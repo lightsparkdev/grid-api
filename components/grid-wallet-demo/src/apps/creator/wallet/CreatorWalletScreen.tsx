@@ -29,7 +29,7 @@ import { WalletCardDetailHeader } from './WalletCardDetailHeader';
 import { WalletListSection } from './WalletListSection';
 import type { SkinWalletScreenProps } from '@/apps/types';
 import { SkinTabBar } from '../blocks/SkinTabBar';
-import { CREATOR_HERO_STATS, CREATOR_TAB_BAR } from '../config';
+import { CREATOR_HERO_STATS, CREATOR_STACKED_SHEET_DURATION, CREATOR_TAB_BAR } from '../config';
 import styles from './CreatorWalletScreen.module.scss';
 
 const SHEET_DURATION = 0.4;
@@ -130,8 +130,14 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
     <SheetPresentationProvider>
     <div className={styles.root}>
       {/* The presenting "card" surface — scales back behind a rising sheet (iOS
-          stacked-sheet effect). Sheets + overlay stay siblings, above the stage. */}
-      <PresentationStage className={styles.stageSkin}>
+          stacked-sheet effect). Sheets + overlay stay siblings, above the stage.
+          offset 62 pairs with the money sheet's .flow top (72) for a 10px peek;
+          duration matches the sheet slide so the two move in lockstep. */}
+      <PresentationStage
+        className={styles.stageSkin}
+        offset={62}
+        duration={CREATOR_STACKED_SHEET_DURATION}
+      >
       {/* Purple brand wash behind the card during issuance (in place of Aurora's
           WebGL field). Same fade language so the bottom content reads on the bg. */}
       <AnimatePresence>

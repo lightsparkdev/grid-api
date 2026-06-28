@@ -7,24 +7,40 @@ import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import { useSheetPresented } from './SheetPresentationContext';
 import styles from './PresentationStage.module.scss';
 
-// Must match the slide duration of the sheets that scale this stage so the card
-// recedes in lockstep with the rising sheet. Creator's wallet sheets pass
-// duration={0.5} to BottomSheet, so the stage uses 0.5 too.
-const STAGE_TRANSITION = motionTransition(easeOutSnappy, 0.5);
-const STAGE_SCALE = 0.92;
-// Drop so the receded card's top sits just under the status bar with a small dark
-// gap (iOS look). Pairs with AddMoneySheet's .flow top (STAGE_Y + 10) for a 10px peek.
-const STAGE_Y = 62;
+// Neutral iOS-ish defaults. Each skin tunes via props; the duration default
+// matches BottomSheet's default slide so a screen using stock sheets stays in
+// sync for free (only retune both together when a skin slows its sheets).
+const DEFAULT_SCALE = 0.92;
+const DEFAULT_OFFSET = 64;
+const DEFAULT_DURATION = 0.35;
+const DEFAULT_RADIUS = 16;
+
+interface PresentationStageProps {
+  className?: string;
+  children: ReactNode;
+  /** Scale of the receded card while a sheet is presented (default 0.92). */
+  scale?: number;
+  /** Downward translate (px) of the receded card — its top drops this far so the
+   *  sheet peeks above it. Coordinate with the sheet's top for the peek you want
+   *  (peek = sheetTop − offset). Default 64. */
+  offset?: number;
+  /** Scale/translate duration (s). MUST equal the slide duration of the sheets
+   *  that scale this stage so the two move in lockstep. Default 0.35, matching
+   *  BottomSheet's default `duration`. */
+  duration?: number;
+  /** Corner radius (px) of the receded card (default 16). */
+  radius?: number;
+}
 
 /**
  * The presenting "card" surface. Wraps a screen's content; when a sheet is
  * presented it scales back and drops behind the sheet, rounding its corners over
  * a dark backdrop. Identity (no transform) when nothing is presented, so the
  * resting screen is pixel-unchanged. `className` carries skin visuals (bg + the
- * status-bar padding).
+ * status-bar padding); the motion is tuned per-skin via the props above.
  *
  * Perf: only the `transform` animates (GPU-composited). The corner rounding is a
- * STATIC class toggle (no border-radius transition — that would re-rasterize the
+ * STATIC inline toggle (no border-radius transition — that would re-rasterize the
  * full-screen layer every frame). It rounds for the whole presented stretch and
  * only drops back to square once the close animation finishes (corners are then
  * at the screen edge, hidden by AppShell's clip), so the look is unchanged.
@@ -32,10 +48,11 @@ const STAGE_Y = 62;
 export function PresentationStage({
   className,
   children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
+  scale = DEFAULT_SCALE,
+  offset = DEFAULT_OFFSET,
+  duration = DEFAULT_DURATION,
+  radius = DEFAULT_RADIUS,
+}: PresentationStageProps) {
   const presented = useSheetPresented();
   const reduceMotion = useReducedMotion();
   const active = presented && !reduceMotion;
@@ -49,10 +66,13 @@ export function PresentationStage({
     <>
       <div className={styles.backdrop} aria-hidden />
       <motion.div
-        className={clsx(styles.stage, rounded && styles.stageRounded, className)}
+        className={clsx(styles.stage, className)}
         initial={false}
-        animate={active ? { scale: STAGE_SCALE, y: STAGE_Y } : { scale: 1, y: 0 }}
-        transition={STAGE_TRANSITION}
+        animate={active ? { scale, y: offset } : { scale: 1, y: 0 }}
+        transition={motionTransition(easeOutSnappy, duration)}
+        // Static (un-transitioned) radius toggle so only the transform animates;
+        // see the .stage comment. Held through the close, dropped on complete.
+        style={{ borderRadius: rounded ? radius : 0 }}
         onAnimationComplete={() => {
           if (!active) setRounded(false);
         }}

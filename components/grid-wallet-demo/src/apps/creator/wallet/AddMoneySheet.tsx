@@ -28,6 +28,7 @@ import NumericText from '@/components/NumericText';
 import { FrostPanel, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { PrimaryButton } from '../blocks/PrimaryButton';
 import { SheetIconButton } from '../blocks/SheetIconButton';
+import { CREATOR_STACKED_SHEET_DURATION } from '../config';
 import { SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
@@ -549,9 +550,9 @@ export function AddMoneySheet({
     <BottomSheet
       open={open}
       onDismiss={dismiss}
-      // Slower 0.5s slide for the stacked-sheet presentation — must match the
-      // PresentationStage transition so the scale recedes in lockstep.
-      duration={0.5}
+      // Slower slide for the stacked-sheet presentation — shares one constant with
+      // the PresentationStage transition so the scale recedes in lockstep.
+      duration={CREATOR_STACKED_SHEET_DURATION}
       // Flat solid sheet per Figma (no frost, no glassy glint — glass stays on
       // the toolbar buttons only). 24px top corners to unify with the auth /
       // Send-Receive sheets; shell smoothing so the bottom corners nest

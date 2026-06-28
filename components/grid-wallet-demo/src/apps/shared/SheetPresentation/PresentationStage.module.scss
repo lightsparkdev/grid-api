@@ -22,16 +22,9 @@
   flex-direction: column;
   overflow: hidden;
   transform-origin: top center;
-  border-radius: 0;
   corner-shape: var(--corner-shape);
-  /* No border-radius transition on purpose: animating it would re-rasterize this
-     full-screen layer every frame. The radius is toggled statically (see
-     .stageRounded) so the scale stays a pure GPU transform. */
-}
-
-.stageRounded {
-  /* A modest corner-smoothed round on the receded card (not the full screen
-     radius, which reads too large once the card is scaled back). Held for the
-     whole presented stretch + the close, then dropped once scale is back to 1. */
-  border-radius: 16px;
+  /* border-radius is set inline by PresentationStage (the `radius` prop) and
+     toggled statically — NOT transitioned. Animating it would re-rasterize this
+     full-screen layer every frame; keeping it static lets the scale stay a pure
+     GPU transform. corner-shape above smooths whatever radius is applied. */
 }

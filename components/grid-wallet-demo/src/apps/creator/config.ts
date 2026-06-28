@@ -18,6 +18,12 @@ export const CREATOR_LOGO = '/assets/creator/logo-creator-platform.svg';
 /** Purple logo — wallet header avatar on the dark home. */
 export const CREATOR_LOGO_PURPLE = '/assets/creator/logo-creator-platform-color.svg';
 
+/** Slide duration (s) for the creator wallet's stacked sheets. Shared by the
+ *  Add Money BottomSheet and the PresentationStage so the sheet's slide and the
+ *  background scale stay in lockstep — the sync the stacked effect depends on.
+ *  Change it here to retune both at once. */
+export const CREATOR_STACKED_SHEET_DURATION = 0.5;
+
 /** Hero secondary stats (Figma 2454:19341). Static creator chrome — the balance
  *  itself stays the unified, fresh-per-session demo value across every skin. */
 export const CREATOR_HERO_STATS: { amount: string; label: string }[] = [
