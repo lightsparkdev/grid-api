@@ -84,21 +84,9 @@ function edgeUV(): { u: number; v: number } {
   }
 }
 
-/** Pick one of the four card corners (optionally not `exclude`). */
-function pickCorner(exclude?: { cu: number; cv: number }): { cu: number; cv: number } {
-  const corners = [
-    { cu: -1, cv: -1 },
-    { cu: 1, cv: -1 },
-    { cu: 1, cv: 1 },
-    { cu: -1, cv: 1 },
-  ].filter((c) => !exclude || c.cu !== exclude.cu || c.cv !== exclude.cv);
-  return corners[Math.floor(Math.random() * corners.length)];
-}
-
-/** A point hugging a given corner (tight, with a little jitter — never near the
- *  middle). */
-function nearCorner(c: { cu: number; cv: number }): { u: number; v: number } {
-  return { u: c.cu * rand(0.84, 1.04), v: c.cv * rand(0.84, 1.04) };
+/** Layer-space px position of a placed sparkle (for overlap checks). */
+function sparkPx(left: number, top: number): { x: number; y: number } {
+  return { x: (left / 100) * LAYER_W, y: (top / 100) * LAYER_H };
 }
 
 interface SparkState {
@@ -119,7 +107,7 @@ interface SparkState {
 
 type SparkMode = 'rise' | 'twinkle';
 
-function makeSpark(uv: { u: number; v: number }, band: [number, number], mode: SparkMode): SparkState {
+function makeSpark(uv: { u: number; v: number }, size: number, mode: SparkMode): SparkState {
   const ang = rand(0, Math.PI * 2);
   const caDist = rand(5, 10);
   const drift = rand(-18, 18);
@@ -131,7 +119,7 @@ function makeSpark(uv: { u: number; v: number }, band: [number, number], mode: S
   return {
     left,
     startTop: top,
-    size: Math.round(rand(band[0], band[1])),
+    size,
     rise,
     drift, // wobble amplitude (signed)
     dur: mode === 'twinkle' ? rand(1.1, 1.9) : rand(2.2, 4.6),
@@ -148,7 +136,39 @@ function makeSpark(uv: { u: number; v: number }, band: [number, number], mode: S
 
 /** Edge-placed sparkle (rise mode's continuous stream). */
 function randomSpark(band: [number, number], mode: SparkMode): SparkState {
-  return makeSpark(edgeUV(), band, mode);
+  return makeSpark(edgeUV(), Math.round(rand(band[0], band[1])), mode);
+}
+
+/** Created-screen sparkle placed INSIDE the card face, kept clear of the ones already
+ *  on screen (tries a handful of spots, picks the most clear). */
+function insideSpark(active: SparkState[], band: [number, number], mode: SparkMode): SparkState {
+  const size = Math.round(rand(band[0], band[1]));
+  // Keep fully inside the face — bigger sparkles get a tighter range so they don't
+  // poke past the card edge.
+  const lim = Math.max(0.4, 0.8 - size / 300);
+  let best = { u: 0, v: 0 };
+  let bestClear = -Infinity;
+  for (let i = 0; i < 16; i += 1) {
+    const u = rand(-lim, lim);
+    const v = rand(-lim, lim);
+    const { left, top } = projectIso(u, v);
+    const p = sparkPx(left, top);
+    let clear = Infinity;
+    for (const a of active) {
+      const ap = sparkPx(a.left, a.startTop);
+      const d = Math.hypot(p.x - ap.x, p.y - ap.y) - (size / 2 + a.size / 2 + 6);
+      if (d < clear) clear = d;
+    }
+    if (clear >= 0) {
+      best = { u, v };
+      break;
+    }
+    if (clear > bestClear) {
+      bestClear = clear;
+      best = { u, v };
+    }
+  }
+  return makeSpark(best, size, mode);
 }
 
 const SparkSvgs = (
@@ -252,12 +272,14 @@ export function CardSparkles({
 
   useEffect(() => {
     if (reduce) {
-      // A few static sparkles (a big, a small, a mid), no stream.
-      setParticles([
-        { id: idRef.current++, s: randomSpark(BIG_BAND, mode) },
-        { id: idRef.current++, s: randomSpark(SMALL_BAND, mode) },
-        { id: idRef.current++, s: randomSpark(MID_BANDS[0], mode) },
-      ]);
+      // A few static sparkles (a big, a small, a mid), no stream. Twinkle places them
+      // inside the card + non-overlapping; rise keeps its edge placement.
+      const acc: ActiveSpark[] = [];
+      for (const band of [BIG_BAND, SMALL_BAND, MID_BANDS[0]]) {
+        const s = mode === 'twinkle' ? insideSpark(acc.map((x) => x.s), band, mode) : randomSpark(band, mode);
+        acc.push({ id: idRef.current++, s });
+      }
+      setParticles(acc);
       return;
     }
     // Stopped emitting (e.g. on Create): keep the existing sparkles so they finish
@@ -268,13 +290,13 @@ export function CardSparkles({
 
     if (mode === 'twinkle') {
       // Created screen: a rhythm of PAIRS — "twinkle-twinkle … (rest) … twinkle-
-      // twinkle …". Two sparkles close together at random corners, then a gap.
+      // twinkle …". Each sparkle is placed INSIDE the card face, clear of the others.
       let timer2: number | undefined;
       const one = () =>
-        setParticles((p) => [
-          ...p,
-          { id: idRef.current++, s: makeSpark(nearCorner(pickCorner()), nextBand(p.map((x) => x.s)), mode) },
-        ]);
+        setParticles((p) => {
+          const active = p.map((x) => x.s);
+          return [...p, { id: idRef.current++, s: insideSpark(active, nextBand(active), mode) }];
+        });
       const burst = () => {
         if (!alive) return;
         one();

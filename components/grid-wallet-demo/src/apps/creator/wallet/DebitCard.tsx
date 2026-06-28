@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { TextMorph } from 'torph/react';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { cubicBezierCss, easeOutSwift } from '@/lib/easing';
@@ -20,12 +20,22 @@ interface DebitCardProps {
   issued?: boolean;
   /** Sweep a one-time whiter gradient shimmer across the card (while creating). */
   shimmer?: boolean;
+  /** Loop an ambient shimmer (sweep + pause, ~5s cycle) on the settled card. */
+  shimmerLoop?: boolean;
   className?: string;
 }
 
 /** The card face content (Figma 2528:21062) — rendered on BOTH faces so the
  *  issuance half-flip (180°, lands on the "back") shows the same card. */
-function CardFace({ issued, shimmer }: { issued: boolean; shimmer: boolean }) {
+function CardFace({
+  issued,
+  shimmer,
+  shimmerLoop,
+}: {
+  issued: boolean;
+  shimmer: boolean;
+  shimmerLoop: boolean;
+}) {
   return (
     <>
       <div className={styles.lockup}>
@@ -54,14 +64,19 @@ function CardFace({ issued, shimmer }: { issued: boolean; shimmer: boolean }) {
           />
         </div>
       </div>
-      {shimmer && (
+      {(shimmer || shimmerLoop) && (
         <motion.div
+          key={shimmerLoop ? 'loop' : 'once'}
           className={styles.shimmer}
           initial={{ x: '-130%' }}
           animate={{ x: '130%' }}
-          // Sweep AFTER the card lands its flip (~1.0s), finishing before the
-          // creating state ends (~2.2s).
-          transition={{ duration: 0.9, ease: 'easeInOut', delay: 1.05 }}
+          transition={
+            shimmerLoop
+              ? // Ambient: sweep (0.9s) then rest, ~5s cycle, forever.
+                { duration: 0.9, ease: 'easeInOut', repeat: Infinity, repeatDelay: 4.1 }
+              : // Creating: one sweep AFTER the card lands its flip (~1.0s).
+                { duration: 0.9, ease: 'easeInOut', delay: 1.05 }
+          }
         />
       )}
     </>
@@ -72,7 +87,9 @@ function CardFace({ issued, shimmer }: { issued: boolean; shimmer: boolean }) {
  *  "Spend anywhere" → masked number bottom-left, DEBIT + Visa bottom-right. Two
  *  identical faces so the issuance flip is a single continuous 180° roll (iso →
  *  head-on) that lands on the duplicated back instead of a full 360. */
-export function DebitCard({ issued = false, shimmer = false, className }: DebitCardProps) {
+export function DebitCard({ issued = false, shimmer = false, shimmerLoop = false, className }: DebitCardProps) {
+  const reduce = useReducedMotion();
+  const loop = shimmerLoop && !reduce;
   const cardClip = useSquircleClip<HTMLDivElement>({
     radiusVar: '--corner-radius-debit-card-squircle',
   });
@@ -93,10 +110,10 @@ export function DebitCard({ issued = false, shimmer = false, className }: DebitC
         />
       ))}
       <div ref={cardClip.ref} style={cardClip.style} className={styles.cardFace}>
-        <CardFace issued={issued} shimmer={shimmer} />
+        <CardFace issued={issued} shimmer={shimmer} shimmerLoop={loop} />
       </div>
       <div style={cardClip.style} className={clsx(styles.cardFace, styles.cardBack)} aria-hidden>
-        <CardFace issued={issued} shimmer={shimmer} />
+        <CardFace issued={issued} shimmer={shimmer} shimmerLoop={loop} />
       </div>
     </div>
   );

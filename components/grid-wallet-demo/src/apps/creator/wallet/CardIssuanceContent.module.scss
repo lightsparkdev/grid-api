@@ -21,9 +21,24 @@
 /* Ready title — symmetric top/bottom padding (the value-prop card carries its own
    top margin for the gap below). */
 .titleBlockTight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
   width: 100%;
-  padding: 16px 24px;
+  padding: 16px 24px 4px;
   text-align: center;
+}
+
+/* Created-screen subhead — same Title3/Emphasized type as the title, just the
+   secondary tone (sits tight under it, gap 0). */
+.titleSecondaryEmphasis {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-secondary);
 }
 
 /* Title3/Emphasized 20/25, -0.45. */
@@ -70,11 +85,10 @@
 .valuePropCard {
   align-self: stretch;
   margin: 8px 16px 0;
+  padding: 0 8px;
   border-radius: 12px;
   corner-shape: var(--corner-shape);
   overflow: hidden;
-  /* iOS grouped-list look on the white created screen — subtle gray fill. */
-  background: rgba(0, 0, 0, 0.04);
 }
 
 /* Value-prop rows — left-aligned feature list inside the card, with a full-width
@@ -82,9 +96,9 @@
 .valueProp {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   width: 100%;
-  padding: 14px 16px;
+  padding: 14px 16px 14px 0;
   text-align: left;
   border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
 
@@ -138,9 +152,9 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  /* 16px sides + 40px from the screen bottom, matching the other bottom-anchored
-     CTAs across the creator app. */
-  padding: 32px 16px 40px;
+  /* 16px top + 16px sides + 40px from the screen bottom, matching the other
+     bottom-anchored CTAs across the creator app. */
+  padding: 16px 16px 40px;
 }
 
 /* Hug-contents CTA — width to the label (centered by .ctaWrap), with roomier

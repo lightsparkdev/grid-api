@@ -4,8 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useReducedMotion } from 'motion/react';
 import styles from './SpeedLines.module.scss';
 
-/** Tiny deterministic PRNG (seeded) so the ray field is identical every mount —
- *  a stable, reproducible burst. */
+/** Tiny deterministic PRNG (seeded) so the ray field is identical every time. */
 function mulberry32(seed: number) {
   let a = seed >>> 0;
   return () => {
@@ -16,8 +15,7 @@ function mulberry32(seed: number) {
   };
 }
 
-/** Standard-normal sample (Box–Muller) for a bell-curve thickness — most rays
- *  cluster around the mean, only a few are thin (or thick). */
+/** Standard-normal sample (Box–Muller) for a bell-curve thickness. */
 function gaussian(rnd: () => number) {
   let u = 0;
   let v = 0;
@@ -29,55 +27,42 @@ function gaussian(rnd: () => number) {
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
 interface Ray {
-  a: number; // angle (deg)
-  aRad: number; // angle (rad), precomputed
-  len: number; // streak length (px)
-  w: number; // thickness (px)
-  r0: number; // inner gap from the burst center (px)
-  op: number; // intensity
-  tier: number; // blur bucket
-  tw: number; // twinkle period (s)
-  td: number; // twinkle phase offset (s, negative to desync)
+  a: number;
+  aRad: number;
+  len: number;
+  w: number;
+  r0: number;
+  op: number;
+  tier: number;
+  tw: number;
+  td: number;
 }
 
 const RAY_COUNT = 180;
-const DEAD_ZONE = 88; // clear middle (px radius) — rays start outside it
-// Per-bucket blur (px), soft → very soft. No truly-sharp tier, so no crisp
-// hairlines. Rays are biased toward the blurrier buckets (see buildRays).
+const DEAD_ZONE = 88;
 const BLUR_STD = [1.6, 3.5, 6.5, 11, 17];
-// Chromatic aberration: how far the R/G/B copies spread, as a fraction of the ray's
-// distance from the burst centre (matches the old per-channel scale ±0.038 — the
-// fringe grows toward the tips/edges).
 const CHROMA = 0.038;
-// R warm, G, B cool — additive ('lighter') so they sum to a white core with colored
-// fringes, exactly like the old isolated screen/plus-lighter channels.
 const RGB = { r: [255, 47, 34], g: [29, 255, 88], b: [53, 107, 255] } as const;
-// Burst "hum": a slow full rotation + a gentle scale/opacity breathe.
-const ROT_DEG_PER_MS = 360 / 160000; // one turn / 160s
+const ROT_DEG_PER_MS = 360 / 160000; // one slow turn / 160s
 const BREATHE_MS = 5500;
-// Burst origin inside the layer: 50% across, 32% down + 72px (matches the sheet's
-// reserved card slot, so the burst sits behind the card).
+// Burst origin in the layer: 50% across, 32% down + 72px (behind the card slot).
 const ORIGIN_X = 0.5;
 const ORIGIN_Y = 0.32;
 const ORIGIN_Y_PX = 72;
+// Build a few sprites per frame. The component is only mounted AFTER the card settles
+// (CardIssuanceSheet), so this runs on calm frames and never competes with the open.
+const BUILD_PER_FRAME = 8;
 
-function buildRays(seed: number): Ray[] {
-  const rnd = mulberry32(seed);
+function buildRays(): Ray[] {
+  const rnd = mulberry32(0x5eed1);
   return Array.from({ length: RAY_COUNT }, () => {
     const a = rnd() * 360;
-    // Dead zone in the middle (the card's space); rays start outside it.
     const r0 = DEAD_ZONE + rnd() * 110;
-    // Mostly short with a few long streaks (pow biases the distribution).
     const len = 90 + Math.pow(rnd(), 1.6) * 560;
-    // Thickness ~ normal(2.8, 1.4), min 1.2: most mid-weight, no ultra-thin.
     const w = clamp(2.8 + gaussian(rnd) * 1.4, 1.2, 8.5);
     const op = 0.1 + Math.pow(rnd(), 1.2) * 0.78;
-    // Bias toward the blurrier buckets (pow < 1), and force thin rays to be soft —
-    // so there are no thin, crisp lines.
     let tier = Math.floor(Math.pow(rnd(), 0.6) * BLUR_STD.length);
     if (w < 2) tier = Math.max(tier, 2);
-    // Each ray fades 0→1→0 on its OWN cycle (~750ms, varied so periods drift), phase
-    // spread across a full cycle — independent shimmer, no batches/waves.
     const tw = 0.55 + rnd() * 0.4;
     const td = -rnd() * 2;
     return { a, aRad: (a * Math.PI) / 180, len, w, r0, op, tier, tw, td };
@@ -88,10 +73,10 @@ const rgba = (c: readonly number[], a: number) => `rgba(${c[0]},${c[1]},${c[2]},
 
 interface Sprite {
   canvas: HTMLCanvasElement;
-  sw: number; // logical sprite width
-  sh: number; // logical sprite height
-  pad: number; // blur/chroma padding
-  off: number; // chroma offset (px)
+  sw: number;
+  sh: number;
+  pad: number;
+  off: number;
 }
 
 function drawColumn(
@@ -102,8 +87,6 @@ function drawColumn(
   w: number,
   color: readonly number[],
 ) {
-  // Streak falloff along the length: faded at the base (near centre), brightest just
-  // out, fading to nothing at the tip. (base = larger y, tip = smaller y.)
   const grad = g.createLinearGradient(0, baseY, 0, tipY);
   grad.addColorStop(0, rgba(color, 0.1));
   grad.addColorStop(0.22, rgba(color, 1));
@@ -117,8 +100,7 @@ function drawColumn(
   g.fill();
 }
 
-/** Pre-render one ray to an offscreen canvas with its blur + chroma baked in, so the
- *  draw loop only blits it (with a per-frame alpha for the twinkle). */
+/** Render one ray to an offscreen canvas with its blur + chroma baked in. */
 function buildSprite(ray: Ray): Sprite {
   const std = BLUR_STD[ray.tier];
   const off = CHROMA * (ray.r0 + ray.len / 2);
@@ -135,44 +117,22 @@ function buildSprite(ray: Ray): Sprite {
   const cx = sw / 2;
   const tipY = pad + off;
   const baseY = tipY + ray.len;
-  // G centred; R pushed outward (toward tip), B inward (toward base) → radial chroma.
   drawColumn(g, cx, tipY, baseY, ray.w, RGB.g);
   drawColumn(g, cx, tipY - off, baseY - off, ray.w, RGB.r);
   drawColumn(g, cx, tipY + off, baseY + off, ray.w, RGB.b);
   return { canvas, sw, sh, pad, off };
 }
 
-const smoothstep = (x: number) => x * x * (3 - 2 * x);
-
-/** Per-ray twinkle: opacity 0↔1, eased, on the ray's own period/phase (mirrors the
- *  old CSS `rayTwinkle` ease-in-out alternate). */
-function twinkle(t: number, r: Ray): number {
-  const u = (t - r.td) / r.tw;
-  const tri = 1 - Math.abs((u % 2) - 1); // triangle 0→1→0, period 2
-  return smoothstep(tri);
-}
-
-/**
- * Procedural radial speed-line burst — chroma-aberrated, blurred rays that shimmer,
- * drift (slow rotate) and breathe. Rendered on a single <canvas>: the blur + chroma
- * are baked into per-ray sprites ONCE, then the loop just blits them with a per-frame
- * alpha (the twinkle) + a global rotate/scale (drift/breathe). One composited layer,
- * no live SVG filters — the same look at a fraction of the cost.
- */
 interface RayWithSprite extends Ray {
-  sprite: Sprite | null; // built lazily, amortized across frames
+  sprite: Sprite | null;
 }
 
-// Sprites (blur + chroma baked) are identical every time, so they're built ONCE and
-// cached at module scope. The build is heavy (~540 blurred offscreen canvases), so it
-// is AMORTIZED across frames — `buildSome` does a slice per animation frame and the
-// draw loop skips not-yet-built rays — instead of one ~180ms blocking task on first
-// open. Once built, every later open reuses the cache instantly.
-const BUILD_PER_FRAME = 18;
+// Built ONCE and cached at module scope (a few sprites per frame). Once built, every
+// later open reuses the cache instantly.
 let rayCache: RayWithSprite[] | null = null;
 let builtCount = 0;
 function getRays(): RayWithSprite[] {
-  if (!rayCache) rayCache = buildRays(0x5eed1).map((r) => ({ ...r, sprite: null }));
+  if (!rayCache) rayCache = buildRays().map((r) => ({ ...r, sprite: null }));
   return rayCache;
 }
 function buildSome(rays: RayWithSprite[], n: number) {
@@ -184,6 +144,20 @@ function buildSome(rays: RayWithSprite[], n: number) {
   }
 }
 
+const smoothstep = (x: number) => x * x * (3 - 2 * x);
+
+function twinkle(t: number, r: Ray): number {
+  const u = (t - r.td) / r.tw;
+  const tri = 1 - Math.abs((u % 2) - 1);
+  return smoothstep(tri);
+}
+
+/**
+ * Procedural radial speed-line burst on a single <canvas>: blur + chroma are baked
+ * into per-ray sprites (built a few per frame, cached), then the loop blits them with a
+ * per-frame twinkle + slow rotate/breathe. One composited layer, no live SVG filters.
+ * Mounted only after the card settles, so the build runs on calm frames.
+ */
 export function SpeedRays({ active = true }: { active?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const reduce = useReducedMotion();
@@ -220,8 +194,8 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
       const t = elapsedMs / 1000;
       const rot = elapsedMs * ROT_DEG_PER_MS * (Math.PI / 180);
       const bp = (elapsedMs / BREATHE_MS) * Math.PI * 2;
-      const breatheS = 1.03 - 0.03 * Math.cos(bp); // scale 1 ↔ 1.06
-      const breatheA = 0.86 - 0.14 * Math.cos(bp); // opacity 0.72 ↔ 1
+      const breatheS = 1.03 - 0.03 * Math.cos(bp);
+      const breatheA = 0.86 - 0.14 * Math.cos(bp);
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
@@ -232,7 +206,7 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
 
       for (const r of rays) {
         const sp = r.sprite;
-        if (!sp) continue; // not built yet (amortized across frames)
+        if (!sp) continue;
         const tw = reduce ? 1 : twinkle(t, r);
         if (tw <= 0.002) continue;
         ctx.save();
@@ -245,28 +219,15 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
 
     let raf = 0;
     let start = 0;
-    if (reduce) {
-      // Static burst — still build amortized (no big blocking task), redraw each slice
-      // until complete, then stop (no ongoing animation for reduced-motion).
-      const buildLoop = () => {
-        buildSome(rays, BUILD_PER_FRAME);
-        drawFrame(0);
-        if (builtCount < rays.length) raf = requestAnimationFrame(buildLoop);
-      };
-      raf = requestAnimationFrame(buildLoop);
-    } else if (!active) {
-      // Faded out off the intro — just draw whatever's already built, no loop.
-      drawFrame(0);
-    } else {
-      const loop = (now: number) => {
-        if (!start) start = now;
-        // Amortize the sprite build over the first frames so it never blocks.
-        if (builtCount < rays.length) buildSome(rays, BUILD_PER_FRAME);
-        drawFrame(now - start);
-        raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-    }
+    const tick = (now: number) => {
+      if (!start) start = now;
+      if (builtCount < rays.length) buildSome(rays, BUILD_PER_FRAME);
+      drawFrame(reduce || !active ? 0 : now - start);
+      const animating = active && !reduce;
+      const building = builtCount < rays.length;
+      if (animating || building) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
 
     return () => {
       if (raf) cancelAnimationFrame(raf);

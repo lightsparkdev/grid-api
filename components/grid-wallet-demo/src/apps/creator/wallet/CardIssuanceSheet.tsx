@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'motion/react';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
@@ -35,6 +36,19 @@ export function CardIssuanceSheet({
   // Once the card is created the burst warps out to a clean white screen; keep it
   // white through the Continue → card-home handoff.
   const onWhite = cardView === 'ready' || cardView === 'home';
+
+  // Bring the speed lines in only AFTER the sheet + card have settled, so the heavy
+  // one-time sprite build runs on calm frames and never competes with the open. Then
+  // it fades in. (Card reveal lands ~0.85s in; mount a hair after that.)
+  const [raysReady, setRaysReady] = useState(false);
+  useEffect(() => {
+    if (!open) {
+      setRaysReady(false);
+      return;
+    }
+    const t = window.setTimeout(() => setRaysReady(true), 950);
+    return () => window.clearTimeout(t);
+  }, [open]);
 
   return (
     <BottomSheet
@@ -83,16 +97,15 @@ export function CardIssuanceSheet({
             cardView === 'intro' && styles.speedLinesMasked,
           )}
           aria-hidden
-          // The burst is present from the start, so it rides UP with the sheet (it's
-          // sheet content) rather than fading in later. It lives in the intro only —
+          // Fades in once mounted (after the card settles). Lives in the intro only —
           // it fades out the moment the card starts creating, and stays gone through
-          // the white ready screen. (Sprites are prewarmed, so mounting it with the
-          // sheet doesn't stall the slide.)
-          initial={false}
-          animate={{ opacity: cardView === 'intro' ? 0.5 : 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          // the white ready screen.
+          initial={{ opacity: 0 }}
+          animate={{ opacity: cardView === 'intro' && raysReady ? 0.5 : 0 }}
+          // "Quick Out" (easing.dev) — fast-out, settling: covers both fade in + out.
+          transition={{ duration: 0.5, ease: [0, 0, 0.2, 1] }}
         >
-          <SpeedRays active={cardView === 'intro'} />
+          {raysReady && <SpeedRays active={cardView === 'intro'} />}
         </motion.div>
 
         <div className={styles.toolbar}>

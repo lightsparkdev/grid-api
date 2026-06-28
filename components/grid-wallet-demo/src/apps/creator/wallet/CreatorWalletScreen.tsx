@@ -53,7 +53,7 @@ const CREATING_DY = 200;
 // Created (ready) screen: the title + value-prop list anchor lower in the sheet, so
 // the card recenters in the open space between the X header and the title (it sits a
 // touch higher than the intro slot). Title stays in ReadyContent, above the list.
-const READY_DY = 72;
+const READY_DY = 82;
 // Intro float: a TRUE isometric hover (orthographic — no perspective). The card
 // sits at the textbook isometric angle and gently bobs up/down, like a floating
 // game item. Settles flat/head-on for creating (shrunk a touch), ready, and morph.
@@ -472,7 +472,11 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
                 sparkleEmit={cardView !== 'creating'}
                 sparkleDelay={cardView === 'intro' ? SPARKLE_START_DELAY : 0}
               >
-                <DebitCard issued={issued} shimmer={cardView === 'creating'} />
+                <DebitCard
+                  issued={issued}
+                  shimmer={cardView === 'creating'}
+                  shimmerLoop={cardView === 'ready' || cardView === 'home'}
+                />
               </FloatingCard>
             </motion.div>
             {/* "Creating…" rides the foreground, pinned just under the scaled card
