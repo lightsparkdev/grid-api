@@ -37,24 +37,25 @@ export function IntroContent({ onCreate }: { onCreate?: () => void }) {
     <>
       <div className={styles.section}>
         <motion.div {...reveal(0)} className={styles.titleBlock}>
-          <p className={styles.titlePrimary}>Get your free card</p>
+          <p className={styles.titlePrimary}>Get your free {BRAND} card</p>
           <p className={styles.titleSecondary}>
             Spend your balance in person and online anywhere Visa is accepted
           </p>
         </motion.div>
-        <motion.p {...reveal(1)} className={styles.agreement}>
-          By tapping &ldquo;Create card&rdquo; you accept the{' '}
-          <span className={styles.agreementStrong}>Terms of Service</span> &amp;{' '}
-          <span className={styles.agreementStrong}>Privacy Policy</span> and{' '}
-          <span className={styles.agreementStrong}>Card Holder Agreement</span> &amp;{' '}
-          <span className={styles.agreementStrong}>Privacy Policy</span>
-        </motion.p>
       </div>
-      <motion.div {...reveal(2)} className={styles.ctaWrap}>
-        <PrimaryButton onClick={onCreate}>
+      <motion.div {...reveal(1)} className={clsx(styles.ctaWrap, styles.ctaWrapAboveNote)}>
+        <PrimaryButton className={styles.ctaHug} onClick={onCreate}>
           Create card
         </PrimaryButton>
       </motion.div>
+      {/* Disclaimer sits UNDER the CTA, 8px gap (Figma 2219:48745). */}
+      <motion.p {...reveal(2)} className={styles.agreement}>
+        By tapping &ldquo;Create card&rdquo; you accept the{' '}
+        <span className={styles.agreementStrong}>Terms of Service</span> &amp;{' '}
+        <span className={styles.agreementStrong}>Privacy Policy</span> and{' '}
+        <span className={styles.agreementStrong}>Card Holder Agreement</span> &amp;{' '}
+        <span className={styles.agreementStrong}>Privacy Policy</span>
+      </motion.p>
     </>
   );
 }
@@ -67,19 +68,20 @@ export function ReadyContent({ onContinue }: { onContinue?: () => void }) {
       <div className={styles.section}>
         <motion.div {...reveal(0)} className={styles.titleBlockTight}>
           <p className={styles.titlePrimary}>Your card is ready to use</p>
-          <p className={styles.titleSecondary}>Ready for the world</p>
         </motion.div>
-        {VALUE_PROPS.map(({ Icon, title, sub }, i) => (
-          <motion.div key={title} {...reveal(i + 1)} className={styles.valueProp}>
-            <span className={styles.valuePropIcon}>
-              <Icon size={20} />
-            </span>
-            <div className={styles.valuePropText}>
-              <p className={styles.valuePropTitle}>{title}</p>
-              <p className={styles.valuePropSub}>{sub}</p>
-            </div>
-          </motion.div>
-        ))}
+        <div className={styles.valuePropCard}>
+          {VALUE_PROPS.map(({ Icon, title, sub }, i) => (
+            <motion.div key={title} {...reveal(i + 1)} className={styles.valueProp}>
+              <span className={styles.valuePropIcon}>
+                <Icon size={20} />
+              </span>
+              <div className={styles.valuePropText}>
+                <p className={styles.valuePropTitle}>{title}</p>
+                <p className={styles.valuePropSub}>{sub}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
       <motion.div {...reveal(VALUE_PROPS.length + 1)} className={styles.ctaWrap}>
         <PrimaryButton onClick={onContinue}>
@@ -96,16 +98,18 @@ export function ReadyContent({ onContinue }: { onContinue?: () => void }) {
 export function CreatingCaption({
   label = 'Creating your card...',
   onSurface = false,
+  delay = 0,
 }: {
   label?: string;
   onSurface?: boolean;
+  delay?: number;
 }) {
   return (
     <motion.div
       className={clsx(styles.creating, onSurface && styles.creatingOnSurface)}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={motionTransition(undefined, 0.3)}
+      transition={motionTransition(undefined, 0.3, { delay })}
     >
       <span className={styles.spinner} aria-hidden>
         <IconLoadingCircle size={16} />

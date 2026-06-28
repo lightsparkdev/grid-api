@@ -19,8 +19,53 @@ interface DebitCardProps {
   className?: string;
 }
 
-/** Figma 2528:21062 — Glitch debit card face: flat brand-purple, logo lockup
- *  top-left, "Spend anywhere" → masked number bottom-left, DEBIT + Visa bottom-right. */
+/** The card face content (Figma 2528:21062) — rendered on BOTH faces so the
+ *  issuance half-flip (180°, lands on the "back") shows the same card. */
+function CardFace({ issued, shimmer }: { issued: boolean; shimmer: boolean }) {
+  return (
+    <>
+      <div className={styles.lockup}>
+        <img className={styles.mark} src={GLITCH_MARK} alt="" aria-hidden draggable={false} />
+        <span className={styles.wordmark}>Glitch</span>
+      </div>
+      <div className={styles.bottom}>
+        <TextMorph
+          as="span"
+          className={styles.number}
+          duration={450}
+          ease={cubicBezierCss(easeOutSwift)}
+        >
+          {issued ? '•••• 8972' : 'Spend anywhere'}
+        </TextMorph>
+        <div className={styles.brand}>
+          <span className={styles.debit}>DEBIT</span>
+          <img
+            className={styles.visa}
+            src={VISA_LOGO}
+            alt=""
+            width={62}
+            height={20}
+            aria-hidden
+            draggable={false}
+          />
+        </div>
+      </div>
+      {shimmer && (
+        <motion.div
+          className={styles.shimmer}
+          initial={{ x: '-130%' }}
+          animate={{ x: '130%' }}
+          transition={{ duration: 1.1, ease: 'easeInOut', delay: 0.15 }}
+        />
+      )}
+    </>
+  );
+}
+
+/** Figma 2528:21062 — Glitch debit card: flat brand-purple, logo lockup top-left,
+ *  "Spend anywhere" → masked number bottom-left, DEBIT + Visa bottom-right. Two
+ *  identical faces so the issuance flip is a single continuous 180° roll (iso →
+ *  head-on) that lands on the duplicated back instead of a full 360. */
 export function DebitCard({ issued = false, shimmer = false, className }: DebitCardProps) {
   const cardClip = useSquircleClip<HTMLDivElement>({
     radiusVar: '--corner-radius-debit-card-squircle',
@@ -29,46 +74,10 @@ export function DebitCard({ issued = false, shimmer = false, className }: DebitC
   return (
     <div className={clsx(styles.cardShell, className)}>
       <div ref={cardClip.ref} style={cardClip.style} className={styles.card}>
-        <div className={styles.lockup}>
-          <img
-            className={styles.mark}
-            src={GLITCH_MARK}
-            alt=""
-            aria-hidden
-            draggable={false}
-          />
-          <span className={styles.wordmark}>Glitch</span>
-        </div>
-        <div className={styles.bottom}>
-          <TextMorph
-            as="span"
-            className={styles.number}
-            duration={450}
-            ease={cubicBezierCss(easeOutSwift)}
-          >
-            {issued ? '•••• 8972' : 'Spend anywhere'}
-          </TextMorph>
-          <div className={styles.brand}>
-            <span className={styles.debit}>DEBIT</span>
-            <img
-              className={styles.visa}
-              src={VISA_LOGO}
-              alt=""
-              width={62}
-              height={20}
-              aria-hidden
-              draggable={false}
-            />
-          </div>
-        </div>
-        {shimmer && (
-          <motion.div
-            className={styles.shimmer}
-            initial={{ x: '-130%' }}
-            animate={{ x: '130%' }}
-            transition={{ duration: 1.1, ease: 'easeInOut', delay: 0.15 }}
-          />
-        )}
+        <CardFace issued={issued} shimmer={shimmer} />
+      </div>
+      <div style={cardClip.style} className={clsx(styles.card, styles.cardBack)} aria-hidden>
+        <CardFace issued={issued} shimmer={shimmer} />
       </div>
     </div>
   );

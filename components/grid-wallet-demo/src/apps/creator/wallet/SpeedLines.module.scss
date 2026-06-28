@@ -1,0 +1,76 @@
+/* One chromatic-aberration channel: the full random ray field, tinted + screen-
+   blended over its siblings and the gradient. The radial scale offset spreads the
+   R / G / B copies apart so the colored fringes grow toward the ray tips. */
+.ray {
+  position: absolute;
+  inset: 0;
+  /* plus-lighter = true additive (sums to clean white, not screen's grayer mids);
+     screen stays as a fallback for engines without plus-lighter. */
+  mix-blend-mode: screen;
+  mix-blend-mode: plus-lighter;
+  transform-origin: center;
+}
+
+.rayR {
+  transform: scale(1.038);
+}
+
+.rayG {
+  transform: scale(1);
+}
+
+.rayB {
+  transform: scale(0.962);
+}
+
+.raySvg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Anime speed-line flicker — N distinct ray frames stacked; each is visible for
+   one 1/N slice of the loop with a HARD cut (no fade), staggered by delay, so a
+   different field is drawn each frame (~10fps redraw jitter). */
+.flickStack {
+  position: absolute;
+  inset: 0;
+}
+
+.flickFrame {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: flick 0.4s linear infinite;
+}
+
+/* 4 frames → each holds for ~25% of the cycle then HARD cuts off (the adjacent
+   keyframes at 24.9%/25% make the 1→0 flip effectively instant — no fade). */
+@keyframes flick {
+  0% {
+    opacity: 1;
+  }
+  24.9% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flickFrame {
+    animation: none;
+
+    /* Keep just the first frame static. */
+    &:first-child {
+      opacity: 1;
+    }
+  }
+}

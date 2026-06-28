@@ -4,14 +4,18 @@
    drop-shadow breaks sheet stacking); the inner clip-path is the only shape, so
    the shell can't leak a mismatched-squircle edge. Radius is kept for the shadow. */
 .cardShell {
+  position: relative;
   width: 100%;
   border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
   corner-shape: var(--corner-shape);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  /* Hold front + back faces in 3D so the issuance flip (rotateY on .cardIso) culls
+     correctly. Inert outside the flip — the back stays rotated away. */
+  transform-style: preserve-3d;
+  /* Heavier shadow so the card lifts/floats off the same-purple issuance sheet. */
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
 
-  /* Black shadow over the dark base needs more weight to read. */
   :global([data-theme='dark']) & {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -31,6 +35,18 @@
   background: var(--app-tint);
   color: #ffffff;
   text-align: left;
+  /* Each face hides once the flip turns it away (the other face takes over). */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Back face — an IDENTICAL card, pre-rotated 180° and overlaid. The issuance flip
+   is a single 180° roll, so the card lands on this face showing the same content
+   (no plain "back" to design). */
+.cardBack {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
 }
 
 /* Brand lockup — TV mark + wordmark, top-left (Figma 2528:21065). */

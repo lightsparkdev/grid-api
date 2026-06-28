@@ -22,6 +22,7 @@ import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
 import { AddMoneySheet } from './AddMoneySheet';
 import { CardHomeContent } from './CardHomeContent';
 import { CardIssuanceSheet } from './CardIssuanceSheet';
+import { CreatingCaption } from './CardIssuanceContent';
 import { DebitCard } from './DebitCard';
 import { SendReceiveSheet } from './SendReceiveSheet';
 import { TapToPayStatus } from './TapToPayStatus';
@@ -45,15 +46,38 @@ const TAB_INDICATOR = motionTransition(easeOutSnappy, 0.35);
 // card-home slot on Continue. (DY is the downward offset from the home slot.)
 const ISSUE_DY = 118;
 const ISSUE_SCALE = 0.75;
-// Entrance: delayed so it lands AFTER the sheet has risen, then a springy arc
-// (overshoots up, settles down) — a bouncy spring from just-below.
-const ENTRANCE_SPRING = { type: 'spring' as const, stiffness: 420, damping: 17, delay: 0.3 };
-// Card 3D float (intro only): a gentle, continuous tilt + bob. Mirror-looped so the
-// card eases back and forth without a seam; settles to flat (head-on) otherwise.
+// While creating, the copy/CTA clear out so the card (+ caption) drop so the
+// card-plus-caption GROUP sits at the sheet's vertical center.
+const CREATING_DY = 200;
+// Intro float: a TRUE isometric hover (orthographic — no perspective). The card
+// sits at the textbook isometric angle and gently bobs up/down, like a floating
+// game item. Settles flat/head-on for creating (shrunk a touch), ready, and morph.
+const ISO_ROTX = 54.736; // textbook isometric: arccos(1/√3) ≈ 54.736°
+const ISO_ROTZ = 45; // + the 45° spin = the standard isometric projection
+const FLOAT_BOB = 12; // hover amplitude (px)
+const CREATING_SCALE = 0.9; // shrink a touch while creating
 const CARD_SETTLE = motionTransition(easeOutSnappy, CREATOR_STACKED_SHEET_DURATION);
-const FLOAT_ROTX = { duration: 6, repeat: Infinity, repeatType: 'mirror' as const, ease: 'easeInOut' as const };
-const FLOAT_ROTY = { duration: 7.5, repeat: Infinity, repeatType: 'mirror' as const, ease: 'easeInOut' as const };
-const FLOAT_Y = { duration: 5, repeat: Infinity, repeatType: 'mirror' as const, ease: 'easeInOut' as const };
+// Flip (intro → creating): ONE continuous snappy roll from the isometric pose to
+// head-on — all axes (untilt rotateX/rotateZ + a 180° rotateY roll) move together,
+// so it reads as one flip, not "settle head-on then spin." 180 (not 360) lands on
+// the card's duplicated back = the same face.
+const CARD_FLIP_DURATION = 0.6;
+const CARD_FLIP_T = motionTransition(easeOutSnappy, CARD_FLIP_DURATION);
+const CARD_FLIP_ROLL = 180;
+// "Creating your card" fades in 150ms before the flip lands.
+const CREATE_CAPTION_DELAY = CARD_FLIP_DURATION - 0.15;
+// Bob waits out the ride-up (sheet duration) so the hover doesn't fight the entrance.
+const FLOAT_BOB_T = {
+  duration: 2.6,
+  repeat: Infinity,
+  repeatType: 'mirror' as const,
+  ease: 'easeInOut' as const,
+  delay: CREATOR_STACKED_SHEET_DURATION,
+};
+// Issuance entrance: the card rides up from below in lockstep with the sheet (same
+// easing/duration, no delay) instead of the old decoupled fade. Tuned so it starts
+// just off the bottom and arrives as the sheet settles.
+const CARD_ENTER_FROM = 520;
 
 const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
 const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
@@ -62,10 +86,11 @@ const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
 const ACTIVITY_TABS = ['All', 'Sent', 'Received'];
 
-/** Debit card presentation in the issuance sheet: a delayed, springy arc fade-in,
- *  then a continuous 3D float while `float` (intro). Goes flat/head-on otherwise
- *  (creating/ready) and as it morphs into card-home. */
-function FloatingCard({ float, children }: { float: boolean; children: ReactNode }) {
+/** Debit card presentation in the issuance sheet: fades in, then hovers like a
+ *  floating video-game item — a super-isometric tilt + a gentle up/down bob and
+ *  slow tilt drift (intro). Settles flat/head-on for creating (shrunk a touch),
+ *  ready, and the morph into card-home. */
+function FloatingCard({ phase, children }: { phase: 'intro' | 'creating' | 'settled'; children: ReactNode }) {
   const reduceMotion = useReducedMotion();
   if (reduceMotion) {
     return (
@@ -74,21 +99,28 @@ function FloatingCard({ float, children }: { float: boolean; children: ReactNode
       </motion.div>
     );
   }
+  const intro = phase === 'intro';
   return (
+    // Outer = screen-vertical bob (no rotation here, so the hover stays vertical
+    // regardless of the isometric tilt). Inner = the fixed orthographic iso angle,
+    // which flattens to head-on for creating/ready.
     <motion.div
-      className={styles.cardEntrance}
-      initial={{ opacity: 0, y: 44 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={ENTRANCE_SPRING}
+      className={styles.cardFloat}
+      initial={{ y: 0 }}
+      animate={intro ? { y: [-FLOAT_BOB, FLOAT_BOB] } : { y: 0 }}
+      transition={intro ? FLOAT_BOB_T : CARD_SETTLE}
     >
       <motion.div
-        className={styles.cardFloat}
+        className={styles.cardIso}
+        initial={{ rotateX: ISO_ROTX, rotateZ: ISO_ROTZ, rotateY: 0 }}
         animate={
-          float
-            ? { rotateX: [4, -3], rotateY: [-6, 6], y: [-6, 6] }
-            : { rotateX: 0, rotateY: 0, y: 0 }
+          intro
+            ? { rotateX: ISO_ROTX, rotateZ: ISO_ROTZ, rotateY: 0, scale: 1 }
+            : // Leaving intro: one continuous roll to head-on (iso untilt + 180° flip
+              // together). Held at 180 for every later phase so it never re-rolls.
+              { rotateX: 0, rotateZ: 0, rotateY: CARD_FLIP_ROLL, scale: phase === 'creating' ? CREATING_SCALE : 1 }
         }
-        transition={float ? { rotateX: FLOAT_ROTX, rotateY: FLOAT_ROTY, y: FLOAT_Y } : CARD_SETTLE}
+        transition={intro ? CARD_SETTLE : CARD_FLIP_T}
       >
         {children}
       </motion.div>
@@ -364,21 +396,40 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
             key="card-foreground"
             className={styles.cardForeground}
             aria-hidden
-            initial={false}
-            animate={{ y: isTap ? TAP_LIFT : 0 }}
-            exit={{ opacity: 0 }}
+            // Ride up with the sheet on issuance (start below, no delay, sheet
+            // easing); a direct card-home open (already issued) fades in at the slot.
+            initial={{ y: cardView === 'home' ? 0 : CARD_ENTER_FROM, opacity: cardView === 'home' ? 0 : 1 }}
+            animate={{ y: isTap ? TAP_LIFT : 0, opacity: 1 }}
+            exit={{ y: CARD_ENTER_FROM, opacity: 0 }}
             transition={CARD_TRANSITION}
           >
             <motion.div
               className={styles.cardMorph}
               initial={false}
-              animate={{ y: isIssuance ? ISSUE_DY : 0, scale: isIssuance ? ISSUE_SCALE : 1 }}
+              // Creating drops the card to the sheet's vertical center (copy/CTA are
+              // gone); intro/ready hold the upper issuance slot; home morphs to top.
+              animate={{
+                y: cardView === 'home' ? 0 : cardView === 'creating' ? CREATING_DY : ISSUE_DY,
+                scale: isIssuance ? ISSUE_SCALE : 1,
+              }}
               transition={CARD_TRANSITION}
             >
-              <FloatingCard float={cardView === 'intro'}>
+              <FloatingCard
+                phase={cardView === 'intro' ? 'intro' : cardView === 'creating' ? 'creating' : 'settled'}
+              >
                 <DebitCard issued={issued} shimmer={cardView === 'creating'} />
               </FloatingCard>
             </motion.div>
+            {/* "Creating…" rides the foreground, pinned just under the scaled card
+                (the card's visual bottom + a small gap). */}
+            {cardView === 'creating' && (
+              <div
+                className={styles.creatingUnderCard}
+                style={{ top: CREATING_DY + 116 + 116 * ISSUE_SCALE + 12 }}
+              >
+                <CreatingCaption delay={CREATE_CAPTION_DELAY} />
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

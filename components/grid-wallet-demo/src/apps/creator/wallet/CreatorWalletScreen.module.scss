@@ -137,15 +137,27 @@
   transform-origin: center center;
 }
 
-/* Entrance host — also the perspective for the 3D float child. */
-.cardEntrance {
-  perspective: 1200px;
-  perspective-origin: 50% 35%;
+/* Bob wrapper — gentle screen-vertical hover. No rotation here, so the bob stays
+   vertical no matter how the inner card is isometrically tilted. */
+.cardFloat {
+  will-change: transform;
 }
 
-.cardFloat {
-  transform-style: preserve-3d;
+/* Isometric tilt — orthographic (deliberately NO perspective ancestor anywhere in
+   this chain), so rotateX/rotateZ project as a true parallel isometric view.
+   preserve-3d keeps the card's front/back faces in 3D so the rotateY flip
+   (intro→creating) culls correctly and shows the clean back mid-spin. */
+.cardIso {
   will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/* "Creating…" caption, pinned just below the floating card (top set inline from
+   the card's centered offset + scaled height). */
+.creatingUnderCard {
+  position: absolute;
+  left: 0;
+  right: 0;
 }
 
 /* Card-home body — transactions fill below the floating card's reserved slot. */
