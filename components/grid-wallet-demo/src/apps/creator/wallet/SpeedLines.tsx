@@ -40,13 +40,13 @@ interface Ray {
   td: number; // twinkle delay (s, negative to desync)
 }
 
-const RAY_COUNT = 132;
+const RAY_COUNT = 180;
 const VIEW = 1500; // 1:1 with the .burstRotate square (origin at viewBox center)
 const HALF = VIEW / 2;
-const DEAD_ZONE = 104; // clear middle (px radius) — rays start outside it
-// Per-bucket blur (px), sharp → very soft. Rays are randomly assigned, so blur
-// varies widely across the field.
-const BLUR_STD = [1, 3.5, 7, 12, 18];
+const DEAD_ZONE = 88; // clear middle (px radius) — rays start outside it
+// Per-bucket blur (px), soft → very soft. No truly-sharp tier, so no crisp
+// hairlines. Rays are biased toward the blurrier buckets (see buildRays).
+const BLUR_STD = [1.6, 3.5, 6.5, 11, 17];
 const CHANNELS = [
   { key: 'r', color: '#ff2f22', cls: 'rayR' },
   { key: 'g', color: '#1dff58', cls: 'rayG' },
@@ -60,15 +60,18 @@ function buildRays(seed: number, count: number, deadZone: number): Ray[] {
     const r0 = deadZone + rnd() * 110;
     // Mostly short with a few long streaks (pow biases the distribution).
     const len = 90 + Math.pow(rnd(), 1.6) * 560;
-    // Thickness ~ normal(2.8, 1.3): most rays mid-weight, only a few thin.
-    const w = clamp(2.8 + gaussian(rnd) * 1.3, 0.7, 8);
+    // Thickness ~ normal(2.8, 1.4), min 1.2: most mid-weight, no ultra-thin.
+    const w = clamp(2.8 + gaussian(rnd) * 1.4, 1.2, 8.5);
     const op = 0.1 + Math.pow(rnd(), 1.2) * 0.78;
-    const tier = Math.floor(rnd() * BLUR_STD.length);
-    // Only a FEW rays fade at a time (the dense rest stay solid), each fully fading
-    // 100%→0%→100% on its own cycle (negative delay desyncs them).
-    const twinkles = rnd() < 0.12;
-    const tw = 1 + rnd() * 1.4;
-    const td = -rnd() * 2.4;
+    // Bias toward the blurrier buckets (pow < 1), and force thin rays to be soft —
+    // so there are no thin, crisp lines.
+    let tier = Math.floor(Math.pow(rnd(), 0.6) * BLUR_STD.length);
+    if (w < 2) tier = Math.max(tier, 2);
+    // Every ray fades 0→1→0 on its OWN cycle (~750ms, but varied so periods drift)
+    // with a phase spread across a full cycle — independent, no batches/waves.
+    const twinkles = true;
+    const tw = 0.55 + rnd() * 0.4;
+    const td = -rnd() * 2;
     return { a, len, w, r0, op, tier, twinkles, tw, td };
   });
 }

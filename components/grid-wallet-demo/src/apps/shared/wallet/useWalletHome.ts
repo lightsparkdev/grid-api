@@ -25,7 +25,7 @@ import {
   toastUsd,
 } from './activity';
 
-const CREATING_MS = 2200;
+const CREATING_MS = 2700;
 const TAP_HOLD_MS = 1200; // Hold Near Reader dwell before Face ID kicks in.
 const TAP_DONE_MS = 1500; // Done-check dwell before resolving back to card-home.
 // Insert the transaction AFTER card-home has re-entered (content settles ~0.7s)

@@ -65,12 +65,13 @@ const FLOAT_BOB_T = {
 };
 const CREATING_SCALE = 0.9; // shrink a touch while creating
 const CARD_SETTLE = motionTransition(easeOutSnappy, CREATOR_STACKED_SHEET_DURATION);
-// Flip (intro → creating): ONE continuous snappy roll from the isometric pose to
-// head-on — all axes (untilt rotateX/rotateZ + a 180° rotateY roll) move together,
-// so it reads as one flip, not "settle head-on then spin." 180 (not 360) lands on
-// the card's duplicated back = the same face.
-const CARD_FLIP_DURATION = 0.6;
-const CARD_FLIP_T = motionTransition(easeOutSnappy, CARD_FLIP_DURATION);
+// Flip (intro → creating): ONE continuous roll from the isometric pose to head-on
+// — all axes (untilt rotateX/rotateZ + a 180° rotateY roll) move together. Uses the
+// "anticipate" easing (easing.dev) which winds back before flipping, over a longer
+// beat. 180 (not 360) lands on the card's duplicated back = the same face.
+const ANTICIPATE: [number, number, number, number] = [1, -0.4, 0.35, 0.95];
+const CARD_FLIP_DURATION = 1;
+const CARD_FLIP_T = motionTransition(ANTICIPATE, CARD_FLIP_DURATION);
 const CARD_FLIP_ROLL = 180;
 // "Creating your card" fades in 150ms before the flip lands.
 const CREATE_CAPTION_DELAY = CARD_FLIP_DURATION - 0.15;
@@ -90,7 +91,17 @@ const ACTIVITY_TABS = ['All', 'Sent', 'Received'];
  *  floating video-game item — a super-isometric tilt + a gentle up/down bob and
  *  slow tilt drift (intro). Settles flat/head-on for creating (shrunk a touch),
  *  ready, and the morph into card-home. */
-function FloatingCard({ phase, children }: { phase: 'intro' | 'creating' | 'settled'; children: ReactNode }) {
+function FloatingCard({
+  phase,
+  sparkleMode,
+  sparkleEmit = true,
+  children,
+}: {
+  phase: 'intro' | 'creating' | 'settled';
+  sparkleMode?: 'rise' | 'twinkle';
+  sparkleEmit?: boolean;
+  children: ReactNode;
+}) {
   const reduceMotion = useReducedMotion();
   const intro = phase === 'intro';
   const creating = phase === 'creating';
@@ -119,8 +130,10 @@ function FloatingCard({ phase, children }: { phase: 'intro' | 'creating' | 'sett
         >
           {children}
         </motion.div>
-        {/* Rising sparkles, positioned around the card (not tilted with it). */}
-        {(intro || creating) && <CardSparkles />}
+        {/* Sparkles around the card: a rising stream on intro that STOPS emitting on
+            create (existing ones finish), and twinkling in place on ready. Keyed by
+            mode so the rise layer persists intro→creating. */}
+        {sparkleMode && <CardSparkles key={sparkleMode} mode={sparkleMode} emit={sparkleEmit} />}
       </motion.div>
     </div>
   );
@@ -410,10 +423,18 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
                 y: cardView === 'home' ? 0 : cardView === 'creating' ? CREATING_DY : ISSUE_DY,
                 scale: isIssuance ? ISSUE_SCALE : 1,
               }}
-              transition={CARD_TRANSITION}
+              transition={cardView === 'creating' ? CARD_FLIP_T : CARD_TRANSITION}
             >
               <FloatingCard
                 phase={cardView === 'intro' ? 'intro' : cardView === 'creating' ? 'creating' : 'settled'}
+                sparkleMode={
+                  cardView === 'intro' || cardView === 'creating'
+                    ? 'rise'
+                    : cardView === 'ready'
+                      ? 'twinkle'
+                      : undefined
+                }
+                sparkleEmit={cardView !== 'creating'}
               >
                 <DebitCard issued={issued} shimmer={cardView === 'creating'} />
               </FloatingCard>

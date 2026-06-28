@@ -116,7 +116,9 @@ export function CardIssuanceSheet({
                 className={styles.contentBlock}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                // Hold a 300ms beat before the copy clears (matches the card's
+                // delayed move-to-centre on Create).
+                exit={{ opacity: 0, transition: { duration: 0.25, delay: 0.3 } }}
                 transition={{ duration: 0.25 }}
               >
                 <IntroContent onCreate={onCreate} />

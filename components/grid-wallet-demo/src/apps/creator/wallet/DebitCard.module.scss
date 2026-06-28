@@ -21,7 +21,10 @@
   corner-shape: var(--corner-shape);
   background: rgba(0, 0, 0, 0.22);
   filter: blur(22px);
-  transform: translateZ(-16px) translateY(12px);
+  /* translateY only (NO translateZ): the 180° flip inverts Z, which would throw a
+     translateZ shadow IN FRONT of the card on the created screen. Coplanar + behind
+     in DOM order keeps it behind in both orientations. */
+  transform: translateY(16px);
 }
 
 /* A card face — absolute so edge/front/back align in the 3D shell. */
@@ -36,7 +39,14 @@
   /* clip-path via useSquircleClip — border-radius must stay 0 (see fill-button). */
   border-radius: 0;
   overflow: hidden;
-  background: var(--app-tint);
+  /* Subtle top-lit gradient (brand purple, lighter toward the top edge, a touch
+     darker toward the bottom) so the tilted card catches light and reads 3D. */
+  background: linear-gradient(
+    158deg,
+    color-mix(in srgb, var(--app-tint) 90%, #000000) 0%,
+    var(--app-tint) 46%,
+    color-mix(in srgb, var(--app-tint) 84%, #ffffff) 100%
+  );
   color: #ffffff;
   text-align: left;
   /* Each face hides once the flip turns it away (the other face takes over). */

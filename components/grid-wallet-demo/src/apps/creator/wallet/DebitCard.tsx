@@ -59,7 +59,9 @@ function CardFace({ issued, shimmer }: { issued: boolean; shimmer: boolean }) {
           className={styles.shimmer}
           initial={{ x: '-130%' }}
           animate={{ x: '130%' }}
-          transition={{ duration: 1.1, ease: 'easeInOut', delay: 0.15 }}
+          // Sweep AFTER the card lands its flip (~1.0s), finishing before the
+          // creating state ends (~2.2s).
+          transition={{ duration: 0.9, ease: 'easeInOut', delay: 1.05 }}
         />
       )}
     </>
