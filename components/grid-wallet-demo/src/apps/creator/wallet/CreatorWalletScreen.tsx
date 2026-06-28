@@ -126,7 +126,10 @@ function FloatingCard({
                   // flip together). Held at 180 after so it never re-rolls.
                   { rotateX: 0, rotateZ: 0, rotateY: CARD_FLIP_ROLL, scale: creating ? CREATING_SCALE : 1 }
           }
-          transition={intro ? CARD_SETTLE : CARD_FLIP_T}
+          // Only the flip (creating) uses the longer anticipate; ready/home settle
+          // on the same transition the move-to-centre uses, so scale + translate
+          // stay in sync (no "translate, then scale" two-stage).
+          transition={creating ? CARD_FLIP_T : CARD_SETTLE}
         >
           {children}
         </motion.div>

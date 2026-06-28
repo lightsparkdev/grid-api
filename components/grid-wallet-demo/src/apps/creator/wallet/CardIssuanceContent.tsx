@@ -67,7 +67,7 @@ export function ReadyContent({ onContinue }: { onContinue?: () => void }) {
     <>
       <div className={styles.section}>
         <motion.div {...reveal(0)} className={styles.titleBlockTight}>
-          <p className={styles.titlePrimary}>Your card is ready to use</p>
+          <p className={styles.titlePrimary}>Meet your Glitch card</p>
         </motion.div>
         <div className={styles.valuePropCard}>
           {VALUE_PROPS.map(({ Icon, title, sub }, i) => (
