@@ -63,7 +63,11 @@ function DoneCheckGlyph({ animate }: { animate: boolean }) {
   );
 }
 
-/** Figma 2143:41178 / 2143:41197 — the tap-to-pay reader status (glyph + label). */
+/**
+ * Tap-to-pay reader status (glyph + label) — the system iOS contactless interaction,
+ * shared across skins so it behaves identically everywhere. Figma 2143:41178 /
+ * 2143:41197. (Each skin positions it in its own card-detail layout.)
+ */
 export function TapToPayStatus({ phase }: { phase: TapPhase }) {
   const reduceMotion = useReducedMotion();
   const done = phase === 'done';

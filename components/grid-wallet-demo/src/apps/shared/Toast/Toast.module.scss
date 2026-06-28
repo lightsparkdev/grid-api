@@ -15,7 +15,7 @@
   pointer-events: none;
 }
 
-/* Shadow wrapper — the glass clips itself, so the drop shadow lives out here
+/* Shadow wrapper — the surface clips itself, so the drop shadow lives out here
    and must share the pill rounding (the square-halo rule). */
 .pill {
   border-radius: 1000px;
@@ -24,13 +24,14 @@
   @include shadow.glass-button-shadow;
 }
 
-.glass {
+/* Rounded clip shared by both surface variants. */
+.surface {
   border-radius: 1000px;
   corner-shape: round;
   overflow: hidden;
 }
 
-/* Flat (frosted) pill — flat translucent surface + a backdrop blur, no refraction
+/* Flat (frosted) surface — a flat translucent fill + backdrop blur, no refraction
    lens or specular edge. For flat skins (Glitch). */
 .flat {
   display: flex;
@@ -43,7 +44,7 @@
 }
 
 /* Subheadline/Emphasized 15/590 — same compact type as the medium content-area
-   chip; themed label matches the neutral glass backdrop it sits on. */
+   chip; themed label matches the neutral surface it sits on. */
 .label {
   display: flex;
   align-items: center;

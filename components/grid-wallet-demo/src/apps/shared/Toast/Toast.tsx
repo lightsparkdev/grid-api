@@ -7,7 +7,7 @@ import { GlassOver } from '@/components/liquid-glass';
 import { headerGlassBrightness, useOverlayGlass } from '@/apps/shared/glass';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
-import styles from './GlassToast.module.scss';
+import styles from './Toast.module.scss';
 
 /** iOS banner beat — settle, hold, exit back up. */
 const HOLD_MS = 2200;
@@ -20,34 +20,30 @@ const ENTER_Y = -150;
 const ENTER = motionTransition(easeOutSwift, 0.55);
 const EXIT = motionTransition(easeOutSnappy, 0.4);
 
-export interface GlassToastData {
+export interface ToastData {
   /** Re-trigger token — a new id restarts the hold even while visible. */
   id: number;
   text: string;
 }
 
-interface GlassToastProps {
-  toast: GlassToastData | null;
+interface ToastProps {
+  toast: ToastData | null;
   /** Hold elapsed — parent clears `toast`, which plays the exit. */
   onDismiss: () => void;
-  /** Flat (frosted) pill instead of the refractive glass lens — for flat skins
-   *  (Glitch). Default glass (Aurora). */
-  flat?: boolean;
+  /** Surface variant: 'glass' (refractive lens — Aurora) or 'flat' (frosted pill —
+   *  flat skins like Glitch). Default 'glass'. */
+  variant?: 'glass' | 'flat';
 }
 
 /**
- * GlassToast — a text-only liquid-glass pill that drops in from the top of the
- * phone screen, settles below the status bar (iOS banners land under the
- * Dynamic Island), holds for a beat, and slides back out. Render it in
- * AppShell's overlay layer (next to Face ID) so it rides above all screen
- * content; it's non-interactive, so the layer's pointer-events: none stands.
- *
- * Glass: the established small-pill recipe — GlassOver refracting the themed
- * neutral `--glass-symbol-backdrop` (same as the header symbol buttons).
- * Refracting the live UI behind a moving toast isn't portable (the lens bends
- * its own children, not the page — see the liquid-glass README).
+ * Toast — a text-only banner pill that drops in from the top of the phone screen,
+ * settles below the status bar (iOS banners land under the Dynamic Island), holds for
+ * a beat, and slides back out. The drop/hold/exit timing + the overlay slot are
+ * shared; `variant` only swaps the surface (glass lens vs flat frost). Render it in
+ * AppShell's overlay layer (next to Face ID) so it rides above all screen content;
+ * it's non-interactive, so the layer's pointer-events: none stands.
  */
-export function GlassToast({ toast, onDismiss, flat = false }: GlassToastProps) {
+export function Toast({ toast, onDismiss, variant = 'glass' }: ToastProps) {
   const reduceMotion = useReducedMotion();
   const overlayGlass = useOverlayGlass();
   const theme = useThemeMode();
@@ -74,29 +70,23 @@ export function GlassToast({ toast, onDismiss, flat = false }: GlassToastProps) 
             key="toast"
             className={styles.pill}
             initial={reduceMotion ? { opacity: 0 } : { y: ENTER_Y }}
-            animate={
-              reduceMotion
-                ? { opacity: 1, transition: ENTER }
-                : { y: 0, transition: ENTER }
-            }
-            exit={
-              reduceMotion
-                ? { opacity: 0, transition: EXIT }
-                : { y: ENTER_Y, transition: EXIT }
-            }
+            animate={reduceMotion ? { opacity: 1, transition: ENTER } : { y: 0, transition: ENTER }}
+            exit={reduceMotion ? { opacity: 0, transition: EXIT } : { y: ENTER_Y, transition: EXIT }}
           >
-            {flat ? (
+            {variant === 'flat' ? (
               // Flat skins (Glitch): a flat frosted pill — backdrop blur, no lens.
-              <div className={clsx(styles.glass, styles.flat)}>
+              <div className={clsx(styles.surface, styles.flat)}>
                 <span className={styles.label}>{toast.text}</span>
               </div>
             ) : (
+              // The small-pill glass recipe — GlassOver refracting the themed neutral
+              // backdrop (same as the header symbol buttons).
               <GlassOver
-                className={styles.glass}
+                className={styles.surface}
                 backdrop="var(--glass-symbol-backdrop)"
                 {...overlayGlass.text}
-                // Same lens brightness as the header buttons (gear) — full white
-                // soft-light on light, none on dark — so the pills read as one set.
+                // Same lens brightness as the header buttons (gear) so the pills read
+                // as one set.
                 brightness={headerGlassBrightness(theme)}
               >
                 <span className={styles.label}>{toast.text}</span>

@@ -16,7 +16,7 @@ import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { PresentationStage, SheetPresentationProvider } from '@/apps/shared/SheetPresentation';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
-import { GlassToast } from '@/apps/shared/GlassToast';
+import { Toast } from '@/apps/shared/Toast';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
 import { AddMoneySheet } from './AddMoneySheet';
@@ -26,7 +26,7 @@ import { CreatingCaption } from './CardIssuanceContent';
 import { CardSparkles } from './CardSparkles';
 import { DebitCard } from './DebitCard';
 import { SendReceiveSheet } from './SendReceiveSheet';
-import { TapToPayStatus } from './TapToPayStatus';
+import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
 import { WalletCardDetailHeader } from './WalletCardDetailHeader';
 import { WalletListSection } from './WalletListSection';
 import type { SkinWalletScreenProps } from '@/apps/types';
@@ -237,7 +237,7 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
           else setTapPhase('done');
         }}
       />
-      <GlassToast toast={toast} onDismiss={() => setToast(null)} flat />
+      <Toast toast={toast} onDismiss={() => setToast(null)} variant="flat" />
     </>
   );
   const screenOverlay = overlayEl ? (

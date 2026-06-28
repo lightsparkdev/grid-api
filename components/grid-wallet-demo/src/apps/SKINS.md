@@ -38,10 +38,13 @@ src/apps/
     BottomSheet/    # MECHANIC: sheet rise/scrim/portal (skin-blind). Reuse as-is.
     PasskeySheet/   # SYSTEM CHROME: the iOS passkey dialog — shared, iOS colors
                     #   pinned, takes appName. Not skinnable (it's an OS sheet).
-    AppShell, glass, icons, FaceIdAuth, GlassToast, useStaggerReveal, …  # primitives
+    TapToPayStatus/ # SYSTEM CHROME: the iOS "Hold Near Reader" contactless status —
+                    #   shared so tap-to-pay behaves identically across skins. Each
+                    #   skin only positions it within its own card-detail layout.
+    AppShell, glass, icons, FaceIdAuth, Toast, useStaggerReveal, …  # primitives
   aurora/           # reference skin (skin zero). Its wallet/ holds the FACES:
                     #   AddMoneySheet, SendReceiveSheet, CardHomeContent,
-                    #   CardIssuanceContent, DebitCard, TapToPayStatus,
+                    #   CardIssuanceContent, DebitCard,
                     #   WalletCardDetailHeader, WalletListSection/Card/Item, Flag.
   creator/          # full worked example (brand "Glitch"): owns every face (auth, overlays,
                     #   home, + all flow faces) — each a thin view over the brains.

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReceivePaymentInfo } from '@/data/apiCalls';
-import type { GlassToastData } from '@/apps/shared/GlassToast';
+import type { ToastData } from '@/apps/shared/Toast';
 import { formatUsdCents, truncateAddress } from './format';
 import type {
   CardView,
@@ -129,7 +129,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
 
   // Glass toast (overlay layer): transfer confirmations + the tap-to-pay balance
   // guard. A fresh id restarts the hold when one is already up.
-  const [toast, setToast] = useState<GlassToastData | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
   const showToast = (text: string) => setToast({ id: Date.now(), text });
 
   // Home Activity = money movements + card transactions, newest first. Derived
@@ -312,6 +312,20 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
       tapPhase !== 'idle';
     if (!awayFromHome) {
       openTarget();
+      return;
+    }
+
+    // Issue-a-card from a non-clean state (e.g. mid tap-to-pay): the issuance sheet
+    // covers the whole screen, so skip the "home first" detour. The detour sets
+    // cardView to 'closed', which UNMOUNTS the floating card, then re-mounts it on
+    // 'intro' — the card visibly slid in from the bottom after the sheet. Clear the
+    // transient state and go straight to issuance so the card just morphs into it.
+    if (entry.open === 'card') {
+      setSheetOpen(false);
+      setSheetConfirming(false);
+      setSendReceiveOpen(false);
+      setTapPhase('idle');
+      setCardView('intro');
       return;
     }
 

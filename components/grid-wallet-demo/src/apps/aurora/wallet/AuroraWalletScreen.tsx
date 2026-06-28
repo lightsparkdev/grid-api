@@ -7,7 +7,7 @@ import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { AuroraBackground } from '@/apps/aurora/aurora-fx';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
-import { GlassToast } from '@/apps/shared/GlassToast';
+import { Toast } from '@/apps/shared/Toast';
 import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
@@ -20,7 +20,7 @@ import { CardHomeContent } from './CardHomeContent';
 import { CreatingCaption, IntroContent, ReadyContent } from './CardIssuanceContent';
 import { DebitCard } from './DebitCard';
 import { SendReceiveSheet } from './SendReceiveSheet';
-import { TapToPayStatus } from './TapToPayStatus';
+import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
 import { WalletCardDetailHeader } from './WalletCardDetailHeader';
 import { WalletListSection } from './WalletListSection';
 import { BalanceHero } from './BalanceHero';
@@ -142,7 +142,7 @@ export function AuroraWalletScreen(props: AuroraWalletScreenProps) {
           else setTapPhase('done');
         }}
       />
-      <GlassToast toast={toast} onDismiss={() => setToast(null)} />
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </>
   );
   const screenOverlay = overlayEl ? (

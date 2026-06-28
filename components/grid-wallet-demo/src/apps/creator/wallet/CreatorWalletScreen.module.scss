@@ -179,8 +179,11 @@
   padding-top: var(--card-slot-height);
 }
 
-/* Tap-to-pay reader status — fills below the raised card; glyph + label sit just
-   beneath it (Figma 2143:41178 section pt 50). */
+/* Tap-to-pay reader status — the card lifts to sit under the status bar and the
+   glyph + label sit BELOW it, matching Aurora. Aurora flows the card in-document
+   then drops the status 50px below the card area; here the card is a foreground
+   layer, so reserve the card slot (+ the header height, hidden during tap) to land
+   at the card's bottom, then the same 50px gap below it. */
 .tapStatus {
   position: relative;
   z-index: 2;
@@ -190,7 +193,7 @@
   align-items: center;
   min-height: 0;
   width: 100%;
-  padding-top: 50px;
+  padding-top: calc(var(--card-slot-height) + var(--wallet-header-height) + 50px);
 }
 
 /* Card view — flat full-page sheet, split into two slide layers around the floating

@@ -60,7 +60,10 @@ export function CardIssuanceSheet({
   //    twinkling fast) and HOLD. The fade-OUT is driven by the ready transition below.
   //  - ready/home: gone — fades out as the white screen comes in.
   const QUICK_OUT = [0, 0, 0.2, 1] as const;
-  const SPEED_SHIFT = 80; // px the burst ORIGIN drops to follow the card to centre
+  // Drop the burst ORIGIN by how far the card itself moves from intro to creating
+  // (CREATING_DY 200 − ISSUE_DY 158 = 42) so it stays centred on the CARD — not the
+  // lower card+caption group.
+  const SPEED_SHIFT = 42;
   // Creating sequence: out (0–0.25s) → hold invisible through the card's anticipate
   // (+800ms beat) → fade in 1.8–2.3s → hold (until the ready transition fades it out).
   const SPEED_DURATION = 2.3;
