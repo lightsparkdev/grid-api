@@ -96,58 +96,6 @@
   mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 74%);
 }
 
-/* A big square centered on the burst origin (~50% / 32% of the sheet, nudged 40px
-   down to sit behind the card) so the slow full rotation never reveals a gap. The
-   rotation is the slow "hum" drift. The origin slides DOWN to the sheet centre
-   while creating, so the burst tracks the card as it drops to centre. */
-.burstRotate {
-  position: absolute;
-  left: 50%;
-  top: calc(32% + 72px);
-  width: 1500px;
-  height: 1500px;
-  margin: -750px 0 0 -750px;
-  transform-origin: center;
-  will-change: transform;
-  animation: humRotate 160s linear infinite;
-  transition: top 0.5s ease;
-}
-
-/* Gentle scale + opacity breathe — the subtle radial "speed" hum (intro). */
-.burstBreathe {
-  position: absolute;
-  inset: 0;
-  transform-origin: center;
-  will-change: transform, opacity;
-  animation: humBreathe 5.5s ease-in-out infinite;
-}
-
-@keyframes humRotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes humBreathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.72;
-  }
-  50% {
-    transform: scale(1.06);
-    opacity: 1;
-  }
-}
-
-/* Freeze the hum for reduced-motion (keep a static burst). */
-@media (prefers-reduced-motion: reduce) {
-  .burstRotate,
-  .burstBreathe {
-    animation: none;
-  }
-}
-
 /* X at top 16 / left 16 — same inset as the money sheets' toolbar
    (AddMoneySheet: 16px top + 40 button + 10px bottom, 16px sides). */
 .toolbar {

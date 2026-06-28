@@ -84,8 +84,10 @@ const CREATE_CAPTION_DELAY = CARD_FLIP_DURATION - 0.15;
 // CardIssuanceSheet), then the sparkle stream last. A modest lift so it travels up
 // without overshooting its slot.
 const CARD_REVEAL = motionTransition(easeOutQuick, 0.5, { delay: 0.3 });
-const CARD_REVEAL_LIFT = 64; // px the card travels up from below as it reveals in
-const SPARKLE_START_DELAY = 1.1; // sparkles come last, after the lines have faded in
+const CARD_REVEAL_LIFT = 32; // px the card travels up from below as it reveals in
+// Sparkles join the same lockstep beat — a touch after the card so it's present to
+// emit them, but part of the group rather than a late afterthought.
+const SPARKLE_START_DELAY = 0.6;
 // Issuance CLOSE: the card rides back down WITH the sheet. The sheet slides 110% of
 // its own height (`.flow` = --app-screen-height − 72) ≈ 1.1 × (874 − 72) ≈ 882px, so
 // matching that (same easing/duration via CARD_TRANSITION) keeps them glued on exit.

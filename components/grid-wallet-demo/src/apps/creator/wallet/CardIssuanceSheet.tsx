@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'motion/react';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
@@ -10,7 +10,7 @@ import type { CardView } from '@/apps/shared/wallet';
 import { SheetIconButton } from '../blocks/SheetIconButton';
 import { CREATOR_STACKED_SHEET_DURATION } from '../config';
 import { IntroContent, ReadyContent } from './CardIssuanceContent';
-import { SpeedRays } from './SpeedLines';
+import { SpeedRays, prewarmSpeedRays } from './SpeedLines';
 import styles from './CardIssuanceSheet.module.scss';
 
 interface CardIssuanceSheetProps {
@@ -37,20 +37,19 @@ export function CardIssuanceSheet({
   // white through the Continue → card-home handoff.
   const onWhite = cardView === 'ready' || cardView === 'home';
 
-  // Defer the (heavy) speed-line burst's mount so it builds in step with the card's
-  // reveal rather than during the sheet slide — the cascade is sheet → (card + lines
-  // together) → sparkles. This still avoids stacking the 540-rect/filter build on the
-  // initial sheet mount, then they fade in a beat after the card starts rising.
-  const RAYS_MOUNT_DELAY_MS = 550;
-  const [raysReady, setRaysReady] = useState(false);
+  // Build the (expensive) ray sprites ahead of time, off the critical path, so the
+  // burst can mount during the entrance without stalling it.
   useEffect(() => {
-    if (!open) {
-      setRaysReady(false);
-      return;
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number })
+      .requestIdleCallback;
+    if (ric) {
+      ric(() => prewarmSpeedRays());
+    } else {
+      const t = window.setTimeout(() => prewarmSpeedRays(), 200);
+      return () => window.clearTimeout(t);
     }
-    const t = window.setTimeout(() => setRaysReady(true), RAYS_MOUNT_DELAY_MS);
-    return () => window.clearTimeout(t);
-  }, [open]);
+  }, []);
+
   return (
     <BottomSheet
       open={open}
@@ -86,11 +85,10 @@ export function CardIssuanceSheet({
             />
           )}
         </AnimatePresence>
-        {/* Procedural chroma-aberrated radial speed lines: a randomized SVG ray
-            field (varied length / width / spacing / intensity / blur) drawn three
-            times — tinted R/G/B and radially offset, screen-blended (the
-            aberration) — with a slow rotate + breathe "hum". On created, it warps
-            out: scales up + blurs + fades, like flying past into the white. */}
+        {/* Procedural chroma-aberrated radial speed lines (canvas): a randomized ray
+            field with blur + R/G/B aberration baked into per-ray sprites, blitted with
+            a per-frame twinkle + slow rotate/breathe "hum". One composited layer; this
+            wrapper owns the mix-blend over the gradient + the fade in/out. */}
         <motion.div
           className={clsx(
             styles.speedLines,
@@ -99,16 +97,16 @@ export function CardIssuanceSheet({
             cardView === 'intro' && styles.speedLinesMasked,
           )}
           aria-hidden
-          // Fade in only once mounted (after the slide lands). Burst lives in the
-          // intro only — it fades out the moment the card starts creating (no delay
-          // there), and stays gone through the white ready screen.
-          initial={{ opacity: 0 }}
-          animate={{ opacity: cardView === 'intro' && raysReady ? 0.5 : 0 }}
+          // The burst is present from the start, so it rides UP with the sheet (it's
+          // sheet content) rather than fading in later. It lives in the intro only —
+          // it fades out the moment the card starts creating, and stays gone through
+          // the white ready screen. (Sprites are prewarmed, so mounting it with the
+          // sheet doesn't stall the slide.)
+          initial={false}
+          animate={{ opacity: cardView === 'intro' ? 0.5 : 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className={styles.burstRotate}>
-            <div className={styles.burstBreathe}>{raysReady && <SpeedRays />}</div>
-          </div>
+          <SpeedRays active={cardView === 'intro'} />
         </motion.div>
 
         <div className={styles.toolbar}>

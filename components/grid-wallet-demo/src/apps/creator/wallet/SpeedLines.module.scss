@@ -1,54 +1,11 @@
-/* One chromatic-aberration channel: the full random ray field, tinted + screen-
-   blended over its siblings and the gradient. The radial scale offset spreads the
-   R / G / B copies apart so the colored fringes grow toward the ray tips. */
-.ray {
+/* Single canvas that fills the burst layer. The blur, chromatic aberration and
+   additive blending are all baked into the rendering (see SpeedLines.tsx); the
+   parent (.speedLines) owns the layer opacity + mix-blend over the gradient. */
+.canvas {
   position: absolute;
   inset: 0;
-  /* plus-lighter = true additive (sums to clean white, not screen's grayer mids);
-     screen stays as a fallback for engines without plus-lighter. */
-  mix-blend-mode: screen;
-  mix-blend-mode: plus-lighter;
-  transform-origin: center;
-}
-
-.rayR {
-  transform: scale(1.038);
-}
-
-.rayG {
-  transform: scale(1);
-}
-
-.rayB {
-  transform: scale(0.962);
-}
-
-.raySvg {
-  position: absolute;
-  inset: 0;
-  display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
-}
-
-/* Each ray fades its opacity in/out on its own cycle (per-rect --tw/--td), so the
-   burst shimmers as it rotates rather than reading as one solid fan. */
-.twinkle {
-  animation: rayTwinkle var(--tw, 2.4s) ease-in-out var(--td, 0s) infinite alternate;
-}
-
-@keyframes rayTwinkle {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .twinkle {
-    animation: none;
-  }
+  display: block;
+  pointer-events: none;
 }
