@@ -83,11 +83,13 @@ export function CardIssuanceSheet({
             cardView === 'intro' && styles.speedLinesMasked,
           )}
           aria-hidden
-          initial={false}
-          // Burst lives in the intro only — it fades out the moment the card starts
-          // creating (and stays gone through the white ready screen).
+          // Fade IN with the sheet (a small beat behind the slide, like the copy)
+          // rather than snapping on. Burst lives in the intro only — it fades out the
+          // moment the card starts creating (no delay there), and stays gone through
+          // the white ready screen.
+          initial={{ opacity: 0 }}
           animate={{ opacity: cardView === 'intro' ? 0.5 : 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: cardView === 'intro' ? 0.12 : 0 }}
         >
           <div className={styles.burstRotate}>
             <div className={styles.burstBreathe}>

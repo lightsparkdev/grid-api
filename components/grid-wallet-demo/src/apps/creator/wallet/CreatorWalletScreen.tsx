@@ -50,6 +50,10 @@ const ISSUE_SCALE = 0.75;
 // While creating, the copy/CTA clear out so the card (+ caption) drop so the
 // card-plus-caption GROUP sits at the sheet's vertical center.
 const CREATING_DY = 200;
+// Created (ready) screen: the title + value-prop list anchor lower in the sheet, so
+// the card recenters in the open space between the X header and the title (it sits a
+// touch higher than the intro slot). Title stays in ReadyContent, above the list.
+const READY_DY = 72;
 // Intro float: a TRUE isometric hover (orthographic — no perspective). The card
 // sits at the textbook isometric angle and gently bobs up/down, like a floating
 // game item. Settles flat/head-on for creating (shrunk a touch), ready, and morph.
@@ -75,10 +79,20 @@ const CARD_FLIP_T = motionTransition(ANTICIPATE, CARD_FLIP_DURATION);
 const CARD_FLIP_ROLL = 180;
 // "Creating your card" fades in 150ms before the flip lands.
 const CREATE_CAPTION_DELAY = CARD_FLIP_DURATION - 0.15;
-// Issuance entrance: the card rides up from below in lockstep with the sheet (same
-// easing/duration, no delay) instead of the old decoupled fade. Tuned so it starts
-// just off the bottom and arrives as the sheet settles.
-const CARD_ENTER_FROM = 520;
+// Issuance OPEN: the card stagger-reveals like the sheet copy — a small upward lift
+// + fade + de-blur, a beat behind the slide (matches useStaggerReveal's feel). It
+// stays invisible through the sheet's slide and resolves as the sheet lands, so
+// there's no visible drift between the two. The sparkle stream then starts a little
+// later still, so it trails the card's reveal.
+const CARD_REVEAL = motionTransition(easeOutQuick, 0.45, { delay: 0.18 });
+const CARD_REVEAL_LIFT = 24; // px the card lifts up as it reveals in
+const SPARKLE_START_DELAY = 0.55;
+// Issuance CLOSE: the card rides back down WITH the sheet. The sheet slides 110% of
+// its own height (`.flow` = --app-screen-height − 72) ≈ 1.1 × (874 − 72) ≈ 882px, so
+// matching that (same easing/duration via CARD_TRANSITION) keeps them glued on exit.
+const SHEET_TOP_INSET = 72;
+const SCREEN_HEIGHT = 874; // --app-screen-height (globals.scss)
+const CARD_EXIT_TO = 1.1 * (SCREEN_HEIGHT - SHEET_TOP_INSET);
 
 const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
 const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
@@ -95,11 +109,13 @@ function FloatingCard({
   phase,
   sparkleMode,
   sparkleEmit = true,
+  sparkleDelay = 0,
   children,
 }: {
   phase: 'intro' | 'creating' | 'settled';
   sparkleMode?: 'rise' | 'twinkle';
   sparkleEmit?: boolean;
+  sparkleDelay?: number;
   children: ReactNode;
 }) {
   const reduceMotion = useReducedMotion();
@@ -136,7 +152,9 @@ function FloatingCard({
         {/* Sparkles around the card: a rising stream on intro that STOPS emitting on
             create (existing ones finish), and twinkling in place on ready. Keyed by
             mode so the rise layer persists intro→creating. */}
-        {sparkleMode && <CardSparkles key={sparkleMode} mode={sparkleMode} emit={sparkleEmit} />}
+        {sparkleMode && (
+          <CardSparkles key={sparkleMode} mode={sparkleMode} emit={sparkleEmit} startDelay={sparkleDelay} />
+        )}
       </motion.div>
     </div>
   );
@@ -410,12 +428,18 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
             key="card-foreground"
             className={styles.cardForeground}
             aria-hidden
-            // Ride up with the sheet on issuance (start below, no delay, sheet
-            // easing); a direct card-home open (already issued) fades in at the slot.
-            initial={{ y: cardView === 'home' ? 0 : CARD_ENTER_FROM, opacity: cardView === 'home' ? 0 : 1 }}
-            animate={{ y: isTap ? TAP_LIFT : 0, opacity: 1 }}
-            exit={{ y: CARD_ENTER_FROM, opacity: 0 }}
-            transition={CARD_TRANSITION}
+            // Issuance OPEN: stagger-reveal like the copy — a small lift + fade +
+            // de-blur, a beat behind the slide. CLOSE: ride back down WITH the sheet
+            // (exit carries its own glued transition). A direct card-home open just
+            // fades in at the slot (no lift/blur).
+            initial={{
+              y: cardView === 'home' ? 0 : CARD_REVEAL_LIFT,
+              opacity: 0,
+              filter: cardView === 'home' ? 'blur(0px)' : 'blur(10px)',
+            }}
+            animate={{ y: isTap ? TAP_LIFT : 0, opacity: 1, filter: 'blur(0px)' }}
+            exit={{ y: CARD_EXIT_TO, opacity: 0, transition: CARD_TRANSITION }}
+            transition={cardView === 'home' ? CARD_TRANSITION : CARD_REVEAL}
           >
             <motion.div
               className={styles.cardMorph}
@@ -423,7 +447,14 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
               // Creating drops the card to the sheet's vertical center (copy/CTA are
               // gone); intro/ready hold the upper issuance slot; home morphs to top.
               animate={{
-                y: cardView === 'home' ? 0 : cardView === 'creating' ? CREATING_DY : ISSUE_DY,
+                y:
+                  cardView === 'home'
+                    ? 0
+                    : cardView === 'creating'
+                      ? CREATING_DY
+                      : cardView === 'ready'
+                        ? READY_DY
+                        : ISSUE_DY,
                 scale: isIssuance ? ISSUE_SCALE : 1,
               }}
               transition={cardView === 'creating' ? CARD_FLIP_T : CARD_TRANSITION}
@@ -438,6 +469,7 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
                       : undefined
                 }
                 sparkleEmit={cardView !== 'creating'}
+                sparkleDelay={cardView === 'intro' ? SPARKLE_START_DELAY : 0}
               >
                 <DebitCard issued={issued} shimmer={cardView === 'creating'} />
               </FloatingCard>

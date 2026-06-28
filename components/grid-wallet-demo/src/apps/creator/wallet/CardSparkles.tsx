@@ -235,7 +235,17 @@ interface ActiveSpark {
 
 /** Warm sparkles continuously flying up from the issuance card — a steady-rate
  *  emitter (each particle is fire-and-forget), so it never bunches into waves. */
-export function CardSparkles({ mode = 'rise', emit = true }: { mode?: SparkMode; emit?: boolean }) {
+export function CardSparkles({
+  mode = 'rise',
+  emit = true,
+  startDelay = 0,
+}: {
+  mode?: SparkMode;
+  emit?: boolean;
+  /** Hold this many seconds before the first sparkle — lets the stream trail the
+   *  card's reveal instead of popping in with it. */
+  startDelay?: number;
+}) {
   const reduce = useReducedMotion();
   const [particles, setParticles] = useState<ActiveSpark[]>([]);
   const idRef = useRef(0);
@@ -271,7 +281,7 @@ export function CardSparkles({ mode = 'rise', emit = true }: { mode?: SparkMode;
         timer2 = window.setTimeout(() => alive && one(), rand(0.18, 0.34) * 1000);
         timer = window.setTimeout(burst, rand(1.5, 2.6) * 1000);
       };
-      burst();
+      timer = window.setTimeout(burst, startDelay * 1000);
       return () => {
         alive = false;
         window.clearTimeout(timer);
@@ -287,12 +297,12 @@ export function CardSparkles({ mode = 'rise', emit = true }: { mode?: SparkMode;
       ]);
       timer = window.setTimeout(spawn, rand(SPAWN_MIN, SPAWN_MAX) * 1000);
     };
-    spawn();
+    timer = window.setTimeout(spawn, startDelay * 1000);
     return () => {
       alive = false;
       window.clearTimeout(timer);
     };
-  }, [reduce, mode, emit]);
+  }, [reduce, mode, emit, startDelay]);
 
   const remove = (id: number) => setParticles((p) => p.filter((x) => x.id !== id));
 
