@@ -137,6 +137,11 @@
   transform-origin: center center;
 }
 
+/* Card stack — positioning context for the card (and the sparkle layer inside). */
+.cardStack {
+  position: relative;
+}
+
 /* Bob wrapper — gentle screen-vertical hover. No rotation here, so the bob stays
    vertical no matter how the inner card is isometrically tilted. */
 .cardFloat {

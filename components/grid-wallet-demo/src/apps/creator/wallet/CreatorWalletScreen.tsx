@@ -23,6 +23,7 @@ import { AddMoneySheet } from './AddMoneySheet';
 import { CardHomeContent } from './CardHomeContent';
 import { CardIssuanceSheet } from './CardIssuanceSheet';
 import { CreatingCaption } from './CardIssuanceContent';
+import { CardSparkles } from './CardSparkles';
 import { DebitCard } from './DebitCard';
 import { SendReceiveSheet } from './SendReceiveSheet';
 import { TapToPayStatus } from './TapToPayStatus';
@@ -92,39 +93,40 @@ const ACTIVITY_TABS = ['All', 'Sent', 'Received'];
  *  ready, and the morph into card-home. */
 function FloatingCard({ phase, children }: { phase: 'intro' | 'creating' | 'settled'; children: ReactNode }) {
   const reduceMotion = useReducedMotion();
-  if (reduceMotion) {
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.2 }}>
-        {children}
-      </motion.div>
-    );
-  }
   const intro = phase === 'intro';
+  const creating = phase === 'creating';
   return (
-    // Outer = screen-vertical bob (no rotation here, so the hover stays vertical
-    // regardless of the isometric tilt). Inner = the fixed orthographic iso angle,
-    // which flattens to head-on for creating/ready.
-    <motion.div
-      className={styles.cardFloat}
-      initial={{ y: 0 }}
-      animate={intro ? { y: [-FLOAT_BOB, FLOAT_BOB] } : { y: 0 }}
-      transition={intro ? FLOAT_BOB_T : CARD_SETTLE}
-    >
+    <div className={styles.cardStack}>
+      {/* Outer = screen-vertical bob (no rotation here, so the hover stays vertical
+          regardless of the isometric tilt). Inner = the fixed orthographic iso
+          angle, which flattens to head-on for creating/ready. */}
       <motion.div
-        className={styles.cardIso}
-        initial={{ rotateX: ISO_ROTX, rotateZ: ISO_ROTZ, rotateY: 0 }}
-        animate={
-          intro
-            ? { rotateX: ISO_ROTX, rotateZ: ISO_ROTZ, rotateY: 0, scale: 1 }
-            : // Leaving intro: one continuous roll to head-on (iso untilt + 180° flip
-              // together). Held at 180 for every later phase so it never re-rolls.
-              { rotateX: 0, rotateZ: 0, rotateY: CARD_FLIP_ROLL, scale: phase === 'creating' ? CREATING_SCALE : 1 }
-        }
-        transition={intro ? CARD_SETTLE : CARD_FLIP_T}
+        className={styles.cardFloat}
+        initial={{ y: 0 }}
+        animate={!reduceMotion && intro ? { y: [-FLOAT_BOB, FLOAT_BOB] } : { y: 0 }}
+        transition={!reduceMotion && intro ? FLOAT_BOB_T : CARD_SETTLE}
       >
-        {children}
+        <motion.div
+          className={styles.cardIso}
+          initial={false}
+          animate={
+            reduceMotion
+              ? { rotateX: 0, rotateZ: 0, rotateY: 0, scale: 1 }
+              : intro
+                ? { rotateX: ISO_ROTX, rotateZ: ISO_ROTZ, rotateY: 0, scale: 1 }
+                : // Leaving intro: one continuous roll to head-on (iso untilt + 180°
+                  // flip together). Held at 180 after so it never re-rolls.
+                  { rotateX: 0, rotateZ: 0, rotateY: CARD_FLIP_ROLL, scale: creating ? CREATING_SCALE : 1 }
+          }
+          transition={intro ? CARD_SETTLE : CARD_FLIP_T}
+        >
+          {children}
+        </motion.div>
+        {/* Sparkles ride the card's bob (inside cardFloat) but not its tilt/spin,
+            so they hover with the card while twinkling on their own. */}
+        {(intro || creating) && <CardSparkles />}
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 

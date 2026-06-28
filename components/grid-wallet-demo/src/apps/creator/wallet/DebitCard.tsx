@@ -73,10 +73,15 @@ export function DebitCard({ issued = false, shimmer = false, className }: DebitC
 
   return (
     <div className={clsx(styles.cardShell, className)}>
-      <div ref={cardClip.ref} style={cardClip.style} className={styles.card}>
+      {/* Soft drop shadow — a blurred copy of the card's shape, behind it. */}
+      <div className={styles.cardShadow} aria-hidden />
+      {/* Thickness — darker face extruded back along the card's normal (translateZ);
+          shows as a real edge when tilted, hidden head-on. */}
+      <div style={cardClip.style} className={clsx(styles.cardFace, styles.cardEdge)} aria-hidden />
+      <div ref={cardClip.ref} style={cardClip.style} className={styles.cardFace}>
         <CardFace issued={issued} shimmer={shimmer} />
       </div>
-      <div style={cardClip.style} className={clsx(styles.card, styles.cardBack)} aria-hidden>
+      <div style={cardClip.style} className={clsx(styles.cardFace, styles.cardBack)} aria-hidden>
         <CardFace issued={issued} shimmer={shimmer} />
       </div>
     </div>

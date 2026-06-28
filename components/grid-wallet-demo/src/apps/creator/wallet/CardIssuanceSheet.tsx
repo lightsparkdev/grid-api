@@ -79,16 +79,15 @@ export function CardIssuanceSheet({
           className={clsx(
             styles.speedLines,
             // Alpha-mask the rays behind the bottom copy (intro) so the real
-            // gradient shows through; full rays while the card centers/creates.
+            // gradient shows through.
             cardView === 'intro' && styles.speedLinesMasked,
-            // Creating: burst tracks the card to centre + punchy hyperspace pulse.
-            cardView === 'creating' && styles.speedLinesCreating,
           )}
           aria-hidden
           initial={false}
-          // Simply fade the burst out as the card is created (white fades in under).
-          animate={{ opacity: onWhite ? 0 : 0.5 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          // Burst lives in the intro only — it fades out the moment the card starts
+          // creating (and stays gone through the white ready screen).
+          animate={{ opacity: cardView === 'intro' ? 0.5 : 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className={styles.burstRotate}>
             <div className={styles.burstBreathe}>

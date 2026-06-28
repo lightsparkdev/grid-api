@@ -1,0 +1,53 @@
+/* Sparkle layer — fills the card's box; sparkles are absolutely placed around it. */
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Each sparkle: floats/scales/spins (motion). isolate so the R/C channels blend
+   among themselves into the aberrated sparkle; soft 4px blur + warm glow. */
+.sparkle {
+  position: absolute;
+  transform-origin: center;
+  will-change: transform, opacity;
+  isolation: isolate;
+  filter: blur(1px) drop-shadow(0 0 5px rgba(255, 205, 70, 0.5));
+}
+
+/* Inner wrapper — continuous float + single rotation (separate from the entrance
+   rise on .sparkle). */
+.sparkInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.spark {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Warm-yellow core. */
+.sparkBase {
+  color: #ffd23a;
+}
+
+/* Chromatic-aberration fringes — split along a per-spark random direction
+   (--cax/--cay), red one way and cyan the other (screen-blended). */
+.sparkR {
+  color: #ff4d3a;
+  mix-blend-mode: screen;
+  transform: translate(calc(var(--cax, 6%) * -1), calc(var(--cay, 4%) * -1));
+}
+
+.sparkC {
+  color: #45ffff;
+  mix-blend-mode: screen;
+  transform: translate(var(--cax, 6%), var(--cay, 4%));
+}

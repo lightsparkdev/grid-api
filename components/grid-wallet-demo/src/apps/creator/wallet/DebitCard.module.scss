@@ -1,33 +1,37 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
 
-/* Figma 2528:21062 — Glitch debit card. Shadow lives on the shell (filter:
-   drop-shadow breaks sheet stacking); the inner clip-path is the only shape, so
-   the shell can't leak a mismatched-squircle edge. Radius is kept for the shadow. */
+/* Figma 2528:21062 — Glitch debit card. The three faces (edge, front, back) stack
+   absolutely in a 3D shell so the flip (rotateY) and the translateZ thickness
+   extrude both resolve in the same space. */
 .cardShell {
   position: relative;
   width: 100%;
-  border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
-  corner-shape: var(--corner-shape);
-  /* Hold front + back faces in 3D so the issuance flip (rotateY on .cardIso) culls
-     correctly. Inert outside the flip — the back stays rotated away. */
+  height: 232px;
   transform-style: preserve-3d;
-  /* Heavier shadow so the card lifts/floats off the same-purple issuance sheet. */
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
-
-  :global([data-theme='dark']) & {
-    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
-  }
 }
 
-/* 232pt flat brand-purple card, 13px continuous corners. */
-.card {
+/* Soft drop shadow — a blurred copy of the card's rounded shape, pushed back/down
+   behind the faces. It lives in the 3D shell so it tracks the card's tilt (it's
+   the card's own silhouette). border-radius (not clip-path) so the blur isn't
+   clipped to a hard edge. */
+.cardShadow {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
+  corner-shape: var(--corner-shape);
+  background: rgba(0, 0, 0, 0.22);
+  filter: blur(22px);
+  transform: translateZ(-16px) translateY(12px);
+}
+
+/* A card face — absolute so edge/front/back align in the 3D shell. */
+.cardFace {
   box-sizing: border-box;
-  position: relative;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 100%;
-  height: 232px;
   padding: 20px 24px 24px;
   /* clip-path via useSquircleClip — border-radius must stay 0 (see fill-button). */
   border-radius: 0;
@@ -40,12 +44,17 @@
   backface-visibility: hidden;
 }
 
+/* Thickness — a darker face extruded back along the card's normal (translateZ), so
+   it reads as a real edge along the lower sides when tilted, and is hidden head-on. */
+.cardEdge {
+  transform: translateZ(-7px);
+  background: color-mix(in srgb, var(--app-tint) 55%, #000);
+}
+
 /* Back face — an IDENTICAL card, pre-rotated 180° and overlaid. The issuance flip
    is a single 180° roll, so the card lands on this face showing the same content
    (no plain "back" to design). */
 .cardBack {
-  position: absolute;
-  inset: 0;
   transform: rotateY(180deg);
 }
 

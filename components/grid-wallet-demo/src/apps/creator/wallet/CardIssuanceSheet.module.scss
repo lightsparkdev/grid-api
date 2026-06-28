@@ -122,15 +122,6 @@
   animation: humBreathe 5.5s ease-in-out infinite;
 }
 
-/* Creating: drop the burst centre to the card (sheet centre) so the anime
-   speed-line flicker radiates from the card. The slow rotate keeps running but is
-   imperceptible over ~2.2s. */
-.speedLinesCreating {
-  .burstRotate {
-    top: 50%;
-  }
-}
-
 @keyframes humRotate {
   to {
     transform: rotate(360deg);
