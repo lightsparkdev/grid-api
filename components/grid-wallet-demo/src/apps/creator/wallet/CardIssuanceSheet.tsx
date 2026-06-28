@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'motion/react';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
@@ -10,7 +9,7 @@ import type { CardView } from '@/apps/shared/wallet';
 import { SheetIconButton } from '../blocks/SheetIconButton';
 import { CREATOR_STACKED_SHEET_DURATION } from '../config';
 import { IntroContent, ReadyContent } from './CardIssuanceContent';
-import { SpeedRays, prewarmSpeedRays } from './SpeedLines';
+import { SpeedRays } from './SpeedLines';
 import styles from './CardIssuanceSheet.module.scss';
 
 interface CardIssuanceSheetProps {
@@ -36,19 +35,6 @@ export function CardIssuanceSheet({
   // Once the card is created the burst warps out to a clean white screen; keep it
   // white through the Continue → card-home handoff.
   const onWhite = cardView === 'ready' || cardView === 'home';
-
-  // Build the (expensive) ray sprites ahead of time, off the critical path, so the
-  // burst can mount during the entrance without stalling it.
-  useEffect(() => {
-    const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number })
-      .requestIdleCallback;
-    if (ric) {
-      ric(() => prewarmSpeedRays());
-    } else {
-      const t = window.setTimeout(() => prewarmSpeedRays(), 200);
-      return () => window.clearTimeout(t);
-    }
-  }, []);
 
   return (
     <BottomSheet

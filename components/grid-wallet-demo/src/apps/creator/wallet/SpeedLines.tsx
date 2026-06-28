@@ -160,26 +160,28 @@ function twinkle(t: number, r: Ray): number {
  * no live SVG filters — the same look at a fraction of the cost.
  */
 interface RayWithSprite extends Ray {
-  sprite: Sprite;
+  sprite: Sprite | null; // built lazily, amortized across frames
 }
 
-// Sprites (blur + chroma baked) are expensive to build (540 offscreen canvases) but
-// identical every time, so build them ONCE at module scope and reuse forever. This is
-// the only heavy step; doing it lazily during the card's reveal caused a stutter, so
-// `prewarmSpeedRays()` lets the sheet build them ahead of time (on idle) instead.
-let spriteCache: RayWithSprite[] | null = null;
-function getRaySprites(): RayWithSprite[] {
-  if (!spriteCache) {
-    spriteCache = buildRays(0x5eed1).map((r) => ({ ...r, sprite: buildSprite(r) }));
+// Sprites (blur + chroma baked) are identical every time, so they're built ONCE and
+// cached at module scope. The build is heavy (~540 blurred offscreen canvases), so it
+// is AMORTIZED across frames — `buildSome` does a slice per animation frame and the
+// draw loop skips not-yet-built rays — instead of one ~180ms blocking task on first
+// open. Once built, every later open reuses the cache instantly.
+const BUILD_PER_FRAME = 18;
+let rayCache: RayWithSprite[] | null = null;
+let builtCount = 0;
+function getRays(): RayWithSprite[] {
+  if (!rayCache) rayCache = buildRays(0x5eed1).map((r) => ({ ...r, sprite: null }));
+  return rayCache;
+}
+function buildSome(rays: RayWithSprite[], n: number) {
+  let i = 0;
+  while (builtCount < rays.length && i < n) {
+    rays[builtCount].sprite = buildSprite(rays[builtCount]);
+    builtCount += 1;
+    i += 1;
   }
-  return spriteCache;
-}
-
-/** Pre-build the ray sprite cache off the critical path (call on idle before the
- *  sheet opens) so mounting the burst never stalls the entrance animation. */
-export function prewarmSpeedRays() {
-  if (typeof document === 'undefined') return;
-  getRaySprites();
 }
 
 export function SpeedRays({ active = true }: { active?: boolean }) {
@@ -194,7 +196,7 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
     if (!ctx) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rays = getRaySprites();
+    const rays = getRays();
 
     let w = 0;
     let h = 0;
@@ -229,9 +231,10 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
       ctx.globalCompositeOperation = 'lighter';
 
       for (const r of rays) {
+        const sp = r.sprite;
+        if (!sp) continue; // not built yet (amortized across frames)
         const tw = reduce ? 1 : twinkle(t, r);
         if (tw <= 0.002) continue;
-        const sp = r.sprite;
         ctx.save();
         ctx.rotate(r.aRad);
         ctx.globalAlpha = r.op * tw * breatheA;
@@ -242,13 +245,23 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
 
     let raf = 0;
     let start = 0;
-    if (reduce || !active) {
-      // Static snapshot — no loop (reduced-motion, or the burst is faded out off the
-      // intro). Keeps cost at zero while it's not the live, visible state.
+    if (reduce) {
+      // Static burst — still build amortized (no big blocking task), redraw each slice
+      // until complete, then stop (no ongoing animation for reduced-motion).
+      const buildLoop = () => {
+        buildSome(rays, BUILD_PER_FRAME);
+        drawFrame(0);
+        if (builtCount < rays.length) raf = requestAnimationFrame(buildLoop);
+      };
+      raf = requestAnimationFrame(buildLoop);
+    } else if (!active) {
+      // Faded out off the intro — just draw whatever's already built, no loop.
       drawFrame(0);
     } else {
       const loop = (now: number) => {
         if (!start) start = now;
+        // Amortize the sprite build over the first frames so it never blocks.
+        if (builtCount < rays.length) buildSome(rays, BUILD_PER_FRAME);
         drawFrame(now - start);
         raf = requestAnimationFrame(loop);
       };
