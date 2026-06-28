@@ -14,9 +14,10 @@
   --wallet-sheet-overlap: 176px;
   /* Resting card slot: top pad (8) + card height (232). Used to pin the sheet to
      its closed position when it goes absolute (open) so the slide doesn't jump. */
-  --card-slot-height: 240px;
-  /* Header strip height — the body underlaps it by this much (scroll-under). */
-  --wallet-header-height: 56px;
+  --card-slot-height: 248px;
+  /* Card-view header height (status-bar offset aside): 40px button + 2x4px padding.
+     Drives where the floating card's slot sits (see .cardForeground top). */
+  --wallet-header-height: 48px;
 
   :global([data-theme='dark']) & {
     /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
@@ -190,6 +191,52 @@
   min-height: 0;
   width: 100%;
   padding-top: 50px;
+}
+
+/* Card view — flat full-page sheet, split into two slide layers around the floating
+   card (z 30) so the card's drop shadow shows on the bg but not on the content.
+   Background: behind the card (above the home base). */
+.cardSheetBg {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  background: var(--wallet-bg);
+  will-change: transform;
+}
+
+/* Content (header + CTA + list): ABOVE the card, so the tap-to-pay / list sit over
+   the card's drop shadow. Transparent — the bg layer paints the surface. */
+.cardSheet {
+  position: absolute;
+  inset: 0;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  padding-top: 62px;
+  overflow: hidden;
+  will-change: transform;
+}
+
+/* Flat card-detail header row (X + card-number/more) — 16px sides to match the home
+   bar + the other sheet toolbars; row drops to ~74 from the screen top (62 status +
+   12) like the brand header. Buttons are ghost (no fill). */
+.cardSheetHeader {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  /* 16px sides like the home brand bar; 12px top/bottom keeps the row 48px tall
+     (12 + 24 icon + 12) so it matches --wallet-header-height (the card slot offset). */
+  padding: 12px 16px;
+}
+
+/* Holds the card-home / tap content; lifts during tap-to-pay. */
+.cardSheetBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* Face ID (Dynamic Island) overlay — above the screen, click-through. */

@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
@@ -34,10 +34,8 @@ import { SkinTabBar } from '../blocks/SkinTabBar';
 import { CREATOR_HERO_STATS, CREATOR_STACKED_SHEET_DURATION, CREATOR_TAB_BAR } from '../config';
 import styles from './CreatorWalletScreen.module.scss';
 
-const HEADER_DURATION = 0.2;
 const TAP_LIFT = -56;
 
-const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
 const CARD_TRANSITION = motionTransition(easeOutSnappy, CREATOR_STACKED_SHEET_DURATION);
 const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.3 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
@@ -94,9 +92,12 @@ const SPARKLE_START_DELAY = 0.6;
 const SHEET_TOP_INSET = 72;
 const SCREEN_HEIGHT = 874; // --app-screen-height (globals.scss)
 const CARD_EXIT_TO = 1.1 * (SCREEN_HEIGHT - SHEET_TOP_INSET);
+// Card view = a flat full-page sheet that slides up from the bottom (under the status
+// bar) when opened from the wallet home. Opened from issuance (Continue) it mounts in
+// place (no slide) so the existing card morph + issuance sheet-down reads as before.
+const CARD_SHEET_DURATION = CREATOR_STACKED_SHEET_DURATION;
+const CARD_SHEET_T = motionTransition(easeOutSnappy, CARD_SHEET_DURATION);
 
-const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
-const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
 const CONTENT_HIDDEN = { opacity: 0, y: 12, filter: 'blur(8px)' };
 const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
@@ -213,10 +214,19 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
     return homeActivity;
   }, [activityTab, homeActivity]);
 
-  // Wallet home shows for the closed state AND behind the rising issuance sheet
-  // (it recedes via the stacked effect). Card-home replaces it; tap-to-pay too.
-  const onWalletHome = cardView !== 'home' && !isTap;
+  // The wallet home is the persistent base layer: it renders behind the rising
+  // issuance sheet (recedes via the stacked effect) AND behind the card-view sheet, so
+  // the card view can slide up over it.
   const showCard = isIssuance || cardView === 'home';
+  // The card view is its own full-page sheet (cardView 'home', incl. tap-to-pay).
+  const cardOpen = cardView === 'home';
+  // Slide up only when opened from the wallet home; mounting from issuance (ready ->
+  // home) stays in place so the card morph + issuance sheet-down reads as before.
+  const prevCardViewRef = useRef(cardView);
+  useEffect(() => {
+    prevCardViewRef.current = cardView;
+  }, [cardView]);
+  const cardSheetSlideUp = cardOpen && prevCardViewRef.current !== 'ready';
 
   const overlayContent = (
     <>
@@ -248,49 +258,18 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
         offset={62}
         duration={CREATOR_STACKED_SHEET_DURATION}
       >
-      {/* Card-detail header (card-home only — issuance's close X lives in the sheet). */}
-      {cardView === 'home' && !isTap && (
-        <header className={styles.header}>
-          <AnimatePresence initial={false}>
-            <motion.div
-              key="detail-header"
-              className={styles.headerInner}
-              initial={reduceMotion ? false : HEADER_HIDDEN}
-              animate={HEADER_VISIBLE}
-              exit={HEADER_HIDDEN}
-              transition={HEADER_TRANSITION}
-            >
-              <WalletCardDetailHeader onClose={() => setCardView('closed')} showActions />
-            </motion.div>
-          </AnimatePresence>
-        </header>
-      )}
+      {/* Wallet home base — always mounted; the issuance + card-view sheets overlay it. */}
+      <header className={styles.brandHeader}>
+        <button type="button" className={styles.brandHeaderButton} aria-label="Community">
+          <IconPeople2 size={24} />
+        </button>
+        <span className={styles.brandHeaderTitle}>Wallet</span>
+        <button type="button" className={styles.brandHeaderButton} aria-label="Settings">
+          <IconSettingsGear2 size={24} />
+        </button>
+      </header>
 
-      {onWalletHome && (
-        <header className={styles.brandHeader}>
-          <button type="button" className={styles.brandHeaderButton} aria-label="Community">
-            <IconPeople2 size={24} />
-          </button>
-          <span className={styles.brandHeaderTitle}>Wallet</span>
-          <button type="button" className={styles.brandHeaderButton} aria-label="Settings">
-            <IconSettingsGear2 size={24} />
-          </button>
-        </header>
-      )}
-
-      <motion.div
-        className={clsx(
-          styles.body,
-          onWalletHome && styles.bodyHome,
-          cardView === 'home' && styles.bodyOpen,
-          isTap && styles.bodyTap,
-        )}
-        initial={false}
-        animate={{ y: isTap ? TAP_LIFT : 0 }}
-        transition={CARD_TRANSITION}
-      >
-        {onWalletHome && (
-          <>
+      <div className={clsx(styles.body, styles.bodyHome)}>
             <motion.div {...enter(1)} className={styles.hero}>
               <div className={styles.heroTop}>
                 <div className={styles.balanceRow}>
@@ -386,37 +365,79 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
               concentricBottom
               grow
             />
-          </>
-        )}
+      </div>
 
-        <AnimatePresence mode="popLayout" initial={false}>
-          {cardView === 'home' && !isTap && (
-            <motion.div
-              key="card-home"
-              className={styles.cardHomeBody}
-              initial={reduceMotion ? false : CONTENT_HIDDEN}
-              animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
-              exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
-            >
-              <CardHomeContent transactions={transactions} onTapToPay={startTapToPay} />
-            </motion.div>
-          )}
-          {isTap && (
-            <motion.div
-              key="tap"
-              className={styles.tapStatus}
-              initial={reduceMotion ? false : CONTENT_HIDDEN}
-              animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
-              exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
-            >
-              <TapToPayStatus phase={tapPhase === 'idle' ? 'hold' : tapPhase} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {onWalletHome ? <SkinTabBar {...CREATOR_TAB_BAR} /> : null}
+      <SkinTabBar {...CREATOR_TAB_BAR} />
       </PresentationStage>
+
+      {/* Card view — flat full-page sheet, split into two slide layers so the card's
+          drop shadow shows on the bg but does NOT fall on the content: the BG sits
+          BEHIND the floating card (z 14), the content (header/CTA/list) sits ABOVE it
+          (z 31). Slides up from the wallet home; mounts in place from issuance. */}
+      <AnimatePresence>
+        {cardOpen && (
+          <motion.div
+            key="card-sheet-bg"
+            className={styles.cardSheetBg}
+            aria-hidden
+            initial={{ y: cardSheetSlideUp ? '100%' : 0 }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={CARD_SHEET_T}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {cardOpen && (
+          <motion.div
+            key="card-sheet"
+            className={styles.cardSheet}
+            initial={{ y: cardSheetSlideUp ? '100%' : 0 }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={CARD_SHEET_T}
+          >
+            {!isTap && (
+              <header className={styles.cardSheetHeader}>
+                <WalletCardDetailHeader onClose={() => setCardView('closed')} showActions />
+              </header>
+            )}
+            <motion.div
+              className={styles.cardSheetBody}
+              initial={false}
+              animate={{ y: isTap ? TAP_LIFT : 0 }}
+              transition={CARD_TRANSITION}
+            >
+              {/* No `initial={false}` here — it would suppress the card-home subtree's
+                  entry animations on mount, killing the CTA/list stagger. */}
+              <AnimatePresence mode="popLayout">
+                {!isTap ? (
+                  <motion.div
+                    key="card-home"
+                    className={styles.cardHomeBody}
+                    // No block fade — the inner items (CTA/list) stagger themselves
+                    // (CardHomeContent); just animate the exit when swapping to tap.
+                    initial={false}
+                    exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
+                  >
+                    <CardHomeContent transactions={transactions} onTapToPay={startTapToPay} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="tap"
+                    className={styles.tapStatus}
+                    initial={reduceMotion ? false : CONTENT_HIDDEN}
+                    animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
+                    exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
+                  >
+                    <TapToPayStatus phase={tapPhase === 'idle' ? 'hold' : tapPhase} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating debit card — a single persistent element in an un-scaled
           foreground layer so it morphs cleanly from the issuance sheet into
@@ -434,12 +455,17 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
             // (exit carries its own glued transition). A direct card-home open just
             // fades in at the slot (no lift/blur).
             initial={{
-              y: cardView === 'home' ? 0 : CARD_REVEAL_LIFT,
-              opacity: 0,
+              // View-card: start a full screen-height below so it RIDES UP in lockstep
+              // with the sheet (same transition). Issuance: already mounted (morphs),
+              // so this initial is unused there.
+              y: cardView === 'home' ? (cardSheetSlideUp ? SCREEN_HEIGHT : 0) : CARD_REVEAL_LIFT,
+              opacity: cardView === 'home' && cardSheetSlideUp ? 1 : 0,
               filter: cardView === 'home' ? 'blur(0px)' : 'blur(10px)',
             }}
             animate={{ y: isTap ? TAP_LIFT : 0, opacity: 1, filter: 'blur(0px)' }}
             exit={{ y: CARD_EXIT_TO, opacity: 0, transition: CARD_TRANSITION }}
+            // Card-home rides up with the sheet (CARD_TRANSITION == the sheet's slide);
+            // issuance keeps the reveal.
             transition={cardView === 'home' ? CARD_TRANSITION : CARD_REVEAL}
           >
             <motion.div

@@ -1,51 +1,31 @@
 'use client';
 
-import { GlassWindowButtonGroup, headerGlassBrightness } from '@/apps/shared/glass';
-import { SfSymbol } from '@/apps/shared/icons';
-import { SheetIconButton } from '../blocks/SheetIconButton';
-import { useThemeMode } from '@/hooks/useThemeMode';
+import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
+import { IconDotGrid1x3Horizontal } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconDotGrid1x3Horizontal';
 import styles from './WalletCardDetailHeader.module.scss';
 
 interface WalletCardDetailHeaderProps {
   onClose: () => void;
-  /** Card-actions pill (card numbers / more). Hidden during issuance — the card
-   *  doesn't exist yet, so only the close button shows. */
+  /** Card-actions (more). Hidden during issuance — the card doesn't exist yet. */
   showActions?: boolean;
-  /** The button sits over the full-screen issuance aurora — use the live WebGL
-   *  aurora lens (refracts the real drifting field) and the white glyph. Off when
-   *  it's over the flat wallet/card-home surface (plain SVG glass). */
-  closeOnAurora?: boolean;
 }
 
-/** Figma 2143:40972 — close + card actions while debit card detail is open. */
-export function WalletCardDetailHeader({
-  onClose,
-  showActions = true,
-  closeOnAurora = false,
-}: WalletCardDetailHeaderProps) {
-  const theme = useThemeMode();
-  const brightness = headerGlassBrightness(theme);
-
+/** Card-view header — mirrors the Glitch home brand bar: bare central icons (no fill),
+ *  a centered "Card" title, transparent (not purple). X (left) / Card / more (right). */
+export function WalletCardDetailHeader({ onClose, showActions = true }: WalletCardDetailHeaderProps) {
   return (
     <div className={styles.root}>
-      <SheetIconButton
-        aria-label="Close"
-        size={40}
-        type="button"
-        onClick={onClose}
-      >
-        <SfSymbol name="xmark" size={14} />
-      </SheetIconButton>
-
+      <button type="button" className={styles.button} aria-label="Close" onClick={onClose}>
+        <IconCrossMedium size={24} />
+      </button>
+      <span className={styles.title}>Card</span>
       {showActions ? (
-        <GlassWindowButtonGroup
-          symbols={[
-            { name: 'creditcard.and.numbers', size: 24 },
-            { name: 'ellipsis', size: 20 },
-          ]}
-          glass={{ brightness }}
-        />
-      ) : null}
+        <button type="button" className={styles.button} aria-label="More">
+          <IconDotGrid1x3Horizontal size={24} />
+        </button>
+      ) : (
+        <span className={styles.button} aria-hidden />
+      )}
     </div>
   );
 }
