@@ -44,10 +44,10 @@
   backface-visibility: hidden;
 }
 
-/* Thickness — a darker face extruded back along the card's normal (translateZ), so
-   it reads as a real edge along the lower sides when tilted, and is hidden head-on. */
+/* Thickness slices — darker squircle layers pushed back 1px apart (translateZ set
+   inline per slice). Stacked, they fill the card's side so it reads as a solid 3D
+   edge following the rounded corners; hidden head-on. */
 .cardEdge {
-  transform: translateZ(-7px);
   background: color-mix(in srgb, var(--app-tint) 55%, #000);
 }
 

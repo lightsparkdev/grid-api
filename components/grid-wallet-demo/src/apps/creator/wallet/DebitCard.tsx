@@ -10,6 +10,10 @@ import styles from './DebitCard.module.scss';
 const GLITCH_MARK = '/assets/creator/logo-creator-platform-white.svg';
 const VISA_LOGO = '/assets/VisaLogo.svg';
 
+// Card thickness via a layered extrude — N 1px-spaced slices fill the side
+// (~3px of visible edge once projected at the iso angle).
+const EDGE_SLICES = 6;
+
 interface DebitCardProps {
   /** A created card reveals the masked number; before issuance the slot reads
    *  "Spend anywhere" (the card has no number yet). */
@@ -75,9 +79,17 @@ export function DebitCard({ issued = false, shimmer = false, className }: DebitC
     <div className={clsx(styles.cardShell, className)}>
       {/* Soft drop shadow — a blurred copy of the card's shape, behind it. */}
       <div className={styles.cardShadow} aria-hidden />
-      {/* Thickness — darker face extruded back along the card's normal (translateZ);
-          shows as a real edge when tilted, hidden head-on. */}
-      <div style={cardClip.style} className={clsx(styles.cardFace, styles.cardEdge)} aria-hidden />
+      {/* Thickness — a layered extrude: many thin squircle slices each pushed 1px
+          further back in Z, so they FILL the gap between front and back and read as
+          a solid edge (with sides) following the rounded corners when tilted. */}
+      {Array.from({ length: EDGE_SLICES }).map((_, i) => (
+        <div
+          key={i}
+          aria-hidden
+          className={clsx(styles.cardFace, styles.cardEdge)}
+          style={{ ...cardClip.style, transform: `translateZ(${-(i + 1)}px)` }}
+        />
+      ))}
       <div ref={cardClip.ref} style={cardClip.style} className={styles.cardFace}>
         <CardFace issued={issued} shimmer={shimmer} />
       </div>

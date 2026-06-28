@@ -35,9 +35,12 @@ interface Ray {
   r0: number; // inner gap from the burst center (px)
   op: number; // intensity
   tier: number; // blur bucket
+  twinkles: boolean; // only a few rays twinkle at a time
+  tw: number; // opacity-twinkle duration (s)
+  td: number; // twinkle delay (s, negative to desync)
 }
 
-const RAY_COUNT = 96;
+const RAY_COUNT = 132;
 const VIEW = 1500; // 1:1 with the .burstRotate square (origin at viewBox center)
 const HALF = VIEW / 2;
 const DEAD_ZONE = 104; // clear middle (px radius) — rays start outside it
@@ -61,7 +64,12 @@ function buildRays(seed: number, count: number, deadZone: number): Ray[] {
     const w = clamp(2.8 + gaussian(rnd) * 1.3, 0.7, 8);
     const op = 0.1 + Math.pow(rnd(), 1.2) * 0.78;
     const tier = Math.floor(rnd() * BLUR_STD.length);
-    return { a, len, w, r0, op, tier };
+    // Only a FEW rays fade at a time (the dense rest stay solid), each fully fading
+    // 100%→0%→100% on its own cycle (negative delay desyncs them).
+    const twinkles = rnd() < 0.12;
+    const tw = 1 + rnd() * 1.4;
+    const td = -rnd() * 2.4;
+    return { a, len, w, r0, op, tier, twinkles, tw, td };
   });
 }
 
@@ -95,6 +103,7 @@ function RayChannel({ rays, color, idBase }: { rays: Ray[]; color: string; idBas
             .map((r, i) => (
               <rect
                 key={i}
+                className={r.twinkles ? styles.twinkle : undefined}
                 x={-r.w / 2}
                 y={-(r.r0 + r.len)}
                 width={r.w}
@@ -103,6 +112,9 @@ function RayChannel({ rays, color, idBase }: { rays: Ray[]; color: string; idBas
                 fill={`url(#${grad})`}
                 fillOpacity={r.op}
                 transform={`rotate(${r.a})`}
+                style={
+                  r.twinkles ? { ['--tw' as string]: `${r.tw}s`, ['--td' as string]: `${r.td}s` } : undefined
+                }
               />
             ))}
         </g>

@@ -31,3 +31,24 @@
   height: 100%;
   overflow: visible;
 }
+
+/* Each ray fades its opacity in/out on its own cycle (per-rect --tw/--td), so the
+   burst shimmers as it rotates rather than reading as one solid fan. */
+.twinkle {
+  animation: rayTwinkle var(--tw, 2.4s) ease-in-out var(--td, 0s) infinite alternate;
+}
+
+@keyframes rayTwinkle {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twinkle {
+    animation: none;
+  }
+}

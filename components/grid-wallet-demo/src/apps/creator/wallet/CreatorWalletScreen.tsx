@@ -45,7 +45,7 @@ const TAB_INDICATOR = motionTransition(easeOutSnappy, 0.35);
 
 // Issuance card: centered + scaled down, floating; morphs up to full size at the
 // card-home slot on Continue. (DY is the downward offset from the home slot.)
-const ISSUE_DY = 118;
+const ISSUE_DY = 158;
 const ISSUE_SCALE = 0.75;
 // While creating, the copy/CTA clear out so the card (+ caption) drop so the
 // card-plus-caption GROUP sits at the sheet's vertical center.
@@ -55,7 +55,14 @@ const CREATING_DY = 200;
 // game item. Settles flat/head-on for creating (shrunk a touch), ready, and morph.
 const ISO_ROTX = 54.736; // textbook isometric: arccos(1/√3) ≈ 54.736°
 const ISO_ROTZ = 45; // + the 45° spin = the standard isometric projection
-const FLOAT_BOB = 12; // hover amplitude (px)
+const FLOAT_BOB = 9; // hover amplitude (px)
+const FLOAT_BOB_T = {
+  duration: 3.4,
+  repeat: Infinity,
+  repeatType: 'mirror' as const,
+  ease: 'easeInOut' as const,
+  delay: CREATOR_STACKED_SHEET_DURATION,
+};
 const CREATING_SCALE = 0.9; // shrink a touch while creating
 const CARD_SETTLE = motionTransition(easeOutSnappy, CREATOR_STACKED_SHEET_DURATION);
 // Flip (intro → creating): ONE continuous snappy roll from the isometric pose to
@@ -67,14 +74,6 @@ const CARD_FLIP_T = motionTransition(easeOutSnappy, CARD_FLIP_DURATION);
 const CARD_FLIP_ROLL = 180;
 // "Creating your card" fades in 150ms before the flip lands.
 const CREATE_CAPTION_DELAY = CARD_FLIP_DURATION - 0.15;
-// Bob waits out the ride-up (sheet duration) so the hover doesn't fight the entrance.
-const FLOAT_BOB_T = {
-  duration: 2.6,
-  repeat: Infinity,
-  repeatType: 'mirror' as const,
-  ease: 'easeInOut' as const,
-  delay: CREATOR_STACKED_SHEET_DURATION,
-};
 // Issuance entrance: the card rides up from below in lockstep with the sheet (same
 // easing/duration, no delay) instead of the old decoupled fade. Tuned so it starts
 // just off the bottom and arrives as the sheet settles.
@@ -97,9 +96,7 @@ function FloatingCard({ phase, children }: { phase: 'intro' | 'creating' | 'sett
   const creating = phase === 'creating';
   return (
     <div className={styles.cardStack}>
-      {/* Outer = screen-vertical bob (no rotation here, so the hover stays vertical
-          regardless of the isometric tilt). Inner = the fixed orthographic iso
-          angle, which flattens to head-on for creating/ready. */}
+      {/* Subtle vertical hover (intro) — holds the isometric card + rising sparkles. */}
       <motion.div
         className={styles.cardFloat}
         initial={{ y: 0 }}
@@ -122,8 +119,7 @@ function FloatingCard({ phase, children }: { phase: 'intro' | 'creating' | 'sett
         >
           {children}
         </motion.div>
-        {/* Sparkles ride the card's bob (inside cardFloat) but not its tilt/spin,
-            so they hover with the card while twinkling on their own. */}
+        {/* Rising sparkles, positioned around the card (not tilted with it). */}
         {(intro || creating) && <CardSparkles />}
       </motion.div>
     </div>

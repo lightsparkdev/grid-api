@@ -1,8 +1,17 @@
-/* Sparkle layer — fills the card's box; sparkles are absolutely placed around it. */
+/* Sparkle layer — extends above the card to cover the rise zone, with a fixed
+   alpha mask that fades to transparent toward the top. Sparkles fly up into the
+   mask and dissolve at the SAME height, not on their own timelines. */
 .layer {
   position: absolute;
-  inset: 0;
+  /* Extends beyond the card (sides + top) so corner spawns and the rise stay
+     inside the box — the mask clips to its own box, so overflow would be cut. */
+  left: -60px;
+  right: -60px;
+  bottom: 0;
+  top: -210px;
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 50%, transparent 76%);
+  mask-image: linear-gradient(to top, #000 0%, #000 50%, transparent 76%);
 }
 
 /* Each sparkle: floats/scales/spins (motion). isolate so the R/C channels blend
@@ -13,16 +22,6 @@
   will-change: transform, opacity;
   isolation: isolate;
   filter: blur(1px) drop-shadow(0 0 5px rgba(255, 205, 70, 0.5));
-}
-
-/* Inner wrapper — continuous float + single rotation (separate from the entrance
-   rise on .sparkle). */
-.sparkInner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-origin: center;
-  will-change: transform;
 }
 
 .spark {
