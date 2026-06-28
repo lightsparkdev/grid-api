@@ -2,15 +2,15 @@
 @use '../../shared/glass/glass-button-shadow' as shadow;
 
 /* ── Sheet flow shell ─────────────────────────────────────────────────────────
-   Figma 109:29870 — solid near-full-height sheet. Top stops ~82px down (vs the
-   62px status bar) so the receded card behind it (top ~64) peeks ~18px above the
-   sheet's top edge (the stacked-sheet effect). Steps slide inside .steps. */
+   Figma 109:29870 — solid near-full-height sheet. Top stops ~72px down so the
+   receded card behind it (top ~62, STAGE_Y) peeks ~10px above the sheet's top
+   edge (the stacked-sheet effect). Steps slide inside .steps. */
 .flow {
   --sheet-toolbar-h: 66px; // back/X row (40) + toolbar padding (16 + 10)
   position: relative;
   display: flex;
   flex-direction: column;
-  height: calc(var(--app-screen-height, 874px) - 82px);
+  height: calc(var(--app-screen-height, 874px) - 72px);
   min-height: 0;
 }
 

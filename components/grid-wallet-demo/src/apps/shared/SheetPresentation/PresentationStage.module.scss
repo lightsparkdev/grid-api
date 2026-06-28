@@ -24,11 +24,14 @@
   transform-origin: top center;
   border-radius: 0;
   corner-shape: var(--corner-shape);
-  transition: border-radius 0.4s var(--ease-out-snappy, ease-out);
+  /* No border-radius transition on purpose: animating it would re-rasterize this
+     full-screen layer every frame. The radius is toggled statically (see
+     .stageRounded) so the scale stays a pure GPU transform. */
 }
 
-.stagePresented {
+.stageRounded {
   /* A modest corner-smoothed round on the receded card (not the full screen
-     radius, which reads too large once the card is scaled back). */
+     radius, which reads too large once the card is scaled back). Held for the
+     whole presented stretch + the close, then dropped once scale is back to 1. */
   border-radius: 16px;
 }

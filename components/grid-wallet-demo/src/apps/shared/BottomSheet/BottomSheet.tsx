@@ -10,8 +10,6 @@ import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import styles from './BottomSheet.module.scss';
 
 const SHEET_DURATION = 0.35;
-const SHEET_TRANSITION = motionTransition(easeOutSnappy, SHEET_DURATION);
-const SCRIM_TRANSITION = { duration: SHEET_DURATION, ease: 'easeOut' as const };
 
 interface BottomSheetProps {
   open: boolean;
@@ -39,6 +37,12 @@ interface BottomSheetProps {
    * small action/chooser sheets that shouldn't push the whole screen back.
    */
   scalesBackground?: boolean;
+  /**
+   * Slide/scrim duration in seconds. Default 0.35. Bump it (e.g. creator's
+   * stacked sheets at 0.5) to slow the presentation — keep it equal to the
+   * PresentationStage transition so the scale stays in lockstep with the slide.
+   */
+  duration?: number;
 }
 
 /**
@@ -58,9 +62,13 @@ export function BottomSheet({
   inset = 0,
   topRadius,
   scalesBackground = true,
+  duration = SHEET_DURATION,
 }: BottomSheetProps) {
   const overlayGlass = useOverlayGlass();
   const sheetGlass = glass ?? overlayGlass.sheet;
+
+  const sheetTransition = motionTransition(easeOutSnappy, duration);
+  const scrimTransition = { duration, ease: 'easeOut' as const };
 
   // Drive the stacked-sheet effect: under a SheetPresentationProvider, the
   // presenting screen scales back while this sheet is open. No-op otherwise, or
@@ -109,7 +117,7 @@ export function BottomSheet({
           style={{ paddingLeft: inset, paddingRight: inset, paddingBottom: inset }}
           role="presentation"
           initial={false}
-          exit={{ opacity: 1, transition: { ...SHEET_TRANSITION, when: 'afterChildren' } }}
+          exit={{ opacity: 1, transition: { ...sheetTransition, when: 'afterChildren' } }}
         >
           <motion.button
             type="button"
@@ -118,7 +126,7 @@ export function BottomSheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={SCRIM_TRANSITION}
+            transition={scrimTransition}
             onClick={onDismiss}
           />
           <motion.div
@@ -129,7 +137,7 @@ export function BottomSheet({
             initial={{ y: '110%' }}
             animate={{ y: 0 }}
             exit={{ y: '110%' }}
-            transition={SHEET_TRANSITION}
+            transition={sheetTransition}
           >
             <FrostPanel
               className={styles.sheet}

@@ -4,7 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -30,25 +30,19 @@ const SheetPresentationContext = createContext<SheetPresentationValue | null>(nu
 
 export function SheetPresentationProvider({ children }: { children: ReactNode }) {
   const [count, setCount] = useState(0);
-  const [presented, setPresented] = useState(false);
 
   // `register` is stable so consumers' effects don't re-run when `presented`
-  // flips (which would re-register and loop).
+  // flips (which would re-register and loop). Sheets register via a LAYOUT effect
+  // (see useRegisterSheet), so the count bump — and thus `presented` — lands in
+  // the same frame the sheet starts animating, keeping the stage in lockstep.
   const register = useCallback(() => {
     setCount((c) => c + 1);
     return () => setCount((c) => c - 1);
   }, []);
 
-  // Rising edge is immediate; the falling edge lingers a beat so a sheet→sheet
-  // swap (close A, open B) doesn't blip the stage back to rest between them.
-  useEffect(() => {
-    if (count > 0) {
-      setPresented(true);
-      return;
-    }
-    const t = window.setTimeout(() => setPresented(false), 80);
-    return () => window.clearTimeout(t);
-  }, [count]);
+  // Derived (not stored) so both edges are immediate: opening any sheet presents,
+  // and the last close un-presents in the same commit the sheet starts closing.
+  const presented = count > 0;
 
   const value = useMemo<SheetPresentationValue>(
     () => ({ presented, register }),
@@ -62,10 +56,12 @@ export function SheetPresentationProvider({ children }: { children: ReactNode })
   );
 }
 
-/** Register a sheet's open state with the nearest provider (no-op without one). */
+/** Register a sheet's open state with the nearest provider (no-op without one).
+ *  Layout effect so the presenting stage updates in the same frame the sheet
+ *  starts animating (no one-frame stagger between the sheet and the scale). */
 export function useRegisterSheet(open: boolean): void {
   const register = useContext(SheetPresentationContext)?.register;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!register || !open) return;
     return register();
   }, [register, open]);

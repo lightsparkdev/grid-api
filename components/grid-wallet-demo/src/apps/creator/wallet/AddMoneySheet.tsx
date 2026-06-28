@@ -549,6 +549,9 @@ export function AddMoneySheet({
     <BottomSheet
       open={open}
       onDismiss={dismiss}
+      // Slower 0.5s slide for the stacked-sheet presentation — must match the
+      // PresentationStage transition so the scale recedes in lockstep.
+      duration={0.5}
       // Flat solid sheet per Figma (no frost, no glassy glint — glass stays on
       // the toolbar buttons only). 24px top corners to unify with the auth /
       // Send-Receive sheets; shell smoothing so the bottom corners nest
