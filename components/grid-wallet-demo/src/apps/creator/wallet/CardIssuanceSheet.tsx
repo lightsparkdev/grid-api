@@ -50,30 +50,31 @@ export function CardIssuanceSheet({
     return () => window.clearTimeout(t);
   }, [open]);
 
-  // Speed-line choreography by phase:
+  // Speed-line choreography by phase. The "speed in" is the canvas twinkle going
+  // faster (NOT a container scale), and the recenter is a burst-ORIGIN shift inside a
+  // full-bleed canvas (NOT a layer translate — that would clip the top). The wrapper
+  // only fades:
   //  - intro: steady glow at the intro origin.
-  //  - creating: quick-OUT (streak away) → reappear centred on the card's NEW (lower)
-  //    position → "speed in" (warp scale up) → fade out as the card finishes.
-  //  - ready/home: gone (white screen).
+  //  - creating: quick-OUT (fade away) while the card runs its anticipate flip/centre
+  //    (~1.0s); the origin eases down (invisible) meanwhile; then fade back in (rays
+  //    twinkling fast) and HOLD. The fade-OUT is driven by the ready transition below.
+  //  - ready/home: gone — fades out as the white screen comes in.
   const QUICK_OUT = [0, 0, 0.2, 1] as const;
-  const SPEED_SHIFT = 80; // px the burst drops to follow the card to centre
-  const SPEED_DURATION = 2.4; // s — the full creating sequence (≈ the creating beat)
+  const SPEED_SHIFT = 80; // px the burst ORIGIN drops to follow the card to centre
+  // Creating sequence: out (0–0.25s) → hold invisible through the card's anticipate
+  // (+800ms beat) → fade in 1.8–2.3s → hold (until the ready transition fades it out).
+  const SPEED_DURATION = 2.3;
   let burstAnimate: Record<string, number | number[]>;
   let burstTransition: Record<string, unknown>;
   if (cardView === 'intro') {
-    burstAnimate = { opacity: raysReady ? 0.5 : 0, y: 0, scale: 1 };
+    burstAnimate = { opacity: raysReady ? 0.5 : 0 };
     burstTransition = { duration: 0.5, ease: QUICK_OUT };
   } else if (cardView === 'creating') {
-    burstAnimate = {
-      // streak out → (reposition while invisible) → fade in small → warp up → out
-      opacity: [0.5, 0, 0, 0.5, 0.5, 0],
-      y: [0, 0, SPEED_SHIFT, SPEED_SHIFT, SPEED_SHIFT, SPEED_SHIFT],
-      scale: [1, 1.12, 0.7, 1.05, 1.45, 1.7],
-    };
-    burstTransition = { duration: SPEED_DURATION, times: [0, 0.1, 0.17, 0.42, 0.86, 1], ease: QUICK_OUT };
+    burstAnimate = { opacity: [0.5, 0, 0, 0.6] };
+    burstTransition = { duration: SPEED_DURATION, times: [0, 0.11, 0.78, 1], ease: QUICK_OUT };
   } else {
-    burstAnimate = { opacity: 0, y: SPEED_SHIFT, scale: 1.7 };
-    burstTransition = { duration: 0.4, ease: QUICK_OUT };
+    burstAnimate = { opacity: 0 };
+    burstTransition = { duration: 0.5, ease: QUICK_OUT };
   }
 
   return (
@@ -123,13 +124,20 @@ export function CardIssuanceSheet({
             cardView === 'intro' && styles.speedLinesMasked,
           )}
           aria-hidden
-          // Phased: glow on intro, streak-out → recentre → speed-in → fade-out on
-          // create, gone on the white ready screen (see burstAnimate above).
-          initial={{ opacity: 0, y: 0, scale: 1 }}
+          // Phased: glow on intro, fade-out → fade-in on create (the rays themselves
+          // speed up via `speeding`, and the origin shifts down via `originShift`),
+          // gone on the white ready screen.
+          initial={{ opacity: 0 }}
           animate={burstAnimate}
           transition={burstTransition}
         >
-          {raysReady && <SpeedRays active={cardView === 'intro' || cardView === 'creating'} />}
+          {raysReady && (
+            <SpeedRays
+              active={cardView === 'intro' || cardView === 'creating'}
+              speeding={cardView === 'creating'}
+              originShift={cardView === 'creating' ? SPEED_SHIFT : 0}
+            />
+          )}
         </motion.div>
 
         <div className={styles.toolbar}>

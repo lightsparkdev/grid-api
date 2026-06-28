@@ -146,8 +146,12 @@ function buildSome(rays: RayWithSprite[], n: number) {
 
 const smoothstep = (x: number) => x * x * (3 - 2 * x);
 
-function twinkle(t: number, r: Ray): number {
-  const u = (t - r.td) / r.tw;
+// While "speeding" (card creating) each ray twinkles this many times faster, so the
+// field reads as a fast warp flicker instead of a gentle shimmer.
+const SPEED_TW_MULT = 4;
+
+function twinkle(t: number, r: Ray, factor: number): number {
+  const u = ((t - r.td) * factor) / r.tw;
   const tri = 1 - Math.abs((u % 2) - 1);
   return smoothstep(tri);
 }
@@ -158,9 +162,24 @@ function twinkle(t: number, r: Ray): number {
  * per-frame twinkle + slow rotate/breathe. One composited layer, no live SVG filters.
  * Mounted only after the card settles, so the build runs on calm frames.
  */
-export function SpeedRays({ active = true }: { active?: boolean }) {
+export function SpeedRays({
+  active = true,
+  speeding = false,
+  originShift = 0,
+}: {
+  active?: boolean;
+  speeding?: boolean;
+  /** Push the burst's ORIGIN down by this many px (keeps the canvas full-bleed, so the
+   *  rays still reach the top — unlike translating the whole layer). Eased in. */
+  originShift?: number;
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const reduce = useReducedMotion();
+  // Read live in the loop so toggling these doesn't restart (and jump) the burst.
+  const speedingRef = useRef(speeding);
+  speedingRef.current = speeding;
+  const shiftRef = useRef(originShift);
+  shiftRef.current = originShift;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -175,7 +194,8 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
     let w = 0;
     let h = 0;
     let cx = 0;
-    let cy = 0;
+    let cy = 0; // base origin y; the live origin = cy + curShift (eased)
+    let curShift = 0;
     const resize = () => {
       const rect = parent.getBoundingClientRect();
       w = rect.width;
@@ -191,6 +211,7 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
 
     const drawFrame = (elapsedMs: number) => {
       if (w === 0 || h === 0) return;
+      curShift += (shiftRef.current - curShift) * 0.12; // ease origin toward target
       const t = elapsedMs / 1000;
       const rot = elapsedMs * ROT_DEG_PER_MS * (Math.PI / 180);
       const bp = (elapsedMs / BREATHE_MS) * Math.PI * 2;
@@ -199,15 +220,16 @@ export function SpeedRays({ active = true }: { active?: boolean }) {
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      ctx.translate(cx, cy);
+      ctx.translate(cx, cy + curShift);
       ctx.scale(breatheS, breatheS);
       ctx.rotate(rot);
       ctx.globalCompositeOperation = 'lighter';
 
+      const factor = speedingRef.current ? SPEED_TW_MULT : 1;
       for (const r of rays) {
         const sp = r.sprite;
         if (!sp) continue;
-        const tw = reduce ? 1 : twinkle(t, r);
+        const tw = reduce ? 1 : twinkle(t, r, factor);
         if (tw <= 0.002) continue;
         ctx.save();
         ctx.rotate(r.aRad);
