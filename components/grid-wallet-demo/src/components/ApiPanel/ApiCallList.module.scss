@@ -14,7 +14,7 @@
   flex-direction: column;
   width: 100%;
   padding: 48px;
-  padding-top: calc(var(--spacing-md) + 4px);
+  padding-top: calc(var(--spacing-md) + 12px);
 
   // Mobile: match the Configure panel's 24px side padding.
   @media (max-width: $breakpoint-layout-mobile) {

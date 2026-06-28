@@ -515,11 +515,13 @@
   color: var(--app-tabbar-active);
 }
 
+/* Single underline shared across tabs — positioned at the buttons' bottom edge
+   (tabs are 32px tall under the 16px top padding; 8px bottom padding remains).
+   `left`/`width` are driven by Framer from the measured active tab. */
 .activityIndicator {
   position: absolute;
   left: 0;
-  right: 0;
-  bottom: 0;
+  bottom: 8px;
   height: 3px;
   border-radius: 0;
   background: var(--app-tabbar-active);

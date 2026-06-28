@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
@@ -214,6 +214,27 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
     return homeActivity;
   }, [activityTab, homeActivity]);
 
+  // Active-tab underline: measured from the tabs' own layout (offsetLeft/Width,
+  // which ignore ancestor transforms) rather than a Framer `layoutId`. The
+  // stacked-sheet effect scales the whole home when a sheet opens, and a shared
+  // layout indicator re-projects against that transform and drifts; a measured
+  // indicator just scales in lockstep and only animates on a real tab change.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [tabUnderline, setTabUnderline] = useState<{ left: number; width: number } | null>(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = tabRefs.current[activityTab];
+      if (el) setTabUnderline({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    measure();
+    // Re-measure on real size changes (font load / layout reflow) only — a
+    // ResizeObserver never fires for a transform, so the sheet scale won't.
+    const ro = new ResizeObserver(measure);
+    if (tabsRef.current) ro.observe(tabsRef.current);
+    return () => ro.disconnect();
+  }, [activityTab]);
+
   // The wallet home is the persistent base layer: it renders behind the rising
   // issuance sheet (recedes via the stacked effect) AND behind the card-view sheet, so
   // the card view can slide up over it.
@@ -327,10 +348,14 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
               className={styles.activityTabs}
               role="tablist"
               aria-label="Activity filter"
+              ref={tabsRef}
             >
               {ACTIVITY_TABS.map((t, i) => (
                 <button
                   key={t}
+                  ref={(el) => {
+                    tabRefs.current[i] = el;
+                  }}
                   type="button"
                   role="tab"
                   aria-selected={i === activityTab}
@@ -338,15 +363,17 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
                   onClick={() => setActivityTab(i)}
                 >
                   {t}
-                  {i === activityTab && (
-                    <motion.span
-                      layoutId="creatorTabIndicator"
-                      className={styles.activityIndicator}
-                      transition={reduceMotion ? { duration: 0 } : TAB_INDICATOR}
-                    />
-                  )}
                 </button>
               ))}
+              {tabUnderline && (
+                <motion.span
+                  className={styles.activityIndicator}
+                  aria-hidden
+                  initial={false}
+                  animate={{ x: tabUnderline.left, width: tabUnderline.width }}
+                  transition={reduceMotion ? { duration: 0 } : TAB_INDICATOR}
+                />
+              )}
             </motion.div>
 
             <WalletListSection
