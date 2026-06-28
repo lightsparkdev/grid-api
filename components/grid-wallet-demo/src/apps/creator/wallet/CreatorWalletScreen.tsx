@@ -79,14 +79,13 @@ const CARD_FLIP_T = motionTransition(ANTICIPATE, CARD_FLIP_DURATION);
 const CARD_FLIP_ROLL = 180;
 // "Creating your card" fades in 150ms before the flip lands.
 const CREATE_CAPTION_DELAY = CARD_FLIP_DURATION - 0.15;
-// Issuance OPEN: the card stagger-reveals like the sheet copy — a small upward lift
-// + fade + de-blur, a beat behind the slide (matches useStaggerReveal's feel). It
-// stays invisible through the sheet's slide and resolves as the sheet lands, so
-// there's no visible drift between the two. The sparkle stream then starts a little
-// later still, so it trails the card's reveal.
-const CARD_REVEAL = motionTransition(easeOutQuick, 0.45, { delay: 0.18 });
-const CARD_REVEAL_LIFT = 24; // px the card lifts up as it reveals in
-const SPARKLE_START_DELAY = 0.55;
+// Issuance OPEN: staggered cascade — sheet slides in, THEN the card rises up from
+// below (fade + de-blur) as the next beat, then the speed lines fade in (deferred in
+// CardIssuanceSheet), then the sparkle stream last. A modest lift so it travels up
+// without overshooting its slot.
+const CARD_REVEAL = motionTransition(easeOutQuick, 0.5, { delay: 0.3 });
+const CARD_REVEAL_LIFT = 64; // px the card travels up from below as it reveals in
+const SPARKLE_START_DELAY = 1.1; // sparkles come last, after the lines have faded in
 // Issuance CLOSE: the card rides back down WITH the sheet. The sheet slides 110% of
 // its own height (`.flow` = --app-screen-height − 72) ≈ 1.1 × (874 − 72) ≈ 882px, so
 // matching that (same easing/duration via CARD_TRANSITION) keeps them glued on exit.

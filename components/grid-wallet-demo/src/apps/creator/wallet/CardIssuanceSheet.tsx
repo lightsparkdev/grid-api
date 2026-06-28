@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'motion/react';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
@@ -35,6 +36,21 @@ export function CardIssuanceSheet({
   // Once the card is created the burst warps out to a clean white screen; keep it
   // white through the Continue → card-home handoff.
   const onWhite = cardView === 'ready' || cardView === 'home';
+
+  // Defer the (heavy) speed-line burst's mount so it builds in step with the card's
+  // reveal rather than during the sheet slide — the cascade is sheet → (card + lines
+  // together) → sparkles. This still avoids stacking the 540-rect/filter build on the
+  // initial sheet mount, then they fade in a beat after the card starts rising.
+  const RAYS_MOUNT_DELAY_MS = 550;
+  const [raysReady, setRaysReady] = useState(false);
+  useEffect(() => {
+    if (!open) {
+      setRaysReady(false);
+      return;
+    }
+    const t = window.setTimeout(() => setRaysReady(true), RAYS_MOUNT_DELAY_MS);
+    return () => window.clearTimeout(t);
+  }, [open]);
   return (
     <BottomSheet
       open={open}
@@ -83,18 +99,15 @@ export function CardIssuanceSheet({
             cardView === 'intro' && styles.speedLinesMasked,
           )}
           aria-hidden
-          // Fade IN with the sheet (a small beat behind the slide, like the copy)
-          // rather than snapping on. Burst lives in the intro only — it fades out the
-          // moment the card starts creating (no delay there), and stays gone through
-          // the white ready screen.
+          // Fade in only once mounted (after the slide lands). Burst lives in the
+          // intro only — it fades out the moment the card starts creating (no delay
+          // there), and stays gone through the white ready screen.
           initial={{ opacity: 0 }}
-          animate={{ opacity: cardView === 'intro' ? 0.5 : 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: cardView === 'intro' ? 0.12 : 0 }}
+          animate={{ opacity: cardView === 'intro' && raysReady ? 0.5 : 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className={styles.burstRotate}>
-            <div className={styles.burstBreathe}>
-              <SpeedRays />
-            </div>
+            <div className={styles.burstBreathe}>{raysReady && <SpeedRays />}</div>
           </div>
         </motion.div>
 

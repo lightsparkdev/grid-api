@@ -35,9 +35,7 @@ interface Ray {
   r0: number; // inner gap from the burst center (px)
   op: number; // intensity
   tier: number; // blur bucket
-  twinkles: boolean; // only a few rays twinkle at a time
-  tw: number; // opacity-twinkle duration (s)
-  td: number; // twinkle delay (s, negative to desync)
+  phase: number; // twinkle phase bucket (which group it shimmers with)
 }
 
 const RAY_COUNT = 180;
@@ -47,6 +45,14 @@ const DEAD_ZONE = 88; // clear middle (px radius) — rays start outside it
 // Per-bucket blur (px), soft → very soft. No truly-sharp tier, so no crisp
 // hairlines. Rays are biased toward the blurrier buckets (see buildRays).
 const BLUR_STD = [1.6, 3.5, 6.5, 11, 17];
+// Twinkle is done per GROUP, not per rect: rays are split into BLUR_STD × PHASES
+// scattered groups, each an outer <g> whose opacity animates over a STATIC, already-
+// blurred inner <g>. The Gaussian blur rasterizes once and is cached; only the cheap
+// group opacity composites per frame (vs. re-running the blur on 540 animating rects
+// every frame). PHASES gives several independent shimmer cycles so it still reads as
+// a scattered twinkle, not one pulsing fan.
+const PHASES = 3;
+const GROUPS = BLUR_STD.length * PHASES;
 const CHANNELS = [
   { key: 'r', color: '#ff2f22', cls: 'rayR' },
   { key: 'g', color: '#1dff58', cls: 'rayG' },
@@ -67,16 +73,38 @@ function buildRays(seed: number, count: number, deadZone: number): Ray[] {
     // so there are no thin, crisp lines.
     let tier = Math.floor(Math.pow(rnd(), 0.6) * BLUR_STD.length);
     if (w < 2) tier = Math.max(tier, 2);
-    // Every ray fades 0→1→0 on its OWN cycle (~750ms, but varied so periods drift)
-    // with a phase spread across a full cycle — independent, no batches/waves.
-    const twinkles = true;
-    const tw = 0.55 + rnd() * 0.4;
-    const td = -rnd() * 2;
-    return { a, len, w, r0, op, tier, twinkles, tw, td };
+    // Which shimmer group this ray belongs to (scattered, not spatial).
+    const phase = Math.floor(rnd() * PHASES);
+    return { a, len, w, r0, op, tier, phase };
   });
 }
 
-function RayChannel({ rays, color, idBase }: { rays: Ray[]; color: string; idBase: string }) {
+interface GroupTwinkle {
+  tw: number; // fade duration (s)
+  td: number; // start delay (s, negative to desync)
+}
+
+/** One twinkle timing per group, shared across the R/G/B channels so the chroma
+ *  copies shimmer together (consistent fringe), each group on its own cycle. */
+function buildGroupTwinkle(seed: number): GroupTwinkle[] {
+  const rnd = mulberry32(seed);
+  return Array.from({ length: GROUPS }, () => ({
+    tw: +(0.55 + rnd() * 0.4).toFixed(2), // ~750ms, varied so periods drift
+    td: +(-rnd() * 2).toFixed(2), // phase spread across a full cycle
+  }));
+}
+
+function RayChannel({
+  rays,
+  color,
+  idBase,
+  groupTw,
+}: {
+  rays: Ray[];
+  color: string;
+  idBase: string;
+  groupTw: GroupTwinkle[];
+}) {
   const grad = `${idBase}-g`;
   return (
     <svg
@@ -99,29 +127,40 @@ function RayChannel({ rays, color, idBase }: { rays: Ray[]; color: string; idBas
           </filter>
         ))}
       </defs>
-      {BLUR_STD.map((_, tier) => (
-        <g key={tier} filter={`url(#${idBase}-b${tier})`}>
-          {rays
-            .filter((r) => r.tier === tier)
-            .map((r, i) => (
-              <rect
-                key={i}
-                className={r.twinkles ? styles.twinkle : undefined}
-                x={-r.w / 2}
-                y={-(r.r0 + r.len)}
-                width={r.w}
-                height={r.len}
-                rx={r.w / 2}
-                fill={`url(#${grad})`}
-                fillOpacity={r.op}
-                transform={`rotate(${r.a})`}
-                style={
-                  r.twinkles ? { ['--tw' as string]: `${r.tw}s`, ['--td' as string]: `${r.td}s` } : undefined
-                }
-              />
-            ))}
-        </g>
-      ))}
+      {BLUR_STD.map((_, tier) =>
+        Array.from({ length: PHASES }, (_unused, ph) => {
+          const groupRays = rays.filter((r) => r.tier === tier && r.phase === ph);
+          if (groupRays.length === 0) return null;
+          const gi = tier * PHASES + ph;
+          const { tw, td } = groupTw[gi];
+          // Outer <g>: the cheap, animated opacity (twinkle). Inner <g>: the STATIC
+          // blurred rays — the Gaussian filter rasterizes once and is cached, so the
+          // shimmer never re-runs the blur.
+          return (
+            <g
+              key={gi}
+              className={styles.twinkle}
+              style={{ ['--tw' as string]: `${tw}s`, ['--td' as string]: `${td}s` }}
+            >
+              <g filter={`url(#${idBase}-b${tier})`}>
+                {groupRays.map((r, i) => (
+                  <rect
+                    key={i}
+                    x={-r.w / 2}
+                    y={-(r.r0 + r.len)}
+                    width={r.w}
+                    height={r.len}
+                    rx={r.w / 2}
+                    fill={`url(#${grad})`}
+                    fillOpacity={r.op}
+                    transform={`rotate(${r.a})`}
+                  />
+                ))}
+              </g>
+            </g>
+          );
+        }),
+      )}
     </svg>
   );
 }
@@ -132,12 +171,13 @@ function RayChannel({ rays, color, idBase }: { rays: Ray[]; color: string; idBas
 export function SpeedRays() {
   const uid = useId().replace(/[:]/g, '');
   const rays = useMemo<Ray[]>(() => buildRays(0x5eed1, RAY_COUNT, DEAD_ZONE), []);
+  const groupTw = useMemo<GroupTwinkle[]>(() => buildGroupTwinkle(0x71717), []);
 
   return (
     <>
       {CHANNELS.map((ch) => (
         <div key={ch.key} className={clsx(styles.ray, styles[ch.cls])}>
-          <RayChannel rays={rays} color={ch.color} idBase={`${uid}-${ch.key}`} />
+          <RayChannel rays={rays} color={ch.color} idBase={`${uid}-${ch.key}`} groupTw={groupTw} />
         </div>
       ))}
     </>
