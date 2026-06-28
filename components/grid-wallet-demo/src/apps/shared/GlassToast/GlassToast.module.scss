@@ -30,6 +30,18 @@
   overflow: hidden;
 }
 
+/* Flat (frosted) pill — flat translucent surface + a backdrop blur, no refraction
+   lens or specular edge. For flat skins (Glitch). */
+.flat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--app-bg) 80%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 0.5px solid color-mix(in srgb, var(--ios-label-primary) 8%, transparent);
+}
+
 /* Subheadline/Emphasized 15/590 — same compact type as the medium content-area
    chip; themed label matches the neutral glass backdrop it sits on. */
 .label {

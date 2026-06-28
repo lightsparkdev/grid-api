@@ -237,7 +237,7 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
           else setTapPhase('done');
         }}
       />
-      <GlassToast toast={toast} onDismiss={() => setToast(null)} />
+      <GlassToast toast={toast} onDismiss={() => setToast(null)} flat />
     </>
   );
   const screenOverlay = overlayEl ? (

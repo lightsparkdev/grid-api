@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { GlassOver } from '@/components/liquid-glass';
 import { headerGlassBrightness, useOverlayGlass } from '@/apps/shared/glass';
@@ -29,6 +30,9 @@ interface GlassToastProps {
   toast: GlassToastData | null;
   /** Hold elapsed — parent clears `toast`, which plays the exit. */
   onDismiss: () => void;
+  /** Flat (frosted) pill instead of the refractive glass lens — for flat skins
+   *  (Glitch). Default glass (Aurora). */
+  flat?: boolean;
 }
 
 /**
@@ -43,7 +47,7 @@ interface GlassToastProps {
  * Refracting the live UI behind a moving toast isn't portable (the lens bends
  * its own children, not the page — see the liquid-glass README).
  */
-export function GlassToast({ toast, onDismiss }: GlassToastProps) {
+export function GlassToast({ toast, onDismiss, flat = false }: GlassToastProps) {
   const reduceMotion = useReducedMotion();
   const overlayGlass = useOverlayGlass();
   const theme = useThemeMode();
@@ -81,16 +85,23 @@ export function GlassToast({ toast, onDismiss }: GlassToastProps) {
                 : { y: ENTER_Y, transition: EXIT }
             }
           >
-            <GlassOver
-              className={styles.glass}
-              backdrop="var(--glass-symbol-backdrop)"
-              {...overlayGlass.text}
-              // Same lens brightness as the header buttons (gear) — full white
-              // soft-light on light, none on dark — so the pills read as one set.
-              brightness={headerGlassBrightness(theme)}
-            >
-              <span className={styles.label}>{toast.text}</span>
-            </GlassOver>
+            {flat ? (
+              // Flat skins (Glitch): a flat frosted pill — backdrop blur, no lens.
+              <div className={clsx(styles.glass, styles.flat)}>
+                <span className={styles.label}>{toast.text}</span>
+              </div>
+            ) : (
+              <GlassOver
+                className={styles.glass}
+                backdrop="var(--glass-symbol-backdrop)"
+                {...overlayGlass.text}
+                // Same lens brightness as the header buttons (gear) — full white
+                // soft-light on light, none on dark — so the pills read as one set.
+                brightness={headerGlassBrightness(theme)}
+              >
+                <span className={styles.label}>{toast.text}</span>
+              </GlassOver>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

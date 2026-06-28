@@ -36,6 +36,9 @@ function nextBand(active: SparkState[]): [number, number] {
 // a true continuous stream; lifetime ÷ rate ≈ how many are on screen at once.
 const SPAWN_MIN = 0.5;
 const SPAWN_MAX = 0.9;
+// Hard cap on live sparkles — a safety net so they can never pile up (e.g. if removal
+// stalls). Well above the ~5-8 a steady stream holds.
+const MAX_ACTIVE = 16;
 
 // Iso projection so spawns match the actual tilted card (a diamond), not the flat
 // rectangular layer. Mirrors the card transform: rotateZ(45) then rotateX(54.736),
@@ -294,11 +297,19 @@ export function CardSparkles({
       let timer2: number | undefined;
       const one = () =>
         setParticles((p) => {
+          if (p.length >= MAX_ACTIVE) return p;
           const active = p.map((x) => x.s);
           return [...p, { id: idRef.current++, s: insideSpark(active, nextBand(active), mode) }];
         });
       const burst = () => {
         if (!alive) return;
+        // Tab backgrounded: rAF (and particle removal via onAnimationComplete) is
+        // paused, so pause spawning too — otherwise sparkles pile up and all flash in
+        // on return. Re-check shortly.
+        if (typeof document !== 'undefined' && document.hidden) {
+          timer = window.setTimeout(burst, 500);
+          return;
+        }
         one();
         timer2 = window.setTimeout(() => alive && one(), rand(0.18, 0.34) * 1000);
         timer = window.setTimeout(burst, rand(1.5, 2.6) * 1000);
@@ -313,10 +324,17 @@ export function CardSparkles({
 
     const spawn = () => {
       if (!alive) return;
-      setParticles((p) => [
-        ...p,
-        { id: idRef.current++, s: randomSpark(nextBand(p.map((x) => x.s)), mode) },
-      ]);
+      // Tab backgrounded: rAF (and particle removal via onAnimationComplete) is paused,
+      // so pause spawning too — otherwise sparkles pile up and all flash in on return.
+      if (typeof document !== 'undefined' && document.hidden) {
+        timer = window.setTimeout(spawn, 500);
+        return;
+      }
+      setParticles((p) =>
+        p.length >= MAX_ACTIVE
+          ? p
+          : [...p, { id: idRef.current++, s: randomSpark(nextBand(p.map((x) => x.s)), mode) }],
+      );
       timer = window.setTimeout(spawn, rand(SPAWN_MIN, SPAWN_MAX) * 1000);
     };
     timer = window.setTimeout(spawn, startDelay * 1000);
