@@ -9,7 +9,7 @@ import type { CardView } from '@/apps/shared/wallet';
 import { SheetIconButton } from '../blocks/SheetIconButton';
 import { CREATOR_STACKED_SHEET_DURATION } from '../config';
 import { IntroContent, ReadyContent } from './CardIssuanceContent';
-import { SpeedRays, SpeedRaysFlicker } from './SpeedLines';
+import { SpeedRays } from './SpeedLines';
 import styles from './CardIssuanceSheet.module.scss';
 
 interface CardIssuanceSheetProps {
@@ -86,25 +86,14 @@ export function CardIssuanceSheet({
           )}
           aria-hidden
           initial={false}
-          animate={
-            onWhite
-              ? { scale: 1.7, opacity: 0, filter: 'blur(22px)' }
-              : cardView === 'creating'
-                ? { scale: 1, opacity: 0.75, filter: 'blur(0px)' }
-                : { scale: 1, opacity: 0.5, filter: 'blur(0px)' }
-          }
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          // Simply fade the burst out as the card is created (white fades in under).
+          animate={{ opacity: onWhite ? 0 : 0.5 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className={styles.burstRotate}>
-            {cardView === 'creating' ? (
-              // Creating: anime hard-cut speed lines (centered on the card).
-              <SpeedRaysFlicker />
-            ) : (
-              // Intro/ready: the steady chroma burst with the gentle breathe hum.
-              <div className={styles.burstBreathe}>
-                <SpeedRays />
-              </div>
-            )}
+            <div className={styles.burstBreathe}>
+              <SpeedRays />
+            </div>
           </div>
         </motion.div>
 

@@ -49,11 +49,6 @@ const CHANNELS = [
   { key: 'g', color: '#1dff58', cls: 'rayG' },
   { key: 'b', color: '#356bff', cls: 'rayB' },
 ] as const;
-// Mono = a single white channel (no chromatic aberration) — used for the fast
-// anime flicker, where the per-frame hard cut matters more than fringing, and one
-// channel keeps it light.
-const MONO_CHANNELS = [{ key: 'w', color: '#ffffff', cls: 'rayG' }] as const;
-
 function buildRays(seed: number, count: number, deadZone: number): Ray[] {
   const rnd = mulberry32(seed);
   return Array.from({ length: count }, () => {
@@ -117,43 +112,19 @@ function RayChannel({ rays, color, idBase }: { rays: Ray[]; color: string; idBas
 }
 
 /** Procedural radial speed-line burst: rays randomized in length, thickness,
- *  spacing, intensity and blur. Default = three R/G/B screen-blended copies for
- *  apparent chromatic aberration (the steady hero burst); `mono` = a single white
- *  field (the anime flicker frames). `seed` varies the layout between frames. */
-export function SpeedRays({ seed = 0x5eed1, mono = false }: { seed?: number; mono?: boolean }) {
+ *  spacing, intensity and blur, rendered three times — tinted R/G/B and radially
+ *  offset — and screen-blended for an apparent chromatic aberration. */
+export function SpeedRays() {
   const uid = useId().replace(/[:]/g, '');
-  const rays = useMemo<Ray[]>(() => buildRays(seed, RAY_COUNT, DEAD_ZONE), [seed]);
-  const channels = mono ? MONO_CHANNELS : CHANNELS;
+  const rays = useMemo<Ray[]>(() => buildRays(0x5eed1, RAY_COUNT, DEAD_ZONE), []);
 
   return (
     <>
-      {channels.map((ch) => (
+      {CHANNELS.map((ch) => (
         <div key={ch.key} className={clsx(styles.ray, styles[ch.cls])}>
           <RayChannel rays={rays} color={ch.color} idBase={`${uid}-${ch.key}`} />
         </div>
       ))}
     </>
-  );
-}
-
-// Anime speed-line flicker: a handful of DISTINCT ray fields (different seeds)
-// hard-cut one at a time on a ~10fps loop, so the rays jump to new positions each
-// frame — the manga/cartoon "speed lines" jitter, not a smooth animation.
-const FLICK_SEEDS = [0xa17c, 0x33d1, 0x9b2e, 0xc4f0];
-
-/** The creating-state burst: hard-cutting frames of seeded white ray fields. */
-export function SpeedRaysFlicker() {
-  return (
-    <div className={styles.flickStack} aria-hidden>
-      {FLICK_SEEDS.map((seed, i) => (
-        <div
-          key={seed}
-          className={styles.flickFrame}
-          style={{ animationDelay: `${(i / FLICK_SEEDS.length) * 0.4}s` }}
-        >
-          <SpeedRays seed={seed} mono />
-        </div>
-      ))}
-    </div>
   );
 }
