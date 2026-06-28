@@ -1,23 +1,25 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
 
-/* Figma 2219:48658 / 2219:48832 — bottom-anchored copy section. */
+/* Figma 2219:48658 / 2219:48832 — bottom-anchored copy section, centered. */
 .section {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   width: 100%;
 }
 
-/* Figma 2219:48659 — pl 40 pr 32 pt 16. */
+/* Centered copy, 24px sides — an 8px indent inside the CTA's 16px edges. */
 .titleBlock {
   width: 100%;
-  padding: 16px 32px 0 40px;
+  padding: 16px 24px 0;
+  text-align: center;
 }
 
-/* Figma 2219:48833 — same, with pb 4 before the value props. */
+/* Same, with pb 4 before the value props. */
 .titleBlockTight {
   width: 100%;
-  padding: 16px 32px 4px 40px;
+  padding: 16px 24px 4px;
+  text-align: center;
 }
 
 /* Title3/Emphasized 20/25, -0.45. */
@@ -38,13 +40,14 @@
   color: var(--ios-label-secondary);
 }
 
-/* Figma 2219:48829 — pl 40 pr 32 pt 16, Caption2/Regular 11/13, +0.06. */
+/* Caption2/Regular 11/13, +0.06 — centered, 24px sides. */
 .agreement {
   margin: 0;
   width: 100%;
-  padding: 16px 32px 0 40px;
+  padding: 16px 24px 0;
   @include ios.ios-text-caption-2;
   color: var(--ios-label-secondary);
+  text-align: center;
   font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-caption-2-opsz);
 }
 
@@ -53,13 +56,14 @@
   color: var(--ios-label-primary);
 }
 
-/* Figma 2219:48928 — pl 40 pr 32 pt 24, row, gap 12, items-center. */
+/* Value-prop rows — kept left-aligned (a feature list), 24px sides. */
 .valueProp {
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 18px 32px 0 40px;
+  padding: 18px 24px 0;
+  text-align: left;
 }
 
 .valuePropIcon {
@@ -119,6 +123,11 @@
   padding-top: 16px;
   /* On the full-bleed creating screen the caption + spinner sit on the aurora. */
   color: rgba(255, 255, 255, 0.6);
+}
+
+/* On the flat issuance sheet there's no aurora — read as label-secondary. */
+.creatingOnSurface {
+  color: var(--ios-label-secondary);
 }
 
 .creatingText {

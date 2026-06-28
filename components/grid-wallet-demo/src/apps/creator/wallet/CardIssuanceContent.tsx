@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from 'clsx';
 import { motion } from 'motion/react';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
@@ -89,12 +90,19 @@ export function ReadyContent({ onContinue }: { onContinue?: () => void }) {
   );
 }
 
-/** Figma 2219:48913 — creating status with a leading spinner (white/60% on the
- *  full-bleed aurora). Shared by card issuance and the sign-in intro. */
-export function CreatingCaption({ label = 'Creating your card...' }: { label?: string }) {
+/** Figma 2219:48913 — creating status with a leading spinner. Defaults to the
+ *  white/60% tone for the full-bleed aurora (sign-in intro); pass `onSurface` for
+ *  the flat sheet (card issuance), where it reads as label-secondary. */
+export function CreatingCaption({
+  label = 'Creating your card...',
+  onSurface = false,
+}: {
+  label?: string;
+  onSurface?: boolean;
+}) {
   return (
     <motion.div
-      className={styles.creating}
+      className={clsx(styles.creating, onSurface && styles.creatingOnSurface)}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={motionTransition(undefined, 0.3)}

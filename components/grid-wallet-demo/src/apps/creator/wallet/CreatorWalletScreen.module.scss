@@ -33,58 +33,6 @@
   padding-top: 62px;
 }
 
-/* ── Full-screen issuance aurora (behind header + body) ───────────────────── */
-
-.fullAurora {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  /* Hit-testable (NOT pointer-events:none) so the status bar tone sampler, which
-     uses elementsFromPoint, can read the aurora and flip the glyphs to white. It
-     sits at z-index 0 behind the body, so it never intercepts real interaction. */
-}
-
-/* Bleed past the top/sides so blurred streaks clip mid-flow; bottom flush. */
-.fullAuroraBg {
-  position: absolute;
-  top: -80px;
-  right: -80px;
-  bottom: 0;
-  left: -80px;
-}
-
-/* Tall auth-style fade — aurora reads at the top, then resolves to the wallet bg
-   well above the bottom content so the copy/CTA sit on solid ground. */
-.auroraFade {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 76%;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    color-mix(in srgb, var(--wallet-bg) 12%, transparent) 18%,
-    color-mix(in srgb, var(--wallet-bg) 40%, transparent) 34%,
-    color-mix(in srgb, var(--wallet-bg) 70%, transparent) 48%,
-    color-mix(in srgb, var(--wallet-bg) 92%, transparent) 58%,
-    var(--wallet-bg) 66%
-  );
-}
-
-/* Creating screen: drop the fade so the aurora full-bleeds behind the card. */
-.auroraFadeHidden {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auroraFade {
-    transition: none;
-  }
-}
-
 /* ── Header ───────────────────────────────────────────────────────────────── */
 
 .header {
@@ -169,84 +117,39 @@
   overflow: hidden;
 }
 
-/* Card slot — top for closed/home, centered for intro/creating/ready. The card
-   itself (.cardCarry) layout-animates between the two. */
-.cardAreaTop {
-  /* Pinned: holds while the sheet scrolls up over it. Only active in the home
-     scroll; the card-open/tap states don't scroll. */
-  position: sticky;
-  top: 0;
-  flex-shrink: 0;
-  padding: 8px 16px 0;
+/* Floating debit card — a single persistent element in an un-scaled foreground
+   layer (above the sheet at z 20, below the screen overlay at z 50) so it morphs
+   cleanly from the issuance sheet up into card-home without the stage's scale
+   compounding the transform. Top aligns with both the sheet's card slot (sheet
+   top 72 + 54 toolbar) and the card-home slot (62 status + 56 header + 8). */
+.cardForeground {
+  position: absolute;
+  top: calc(62px + var(--wallet-header-height) + 8px);
+  left: 16px;
+  right: 16px;
+  z-index: 30;
+  pointer-events: none;
 }
 
-/* Card-home (issued): 8px gap below the card before the transactions list. */
-.bodyOpen .cardAreaTop {
-  padding-bottom: 8px;
-}
-
-.cardAreaCentered {
-  position: relative;
-  z-index: 2; /* above the sheet as it slides out from underneath */
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-}
-
-/* Figma 2219:48842 — card + "Creating..." caption, gap 12. The centered content
-   sits up by half this padding: 96px ⇒ 48px above true center. */
-.cardAreaCreating {
-  gap: 12px;
-  padding-bottom: 96px;
-}
-
-.cardCarry {
-  width: 100%;
-}
-
-.cardScale {
-  width: 100%;
+/* Morph layer: issuance (centered, scaled down) ↔ card-home (top, full size).
+   Scales about its own center so the card grows in place as it lifts. */
+.cardMorph {
   transform-origin: center center;
 }
 
-.sheetWrap {
-  display: flex;
-  /* Grow with content, never shrink below it: a long Activity list extends the
-     sheet past the viewport and the body page-scrolls it (like card-home). */
-  flex: 1 0 auto;
-  flex-direction: column;
+/* Entrance host — also the perspective for the 3D float child. */
+.cardEntrance {
+  perspective: 1200px;
+  perspective-origin: 50% 35%;
+}
+
+.cardFloat {
+  transform-style: preserve-3d;
   will-change: transform;
 }
 
-/* While the card is open the sheet leaves the flex flow (pinned to its resting
-   slot) so the card area can take the full height and carry to center without the
-   sheet stealing space. It still translates straight down from the same spot.
-   The top inset matches .body's padding-top: absolute inset is measured from the
-   body's padding BOX (lifted by the underlap margin), while the resting flow
-   position starts at the content box — inset: 0 teleported the sheet up by the
-   underlap on the render that started the slide. */
-.sheetWrapOpen {
-  position: absolute;
-  inset: var(--wallet-header-height) 0 0;
-  z-index: 1;
-  flex: none;
-  padding-top: var(--card-slot-height);
-}
-
-/* Intro / ready bottom-anchored copy + CTA. */
-.bottomContent {
-  position: relative;
-  z-index: 2;
-  flex-shrink: 0;
-  width: 100%;
-}
-
-/* Card-home body — transactions list fills, Apple Wallet button pinned below. */
-.homeContent {
+/* Card-home body — transactions fill below the floating card's reserved slot. */
+.cardHomeBody {
   position: relative;
   z-index: 2;
   display: flex;
@@ -254,6 +157,8 @@
   flex-direction: column;
   min-height: 0;
   width: 100%;
+  /* Card slot (card 232 + 8 gap) — the foreground card overlays this space. */
+  padding-top: var(--card-slot-height);
 }
 
 /* Tap-to-pay reader status — fills below the raised card; glyph + label sit just
@@ -288,13 +193,6 @@
   :global([data-theme='dark']) & {
     --wallet-bg: var(--app-bg);
   }
-}
-
-/* Brand wash behind the issuance card (in place of Aurora's WebGL field). */
-.fullWash {
-  position: absolute;
-  inset: 0;
-  background: var(--app-wash);
 }
 
 /* Pinned purple nav header (Figma 2454:19376) — bleeds up behind the status bar:

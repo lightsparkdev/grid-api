@@ -1,128 +1,58 @@
 'use client';
 
 import clsx from 'clsx';
-import { useId, useState } from 'react';
-import { motion, useAnimate, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import { TextMorph } from 'torph/react';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
-import { cubicBezierCss, easeOutOvershoot, easeOutSwift, motionTransition } from '@/lib/easing';
+import { cubicBezierCss, easeOutSwift } from '@/lib/easing';
 import styles from './DebitCard.module.scss';
 
-/** Lift the card on hover; resolve back down on open. Negative = up. */
-const HOVER_LIFT = -4;
-/** Shared by the hover lift and the click resolve so they match. */
-const LIFT_DURATION = 0.28;
-/** Morph the primary label down to its tail ("debit card") when the card opens. */
-const LABEL_DEFAULT = 'Get your free debit card';
-const LABEL_OPEN = 'Debit card';
+const GLITCH_MARK = '/assets/creator/logo-creator-platform-white.svg';
+const VISA_LOGO = '/assets/VisaLogo.svg';
 
 interface DebitCardProps {
-  interactive?: boolean;
-  onOpen?: () => void;
-  /** Hide the card number (kept in layout via opacity) — issuance screens. */
-  showNumber?: boolean;
-  /** White inset border so the card reads over the full-screen aurora. */
-  bordered?: boolean;
-  /** A created card: morph the label to "Debit card" and reveal the number. */
+  /** A created card reveals the masked number; before issuance the slot reads
+   *  "Spend anywhere" (the card has no number yet). */
   issued?: boolean;
+  /** Sweep a one-time whiter gradient shimmer across the card (while creating). */
+  shimmer?: boolean;
+  className?: string;
 }
 
-/** Figma 2143:36184 — debit card behind the wallet sheet. */
-export function DebitCard({
-  interactive = true,
-  onOpen,
-  showNumber = true,
-  bordered = false,
-  issued = false,
-}: DebitCardProps) {
-  const reduceMotion = useReducedMotion();
-  const [hovered, setHovered] = useState(false);
-  const [opening, setOpening] = useState(false);
-  const [scope, animate] = useAnimate<HTMLDivElement>();
-  const cardClip = useSquircleClip<HTMLButtonElement>({
+/** Figma 2528:21062 — Glitch debit card face: flat brand-purple, logo lockup
+ *  top-left, "Spend anywhere" → masked number bottom-left, DEBIT + Visa bottom-right. */
+export function DebitCard({ issued = false, shimmer = false, className }: DebitCardProps) {
+  const cardClip = useSquircleClip<HTMLDivElement>({
     radiusVar: '--corner-radius-debit-card-squircle',
   });
-  const borderGradientId = `debit-card-border-${useId().replace(/:/g, '')}`;
-
-  const handleClick = async () => {
-    if (!interactive || !onOpen || opening) return;
-    setOpening(true);
-    setHovered(false);
-    onOpen();
-
-    if (reduceMotion || !scope.current) {
-      setOpening(false);
-      return;
-    }
-
-    try {
-      await animate(
-        scope.current,
-        { y: 0 },
-        motionTransition(easeOutOvershoot, LIFT_DURATION),
-      );
-    } finally {
-      setOpening(false);
-    }
-  };
-
-  // The "Get your free debit card" offer only shows on the un-issued home card;
-  // once a card exists it morphs to "Debit card" and the masked number returns.
-  const showOffer = interactive && !issued;
-  const showCardNumber = showNumber && issued;
 
   return (
-    <motion.div
-      ref={scope}
-      className={clsx(styles.cardShell, bordered && styles.cardShellFlat)}
-      initial={false}
-      animate={
-        opening || !interactive ? false : hovered ? { y: HOVER_LIFT } : { y: 0 }
-      }
-      transition={motionTransition(easeOutOvershoot, LIFT_DURATION)}
-    >
-      <button
-        type="button"
-        ref={cardClip.ref}
-        style={cardClip.style}
-        className={clsx(styles.card, !interactive && styles.cardStatic)}
-        aria-label="View debit card"
-        disabled={!interactive}
-        onClick={handleClick}
-        onMouseEnter={() => interactive && setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        <div
-          aria-hidden
-          className={clsx(styles.aurora, bordered && styles.auroraHidden)}
-          style={{ background: 'var(--app-wash)' }}
-        />
-        <div className={styles.top}>
-          <TextMorph
-            as="span"
-            className={styles.primary}
-            duration={LIFT_DURATION * 1000}
-            ease={cubicBezierCss(easeOutSwift)}
-          >
-            {showOffer ? LABEL_DEFAULT : LABEL_OPEN}
-          </TextMorph>
-          <span className={styles.secondary}>Spend anywhere</span>
+    <div className={clsx(styles.cardShell, className)}>
+      <div ref={cardClip.ref} style={cardClip.style} className={styles.card}>
+        <div className={styles.lockup}>
+          <img
+            className={styles.mark}
+            src={GLITCH_MARK}
+            alt=""
+            aria-hidden
+            draggable={false}
+          />
+          <span className={styles.wordmark}>Glitch</span>
         </div>
         <div className={styles.bottom}>
-          <span
-            className={clsx(
-              styles.primary,
-              styles.cardNumber,
-              !showCardNumber && styles.cardNumberHidden,
-            )}
+          <TextMorph
+            as="span"
+            className={styles.number}
+            duration={450}
+            ease={cubicBezierCss(easeOutSwift)}
           >
-            •••• 8972
-          </span>
+            {issued ? '•••• 8972' : 'Spend anywhere'}
+          </TextMorph>
           <div className={styles.brand}>
-            <span className={styles.secondary}>DEBIT</span>
+            <span className={styles.debit}>DEBIT</span>
             <img
               className={styles.visa}
-              src="/assets/VisaLogo.svg"
+              src={VISA_LOGO}
               alt=""
               width={62}
               height={20}
@@ -131,30 +61,15 @@ export function DebitCard({
             />
           </div>
         </div>
-        {bordered && cardClip.path && (
-          <svg
-            className={styles.borderRing}
-            viewBox={`0 0 ${cardClip.width} ${cardClip.height}`}
-            preserveAspectRatio="none"
-            aria-hidden
-          >
-            <defs>
-              {/* Diagonal stroke: 100% at both ends, dipping to 30% in the middle. */}
-              <linearGradient id={borderGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#fff" stopOpacity="1" />
-                <stop offset="50%" stopColor="#fff" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#fff" stopOpacity="1" />
-              </linearGradient>
-            </defs>
-            <path
-              d={cardClip.path}
-              fill="none"
-              stroke={`url(#${borderGradientId})`}
-              strokeWidth={1}
-            />
-          </svg>
+        {shimmer && (
+          <motion.div
+            className={styles.shimmer}
+            initial={{ x: '-130%' }}
+            animate={{ x: '130%' }}
+            transition={{ duration: 1.1, ease: 'easeInOut', delay: 0.15 }}
+          />
         )}
-      </button>
-    </motion.div>
+      </div>
+    </div>
   );
 }

@@ -1,0 +1,29 @@
+/* ── Card-issuance sheet shell ────────────────────────────────────────────────
+   Tall stacked sheet (Figma 2528:21062). Top stops ~72px down so the receded
+   card behind it peeks ~10px (the stacked-sheet effect, matching the money
+   sheets). The toolbar height + card slot place the slot where the foreground
+   card sits (top ~126), so the floating card lands exactly over the slot. */
+.flow {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--app-screen-height, 874px) - 72px);
+  min-height: 0;
+}
+
+.toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 54px;
+  padding: 0 16px;
+}
+
+/* Copy + CTA anchored at the bottom (the floating card sits centered above). */
+.content {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 0;
+}

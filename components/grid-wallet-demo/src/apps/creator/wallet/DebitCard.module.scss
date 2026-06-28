@@ -1,8 +1,8 @@
 @use '../../shared/typography/ios-type-mixins' as ios;
 
-/* Figma 2143:40916 — shadow on shell; filter: drop-shadow breaks sheet stacking.
-   No fill/overflow here: the inner button's clip-path is the only shape, so the
-   shell can't leak a mismatched-squircle edge. Radius is kept for the shadow. */
+/* Figma 2528:21062 — Glitch debit card. Shadow lives on the shell (filter:
+   drop-shadow breaks sheet stacking); the inner clip-path is the only shape, so
+   the shell can't leak a mismatched-squircle edge. Radius is kept for the shadow. */
 .cardShell {
   width: 100%;
   border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
@@ -15,17 +15,7 @@
   }
 }
 
-/* Issuance card sits on the full-screen aurora — drop the shadow (it muddies the
-   aurora) and let the white border define the edge instead. */
-.cardShellFlat {
-  box-shadow: none;
-
-  :global([data-theme='dark']) & {
-    box-shadow: none;
-  }
-}
-
-/* Figma 2143:36184 — 232pt card, 13px continuous corners, footnote labels. */
+/* 232pt flat brand-purple card, 13px continuous corners. */
 .card {
   box-sizing: border-box;
   position: relative;
@@ -34,118 +24,63 @@
   justify-content: space-between;
   width: 100%;
   height: 232px;
-  margin: 0;
   padding: 20px 24px 24px;
-  border: 0;
   /* clip-path via useSquircleClip — border-radius must stay 0 (see fill-button). */
   border-radius: 0;
-  -webkit-appearance: none;
-  appearance: none;
   overflow: hidden;
+  background: var(--app-tint);
   color: #ffffff;
   text-align: left;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-
-  &:disabled {
-    cursor: default;
-  }
 }
 
-.cardStatic {
-  pointer-events: none;
-}
-
-/* White border drawn as a STROKE of the exact squircle clip path (from
-   useSquircleClip), so it follows the corners precisely — a CSS corner-shape
-   ring drifts from the path. Painted above the aurora; the card's clip-path trims
-   the stroke's outer half, leaving a clean inner border. */
-.borderRing {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-/* Extend past card edges on all sides so overflow:hidden clips streaks
-   mid-flow instead of blurred layer periphery. */
-.aurora {
-  position: absolute;
-  inset: -80px;
-  flex: none;
-  min-height: auto;
-  /* Crossfade out over the full-screen aurora so the card reads as an outline
-     window onto that one continuous aurora, not a second mismatched one. */
-  transition: opacity 0.4s ease;
-}
-
-/* Issuance: drop the card's own aurora so the full-screen aurora shows straight
-   through the transparent card body (the white border outlines the window). */
-.auroraHidden {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aurora {
-    transition: none;
-  }
-}
-
-.top,
-.bottom {
-  position: relative;
-  z-index: 2;
+/* Brand lockup — TV mark + wordmark, top-left (Figma 2528:21065). */
+.lockup {
   display: flex;
   align-items: center;
+  gap: 4px;
+}
+
+.mark {
+  display: block;
+  flex: none;
+  width: auto;
+  height: 28px;
+}
+
+.wordmark {
+  font-family: var(--ios-font-family, inherit);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: normal;
+  letter-spacing: -0.5px;
+  color: #efeff1;
+  white-space: nowrap;
+}
+
+.bottom {
+  display: flex;
+  align-items: flex-end;
   justify-content: space-between;
   width: 100%;
 }
 
-.bottom {
-  align-items: flex-end;
-}
-
-.primary,
-.secondary,
-.brand {
+.number,
+.debit {
   @include ios.ios-text-footnote;
   font-weight: 590;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
-}
-
-.primary {
-  color: #ffffff;
   white-space: nowrap;
 }
 
-/* The masked number blurs in once the card is issued (the "ready" reveal). */
-.cardNumber {
-  transition: opacity 0.45s ease, filter 0.45s ease;
+.number {
+  color: #ffffff;
 }
 
-.cardNumberHidden {
-  opacity: 0;
-  filter: blur(8px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cardNumber {
-    transition: none;
-  }
-}
-
-.secondary {
+.debit {
   color: rgba(255, 255, 255, 0.7);
-  text-align: right;
 }
 
-.top .secondary {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
+/* DEBIT + Visa, stacked bottom-right (Figma 2528:21074). */
 .brand {
   display: flex;
   flex-direction: column;
@@ -157,4 +92,19 @@
   display: block;
   width: 61.856px;
   height: 20px;
+}
+
+/* One-time whiter shimmer sweep while the card is being created. Clipped by the
+   card's squircle (overflow hidden); rides above the content. */
+.shimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 65%
+  );
 }
