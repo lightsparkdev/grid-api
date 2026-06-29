@@ -49,7 +49,7 @@ properties:
     type: number
     description: Number of sending currency units per receiving currency unit.
     exclusiveMinimum: 0
-    example: 82.50
+    example: 0.012121
   fees:
     $ref: ./ExchangeRateFees.yaml
   updatedAt:

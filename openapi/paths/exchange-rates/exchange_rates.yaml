@@ -73,7 +73,7 @@ get:
                       symbol: "₹"
                     destinationPaymentRail: UPI
                     receivingAmount: 825000
-                    exchangeRate: 82.50
+                    exchangeRate: 0.012121
                     fees:
                       fixed: 100
                       total: 150
@@ -92,8 +92,8 @@ get:
                       name: Euro
                       symbol: "€"
                     destinationPaymentRail: SEPA_INSTANT
-                    receivingAmount: 18500
-                    exchangeRate: 0.925
+                    receivingAmount: 9250
+                    exchangeRate: 1.081081
                     fees:
                       fixed: 10
                       total: 15
