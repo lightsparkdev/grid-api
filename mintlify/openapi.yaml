@@ -229,7 +229,7 @@ paths:
                           symbol: ₹
                         destinationPaymentRail: UPI
                         receivingAmount: 825000
-                        exchangeRate: 82.5
+                        exchangeRate: 0.012121
                         fees:
                           fixed: 100
                           total: 150
@@ -248,8 +248,8 @@ paths:
                           name: Euro
                           symbol: €
                         destinationPaymentRail: SEPA_INSTANT
-                        receivingAmount: 18500
-                        exchangeRate: 0.925
+                        receivingAmount: 9250
+                        exchangeRate: 1.081081
                         fees:
                           fixed: 10
                           total: 15
@@ -9260,7 +9260,7 @@ components:
           type: number
           description: Number of sending currency units per receiving currency unit.
           exclusiveMinimum: 0
-          example: 82.5
+          example: 0.012121
         fees:
           $ref: '#/components/schemas/ExchangeRateFees'
         updatedAt:
