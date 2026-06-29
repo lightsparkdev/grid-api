@@ -7,6 +7,7 @@ import { AuthSheet as CreatorAuthSheet } from './creator/AuthSheet';
 import { BRAND } from './creator/config';
 import { SocialAuthScreen } from './social/SocialAuthScreen';
 import { SocialWalletScreen } from './social/wallet';
+import { AuthSheet as SocialAuthSheet } from './social/AuthSheet';
 import { BRAND as SOCIAL_BRAND } from './social/config';
 import type {
   SkinAuthScreen,
@@ -61,6 +62,7 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     fontFamily: GEIST,
     AuthScreen: SocialAuthScreen,
     WalletScreen: SocialWalletScreen,
+    AuthSheet: SocialAuthSheet,
   },
   marketplace: {
     id: 'marketplace',

@@ -1,0 +1,216 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Footnote / Regular — instruction line under the header. The extra 8px each
+   side (32 vs the 24 body gutter) indents the copy to optically balance the
+   rounded controls. */
+.sub {
+  margin: 0;
+  padding: 20px 32px 16px;
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+  text-wrap: pretty;
+}
+
+.cardContainer,
+.codeContainer {
+  padding: 0 24px;
+}
+
+/* Full pill input — round ends are cross-browser safe (no squircle clip needed);
+   border tints on focus. */
+.card {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: 52px;
+  border: 1px solid var(--input-border);
+  border-radius: 999px;
+  corner-shape: round;
+  background: transparent;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+/* Focus: a 2px stroke that paints OUTWARD (box-shadow ring) in Twitter blue,
+   pinned across light + dark. The resting border fades under it. */
+.cardContainer:focus-within .card {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #4c99ea;
+}
+
+/* Squircle stroke for the code cells — sits outside the clip-path. */
+.codeCellHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--input-border);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    transition: stroke 0.15s ease;
+  }
+}
+
+.codeContainer:focus-within .codeCellShell[data-active] .codeCellHalo path {
+  stroke: var(--input-halo);
+}
+
+/* Callout / Regular — 16/21; placeholder is labels/tertiary. */
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 20px;
+  border: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  color: var(--app-text-primary);
+  outline: none;
+  caret-color: var(--app-tint);
+  @include ios.ios-text-callout;
+
+  &::placeholder {
+    color: var(--app-text-tertiary);
+  }
+}
+
+/* CTA block — sheet frame: sides 24, bottom 32. */
+.actions {
+  padding: 0 24px 32px;
+}
+.cta {
+  height: 48px;
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+}
+
+/* ── Steps (entry → code) ─────────────────────────────────────────────────── */
+.steps {
+  position: relative;
+  display: grid;
+  grid-template-rows: 100%;
+  align-items: end;
+  overflow: hidden;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+@supports (overflow-clip-margin: 1px) {
+  .steps {
+    overflow: clip;
+    padding: 0;
+    overflow-clip-margin: 6px;
+  }
+}
+
+.step {
+  grid-area: 1 / 1;
+  min-width: 0;
+  padding-bottom: 24px;
+
+  --input-border: var(--z-border);
+  --input-halo: var(--app-tint);
+}
+
+/* ── Verification code cells ──────────────────────────────────────────────── */
+.codeContainer {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  cursor: text;
+}
+
+.codeInput {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  opacity: 0;
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
+  outline: none;
+}
+
+.codeCellShell {
+  position: relative;
+  flex: 1;
+  height: 52px;
+}
+
+.codeCell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: transparent;
+  @include ios.ios-text-title-3;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--app-text-primary);
+}
+
+.codeDash {
+  flex-shrink: 0;
+  align-self: center;
+  width: 10px;
+  height: 1px;
+  border-radius: 0.5px;
+  background: var(--app-text-tertiary);
+}
+
+/* Inline "Resend" — a tinted text button flowing inside the body copy. */
+.resend {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--app-tint);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* CTA content stack — Continue / spinner / checkmark overlap in one cell. */
+.ctaSwap {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.ctaItem {
+  display: inline-flex;
+  grid-area: 1 / 1;
+  align-items: center;
+}
+
+.spinner {
+  display: inline-flex;
+  animation: social-auth-sheet-spin 0.9s linear infinite;
+}
+
+@keyframes social-auth-sheet-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

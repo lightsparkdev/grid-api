@@ -20,7 +20,15 @@ const CONTENT_OUT = motionTransition(easeOutQuick, 0.5);
 // Method toggles (add/remove a circle, swap the pill, show/hide the divider) ride
 // the same blur-fade + reflow language as Aurora's auth CTAs.
 const TOGGLE = motionTransition(easeOutSnappy, 0.32);
-const HOVER = motionTransition(easeOutSnappy, 0.18);
+// Press feel matched to Aurora (glass-button-press): a slight grow on hover, a
+// bigger grow on press — same curve + duration as the shared mixin.
+const PRESS = motionTransition([0.22, 1, 0.36, 1], 0.28);
+// 56px circle: +2px/side hover, +4px/side press (Aurora's bloom ratios).
+const CIRCLE_HOVER = 60 / 56;
+const CIRCLE_PRESS = 64 / 56;
+// Full-width pill: the home pills' grow ratios (press 1.04, hover halfway).
+const PILL_HOVER = 1.02;
+const PILL_PRESS = 1.04;
 // Circles add/remove with popLayout: the exiting circle is lifted out of flow and
 // fades/scales out in place while its siblings animate (layout="position") to
 // their new centered positions — no end-of-tween reflow snap. The rows below
@@ -118,8 +126,8 @@ export function SocialAuthScreen({
                         animate={CIRCLE_SHOWN}
                         exit={CIRCLE_HIDDEN}
                         transition={TOGGLE}
-                        whileHover={disabled ? undefined : { scale: 1.06, transition: HOVER }}
-                        whileTap={disabled ? undefined : { scale: 0.92, transition: HOVER }}
+                        whileHover={disabled ? undefined : { scale: CIRCLE_HOVER, transition: PRESS }}
+                        whileTap={disabled ? undefined : { scale: CIRCLE_PRESS, transition: PRESS }}
                         disabled={disabled}
                         onClick={() => onSignIn(m)}
                         aria-label={`Continue with ${authLabel(m)}`}
@@ -157,8 +165,8 @@ export function SocialAuthScreen({
               className={styles.phoneBtn}
               disabled={busy || dismissed}
               onClick={() => onSignIn(pillMethod)}
-              whileHover={busy || dismissed ? undefined : { scale: 1.015, transition: HOVER }}
-              whileTap={busy || dismissed ? undefined : { scale: 0.985, transition: HOVER }}
+              whileHover={busy || dismissed ? undefined : { scale: PILL_HOVER, transition: PRESS }}
+              whileTap={busy || dismissed ? undefined : { scale: PILL_PRESS, transition: PRESS }}
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span

@@ -5,6 +5,8 @@ import { IconEmail1 } from '@central-icons-react/round-outlined-radius-2-stroke-
 import { IconCall } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCall';
 import { IconPasskeys } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconPasskeys';
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowLeft';
+import { IconChevronLeftMedium } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconChevronLeftMedium';
+import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCrossMedium';
 import { IconCircleQuestionmark } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCircleQuestionmark';
 import { IconSettingsGear2 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconSettingsGear2';
 import { IconEyeSlash } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconEyeSlash';
@@ -27,6 +29,8 @@ export {
   IconCall,
   IconPasskeys,
   IconArrowLeft,
+  IconChevronLeftMedium,
+  IconCrossMedium,
   IconCircleQuestionmark,
   IconSettingsGear2,
   IconEyeSlash,

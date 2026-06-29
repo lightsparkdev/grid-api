@@ -36,6 +36,7 @@
 
     /* Flat sheets — no glass anywhere in Z. */
     --auth-sheet-bg: #ffffff;
+    --z-sheet-bg: #ffffff;
     --app-sheet-glass-backdrop: transparent;
 
     /* Activity / list panel — flat on the page; hairline divider. */
@@ -69,7 +70,8 @@
       --content-secondary-bg: var(--z-surface);
       --content-secondary-fg: var(--app-text-primary);
 
-      --auth-sheet-bg: #16181c;
+      --auth-sheet-bg: #141414;
+      --z-sheet-bg: #141414;
 
       --list-panel-bg: #000000;
       --list-panel-border: 0.5px solid rgba(255, 255, 255, 0.1);
