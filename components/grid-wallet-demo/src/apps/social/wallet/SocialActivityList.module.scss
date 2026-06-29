@@ -1,0 +1,118 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 40px 24px;
+  text-align: center;
+}
+.emptyTitle {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  font-weight: 600;
+  color: var(--app-text-primary);
+}
+.emptySub {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  color: var(--app-text-secondary);
+  max-width: 240px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.graphic {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--z-surface);
+  color: var(--app-text-primary);
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+.graphicCircle {
+  border-radius: 50%;
+}
+.avatarInitials {
+  @include ios.ios-type-rounded;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--app-text-primary);
+}
+.avatarFlag {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px var(--app-bg);
+}
+.graphicImage {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.graphicImageSquare {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.labels {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.title {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  font-weight: 600;
+  color: var(--app-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  color: var(--app-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amount {
+  flex-shrink: 0;
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  font-weight: 600;
+  color: var(--app-text-primary);
+}
+.amountPositive {
+  color: var(--z-green);
+}

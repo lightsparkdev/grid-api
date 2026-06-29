@@ -1,0 +1,235 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  /* Clear the status bar (screenBody underlaps it; see AppShell). */
+  padding-top: 62px;
+}
+
+/* ── Nav bar ──────────────────────────────────────────────────────────────── */
+.nav {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 48px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+.navTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.navBtn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ── Body (scrolls under the pinned nav + tab bar) ────────────────────────── */
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Balance hero ─────────────────────────────────────────────────────────── */
+.balanceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 16px 20px;
+}
+.balanceLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.balanceLabel {
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+}
+.muted {
+  color: var(--app-text-secondary);
+  flex: none;
+}
+.balanceAmount {
+  @include ios.ios-text-wallet-balance;
+  letter-spacing: -0.02em;
+  color: var(--app-text-primary);
+}
+.assuranceRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.assurance {
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+}
+
+/* ── Action chips (Deposit / Send / Request) ──────────────────────────────── */
+.actions {
+  display: flex;
+  gap: 12px;
+  padding: 0 16px;
+}
+.actionChip {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  height: 68px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--z-surface);
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.1s ease;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+  svg path {
+    stroke-width: 2;
+  }
+
+  &:hover {
+    background: var(--z-surface-press);
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+}
+.actionLabel {
+  @include ios.ios-text-footnote;
+  font-weight: 600;
+}
+
+/* ── Rewards + Z Card tiles ───────────────────────────────────────────────── */
+.tiles {
+  display: flex;
+  gap: 12px;
+  padding: 16px 16px 8px;
+}
+.rewardsTile,
+.cardTile {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 152px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--z-surface);
+  color: var(--app-text-primary);
+  text-align: left;
+}
+.rewardsTile {
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+}
+.tileHeading,
+.cardHeading {
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  color: var(--app-text-primary);
+}
+.rewardsFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.apy {
+  @include ios.ios-text-subheadline;
+  font-weight: 600;
+  color: var(--z-green);
+}
+.rewardsAmount {
+  @include ios.ios-text-title-3;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--app-text-primary);
+}
+
+.cardTile {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cardHeading {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Activity ─────────────────────────────────────────────────────────────── */
+.activityWrap {
+  padding: 8px 0 16px;
+}
+
+/* Face ID (Dynamic Island) overlay — above the screen, click-through. */
+.faceIdLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}

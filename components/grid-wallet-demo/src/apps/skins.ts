@@ -5,6 +5,9 @@ import { CreatorAuthScreen } from './creator/CreatorAuthScreen';
 import { CreatorWalletScreen } from './creator/wallet';
 import { AuthSheet as CreatorAuthSheet } from './creator/AuthSheet';
 import { BRAND } from './creator/config';
+import { SocialAuthScreen } from './social/SocialAuthScreen';
+import { SocialWalletScreen } from './social/wallet';
+import { BRAND as SOCIAL_BRAND } from './social/config';
 import type {
   SkinAuthScreen,
   SkinWalletScreen,
@@ -30,6 +33,7 @@ export interface AppSkin {
 }
 
 const SF_PRO = "'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+const GEIST = 'var(--font-family-geist), system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
 
 /** Persona → app skin. Swap fontFamily per skin; metrics stay on ios-type stack. */
 export const APP_SKINS: Record<Persona, AppSkin> = {
@@ -53,8 +57,10 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
   social: {
     id: 'social',
     persona: 'social',
-    label: 'Pulse',
-    fontFamily: SF_PRO,
+    label: SOCIAL_BRAND,
+    fontFamily: GEIST,
+    AuthScreen: SocialAuthScreen,
+    WalletScreen: SocialWalletScreen,
   },
   marketplace: {
     id: 'marketplace',

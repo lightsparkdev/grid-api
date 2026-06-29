@@ -1,0 +1,202 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Z auth — flat white/black, Geist, no glass. Logo + headline in the upper third,
+   the social cluster low, the username bar full-bleed at the bottom. */
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Clears the status bar; the flex weights seat the logo in the upper third. */
+.spacerTop {
+  flex: 1;
+  min-height: 72px;
+}
+.spacerBottom {
+  flex: 2.4;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+}
+.logo {
+  color: var(--app-text-primary);
+}
+.headline {
+  margin: 0;
+  @include ios.ios-text-title-1;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-1-opsz);
+  text-align: center;
+}
+
+.cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.circles {
+  display: flex;
+  gap: 16px;
+}
+.circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  corner-shape: round;
+  border: 1px solid var(--z-border);
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.circle:hover:not(:disabled) {
+  background: var(--z-surface);
+}
+.circle:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.circle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.orRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.orLine {
+  flex: 1;
+  height: 1px;
+  background: var(--z-hairline);
+}
+.orText {
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+}
+
+.phoneBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 50px;
+  border: 0;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: var(--z-primary-bg);
+  color: var(--z-primary-fg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.phoneBtn:hover:not(:disabled) {
+  background: var(--z-primary-press);
+}
+.phoneBtn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+.phoneBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.phoneLabel {
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+}
+
+.legal {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  color: var(--app-text-secondary);
+  text-align: center;
+  max-width: 320px;
+}
+.legalLink {
+  color: var(--app-text-primary);
+  font-weight: 600;
+}
+
+.usernameBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 18px 24px;
+  border: 0;
+  background: var(--z-surface);
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+}
+.usernameBar:hover:not(:disabled) {
+  background: var(--z-surface-press);
+}
+.usernameBar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.usernameAt {
+  color: var(--app-text-secondary);
+}
+.usernameLabel {
+  @include ios.ios-text-subheadline;
+  font-weight: 600;
+}
+.usernameChevron {
+  color: var(--app-text-secondary);
+}
+
+/* Signing-in beat — centered logo + caption over the flat background. */
+.creatingSlot {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--app-text-primary);
+}
+.creatingLogo {
+  color: var(--app-text-primary);
+}
+.creatingLabel {
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+}

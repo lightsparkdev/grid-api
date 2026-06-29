@@ -44,7 +44,7 @@ export const USE_CASES: UseCaseOption[] = [
     label: 'Social platform',
     iconSrc: '/assets/app-icon-social.png',
     enabled: true,
-    built: false,
+    built: true,
   },
   {
     id: 'marketplace',

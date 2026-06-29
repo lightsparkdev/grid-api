@@ -1,0 +1,32 @@
+/* Tilted metallic placeholder card. Solid (no glass); a soft shadow gives the
+   "floating card" read. Fills the Z Card tile's lower area. */
+.graphic {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.card {
+  position: absolute;
+  right: -16px;
+  bottom: -14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 152px;
+  height: 96px;
+  border-radius: 12px;
+  transform: rotate(-10deg);
+  background: linear-gradient(135deg, #e2e6e9 0%, #c3cacf 42%, #d6dbdf 64%, #aeb5ba 100%);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+
+  :global([data-theme='dark']) & {
+    background: linear-gradient(135deg, #6b7075 0%, #4a4e52 44%, #5c6166 66%, #3c4044 100%);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.mark {
+  color: rgba(255, 255, 255, 0.82);
+}
