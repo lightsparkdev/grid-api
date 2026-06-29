@@ -39,10 +39,10 @@ export function CardEnv() {
           the center cards (otherwise the Z reflects past it and goes dark). */}
       <Lightformer
         form="rect"
-        intensity={2.6}
+        intensity={2.9}
         color="#ffffff"
-        position={[7, 1, 12]}
-        scale={[14, 10, 1]}
+        position={[3, 1, 12]}
+        scale={[12, 9, 1]}
         target={[0, 0, 0]}
       />
     </Environment>

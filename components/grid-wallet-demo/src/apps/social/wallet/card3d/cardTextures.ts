@@ -63,6 +63,52 @@ function fillZ(ctx: CanvasRenderingContext2D) {
   ctx.restore();
 }
 
+// SIM chip (refs/social-platform/chip.svg, viewBox 151 x 101): a rounded body +
+// a 2x3 grid of rounded contacts. Placed left, vertically centered, ~realistic
+// size. The body is shiny polished metal (like the Z); the contact-dividing
+// lines are the matte grey field.
+const CHIP_VIEW_W = 151;
+const CHIP_W_FRAC = 0.145; // chip width / card width
+const CHIP_LEFT_FRAC = 0.075; // chip left edge / card width
+
+/** Apply the chip's placement transform (drawing then happens in svg space). */
+function withChip(ctx: CanvasRenderingContext2D, fn: (c: CanvasRenderingContext2D) => void) {
+  const scale = (TEX_W * CHIP_W_FRAC) / CHIP_VIEW_W;
+  const chipH = 101 * scale;
+  ctx.save();
+  ctx.translate(TEX_W * CHIP_LEFT_FRAC, TEX_H * 0.5 - chipH / 2);
+  ctx.scale(scale, scale);
+  fn(ctx);
+  ctx.restore();
+}
+
+/** Fill the chip body (the outer rounded rect). */
+function fillChipBody(ctx: CanvasRenderingContext2D) {
+  withChip(ctx, (c) => {
+    c.beginPath();
+    c.roundRect(0.5, 0.5, 149.066, 99.0898, 19.5);
+    c.fill();
+  });
+}
+
+/** Stroke the chip lines — outer outline + the 2x3 contact outlines (caller
+ *  sets strokeStyle). These are the matte grey dividers between the contacts. */
+function strokeChip(ctx: CanvasRenderingContext2D, lineWidthTex: number) {
+  const scale = (TEX_W * CHIP_W_FRAC) / CHIP_VIEW_W;
+  withChip(ctx, (c) => {
+    c.lineWidth = lineWidthTex / scale;
+    c.lineJoin = 'round';
+    c.beginPath();
+    c.roundRect(0.5, 0.5, 149.066, 99.0898, 19.5);
+    for (const cx of [8.5, 83.5332]) {
+      for (const ry of [8.5, 37.8633, 67.2266]) {
+        c.roundRect(cx, ry, 58.0332, 24.3633, 12.1816);
+      }
+    }
+    c.stroke();
+  });
+}
+
 /** Draw the bottom-row face content (card number left, DEBIT + Visa right). */
 function drawFace(
   ctx: CanvasRenderingContext2D,
@@ -168,8 +214,15 @@ export async function generateCardMaps(opts: CardMapOptions): Promise<CardMaps> 
   // (sharp edge). Solid fill ⇒ the basin floor is smooth (no grain = polished).
   hctx.save();
   hctx.filter = `blur(${3 * S}px)`;
-  hctx.fillStyle = '#5d5d5d'; // ~half the deboss depth (was #3a3a3a)
+  hctx.fillStyle = '#4d4d4d'; // deboss depth (a bit deeper than the half-depth #5d5d5d)
   fillZ(hctx);
+  hctx.restore();
+  // SIM chip: flush with the surface (no emboss/depth) but the body is stamped
+  // SMOOTH at the base height so the polished panel reads clean, not sparkly from
+  // the beadblast grain.
+  hctx.save();
+  hctx.fillStyle = '#808080';
+  fillChipBody(hctx);
   hctx.restore();
 
   const heightField = hctx.getImageData(0, 0, TEX_W, TEX_H);
@@ -193,8 +246,19 @@ export async function generateCardMaps(opts: CardMapOptions): Promise<CardMaps> 
   // it mirrors the key so it reads brighter than the field.
   rctx.save();
   rctx.filter = `blur(${2 * S}px)`;
-  rctx.fillStyle = '#404040'; // ~0.25 satin polish (spreads the key into a soft bright center, not a hard streak)
+  rctx.fillStyle = '#333333'; // ~0.20 polish — sharper, more dramatic reflection (still soft enough to stay centered)
   fillZ(rctx);
+  rctx.restore();
+  // Chip body shiny (like the Z); the dividing lines are matte (the grey field).
+  rctx.save();
+  rctx.filter = `blur(${3 * S}px)`;
+  rctx.fillStyle = '#404040';
+  fillChipBody(rctx);
+  rctx.restore();
+  rctx.save();
+  rctx.filter = `blur(${0.5 * S}px)`;
+  rctx.strokeStyle = '#b2b2b2';
+  strokeChip(rctx, 2 * S);
   rctx.restore();
 
   // ── Albedo: metal gray base + lighter face content. ──
@@ -207,6 +271,17 @@ export async function generateCardMaps(opts: CardMapOptions): Promise<CardMaps> 
   actx.filter = `blur(${1.5 * S}px)`;
   actx.fillStyle = '#f0efee';
   fillZ(actx);
+  actx.restore();
+  // Chip body bright (like the Z); the dividing lines fall back to the base tone.
+  actx.save();
+  actx.filter = `blur(${3 * S}px)`;
+  actx.fillStyle = '#f0efee';
+  fillChipBody(actx);
+  actx.restore();
+  actx.save();
+  actx.filter = `blur(${0.5 * S}px)`;
+  actx.strokeStyle = '#cdcccb';
+  strokeChip(actx, 2 * S);
   actx.restore();
   // Face content, light — flat printed decal.
   drawFace(actx, visa, opts, 'rgba(230,229,228,0.92)');
