@@ -3,7 +3,7 @@ import { IconGoogle } from '@central-icons-react/round-outlined-radius-2-stroke-
 import { IconApple } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconApple';
 import { IconEmail1 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconEmail1';
 import { IconCall } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCall';
-import { IconAt } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconAt';
+import { IconPasskeys } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconPasskeys';
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowLeft';
 import { IconCircleQuestionmark } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCircleQuestionmark';
 import { IconSettingsGear2 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconSettingsGear2';
@@ -25,7 +25,7 @@ export {
   IconApple,
   IconEmail1,
   IconCall,
-  IconAt,
+  IconPasskeys,
   IconArrowLeft,
   IconCircleQuestionmark,
   IconSettingsGear2,
@@ -51,5 +51,5 @@ export const SOCIAL_AUTH_METHOD_ICONS: Record<AuthMethod, SocialIcon> = {
   apple: IconApple,
   email_otp: IconEmail1,
   sms: IconCall,
-  passkey: IconAt,
+  passkey: IconPasskeys,
 };

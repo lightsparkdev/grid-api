@@ -10,9 +10,6 @@ export const BRAND = 'Z';
 /** Auth hero copy — the "See what's going on" sign-in screen. */
 export const SOCIAL_AUTH = {
   headline: 'See what\u2019s going on',
-  legalPrefix: 'By continuing, you agree to our ',
-  legalLinks: ['Terms', 'Privacy Policy', 'Cookie Use'] as const,
-  usernameCta: 'Login with username',
   signingIn: 'Signing you in\u2026',
 };
 
