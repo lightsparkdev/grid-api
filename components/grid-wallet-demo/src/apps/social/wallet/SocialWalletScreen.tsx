@@ -13,6 +13,7 @@ import type { SkinWalletScreenProps } from '@/apps/types';
 import type { SkinIcon } from '../types';
 // Z's own money sheet (forked from Glitch's flat sheet onto the shared brain).
 import { AddMoneySheet } from './AddMoneySheet';
+import { CardIssuanceSheet } from './CardIssuanceSheet';
 import {
   IconPeopleCircle,
   IconCircleQuestionmark,
@@ -68,7 +69,7 @@ function ActionChip({
  *  chips drive the reused flat money sheet (which logs the Grid API calls). Flat,
  *  no glass; cards use the squircle clip + Aurora press scale. */
 export function SocialWalletScreen(props: SkinWalletScreenProps) {
-  const { entrance = false, onQuoteCreate, onLinkExternalAccount } = props;
+  const { entrance = false, onQuoteCreate, onLinkExternalAccount, onCardIssued } = props;
   const overlayEl = useScreenOverlay();
 
   const {
@@ -88,6 +89,11 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     finishTransfer,
     confirmTransfer,
     handleReceivePayment,
+    // Card issuance (intro → creating → ready). Replayable demo: the tile always
+    // opens the intro (no card-home screen yet).
+    cardView,
+    setCardView,
+    isIssuance,
     // Z keeps the sheet open after confirm and shows an in-sheet success screen
     // (Done closes it) instead of the toast.
   } = useWalletHome({ ...props, transferSuccessScreen: true });
@@ -163,6 +169,7 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
             className={styles.cardTile}
             ref={cardClip.ref}
             style={cardClip.style}
+            onClick={() => setCardView('intro')}
             whileHover={{ scale: CARD_HOVER, transition: PRESS }}
             whileTap={{ scale: CARD_PRESS, transition: PRESS }}
           >
@@ -199,6 +206,17 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
         }}
         onReceive={handleReceivePayment}
         onConfirm={confirmTransfer}
+      />
+
+      <CardIssuanceSheet
+        open={isIssuance}
+        cardView={cardView}
+        onClose={() => setCardView('closed')}
+        onCreate={() => {
+          setCardView('creating');
+          onCardIssued?.();
+        }}
+        onContinue={() => setCardView('closed')}
       />
 
       {screenOverlay}

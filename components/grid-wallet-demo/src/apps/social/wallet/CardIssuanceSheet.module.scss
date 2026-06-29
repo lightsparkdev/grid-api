@@ -1,0 +1,78 @@
+/* Full-screen issuance flow: X header, a placeholder graphic that fills the top,
+   and bottom-anchored copy on a solid bg (the graphic dissolves into it). */
+.issuance {
+  position: relative;
+  height: var(--app-screen-height, 874px);
+  padding-top: 62px; // status bar
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nav {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+
+.navBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Placeholder graphic — fills the space above the copy; the animated card mark
+   replaces .placeholder later. */
+.graphic {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder {
+  width: 280px;
+  height: 176px; // ~credit-card aspect
+  border-radius: 20px;
+  corner-shape: var(--corner-shape);
+  background: var(--z-surface);
+}
+
+/* Bottom copy on a solid bg; the ::before fade dissolves the graphic into it. */
+.content {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  background: var(--app-bg);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -120px;
+    height: 120px;
+    background: linear-gradient(to bottom, transparent, var(--app-bg));
+    pointer-events: none;
+  }
+}
