@@ -3,7 +3,7 @@ info:
   title: Grid API
   description: |
     API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://docs.lightspark.com/.
-  version: '2026-06-25'
+  version: '2026-06-29'
   contact:
     name: Lightspark Support
     email: support@lightspark.com
@@ -17176,6 +17176,13 @@ components:
         - FUNDING_AMOUNT_MISMATCH
         - COUNTERPARTY_POST_TX_FAILED
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+    RailSelectionMode:
+      type: string
+      enum:
+        - AUTO
+        - MANUAL
+      description: How the payment rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it.
+      example: AUTO
     OutgoingTransaction:
       title: Outgoing Transaction
       allOf:
@@ -17248,6 +17255,27 @@ components:
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
+            paymentRail:
+              anyOf:
+                - $ref: '#/components/schemas/PaymentRail'
+                - type: 'null'
+              description: The payment rail used to settle this transaction (e.g. ACH, WIRE, NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null when no external rail is used (e.g. instant or intra-network transfers, or non-direct-destination transactions) or before a rail is resolved.
+            railSelectionMode:
+              anyOf:
+                - $ref: '#/components/schemas/RailSelectionMode'
+                - type: 'null'
+              description: How the rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it. Null when no rail is resolved.
+            expectedSettlementAt:
+              type:
+                - string
+                - 'null'
+              format: date-time
+              description: Expected settlement time at the beneficiary. Null for instant rails (settlement is immediate) and before a rail with deferred settlement is resolved.
+            settlementTimelineSeconds:
+              type:
+                - integer
+                - 'null'
+              description: Expected number of seconds from quote creation to settlement. Null when not yet known.
     CardTransactionStatus:
       type: string
       enum:

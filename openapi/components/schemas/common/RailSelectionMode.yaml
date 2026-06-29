@@ -1,0 +1,8 @@
+type: string
+enum:
+  - AUTO
+  - MANUAL
+description: >-
+  How the payment rail was chosen — MANUAL when the platform specified a
+  paymentRail on the destination, AUTO when Lightspark selects it.
+example: AUTO
