@@ -17259,7 +17259,7 @@ components:
               anyOf:
                 - $ref: '#/components/schemas/PaymentRail'
                 - type: 'null'
-              description: The payment rail used to settle this transaction (e.g. ACH, WIRE, NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null until a rail is resolved.
+              description: The payment rail used to settle this transaction (e.g. ACH, WIRE, NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null when no external rail is used (e.g. instant or intra-network transfers, or non-direct-destination transactions) or before a rail is resolved.
             railSelectionMode:
               anyOf:
                 - $ref: '#/components/schemas/RailSelectionMode'
@@ -17270,7 +17270,7 @@ components:
                 - string
                 - 'null'
               format: date-time
-              description: Expected settlement time at the beneficiary. Null when not yet known (e.g. instant rails, or before a rail is resolved).
+              description: Expected settlement time at the beneficiary. Null for instant rails (settlement is immediate) and before a rail with deferred settlement is resolved.
             settlementTimelineSeconds:
               type:
                 - integer
