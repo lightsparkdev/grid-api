@@ -73,3 +73,34 @@ allOf:
       failureReason:
         $ref: ./OutgoingTransactionFailureReason.yaml
         description: If the transaction failed, this field provides the reason for failure.
+      paymentRail:
+        anyOf:
+          - $ref: ../common/PaymentRail.yaml
+          - type: 'null'
+        description: >-
+          The payment rail used to settle this transaction (e.g. ACH, WIRE,
+          NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent
+          on quote requests. Null until a rail is resolved.
+      railSelectionMode:
+        anyOf:
+          - $ref: ../common/RailSelectionMode.yaml
+          - type: 'null'
+        description: >-
+          How the rail was chosen — MANUAL when the platform specified a
+          paymentRail on the destination, AUTO when Lightspark selects it. Null
+          when no rail is resolved.
+      expectedSettlementAt:
+        type:
+          - string
+          - 'null'
+        format: date-time
+        description: >-
+          Expected settlement time at the beneficiary. Null when not yet known
+          (e.g. instant rails, or before a rail is resolved).
+      settlementTimelineSeconds:
+        type:
+          - integer
+          - 'null'
+        description: >-
+          Expected number of seconds from quote creation to settlement. Null
+          when not yet known.
