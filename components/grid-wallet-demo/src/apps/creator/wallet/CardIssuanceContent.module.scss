@@ -100,7 +100,9 @@
   width: 100%;
   padding: 14px 16px 14px 0;
   text-align: left;
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+  /* Theme-aware hairline (matches the money-sheet list cards) so the divider
+     doesn't vanish on the dark created screen. */
+  border-bottom: var(--list-panel-border);
 
   &:last-child {
     border-bottom: none;

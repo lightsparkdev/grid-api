@@ -30,23 +30,29 @@
   --p-fg: var(--app-tint);
 }
 
-/* Created state — the burst warps out to a clean WHITE screen: dark content, a
-   brand-purple CTA. */
+/* Created state — the burst warps out to a clean wallet-surface screen: theme
+   label colors, a brand-purple CTA. (Dark mode flips the label tones below.) */
 .flowReady {
-  color: #1c1c1e;
+  color: var(--ios-label-primary);
   --ios-label-primary: #1c1c1e;
   --ios-label-secondary: rgba(60, 60, 67, 0.6);
   --p-fill: var(--app-tint);
   --p-fg: #ffffff;
+
+  :global([data-theme='dark']) & {
+    --ios-label-primary: #efeff1;
+    --ios-label-secondary: rgba(235, 235, 245, 0.6);
+  }
 }
 
-/* White screen that fades in as the burst flies out (created state). Above the
-   purple .bg + below the burst, so the burst warps out OVER the whitening base. */
+/* Surface that fades in as the burst flies out (created state). Above the purple
+   .bg + below the burst, so the burst warps out OVER the settling base. Uses the
+   wallet surface (theme-aware) so it matches the card-home it morphs into. */
 .readyBg {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: #ffffff;
+  background: var(--wallet-bg);
   pointer-events: none;
 }
 
