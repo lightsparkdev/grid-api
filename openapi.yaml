@@ -17120,6 +17120,10 @@ components:
         - LIGHTNING_PAYMENT_FAILED
         - FUNDING_AMOUNT_MISMATCH
         - COUNTERPARTY_POST_TX_FAILED
+        - EXECUTION_FAILED_POST_DEBIT
+        - SETTLEMENT_FAILED
+        - TIMEOUT
+        - MANUAL_REFUND
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
     OutgoingTransaction:
       title: Outgoing Transaction
