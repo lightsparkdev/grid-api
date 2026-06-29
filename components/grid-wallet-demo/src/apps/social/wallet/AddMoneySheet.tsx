@@ -573,11 +573,41 @@ export function AddMoneySheet({
     exit: ({ back: b, reduceMotion: rm }: NavDir) =>
       rm ? { opacity: 0 } : { x: b ? SCREEN_W : -SCREEN_W, opacity: 0 },
   };
+  // The sliding, gradient-masked title (Aurora/Glitch header interaction): each
+  // step's title rides the content push and the strip's mask dissolves it before
+  // it reaches the icons. Keyed by TEXT so adjacent steps sharing a title don't
+  // slide; amount ⇄ confirm share 'transfer' and torph-morph in place. Shared by
+  // both header styles (full-screen flowNav + the receive toolbar).
+  const titleStrip = (
+    <AnimatePresence key={openKey} initial={false} custom={navDir}>
+      <motion.span
+        key={step === 'amount' || step === 'confirm' ? 'transfer' : displayTitle}
+        custom={navDir}
+        variants={titleVariants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={STEP_TRANSITION}
+      >
+        {step === 'amount' || step === 'confirm' ? (
+          <TextMorph as="span" duration={MORPH_MS} ease={cubicBezierCss(easeOutSwift)}>
+            {titles[headerStep]}
+          </TextMorph>
+        ) : (
+          displayTitle
+        )}
+      </motion.span>
+    </AnimatePresence>
+  );
 
-  // Add / Withdraw: the source step is a short content-hugging chooser; tapping a
-  // source slides the full flow up OVER it (the chooser stays mounted behind).
-  // Send/Receive keep the single tall sheet (their entry isn't a source list).
-  const isChooserFlow = mode === 'add' || mode === 'withdraw';
+  // Add / Withdraw open with a short content-hugging chooser, then the full flow
+  // slides up OVER it. Send has no chooser (its entry is the recipient list) but is
+  // still full-screen. Only Receive stays the elevated bottom sheet.
+  const hasChooser = mode === 'add' || mode === 'withdraw';
+  // Every mode is full-screen now (receive included); the elevated-sheet toolbar
+  // path is no longer used.
+  const isFullScreen =
+    mode === 'add' || mode === 'withdraw' || mode === 'send' || mode === 'receive';
 
   // One source card button (icon tile + title, speed on the right). `grid` cards
   // sit two-up and drop the speed.
@@ -617,8 +647,8 @@ export function AddMoneySheet({
     );
   };
 
-  // Full-screen flow header (chooser modes): X back to the chooser on the first
-  // step, a back arrow deeper in; a + (add bank) / QR (recipient) on the right.
+  // Full-screen flow header: a + (add bank/recipient) on the saved-list step, a QR
+  // on the crypto address step; nothing otherwise.
   const flowRight: { icon: ReactNode; onClick?: () => void; ariaLabel: string } | undefined =
     step === 'banks'
       ? {
@@ -629,40 +659,45 @@ export function AddMoneySheet({
       : step === 'recipient'
         ? { icon: <IconArrowsAllSides2 size={24} />, ariaLabel: 'Scan QR code' }
         : undefined;
-  const flowBackToChooser = backFrom[step] === 'source';
+  // The header's left control is an X (close) on the success screen, on the entry
+  // step, and — for the chooser modes — on the step that returns to the short
+  // chooser sheet (send returning to its 'source' STEP is a normal back arrow).
+  const flowBackToChooser = hasChooser && backFrom[step] === 'source';
+  const flowShowsClose = successOpen || isEntryStep || flowBackToChooser;
 
   return (
     <>
     {/* Source chooser — short, content-hugging (auth-sheet style). Stays mounted
-        behind the flow so the full sheet slides up over it. */}
-    {isChooserFlow && (
-      <BottomSheet
-        open={open}
-        onDismiss={dismiss}
-        glass={SOCIAL_FLAT_SHEET}
-        topRadius={32}
-        scalesBackground={false}
-      >
-        <SheetHeader
-          title={displayTitle}
-          left={{ icon: <IconCrossZ size={24} />, onClick: dismiss, ariaLabel: 'Close' }}
-        />
-        <div className={styles.chooserBody}>
-          <div className={styles.choiceList}>
-            {sources.slice(0, 2).map((id) => renderChoice(id))}
-            {sources.length > 2 && (
-              <div className={styles.choiceGrid}>
-                {sources.slice(2).map((id) => renderChoice(id, true))}
-              </div>
-            )}
-          </div>
-        </div>
-      </BottomSheet>
-    )}
-    {/* The full flow — single tall sheet for withdraw/send/receive; for add it
-        slides up OVER the chooser once a source is picked (step !== 'source'). */}
+        behind the flow so the full sheet slides up over it. Always rendered (gated
+        by `open`, not unmounted for send) so its enter animation isn't suppressed
+        by AnimatePresence's first-render `initial={false}` when it remounts. */}
     <BottomSheet
-      open={open && (!isChooserFlow || step !== 'source')}
+      open={hasChooser && open}
+      onDismiss={dismiss}
+      glass={SOCIAL_FLAT_SHEET}
+      topRadius={32}
+      scalesBackground={false}
+    >
+      <SheetHeader
+        title={displayTitle}
+        left={{ icon: <IconCrossZ size={24} />, onClick: dismiss, ariaLabel: 'Close' }}
+      />
+      <div className={styles.chooserBody}>
+        <div className={styles.choiceList}>
+          {sources.slice(0, 2).map((id) => renderChoice(id))}
+          {sources.length > 2 && (
+            <div className={styles.choiceGrid}>
+              {sources.slice(2).map((id) => renderChoice(id, true))}
+            </div>
+          )}
+        </div>
+      </div>
+    </BottomSheet>
+    {/* The full flow — full-screen for add/withdraw/send (for add/withdraw it
+        slides up OVER the chooser once a source is picked); elevated sheet for
+        receive. */}
+    <BottomSheet
+      open={open && (!hasChooser || step !== 'source')}
       onDismiss={dismiss}
       // Slower slide for the stacked-sheet presentation — shares one constant with
       // the PresentationStage transition so the scale recedes in lockstep.
@@ -670,19 +705,19 @@ export function AddMoneySheet({
       // Flat solid sheet (no frost/glint). Z surface token; shell smoothing so the
       // bottom corners nest concentrically in the screen squircle.
       glass={{
-        // Chooser flows go full-screen (square top, flush behind the status bar)
-        // on the base bg; send/receive keep the rounded elevated bottom-sheet.
-        radius: isChooserFlow ? 0 : 24,
+        // Full-screen flows are square-top + flush behind the status bar on the
+        // base bg; receive keeps the rounded elevated bottom-sheet.
+        radius: isFullScreen ? 0 : 24,
         cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
-        tint: isChooserFlow ? 'var(--app-bg)' : 'var(--z-sheet-bg)',
+        tint: isFullScreen ? 'var(--app-bg)' : 'var(--z-sheet-bg)',
         edge: 'var(--sheet-flat-edge)',
         edgeGlint: false,
         edgeWidth: 0.5,
         shadow: '0 15px 37.5px rgba(0, 0, 0, 0.18)',
       }}
     >
-      <div className={clsx(styles.flow, isChooserFlow && styles.flowFull)}>
-        {isChooserFlow ? (
+      <div className={clsx(styles.flow, isFullScreen && styles.flowFull)}>
+        {isFullScreen ? (
           /* Same header as the Z wallet home nav (plain 24px icons, centered
              title, no border): X/back left, title center, +/QR right. On the
              success screen it keeps just the X (close) — no title or right. */
@@ -690,17 +725,17 @@ export function AddMoneySheet({
             <button
               type="button"
               className={styles.flowNavBtn}
-              onClick={successOpen ? onDismiss : () => go(backFrom[step] ?? 'source', true)}
-              aria-label={successOpen || flowBackToChooser ? 'Close' : 'Back'}
+              onClick={
+                successOpen || isEntryStep
+                  ? onDismiss
+                  : () => go(backFrom[step] ?? 'source', true)
+              }
+              aria-label={flowShowsClose ? 'Close' : 'Back'}
               disabled={confirming}
             >
-              {successOpen || flowBackToChooser ? (
-                <IconCrossZ size={24} />
-              ) : (
-                <IconChevronLeftZ size={24} />
-              )}
+              {flowShowsClose ? <IconCrossZ size={24} /> : <IconChevronLeftZ size={24} />}
             </button>
-            {!successOpen && <span className={styles.flowNavTitle}>{displayTitle}</span>}
+            {!successOpen && <h2 className={styles.flowNavTitle}>{titleStrip}</h2>}
             <div className={styles.flowNavRight}>
               {!successOpen && flowRight && (
                 <button
@@ -749,43 +784,7 @@ export function AddMoneySheet({
                 <IconChevronLeftMedium size={24} />
               </SheetIconButton>
             )}
-            {!successOpen && (
-            <h2 className={styles.title}>
-              {/* Slides at every screen boundary except amount ⇄ confirm, which
-                  share the persistent transfer layout and torph-morph in place.
-                  Default (sync) presence, NOT popLayout — the spans stack in the
-                  strip's single-cell grid, and popLayout skipped the leaver's
-                  exit whenever the arriving screen set state mid-mount (the
-                  recipient step's card measurements; see the steps host). */}
-              <AnimatePresence key={openKey} initial={false} custom={navDir}>
-                <motion.span
-                  // Keyed by TEXT (not step): adjacent steps sharing a title
-                  // ("Send to" source → recipient) keep one span — no slide for
-                  // an unchanged title. amount ⇄ confirm share 'transfer' and
-                  // morph between their differing titles instead.
-                  key={step === 'amount' || step === 'confirm' ? 'transfer' : displayTitle}
-                  custom={navDir}
-                  variants={titleVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={STEP_TRANSITION}
-                >
-                  {step === 'amount' || step === 'confirm' ? (
-                    <TextMorph
-                      as="span"
-                      duration={MORPH_MS}
-                      ease={cubicBezierCss(easeOutSwift)}
-                    >
-                      {titles[headerStep]}
-                    </TextMorph>
-                  ) : (
-                    displayTitle
-                  )}
-                </motion.span>
-              </AnimatePresence>
-            </h2>
-            )}
+            {!successOpen && <h2 className={styles.title}>{titleStrip}</h2>}
             {/* Figma 109:28547 — glass QR scan button, recipient step only.
                 Blur-fades between steps, the wallet home header language. */}
             {!successOpen && (
@@ -858,7 +857,7 @@ export function AddMoneySheet({
                 transition={STEP_TRANSITION}
               >
                 <div className={styles.sourceWrap}>
-                  <div className={clsx(styles.card, styles.cardFlush)}>
+                  <div className={styles.flatList}>
                     {/* Receive leads with the bank drill-in; add-from-crypto is
                         crypto-only (bank is its own row in the add source list). */}
                     {mode === 'receive' && (
@@ -956,20 +955,14 @@ export function AddMoneySheet({
                 transition={STEP_TRANSITION}
               >
                 <div className={styles.fundingScroll}>
-                  <div className={clsx(styles.card, styles.detailsCard)}>
-                    <div className={styles.detailRows}>
-                      {receiveFields(pickedCountry, formBeneficiary).map(([label, value], i, arr) => {
+                  <div className={styles.formCard}>
+                    <div className={styles.formFields}>
+                      {receiveFields(pickedCountry, formBeneficiary).map(([label, value]) => {
                         const id = `fd-${label}`;
                         const copied = copiedChainId === id;
                         return (
-                          <div
-                            key={label}
-                            className={clsx(
-                              styles.detailRow,
-                              i < arr.length - 1 && styles.detailRowBordered,
-                            )}
-                          >
-                            <span className={styles.detailLabel}>{label}</span>
+                          <div key={label} className={styles.formField}>
+                            <span className={styles.formLabel}>{label}</span>
                             <span className={styles.fundingValueWrap}>
                               <span className={styles.fundingValue}>{value}</span>
                               <button
@@ -1016,52 +1009,16 @@ export function AddMoneySheet({
                 exit="exit"
                 transition={STEP_TRANSITION}
               >
-                <div className={styles.sourceWrap}>
-                  <div className={clsx(styles.card, styles.cardFlush)}>
-                    {sources.map((id, i) => {
-                      const active = activeSources.find((a) => a.id === id);
-                      const meta = CREATOR_SOURCE_META[id];
-                      const SourceIcon = meta.Icon;
-                      return (
-                      <button
-                        key={id}
-                        type="button"
-                        className={styles.sourceRow}
-                        disabled={!active}
-                        onClick={() => {
-                          if (!active) return;
-                          // Crypto path starts a fresh address; bank path drops any
-                          // crypto destination so the two never bleed together.
-                          if (id === 'crypto') {
-                            setSelectedBankId(null);
-                            setCryptoDest(null);
-                            setPasted(false);
-                            setPastedAddress('');
-                          } else {
-                            setCryptoDest(null);
-                          }
-                          go(active.next);
-                        }}
-                      >
-                        <span className={styles.tile} aria-hidden>
-                          <SourceIcon size={24} className={styles.tileGlyph} />
-                        </span>
-                        <span
-                          className={clsx(
-                            styles.sourceContent,
-                            i < sources.length - 1 && styles.sourceContentBordered,
-                          )}
-                        >
-                          <span className={styles.sourceLabels}>
-                            <span className={styles.rowTitle}>{meta.title}</span>
-                            <span className={styles.rowSub}>{meta.sub}</span>
-                            <span className={styles.rowSub}>{meta.speed}</span>
-                          </span>
-                          <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
-                        </span>
-                      </button>
-                      );
-                    })}
+                {/* Same card buttons as the deposit/withdraw "via" chooser, but in
+                    the full-screen step (tighter padding than the short sheet). */}
+                <div className={clsx(styles.chooserBody, styles.chooserBodyFull)}>
+                  <div className={styles.choiceList}>
+                    {sources.slice(0, 2).map((id) => renderChoice(id))}
+                    {sources.length > 2 && (
+                      <div className={styles.choiceGrid}>
+                        {sources.slice(2).map((id) => renderChoice(id, true))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -1313,7 +1270,7 @@ export function AddMoneySheet({
                         entry card. Paste fills it with the demo Solana address;
                         the empty ⇄ filled swap runs through real height (the
                         keypad REGION_* pattern) so the card grows, not pops. */}
-                    <div className={clsx(styles.card, styles.addressCard)}>
+                    <div className={styles.addressCard}>
                       <AnimatePresence initial={false}>
                         {pasted ? (
                           <motion.div
@@ -1364,7 +1321,7 @@ export function AddMoneySheet({
                       <div className={styles.addressBtnWrap}>
                         <ContentAreaButton
                           className={styles.addressBtn}
-                          variant={pasted ? 'filled' : 'secondary'}
+                          variant="filled"
                           onClick={() => {
                             if (saving) return;
                             // Paste fills a demo address; the prominent state then
@@ -1575,22 +1532,18 @@ export function AddMoneySheet({
       onDismiss={() => setPickerOpen(false)}
       glass={SOCIAL_FLAT_SHEET}
       topRadius={32}
+      scalesBackground={false}
     >
-      <div className={styles.clipboardHeader}>
-        <h2 className={styles.clipboardHeading}>Paste address</h2>
-        <SheetIconButton
-          aria-label="Close"
-          size={40}
-          type="button"
-          ghost
-          onClick={() => setPickerOpen(false)}
-        >
-          <IconCrossMedium size={24} />
-        </SheetIconButton>
-      </div>
-
-      <div className={styles.clipboardList}>
-        <div className={clsx(styles.card, styles.cardFlush)}>
+      <SheetHeader
+        title="Paste address"
+        left={{
+          icon: <IconCrossZ size={24} />,
+          onClick: () => setPickerOpen(false),
+          ariaLabel: 'Close',
+        }}
+      />
+      <div className={clsx(styles.sourceWrap, styles.pasteWrap)}>
+        <div className={styles.flatList}>
           {SEND_NETWORKS.map((net, i) => (
             <button
               key={net.id}
@@ -1598,8 +1551,8 @@ export function AddMoneySheet({
               className={styles.sourceRow}
               onClick={() => pickNetwork(net)}
             >
-              <span className={styles.recipientAvatar} aria-hidden>
-                <img className={styles.tokenIconSm} src={net.logo} alt="" draggable={false} />
+              <span className={styles.tile} aria-hidden>
+                <img className={styles.depositLogo} src={net.logo} alt="" draggable={false} />
               </span>
               <span
                 className={clsx(

@@ -167,7 +167,7 @@ export function WalletListCard({
           >
             <div className={styles.skeletonLayer}>
               <div className={styles.list} aria-hidden>
-                <SkeletonRow bordered round={roundGraphic} />
+                <SkeletonRow round={roundGraphic} />
                 <SkeletonRow round={roundGraphic} />
                 <div
                   className={clsx(
@@ -202,20 +202,16 @@ export function WalletListCard({
   );
 }
 
-function SkeletonRow({ bordered, round }: { bordered?: boolean; round?: boolean }) {
+// Matches the flat contact list row: 40px round graphic + a title/sub pill pair,
+// no divider, no trailing amount (the picker rows aren't transactions).
+function SkeletonRow({ round }: { round?: boolean }) {
   return (
     <div className={styles.row}>
       <div className={clsx(styles.rowGraphic, round && styles.rowGraphicRound)} />
-      <div className={bordered ? styles.rowContentBordered : styles.rowContent}>
-        <div className={styles.rowInner}>
-          <div className={styles.rowLabels}>
-            <SkeletonPill width="72.215px" />
-            <SkeletonPill width="143.25px" />
-            <SkeletonPill width="108.723px" />
-          </div>
-          <div className={styles.rowAmount}>
-            <SkeletonPill width="50px" />
-          </div>
+      <div className={styles.rowContent}>
+        <div className={styles.rowLabels}>
+          <SkeletonPill width="143.25px" />
+          <SkeletonPill width="92px" />
         </div>
       </div>
     </div>

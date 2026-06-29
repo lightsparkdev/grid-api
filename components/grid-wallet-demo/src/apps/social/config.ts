@@ -4,7 +4,6 @@ import {
   IconMagnifyingGlass2,
   IconSparkle2,
   IconBell2,
-  IconBubble3,
   IconDollar,
   IconDollarFilled,
 } from './icons';
@@ -36,7 +35,6 @@ export const SOCIAL_TAB_BAR: SkinTabBarConfig = {
     { Icon: IconMagnifyingGlass2, label: 'Search' },
     { Icon: IconSparkle2, label: 'Grok' },
     { Icon: IconBell2, label: 'Notifications' },
-    { Icon: IconBubble3, label: 'Messages' },
     { Icon: IconDollar, activeIcon: IconDollarFilled, label: 'Money', active: true },
   ],
 };

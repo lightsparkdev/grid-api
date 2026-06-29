@@ -19,7 +19,7 @@ export function SocialTabBar({ items }: SkinTabBarConfig) {
             aria-label={item.label}
             aria-current={item.active ? 'page' : undefined}
           >
-            <Icon size={24} />
+            <Icon size={28} />
           </button>
         );
       })}

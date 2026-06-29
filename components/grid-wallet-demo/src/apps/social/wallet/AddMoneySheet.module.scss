@@ -65,16 +65,43 @@
   padding: 8px 16px;
   box-sizing: border-box;
 }
+/* Sliding, gradient-masked title strip (same interaction as the toolbar's .title):
+   inset to clear the icons, single-cell grid so the entering/exiting spans stack
+   and slide, mask dissolves the text before it reaches the controls. */
 .flowNavTitle {
   position: absolute;
-  left: 0;
-  right: 0;
-  text-align: center;
+  top: 0;
+  bottom: 0;
+  left: 56px;
+  right: 56px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
   @include ios.ios-text-headline;
   font-weight: 700;
   font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
   color: var(--app-text-primary);
-  pointer-events: none;
 }
 .flowNavRight {
   display: flex;
@@ -114,6 +141,12 @@
   /* +8px each side (16 → 24); bottom 48px so the last cards clear the phone-shell
      curve. */
   padding: 24px 24px 48px;
+}
+
+/* Send "Add recipient" lives in the full-screen step (not the short sheet), so it
+   doesn't need the curve clearance — tighter 8px top/bottom, 20px sides. */
+.chooserBodyFull {
+  padding: 8px 20px;
 }
 
 /* Each source is its own flat card button — icon tile + title/sub on the left,
@@ -324,7 +357,120 @@
 
 /* ── Step 1: source list ──────────────────────────────────────────────────── */
 .sourceWrap {
-  padding: 4px 16px 48px;
+  /* Full-bleed: the flat list rows span the screen and carry their own 20px inset. */
+  padding: 4px 0 48px;
+}
+
+/* Flat full-bleed list — same treatment as the bank/country pickers: no card
+   surface, no dividers, rows hug their content with a 20px inset + 40px icon.
+   Used by the crypto deposit-address list and the send "Add recipient" chooser. */
+.flatList {
+  width: 100%;
+  margin: 0;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  /* Row dividers are a ::after on .sourceContentBordered — hide them here. */
+  .sourceContentBordered::after {
+    display: none;
+  }
+
+  /* Glyph icons (e.g. the bank drill-in) read at full label contrast inside the
+     circle — white in dark, black in light — overriding the carded list's muted
+     color-mix tone (which needs --add-card-bg, absent on the flat list). */
+  .sourceRow .tileGlyph {
+    color: var(--ios-label-primary);
+  }
+
+  /* Rows hug content + 12px top/bottom; 12px icon→label gap; 20px edge insets. */
+  .sourceRow,
+  .depositCryptoRow {
+    gap: 12px;
+    padding: 12px 0 12px 20px;
+  }
+  .sourceContent {
+    height: auto;
+    padding-right: 20px;
+  }
+
+  /* Brand logos render bare at 40px (like the bank list's crypto logos). */
+  .depositLogo {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Line glyphs (Bank / Crypto wallet) sit in a 40px subtle-fill circle so they
+     carry the same weight as the 40px logos/flags. */
+  .tile:has(.tileGlyph) {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--ios-fill-tertiary);
+  }
+
+  /* Labels match the bank/country lists (subheadline). */
+  .rowTitle {
+    @include ios.ios-text-subheadline;
+    font-weight: 590;
+    font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  }
+  .rowSub {
+    @include ios.ios-text-subheadline;
+  }
+}
+
+/* Paste-address sheet: a touch more top padding, and the rows inset to 32px so
+   they line up with the SheetHeader's divider (which sits at 32px). */
+.pasteWrap {
+  padding-top: 12px;
+
+  .sourceRow {
+    position: relative;
+    padding-left: 32px;
+  }
+  /* Row content sits above the inset highlight. */
+  .sourceRow > * {
+    position: relative;
+    z-index: 1;
+  }
+  /* Squircle hover/press highlight that leaves a 12px gutter around the row
+     content (the icon sits at 32px, so the fill starts at 20px; full height gives
+     the same 12px above/below the 40px icon), with the chooser cards' 20px radius. */
+  .sourceRow::before {
+    content: '';
+    position: absolute;
+    inset: 0 20px;
+    z-index: 0;
+    border-radius: 20px;
+    corner-shape: var(--corner-shape);
+    transition: background-color 0.08s ease-out;
+    pointer-events: none;
+  }
+  @media (hover: hover) {
+    .sourceRow:not(:disabled):hover {
+      background: none;
+    }
+    .sourceRow:not(:disabled):hover::before {
+      background: var(--ios-fill-tertiary);
+    }
+  }
+  .sourceRow:not(:disabled):active {
+    background: none;
+  }
+  .sourceRow:not(:disabled):active::before {
+    background: var(--ios-fill-secondary);
+    transition: none;
+  }
+  .sourceContent {
+    padding-right: 32px;
+  }
 }
 
 /* Interactive list card: rows run edge-to-edge so the hover/press fill reaches
@@ -435,12 +581,13 @@
    between the two cards at exactly 16. */
 .addressWrap {
   flex-shrink: 0;
-  padding: 4px 16px 0;
+  /* Flat: content sits on the page bg at a 24px gutter (no card). */
+  padding: 4px 24px 0;
 }
 
 .addressCard {
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Height-animated empty ⇄ filled swap (same REGION_* idea as the keypad). */
@@ -448,7 +595,6 @@
   overflow: hidden;
 }
 
-/* Figma 109:27846 (empty, py 20) / 109:29437 (filled, pt 20 pb 16 + p-16 tile). */
 .addressBody {
   display: flex;
   align-items: flex-start;
@@ -459,23 +605,24 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
+  gap: 2px;
   min-width: 0;
-  padding: 20px 24px;
+  padding: 12px 0;
 }
 
-/* Filled state trims the bottom pad (Figma 109:29422 — pt 20, pb 16). */
+/* Filled state trims the bottom pad a touch. */
 .addressLabelsFilled {
-  padding-bottom: 16px;
+  padding-bottom: 8px;
 }
 
-/* Footnote/Emphasized 13/590 — tertiary as the empty prompt, primary once the
-   pasted address fills in (long address wraps inside the card). */
+/* Subheadline 15/590 — tertiary as the empty prompt, primary once the pasted
+   address fills in (long address wraps). */
 .addressPlaceholder,
 .addressValue {
   margin: 0;
-  @include ios.ios-text-footnote;
+  @include ios.ios-text-subheadline;
   font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
   word-break: break-word;
 }
 
@@ -489,18 +636,20 @@
 
 .addressSub {
   margin: 0;
-  @include ios.ios-text-footnote;
+  @include ios.ios-text-subheadline;
   color: var(--ios-label-secondary);
 }
 
-/* Graphic container p 16 — the 56px tile hugs the card's top-right. */
+/* The token logo hugs the right edge, aligned with the 24px gutter. */
 .addressTile {
-  margin: 16px 16px 0 0;
+  margin: 4px 0 0 0;
 }
 
-/* Figma 109:27847 — Paste/Continue spans the card: px 16, pb 16. */
+/* Paste / Continue — full-width inverted-primary button below the prompt; pulled
+   out 8px of the wrap's 24px gutter so it sits 16px off the phone edges. */
 .addressBtnWrap {
-  padding: 0 16px 16px;
+  margin: 0 -8px;
+  padding: 8px 0 0;
 }
 
 /* Medium content-area button (same metrics as the list-section CTA). */
@@ -974,9 +1123,10 @@
   bottom: 0;
   z-index: 2;
   /* 16px sides + 56px from the screen bottom (clears the phone-shell curve); the
-     32px top keeps the gradient fade above the button. */
+     32px top keeps the gradient fade above the button. The full-screen flows sit
+     on the base bg, so the fade resolves to --app-bg. */
   padding: 32px 16px 56px;
-  background: linear-gradient(to top, var(--z-sheet-bg), var(--z-sheet-bg) 56%, transparent);
+  background: linear-gradient(to top, var(--app-bg), var(--app-bg) 56%, transparent);
 }
 
 /* ── Step 2/3 layout ──────────────────────────────────────────────────────────
@@ -1357,17 +1507,6 @@
   padding: 4px 0 16px;
 }
 
-/* Inside the bled-out swap region: restore the layout's 16px side inset (12px
-   wrapper bleed + 4px); 20px below = the old 16px gap + 4px breathing room.
-   width: auto — the base card's 100% would overflow once margins apply. */
-.detailsCard {
-  width: auto;
-  margin: 0 12px 20px;
-  /* Drop the base card's 4px top/bottom (Aurora needed it for its larger corner
-     radii); creator's tighter radius reads clean with just the rows' 16px. */
-  padding: 0;
-}
-
 .key {
   display: flex;
   align-items: center;
@@ -1400,45 +1539,6 @@
   padding: 0 0 48px;
 }
 
-/* ── Step 3: details + Confirm ────────────────────────────────────────────── */
-/* Padding lives on the ROW (not this container) so the row spans the full card
-   width and its hairline divider runs edge-to-edge. */
-.detailRows {
-  display: flex;
-  flex-direction: column;
-}
-
-.detailRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px;
-}
-
-.detailRowBordered {
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
-
-  :global([data-theme='dark']) & {
-    border-bottom-color: rgba(255, 255, 255, 0.12);
-  }
-}
-
-.detailLabel {
-  @include ios.ios-text-footnote;
-  font-weight: 590;
-  color: var(--ios-label-primary);
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
-}
-
-.detailValue {
-  @include ios.ios-text-caption-1;
-  font-weight: 510;
-  color: var(--ios-label-secondary);
-  text-align: right;
-  font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
-}
-
 /* ── Receive: deposit address list + funding details ─────────────────────── */
 
 /* Crypto rows reuse the source row's CHILDREN (.tile/.sourceContent) but NOT the
@@ -1457,37 +1557,18 @@
   }
 }
 
-/* Network brand mark in the tile. */
+/* Network brand mark in the tile — clipped to a circle. */
 .depositLogo {
   width: 24px;
   height: 24px;
+  border-radius: 50%;
+  corner-shape: round;
 }
 
 /* ── Secondary "Clipboard" sheet (Send / Withdraw → crypto picker) ─────────
    A float sheet (auth/send-receive treatment): the "Clipboard" heading inline
    with a glass X, then the tappable address rows (the saved-recipient row look —
    circle avatar, truncated address, "<network> wallet"). */
-.clipboardHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 16px 8px 32px;
-}
-
-.clipboardHeading {
-  margin: 0;
-  @include ios.ios-text-headline;
-  font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
-  color: var(--ios-label-primary);
-}
-
-.clipboardList {
-  /* 40px bottom so the last row clears the sheet's rounded bottom corners (which
-     hug the phone screen) instead of clipping against them. */
-  padding: 4px 16px 40px;
-}
-
 /* Scroll container for the funding-details screen (below the overlaid toolbar). */
 .fundingScroll {
   flex: 1;
@@ -1496,7 +1577,9 @@
   overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  padding: 4px 16px 24px;
+  /* Full-bleed (the flat field group spans the screen); deep bottom so the last
+     content clears the anchored Share CTA. */
+  padding: 4px 0 140px;
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
@@ -1504,16 +1587,9 @@
   }
 }
 
-/* The receive funding card sits at the sheet's 16px gutter (like the source /
-   deposit lists), not the confirm step's extra 12px card inset. */
-.fundingScroll .detailsCard {
-  margin-left: 0;
-  margin-right: 0;
-}
-
-/* Footer caption under the card — centered, caption-1, tertiary. */
+/* Footer caption under the fields — centered, caption-1, tertiary. */
 .fundingNote {
-  margin: 0;
+  margin: 16px 0 0;
   padding: 0 24px;
   @include ios.ios-text-caption-1;
   color: var(--ios-label-tertiary);
@@ -1592,11 +1668,11 @@
 }
 
 .fundingValue {
-  @include ios.ios-text-caption-1;
-  font-weight: 510;
-  color: var(--ios-label-secondary);
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  color: var(--ios-label-primary);
   text-align: right;
-  font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
   word-break: break-word;
   text-wrap: balance;
   min-width: 0;
