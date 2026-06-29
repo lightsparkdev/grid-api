@@ -678,8 +678,11 @@ export function AddMoneySheet({
       topRadius={32}
       scalesBackground={false}
     >
+      {/* Fixed chooser title — NOT displayTitle, which tracks the step and would
+          flip to "Select bank"/"Select country" the instant a source is picked
+          (the chooser stays behind the full flow but should keep its own title). */}
       <SheetHeader
-        title={displayTitle}
+        title={mode === 'add' ? 'Deposit via' : 'Withdraw via'}
         left={{ icon: <IconCrossZ size={24} />, onClick: dismiss, ariaLabel: 'Close' }}
       />
       <div className={styles.chooserBody}>
