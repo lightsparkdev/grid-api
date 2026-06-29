@@ -756,7 +756,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential on this or another internal account, or when the tied Embedded Wallet OTP credential set changed between the initial `202` challenge and the signed retry.
+          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential, or the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account, or when the tied Embedded Wallet OTP credential set changed between the initial `202` challenge and the signed retry.
           content:
             application/json:
               schema:
@@ -9394,7 +9394,7 @@ components:
         phoneNumber:
           type: string
           pattern: ^\+[1-9]\d{1,14}$
-          description: Phone number for the customer in E.164 format.
+          description: Phone number for the customer in strict E.164 format.
           example: '+14155551234'
         umaAddress:
           type: string

@@ -225,9 +225,11 @@ patch:
     '409':
       description: >-
         Conflict. Returned when the supplied email address is already
-        associated with an `EMAIL_OTP` credential on this or another internal
-        account, or when the tied Embedded Wallet OTP credential set changed
-        between the initial `202` challenge and the signed retry.
+        associated with an `EMAIL_OTP` credential, or the supplied phone
+        number is already associated with an `SMS_OTP` credential, on this or
+        another internal account, or when the tied Embedded Wallet OTP
+        credential set changed between the initial `202` challenge and the
+        signed retry.
       content:
         application/json:
           schema:
