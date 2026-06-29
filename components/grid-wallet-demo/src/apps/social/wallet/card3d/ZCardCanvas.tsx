@@ -17,6 +17,8 @@ export interface ZCardCanvasProps {
   issued: boolean;
   cardNumber?: string;
   reducedMotion?: boolean;
+  /** Fired once the material maps are generated (host fades the graphic in). */
+  onReady?: () => void;
 }
 
 /**
@@ -29,6 +31,7 @@ export default function ZCardCanvas({
   issued,
   cardNumber = '•••• 8972',
   reducedMotion = false,
+  onReady,
 }: ZCardCanvasProps) {
   return (
     <Canvas
@@ -37,6 +40,10 @@ export default function ZCardCanvas({
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       camera={{ position: [0, 0, 10], fov: 28 }}
       style={{ width: '100%', height: '100%' }}
+      // The phone scales via CSS transform; getBoundingClientRect (r3f's default
+      // measure) returns the *scaled* size, sizing the drawing buffer too small
+      // so the scene clips on the right. offsetSize uses the unscaled layout box.
+      resize={{ offsetSize: true }}
       onCreated={({ gl }) => {
         gl.toneMapping = NEUTRAL_TONE_MAPPING;
         gl.toneMappingExposure = 1.05;
@@ -54,6 +61,7 @@ export default function ZCardCanvas({
           issued={issued}
           cardNumber={cardNumber}
           reducedMotion={reducedMotion}
+          onReady={onReady}
         />
       </Suspense>
     </Canvas>

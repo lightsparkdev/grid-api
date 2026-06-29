@@ -20,17 +20,29 @@ export function CardEnv() {
           <GradientTexture
             attach="map"
             stops={[0, 0.4, 0.68, 1]}
-            colors={['#474e59', '#9aa4b3', '#e2e8f0', '#ffffff']}
+            colors={['#444342', '#939291', '#e2e1df', '#fcfcfb']}
           />
         </meshBasicMaterial>
       </mesh>
-      {/* Soft key for the sheen line across the brushed Z. */}
+      {/* Soft, slightly warm key for the sheen line across the brushed Z. */}
       <Lightformer
         form="rect"
         intensity={1.4}
-        color="#ffffff"
+        color="#fbfaf8"
         position={[0, 5, 10]}
         scale={[14, 6, 1]}
+        target={[0, 0, 0]}
+      />
+      {/* Big bright key BEHIND the camera, centered on the +Z axis. Head-on
+          (center-screen) cards reflect this region, so the polished Z mirrors it
+          and reads BRIGHTEST there; it's wide enough to cover the slight pitch of
+          the center cards (otherwise the Z reflects past it and goes dark). */}
+      <Lightformer
+        form="rect"
+        intensity={2.6}
+        color="#ffffff"
+        position={[7, 1, 12]}
+        scale={[14, 10, 1]}
         target={[0, 0, 0]}
       />
     </Environment>

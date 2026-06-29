@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
@@ -47,6 +47,9 @@ export function CardIssuanceSheet({
   onContinue: () => void;
 }) {
   const support = useCard3DSupport();
+  // Fade the 3D graphic in only once its maps are generated (no placeholder, no
+  // untextured flash); gated on `open` so the fade plays each time the sheet opens.
+  const [graphicReady, setGraphicReady] = useState(false);
   return (
     <BottomSheet
       open={open}
@@ -78,19 +81,25 @@ export function CardIssuanceSheet({
             the content's gradient fade. Flat fallback during load / when WebGL is
             unavailable; reduced-motion renders the card static. */}
         <div className={styles.graphic} aria-hidden>
-          {support?.webgl ? (
-            <CanvasErrorBoundary fallback={<div className={styles.placeholder} />}>
-              <Suspense fallback={<div className={styles.placeholder} />}>
-                <ZCardCanvas
-                  cardView={cardView}
-                  issued={issued}
-                  cardNumber={cardNumber}
-                  reducedMotion={support.reducedMotion}
-                />
+          {support?.webgl && (
+            <CanvasErrorBoundary fallback={null}>
+              <Suspense fallback={null}>
+                <motion.div
+                  style={{ width: '100%', height: '100%' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: open && graphicReady ? 1 : 0 }}
+                  transition={{ duration: 0.55, ease: 'easeOut' }}
+                >
+                  <ZCardCanvas
+                    cardView={cardView}
+                    issued={issued}
+                    cardNumber={cardNumber}
+                    reducedMotion={support.reducedMotion}
+                    onReady={() => setGraphicReady(true)}
+                  />
+                </motion.div>
               </Suspense>
             </CanvasErrorBoundary>
-          ) : (
-            <div className={styles.placeholder} />
           )}
         </div>
 

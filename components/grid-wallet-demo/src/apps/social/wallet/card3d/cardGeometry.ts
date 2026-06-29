@@ -4,7 +4,7 @@ import * as THREE from 'three';
 // units; the camera frames them.
 export const CARD_W = 3.4;
 export const CARD_H = CARD_W / 1.586; // ≈ 2.143
-export const CARD_D = 0.05; // thin metal slab
+export const CARD_D = 0.03; // thin metal slab (real-card thinness)
 export const CARD_R = 0.16; // face corner radius
 
 /** A centered rounded-rectangle Shape in the XY plane. */
@@ -36,8 +36,8 @@ export function createCardGeometry(): THREE.ExtrudeGeometry {
   const geometry = new THREE.ExtrudeGeometry(shape, {
     depth: CARD_D,
     bevelEnabled: true,
-    bevelThickness: 0.012,
-    bevelSize: 0.012,
+    bevelThickness: 0.007,
+    bevelSize: 0.007,
     bevelSegments: 3,
     curveSegments: 24,
   });

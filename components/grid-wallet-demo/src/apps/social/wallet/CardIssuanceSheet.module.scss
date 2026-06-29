@@ -21,6 +21,8 @@
 }
 
 .navBtn {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -35,13 +37,13 @@
 
   svg {
     display: block;
+    flex: none; // without this the SVG flex-item collapses to ~0 (the "tiny X" bug)
     width: 24px;
     height: 24px;
   }
 }
 
-/* Placeholder graphic — fills the space above the copy; the animated card mark
-   replaces .placeholder later. */
+/* The 3D card graphic fills the space above the copy. */
 .graphic {
   flex: 1 1 0;
   min-height: 0;
@@ -50,29 +52,11 @@
   justify-content: center;
 }
 
-.placeholder {
-  width: 280px;
-  height: 176px; // ~credit-card aspect
-  border-radius: 20px;
-  corner-shape: var(--corner-shape);
-  background: var(--z-surface);
-}
-
-/* Bottom copy on a solid bg; the ::before fade dissolves the graphic into it. */
+/* Bottom copy on a solid bg; the graphic above fades into it via its own
+   mask-image (see .graphic), so no scrim is needed here. */
 .content {
   position: relative;
   z-index: 1;
   flex-shrink: 0;
   background: var(--app-bg);
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: -120px;
-    height: 120px;
-    background: linear-gradient(to bottom, transparent, var(--app-bg));
-    pointer-events: none;
-  }
 }
