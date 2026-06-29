@@ -11,9 +11,8 @@ import { motionTransition } from '@/lib/easing';
 import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
 import type { SkinWalletScreenProps } from '@/apps/types';
 import type { SkinIcon } from '../types';
-// Reuse Glitch's flat (no-glass) money sheet on the shared brain — solid
-// CREATOR_FLAT_SHEET surface, retinted by the Z tokens it renders under.
-import { AddMoneySheet } from '@/apps/creator/wallet/AddMoneySheet';
+// Z's own money sheet (forked from Glitch's flat sheet onto the shared brain).
+import { AddMoneySheet } from './AddMoneySheet';
 import {
   IconPeopleCircle,
   IconCircleQuestionmark,
