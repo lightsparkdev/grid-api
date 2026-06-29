@@ -12254,6 +12254,7 @@ components:
         - accountType
         - accountNumber
         - bankAccountType
+        - bankName
       properties:
         accountType:
           type: string
@@ -12270,10 +12271,17 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
+          example: Banco GYT Continental
       example:
         accountType: GTQ_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
+        bankName: Banco GYT Continental
     GtqAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GtqAccountInfoBase'
@@ -12353,6 +12361,7 @@ components:
         - accountNumber
         - branchCode
         - bankAccountType
+        - bankName
       properties:
         accountType:
           type: string
@@ -12375,11 +12384,18 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
+          example: Bank of Nova Scotia
       example:
         accountType: JMD_ACCOUNT
         accountNumber: '1234567890'
         branchCode: '11111'
         bankAccountType: CHECKING
+        bankName: Bank of Nova Scotia
     JmdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/JmdAccountInfoBase'
