@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import type { SkinTabBarConfig } from '../types';
 import styles from './SocialTabBar.module.scss';
 
-/** Decorative bottom tab bar (X style) — five evenly spaced, icon-only items.
+/** Decorative bottom tab bar (Figma 2543:21322) — evenly spaced icon-only items.
  *  Only `active` is highlighted; the rest are presentational for v1 (no routing). */
 export function SocialTabBar({ items }: SkinTabBarConfig) {
   return (
@@ -19,7 +19,7 @@ export function SocialTabBar({ items }: SkinTabBarConfig) {
             aria-label={item.label}
             aria-current={item.active ? 'page' : undefined}
           >
-            <Icon size={26} />
+            <Icon size={24} />
           </button>
         );
       })}

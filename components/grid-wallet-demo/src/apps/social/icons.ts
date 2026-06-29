@@ -12,14 +12,17 @@ import { IconSettingsGear2 } from '@central-icons-react/round-outlined-radius-2-
 import { IconEyeSlash } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconEyeSlash';
 import { IconInfoSimple } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconInfoSimple';
 import { IconArrowInbox } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowInbox';
-import { IconSend } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconSend';
-import { IconQrCode } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconQrCode';
-import { IconChevronRightSmall } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconChevronRightSmall';
-import { IconHome } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconHome';
-import { IconHome as IconHomeFilled } from '@central-icons-react/round-filled-radius-2-stroke-2/IconHome';
-import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconMagnifyingGlass';
-import { IconBell } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconBell';
-import { IconBubble2 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconBubble2';
+import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconArrowOutOfBox';
+import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconPaperPlaneTopRight';
+import { IconPeopleCircle } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconPeopleCircle';
+// Money-home bottom tab bar (Figma 2543:21322).
+import { IconHomeOpen } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconHomeOpen';
+import { IconMagnifyingGlass2 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconMagnifyingGlass2';
+import { IconSparkle2 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconSparkle2';
+import { IconBell2 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconBell2';
+import { IconBubble3 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconBubble3';
+import { IconDollar } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconDollar';
+import { IconDollar as IconDollarFilled } from '@central-icons-react/round-filled-radius-2-stroke-2/IconDollar';
 import type { AuthMethod } from '@/data/flow';
 
 export {
@@ -36,14 +39,16 @@ export {
   IconEyeSlash,
   IconInfoSimple,
   IconArrowInbox,
-  IconSend,
-  IconQrCode,
-  IconChevronRightSmall,
-  IconHome,
-  IconHomeFilled,
-  IconMagnifyingGlass,
-  IconBell,
-  IconBubble2,
+  IconArrowOutOfBox,
+  IconPaperPlaneTopRight,
+  IconPeopleCircle,
+  IconHomeOpen,
+  IconMagnifyingGlass2,
+  IconSparkle2,
+  IconBell2,
+  IconBubble3,
+  IconDollar,
+  IconDollarFilled,
 };
 
 export type SocialIcon = typeof IconEmail1;

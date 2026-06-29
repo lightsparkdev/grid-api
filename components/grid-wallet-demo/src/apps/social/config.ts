@@ -1,6 +1,13 @@
 import type { SkinTabBarConfig } from './types';
-import { ZLogo } from './ZLogo';
-import { IconHome, IconHomeFilled, IconMagnifyingGlass, IconBell, IconBubble2 } from './icons';
+import {
+  IconHomeOpen,
+  IconMagnifyingGlass2,
+  IconSparkle2,
+  IconBell2,
+  IconBubble3,
+  IconDollar,
+  IconDollarFilled,
+} from './icons';
 
 /** Z (social platform) — an X-style skin. Brand + copy live here; the auth and
  *  Money-home layouts live in SocialAuthScreen / SocialWalletScreen. Re-brand by
@@ -17,18 +24,19 @@ export const SOCIAL_AUTH = {
 export const SOCIAL_MONEY = {
   title: 'Money',
   balanceLabel: 'Total Balance',
-  balanceCaption: 'Your assets are safe',
   rewardsLabel: 'Rewards',
   cardLabel: `${BRAND} Card`,
 };
 
-/** Decorative bottom tab bar for the Money home (Home active). */
+/** Decorative bottom tab bar for the Money home (Figma 2543:21322) — six icons,
+ *  Money (Dollar) active since this is the Money screen. */
 export const SOCIAL_TAB_BAR: SkinTabBarConfig = {
   items: [
-    { Icon: IconHome, activeIcon: IconHomeFilled, label: 'Home', active: true },
-    { Icon: IconMagnifyingGlass, label: 'Search' },
-    { Icon: ZLogo, label: 'Z' },
-    { Icon: IconBell, label: 'Notifications' },
-    { Icon: IconBubble2, label: 'Messages' },
+    { Icon: IconHomeOpen, label: 'Home' },
+    { Icon: IconMagnifyingGlass2, label: 'Search' },
+    { Icon: IconSparkle2, label: 'Grok' },
+    { Icon: IconBell2, label: 'Notifications' },
+    { Icon: IconBubble3, label: 'Messages' },
+    { Icon: IconDollar, activeIcon: IconDollarFilled, label: 'Money', active: true },
   ],
 };

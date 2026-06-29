@@ -7,6 +7,7 @@ import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { Toast } from '@/apps/shared/Toast';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { motionTransition } from '@/lib/easing';
 import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
 import type { SkinWalletScreenProps } from '@/apps/types';
 import type { SkinIcon } from '../types';
@@ -14,15 +15,13 @@ import type { SkinIcon } from '../types';
 // CREATOR_FLAT_SHEET surface, retinted by the Z tokens it renders under.
 import { AddMoneySheet } from '@/apps/creator/wallet/AddMoneySheet';
 import {
-  IconArrowLeft,
+  IconPeopleCircle,
   IconCircleQuestionmark,
   IconSettingsGear2,
   IconEyeSlash,
-  IconInfoSimple,
   IconArrowInbox,
-  IconSend,
-  IconQrCode,
-  IconChevronRightSmall,
+  IconArrowOutOfBox,
+  IconPaperPlaneTopRight,
 } from '../icons';
 import { SOCIAL_MONEY, SOCIAL_TAB_BAR } from '../config';
 import { SocialTabBar } from '../blocks/SocialTabBar';
@@ -30,7 +29,14 @@ import { SocialActivityList } from './SocialActivityList';
 import { ZCardGraphic } from './ZCardGraphic';
 import styles from './SocialWalletScreen.module.scss';
 
-/** One Deposit/Send/Request chip — squircle-clipped (Safari-safe), solid fill. */
+// Aurora press feel: a slight grow on hover, a bigger grow on press (same curve
+// + duration as the shared glass-button-press mixin / the auth screen).
+const PRESS = motionTransition([0.22, 1, 0.36, 1], 0.28);
+const CARD_HOVER = 1.02;
+const CARD_PRESS = 1.04;
+
+/** One Deposit/Withdraw/Send chip (Figma 2543:21247) — squircle-clipped
+ *  (Safari-safe), solid fill, Aurora scale on hover/press. */
 function ActionChip({
   Icon,
   label,
@@ -40,25 +46,28 @@ function ActionChip({
   label: string;
   onClick: () => void;
 }) {
-  const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 14 });
+  const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 16 });
   return (
-    <button
+    <motion.button
       type="button"
       className={styles.actionChip}
       onClick={onClick}
       ref={clip.ref}
       style={clip.style}
+      whileHover={{ scale: CARD_HOVER, transition: PRESS }}
+      whileTap={{ scale: CARD_PRESS, transition: PRESS }}
     >
-      <Icon size={22} />
+      <Icon size={20} />
       <span className={styles.actionLabel}>{label}</span>
-    </button>
+    </motion.button>
   );
 }
 
-/** Z (social) Money home — X-style: nav, hidden-balance hero, Deposit/Send/Request,
- *  the Rewards + Z Card tiles, and the activity list. All money logic is the shared
- *  `useWalletHome`; Deposit/Send/Request drive the reused flat money sheet (which
- *  logs the Grid API calls). Flat, no glass; cards use the squircle clip. */
+/** Z (social) Money home (Figma 2543:21291 / 21281 / 21322) — nav, hidden-balance
+ *  hero, Deposit/Withdraw/Send chips, Rewards + Z Card tiles, activity list, and
+ *  the decorative tab bar. All money logic is the shared `useWalletHome`; the
+ *  chips drive the reused flat money sheet (which logs the Grid API calls). Flat,
+ *  no glass; cards use the squircle clip + Aurora press scale. */
 export function SocialWalletScreen(props: SkinWalletScreenProps) {
   const { entrance = false, onQuoteCreate, onLinkExternalAccount } = props;
   const overlayEl = useScreenOverlay();
@@ -76,7 +85,6 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     homeActivity,
     openSheet,
     startSend,
-    startReceive,
     finishTransfer,
     confirmTransfer,
     handleReceivePayment,
@@ -85,7 +93,7 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
 
-  const rewardsClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 16 });
+  const rewardsClip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 16 });
   const cardClip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 16 });
 
   const overlayContent = (
@@ -103,8 +111,8 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
   return (
     <div className={styles.root}>
       <header className={styles.nav}>
-        <button type="button" className={styles.navBtn} aria-label="Back">
-          <IconArrowLeft size={24} />
+        <button type="button" className={styles.navBtn} aria-label="Community">
+          <IconPeopleCircle size={24} />
         </button>
         <span className={styles.navTitle}>{SOCIAL_MONEY.title}</span>
         <div className={styles.navRight}>
@@ -124,38 +132,45 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
             <IconEyeSlash size={16} className={styles.muted} />
           </div>
           <span className={styles.balanceAmount}>{formatUsdCents(availableCents)}</span>
-          <div className={styles.assuranceRow}>
-            <span className={styles.assurance}>{SOCIAL_MONEY.balanceCaption}</span>
-            <IconInfoSimple size={15} className={styles.muted} />
-          </div>
         </motion.div>
 
         <motion.div {...enter(2)} className={styles.actions}>
           <ActionChip Icon={IconArrowInbox} label="Deposit" onClick={() => openSheet('add')} />
-          <ActionChip Icon={IconSend} label="Send" onClick={startSend} />
-          <ActionChip Icon={IconQrCode} label="Request" onClick={startReceive} />
+          <ActionChip Icon={IconArrowOutOfBox} label="Withdraw" onClick={() => openSheet('withdraw')} />
+          <ActionChip Icon={IconPaperPlaneTopRight} label="Send" onClick={startSend} />
         </motion.div>
 
         <motion.div {...enter(3)} className={styles.tiles}>
-          <div className={styles.rewardsTile} ref={rewardsClip.ref} style={rewardsClip.style}>
+          <motion.button
+            type="button"
+            className={styles.rewardsTile}
+            ref={rewardsClip.ref}
+            style={rewardsClip.style}
+            whileHover={{ scale: CARD_HOVER, transition: PRESS }}
+            whileTap={{ scale: CARD_PRESS, transition: PRESS }}
+          >
             <span className={styles.tileHeading}>{SOCIAL_MONEY.rewardsLabel}</span>
             <div className={styles.rewardsFooter}>
               <span className={styles.apy}>{apyPercent.toFixed(2)}% APY</span>
               <span className={styles.rewardsAmount}>{formatUsdCents(availableCents)}</span>
             </div>
-          </div>
+          </motion.button>
 
-          <button type="button" className={styles.cardTile} ref={cardClip.ref} style={cardClip.style}>
-            <span className={styles.cardHeading}>
-              {SOCIAL_MONEY.cardLabel}
-              <IconChevronRightSmall size={16} className={styles.muted} />
-            </span>
+          <motion.button
+            type="button"
+            className={styles.cardTile}
+            ref={cardClip.ref}
+            style={cardClip.style}
+            whileHover={{ scale: CARD_HOVER, transition: PRESS }}
+            whileTap={{ scale: CARD_PRESS, transition: PRESS }}
+          >
+            <span className={styles.cardHeading}>{SOCIAL_MONEY.cardLabel}</span>
             <ZCardGraphic />
-          </button>
+          </motion.button>
         </motion.div>
 
         <motion.div {...enter(4)} className={styles.activityWrap}>
-          <SocialActivityList items={homeActivity} />
+          <SocialActivityList items={homeActivity} onAddMoney={() => openSheet('add')} />
         </motion.div>
       </div>
 

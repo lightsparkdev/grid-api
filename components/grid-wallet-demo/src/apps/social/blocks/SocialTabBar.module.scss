@@ -1,25 +1,29 @@
+/* Figma 2543:21322 — 84px tall (icons up top, home-indicator gap below),
+   px28, 0.33px top border, icons justify-between. */
 .bar {
   position: relative;
   z-index: 4;
   flex-shrink: 0;
+  box-sizing: border-box;
+  height: 84px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 24px 28px;
+  padding: 0 28px 24px;
   background: var(--app-tabbar-bg, var(--app-bg));
-  border-top: 1px solid var(--z-hairline);
+  border-top: 0.33px solid var(--z-tab-border);
 }
 
 .item {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 0;
-  padding: 6px;
+  flex: 0 0 auto;
+  padding: 0;
   border: 0;
   background: none;
   cursor: pointer;
-  color: var(--app-text-primary);
+  color: var(--app-tabbar-fg, var(--app-text-primary));
   -webkit-tap-highlight-color: transparent;
 
   svg {
