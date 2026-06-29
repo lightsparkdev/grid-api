@@ -88,7 +88,9 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     finishTransfer,
     confirmTransfer,
     handleReceivePayment,
-  } = useWalletHome(props);
+    // Z keeps the sheet open after confirm and shows an in-sheet success screen
+    // (Done closes it) instead of the toast.
+  } = useWalletHome({ ...props, transferSuccessScreen: true });
 
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });

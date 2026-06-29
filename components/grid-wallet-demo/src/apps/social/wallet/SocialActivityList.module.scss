@@ -89,9 +89,9 @@
 }
 .title {
   margin: 0;
-  @include ios.ios-text-callout;
+  @include ios.ios-text-subheadline;
   font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
   color: var(--app-text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -99,7 +99,7 @@
 }
 .desc {
   margin: 0;
-  @include ios.ios-text-callout;
+  @include ios.ios-text-subheadline;
   color: var(--app-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -116,9 +116,9 @@
 }
 .amountValue {
   margin: 0;
-  @include ios.ios-text-callout;
+  @include ios.ios-text-subheadline;
   font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
   color: var(--app-text-primary);
 }
 .amountPositive {
@@ -126,7 +126,7 @@
 }
 .timestamp {
   margin: 0;
-  @include ios.ios-text-callout;
+  @include ios.ios-text-subheadline;
   color: var(--app-text-secondary);
 }
 

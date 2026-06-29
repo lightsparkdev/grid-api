@@ -988,9 +988,10 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  /* Bottom gap lives on .ctaWrap (40px, matching the auth sheets) so the CTA
-     isn't doubly inset. */
-  padding: 6px 16px 0;
+  /* 24px side gutter — the content is indented 8px past the base 16px for optical
+     balance (the keypad's -12px margin keeps the keys near the edge). Bottom gap
+     lives on .ctaWrap (48px, matching the auth sheets). */
+  padding: 6px 24px 0;
 }
 
 .cardStack {
@@ -1034,14 +1035,18 @@
    shrinks it back into view around the middle. */
 .amountValue {
   display: flex;
-  /* Stretch to the card width (a centered flex child shrink-wraps otherwise) so
-     the fit measurement has a real bound to compare the amount against. */
+  /* Stretch to the container width (a centered flex child shrink-wraps otherwise)
+     so the fit measurement has a real bound to compare the amount against. */
   align-self: stretch;
   justify-content: center;
   margin: 0;
+  /* Geist (the skin font) — NOT SF Pro Rounded. Base off the wallet-balance token
+     but bumped to 64/72 for the Z amount entry. */
   @include ios.ios-text-wallet-balance;
-  @include ios.ios-type-rounded;
-  @include ios.ios-type-rounded-bold(var(--ios-type-wallet-balance-opsz));
+  font-size: 64px;
+  line-height: 72px;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600, 'wdth' 100, 'opsz' var(--ios-type-wallet-balance-opsz);
   color: var(--ios-label-primary);
 }
 
@@ -1071,6 +1076,238 @@
   font-weight: 590;
   color: var(--ios-label-secondary);
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* ── Enter-amount: From / To pills + free-floating amount ──────────────────── */
+.transferRows {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* From/To rows sit 20px from the sheet edge — 8px out of the layout's 24px
+     gutter, then +4px padding-left, so the labels hug left a touch more than the
+     amount/keypad/CTA. */
+  margin-left: -8px;
+  padding: 6px 0 0 4px;
+}
+
+.transferRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* No fixed width — the label hugs its text so the pills stagger (From sits wider
+   than To) rather than lining up in a column. */
+.transferRowLabel {
+  flex-shrink: 0;
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-secondary);
+}
+
+.transferPill,
+.transferPillStatic {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 8px 10px 8px 8px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--z-surface);
+  text-align: left;
+}
+
+.transferPill {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.pillIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.pillIconFill {
+  background: var(--ios-fill-tertiary);
+}
+
+.pillImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pillInitials {
+  @include ios.ios-type-rounded;
+  font-size: 12px;
+  font-weight: 590;
+  line-height: 1;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+}
+
+/* The $ SVG has 2px of baked padding (the coin disc is 20 of a 24 viewBox). At a
+   20px img the disc would render ~16.7px — smaller than the flag. So keep the img
+   at the container's 20px (no flex-shrink games) and scale it up 24/20 = 1.2 so the
+   disc reads a true 20px; the container's overflow-hidden clips the spill. */
+.pillDollar {
+  width: 20px;
+  height: 20px;
+  transform: scale(1.2);
+
+  :global([data-theme='dark']) & {
+    filter: invert(1);
+  }
+}
+
+.pillName {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+.pillChevron {
+  flex-shrink: 0;
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
+
+/* The amount floats free between the From/To rows and the keypad. */
+.amountFree {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  text-align: center;
+}
+
+/* ── Confirm sheet (short, over the amount screen) ────────────────────────── */
+.confirmBody {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 24px 48px;
+}
+
+/* Text + rows + divider are indented 8px past the body's 24px gutter (→ 32px);
+   the CTA stays flush with the 24px gutter. */
+.confirmHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 8px;
+  padding: 0 0 16px;
+}
+
+.confirmTitle {
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 700;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+}
+
+.confirmSub {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-secondary);
+}
+
+/* Value-over-label rows under a hairline divider (both indented 8px → 32px). */
+.confirmRows {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0 8px;
+  padding: 18px 0 28px;
+  border-top: 0.5px solid var(--z-hairline);
+}
+
+.confirmRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.confirmValue {
+  @include ios.ios-text-callout;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+}
+
+.confirmLabel {
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-secondary);
+}
+
+.confirmCtaWrap {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Face ID glyph on the Confirm CTA (sits left of the label). */
+.ctaFaceId {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+}
+
+/* ── Success screen ───────────────────────────────────────────────────────── */
+.successStep {
+  /* Body + Done split the height; the body is top-aligned. Unlike the amount
+     screen, the CTA isn't wrapped in .amountLayout, so it needs the 24px gutter. */
+  .ctaWrap {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+.successBody {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 24px 0;
+}
+
+.successCheck {
+  display: inline-flex;
+  /* Optically align the circle with the X above it (icon has slight side bearing). */
+  margin-left: -4px;
+  color: var(--ios-label-primary);
+}
+
+.successTitle {
+  margin: 0;
+  @include ios.ios-text-title-1;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-1-opsz);
+  color: var(--ios-label-primary);
+  text-wrap: balance;
 }
 
 /* White disc straddling the 16px gap between the cards (40px ⇒ 12px overlap each). */
@@ -1110,13 +1347,14 @@
   overflow: hidden;
 }
 
-/* Bottom rhythm (space to the CTA) lives INSIDE the animated region so it
-   collapses smoothly with the height instead of popping at unmount. */
+/* Keys sit ~4px off the screen edge (the -12px unwinds the layout's 16px). */
 .keypad {
+  flex-shrink: 0;
+  margin: 0 -12px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
-  padding: 4px 0 20px;
+  padding: 4px 0 16px;
 }
 
 /* Inside the bled-out swap region: restore the layout's 16px side inset (12px
@@ -1134,7 +1372,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 48px;
+  /* 60px (was 48): +12 per row ⇒ the keypad is 48px taller overall. */
+  height: 60px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -1156,9 +1395,9 @@
 /* ── CTAs ─────────────────────────────────────────────────────────────────── */
 .ctaWrap {
   flex-shrink: 0;
-  /* No side inset — the layout's 16px already lines the CTA up with the cards.
-     40px bottom gap to the screen edge, matching the auth sheets. */
-  padding: 0 0 40px;
+  /* No side inset — the layout's gutter already lines the CTA up with the content.
+     48px bottom gap to the screen edge, matching the auth + chooser sheets. */
+  padding: 0 0 48px;
 }
 
 /* ── Step 3: details + Confirm ────────────────────────────────────────────── */

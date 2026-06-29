@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
@@ -9,6 +9,8 @@ import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-
 import { IconQrCode } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconQrCode';
 import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
 import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
+// Success screen — outlined circle-check (Z's 2px-stroke set).
+import { IconCircleCheck } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCircleCheck';
 import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowOutOfBox';
 // Creator source-row icons use the 0px-corner-radius central set (sharp corners),
 // unlike Aurora's rounded asset SVGs / radius-3 glyphs.
@@ -194,6 +196,17 @@ const REGION_HIDDEN = { height: 0, opacity: 0, filter: 'blur(6px)' };
  *  the line box; the wallet doesn't clip, so a slim pad keeps layout tight. */
 const NUMERIC_PAD = { padding: '0.08em 0' };
 
+/** Headline amount — drops the ".00" on round figures ("$200", "$200.50"). */
+function formatAmountShort(cents: number): string {
+  const whole = cents % 100 === 0;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
 interface AddMoneySheetProps {
   open: boolean;
   /** Direction of the flow — flips titles, source rows, card order, and copy. */
@@ -257,21 +270,16 @@ export function AddMoneySheet({
     titles,
     sources,
     activeSources,
-    details,
     isSend,
     step,
-    setStep,
     back,
     openKey,
     go,
     backFrom,
     isEntryStep,
     raw,
-    started,
     cents,
-    balance,
     press,
-    useMax,
     tryContinue,
     quoting,
     shakeNonce,
@@ -279,14 +287,9 @@ export function AddMoneySheet({
     fxRate,
     fxFractionDigits,
     fxLabel,
-    localCurrency,
-    cryptoCurrency,
-    isBtcDest,
-    stablecoinDest,
     confirmDetails,
     activityForConfirm,
     banks,
-    selected,
     selectedBank,
     selectedCrypto,
     setCryptoDest,
@@ -357,149 +360,171 @@ export function AddMoneySheet({
     return () => ro.disconnect();
   }, [step]);
 
-  // Keypad ⇄ details swap: tween each region to its MEASURED height (offsetHeight
-  // + margin) instead of height:auto. Motion's auto enter measures short of the
-  // content's trailing padding/margin, then settles to the true height — a snap
-  // at the end of the transition. Measuring on mount (deferred one frame so
-  // framer reads a target update, not an adoption) is the auth sheet's fix.
-  const [keypadH, setKeypadH] = useState<number | null>(null);
-  const [detailsH, setDetailsH] = useState<number | null>(null);
-  const measureKeypad = useCallback((el: HTMLDivElement | null) => {
-    if (!el) return;
-    requestAnimationFrame(() => {
-      if (!el.isConnected) return;
-      const mb = parseFloat(getComputedStyle(el).marginBottom) || 0;
-      setKeypadH(el.offsetHeight + mb);
-    });
-  }, []);
-  const measureDetails = useCallback((el: HTMLDivElement | null) => {
-    if (!el) return;
-    requestAnimationFrame(() => {
-      if (!el.isConnected) return;
-      const mb = parseFloat(getComputedStyle(el).marginBottom) || 0;
-      setDetailsH(el.offsetHeight + mb);
-    });
-  }, []);
+  // Z confirm/success choreography. The confirm step is presented as a SHORT
+  // bottom sheet over the amount screen (not an inline step); on Face ID done the
+  // sheet dismisses, then the amount screen pushes left to a success screen.
+  const [successOpen, setSuccessOpen] = useState(false);
+  // Transient: force the confirm sheet closed during the success handoff so it
+  // slides DOWN before the screen pushes left (rather than both at once).
+  const [hideConfirm, setHideConfirm] = useState(false);
+  // Fresh choreography on each open.
+  const prevOpenRef = useRef(open);
+  useEffect(() => {
+    if (open && !prevOpenRef.current) {
+      setSuccessOpen(false);
+      setHideConfirm(false);
+    }
+    prevOpenRef.current = open;
+  }, [open]);
+
+  // Face ID finished (confirming fell while on the confirm step): dismiss the
+  // confirm sheet, then a beat later push to the success screen.
+  const SUCCESS_HANDOFF_MS = 380; // ≈ the sheet's 0.35s slide-down + a hair
+  const prevConfirming = useRef(confirming);
+  const successTimer = useRef(0);
+  useEffect(() => {
+    const was = prevConfirming.current;
+    prevConfirming.current = confirming;
+    if (was && !confirming && step === 'confirm') {
+      setHideConfirm(true);
+      window.clearTimeout(successTimer.current);
+      successTimer.current = window.setTimeout(() => setSuccessOpen(true), SUCCESS_HANDOFF_MS);
+    }
+  }, [confirming, step]);
+  useEffect(() => () => window.clearTimeout(successTimer.current), []);
 
   // Amount-entry decimals for NumericText: hidden until the user types the dot
   // ("1500" → "$1,500"); then typed digits solid + remaining placeholders dim
-  // ("1500." → "$1,500." + ghost "00"). Confirm renders the full cents solid —
-  // ghosts ink in via color; a missing ".00" slides in numericText-style.
+  // ("1500." → "$1,500." + ghost "00"). The amount screen stays in entry mode even
+  // while the confirm sheet is up, so we never force the trailing ".00".
   const hasDot = raw.includes('.');
   const fracTyped = raw.split('.')[1] ?? '';
-  const amountFraction =
-    step === 'confirm'
-      ? { hasDot: true, typed: String(cents % 100).padStart(2, '0'), ghost: '' }
-      : {
-          hasDot,
-          typed: fracTyped,
-          ghost: hasDot ? '0'.repeat(Math.max(0, 2 - fracTyped.length)) : '',
-        };
+  const amountFraction = {
+    hasDot,
+    typed: fracTyped,
+    ghost: hasDot ? '0'.repeat(Math.max(0, 2 - fracTyped.length)) : '',
+  };
 
-  // Amount-step cards: bank ⇄ cash balance. The TOP card is the money's source
-  // (bank when adding, balance when withdrawing) and carries the amount input;
-  // the bottom card is the destination — so the rows swap slots with the mode.
-  const bankRow = (
-    <div className={styles.sourceRowStatic}>
-      <span className={styles.tile} aria-hidden>
-        {selectedBank ? (
-          <Flag code={selectedBank.country.code} size={24} />
-        ) : (
-          <img className={styles.flagIcon} src="/assets/add-money/flag-mx.svg" alt="" draggable={false} />
-        )}
-      </span>
-      <span className={styles.sourceLabels}>
-        <span className={styles.rowTitle}>
-          {selectedBank
-            ? `${selectedBank.bankName} (•••• ${accountLast4(selectedBank.values)})`
-            : 'Bank account'}
-        </span>
-        <span className={styles.rowSub}>{localCurrency} bank account</span>
-      </span>
-    </div>
+  // ── Enter-amount From/To pills ──────────────────────────────────────────────
+  // A compact pill: round avatar (flag / crypto logo / initials / $) + name, with
+  // a chevron when it's tappable. The picked account (the one chosen earlier in
+  // the flow) is tappable and returns to its selection step; your own balance is
+  // static. `backFrom.amount` is exactly "the step the amount came from".
+  const destBackStep: Step = backFrom.amount ?? 'banks';
+  const goToDest = () => go(destBackStep, true);
+  const pillIconFlag = (code: string) => (
+    <span className={styles.pillIcon}>
+      <Flag code={code} size={20} />
+    </span>
   );
-  const balanceRow = (
-    <div className={styles.sourceRowStatic}>
-      <span className={styles.tile} aria-hidden>
-        <img
-          className={styles.tileIcon}
-          src="/assets/add-money/IconDollar.svg"
-          alt=""
-          draggable={false}
-        />
-      </span>
-      <span className={styles.sourceLabels}>
-        <span className={styles.rowTitle}>Cash balance</span>
-        <span className={styles.rowSub}>{balance}</span>
-      </span>
-      {/* Figma 109:29074 — small "Use max" chip on balance-sourced outflows
-          (withdraw/send); fades out (row persists) on the push to confirm. */}
-      {mode !== 'add' && (
-        <AnimatePresence initial={false}>
-          {step === 'amount' && (
-            <motion.span
-              key="use-max"
-              className={styles.useMax}
-              initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={SWAP_TRANSITION}
-            >
-              <ContentAreaButton variant="secondary" size="small" onClick={useMax}>
-                Use max
-              </ContentAreaButton>
-            </motion.span>
-          )}
-        </AnimatePresence>
-      )}
-    </div>
+  const pillIconLogo = (logo: string) => (
+    <span className={styles.pillIcon}>
+      <img className={styles.pillImg} src={logo} alt="" draggable={false} />
+    </span>
   );
-
-  // Figma 109:28983 — the pasted destination on the send amount step.
-  const recipientRow = (
-    <div className={styles.sourceRowStatic}>
-      <span className={styles.tile} aria-hidden>
-        <img
-          className={styles.depositLogo}
-          src={selectedCrypto?.logo ?? DEFAULT_SEND_NETWORK.logo}
-          alt=""
-          draggable={false}
-        />
-      </span>
-      <span className={styles.sourceLabels}>
-        <span className={styles.rowTitle}>
-          {truncateAddress(selectedCrypto?.address ?? SEND_DEMO_ADDRESS)}
-        </span>
-        <span className={styles.rowSub}>{selectedCrypto?.network ?? 'Solana'} wallet</span>
-      </span>
-    </div>
+  const pillIconInitials = (name: string) => (
+    <span className={clsx(styles.pillIcon, styles.pillIconFill)}>
+      <span className={styles.pillInitials}>{initials(name)}</span>
+    </span>
   );
-  // Send-to-bank destination: the recipient, name-led (initials avatar + their
-  // bank) — distinct from withdraw's bank-led row (your own account).
-  const recipientBankRow = selectedBank ? (
-    <div className={styles.sourceRowStatic}>
-      <RecipientAvatar name={selectedBank.beneficiary} code={selectedBank.country.code} />
-      <span className={styles.sourceLabels}>
-        <span className={styles.rowTitle}>{selectedBank.beneficiary}</span>
-        <span className={styles.rowSub}>
-          {selectedBank.bankName} •••• {accountLast4(selectedBank.values)}
-        </span>
+  const pillIconBalance = (
+    <span className={styles.pillIcon}>
+      <img
+        className={styles.pillDollar}
+        src="/assets/add-money/IconDollar.svg"
+        alt=""
+        draggable={false}
+      />
+    </span>
+  );
+  const renderPill = (icon: ReactNode, name: string, onTap?: () => void) =>
+    onTap ? (
+      <motion.button
+        type="button"
+        className={styles.transferPill}
+        whileHover={confirming ? undefined : { scale: 1.02, transition: CHOICE_PRESS }}
+        whileTap={confirming ? undefined : { scale: 1.04, transition: CHOICE_PRESS }}
+        onClick={onTap}
+        disabled={confirming}
+      >
+        {icon}
+        <span className={styles.pillName}>{name}</span>
+        <SfSymbol name="chevron.right" size={12} className={styles.pillChevron} />
+      </motion.button>
+    ) : (
+      <span className={styles.transferPillStatic}>
+        {icon}
+        <span className={styles.pillName}>{name}</span>
+        {/* Decorative chevron for visual parity with the tappable pill (no-op). */}
+        <SfSymbol name="chevron.right" size={12} className={styles.pillChevron} />
       </span>
-    </div>
-  ) : null;
-
-  // Bottom card = destination: add → your balance; withdraw → your bank; send →
-  // the recipient's bank (name-led) or, for a crypto send, the address.
-  const bottomRow =
+    );
+  const balancePill = renderPill(pillIconBalance, 'Cash balance');
+  const destPill = selectedCrypto
+    ? renderPill(pillIconLogo(selectedCrypto.logo), truncateAddress(selectedCrypto.address), goToDest)
+    : isSend && selectedBank
+      ? renderPill(pillIconInitials(selectedBank.beneficiary), selectedBank.beneficiary, goToDest)
+      : selectedBank
+        ? renderPill(pillIconFlag(selectedBank.country.code), selectedBank.bankName, goToDest)
+        : renderPill(
+            pillIconLogo(DEFAULT_SEND_NETWORK.logo),
+            truncateAddress(SEND_DEMO_ADDRESS),
+            goToDest,
+          );
+  // add: From = your bank (tappable) → To = your balance; withdraw/send: From =
+  // your balance → To = the destination (tappable).
+  const fromPill =
     mode === 'add'
-      ? balanceRow
+      ? selectedBank
+        ? renderPill(pillIconFlag(selectedBank.country.code), selectedBank.bankName, goToDest)
+        : renderPill(pillIconFlag('mx'), 'Bank account', goToDest)
+      : balancePill;
+  const toPill = mode === 'add' ? balancePill : destPill;
+
+  // ── Confirm sheet + success copy (per mode) ─────────────────────────────────
+  const ctaLabel = mode === 'add' ? 'Deposit' : mode === 'withdraw' ? 'Withdraw' : 'Send';
+  const modeNoun = mode === 'add' ? 'deposit' : mode === 'withdraw' ? 'withdrawal' : 'transfer';
+  const confirmTitle = `Confirm ${modeNoun}`;
+  const confirmSub =
+    mode === 'add'
+      ? 'Funds will be available instantly'
       : mode === 'withdraw'
-        ? selectedCrypto
-          ? recipientRow
-          : bankRow
-        : selectedBank
-          ? recipientBankRow
-          : recipientRow;
+        ? 'Your funds will arrive instantly'
+        : 'They’ll receive the funds instantly';
+  const successHeadline = `Your ${formatAmountShort(cents)} ${modeNoun} was successful`;
+  // Confirm rows (value-over-label): the typed amount is LOCKED at the top; the fee
+  // is the sender's, so "You pay" = amount + fee, anchored at the BOTTOM. Between
+  // them: what the recipient gets (converted, send/withdraw only), the rate + ETA.
+  const hasConversion = fxLabel !== 'USD';
+  const convertedStr = `${new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: fxFractionDigits,
+    maximumFractionDigits: fxFractionDigits,
+  }).format((cents / 100) * fxRate)} ${fxLabel}`;
+  const youPayCents = cents + feeCents;
+  // Deposit is funded from a foreign bank, so "You pay" shows the USD total with
+  // the bank-currency charge in parens, e.g. "$50.15 (876.87 MXN)".
+  const youPayLocalStr = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: fxFractionDigits,
+    maximumFractionDigits: fxFractionDigits,
+  }).format((youPayCents / 100) * fxRate);
+  const youPayValue =
+    mode === 'add' && hasConversion
+      ? `${formatUsdCents(youPayCents)} (${youPayLocalStr} ${fxLabel})`
+      : formatUsdCents(youPayCents);
+  // Drop the brain's Fee row (we re-add it next to "You pay" so the math reads).
+  const detailRowsNoFee = confirmDetails.filter(([label]) => label !== 'Fee');
+  const confirmSheetRows: Array<[string, string]> = [
+    ['Amount', formatUsdCents(cents)],
+    ...(mode !== 'add' && hasConversion
+      ? [['They receive', convertedStr] as [string, string]]
+      : []),
+    ...detailRowsNoFee,
+    ['Fee', formatUsdCents(feeCents)],
+    ['You pay', youPayValue],
+  ];
+  // The confirm sheet rides over the amount screen while on the confirm step
+  // (hidden during the success handoff so it slides down before the push left).
+  const confirmOpen = step === 'confirm' && !hideConfirm && !successOpen;
 
   // iOS push: forward = in from the right / out to the left; back = reverse.
   // Variants + `custom` (not inline objects): an EXITING screen never re-renders,
@@ -511,21 +536,21 @@ export function AddMoneySheet({
   // the source step reads "Deposit via" / "Withdraw via" and the confirm step
   // "Confirm deposit", rather than the shared "Add money from" / "Withdraw to".
   const zTitle =
-    mode === 'add'
-      ? step === 'source'
-        ? 'Deposit via'
-        : step === 'confirm'
-          ? 'Confirm deposit'
-          : null
+    mode === 'add' && step === 'source'
+      ? 'Deposit via'
       : mode === 'withdraw' && step === 'source'
         ? 'Withdraw via'
         : null;
+  // The confirm sheet rides OVER the amount screen, so the header keeps the amount
+  // title ("Enter amount") rather than switching to the confirm title (which the
+  // sheet itself already shows).
+  const headerStep: Step = step === 'confirm' ? 'amount' : step;
   // The funding-details step titles itself with the picked country's name (e.g.
   // "Mexico"); every other step uses the mode's static step title.
   const displayTitle =
-    step === 'fundingDetails' && pickedCountry
+    headerStep === 'fundingDetails' && pickedCountry
       ? `Receive from ${pickedCountry.name}`
-      : (zTitle ?? titles[step]);
+      : (zTitle ?? titles[headerStep]);
   // TRUE push: the incoming screen shares an edge with the outgoing one (full
   // ±100% travel, simultaneous), and the leaver fades as it exits. The entering
   // screen arrives at full opacity — it's a push, not a crossfade.
@@ -659,20 +684,25 @@ export function AddMoneySheet({
       <div className={clsx(styles.flow, isChooserFlow && styles.flowFull)}>
         {isChooserFlow ? (
           /* Same header as the Z wallet home nav (plain 24px icons, centered
-             title, no border): X/back left, title center, +/QR right. */
+             title, no border): X/back left, title center, +/QR right. On the
+             success screen it keeps just the X (close) — no title or right. */
           <header className={styles.flowNav}>
             <button
               type="button"
               className={styles.flowNavBtn}
-              onClick={() => go(backFrom[step] ?? 'source', true)}
-              aria-label={flowBackToChooser ? 'Close' : 'Back'}
+              onClick={successOpen ? onDismiss : () => go(backFrom[step] ?? 'source', true)}
+              aria-label={successOpen || flowBackToChooser ? 'Close' : 'Back'}
               disabled={confirming}
             >
-              {flowBackToChooser ? <IconCrossZ size={24} /> : <IconChevronLeftZ size={24} />}
+              {successOpen || flowBackToChooser ? (
+                <IconCrossZ size={24} />
+              ) : (
+                <IconChevronLeftZ size={24} />
+              )}
             </button>
-            <span className={styles.flowNavTitle}>{displayTitle}</span>
+            {!successOpen && <span className={styles.flowNavTitle}>{displayTitle}</span>}
             <div className={styles.flowNavRight}>
-              {flowRight && (
+              {!successOpen && flowRight && (
                 <button
                   type="button"
                   className={styles.flowNavBtn}
@@ -687,7 +717,17 @@ export function AddMoneySheet({
         ) : (
         <div className={styles.toolbar}>
           <div className={styles.toolbarRow}>
-            {isEntryStep ? (
+            {successOpen ? (
+              <SheetIconButton
+                aria-label="Close"
+                size={40}
+                type="button"
+                ghost
+                onClick={onDismiss}
+              >
+                <IconCrossMedium size={24} />
+              </SheetIconButton>
+            ) : isEntryStep ? (
               <SheetIconButton
                 aria-label="Close"
                 size={40}
@@ -709,6 +749,7 @@ export function AddMoneySheet({
                 <IconChevronLeftMedium size={24} />
               </SheetIconButton>
             )}
+            {!successOpen && (
             <h2 className={styles.title}>
               {/* Slides at every screen boundary except amount ⇄ confirm, which
                   share the persistent transfer layout and torph-morph in place.
@@ -736,7 +777,7 @@ export function AddMoneySheet({
                       duration={MORPH_MS}
                       ease={cubicBezierCss(easeOutSwift)}
                     >
-                      {titles[step]}
+                      {titles[headerStep]}
                     </TextMorph>
                   ) : (
                     displayTitle
@@ -744,8 +785,10 @@ export function AddMoneySheet({
                 </motion.span>
               </AnimatePresence>
             </h2>
+            )}
             {/* Figma 109:28547 — glass QR scan button, recipient step only.
                 Blur-fades between steps, the wallet home header language. */}
+            {!successOpen && (
             <AnimatePresence initial={false}>
               {step === 'recipient' && (
                 <motion.span
@@ -788,6 +831,7 @@ export function AddMoneySheet({
                 </motion.span>
               )}
             </AnimatePresence>
+            )}
           </div>
         </div>
         )}
@@ -1355,7 +1399,7 @@ export function AddMoneySheet({
               </motion.div>
             )}
 
-            {(step === 'amount' || step === 'confirm') && (
+            {(step === 'amount' || step === 'confirm') && !successOpen && (
               <motion.div
                 key="transfer"
                 className={styles.step}
@@ -1366,159 +1410,157 @@ export function AddMoneySheet({
                 exit="exit"
                 transition={STEP_TRANSITION}
               >
-                {/* amount ⇄ confirm is ONE persistent layout: the cards and the
-                    CTA slot stay mounted (layout-animating as heights re-flow);
-                    only the keypad ⇄ details region and the CTA contents swap. */}
                 <div className={styles.amountLayout}>
-                  <div className={styles.cardStack}>
-                    <div className={clsx(styles.card, styles.amountCard)}>
-                      {mode === 'add' ? bankRow : balanceRow}
-                      <div className={styles.amountInput}>
-                        <p ref={amountScope} className={styles.amountValue}>
-                          <span
-                            ref={fitRef}
-                            className={styles.amountFit}
-                            style={{ transform: `scale(${fit})` }}
-                          >
-                            <NumericText
-                              value={cents / 100}
-                              format={{ style: 'currency', currency: 'USD' }}
-                              fraction={amountFraction}
-                              ghostClassName={styles.amountGhost}
-                              style={NUMERIC_PAD}
-                            />
-                          </span>
-                        </p>
-                        <p className={styles.amountSub}>
-                          <NumericText
-                            value={(cents / 100) * fxRate}
-                            format={{
-                              minimumFractionDigits: fxFractionDigits,
-                              maximumFractionDigits: fxFractionDigits,
-                            }}
-                            style={NUMERIC_PAD}
-                          />
-                          {`\u00A0${fxLabel}`}
-                          {step === 'amount' && (
-                            <SfSymbol name="arrow.up.arrow.down" size={11} />
-                          )}
-                        </p>
-                      </div>
+                  {/* From / To — the source + destination as compact pills. The
+                      picked account is tappable (returns to its selection step);
+                      your own balance is static. */}
+                  <div className={styles.transferRows}>
+                    <div className={styles.transferRow}>
+                      <span className={styles.transferRowLabel}>From</span>
+                      {fromPill}
                     </div>
-                    <span className={styles.chevronDisc} aria-hidden>
-                      <SfSymbol name="chevron.down" size={14} />
-                    </span>
-                    <div className={styles.card}>{bottomRow}</div>
+                    <div className={styles.transferRow}>
+                      <span className={styles.transferRowLabel}>To</span>
+                      {toPill}
+                    </div>
                   </div>
 
-                  {/* Keypad ⇄ details card swap — REAL height animation (see
-                      REGION_* above): both stay in flow, the leaver collapses
-                      while the arriver expands, and the cards above grow through
-                      genuine layout so their content slides instead of popping. */}
-                  <AnimatePresence initial={false}>
-                    {step === 'amount' ? (
-                      <motion.div
-                        key="keypad"
-                        className={styles.swapRegion}
-                        initial={reduceMotion ? false : REGION_HIDDEN}
-                        animate={{ ...REGION_ENTER, height: keypadH ?? 'auto' }}
-                        exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
+                  {/* The amount floats free (no card), centered in the gap above
+                      the keypad, with the converted amount beneath it. */}
+                  <div className={styles.amountFree}>
+                    <p ref={amountScope} className={styles.amountValue}>
+                      <span
+                        ref={fitRef}
+                        className={styles.amountFit}
+                        style={{ transform: `scale(${fit})` }}
                       >
-                        <div ref={measureKeypad} className={styles.keypad} role="group" aria-label="Amount keypad">
-                          {KEYPAD.flat().map((key) => (
-                            <button
-                              key={key}
-                              type="button"
-                              className={styles.key}
-                              aria-label={key === 'del' ? 'Delete' : key}
-                              onClick={() => press(key)}
-                            >
-                              {key === 'del' ? <SfSymbol name="delete.left" size={24} /> : key}
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="details"
-                        className={styles.swapRegion}
-                        initial={reduceMotion ? false : REGION_HIDDEN}
-                        animate={{ ...REGION_ENTER, height: detailsH ?? 'auto' }}
-                        exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
-                      >
-                        <div ref={measureDetails} className={clsx(styles.card, styles.detailsCard)}>
-                          <div className={styles.detailRows}>
-                            {confirmDetails.map(([label, value], i) => (
-                              <div
-                                key={label}
-                                className={clsx(
-                                  styles.detailRow,
-                                  i < confirmDetails.length - 1 && styles.detailRowBordered,
-                                )}
-                              >
-                                <span className={styles.detailLabel}>{label}</span>
-                                <span className={styles.detailValue}>{value}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        <NumericText
+                          value={cents / 100}
+                          format={{ style: 'currency', currency: 'USD' }}
+                          fraction={amountFraction}
+                          ghostClassName={styles.amountGhost}
+                          style={NUMERIC_PAD}
+                        />
+                      </span>
+                    </p>
+                    <p className={styles.amountSub}>
+                      <NumericText
+                        value={(cents / 100) * fxRate}
+                        format={{
+                          minimumFractionDigits: fxFractionDigits,
+                          maximumFractionDigits: fxFractionDigits,
+                        }}
+                        style={NUMERIC_PAD}
+                      />
+                      {`\u00A0${fxLabel}`}
+                      <SfSymbol name="arrow.up.arrow.down" size={11} />
+                    </p>
+                  </div>
 
-                  {/* Persistent CTA — ONE button across both steps; the label
-                      morphs and the Face ID glyph fades in on confirm. It rides
-                      the real layout as the region above changes height. */}
+                  <div className={styles.keypad} role="group" aria-label="Amount keypad">
+                    {KEYPAD.flat().map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={styles.key}
+                        aria-label={key === 'del' ? 'Delete' : key}
+                        onClick={() => press(key)}
+                      >
+                        {key === 'del' ? <SfSymbol name="delete.left" size={24} /> : key}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* CTA = the action (Deposit / Withdraw / Send); spins while the
+                      quote is created, then the confirm sheet rises over this. */}
                   <div className={styles.ctaWrap}>
-                    <PrimaryButton
-                      onClick={() =>
-                        step === 'amount'
-                          ? tryContinue()
-                          : !confirming && onConfirm(cents, activityForConfirm())
-                      }
-                    >
-                      {confirming || quoting ? (
-                        <span className={styles.spinner} aria-label="Confirming">
+                    <PrimaryButton onClick={tryContinue} disabled={confirming}>
+                      {quoting ? (
+                        <span className={styles.spinner} aria-label="Creating quote">
                           <IconLoadingCircle size={20} />
                         </span>
                       ) : (
-                        <span className={styles.ctaInner}>
-                          <AnimatePresence initial={false}>
-                            {step === 'confirm' && (
-                              <motion.span
-                                key="faceid"
-                                className={styles.ctaIcon}
-                                // Width + spacing animate too — otherwise the
-                                // unmount frees the icon's space in one frame
-                                // and the label snaps left on the last frame.
-                                initial={
-                                  reduceMotion
-                                    ? false
-                                    : { opacity: 0, scale: 0.6, width: 0, marginRight: 0 }
-                                }
-                                animate={{ opacity: 1, scale: 1, width: 18, marginRight: 6 }}
-                                exit={{ opacity: 0, scale: 0.6, width: 0, marginRight: 0 }}
-                                transition={SWAP_TRANSITION}
-                              >
-                                <SfSymbol name="faceid" size={18} />
-                              </motion.span>
-                            )}
-                          </AnimatePresence>
-                          <TextMorph
-                            as="span"
-                            duration={MORPH_MS}
-                            ease={cubicBezierCss(easeOutSwift)}
-                          >
-                            {step === 'amount' ? 'Continue' : 'Confirm'}
-                          </TextMorph>
-                        </span>
+                        ctaLabel
                       )}
                     </PrimaryButton>
                   </div>
                 </div>
               </motion.div>
             )}
+
+            {/* Success — pushes in from the right after the confirm sheet drops.
+                Checkmark + headline top-aligned, Done pinned to the bottom. */}
+            {successOpen && (
+              <motion.div
+                key="success"
+                className={clsx(styles.step, styles.successStep)}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.successBody}>
+                  <span className={styles.successCheck} aria-hidden>
+                    <IconCircleCheck size={44} />
+                  </span>
+                  <h2 className={styles.successTitle}>{successHeadline}</h2>
+                </div>
+                <div className={styles.ctaWrap}>
+                  <PrimaryButton onClick={onDismiss}>Done</PrimaryButton>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
+        </div>
+      </div>
+    </BottomSheet>
+
+    {/* Confirm — a short sheet that rises over the amount screen. Title + ETA,
+        the quote breakdown (value-over-label), and a Face ID Confirm CTA that
+        spins through the auth beat; on done it drops and the screen pushes to
+        the success step. */}
+    <BottomSheet
+      open={confirmOpen}
+      onDismiss={() => {
+        if (!confirming) go('amount', true);
+      }}
+      glass={SOCIAL_FLAT_SHEET}
+      topRadius={32}
+      scalesBackground={false}
+    >
+      <div className={styles.confirmBody}>
+        <div className={styles.confirmHead}>
+          <h2 className={styles.confirmTitle}>{confirmTitle}</h2>
+          <p className={styles.confirmSub}>{confirmSub}</p>
+        </div>
+        <div className={styles.confirmRows}>
+          {confirmSheetRows.map(([label, value]) => (
+            <div key={label} className={styles.confirmRow}>
+              <span className={styles.confirmValue}>{value}</span>
+              <span className={styles.confirmLabel}>{label}</span>
+            </div>
+          ))}
+        </div>
+        <div className={styles.confirmCtaWrap}>
+          <PrimaryButton
+            onClick={() => !confirming && onConfirm(cents, activityForConfirm())}
+            disabled={confirming}
+          >
+            {confirming ? (
+              <span className={styles.spinner} aria-label="Confirming">
+                <IconLoadingCircle size={20} />
+              </span>
+            ) : (
+              <span className={styles.ctaInner}>
+                <span className={styles.ctaFaceId} aria-hidden>
+                  <SfSymbol name="faceid" size={18} />
+                </span>
+                Confirm
+              </span>
+            )}
+          </PrimaryButton>
         </div>
       </div>
     </BottomSheet>

@@ -56,6 +56,12 @@ export interface UseWalletHomeOptions {
   entrance?: boolean;
   /** Jump command from the sidebar — provision + open a flow out of order. */
   entry?: WalletEntry;
+  /**
+   * Keep the money sheet OPEN after a confirmed transfer (the skin shows its own
+   * in-sheet success screen + Done button) instead of auto-closing + toasting.
+   * Balance + activity still update; the toast is suppressed. Default false.
+   */
+  transferSuccessScreen?: boolean;
   /** Transfer confirmed (Face ID) — log execute + settle and move the balance. */
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   /** A tap-to-pay charge landed on the phone. */
@@ -75,6 +81,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     balance = '$0.00',
     entrance = false,
     entry,
+    transferSuccessScreen = false,
     onTransferExecute,
     onTapToPay,
     onReceivePayment,
@@ -354,21 +361,25 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     if (mode === 'receive') return;
     onTransferExecute?.(mode, cents);
     setSheetConfirming(false);
-    setSheetOpen(false);
     setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
-    const sentTo =
-      dest?.kind === 'crypto'
-        ? truncateAddress(dest.address)
-        : dest?.kind === 'bank'
-          ? dest.recipientName || dest.bankName
-          : 'recipient';
-    showToast(
-      mode === 'add'
-        ? `${toastUsd(cents)} added to balance`
-        : mode === 'withdraw'
-          ? `${toastUsd(cents)} withdrawn from balance`
-          : `${toastUsd(cents)} sent to ${sentTo}`,
-    );
+    // A skin with its own success screen keeps the sheet up (Done closes it) and
+    // owns the confirmation, so skip the auto-close + toast here.
+    if (!transferSuccessScreen) {
+      setSheetOpen(false);
+      const sentTo =
+        dest?.kind === 'crypto'
+          ? truncateAddress(dest.address)
+          : dest?.kind === 'bank'
+            ? dest.recipientName || dest.bankName
+            : 'recipient';
+      showToast(
+        mode === 'add'
+          ? `${toastUsd(cents)} added to balance`
+          : mode === 'withdraw'
+            ? `${toastUsd(cents)} withdrawn from balance`
+            : `${toastUsd(cents)} sent to ${sentTo}`,
+      );
+    }
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
       setActivity((prev) => [makeTransferRow(mode, cents, dest), ...prev]);
