@@ -1,6 +1,18 @@
-/* Inter variable font — Creator skin tab labels and wallet chrome. */
+/* Inter variable font — Creator skin tab labels and wallet chrome.
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap');
+   Self-hosted from the upstream source (https://github.com/rsms/inter,
+   font-files at https://rsms.me/inter/font-files/InterVariable.woff2) rather than
+   Google Fonts. The single variable file carries both the weight (100..900) and
+   optical-size (opsz) axes, so `font-variation-settings` (opsz/wght) keeps working. */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+  font-named-instance: 'Regular';
+}
 
 :root {
   --font-family-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
