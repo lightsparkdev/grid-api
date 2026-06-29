@@ -26,9 +26,8 @@ import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import NumericText from '@/components/NumericText';
 import { FrostPanel, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { PrimaryButton } from '@/apps/creator/blocks/PrimaryButton';
-import { SheetIconButton } from '@/apps/creator/blocks/SheetIconButton';
-import { CREATOR_STACKED_SHEET_DURATION } from '@/apps/creator/config';
+import { PrimaryButton } from '../blocks/PrimaryButton';
+import { SheetIconButton } from '../blocks/SheetIconButton';
 import { SheetHeader } from '../blocks/SheetHeader';
 import { SOCIAL_FLAT_SHEET } from '../glass-presets';
 import { IconCrossMedium as IconCrossZ, IconChevronLeftMedium as IconChevronLeftZ } from '../icons';
@@ -61,7 +60,7 @@ import {
   type ReceivedPayment,
   type TransferActivity,
 } from '@/apps/shared/wallet';
-import { WalletListSection } from '@/apps/creator/wallet/WalletListSection';
+import { WalletListSection } from './WalletListSection';
 import { Flag } from '@/apps/shared/Flag';
 import styles from './AddMoneySheet.module.scss';
 
@@ -160,6 +159,8 @@ function CountryPickRow({
 const STEP_TRANSITION = motionTransition(easeOutSnappy, 0.28);
 // Source chooser card-button press (Aurora-style grow on hover / more on press).
 const CHOICE_PRESS = motionTransition(easeOutSnappy, 0.2);
+// Z-local sheet slide duration (decoupled from Glitch's constant).
+const SOCIAL_SHEET_DURATION = 0.5;
 // Small element swaps (CTA glyph, etc.) inside the persistent transfer layout.
 const SWAP_TRANSITION = motionTransition(easeOutSnappy, 0.35);
 const MORPH_MS = 280;
@@ -506,11 +507,10 @@ export function AddMoneySheet({
   // AnimatePresence `custom` prop is re-resolved for exiting children instead.
   type NavDir = { back: boolean; reduceMotion: boolean };
   const navDir: NavDir = { back, reduceMotion: !!reduceMotion };
-  // Creator-only title overrides matching the wallet-home buttons (Deposit /
-  // Withdraw / Transfer): the source step reads "Deposit via" / "Withdraw via"
-  // and the confirm step "Confirm deposit", rather than the shared "Add money
-  // from" / "Withdraw to" / "Confirm add".
-  const creatorTitle =
+  // Z title overrides matching the wallet-home buttons (Deposit / Withdraw):
+  // the source step reads "Deposit via" / "Withdraw via" and the confirm step
+  // "Confirm deposit", rather than the shared "Add money from" / "Withdraw to".
+  const zTitle =
     mode === 'add'
       ? step === 'source'
         ? 'Deposit via'
@@ -525,7 +525,7 @@ export function AddMoneySheet({
   const displayTitle =
     step === 'fundingDetails' && pickedCountry
       ? `Receive from ${pickedCountry.name}`
-      : (creatorTitle ?? titles[step]);
+      : (zTitle ?? titles[step]);
   // TRUE push: the incoming screen shares an edge with the outgoing one (full
   // ±100% travel, simultaneous), and the leaver fades as it exits. The entering
   // screen arrives at full opacity — it's a push, not a crossfade.
@@ -641,7 +641,7 @@ export function AddMoneySheet({
       onDismiss={dismiss}
       // Slower slide for the stacked-sheet presentation — shares one constant with
       // the PresentationStage transition so the scale recedes in lockstep.
-      duration={CREATOR_STACKED_SHEET_DURATION}
+      duration={SOCIAL_SHEET_DURATION}
       // Flat solid sheet (no frost/glint). Z surface token; shell smoothing so the
       // bottom corners nest concentrically in the screen squircle.
       glass={{
