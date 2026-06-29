@@ -31,7 +31,7 @@ import { SheetIconButton } from '@/apps/creator/blocks/SheetIconButton';
 import { CREATOR_STACKED_SHEET_DURATION } from '@/apps/creator/config';
 import { SheetHeader } from '../blocks/SheetHeader';
 import { SOCIAL_FLAT_SHEET } from '../glass-presets';
-import { IconCrossMedium as IconCrossZ } from '../icons';
+import { IconCrossMedium as IconCrossZ, IconChevronLeftMedium as IconChevronLeftZ } from '../icons';
 import { SfSymbol } from '@/apps/shared/icons';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import { randomNetworkAddress } from '@/lib/cryptoAddresses';
@@ -549,10 +549,10 @@ export function AddMoneySheet({
       rm ? { opacity: 0 } : { x: b ? SCREEN_W : -SCREEN_W, opacity: 0 },
   };
 
-  // Add (Deposit): the source step is a short content-hugging chooser; tapping a
+  // Add / Withdraw: the source step is a short content-hugging chooser; tapping a
   // source slides the full flow up OVER it (the chooser stays mounted behind).
-  // Other modes keep the single tall sheet.
-  const isAddFlow = mode === 'add';
+  // Send/Receive keep the single tall sheet (their entry isn't a source list).
+  const isChooserFlow = mode === 'add' || mode === 'withdraw';
 
   // One source card button (icon tile + title, speed on the right). `grid` cards
   // sit two-up and drop the speed.
@@ -592,11 +592,25 @@ export function AddMoneySheet({
     );
   };
 
+  // Full-screen flow header (chooser modes): X back to the chooser on the first
+  // step, a back arrow deeper in; a + (add bank) / QR (recipient) on the right.
+  const flowRight: { icon: ReactNode; onClick?: () => void; ariaLabel: string } | undefined =
+    step === 'banks'
+      ? {
+          icon: <IconPlusMedium size={24} />,
+          onClick: openAddBank,
+          ariaLabel: isSend ? 'Add recipient' : 'Add bank account',
+        }
+      : step === 'recipient'
+        ? { icon: <IconArrowsAllSides2 size={24} />, ariaLabel: 'Scan QR code' }
+        : undefined;
+  const flowBackToChooser = backFrom[step] === 'source';
+
   return (
     <>
     {/* Source chooser — short, content-hugging (auth-sheet style). Stays mounted
         behind the flow so the full sheet slides up over it. */}
-    {isAddFlow && (
+    {isChooserFlow && (
       <BottomSheet
         open={open}
         onDismiss={dismiss}
@@ -623,7 +637,7 @@ export function AddMoneySheet({
     {/* The full flow — single tall sheet for withdraw/send/receive; for add it
         slides up OVER the chooser once a source is picked (step !== 'source'). */}
     <BottomSheet
-      open={open && (!isAddFlow || step !== 'source')}
+      open={open && (!isChooserFlow || step !== 'source')}
       onDismiss={dismiss}
       // Slower slide for the stacked-sheet presentation — shares one constant with
       // the PresentationStage transition so the scale recedes in lockstep.
@@ -631,16 +645,46 @@ export function AddMoneySheet({
       // Flat solid sheet (no frost/glint). Z surface token; shell smoothing so the
       // bottom corners nest concentrically in the screen squircle.
       glass={{
-        radius: isAddFlow ? 32 : 24,
+        // Chooser flows go full-screen (square top, flush behind the status bar)
+        // on the base bg; send/receive keep the rounded elevated bottom-sheet.
+        radius: isChooserFlow ? 0 : 24,
         cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
-        tint: 'var(--z-sheet-bg)',
+        tint: isChooserFlow ? 'var(--app-bg)' : 'var(--z-sheet-bg)',
         edge: 'var(--sheet-flat-edge)',
         edgeGlint: false,
         edgeWidth: 0.5,
         shadow: '0 15px 37.5px rgba(0, 0, 0, 0.18)',
       }}
     >
-      <div className={styles.flow}>
+      <div className={clsx(styles.flow, isChooserFlow && styles.flowFull)}>
+        {isChooserFlow ? (
+          /* Same header as the Z wallet home nav (plain 24px icons, centered
+             title, no border): X/back left, title center, +/QR right. */
+          <header className={styles.flowNav}>
+            <button
+              type="button"
+              className={styles.flowNavBtn}
+              onClick={() => go(backFrom[step] ?? 'source', true)}
+              aria-label={flowBackToChooser ? 'Close' : 'Back'}
+              disabled={confirming}
+            >
+              {flowBackToChooser ? <IconCrossZ size={24} /> : <IconChevronLeftZ size={24} />}
+            </button>
+            <span className={styles.flowNavTitle}>{displayTitle}</span>
+            <div className={styles.flowNavRight}>
+              {flowRight && (
+                <button
+                  type="button"
+                  className={styles.flowNavBtn}
+                  onClick={flowRight.onClick}
+                  aria-label={flowRight.ariaLabel}
+                >
+                  {flowRight.icon}
+                </button>
+              )}
+            </div>
+          </header>
+        ) : (
         <div className={styles.toolbar}>
           <div className={styles.toolbarRow}>
             {isEntryStep ? (
@@ -746,6 +790,7 @@ export function AddMoneySheet({
             </AnimatePresence>
           </div>
         </div>
+        )}
 
         <div className={styles.steps} key={openKey}>
           {/* Default (sync) presence, NOT popLayout: the steps are absolutely

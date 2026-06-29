@@ -14,12 +14,91 @@
   min-height: 0;
 }
 
+/* Chooser flows (add/withdraw) are full-screen and slide up over the chooser,
+   with a normal-flow SheetHeader (not the overlay toolbar) — so the steps drop
+   their toolbar top-inset and the steps box stops rounding its top. */
+.flowFull {
+  height: var(--app-screen-height, 874px);
+  padding-top: 62px;
+
+  .step {
+    padding-top: 0;
+  }
+  .stepFlushTop {
+    padding-top: 0;
+  }
+  .steps {
+    border-radius: 0;
+  }
+  /* This offset tucked the empty list under the old overlay toolbar; the
+     normal-flow header doesn't need it (the card's own 16px top is the gap). */
+  .banksEmptyOffset {
+    margin-top: 0;
+  }
+}
+
+/* Header matching the Z wallet-home nav: plain 24px icon buttons (no fill/border),
+   a truly centered title, the help/settings-style right cluster. */
+.flowNav {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 48px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+.flowNavTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+.flowNavRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.flowNavBtn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 /* Source chooser body — content-hugging (the chooser sheet hugs these rows).
    Flat full-bleed list: no container bg/radius, no row dividers, no side gutter. */
 .chooserBody {
-  /* +8px each side (16 → 24); bottom matches the auth sheet (32px) so the last
-     cards clear the phone-shell curve. */
-  padding: 24px 24px 32px;
+  /* +8px each side (16 → 24); bottom 48px so the last cards clear the phone-shell
+     curve. */
+  padding: 24px 24px 48px;
 }
 
 /* Each source is its own flat card button — icon tile + title/sub on the left,
