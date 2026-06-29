@@ -35,6 +35,21 @@
   .banksEmptyOffset {
     margin-top: 0;
   }
+
+  /* Country step: the search header was positioned under the old overlay toolbar
+     (top 70 / backdrop 122 / scroll inset 126). With the normal-flow nav above
+     the step, pull it right under the header. */
+  .searchPill {
+    top: 8px;
+  }
+  /* Search pill bottom (8 + 44) + 8px, with a hairline divider under it. */
+  .countryHeaderBg {
+    height: 60px;
+    border-bottom: 0.5px solid var(--z-hairline);
+  }
+  .pickerScrollCountry {
+    padding-top: 60px;
+  }
 }
 
 /* Header matching the Z wallet-home nav: plain 24px icon buttons (no fill/border),
@@ -663,28 +678,54 @@
 }
 
 /* ── Bank picker: saved-banks list, country picker, account form ───────────── */
-/* Saved bank / recipient / contact picker — a contained card with the same bg
-   fill as the "Add money from" + country lists, but carrying the gray circle
-   icon (flag, crypto logo, initials) instead of the choosers' bare glyphs. */
+/* Saved bank / recipient / contact list — flat and full-bleed, same treatment as
+   the country picker (.pickerCard): no container surface/rounding, no dividers,
+   rows hug their content with a 12px top/bottom inset and carry a bare 40px icon
+   (flag) instead of the gray circle the old card used. */
 .bankList {
-  width: auto; // base .card is width:100%; the side margins would otherwise overflow
-  margin: 4px 16px 0;
+  width: 100%;
+  margin: 0; // full-bleed: rows span the screen edges (content keeps its inset)
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 
-  .sourceRow {
-    gap: 16px;
-    padding-left: 16px;
+  /* Row dividers are a ::after on .sourceContentBordered — hide them here. */
+  .sourceContentBordered::after {
+    display: none;
   }
 
-  /* Gray circle for every icon type — flag, crypto logo, and the people-initials
-     avatar already uses it (base .recipientAvatar). The crypto logo inside keeps
-     its base 24px size. */
-  .tile,
-  .recipientAvatar:has(.tokenIconSm) {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    corner-shape: round;
-    background: var(--ios-fill-tertiary);
+  /* Row hugs its content + 12px top/bottom; 12px between the icon and the labels;
+     16px inset on both edges. */
+  .sourceRow {
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 16px;
+  }
+  .sourceContent {
+    height: auto;
+    padding-right: 16px;
+  }
+
+  /* Crypto logo matches the bank flag's 40px (was a 24px glyph in a gray circle). */
+  .tokenIconSm {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Labels match the country list (subheadline). */
+  .rowTitle {
+    @include ios.ios-text-subheadline;
+    font-weight: 590;
+    font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  }
+  .rowSub {
+    @include ios.ios-text-subheadline;
   }
 }
 
@@ -723,17 +764,12 @@
   z-index: 2; // above the header backdrop (z-1), below the toolbar (z-3)
 }
 
-/* Flat solid search field — same fill AND corners as the list cards (12px
-   superellipse, no glass, no shadow). */
+/* Flat solid search field — a full pill (no glass, no shadow). */
 .searchPillFlat {
-  border-radius: 12px;
-  corner-shape: var(--corner-shape);
-  background: var(--ios-bg-primary);
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--z-surface);
   overflow: hidden;
-
-  :global([data-theme='dark']) & {
-    background: var(--ios-bg-secondary);
-  }
 }
 
 .searchRow {
@@ -790,7 +826,7 @@
    scrolls UP under it. Form keeps bottom room for the anchored CTA. */
 .pickerScrollCountry {
   padding-top: 126px; // "Popular" rests 16px under the pill (bottom 114 + label's 4px top)
-  padding-bottom: 40px; // sit the last card clear of the sheet's rounded bottom
+  padding-bottom: 56px; // last row clears the phone-shell's rounded bottom corner
 }
 
 .pickerScrollForm {
@@ -798,44 +834,96 @@
 }
 
 /* iOS grouped-list section header. */
+.sectionLabel:first-child {
+  padding-top: 20px;
+}
+
 .sectionLabel {
   margin: 0;
-  padding: 16px 24px 14px;
+  padding: 12px 16px;
   @include ios.ios-text-footnote;
   font-weight: 590;
   color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
 }
 
-.sectionLabel:first-child {
-  padding-top: 4px;
-}
-
 .pickerCard {
-  width: auto; // base .card is width:100%; margins would otherwise overflow
-  margin: 0 16px;
-}
-
-.formCard {
-  width: auto; // base .card is width:100%; margins would otherwise overflow
-  margin: 4px 16px 0;
+  width: 100%;
+  margin: 0; // full-bleed: rows span the screen edges (content keeps its inset)
+  /* Flat: no container surface or rounding; no dividers. Each row carries its own
+     10px top/bottom padding (≈20px between items) — no flex gap. */
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
   padding: 0;
-  overflow: hidden;
-}
-
-.formFields {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Editable fields styled like the confirm fee-details table (stacked label),
-   with a full-width hairline divider running edge-to-edge inside the card. */
-.formField {
-  position: relative;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 16px;
+
+  /* Row dividers are a ::after on .sourceContentBordered — hide them here. */
+  .sourceContentBordered::after {
+    display: none;
+  }
+
+  /* Row hugs its content + 12px top/bottom (instead of the source list's fixed
+     80px height + flex gap); 12px between the flag and the labels; 16px inset on
+     both edges. */
+  .sourceRow {
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 16px;
+  }
+  .sourceContent {
+    height: auto;
+    padding-right: 16px;
+  }
+
+  /* Country rows read at subheadline (15/20) — name emphasized, currency regular. */
+  .rowTitle {
+    @include ios.ios-text-subheadline;
+    font-weight: 590;
+    font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  }
+  .rowSub {
+    @include ios.ios-text-subheadline;
+  }
+}
+
+/* Full-bleed, flat: no card surface/radius — just edge-to-edge hairline dividers. */
+.formCard {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Outer frame: a divider at the very top and bottom of the field group (the
+   between-field dividers are ::before on each field, so these never overlap). */
+.formFields {
+  display: flex;
+  flex-direction: column;
+  border-top: 0.5px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    border-top-color: rgba(255, 255, 255, 0.12);
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* Two-column key/value row: label hugs the left, value fills + right-aligns. */
+.formField {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
 
   & + &::before {
     content: '';
@@ -853,21 +941,24 @@
 }
 
 .formLabel {
-  @include ios.ios-text-caption-1;
+  flex-shrink: 0;
+  @include ios.ios-text-subheadline;
   color: var(--ios-label-secondary);
 }
 
 .formInput {
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
   background: none;
-  @include ios.ios-text-footnote;
-  // Footnote / Emphasized — set the variation axis too, or the mixin's 'wght'
+  text-align: left;
+  @include ios.ios-text-subheadline;
+  // Subheadline / Emphasized — set the variation axis too, or the mixin's 'wght'
   // (400) wins over plain font-weight on the variable font.
   font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
   color: var(--ios-label-primary);
   outline: none;
   appearance: none;
@@ -882,9 +973,9 @@
   right: 0;
   bottom: 0;
   z-index: 2;
-  /* 16px sides + 40px from the screen bottom, matching the other bottom-anchored
-     CTAs; the 32px top keeps the gradient fade above the button. */
-  padding: 32px 16px 40px;
+  /* 16px sides + 56px from the screen bottom (clears the phone-shell curve); the
+     32px top keeps the gradient fade above the button. */
+  padding: 32px 16px 56px;
   background: linear-gradient(to top, var(--z-sheet-bg), var(--z-sheet-bg) 56%, transparent);
 }
 

@@ -141,7 +141,7 @@ function CountryPickRow({
   return (
     <button type="button" className={styles.sourceRow} onClick={() => onSelect(country)}>
       <span className={styles.tile} aria-hidden>
-        <Flag code={country.code} size={24} />
+        <Flag code={country.code} size={40} />
       </span>
       <span className={clsx(styles.sourceContent, bordered && styles.sourceContentBordered)}>
         <span className={styles.sourceLabels}>
@@ -1076,7 +1076,7 @@ export function AddMoneySheet({
                             <RecipientAvatar name={b.beneficiary} code={b.country.code} />
                           ) : (
                             <span className={styles.tile} aria-hidden>
-                              <Flag code={b.country.code} size={20} />
+                              <Flag code={b.country.code} size={40} />
                             </span>
                           )}
                           <span
@@ -1106,8 +1106,9 @@ export function AddMoneySheet({
                                   <span className={styles.rowTitle}>
                                     {b.bankName} (•••• {accountLast4(b.values)})
                                   </span>
-                                  <span className={styles.rowSub}>{b.country.name}</span>
-                                  <span className={styles.rowSub}>{currencyFor(b.country)}</span>
+                                  <span className={styles.rowSub}>
+                                    {b.country.name} · {currencyFor(b.country)}
+                                  </span>
                                 </>
                               )}
                             </span>
