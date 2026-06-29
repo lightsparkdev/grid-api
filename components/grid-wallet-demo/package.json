@@ -26,6 +26,8 @@
     "@lightsparkdev/origin": "^0.13.4",
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "@scure/base": "^2.2.0",
     "clsx": "^2.1.1",
     "geist": "^1.7.2",
@@ -34,14 +36,22 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sass": "^1.97.3",
+    "three": "^0.169.0",
     "torph": "^0.0.9"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
+    "@types/three": "^0.169.0",
     "playwright": "^1.60.0",
     "tsx": "^4.22.4",
     "typescript": "^5.9.3"
+  },
+  "comments": {
+    "overrides": "react-three-fiber v8 imports zustand's default export; the next.config resolve.modules flattening forces a single zustand, so pin it to v4 (which still has the default export). drei's Environment/Lightformer don't use zustand directly."
+  },
+  "overrides": {
+    "zustand": "^4.5.7"
   }
 }

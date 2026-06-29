@@ -1,5 +1,6 @@
 'use client';
 
+import { lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
@@ -7,7 +8,12 @@ import { motionTransition } from '@/lib/easing';
 import type { CardView } from '@/apps/shared/wallet';
 import { IconCrossMedium as IconCrossZ } from '../icons';
 import { IntroContent, ReadyContent, CreatingCaption } from './CardIssuanceContent';
+import { useCard3DSupport } from './card3d/useCard3DSupport';
+import { CanvasErrorBoundary } from './card3d/CanvasErrorBoundary';
 import styles from './CardIssuanceSheet.module.scss';
+
+// Code-split the 3D card (three.js) — only fetched when the issuance flow opens.
+const ZCardCanvas = lazy(() => import('./card3d/ZCardCanvas'));
 
 // Slower slide to match the Z money flows' full-screen presentation.
 const SHEET_DURATION = 0.5;
@@ -26,16 +32,21 @@ const STEP_EXIT = {
 export function CardIssuanceSheet({
   open,
   cardView,
+  issued,
+  cardNumber = '•••• 8972',
   onClose,
   onCreate,
   onContinue,
 }: {
   open: boolean;
   cardView: CardView;
+  issued: boolean;
+  cardNumber?: string;
   onClose: () => void;
   onCreate: () => void;
   onContinue: () => void;
 }) {
+  const support = useCard3DSupport();
   return (
     <BottomSheet
       open={open}
@@ -63,9 +74,24 @@ export function CardIssuanceSheet({
           </button>
         </header>
 
-        {/* Placeholder graphic — the animated card mark lands here later. */}
+        {/* The 3D metal Z card — fills the top, dissolves into the bg below via
+            the content's gradient fade. Flat fallback during load / when WebGL is
+            unavailable; reduced-motion renders the card static. */}
         <div className={styles.graphic} aria-hidden>
-          <div className={styles.placeholder} />
+          {support?.webgl ? (
+            <CanvasErrorBoundary fallback={<div className={styles.placeholder} />}>
+              <Suspense fallback={<div className={styles.placeholder} />}>
+                <ZCardCanvas
+                  cardView={cardView}
+                  issued={issued}
+                  cardNumber={cardNumber}
+                  reducedMotion={support.reducedMotion}
+                />
+              </Suspense>
+            </CanvasErrorBoundary>
+          ) : (
+            <div className={styles.placeholder} />
+          )}
         </div>
 
         {/* Copy + CTA, anchored at the bottom on a solid bg; the ::before fade

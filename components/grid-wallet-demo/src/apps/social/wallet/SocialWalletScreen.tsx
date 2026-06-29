@@ -94,6 +94,7 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     cardView,
     setCardView,
     isIssuance,
+    issued,
     // Z keeps the sheet open after confirm and shows an in-sheet success screen
     // (Done closes it) instead of the toast.
   } = useWalletHome({ ...props, transferSuccessScreen: true });
@@ -211,6 +212,7 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
       <CardIssuanceSheet
         open={isIssuance}
         cardView={cardView}
+        issued={issued}
         onClose={() => setCardView('closed')}
         onCreate={() => {
           setCardView('creating');
