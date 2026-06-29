@@ -700,16 +700,16 @@
   }
 
   /* Row hugs its content + 12px top/bottom; 12px between the icon and the labels;
-     16px inset on both edges. */
+     20px inset on both edges. */
   .sourceRow {
     gap: 12px;
     padding-top: 12px;
     padding-bottom: 12px;
-    padding-left: 16px;
+    padding-left: 20px;
   }
   .sourceContent {
     height: auto;
-    padding-right: 16px;
+    padding-right: 20px;
   }
 
   /* Crypto logo matches the bank flag's 40px (was a 24px glyph in a gray circle). */
@@ -840,7 +840,7 @@
 
 .sectionLabel {
   margin: 0;
-  padding: 12px 16px;
+  padding: 12px 20px;
   @include ios.ios-text-footnote;
   font-weight: 590;
   color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
@@ -867,17 +867,17 @@
   }
 
   /* Row hugs its content + 12px top/bottom (instead of the source list's fixed
-     80px height + flex gap); 12px between the flag and the labels; 16px inset on
+     80px height + flex gap); 12px between the flag and the labels; 20px inset on
      both edges. */
   .sourceRow {
     gap: 12px;
     padding-top: 12px;
     padding-bottom: 12px;
-    padding-left: 16px;
+    padding-left: 20px;
   }
   .sourceContent {
     height: auto;
-    padding-right: 16px;
+    padding-right: 20px;
   }
 
   /* Country rows read at subheadline (15/20) — name emphasized, currency regular. */
