@@ -40,6 +40,9 @@
     --z-sheet-bg: #ffffff;
     --app-sheet-glass-backdrop: transparent;
 
+    /* Stronger dim behind sheets than the shared 0.2 default. */
+    --sheet-scrim: rgba(0, 0, 0, 0.4);
+
     /* Activity / list panel — flat on the page; hairline divider. */
     --list-panel-bg: #ffffff;
     --list-panel-border: 0.5px solid rgba(0, 0, 0, 0.1);
@@ -75,6 +78,9 @@
 
       --auth-sheet-bg: #141414;
       --z-sheet-bg: #141414;
+
+      /* Page is near-black; push the scrim further so the sheet still separates. */
+      --sheet-scrim: rgba(0, 0, 0, 0.6);
 
       --list-panel-bg: #000000;
       --list-panel-border: 0.5px solid rgba(255, 255, 255, 0.1);
