@@ -50,7 +50,7 @@ const SHAKE_OPTS = { duration: 0.28, ease: 'linear' as const };
 
 /** OTP digit cell — squircle clip-path for Safari (corner-shape fallback is circular). */
 function AuthCodeCell({ active, children }: { active?: boolean; children: ReactNode }) {
-  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 18 });
+  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 14 });
   return (
     <span className={styles.codeCellShell} data-active={active || undefined}>
       <SquircleFocusHalo

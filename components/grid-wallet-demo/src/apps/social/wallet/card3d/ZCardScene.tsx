@@ -14,34 +14,57 @@ const FAN_COUNT = 18;
 const FAN_RADIUS = 5.2; // bigger ring
 const FAN_SCALE = 0.96; // overall size in frame (slightly up)
 const FAN_OFFSET_Y = -4.9; // hub dropped low (≈40px lower); only the top arc shows, rest fades under the mask
-const FAN_PITCH = 0.42; // CONSTANT tilt of every card about its long axis
+const FAN_PITCH = 0.35; // base tilt about each card's long axis (keeps the impeller layering)
+const FAN_PITCH_DRIFT = 1.0; // ± pitch amplitude swept across the visible arc
+const FAN_PITCH_PHASE = 0.55; // shifts the pitch wave toward the right/entering side so the rotation
+// "starts earlier" — and parks the near-flat (intersecting) trough off the right edge
+const FAN_SPIN = 0.04; // rad/s — slow continuous wheel rotation
 const REVEAL_DURATION = 2.3; // s; finishes just before the brain flips to 'ready'
 
 /**
  * Intro: the cards sit already fanned into a continuous circle — a deck flourish
  * standing vertically, facing the camera (no fan-out on open; the graphic just
- * fades in). Each card is portrait (long axis radial) and radiates from the hub,
- * with the SAME constant tilt about its long axis. That makes a
- * rotationally-symmetric impeller: every card overlaps the next identically (so
- * they layer cleanly, no intersection) AND the ring is seam-free — continuous
- * rotation looks identical every card-step. The hub sits below frame so only the
- * top arc shows; the rest dissolves into the fade.
+ * fades in). Each card is portrait (long axis radial) and radiates from the hub.
+ *
+ * It's a CAROUSEL: pitch (tilt about the long axis) is locked to the card's
+ * position on the ring — `base + amp·sin(azimuth)`. Across the visible top arc
+ * (azimuth roughly -90°…+90°) sin is monotonic, so a card rotates its pitch
+ * CONTINUOUSLY in one direction as it travels across, then exits at the side and
+ * the reversal happens below, off-screen. Because every card is identical and
+ * evenly spaced, as one exits another cycles in behind it → a seamless loop where
+ * you never see a back. The base keeps every card tilted the same way (layered, no
+ * intersection); 2π-periodic ⇒ seamless. The spin must be visible-speed (not the
+ * old crawl) or the carousel reads as frozen.
  */
 function FanGroup({ maps }: { maps: CardMaps | null }) {
   const groupRef = useRef<THREE.Group>(null);
+  const pitchRefs = useRef<(THREE.Group | null)[]>([]);
+
   useFrame((state) => {
+    const rot = state.clock.elapsedTime * FAN_SPIN;
     const g = groupRef.current;
-    if (g) g.rotation.z = state.clock.elapsedTime * 0.04; // slow continuous drift
+    if (g) g.rotation.z = rot;
+    for (let i = 0; i < FAN_COUNT; i++) {
+      const p = pitchRefs.current[i];
+      if (!p) continue;
+      const azimuth = rot + (i / FAN_COUNT) * Math.PI * 2;
+      p.rotation.y = FAN_PITCH + FAN_PITCH_DRIFT * Math.sin(azimuth + FAN_PITCH_PHASE);
+    }
   });
 
   return (
     <group ref={groupRef} scale={FAN_SCALE} position={[0, FAN_OFFSET_Y, 0]}>
       {Array.from({ length: FAN_COUNT }).map((_, i) => (
         <group key={i} rotation={[0, 0, (i / FAN_COUNT) * Math.PI * 2]}>
-          {/* radial arm → card on the ring (coplanar). The CONSTANT long-axis
-              tilt makes a symmetric impeller: each card overlaps the next the
-              same way, so they layer cleanly with no intersection and no seam. */}
-          <group position={[0, FAN_RADIUS, 0]} rotation={[0, FAN_PITCH, 0]}>
+          {/* radial arm → card on the ring (coplanar). Pitch (rotation.y) is
+              driven per-frame from the card's azimuth (see above). */}
+          <group
+            ref={(el) => {
+              pitchRefs.current[i] = el;
+            }}
+            position={[0, FAN_RADIUS, 0]}
+            rotation={[0, FAN_PITCH, 0]}
+          >
             {/* roll to portrait (long axis radial) */}
             <group rotation={[0, 0, Math.PI / 2]}>
               <ZCard maps={maps} />
