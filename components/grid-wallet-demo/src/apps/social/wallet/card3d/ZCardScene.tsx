@@ -5,7 +5,6 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ZCard } from './ZCard';
 import { getCardMaps, type CardMaps } from './cardTextures';
-import { envLightTune } from './envLightTune';
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 // Smootherstep (zero velocity AND acceleration at both ends) — a much softer,
@@ -36,21 +35,21 @@ const FAN_SPIN = 0.04; // rad/s — slow continuous wheel rotation
 // ── Reveal timeline (seconds from reveal mount). ONE continuous timeline whose
 // curves overlap generously — tilt, rise and spin all blend mid-flight (no
 // chained phases, no velocity dip between "tip up" and "spin"). ──
-const REVEAL_TILT = [0, 3.1] as const; // flat → dead head-on. Starts at t=0 —
+const REVEAL_TILT = [0, 2.75] as const; // flat → dead head-on. Starts at t=0 —
 // the uprighting is part of the entrance itself (never a separate "now it
 // tilts" onset); smootherstep's dead-flat start means it only budges a few
 // degrees during the fly-in, with the visible action landing low on screen.
-const REVEAL_RISE = [0, 3.45] as const; // off-screen below → the final perch.
+const REVEAL_RISE = [0, 3.1] as const; // off-screen below → the final perch.
 // Ease-OUT, not in-out: the card enters at PEAK velocity and only ever
 // decelerates — one continuous "fly in, spend the momentum" gesture with no
 // mid-flight slowdown (in-out's velocity hump read as two movements). The soft
 // exponent spreads the climb out, so the card is still low on screen (and
 // clearly traveling) when the tilt and spin join.
-const REVEAL_SPIN = [0.85, 3.45] as const; // full 360° about the short axis —
+const REVEAL_SPIN = [0.85, 3.1] as const; // full 360° about the short axis —
 // joins in the lower third of the climb, while the card is clearly traveling
-// (segments end staggered so the resolve is a long, soft glide-in)
-const REVEAL_RESOLVE_AT = 2.85; // fire onResolved during the final approach
-const REVEAL_DONE = 3.45;
+// (segments end staggered so the resolve is a soft — but not lingering — glide-in)
+const REVEAL_RESOLVE_AT = 2.55; // fire onResolved during the final approach
+const REVEAL_DONE = 3.1;
 
 // Depth arc: the recede is ease-out too — the card shrinks away IMMEDIATELY as
 // it flies in (one gesture with the rise), hits the far point while the rise is
@@ -59,7 +58,7 @@ const REVEAL_DONE = 3.45;
 // is a rounded blend, never a stop-and-return.
 const REVEAL_ARC_DEPTH = 12;
 const REVEAL_RECEDE = [0, 1.8] as const;
-const REVEAL_APPROACH = [0.8, 3.45] as const;
+const REVEAL_APPROACH = [0.8, 3.1] as const;
 
 // The reveal card renders smaller than the fan's cards (full-width felt huge).
 const REVEAL_SCALE = 0.8;
@@ -68,7 +67,7 @@ const REVEAL_FLAT_RX = -1.34;
 // Env sweep: rotating the baked studio about X slides the dark stripe's
 // reflection vertically across the card; this pass rakes it across the Z as the
 // card resolves, settling it across the middle.
-const REVEAL_SWEEP = [2.4, 4.1] as const;
+const REVEAL_SWEEP = [2.1, 3.75] as const;
 const REVEAL_SWEEP_FROM = 0.5; // rad — stripe parked off the card at flight start
 // Where the light settles on the resolved card (hand-tuned with the EnvTuner).
 const REVEAL_SETTLE_X = -0.38;
@@ -201,13 +200,11 @@ function RevealCard({
     // the X-rotation pass rakes its reflection across the polished Z as the card
     // resolves and settles it across the middle; the small residual sines keep
     // the metal breathing afterwards instead of freezing on one flat tone.
-    // envLightTune: dev-panel offsets on top of the baked settle (see EnvTuner).
     const sweep = seg(REVEAL_SWEEP);
     scene.environmentRotation.set(
       THREE.MathUtils.lerp(REVEAL_SWEEP_FROM, REVEAL_SETTLE_X, sweep) +
-        Math.sin(now * 0.17) * 0.04 +
-        envLightTune.x,
-      REVEAL_SETTLE_Y * sweep + Math.sin(now * 0.26) * 0.12 + envLightTune.y,
+        Math.sin(now * 0.17) * 0.04,
+      REVEAL_SETTLE_Y * sweep + Math.sin(now * 0.26) * 0.12,
       0,
     );
 
