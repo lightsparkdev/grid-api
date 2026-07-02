@@ -43,20 +43,38 @@
   }
 }
 
-/* The 3D card graphic fills the space above the copy. */
+/* The 3D card graphic — a full-screen overlay behind the nav and copy, so the
+   reveal card can enter from the true bottom of the screen and never clips
+   against a smaller canvas. The scene itself frames the fan/card into the area
+   between the nav and the copy. */
 .graphic {
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
-/* Bottom copy on a solid bg; the graphic above fades into it via its own
-   mask-image (see .graphic), so no scrim is needed here. */
+/* Bottom copy — solid bg only under the intro/fan (its lower arc passes behind
+   this block). From the reveal onward it stays transparent: the card rises from
+   the true bottom edge, glides up past the copy zone, and the ready copy must
+   never paint a bg over it. The fade keeps the flips soft. */
 .content {
   position: relative;
   z-index: 1;
   flex-shrink: 0;
+  margin-top: auto;
+  background: transparent;
+  transition: background-color 0.3s ease;
+}
+
+.contentSolid {
   background: var(--app-bg);
+}
+
+/* Invisible stand-in for the ready copy while the card reveal is in flight —
+   it's the measuring stick for the card's final perch (the scene centers the
+   card in the gap between the nav and this), so the choreography adapts if the
+   copy ever changes. */
+.contentSpacer {
+  visibility: hidden;
+  pointer-events: none;
 }

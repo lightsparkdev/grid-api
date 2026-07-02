@@ -33,12 +33,27 @@ export interface CardMaps {
   map: THREE.CanvasTexture;
   normalMap: THREE.CanvasTexture;
   roughnessMap: THREE.CanvasTexture;
-  dispose: () => void;
 }
 
 export interface CardMapOptions {
   issued: boolean;
   cardNumber: string;
+}
+
+// Generation is expensive (large canvas blurs + a per-pixel Sobel pass), so maps
+// are cached per variant and kept for the session — there are only two (blank /
+// issued). This also lets the host prewarm both on idle so opening the sheet and
+// the mid-reveal issued swap never pay the cost.
+const mapsCache = new Map<string, Promise<CardMaps>>();
+
+export function getCardMaps(opts: CardMapOptions): Promise<CardMaps> {
+  const key = `${opts.issued}|${opts.cardNumber}`;
+  let cached = mapsCache.get(key);
+  if (!cached) {
+    cached = generateCardMaps(opts);
+    mapsCache.set(key, cached);
+  }
+  return cached;
 }
 
 function makeCanvas(w: number, h: number): HTMLCanvasElement {
@@ -297,14 +312,5 @@ export async function generateCardMaps(opts: CardMapOptions): Promise<CardMaps> 
     t.needsUpdate = true;
   }
 
-  return {
-    map,
-    normalMap,
-    roughnessMap,
-    dispose: () => {
-      map.dispose();
-      normalMap.dispose();
-      roughnessMap.dispose();
-    },
-  };
+  return { map, normalMap, roughnessMap };
 }

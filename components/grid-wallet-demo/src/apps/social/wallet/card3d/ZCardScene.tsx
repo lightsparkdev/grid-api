@@ -1,25 +1,55 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { CardView } from '@/apps/shared/wallet';
 import { ZCard } from './ZCard';
-import { generateCardMaps, type CardMaps } from './cardTextures';
+import { getCardMaps, type CardMaps } from './cardTextures';
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
-const easeInOut = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+// Smootherstep (zero velocity AND acceleration at both ends) — a much softer,
+// longer deceleration tail than quadratic easeInOut, so the card glides into
+// its head-on resolve instead of stopping.
+const easeInOutSoft = (x: number) => {
+  const t = clamp01(x);
+  return t * t * t * (t * (t * 6 - 15) + 10);
+};
+// Analytic match for the app's `easeOutSnappy` bezier (0.19, 1, 0.22, 1) ≈
+// expo-out — fast launch, long feathered settle. Used for the final glide so
+// the card moves on the same easing language as the copy staggering in.
+const easeOutSnappyFn = (x: number) => {
+  const t = clamp01(x);
+  return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+};
 
 const FAN_COUNT = 18;
 const FAN_RADIUS = 5.2; // bigger ring
 const FAN_SCALE = 0.96; // overall size in frame (slightly up)
-const FAN_OFFSET_Y = -4.9; // hub dropped low (≈40px lower); only the top arc shows, rest fades under the mask
+const FAN_OFFSET_Y = -4.3; // hub dropped low; only the top arc shows (full-screen canvas:
+// world y=0 is the screen center, so the hub sits less deep than the old nav-to-copy framing)
 const FAN_PITCH = 0.35; // base tilt about each card's long axis (keeps the impeller layering)
 const FAN_PITCH_DRIFT = 1.0; // ± pitch amplitude swept across the visible arc
 const FAN_PITCH_PHASE = 0.55; // shifts the pitch wave toward the right/entering side so the rotation
 // "starts earlier" — and parks the near-flat (intersecting) trough off the right edge
 const FAN_SPIN = 0.04; // rad/s — slow continuous wheel rotation
-const REVEAL_DURATION = 2.3; // s; finishes just before the brain flips to 'ready'
+
+// ── Reveal timeline (seconds from reveal mount). ONE continuous timeline whose
+// curves overlap generously — tilt, rise and spin all blend mid-flight (no
+// chained phases, no velocity dip between "tip up" and "spin"). ──
+const REVEAL_TILT = [0.35, 2.85] as const; // flat → dead head-on
+const REVEAL_RISE = [0.05, 2.8] as const; // off-screen below → screen center
+const REVEAL_SPIN = [1.0, 3.05] as const; // 180° about the short axis, joins mid-flight
+// (segments end staggered + stretched so the resolve is a long, soft glide-in)
+// Head-on at center, a beat, then the card glides up to its final perch while
+// the ready copy staggers in below (onResolved fires as the glide starts).
+const REVEAL_ELEVATE = [3.35, 4.15] as const;
+
+// The reveal card renders smaller than the fan's cards (full-width felt huge).
+const REVEAL_SCALE = 0.8;
+// Flat-on-the-"table" entrance pose: nearly flat, top edge tipped up slightly.
+const REVEAL_FLAT_RX = -1.34;
+
+export type CardStage = 'fan' | 'reveal';
 
 /**
  * Intro: the cards sit already fanned into a continuous circle — a deck flourish
@@ -76,85 +106,122 @@ function FanGroup({ maps }: { maps: CardMaps | null }) {
   );
 }
 
-/** Created: one card lies flat, lifts, and spins 360 about the short axis,
- *  resolving head-on. */
-function RevealCard({ maps, cardView }: { maps: CardMaps | null; cardView: CardView }) {
+/**
+ * Created: one card rises from fully off-screen below, lying nearly flat, then
+ * tilts toward the viewer and spins 180° about its short (vertical) axis — all
+ * on one continuous timeline with overlapping eased segments (no phase seams).
+ * It resolves DEAD head-on (no sway) at the CENTER of the screen, holds a beat,
+ * then glides up to `endY` — the measured center of the gap between the nav and
+ * the ready copy — while the copy staggers in (onResolved fires as the glide
+ * starts, so the two motions read as one moment). Both caps carry the same
+ * content (see cardGeometry), so the face showing after the half-turn reads
+ * identically. Runs on its own clock — the brain's `ready` flip mid-flight only
+ * swaps in the numbered texture.
+ */
+function RevealCard({
+  maps,
+  instant,
+  endY,
+  startY,
+  onResolved,
+}: {
+  maps: CardMaps | null;
+  instant: boolean;
+  /** Final card-center height (world units) — measured from the real layout. */
+  endY: number;
+  /** Entrance height (world units) — fully below the bottom edge. */
+  startY: number;
+  onResolved?: () => void;
+}) {
   const ref = useRef<THREE.Group>(null);
   const startRef = useRef<number | null>(null);
+  const resolvedFiredRef = useRef(false);
 
   useFrame((state) => {
     const g = ref.current;
     if (!g) return;
     const now = state.clock.elapsedTime;
-    if (startRef.current === null) startRef.current = now;
-    const elapsed = now - startRef.current;
-    const p = cardView === 'ready' ? 1 : clamp01(elapsed / REVEAL_DURATION);
+    if (startRef.current === null) {
+      // `instant` (sheet reopened on an already-created card): skip to the end.
+      startRef.current = instant ? now - (REVEAL_ELEVATE[1] + 0.1) : now;
+    }
+    const t = now - startRef.current;
+    const seg = ([a, b]: readonly [number, number]) => easeInOutSoft((t - a) / (b - a));
 
-    // Lift: from nearly flat (tilted toward camera) to upright; rises into frame.
-    const lift = easeInOut(clamp01((p - 0.05) / 0.5));
-    // Spin: one full turn about Y (the short axis), resolving head-on.
-    const spin = easeInOut(clamp01((p - 0.28) / 0.72));
-    // Settle: once resolved, a slow living sway so the metal sweeps the studio
-    // gradient (a dead-flat head-on card reflects a uniform slice and looks flat).
-    const settle = easeInOut(clamp01((p - 0.85) / 0.15));
+    const tilt = seg(REVEAL_TILT);
+    const rise = seg(REVEAL_RISE);
+    const spin = seg(REVEAL_SPIN);
+    // Snappy ease-out: the card clears the copy zone in the glide's first beats,
+    // so the staggering copy never overlaps it.
+    const elevate = easeOutSnappyFn(
+      (t - REVEAL_ELEVATE[0]) / (REVEAL_ELEVATE[1] - REVEAL_ELEVATE[0]),
+    );
 
-    g.rotation.x = THREE.MathUtils.lerp(-1.32, -0.1, lift) + Math.sin(now * 0.5) * 0.045 * settle;
-    g.position.y = THREE.MathUtils.lerp(-0.55, 0, lift) + Math.sin(now * 0.6) * 0.02 * settle;
-    g.rotation.y = spin * Math.PI * 2 + Math.sin(now * 0.42 + 1) * 0.17 * settle;
+    g.rotation.x = THREE.MathUtils.lerp(REVEAL_FLAT_RX, 0, tilt);
+    g.rotation.y = spin * Math.PI;
+    const centered = THREE.MathUtils.lerp(startY, 0, rise);
+    g.position.y = THREE.MathUtils.lerp(centered, endY, elevate);
+
+    if (!resolvedFiredRef.current && t >= REVEAL_ELEVATE[0]) {
+      resolvedFiredRef.current = true;
+      onResolved?.();
+    }
   });
 
   return (
-    <group ref={ref}>
+    <group ref={ref} scale={REVEAL_SCALE}>
       <ZCard maps={maps} />
     </group>
   );
 }
 
 /**
- * Scene root: generates the shared material maps once (regenerated when issued
- * flips so the card number appears), and swaps between the intro fan and the
- * created reveal based on `cardView`.
+ * Scene root: pulls the shared material maps from the session cache (the issued
+ * flip mid-reveal just swaps in the prewarmed numbered variant), and renders the
+ * intro fan or the created-card reveal based on `stage`. The canvas spans the
+ * full screen, so the host expresses the card's final perch as `endYFrac` — a
+ * 0..1 fraction from the top of the screen, MEASURED from the real layout (nav
+ * bottom / ready-copy top) — and it's converted to world units here. Content
+ * changes later just re-measure; nothing in the scene is hardcoded to the copy.
  */
 export function ZCardScene({
-  cardView,
+  stage,
   issued,
   cardNumber,
+  endYFrac = 0.35,
+  revealInstant = false,
   reducedMotion = false,
   onReady,
+  onRevealResolved,
 }: {
-  cardView: CardView;
+  stage: CardStage;
   issued: boolean;
   cardNumber: string;
+  /** Final card-center position as a fraction of screen height (from the top). */
+  endYFrac?: number;
+  /** Sheet opened on an already-created card — skip straight to the resolved pose. */
+  revealInstant?: boolean;
   reducedMotion?: boolean;
   onReady?: () => void;
+  onRevealResolved?: () => void;
 }) {
   const [maps, setMaps] = useState<CardMaps | null>(null);
-  const mapsRef = useRef<CardMaps | null>(null);
   const readyFiredRef = useRef(false);
+  const viewport = useThree((s) => s.viewport);
+  // Screen-fraction → world Y (canvas is full-screen; world y=0 = screen center).
+  const endY = (0.5 - endYFrac) * viewport.height;
+  // Entrance: fully below the bottom edge (half the viewport + card clearance).
+  const startY = -(viewport.height / 2 + 0.9);
 
   useEffect(() => {
     let alive = true;
-    generateCardMaps({ issued, cardNumber }).then((m) => {
-      if (!alive) {
-        m.dispose();
-        return;
-      }
-      mapsRef.current?.dispose();
-      mapsRef.current = m;
-      setMaps(m);
+    getCardMaps({ issued, cardNumber }).then((m) => {
+      if (alive) setMaps(m);
     });
     return () => {
       alive = false;
     };
   }, [issued, cardNumber]);
-
-  useEffect(
-    () => () => {
-      mapsRef.current?.dispose();
-      mapsRef.current = null;
-    },
-    [],
-  );
 
   // Tell the host once the maps exist, so it can fade the (already-textured,
   // already-fanned) graphic in with no untextured flash.
@@ -168,17 +235,26 @@ export function ZCardScene({
   // Render nothing until the maps are ready (no fallback flash before fade-in).
   if (!maps) return null;
 
-  // Reduced motion: a single static card, head-on with a slight tilt — no fan, no spin.
+  // Reduced motion: a single static card, head-on with a slight tilt — no fan,
+  // no spin — sitting at the resolved height.
   if (reducedMotion) {
     return (
-      <group rotation={[-0.08, 0.32, 0]}>
+      <group position={[0, endY, 0]} rotation={[-0.08, 0.32, 0]} scale={REVEAL_SCALE}>
         <ZCard maps={maps} />
       </group>
     );
   }
 
-  if (cardView === 'creating' || cardView === 'ready') {
-    return <RevealCard maps={maps} cardView={cardView} />;
+  if (stage === 'reveal') {
+    return (
+      <RevealCard
+        maps={maps}
+        instant={revealInstant}
+        endY={endY}
+        startY={startY}
+        onResolved={onRevealResolved}
+      />
+    );
   }
   return <FanGroup maps={maps} />;
 }

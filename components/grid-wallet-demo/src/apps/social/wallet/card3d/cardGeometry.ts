@@ -28,8 +28,9 @@ function roundedRectShape(w: number, h: number, r: number): THREE.Shape {
  * Extruded rounded-rectangle card with a small edge bevel, centered on the
  * origin and facing +Z. Front-face UVs are remapped to a clean 0..1 across the
  * card rectangle (ExtrudeGeometry's native UVs are world-space), so the material
- * maps line up with the card face. Back/edge UVs are left as-is (the back reads
- * as plain metal).
+ * maps line up with the card face. The back cap gets the SAME content, u-flipped
+ * so it reads correctly (not mirrored) when facing the camera — the reveal ends
+ * after a 180° spin, so the resting face is the back.
  */
 export function createCardGeometry(): THREE.ExtrudeGeometry {
   const shape = roundedRectShape(CARD_W, CARD_H, CARD_R);
@@ -43,27 +44,36 @@ export function createCardGeometry(): THREE.ExtrudeGeometry {
   });
   geometry.center();
 
-  // Remap UVs to 0..1 across the card rect so face textures map cleanly.
+  // Remap UVs to 0..1 across the card rect so face textures map cleanly. The
+  // caps are material group 0 (non-indexed, so group start/count are vertex
+  // indices); back-cap vertices (z < 0) get u mirrored so the content reads
+  // correctly from behind instead of appearing flipped.
   const pos = geometry.attributes.position as THREE.BufferAttribute;
   const uv = geometry.attributes.uv as THREE.BufferAttribute;
   const halfW = CARD_W / 2;
   const halfH = CARD_H / 2;
+  const caps = geometry.groups[0];
+  const capsEnd = caps.start + caps.count;
   for (let i = 0; i < pos.count; i++) {
     const px = pos.getX(i);
     const py = pos.getY(i);
-    uv.setXY(i, (px + halfW) / CARD_W, (py + halfH) / CARD_H);
+    const backCap = i >= caps.start && i < capsEnd && pos.getZ(i) < 0;
+    const u = (px + halfW) / CARD_W;
+    uv.setXY(i, backCap ? 1 - u : u, (py + halfH) / CARD_H);
   }
   uv.needsUpdate = true;
   geometry.computeVertexNormals();
 
   // ExtrudeGeometry is non-indexed, so `computeTangents()` can't run. The face is
   // planar with axis-aligned UVs, so a uniform horizontal tangent (+X) is the
-  // correct, stable TBN for the front face — exactly the frame the brushed-Z
-  // anisotropy (horizontal sheen) and the normal map need. Edges/back read as
-  // plain metal, so their approximate frame is invisible.
+  // correct, stable TBN for the front face — exactly the frame the normal map
+  // needs. The back cap's u is mirrored, so its tangent is -X (keeps the deboss
+  // relief reading correctly, not inverted). Edges read as plain metal, so their
+  // approximate frame is invisible.
   const tangents = new Float32Array(pos.count * 4);
   for (let i = 0; i < pos.count; i++) {
-    tangents[i * 4] = 1;
+    const backCap = i >= caps.start && i < capsEnd && pos.getZ(i) < 0;
+    tangents[i * 4] = backCap ? -1 : 1;
     tangents[i * 4 + 1] = 0;
     tangents[i * 4 + 2] = 0;
     tangents[i * 4 + 3] = 1;

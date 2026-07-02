@@ -153,20 +153,18 @@
   padding-block: 20px;
 }
 
-/* "Creating your card..." status (Subheadline/Regular). */
-.creating {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 16px 24px 48px;
-  color: var(--ios-label-secondary);
+/* CTA content stack — the "Create card" label and the spinner overlap in one
+   grid cell so the pill's size never jumps during the swap. */
+.ctaSwap {
+  display: grid;
+  place-items: center;
 }
 
-.creatingText {
-  @include ios.ios-text-subheadline;
-  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+.ctaItem {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .spinner {

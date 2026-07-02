@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
 import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
@@ -30,8 +30,15 @@ const VALUE_PROPS = [
   },
 ];
 
-/** Intro copy + agreement + Create card CTA (bottom-anchored). */
-export function IntroContent({ onCreate }: { onCreate?: () => void }) {
+/** Intro copy + agreement + Create card CTA (bottom-anchored). While `creating`,
+ *  the CTA swaps its label for a centered spinner (the only loading signal). */
+export function IntroContent({
+  onCreate,
+  creating = false,
+}: {
+  onCreate?: () => void;
+  creating?: boolean;
+}) {
   const reveal = useStaggerReveal();
   return (
     <>
@@ -44,7 +51,37 @@ export function IntroContent({ onCreate }: { onCreate?: () => void }) {
         </motion.div>
       </div>
       <motion.div {...reveal(1)} className={clsx(styles.ctaWrap, styles.ctaWrapAboveNote)}>
-        <PrimaryButton onClick={onCreate}>Create card</PrimaryButton>
+        {/* Not `disabled` while creating — that washes the pill out; it just
+            stops accepting clicks and shows the spinner. */}
+        <PrimaryButton onClick={creating ? undefined : onCreate} aria-busy={creating}>
+          <span className={styles.ctaSwap}>
+            <AnimatePresence initial={false}>
+              {creating ? (
+                <motion.span
+                  key="spinner"
+                  className={styles.ctaItem}
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={motionTransition(undefined, 0.25)}
+                >
+                  <span className={styles.spinner} aria-label="Creating card">
+                    <IconLoadingCircle size={20} />
+                  </span>
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="label"
+                  className={styles.ctaItem}
+                  initial={false}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={motionTransition(undefined, 0.18)}
+                >
+                  Create card
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </span>
+        </PrimaryButton>
       </motion.div>
       {/* Disclaimer sits UNDER the CTA. */}
       <motion.p {...reveal(2)} className={styles.agreement}>
@@ -88,19 +125,3 @@ export function ReadyContent({ onContinue }: { onContinue?: () => void }) {
   );
 }
 
-/** "Creating your card..." status with a leading spinner. */
-export function CreatingCaption({ delay = 0 }: { delay?: number }) {
-  return (
-    <motion.div
-      className={styles.creating}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={motionTransition(undefined, 0.3, { delay })}
-    >
-      <span className={styles.spinner} aria-hidden>
-        <IconLoadingCircle size={16} />
-      </span>
-      <span className={styles.creatingText}>Creating your card...</span>
-    </motion.div>
-  );
-}
