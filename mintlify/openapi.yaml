@@ -17370,6 +17370,7 @@ components:
           description: Sum of all settled amounts in the smallest unit of the funding source's currency.
           example: 1500
     CardTransaction:
+      title: Card Transaction
       type: object
       required:
         - type
