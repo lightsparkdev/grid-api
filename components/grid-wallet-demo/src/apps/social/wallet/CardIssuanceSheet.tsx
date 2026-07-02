@@ -11,6 +11,7 @@ import { IconCrossMedium as IconCrossZ } from '../icons';
 import { IntroContent, ReadyContent } from './CardIssuanceContent';
 import { useCard3DSupport } from './card3d/useCard3DSupport';
 import { CanvasErrorBoundary } from './card3d/CanvasErrorBoundary';
+import { EnvTuner } from './card3d/EnvTuner';
 import styles from './CardIssuanceSheet.module.scss';
 
 // Code-split the 3D card (three.js) — only fetched when the issuance flow opens
@@ -171,6 +172,9 @@ export function CardIssuanceSheet({
             <IconCrossZ size={24} />
           </button>
         </header>
+
+        {/* Dev-only light-placement sliders for the resolved card (see EnvTuner). */}
+        {flow === 'resolved' && <EnvTuner />}
 
         {/* The 3D metal Z card — fills the space between the nav and the copy.
             The wrapper crossfades (slight blur) between the fan and the reveal.

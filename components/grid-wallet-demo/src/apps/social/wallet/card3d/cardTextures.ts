@@ -179,7 +179,10 @@ function heightToNormal(height: Uint8ClampedArray, w: number, h: number, strengt
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const dx = (at(x - 1, y) - at(x + 1, y)) * strength;
-      const dy = (at(x, y - 1) - at(x, y + 1)) * strength;
+      // Canvas y runs DOWN but texture v runs UP — the vertical gradient's sign
+      // must flip, or every horizontal deboss edge lights from the wrong side
+      // (top walls of the recess catching light that should hit bottom walls).
+      const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
       const nz = 1;
       const len = Math.hypot(dx, dy, nz) || 1;
       const i = (y * w + x) * 4;

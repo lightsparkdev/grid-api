@@ -10,8 +10,13 @@ import * as THREE from 'three';
  * soft graphite bottom. A metal card then reads as bright cool silver with a
  * smooth, premium top→bottom falloff. A single soft key adds the sheen line that
  * rakes across the brushed Z. Cool, diffuse, no warm tones, no hard hotspots.
+ *
+ * `reveal` adds a dark horizontal stripe across the key region the head-on card
+ * mirrors — the reveal sweeps it across the polished Z via
+ * `scene.environmentRotation` (see ZCardScene) so the metal reads as catching a
+ * moving dark reflection line, not one flat tone. Remount (key) to re-bake.
  */
-export function CardEnv() {
+export function CardEnv({ reveal = false }: { reveal?: boolean }) {
   return (
     <Environment resolution={512} frames={1} background={false}>
       <mesh scale={60}>
@@ -45,6 +50,19 @@ export function CardEnv() {
         scale={[12, 9, 1]}
         target={[0, 0, 0]}
       />
+      {/* Dark reflection line for the reveal: a near-black stripe floating just
+          in front of the bright key. The resolved (head-on) card mirrors this
+          region, so the stripe reads as a soft dark band across the polished Z. */}
+      {reveal && (
+        <Lightformer
+          form="rect"
+          intensity={1}
+          color="#151515"
+          position={[3, 0.6, 11.4]}
+          scale={[16, 2.2, 1]}
+          target={[0, 0, 0]}
+        />
+      )}
     </Environment>
   );
 }

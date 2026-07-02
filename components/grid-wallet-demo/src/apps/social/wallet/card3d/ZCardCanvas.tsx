@@ -71,7 +71,9 @@ export default function ZCardCanvas({
       }}
     >
       <Suspense fallback={null}>
-        <CardEnv />
+        {/* Keyed on stage so the env re-bakes with/without the reveal's dark
+            stripe — the swap happens while the canvas wrapper is faded out. */}
+        <CardEnv key={stage} reveal={stage === 'reveal'} />
         {/* Reflections are all env-driven; just a faint cool ambient + a gentle
             key so the matte beadblast isn't dead flat. Kept low for the soft,
             diffuse studio look. */}

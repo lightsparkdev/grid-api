@@ -12,22 +12,11 @@ import { motionTransition } from '@/lib/easing';
 import { BRAND } from '../config';
 import styles from './CardIssuanceContent.module.scss';
 
+// Single-line value props (one text style — title + description points merged).
 const VALUE_PROPS = [
-  {
-    Icon: IconGlobe,
-    title: 'Works globally',
-    sub: 'Your dollar balance works everywhere',
-  },
-  {
-    Icon: IconCreditCard1,
-    title: 'Use online or in store',
-    sub: 'Pay at any online retailer or in person',
-  },
-  {
-    Icon: IconWallet1,
-    title: 'Add your card to Apple Wallet',
-    sub: `Use your ${BRAND} card on all your devices`,
-  },
+  { Icon: IconGlobe, label: 'Your dollar balance works everywhere' },
+  { Icon: IconCreditCard1, label: 'Pay online or in person at any retailer' },
+  { Icon: IconWallet1, label: 'Add to Apple Wallet on all your devices' },
 ];
 
 /** Intro copy + agreement + Create card CTA (bottom-anchored). While `creating`,
@@ -104,16 +93,13 @@ export function ReadyContent({ onContinue }: { onContinue?: () => void }) {
           <p className={styles.titlePrimary}>Meet your new {BRAND} card</p>
           <p className={styles.titleSecondaryEmphasis}>Ready to use</p>
         </motion.div>
-        <div className={styles.valuePropCard}>
-          {VALUE_PROPS.map(({ Icon, title, sub }, i) => (
-            <motion.div key={title} {...reveal(i + 1)} className={styles.valueProp}>
+        <div className={styles.valuePropList}>
+          {VALUE_PROPS.map(({ Icon, label }, i) => (
+            <motion.div key={label} {...reveal(i + 1)} className={styles.valueProp}>
               <span className={styles.valuePropIcon}>
                 <Icon size={20} />
               </span>
-              <div className={styles.valuePropText}>
-                <p className={styles.valuePropTitle}>{title}</p>
-                <p className={styles.valuePropSub}>{sub}</p>
-              </div>
+              <p className={styles.valuePropTitle}>{label}</p>
             </motion.div>
           ))}
         </div>
