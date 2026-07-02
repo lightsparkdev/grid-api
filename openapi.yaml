@@ -9954,6 +9954,15 @@ components:
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/IndividualCustomerFields'
+        - type: object
+          properties:
+            idType:
+              $ref: '#/components/schemas/IdentificationType'
+            identifier:
+              type: string
+              writeOnly: true
+              description: The individual's tax identification number. Required to onboard the individual as a US account holder. Only SSN and ITIN are currently accepted for an individual account holder; other identification types are rejected. Write-only — never returned in customer responses.
+              example: 123-45-6789
     BusinessInfo:
       type: object
       description: Additional information required for business entities

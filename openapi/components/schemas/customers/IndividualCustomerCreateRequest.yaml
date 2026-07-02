@@ -2,3 +2,17 @@ title: Individual Customer Create Request
 allOf:
   - $ref: ./CustomerCreateRequest.yaml
   - $ref: ./IndividualCustomerFields.yaml
+  - type: object
+    properties:
+      idType:
+        $ref: ./IdentificationType.yaml
+      identifier:
+        type: string
+        writeOnly: true
+        description: >-
+          The individual's tax identification number. Required to onboard the
+          individual as a US account holder. Only SSN and ITIN are currently
+          accepted for an individual account holder; other identification
+          types are rejected. Write-only — never returned in customer
+          responses.
+        example: 123-45-6789
