@@ -9960,7 +9960,8 @@ components:
               $ref: '#/components/schemas/IdentificationType'
             identifier:
               type: string
-              description: The individual's tax identification number (SSN or ITIN for a US account holder). Required to onboard the individual as a US account holder. Write-only — never returned in customer responses.
+              writeOnly: true
+              description: The individual's tax identification number. Required to onboard the individual as a US account holder. Only SSN and ITIN are currently accepted for an individual account holder; other identification types are rejected. Write-only — never returned in customer responses.
               example: 123-45-6789
     BusinessInfo:
       type: object
