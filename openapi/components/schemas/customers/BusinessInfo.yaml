@@ -85,7 +85,7 @@ properties:
       $ref: ./SourceOfFunds.yaml
     description: Structured source-of-funds categories for the business
     example:
-      - BUSINESS_REVENUE
+      - OPERATING_REVENUE
   sourceOfFundsOtherDescription:
     type: string
     maxLength: 500
