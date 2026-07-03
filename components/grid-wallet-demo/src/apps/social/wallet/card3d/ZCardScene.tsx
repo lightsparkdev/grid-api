@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ZCard } from './ZCard';
+import { CARD_W, CARD_H } from './cardGeometry';
 import { getCardMaps, type CardMaps } from './cardTextures';
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
@@ -72,6 +73,19 @@ const REVEAL_SWEEP_FROM = 0.5; // rad — stripe parked off the card at flight s
 // Where the light settles on the resolved card (hand-tuned with the EnvTuner).
 const REVEAL_SETTLE_X = -0.38;
 const REVEAL_SETTLE_Y = -0.15;
+
+// Hover tilt (resolved card only): the card pivots a few degrees under the
+// pointer — the hovered edge dips away, like pressing a physical card resting
+// on a pin. Damped toward the target so it glides, and eases back to dead
+// head-on when the pointer leaves. Tiny angles are plenty: the env-lit metal
+// makes even 3° shimmer.
+const HOVER_MAX_TILT = 0.1; // rad ≈ 5.7°
+const HOVER_DAMP = 5; // exponential smoothing rate (1/s)
+// The invisible hover hit plane extends this far beyond the card on every side
+// (pre-scale world units), so the tilt engages a little before the pointer
+// actually reaches the card; outside the card bounds the tilt clamps to the
+// edge value.
+const HOVER_HIT_MARGIN = 0.55;
 
 export type CardStage = 'fan' | 'reveal';
 
@@ -161,6 +175,11 @@ function RevealCard({
   const startRef = useRef<number | null>(null);
   const resolvedFiredRef = useRef(false);
   const scene = useThree((s) => s.scene);
+  // Hover tilt state — target follows the pointer (landed card only), current
+  // is damped toward it every frame.
+  const landedRef = useRef(false);
+  const hoverTarget = useRef({ x: 0, y: 0 });
+  const hoverCur = useRef({ x: 0, y: 0 });
 
   // The env sweep below mutates the shared scene — put it back for the fan
   // (whose key-light placement is tuned) when the reveal unmounts.
@@ -171,7 +190,7 @@ function RevealCard({
     [scene],
   );
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const g = ref.current;
     if (!g) return;
     const now = state.clock.elapsedTime;
@@ -187,8 +206,22 @@ function RevealCard({
     const rise = segOut(REVEAL_RISE);
     const spin = seg(REVEAL_SPIN);
 
-    g.rotation.x = THREE.MathUtils.lerp(REVEAL_FLAT_RX, 0, tilt);
-    g.rotation.y = spin * Math.PI * 2;
+    // Hover tilt only engages once the flight is over; the damped current
+    // value keeps any residual tilt easing out smoothly if the state flips.
+    landedRef.current = t >= REVEAL_DONE;
+    if (!landedRef.current) {
+      hoverTarget.current.x = 0;
+      hoverTarget.current.y = 0;
+    }
+    hoverCur.current.x = THREE.MathUtils.damp(
+      hoverCur.current.x, hoverTarget.current.x, HOVER_DAMP, delta,
+    );
+    hoverCur.current.y = THREE.MathUtils.damp(
+      hoverCur.current.y, hoverTarget.current.y, HOVER_DAMP, delta,
+    );
+
+    g.rotation.x = THREE.MathUtils.lerp(REVEAL_FLAT_RX, 0, tilt) + hoverCur.current.x;
+    g.rotation.y = spin * Math.PI * 2 + hoverCur.current.y;
     g.position.y = THREE.MathUtils.lerp(startY, endY, rise);
     // Depth arc: recede (ease-out, flies away with the entrance) minus approach
     // (smootherstep, carries the come-closer scale-up all the way to the land).
@@ -215,8 +248,37 @@ function RevealCard({
   });
 
   return (
-    <group ref={ref}>
+    <group
+      ref={ref}
+      onPointerMove={(e) => {
+        const g = ref.current;
+        if (!g || !landedRef.current) return;
+        // Pointer position across the card's footprint, -1..1 from the center.
+        const nx = THREE.MathUtils.clamp(
+          (e.point.x - g.position.x) / ((CARD_W / 2) * REVEAL_SCALE), -1, 1,
+        );
+        const ny = THREE.MathUtils.clamp(
+          (e.point.y - g.position.y) / ((CARD_H / 2) * REVEAL_SCALE), -1, 1,
+        );
+        // Hovered edge dips away (pressing a card pivoting on a pin).
+        hoverTarget.current.x = -ny * HOVER_MAX_TILT;
+        hoverTarget.current.y = nx * HOVER_MAX_TILT;
+      }}
+      onPointerLeave={() => {
+        hoverTarget.current.x = 0;
+        hoverTarget.current.y = 0;
+      }}
+    >
       <ZCard maps={maps} />
+      {/* Invisible raycast target extending the hover-reactive area past the
+          card bounds (transparent but NOT visible=false — hidden objects are
+          skipped by the raycaster). */}
+      <mesh position={[0, 0, 0.05]}>
+        <planeGeometry
+          args={[CARD_W + HOVER_HIT_MARGIN * 2, CARD_H + HOVER_HIT_MARGIN * 2]}
+        />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
     </group>
   );
 }
