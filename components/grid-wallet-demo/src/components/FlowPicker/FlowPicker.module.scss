@@ -32,12 +32,13 @@
     background: var(--color-gray-925);
   }
 
-  /* Left column of each pair (Reset sits alone here, like Passkey). */
+  /* Left column of each pair. */
   &:nth-child(odd) {
     border-right: var(--stroke-xs) solid var(--border-primary);
   }
 
-  &:last-child {
+  /* Bottom row (last pair) closes the card. */
+  &:nth-last-child(-n + 2) {
     border-bottom: none;
   }
 }

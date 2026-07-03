@@ -48,22 +48,31 @@ export function ConfigurePanel({
           <PlaygroundIntro />
 
           <section className={styles.section}>
-            <SectionDivider label="Explore flows" />
-            <FlowPicker
-              wallet={wallet}
-              running={running}
-              onAction={onAction}
-              onReset={onReset}
+            <SectionDivider
+              label="Explore flows"
+              action={
+                wallet.created ? (
+                  <button
+                    type="button"
+                    className={styles.resetBtn}
+                    onClick={onReset}
+                    disabled={running}
+                  >
+                    Reset
+                  </button>
+                ) : null
+              }
             />
+            <FlowPicker wallet={wallet} running={running} onAction={onAction} />
           </section>
 
           <section className={styles.section}>
-            <SectionDivider label="Select platform" />
+            <SectionDivider label="Platform" />
             <UseCasePicker selected={useCase} onSelect={setUseCase} />
           </section>
 
           <section className={styles.section}>
-            <SectionDivider label="Select authentication" />
+            <SectionDivider label="Authentication" />
             <AuthMethodPicker
               methods={methods}
               onToggle={onToggleMethod}

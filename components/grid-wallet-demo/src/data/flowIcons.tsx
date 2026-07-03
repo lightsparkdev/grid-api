@@ -20,12 +20,13 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   tap: IconNfc1,
 };
 
+/** One palette pair per grid row: greens, sky blues, blues. */
 export const FLOW_ICON_COLORS: Record<ActionId, string> = {
   create: '#34C759',
-  add: 'var(--icon-success)',
-  send: '#11A98B',
-  receive: 'var(--color-sky-500)',
-  withdraw: '#009DE0',
+  add: '#34C759',
+  withdraw: 'var(--icon-success)',
+  send: 'var(--color-sky-500)',
+  receive: '#009DE0',
   card: 'var(--color-blue-500)',
   tap: 'var(--icon-info)',
 };
