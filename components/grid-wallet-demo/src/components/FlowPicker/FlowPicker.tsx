@@ -6,11 +6,11 @@ import { ACTIONS, type ActionId, type WalletState } from '@/data/actions';
 import { FLOW_ICONS, FLOW_ICON_COLORS } from '@/data/flowIcons';
 import styles from './FlowPicker.module.scss';
 
-// 2-col grid (matches the auth picker), four pairs: the seven flows plus Reset
-// as the final tile. Labels are compacted for the half-width tiles.
-const GRID_ORDER: ActionId[] = ['create', 'add', 'withdraw', 'send', 'receive', 'card', 'tap'];
-const GRID_LABELS: Record<ActionId, string> = {
-  create: 'Sign in',
+// 2-col grid (matches the auth picker): three flow pairs, then Reset alone in
+// the last row's left cell — like Passkey in the auth grid. (Reset doubles as
+// "sign in again", so there's no Sign in tile.)
+const GRID_ORDER: ActionId[] = ['add', 'withdraw', 'send', 'receive', 'card', 'tap'];
+const GRID_LABELS: Partial<Record<ActionId, string>> = {
   add: 'Deposit',
   withdraw: 'Withdraw',
   send: 'Send',

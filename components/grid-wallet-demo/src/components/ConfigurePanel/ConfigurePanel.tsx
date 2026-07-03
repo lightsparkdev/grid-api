@@ -58,7 +58,7 @@ export function ConfigurePanel({
           </section>
 
           <section className={styles.section}>
-            <SectionDivider label="Select use case" />
+            <SectionDivider label="Select platform" />
             <UseCasePicker selected={useCase} onSelect={setUseCase} />
           </section>
 

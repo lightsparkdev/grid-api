@@ -25,7 +25,7 @@ export const USE_CASES: UseCaseOption[] = [
   {
     id: 'fintech',
     persona: 'fintech',
-    label: 'Financial app',
+    label: 'Fintech',
     iconSrc: '/assets/app-icon-wallet.png',
     enabled: true,
     built: true,
@@ -33,7 +33,7 @@ export const USE_CASES: UseCaseOption[] = [
   {
     id: 'creator',
     persona: 'creator',
-    label: 'Creator platform',
+    label: 'Creator',
     iconSrc: '/assets/app-icon-creator.png',
     enabled: true,
     built: true,
@@ -41,7 +41,7 @@ export const USE_CASES: UseCaseOption[] = [
   {
     id: 'social',
     persona: 'social',
-    label: 'Social platform',
+    label: 'Social',
     iconSrc: '/assets/app-icon-social.png',
     enabled: true,
     built: true,
@@ -56,14 +56,14 @@ export const USE_CASES: UseCaseOption[] = [
   },
   {
     id: 'ondemand',
-    label: 'On-demand platform',
+    label: 'On-demand',
     iconSrc: '/assets/app-icon-ondemand.png',
     enabled: true,
     built: false,
   },
   {
     id: 'messaging',
-    label: 'Messaging platform',
+    label: 'Messaging',
     iconSrc: '/assets/app-icon-messaging.png',
     enabled: true,
     built: false,

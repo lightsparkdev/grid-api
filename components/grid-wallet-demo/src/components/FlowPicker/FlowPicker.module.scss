@@ -22,7 +22,7 @@
   align-items: center;
   gap: var(--spacing-sm);
   min-width: 0;
-  padding: var(--spacing-lg) var(--spacing-md);
+  padding: var(--spacing-md);
   background: var(--surface-base);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   cursor: default;
@@ -32,13 +32,12 @@
     background: var(--color-gray-925);
   }
 
-  /* Left column of each pair. */
+  /* Left column of each pair (Reset sits alone here, like Passkey). */
   &:nth-child(odd) {
     border-right: var(--stroke-xs) solid var(--border-primary);
   }
 
-  /* Bottom row (last pair) closes the card. */
-  &:nth-last-child(-n + 2) {
+  &:last-child {
     border-bottom: none;
   }
 }
