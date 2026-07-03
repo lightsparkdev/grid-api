@@ -1,7 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Suspense, useEffect } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CardEnv } from './cardEnv';
 import { ZCardScene, type CardStage } from './ZCardScene';
@@ -11,6 +11,23 @@ import { getCardMaps } from './cardTextures';
 // default, skews highlights warm). Fall back gracefully on older three.
 const NEUTRAL_TONE_MAPPING =
   THREE.NeutralToneMapping ?? THREE.AgXToneMapping ?? THREE.ACESFilmicToneMapping;
+
+// Exposure per theme: the lighting rig is tuned in light mode; dark mode dims
+// the whole render uniformly (same tuned relationships, room-appropriate
+// brightness) instead of re-tuning every light.
+const EXPOSURE_LIGHT = 1.05;
+const EXPOSURE_DARK = 0.62;
+
+/** Applies theme exposure reactively (onCreated only runs once). */
+function Exposure({ dark }: { dark: boolean }) {
+  const gl = useThree((s) => s.gl);
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    gl.toneMappingExposure = dark ? EXPOSURE_DARK : EXPOSURE_LIGHT;
+    invalidate();
+  }, [gl, invalidate, dark]);
+  return null;
+}
 
 /**
  * Generate + cache both texture variants ahead of time (called from the host on
@@ -26,6 +43,8 @@ export interface ZCardCanvasProps {
   stage: CardStage;
   /** Sheet closed: stop the render loop entirely (canvas stays mounted). */
   paused?: boolean;
+  /** Dark theme: dim the render to sit right on the dark sheet. */
+  dark?: boolean;
   issued: boolean;
   cardNumber?: string;
   /** Final card-center position as a fraction of screen height (from the top). */
@@ -51,6 +70,7 @@ export interface ZCardCanvasProps {
 export default function ZCardCanvas({
   stage,
   paused = false,
+  dark = false,
   issued,
   cardNumber = '•••• 8972',
   endYFrac,
@@ -78,9 +98,9 @@ export default function ZCardCanvas({
       resize={{ offsetSize: true }}
       onCreated={({ gl }) => {
         gl.toneMapping = NEUTRAL_TONE_MAPPING;
-        gl.toneMappingExposure = 1.05;
       }}
     >
+      <Exposure dark={dark} />
       <Suspense fallback={null}>
         {/* Keyed on stage so the env re-bakes with/without the reveal's dark
             stripe — the swap happens while the canvas wrapper is faded out. */}

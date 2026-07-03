@@ -17,6 +17,7 @@ import {
 import pillStyles from '../blocks/SheetButton.module.scss';
 import { SocialActivityList } from './SocialActivityList';
 import { IntroContent, ReadyContent } from './CardIssuanceContent';
+import { useThemeMode } from '@/hooks/useThemeMode';
 import { useCard3DSupport } from './card3d/useCard3DSupport';
 import { CanvasErrorBoundary } from './card3d/CanvasErrorBoundary';
 import styles from './CardIssuanceSheet.module.scss';
@@ -92,6 +93,7 @@ export function CardIssuanceSheet({
   onTapToPay?: () => void;
 }) {
   const support = useCard3DSupport();
+  const themeMode = useThemeMode();
   // Fade the 3D graphic in only once its maps are generated (no placeholder, no
   // untextured flash).
   const [graphicReady, setGraphicReady] = useState(false);
@@ -327,6 +329,7 @@ export function CardIssuanceSheet({
                   <ZCardCanvas
                     stage={flow === 'reveal' || flow === 'resolved' ? 'reveal' : 'fan'}
                     paused={!open}
+                    dark={themeMode === 'dark'}
                     issued={issued}
                     cardNumber={cardNumber}
                     endYFrac={endYFrac}

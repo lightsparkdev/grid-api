@@ -20,8 +20,10 @@
   /* Aurora press curve — same feel as the tile's own hover scale. */
   transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 
+  /* The webp is baked from the light-mode scene — dim it to match the live
+     canvas's dark-mode exposure (0.62 vs 1.05, see ZCardCanvas). */
   :global([data-theme='dark']) & {
-    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.4));
+    filter: brightness(0.66) drop-shadow(0 10px 22px rgba(0, 0, 0, 0.4));
   }
 }
 
