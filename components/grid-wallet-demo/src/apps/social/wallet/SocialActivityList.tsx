@@ -2,15 +2,39 @@
 
 import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
-import { Flag } from '@/apps/shared/Flag';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconHotDrinkCup';
+import { IconCheeseburger } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCheeseburger';
+import { IconStore1 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconStore1';
+import { IconCup } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconCup';
+import { IconFashion } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconFashion';
+import { IconShoppingBag1 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconShoppingBag1';
+import { IconTag } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconTag';
+import { IconSofa } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconSofa';
+import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconDeskLamp';
+import { IconBasket1 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconBasket1';
 import { useNow } from '@/hooks/useNow';
 import { motionTransition } from '@/lib/easing';
 import { relativeTime } from '@/lib/relativeTime';
-import type { WalletListItemData } from '@/apps/shared/wallet';
+import type { MerchantCategory, WalletListItemData } from '@/apps/shared/wallet';
 import { IconArrowInbox } from '../icons';
 import { SOCIAL_MONEY } from '../config';
 import styles from './SocialActivityList.module.scss';
+
+// Tap-to-pay merchant glyphs (the brain supplies only `category`) — Z's icon
+// variant (radius-2, stroke-2).
+const MERCHANT_ICONS: Record<MerchantCategory, typeof IconHotDrinkCup> = {
+  coffee: IconHotDrinkCup,
+  'fast-food': IconCheeseburger,
+  convenience: IconStore1,
+  cafe: IconCup,
+  fashion: IconFashion,
+  apparel: IconShoppingBag1,
+  accessories: IconTag,
+  furniture: IconSofa,
+  homeware: IconDeskLamp,
+  grocery: IconBasket1,
+};
 
 // Skeleton hold → gradient cover fades in → the empty message + CTA reveal
 // (same beat structure as Aurora/Glitch's WalletListCard).
@@ -38,9 +62,17 @@ const INSERT_DURATION_S = 0.5;
 export function SocialActivityList({
   items,
   onAddMoney,
+  emptyTitle = 'No transactions yet',
+  emptySub,
+  hideCta = false,
 }: {
   items: WalletListItemData[];
-  onAddMoney: () => void;
+  onAddMoney?: () => void;
+  /** Empty-state copy overrides (defaults are the wallet-home wording). */
+  emptyTitle?: string;
+  emptySub?: ReactNode;
+  /** Drop the "Add money" CTA (e.g. the card home's card-only list). */
+  hideCta?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
   const now = useNow();
@@ -141,16 +173,22 @@ export function SocialActivityList({
                   transition={motionTransition(undefined, REVEAL_DURATION_S)}
                 >
                   <div className={styles.emptyText}>
-                    <p className={styles.emptyTitle}>No transactions yet</p>
+                    <p className={styles.emptyTitle}>{emptyTitle}</p>
                     <p className={styles.emptySub}>
-                      Deposit to your {SOCIAL_MONEY.cardLabel.split(' ')[0]} account
-                      <br />
-                      to get started
+                      {emptySub ?? (
+                        <>
+                          Deposit to your {SOCIAL_MONEY.cardLabel.split(' ')[0]} account
+                          <br />
+                          to get started
+                        </>
+                      )}
                     </p>
                   </div>
-                  <button type="button" className={styles.addCta} onClick={onAddMoney}>
-                    Add money
-                  </button>
+                  {!hideCta && (
+                    <button type="button" className={styles.addCta} onClick={onAddMoney}>
+                      Add money
+                    </button>
+                  )}
                 </motion.div>
               </div>
             </motion.div>
@@ -163,6 +201,7 @@ export function SocialActivityList({
 
 function Row({ item, time }: { item: WalletListItemData; time: string }) {
   const positive = item.amount.includes('+');
+  const MerchantIcon = item.category ? MERCHANT_ICONS[item.category] : null;
   return (
     <div className={styles.row}>
       <span className={styles.graphic} aria-hidden>
@@ -170,6 +209,8 @@ function Row({ item, time }: { item: WalletListItemData; time: string }) {
           <span className={styles.avatarInitials}>{item.avatar.initials}</span>
         ) : item.image ? (
           <img className={styles.graphicImage} src={item.image} alt="" draggable={false} />
+        ) : MerchantIcon ? (
+          <MerchantIcon size={20} />
         ) : (
           <IconArrowInbox size={20} />
         )}

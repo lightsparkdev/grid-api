@@ -5,9 +5,17 @@ import clsx from 'clsx';
 import { AnimatePresence, motion } from 'motion/react';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { motionTransition } from '@/lib/easing';
-import type { CardView } from '@/apps/shared/wallet';
-import { IconCrossMedium as IconCrossZ } from '../icons';
+import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
+import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
+import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import type { CardView, TapPhase, WalletListItemData } from '@/apps/shared/wallet';
+import {
+  IconCrossMedium as IconCrossZ,
+  IconDotGrid1x3Horizontal,
+  IconNfc1,
+} from '../icons';
+import pillStyles from '../blocks/SheetButton.module.scss';
+import { SocialActivityList } from './SocialActivityList';
 import { IntroContent, ReadyContent } from './CardIssuanceContent';
 import { useCard3DSupport } from './card3d/useCard3DSupport';
 import { CanvasErrorBoundary } from './card3d/CanvasErrorBoundary';
@@ -42,30 +50,46 @@ const GRAPHIC_SWAP_MS = 250; // fan fades out (with the content) before the card
  */
 type Flow = 'fan' | 'swap' | 'reveal' | 'resolved';
 
-// Stub card-home actions — art direction TBD.
-const CARD_HOME_ROWS = ['Tap to pay', 'Card details', 'Freeze card'];
+// Tap-to-pay is the iOS SYSTEM contactless interaction — the choreography must
+// read identically across every skin (glitch is the reference): the card lifts
+// 56px, the header steps away, and the reader status fades in a beat later.
+const TAP_LIFT = -56;
+const LIFT_T = motionTransition(easeOutSnappy, 0.5);
+const TAP_CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.3 });
+const TAP_CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
 
 /**
  * Z card issuance — a flat, full-screen sheet. The 3D metal card fills the top;
  * copy + CTA anchor at the bottom. Create runs the spinner → blur-out → card
  * reveal choreography; the ready copy waits for the card to resolve head-on.
+ * Once created, the same sheet is the debit-card home (`cardView: 'home'`) —
+ * hero card, Tap to pay, and the card's transactions.
  */
 export function CardIssuanceSheet({
   open,
   cardView,
   issued,
   cardNumber = '•••• 8972',
+  tapPhase = 'idle',
+  transactions = [],
   onClose,
   onCreate,
   onContinue,
+  onTapToPay,
 }: {
   open: boolean;
   cardView: CardView;
   issued: boolean;
   cardNumber?: string;
+  /** Tap-to-pay sub-flow phase (brain-driven); non-idle swaps the card-home
+   *  body for the shared reader status. */
+  tapPhase?: TapPhase;
+  /** Card charges only (tap-to-pay history) — the card home's list. */
+  transactions?: WalletListItemData[];
   onClose: () => void;
   onCreate: () => void;
   onContinue: () => void;
+  onTapToPay?: () => void;
 }) {
   const support = useCard3DSupport();
   // Fade the 3D graphic in only once its maps are generated (no placeholder, no
@@ -111,7 +135,9 @@ export function CardIssuanceSheet({
   // invisible placeholder in the card-home layout and handed to the scene as
   // fractions, so the 3D card lands wherever the layout puts it.
   const heroRef = useRef<HTMLDivElement>(null);
-  const [heroFrac, setHeroFrac] = useState<{ y: number; w: number } | null>(null);
+  const [heroFrac, setHeroFrac] = useState<{ y: number; w: number; lift: number } | null>(
+    null,
+  );
   const measureHero = useCallback(() => {
     const root = rootRef.current;
     const heroEl = heroRef.current;
@@ -123,6 +149,9 @@ export function CardIssuanceSheet({
     setHeroFrac({
       y: (rect.top + rect.height / 2 - rootRect.top) / rootRect.height,
       w: rect.width / rootRect.width,
+      // The tap-to-pay lift, as a screen fraction (56 layout px; rect heights
+      // are in the same scaled space as rootRect, so use the layout height).
+      lift: -TAP_LIFT / root.offsetHeight,
     });
   }, []);
   useEffect(() => {
@@ -198,6 +227,10 @@ export function CardIssuanceSheet({
   const showIntro = cardView === 'intro' || (cardView === 'creating' && flow === 'fan');
   const showReady = cardView === 'ready' && flow === 'resolved';
   const showHome = cardView === 'home';
+  const isTap = tapPhase !== 'idle';
+  // Tap-to-pay lifts the card 56px (system choreography) — expressed to the
+  // scene as a shifted hero target; the scene glides to it (damped).
+  const heroY = heroFrac ? heroFrac.y - (isTap ? heroFrac.lift : 0) : null;
   // No `open` here: the card stays visible while the sheet slides away (it
   // rides the sheet), and reopening never waits on a fade-in.
   const graphicVisible = graphicReady && flow !== 'swap';
@@ -221,15 +254,54 @@ export function CardIssuanceSheet({
       }}
     >
       <div className={styles.issuance} ref={rootRef}>
+        {/* Wallet-home-style nav (no hairline): X left; the centered title +
+            "more" appear only on the card home. The WHOLE header steps away
+            while tap-to-pay runs (system choreography — glitch does the same);
+            the element stays mounted so layout measurements hold. */}
         <header className={styles.nav} ref={navRef}>
-          <button
-            type="button"
-            className={styles.navBtn}
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <IconCrossZ size={24} />
-          </button>
+          <AnimatePresence>
+            {!isTap && (
+              <motion.button
+                key="close"
+                type="button"
+                className={styles.navBtn}
+                onClick={onClose}
+                aria-label="Close"
+                initial={false}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                <IconCrossZ size={24} />
+              </motion.button>
+            )}
+            {showHome && !isTap && (
+              <motion.h2
+                key="title"
+                className={styles.navTitle}
+                initial={{ opacity: 0, filter: 'blur(4px)' }}
+                animate={{ opacity: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, filter: 'blur(4px)' }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+              >
+                Z Card
+              </motion.h2>
+            )}
+            {showHome && !isTap && (
+              <motion.button
+                key="more"
+                type="button"
+                className={clsx(styles.navBtn, styles.navRight)}
+                aria-label="More"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+              >
+                <IconDotGrid1x3Horizontal size={24} />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </header>
 
         {/* The 3D metal Z card — fills the space between the nav and the copy.
@@ -258,8 +330,9 @@ export function CardIssuanceSheet({
                     issued={issued}
                     cardNumber={cardNumber}
                     endYFrac={endYFrac}
-                    heroYFrac={heroFrac?.y ?? null}
+                    heroYFrac={heroY}
                     heroWFrac={heroFrac?.w ?? null}
+                    hoverTilt={!isTap}
                     revealInstant={revealInstantRef.current}
                     reducedMotion={support.reducedMotion}
                     onReady={() => setGraphicReady(true)}
@@ -282,9 +355,11 @@ export function CardIssuanceSheet({
             card perches above the copy and must never get clipped by this
             block (e.g. while gliding up as the ready copy appears). */}
         {/* Card home — the debit-card view. The hero placeholder is invisible
-            (the LIVE 3D card morphs onto its measured rect); the rows below are
-            a stub layout. pointer-events pass through to the canvas everywhere
-            except the interactive rows, so the hero card keeps its hover tilt. */}
+            (the LIVE 3D card morphs onto its measured rect); below it, Tap to
+            pay + the card's transactions — swapped for the shared reader
+            status while a tap runs. pointer-events pass through to the canvas
+            everywhere except the interactive area, so the hero card keeps its
+            hover tilt. */}
         {showHome && (
           <motion.div
             key="home"
@@ -300,11 +375,59 @@ export function CardIssuanceSheet({
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               transition={{ ...motionTransition(undefined, 0.4), delay: 0.25 }}
             >
-              {CARD_HOME_ROWS.map((label) => (
-                <button key={label} type="button" className={styles.cardHomeRow}>
-                  {label}
-                </button>
-              ))}
+              {/* Lift layer: rides up 56px with the card during tap-to-pay
+                  (same transition as the card's own glide). */}
+              <motion.div
+                className={styles.cardHomeLift}
+                animate={{ y: isTap ? TAP_LIFT : 0 }}
+                transition={LIFT_T}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {!isTap ? (
+                    <motion.div
+                      key="home-content"
+                      className={styles.cardHomeContent}
+                      initial={{ opacity: 0, filter: 'blur(8px)' }}
+                      animate={{ opacity: 1, filter: 'blur(0px)', transition: TAP_CONTENT_IN }}
+                      exit={{ opacity: 0, filter: 'blur(8px)', transition: TAP_CONTENT_OUT }}
+                    >
+                      <ContentAreaButton
+                        type="button"
+                        variant="filled"
+                        className={clsx(pillStyles.pill, styles.tapButton)}
+                        icon={<IconNfc1 size={20} className={styles.tapIcon} aria-hidden />}
+                        onClick={onTapToPay}
+                      >
+                        Tap to pay
+                      </ContentAreaButton>
+                      <div className={styles.cardHomeList}>
+                        <SocialActivityList
+                          items={transactions}
+                          emptyTitle="Nothing here, yet"
+                          emptySub={
+                            <>
+                              Transactions using your debit
+                              <br />
+                              card will show up here
+                            </>
+                          }
+                          hideCta
+                        />
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="tap-status"
+                      className={styles.tapStatus}
+                      initial={{ opacity: 0, filter: 'blur(8px)' }}
+                      animate={{ opacity: 1, filter: 'blur(0px)', transition: TAP_CONTENT_IN }}
+                      exit={{ opacity: 0, filter: 'blur(8px)', transition: TAP_CONTENT_OUT }}
+                    >
+                      <TapToPayStatus phase={tapPhase === 'idle' ? 'hold' : tapPhase} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}

@@ -15,9 +15,29 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 48px;
   padding: 8px 16px;
   box-sizing: border-box;
+}
+
+/* Card-home title — absolutely centered (matches the wallet home nav). */
+.navTitle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 590;
+  letter-spacing: -0.43px;
+  color: var(--app-text-primary);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.navRight {
+  margin-left: auto;
 }
 
 .navBtn {
@@ -95,24 +115,68 @@
 .cardHomeBody {
   display: flex;
   flex-direction: column;
-  margin-top: 24px;
-  padding: 0 16px;
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
   pointer-events: auto;
 }
 
-/* Stub action row (art direction TBD). */
-.cardHomeRow {
-  border: 0;
-  background: transparent;
-  text-align: left;
-  padding: 12px 12px;
-  font-size: 15px;
-  line-height: 20px;
-  font-weight: 510;
-  letter-spacing: -0.23px;
-  color: var(--app-text-primary);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+/* Rides up 56px with the card during tap-to-pay (system choreography). */
+.cardHomeLift {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.cardHomeContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Tap to pay — the flat brand pill, full width on the page's 16px gutters.
+   (The shared button is width:100%, which overflows next to margins — width
+   auto + stretch fills the row correctly instead.) */
+.tapButton {
+  flex-shrink: 0;
+  width: auto;
+  margin: 0 16px;
+  /* Glyph on the RIGHT of the label (row-reverse keeps the shared button's
+     icon-slot markup). +4px left padding optically balances the icon side. */
+  flex-direction: row-reverse;
+  gap: 0;
+  padding-left: 24px;
+}
+
+/* Center the 20px glyph in the shared button's 24px icon slot — otherwise it
+   sits top-left, reading as misaligned with a bloated gap. */
+.tapIcon {
+  display: block;
+  margin: auto;
+}
+
+/* The card's transactions (flat home-screen list style, card charges only).
+   Scrolls if the history outgrows the space; flex so the list section fills
+   the remaining height (the empty-state message centers in ALL of it). */
+.cardHomeList {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Reader status (Hold Near Reader / Done) — the iOS system interaction: fixed
+   position below the lifted card (not centered in leftover space), matching
+   the other skins' choreography. */
+.tapStatus {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 26px; /* + the 24px body gap = 50px below the card */
 }
 
 /* Invisible stand-in for the ready copy while the card reveal is in flight —

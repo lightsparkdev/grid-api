@@ -23,6 +23,9 @@ import { IconBell2 } from '@central-icons-react/round-outlined-radius-2-stroke-2
 import { IconBubble3 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconBubble3';
 import { IconDollar } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconDollar';
 import { IconDollar as IconDollarFilled } from '@central-icons-react/round-filled-radius-2-stroke-2/IconDollar';
+// Debit-card home (header "more" + Tap to pay).
+import { IconDotGrid1x3Horizontal } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconDotGrid1x3Horizontal';
+import { IconNfc1 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconNfc1';
 import type { AuthMethod } from '@/data/flow';
 
 export {
@@ -49,6 +52,8 @@ export {
   IconBubble3,
   IconDollar,
   IconDollarFilled,
+  IconDotGrid1x3Horizontal,
+  IconNfc1,
 };
 
 export type SocialIcon = typeof IconEmail1;

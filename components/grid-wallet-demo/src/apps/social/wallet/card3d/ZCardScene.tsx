@@ -96,6 +96,10 @@ const HOVER_HIT_MARGIN = 0.55;
 // canvas, same mesh; only the target moves. Damped (exponential ease-out), so
 // it's interruptible and never snaps.
 const HERO_DAMP = 6;
+// The hero TARGET itself can move after landing (tap-to-pay lifts it 56px) —
+// track it damped so target changes glide instead of teleporting. λ≈8 lands in
+// ~0.5s, matching the system tap-lift transition the DOM layers use.
+const HERO_TRACK_DAMP = 8;
 
 /** Hero target in world units — measured from the card-home layout. */
 export interface HeroTarget {
@@ -188,6 +192,7 @@ function RevealCard({
   endY,
   startY,
   hero,
+  hoverTilt = true,
   onResolved,
 }: {
   maps: CardMaps | null;
@@ -198,6 +203,9 @@ function RevealCard({
   startY: number;
   /** Card-home hero target — when set, the landed card morphs to it. */
   hero?: HeroTarget | null;
+  /** Pointer hover tilt on the landed card (off during tap-to-pay — the
+   *  system interaction wants the card dead head-on). */
+  hoverTilt?: boolean;
   onResolved?: () => void;
 }) {
   const ref = useRef<THREE.Group>(null);
@@ -212,7 +220,7 @@ function RevealCard({
   // 0 = flight/perch placement, 1 = hero placement. Instant opens onto the
   // card home start at 1 (no morph on mount).
   const heroBlend = useRef(instant && hero ? 1 : 0);
-  const heroLast = useRef<HeroTarget | null>(hero ?? null);
+  const heroLast = useRef<HeroTarget | null>(null);
   // The morph's FROM placement, captured the moment the hero engages. The live
   // perch is layout-derived and MOVES when the ready copy exits mid-morph —
   // blending from a frozen snapshot instead keeps the card jump-free.
@@ -243,9 +251,10 @@ function RevealCard({
     const rise = segOut(REVEAL_RISE);
     const spin = seg(REVEAL_SPIN);
 
-    // Hover tilt only engages once the flight is over; the damped current
-    // value keeps any residual tilt easing out smoothly if the state flips.
-    landedRef.current = t >= REVEAL_DONE;
+    // Hover tilt only engages once the flight is over (and not while it's
+    // disabled, e.g. tap-to-pay); the damped current value keeps any residual
+    // tilt easing out smoothly if the state flips.
+    landedRef.current = t >= REVEAL_DONE && hoverTilt;
     if (!landedRef.current) {
       hoverTarget.current.x = 0;
       hoverTarget.current.y = 0;
@@ -265,9 +274,19 @@ function RevealCard({
     // Hero morph: blend from a FROZEN snapshot of the card's placement (taken
     // the moment the hero engages) toward the measured hero rect. Remember the
     // last real target so the morph keeps easing if `hero` flips back to null
-    // mid-glide.
+    // mid-glide. The target itself is TRACKED damped — post-landing target
+    // moves (the tap-to-pay 56px lift) glide instead of snapping.
     if (hero) {
-      heroLast.current = hero;
+      if (!heroLast.current) {
+        heroLast.current = { ...hero };
+      } else {
+        heroLast.current.y = THREE.MathUtils.damp(
+          heroLast.current.y, hero.y, HERO_TRACK_DAMP, delta,
+        );
+        heroLast.current.scale = THREE.MathUtils.damp(
+          heroLast.current.scale, hero.scale, HERO_TRACK_DAMP, delta,
+        );
+      }
       if (!heroFrom.current) {
         heroFrom.current = { y: g.position.y, scale: g.scale.x || REVEAL_SCALE };
       }
@@ -363,6 +382,7 @@ export function ZCardScene({
   endYFrac = 0.35,
   heroYFrac = null,
   heroWFrac = null,
+  hoverTilt = true,
   revealInstant = false,
   reducedMotion = false,
   onReady,
@@ -376,6 +396,8 @@ export function ZCardScene({
   /** Card-home hero rect (measured): center Y fraction + width fraction. */
   heroYFrac?: number | null;
   heroWFrac?: number | null;
+  /** Pointer hover tilt on the landed card (off during tap-to-pay). */
+  hoverTilt?: boolean;
   /** Sheet opened on an already-created card — skip straight to the resolved pose. */
   revealInstant?: boolean;
   reducedMotion?: boolean;
@@ -442,6 +464,7 @@ export function ZCardScene({
         endY={endY}
         startY={startY}
         hero={hero}
+        hoverTilt={hoverTilt}
         onResolved={onRevealResolved}
       />
     );

@@ -33,6 +33,8 @@ export interface ZCardCanvasProps {
   /** Card-home hero rect (measured): center Y fraction + width fraction. */
   heroYFrac?: number | null;
   heroWFrac?: number | null;
+  /** Pointer hover tilt on the landed card (off during tap-to-pay). */
+  hoverTilt?: boolean;
   revealInstant?: boolean;
   reducedMotion?: boolean;
   /** Fired once the material maps are generated (host fades the graphic in). */
@@ -54,6 +56,7 @@ export default function ZCardCanvas({
   endYFrac,
   heroYFrac = null,
   heroWFrac = null,
+  hoverTilt = true,
   revealInstant = false,
   reducedMotion = false,
   onReady,
@@ -94,6 +97,7 @@ export default function ZCardCanvas({
           endYFrac={endYFrac}
           heroYFrac={heroYFrac}
           heroWFrac={heroWFrac}
+          hoverTilt={hoverTilt}
           revealInstant={revealInstant}
           reducedMotion={reducedMotion}
           onReady={onReady}

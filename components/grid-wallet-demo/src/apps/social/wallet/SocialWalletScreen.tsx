@@ -95,6 +95,11 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     setCardView,
     isIssuance,
     issued,
+    // Card home: tap-to-pay sub-flow + the card's transaction history.
+    tapPhase,
+    setTapPhase,
+    startTapToPay,
+    transactions,
     // Z keeps the sheet open after confirm and shows an in-sheet success screen
     // (Done closes it) instead of the toast.
   } = useWalletHome({ ...props, transferSuccessScreen: true });
@@ -105,9 +110,15 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
   const rewardsClip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 16 });
   const cardClip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 16 });
 
+  // One Face ID surface for both flows that need it: transfer confirms and the
+  // tap-to-pay auth beat.
+  const tapAuth = tapPhase === 'auth';
   const overlayContent = (
     <>
-      <FaceIdAuth active={sheetConfirming} onDone={() => finishTransfer()} />
+      <FaceIdAuth
+        active={sheetConfirming || tapAuth}
+        onDone={() => (tapAuth ? setTapPhase('done') : finishTransfer())}
+      />
       <Toast toast={toast} onDismiss={() => setToast(null)} variant="flat" />
     </>
   );
@@ -213,6 +224,8 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
         open={isIssuance || cardView === 'home'}
         cardView={cardView}
         issued={issued}
+        tapPhase={tapPhase}
+        transactions={transactions}
         onClose={() => setCardView('closed')}
         onCreate={() => {
           setCardView('creating');
@@ -221,6 +234,7 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
         // Continue morphs the live 3D card from its perch to the card-home hero
         // rect — same sheet, same canvas, one continuous element.
         onContinue={() => setCardView('home')}
+        onTapToPay={startTapToPay}
       />
 
       {screenOverlay}
