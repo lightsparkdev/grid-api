@@ -1,6 +1,7 @@
 'use client';
 
 import { IconSettingsSliderHor } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsSliderHor';
+import { IconArrowRotateCounterClockwise } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateCounterClockwise';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
@@ -58,6 +59,7 @@ export function ConfigurePanel({
                     onClick={onReset}
                     disabled={running}
                   >
+                    <IconArrowRotateCounterClockwise size={12} aria-hidden />
                     Reset
                   </button>
                 ) : null
