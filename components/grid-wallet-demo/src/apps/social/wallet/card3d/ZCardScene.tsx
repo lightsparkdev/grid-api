@@ -128,18 +128,26 @@ function FanGroup({ maps }: { maps: CardMaps | null }) {
   const groupRef = useRef<THREE.Group>(null);
   const pitchRefs = useRef<(THREE.Group | null)[]>([]);
   const scene = useThree((s) => s.scene);
+  // Carousel time accumulates from per-frame deltas (not the global clock) so
+  // a paused frameloop (sheet closed) resumes without a jump.
+  const fanTime = useRef(0);
 
-  // Park the env at the fan's tuned orientation; hand it back neutral for the
-  // reveal stage (which drives its own sweep) on unmount.
-  useEffect(() => {
-    scene.environmentRotation.set(FAN_ENV_X, FAN_ENV_Y, 0);
-    return () => {
+  // Hand the env back neutral for the reveal stage (which drives its own
+  // sweep) on unmount; while mounted it's driven per-frame below.
+  useEffect(
+    () => () => {
       scene.environmentRotation.set(0, 0, 0);
-    };
-  }, [scene]);
+    },
+    [scene],
+  );
 
-  useFrame((state) => {
-    const rot = state.clock.elapsedTime * FAN_SPIN;
+  useFrame((_, delta) => {
+    fanTime.current += delta;
+    // Re-asserted every frame (not just on mount): the reveal stage mutates
+    // the same shared scene rotation, so a mount-only set could go stale on
+    // the always-warm canvas. Three floats — free.
+    scene.environmentRotation.set(FAN_ENV_X, FAN_ENV_Y, 0);
+    const rot = fanTime.current * FAN_SPIN;
     const g = groupRef.current;
     if (g) g.rotation.z = rot;
     for (let i = 0; i < FAN_COUNT; i++) {
