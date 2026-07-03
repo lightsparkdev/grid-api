@@ -9556,6 +9556,18 @@ components:
         - OTHER
       description: The intended purpose for using the Grid account
       example: CONTRACTOR_PAYOUTS
+    SourceOfFunds:
+      type: string
+      enum:
+        - OPERATING_REVENUE
+        - INVESTMENT_INCOME
+        - LOANS
+        - VENTURE_CAPITAL
+        - PERSONAL_SAVINGS
+        - DONATIONS
+        - OTHER
+      description: The primary source of funds for the business
+      example: OPERATING_REVENUE
     BusinessInfoUpdate:
       type: object
       description: Additional information for business entities
@@ -9627,6 +9639,35 @@ components:
           items:
             type: string
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFunds'
+          description: Structured source-of-funds categories for the business
+          example:
+            - BUSINESS_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
     BusinessCustomerFields:
@@ -9720,6 +9761,35 @@ components:
           items:
             type: string
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFunds'
+          description: Structured source-of-funds categories for the business
+          example:
+            - BUSINESS_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
     BeneficialOwnerRole:
@@ -10038,6 +10108,35 @@ components:
           items:
             type: string
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFunds'
+          description: Structured source-of-funds categories for the business
+          example:
+            - BUSINESS_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
     BusinessCustomerCreateRequest:
@@ -16566,6 +16665,8 @@ components:
         - APPLICANT_CRIMINAL_RECORD
         - APPLICANT_REJECTED
         - MISSING_BENEFICIAL_OWNER
+        - MISSING_CONTROL_PERSON
+        - MISSING_GOOD_STANDING_DOCUMENT
       description: Type of verification error. The category-specific MISSING_*_DOCUMENT types indicate which document category is needed. Document quality types (POOR_QUALITY_DOCUMENT, SUSPECTED_FRAUD_DOCUMENT, etc.) indicate specific issues with uploaded documents. APPLICANT_* types indicate issues with the applicant themselves (sanctions, fraud, criminal records).
       example: MISSING_FIELD
     VerificationError:
