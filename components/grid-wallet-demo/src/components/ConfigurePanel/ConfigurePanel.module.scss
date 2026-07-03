@@ -26,16 +26,12 @@
     height: 100dvh;
     border-right: none;
   }
-
-  // Hide the "Configure" header bar on mobile — the content has its own heading,
-  // so the panel goes straight to it (the body's 24px top padding matches the sides).
-  .panel .headerBar {
-    display: none;
-  }
 }
 
 .body {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: var(--spacing-4xl);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -60,6 +56,10 @@
   flex-direction: column;
   gap: var(--spacing-md);
   width: 100%;
+  /* Center in the panel when there's spare room; auto margins collapse to 0 when
+     the content overflows, so it top-aligns and scrolls without clipping (unlike
+     justify-content: center, which would clip the top). */
+  margin-block: auto;
 }
 
 .section {

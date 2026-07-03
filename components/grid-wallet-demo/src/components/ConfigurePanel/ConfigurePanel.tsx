@@ -1,8 +1,6 @@
 'use client';
 
-import { IconSettingsSliderHor } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsSliderHor';
 import { IconArrowRotateCounterClockwise } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateCounterClockwise';
-import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { UseCasePicker } from '@/components/UseCasePicker/UseCasePicker';
@@ -39,11 +37,6 @@ export function ConfigurePanel({
   // others can hook in here later.
   return (
     <aside className={styles.panel}>
-      <PanelHeader
-        icon={<IconSettingsSliderHor size={20} />}
-        title="Configure"
-        className={styles.headerBar}
-      />
       <div className={styles.body}>
         <div className={styles.content}>
           <PlaygroundIntro />
