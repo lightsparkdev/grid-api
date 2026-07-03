@@ -26,9 +26,10 @@ const STEP_EXIT = {
   transition: motionTransition(undefined, 0.28),
 };
 
-// ── Creation choreography (ms from the Create tap) ──
-const SPINNER_MS = 1200; // spinner sits centered in the CTA before anything moves
-const GRAPHIC_SWAP_MS = 320; // fan fades out (with the content) before the card fades in
+// ── Creation choreography (ms from the Create tap) — the full tap-to-landed
+// run is ~2.8s (0.7 spinner + 0.25 swap + 1.85 flight) ──
+const SPINNER_MS = 700; // spinner sits centered in the CTA before anything moves
+const GRAPHIC_SWAP_MS = 250; // fan fades out (with the content) before the card fades in
 
 /**
  * Presentation phases layered over the brain's cardView:
