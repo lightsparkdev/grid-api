@@ -80,6 +80,25 @@
   color: var(--app-text-primary);
 }
 
+/* Person avatars match the send flow's recipient rows: tertiary fill (no ring)
+   with the country flag badged bottom-right. */
+.graphicAvatar {
+  background: var(--ios-fill-tertiary);
+  overflow: visible; // the corner flag badge hangs past the circle
+}
+.avatarFlag {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round; // round badge + ring, not the global squircle
+  overflow: hidden;
+  /* Ring in the page bg separates the badge from the avatar fill. */
+  box-shadow: 0 0 0 2px var(--app-bg);
+}
+
 /* Info — Callout 16/21: Title (emphasized) + Description (regular secondary). */
 .info {
   display: flex;

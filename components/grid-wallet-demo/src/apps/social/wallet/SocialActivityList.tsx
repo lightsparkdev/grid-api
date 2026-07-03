@@ -17,6 +17,7 @@ import { useNow } from '@/hooks/useNow';
 import { motionTransition } from '@/lib/easing';
 import { relativeTime } from '@/lib/relativeTime';
 import type { MerchantCategory, WalletListItemData } from '@/apps/shared/wallet';
+import { Flag } from '@/apps/shared/Flag';
 import { IconArrowInbox } from '../icons';
 import { SOCIAL_MONEY } from '../config';
 import styles from './SocialActivityList.module.scss';
@@ -204,9 +205,14 @@ function Row({ item, time }: { item: WalletListItemData; time: string }) {
   const MerchantIcon = item.category ? MERCHANT_ICONS[item.category] : null;
   return (
     <div className={styles.row}>
-      <span className={styles.graphic} aria-hidden>
+      <span className={clsx(styles.graphic, item.avatar && styles.graphicAvatar)} aria-hidden>
         {item.avatar ? (
-          <span className={styles.avatarInitials}>{item.avatar.initials}</span>
+          <>
+            <span className={styles.avatarInitials}>{item.avatar.initials}</span>
+            <span className={styles.avatarFlag}>
+              <Flag code={item.avatar.code} size={16} />
+            </span>
+          </>
         ) : item.image ? (
           <img className={styles.graphicImage} src={item.image} alt="" draggable={false} />
         ) : MerchantIcon ? (

@@ -232,7 +232,17 @@ export function useMoneySheet({
   };
   const pickCountry = (country: BankCountry) => {
     setPickedCountry(country);
-    setFormValues(sampleValuesFor(country));
+    const values = sampleValuesFor(country);
+    // The spec's generic example is "Example Bank" — prefill the country's real
+    // demo bank instead (the same pool-cycled name the saved row will get).
+    if ('bankName' in values) {
+      const pool = country.banks ?? [country.bankName];
+      const count = banks.filter(
+        (b) => !('address' in b) && b.country.code === country.code,
+      ).length;
+      values.bankName = pool[count % pool.length];
+    }
+    setFormValues(values);
     if (isSend) {
       const pool = recipientNamesFor(country);
       const count = banks.filter(
@@ -256,7 +266,9 @@ export function useMoneySheet({
     const bank: SavedBank = {
       id: `${country.accountType}-${Date.now()}`,
       country,
-      bankName: pool[sameCountry % pool.length],
+      // The form field is the source of truth (it's prefilled with the pool
+      // name and the user may have edited it); pool-cycle only without one.
+      bankName: formValues.bankName || pool[sameCountry % pool.length],
       values: formValues,
       beneficiary: formBeneficiary,
     };

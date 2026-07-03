@@ -597,7 +597,7 @@
 
 .addressBody {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   width: 100%;
 }
 
@@ -642,7 +642,7 @@
 
 /* The token logo hugs the right edge, aligned with the 24px gutter. */
 .addressTile {
-  margin: 4px 0 0 0;
+  margin: 0;
 }
 
 /* Paste / Continue — full-width inverted-primary button below the prompt; pulled
@@ -663,8 +663,8 @@
 /* Solana token chip (own rounded-square background baked into the asset). */
 .tokenIcon {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 40px;
+  height: 40px;
 }
 
 .tokenIconSm {
