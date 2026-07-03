@@ -9,7 +9,7 @@ import { AuthMethodPicker } from '@/components/AuthMethodPicker/AuthMethodPicker
 import { FlowPicker } from '@/components/FlowPicker/FlowPicker';
 import type { AuthMethod } from '@/data/flow';
 import type { UseCaseId } from '@/data/configure';
-import type { ActionId, CompletedFlows, WalletState } from '@/data/actions';
+import type { ActionId, WalletState } from '@/data/actions';
 import styles from './ConfigurePanel.module.scss';
 
 export interface ConfigurePanelProps {
@@ -18,7 +18,6 @@ export interface ConfigurePanelProps {
   methods: AuthMethod[];
   onToggleMethod: (m: AuthMethod) => void;
   wallet: WalletState;
-  completed: CompletedFlows;
   running: boolean;
   onAction: (id: ActionId) => void;
   onReset: () => void;
@@ -30,7 +29,6 @@ export function ConfigurePanel({
   methods,
   onToggleMethod,
   wallet,
-  completed,
   running,
   onAction,
   onReset,
@@ -50,6 +48,16 @@ export function ConfigurePanel({
           <PlaygroundIntro />
 
           <section className={styles.section}>
+            <SectionDivider label="Explore flows" />
+            <FlowPicker
+              wallet={wallet}
+              running={running}
+              onAction={onAction}
+              onReset={onReset}
+            />
+          </section>
+
+          <section className={styles.section}>
             <SectionDivider label="Select use case" />
             <UseCasePicker selected={useCase} onSelect={setUseCase} />
           </section>
@@ -60,30 +68,6 @@ export function ConfigurePanel({
               methods={methods}
               onToggle={onToggleMethod}
               disabled={running}
-            />
-          </section>
-
-          <section className={styles.section}>
-            <SectionDivider
-              label="Explore flows"
-              action={
-                wallet.created ? (
-                  <button
-                    type="button"
-                    className={styles.resetBtn}
-                    onClick={onReset}
-                    disabled={running}
-                  >
-                    Reset
-                  </button>
-                ) : null
-              }
-            />
-            <FlowPicker
-              wallet={wallet}
-              completed={completed}
-              running={running}
-              onAction={onAction}
             />
           </section>
         </div>

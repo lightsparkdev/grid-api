@@ -80,7 +80,7 @@ export interface AuthMethodOption {
 
 export const AUTH_METHODS: AuthMethodOption[] = [
   { id: 'email_otp', label: 'Email', enabled: true },
-  { id: 'sms', label: 'Phone / SMS', compactLabel: 'Phone', enabled: true },
+  { id: 'sms', label: 'SMS', enabled: true },
   { id: 'oauth', label: 'Google', enabled: true },
   { id: 'apple', label: 'Apple', enabled: true },
   { id: 'passkey', label: 'Passkey', enabled: true },

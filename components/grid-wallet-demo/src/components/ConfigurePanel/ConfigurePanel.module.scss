@@ -68,33 +68,3 @@
   gap: var(--spacing-md);
   width: 100%;
 }
-
-/* Reset control, right-aligned in the Explore flows divider. Matches the section
-   label exactly (type + tertiary color, no padding) so it never changes the
-   divider height. */
-.resetBtn {
-  all: unset;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--font-leading-18);
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  font-feature-settings: 'salt' 1;
-  cursor: pointer;
-  transition: color 150ms ease;
-
-  @media (hover: hover) {
-    &:hover:not(:disabled) {
-      color: var(--text-primary);
-    }
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}

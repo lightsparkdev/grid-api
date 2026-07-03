@@ -102,7 +102,6 @@ export default function Page() {
           methods={logic.methods}
           onToggleMethod={logic.toggleMethod}
           wallet={logic.wallet}
-          completed={logic.completed}
           running={logic.running}
           onAction={onConfigureAction}
           onReset={logic.reset}

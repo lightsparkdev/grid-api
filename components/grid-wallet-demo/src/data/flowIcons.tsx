@@ -1,8 +1,8 @@
 import { IconArrowBoxRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowBoxRight';
-import { IconPlusMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusMedium';
 import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlaneTopRight';
 import { IconArrowInbox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowInbox';
-import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
+import { IconQrCode } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconQrCode';
+import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowOutOfBox';
 import { IconCreditCardAdd } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCardAdd';
 import { IconNfc1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconNfc1';
 import { ACTIONS, type ActionId } from './actions';
@@ -12,10 +12,10 @@ export type FlowIconCmp = typeof IconArrowBoxRight;
 /** Shared with FlowPicker + API feed section dividers. */
 export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   create: IconArrowBoxRight,
-  add: IconPlusMedium,
+  add: IconArrowInbox,
   send: IconPaperPlaneTopRight,
-  receive: IconArrowInbox,
-  withdraw: IconBank,
+  receive: IconQrCode,
+  withdraw: IconArrowOutOfBox,
   card: IconCreditCardAdd,
   tap: IconNfc1,
 };

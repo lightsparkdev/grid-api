@@ -2,8 +2,8 @@
 
 .group {
   corner-shape: var(--corner-shape);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
   background: var(--surface-base);
   border: var(--stroke-xs) solid var(--border-primary);
@@ -21,9 +21,10 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  min-width: 200px;
+  min-width: 0;
   padding: var(--spacing-lg) var(--spacing-md);
   background: var(--surface-base);
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
   cursor: default;
   transition: background 100ms ease;
 
@@ -31,8 +32,14 @@
     background: var(--color-gray-925);
   }
 
-  &:not(:last-child) {
-    border-bottom: var(--stroke-xs) solid var(--border-primary);
+  /* Left column of each pair. */
+  &:nth-child(odd) {
+    border-right: var(--stroke-xs) solid var(--border-primary);
+  }
+
+  /* Bottom row (last pair) closes the card. */
+  &:nth-last-child(-n + 2) {
+    border-bottom: none;
   }
 }
 
@@ -77,14 +84,4 @@
   min-width: 0;
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
-}
-
-.optionCheck {
-  display: flex;
-  flex-shrink: 0;
-  color: var(--icon-primary);
-
-  svg path {
-    vector-effect: non-scaling-stroke;
-  }
 }
