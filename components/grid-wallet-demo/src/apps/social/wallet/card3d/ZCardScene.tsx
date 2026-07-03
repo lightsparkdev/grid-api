@@ -87,6 +87,18 @@ const HOVER_DAMP = 5; // exponential smoothing rate (1/s)
 // edge value.
 const HOVER_HIT_MARGIN = 0.55;
 
+// Hero morph (Continue → the debit-card home): the landed card glides/scales
+// from its perch to the measured hero rect as ONE continuous element — same
+// canvas, same mesh; only the target moves. Damped (exponential ease-out), so
+// it's interruptible and never snaps.
+const HERO_DAMP = 6;
+
+/** Hero target in world units — measured from the card-home layout. */
+export interface HeroTarget {
+  y: number;
+  scale: number;
+}
+
 export type CardStage = 'fan' | 'reveal';
 
 /**
@@ -161,6 +173,7 @@ function RevealCard({
   instant,
   endY,
   startY,
+  hero,
   onResolved,
 }: {
   maps: CardMaps | null;
@@ -169,6 +182,8 @@ function RevealCard({
   endY: number;
   /** Entrance height (world units) — fully below the bottom edge. */
   startY: number;
+  /** Card-home hero target — when set, the landed card morphs to it. */
+  hero?: HeroTarget | null;
   onResolved?: () => void;
 }) {
   const ref = useRef<THREE.Group>(null);
@@ -180,6 +195,14 @@ function RevealCard({
   const landedRef = useRef(false);
   const hoverTarget = useRef({ x: 0, y: 0 });
   const hoverCur = useRef({ x: 0, y: 0 });
+  // 0 = flight/perch placement, 1 = hero placement. Instant opens onto the
+  // card home start at 1 (no morph on mount).
+  const heroBlend = useRef(instant && hero ? 1 : 0);
+  const heroLast = useRef<HeroTarget | null>(hero ?? null);
+  // The morph's FROM placement, captured the moment the hero engages. The live
+  // perch is layout-derived and MOVES when the ready copy exits mid-morph —
+  // blending from a frozen snapshot instead keeps the card jump-free.
+  const heroFrom = useRef<HeroTarget | null>(null);
 
   // The env sweep below mutates the shared scene — put it back for the fan
   // (whose key-light placement is tuned) when the reveal unmounts.
@@ -222,11 +245,35 @@ function RevealCard({
 
     g.rotation.x = THREE.MathUtils.lerp(REVEAL_FLAT_RX, 0, tilt) + hoverCur.current.x;
     g.rotation.y = spin * Math.PI * 2 + hoverCur.current.y;
-    g.position.y = THREE.MathUtils.lerp(startY, endY, rise);
+
+    const flightY = THREE.MathUtils.lerp(startY, endY, rise);
+
+    // Hero morph: blend from a FROZEN snapshot of the card's placement (taken
+    // the moment the hero engages) toward the measured hero rect. Remember the
+    // last real target so the morph keeps easing if `hero` flips back to null
+    // mid-glide.
+    if (hero) {
+      heroLast.current = hero;
+      if (!heroFrom.current) {
+        heroFrom.current = { y: g.position.y, scale: g.scale.x || REVEAL_SCALE };
+      }
+    }
+    heroBlend.current = THREE.MathUtils.damp(
+      heroBlend.current, hero ? 1 : 0, HERO_DAMP, delta,
+    );
+    if (!hero && heroBlend.current < 0.001) heroFrom.current = null;
+    const b = heroBlend.current;
+    const heroT = heroLast.current;
+    const from = heroFrom.current;
+
+    g.position.y =
+      heroT && from ? THREE.MathUtils.lerp(from.y, heroT.y, b) : flightY;
     // Depth arc: recede (ease-out, flies away with the entrance) minus approach
     // (smootherstep, carries the come-closer scale-up all the way to the land).
     g.position.z = -REVEAL_ARC_DEPTH * (segOut(REVEAL_RECEDE) - seg(REVEAL_APPROACH));
-    g.scale.setScalar(REVEAL_SCALE);
+    g.scale.setScalar(
+      heroT && from ? THREE.MathUtils.lerp(from.scale, heroT.scale, b) : REVEAL_SCALE,
+    );
 
     // The card holds dead straight once resolved, so instead of moving the card
     // we orbit the STUDIO around it. The env carries a dark stripe (see cardEnv):
@@ -253,12 +300,13 @@ function RevealCard({
       onPointerMove={(e) => {
         const g = ref.current;
         if (!g || !landedRef.current) return;
-        // Pointer position across the card's footprint, -1..1 from the center.
+        // Pointer position across the card's footprint, -1..1 from the center
+        // (normalized by the CURRENT scale — the hero card is much larger).
         const nx = THREE.MathUtils.clamp(
-          (e.point.x - g.position.x) / ((CARD_W / 2) * REVEAL_SCALE), -1, 1,
+          (e.point.x - g.position.x) / ((CARD_W / 2) * g.scale.x), -1, 1,
         );
         const ny = THREE.MathUtils.clamp(
-          (e.point.y - g.position.y) / ((CARD_H / 2) * REVEAL_SCALE), -1, 1,
+          (e.point.y - g.position.y) / ((CARD_H / 2) * g.scale.y), -1, 1,
         );
         // Hovered edge dips away (pressing a card pivoting on a pin).
         hoverTarget.current.x = -ny * HOVER_MAX_TILT;
@@ -297,6 +345,8 @@ export function ZCardScene({
   issued,
   cardNumber,
   endYFrac = 0.35,
+  heroYFrac = null,
+  heroWFrac = null,
   revealInstant = false,
   reducedMotion = false,
   onReady,
@@ -307,6 +357,9 @@ export function ZCardScene({
   cardNumber: string;
   /** Final card-center position as a fraction of screen height (from the top). */
   endYFrac?: number;
+  /** Card-home hero rect (measured): center Y fraction + width fraction. */
+  heroYFrac?: number | null;
+  heroWFrac?: number | null;
   /** Sheet opened on an already-created card — skip straight to the resolved pose. */
   revealInstant?: boolean;
   reducedMotion?: boolean;
@@ -320,6 +373,14 @@ export function ZCardScene({
   const endY = (0.5 - endYFrac) * viewport.height;
   // Entrance: fully below the bottom edge (half the viewport + card clearance).
   const startY = -(viewport.height / 2 + 0.9);
+  // Card-home hero placement, converted from the measured layout fractions.
+  const hero: HeroTarget | null =
+    heroYFrac !== null && heroWFrac !== null
+      ? {
+          y: (0.5 - heroYFrac) * viewport.height,
+          scale: (heroWFrac * viewport.width) / CARD_W,
+        }
+      : null;
 
   useEffect(() => {
     let alive = true;
@@ -344,10 +405,14 @@ export function ZCardScene({
   if (!maps) return null;
 
   // Reduced motion: a single static card, head-on with a slight tilt — no fan,
-  // no spin — sitting at the resolved height.
+  // no spin — sitting at the resolved (or hero) placement.
   if (reducedMotion) {
     return (
-      <group position={[0, endY, 0]} rotation={[-0.08, 0.32, 0]} scale={REVEAL_SCALE}>
+      <group
+        position={[0, hero ? hero.y : endY, 0]}
+        rotation={[-0.08, 0.32, 0]}
+        scale={hero ? hero.scale : REVEAL_SCALE}
+      >
         <ZCard maps={maps} />
       </group>
     );
@@ -360,6 +425,7 @@ export function ZCardScene({
         instant={revealInstant}
         endY={endY}
         startY={startY}
+        hero={hero}
         onResolved={onRevealResolved}
       />
     );

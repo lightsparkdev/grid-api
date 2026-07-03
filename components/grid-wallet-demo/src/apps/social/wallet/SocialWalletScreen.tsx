@@ -89,8 +89,8 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     finishTransfer,
     confirmTransfer,
     handleReceivePayment,
-    // Card issuance (intro → creating → ready). Replayable demo: the tile always
-    // opens the intro (no card-home screen yet).
+    // Card issuance (intro → creating → ready → home). Once issued, the tile
+    // opens straight onto the card home (hero card, no re-issuance).
     cardView,
     setCardView,
     isIssuance,
@@ -170,7 +170,7 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
             className={styles.cardTile}
             ref={cardClip.ref}
             style={cardClip.style}
-            onClick={() => setCardView('intro')}
+            onClick={() => setCardView(issued ? 'home' : 'intro')}
             whileHover={{ scale: CARD_HOVER, transition: PRESS }}
             whileTap={{ scale: CARD_PRESS, transition: PRESS }}
           >
@@ -210,7 +210,7 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
       />
 
       <CardIssuanceSheet
-        open={isIssuance}
+        open={isIssuance || cardView === 'home'}
         cardView={cardView}
         issued={issued}
         onClose={() => setCardView('closed')}
@@ -218,7 +218,9 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
           setCardView('creating');
           onCardIssued?.();
         }}
-        onContinue={() => setCardView('closed')}
+        // Continue morphs the live 3D card from its perch to the card-home hero
+        // rect — same sheet, same canvas, one continuous element.
+        onContinue={() => setCardView('home')}
       />
 
       {screenOverlay}

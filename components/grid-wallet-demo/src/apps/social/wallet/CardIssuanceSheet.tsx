@@ -33,12 +33,17 @@ const GRAPHIC_SWAP_MS = 250; // fan fades out (with the content) before the card
 
 /**
  * Presentation phases layered over the brain's cardView:
- *  fan      – intro fan spinning (intro copy, or the 1.2s CTA spinner)
+ *  fan      – intro fan spinning (intro copy, or the CTA spinner)
  *  swap     – content exits; the fan fades out (canvas hidden, scene swaps)
- *  reveal   – single card fades in on the "table", floats up + 180° spin
- *  resolved – card head-on; the ready copy staggers in
+ *  reveal   – single card fades in on the "table", floats up + 360° spin
+ *  resolved – card head-on; the ready copy staggers in (also the card-home
+ *             state — cardView 'home' keeps flow at resolved and morphs the
+ *             SAME card to the hero rect; the canvas never unmounts)
  */
 type Flow = 'fan' | 'swap' | 'reveal' | 'resolved';
+
+// Stub card-home actions — art direction TBD.
+const CARD_HOME_ROWS = ['Tap to pay', 'Card details', 'Freeze card'];
 
 /**
  * Z card issuance — a flat, full-screen sheet. The 3D metal card fills the top;
@@ -70,9 +75,11 @@ export function CardIssuanceSheet({
   // shader compile never compete with the open animation (the graphic fades in
   // afterwards anyway).
   const [settled, setSettled] = useState(false);
-  const [flow, setFlow] = useState<Flow>(cardView === 'ready' ? 'resolved' : 'fan');
+  const [flow, setFlow] = useState<Flow>(
+    cardView === 'ready' || cardView === 'home' ? 'resolved' : 'fan',
+  );
   // Sheet opened on an already-created card — the scene skips to the resolved pose.
-  const revealInstantRef = useRef(cardView === 'ready');
+  const revealInstantRef = useRef(cardView === 'ready' || cardView === 'home');
 
   // The card's final perch, measured from the real layout (center of the gap
   // between the nav and the copy) as a fraction of screen height. The hidden
@@ -100,6 +107,40 @@ export function CardIssuanceSheet({
     return () => ro.disconnect();
   }, [measure, open]);
 
+  // Card-home hero rect (16px gutters, card aspect ratio) — measured from the
+  // invisible placeholder in the card-home layout and handed to the scene as
+  // fractions, so the 3D card lands wherever the layout puts it.
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [heroFrac, setHeroFrac] = useState<{ y: number; w: number } | null>(null);
+  const measureHero = useCallback(() => {
+    const root = rootRef.current;
+    const heroEl = heroRef.current;
+    if (!root || !heroEl || root.offsetHeight === 0) return;
+    // Rect-based (not offset chains) so it survives the phone shell's CSS
+    // scale — both rects scale together and the fractions cancel it out.
+    const rootRect = root.getBoundingClientRect();
+    const rect = heroEl.getBoundingClientRect();
+    setHeroFrac({
+      y: (rect.top + rect.height / 2 - rootRect.top) / rootRect.height,
+      w: rect.width / rootRect.width,
+    });
+  }, []);
+  useEffect(() => {
+    if (cardView !== 'home') {
+      // Clear only when a NEW issuance starts (the reveal must fly to the
+      // perch, not the hero). Keep it across 'closed' so reopening straight
+      // onto the card home finds the card already parked at the hero rect.
+      if (cardView === 'intro' || cardView === 'creating') setHeroFrac(null);
+      return;
+    }
+    measureHero();
+    const el = heroRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measureHero);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [cardView, measureHero]);
+
   // Prewarm on idle: fetch + parse the three.js chunk and generate both texture
   // variants while nothing is animating, so the first open doesn't stutter.
   useEffect(() => {
@@ -115,20 +156,32 @@ export function CardIssuanceSheet({
     return () => cancel(id);
   }, [cardNumber]);
 
+  // STICKY: once settled (first open's slide done), stays true forever — the
+  // canvas never unmounts again (the sheet keeps it alive while closed, with
+  // the render loop paused), so reopening skips WebGL init + shader compile.
   useEffect(() => {
-    if (!open) {
-      setSettled(false);
-      return;
-    }
+    if (!open || settled) return;
     const t = window.setTimeout(() => setSettled(true), SHEET_DURATION * 1000 + 80);
     return () => window.clearTimeout(t);
-  }, [open]);
+  }, [open, settled]);
 
   // Drive the creation choreography off the brain's cardView.
   useEffect(() => {
-    if (cardView === 'intro' || cardView === 'closed') {
+    // Closed: leave the scene exactly as it is. The sheet (and the live canvas
+    // inside it) stays mounted and rides the slide-down — resetting to the fan
+    // here would visibly swap the scene mid-dismiss.
+    if (cardView === 'closed') return;
+    if (cardView === 'intro') {
       setFlow('fan');
       revealInstantRef.current = false;
+      return;
+    }
+    if (cardView === 'home') {
+      // Continue (already resolved — no-op) or a direct open on an issued card
+      // (the sheet stays mounted while closed, so flow was reset to 'fan'):
+      // the card home always shows the resolved card, skipping the flight.
+      setFlow('resolved');
+      revealInstantRef.current = true;
       return;
     }
     if (cardView !== 'creating') return;
@@ -144,13 +197,19 @@ export function CardIssuanceSheet({
 
   const showIntro = cardView === 'intro' || (cardView === 'creating' && flow === 'fan');
   const showReady = cardView === 'ready' && flow === 'resolved';
-  const graphicVisible = open && graphicReady && flow !== 'swap';
+  const showHome = cardView === 'home';
+  // No `open` here: the card stays visible while the sheet slides away (it
+  // rides the sheet), and reopening never waits on a fade-in.
+  const graphicVisible = graphicReady && flow !== 'swap';
 
   return (
     <BottomSheet
       open={open}
       onDismiss={onClose}
       duration={SHEET_DURATION}
+      // The 3D canvas lives in here — keep it mounted (hidden + paused) across
+      // close/reopen so flows never pay WebGL init twice.
+      keepMounted
       glass={{
         radius: 0,
         cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
@@ -195,9 +254,12 @@ export function CardIssuanceSheet({
                 >
                   <ZCardCanvas
                     stage={flow === 'reveal' || flow === 'resolved' ? 'reveal' : 'fan'}
+                    paused={!open}
                     issued={issued}
                     cardNumber={cardNumber}
                     endYFrac={endYFrac}
+                    heroYFrac={heroFrac?.y ?? null}
+                    heroWFrac={heroFrac?.w ?? null}
                     revealInstant={revealInstantRef.current}
                     reducedMotion={support.reducedMotion}
                     onReady={() => setGraphicReady(true)}
@@ -219,11 +281,39 @@ export function CardIssuanceSheet({
             the copy). From the reveal on it stays transparent — the resolved
             card perches above the copy and must never get clipped by this
             block (e.g. while gliding up as the ready copy appears). */}
+        {/* Card home — the debit-card view. The hero placeholder is invisible
+            (the LIVE 3D card morphs onto its measured rect); the rows below are
+            a stub layout. pointer-events pass through to the canvas everywhere
+            except the interactive rows, so the hero card keeps its hover tilt. */}
+        {showHome && (
+          <motion.div
+            key="home"
+            className={styles.cardHome}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          >
+            <div className={styles.cardHero} ref={heroRef} aria-hidden />
+            <motion.div
+              className={styles.cardHomeBody}
+              initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              transition={{ ...motionTransition(undefined, 0.4), delay: 0.25 }}
+            >
+              {CARD_HOME_ROWS.map((label) => (
+                <button key={label} type="button" className={styles.cardHomeRow}>
+                  {label}
+                </button>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+
         <div
           className={clsx(styles.content, flow === 'fan' && styles.contentSolid)}
           ref={contentRef}
         >
-          {(flow === 'reveal' || flow === 'resolved') && !showReady && (
+          {(flow === 'reveal' || flow === 'resolved') && !showReady && !showHome && (
             <div className={styles.contentSpacer} aria-hidden>
               <ReadyContent />
             </div>

@@ -70,6 +70,51 @@
   background: var(--app-bg);
 }
 
+/* Card home — the debit-card view living in the same sheet (the canvas never
+   unmounts, so the 3D card is a continuous element from issuance to here).
+   pointer-events pass through to the canvas except on the interactive rows. */
+.cardHome {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+/* Invisible measuring target for the hero card: full width minus 16px gutters,
+   real card aspect ratio (ISO 7810 ID-1). The scene morphs the live 3D card
+   onto this rect — move it in the layout and the card follows. */
+.cardHero {
+  flex-shrink: 0;
+  margin: 16px 16px 0;
+  aspect-ratio: 1.586;
+}
+
+.cardHomeBody {
+  display: flex;
+  flex-direction: column;
+  margin-top: 24px;
+  padding: 0 16px;
+  pointer-events: auto;
+}
+
+/* Stub action row (art direction TBD). */
+.cardHomeRow {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 12px 12px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 510;
+  letter-spacing: -0.23px;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Invisible stand-in for the ready copy while the card reveal is in flight —
    it's the measuring stick for the card's final perch (the scene centers the
    card in the gap between the nav and this), so the choreography adapts if the

@@ -24,10 +24,15 @@ export function prewarmCardAssets(cardNumber: string): void {
 
 export interface ZCardCanvasProps {
   stage: CardStage;
+  /** Sheet closed: stop the render loop entirely (canvas stays mounted). */
+  paused?: boolean;
   issued: boolean;
   cardNumber?: string;
   /** Final card-center position as a fraction of screen height (from the top). */
   endYFrac?: number;
+  /** Card-home hero rect (measured): center Y fraction + width fraction. */
+  heroYFrac?: number | null;
+  heroWFrac?: number | null;
   revealInstant?: boolean;
   reducedMotion?: boolean;
   /** Fired once the material maps are generated (host fades the graphic in). */
@@ -43,9 +48,12 @@ export interface ZCardCanvasProps {
  */
 export default function ZCardCanvas({
   stage,
+  paused = false,
   issued,
   cardNumber = '•••• 8972',
   endYFrac,
+  heroYFrac = null,
+  heroWFrac = null,
   revealInstant = false,
   reducedMotion = false,
   onReady,
@@ -54,7 +62,7 @@ export default function ZCardCanvas({
   return (
     <Canvas
       dpr={[1, 2]}
-      frameloop={reducedMotion ? 'demand' : 'always'}
+      frameloop={paused ? 'never' : reducedMotion ? 'demand' : 'always'}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       // The canvas is a full-screen overlay; the camera is pulled back so the
       // world-units-per-pixel match the old nav-to-copy framing (cards render at
@@ -84,6 +92,8 @@ export default function ZCardCanvas({
           issued={issued}
           cardNumber={cardNumber}
           endYFrac={endYFrac}
+          heroYFrac={heroYFrac}
+          heroWFrac={heroWFrac}
           revealInstant={revealInstant}
           reducedMotion={reducedMotion}
           onReady={onReady}

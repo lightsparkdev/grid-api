@@ -43,6 +43,13 @@ interface BottomSheetProps {
    * PresentationStage transition so the scale stays in lockstep with the slide.
    */
   duration?: number;
+  /**
+   * Keep the sheet's subtree mounted while closed (hidden + inert instead of
+   * unmounted). For sheets with expensive content — e.g. Z's card sheet keeps
+   * its WebGL canvas alive so reopening never pays context init + shader
+   * compile again. Default false (closed sheets unmount, as before).
+   */
+  keepMounted?: boolean;
 }
 
 /**
@@ -63,6 +70,7 @@ export function BottomSheet({
   topRadius,
   scalesBackground = true,
   duration = SHEET_DURATION,
+  keepMounted = false,
 }: BottomSheetProps) {
   const overlayGlass = useOverlayGlass();
   const sheetGlass = glass ?? overlayGlass.sheet;
@@ -104,6 +112,62 @@ export function BottomSheet({
         })()
       : undefined;
 
+  const panel = (
+    <FrostPanel
+      className={styles.sheet}
+      tint={sheetGlass.tint}
+      tintBlur={sheetGlass.tintBlur}
+      edge={sheetGlass.edge}
+      edgeGlint={sheetGlass.edgeGlint}
+      edgeWidth={sheetGlass.edgeWidth}
+      shadow={sheetGlass.shadow}
+      radius={topRadius ?? sheetGlass.radius}
+      cornerSmoothing={sheetGlass.cornerSmoothing}
+      cornerRadii={cornerRadii}
+    >
+      <div className={styles.sheetInner}>{children}</div>
+    </FrostPanel>
+  );
+
+  // keepMounted: the sheet never unmounts — closed just slides it off and makes
+  // it inert (scrim fades, pointer events off). Expensive content (e.g. the Z
+  // card's WebGL canvas) survives close/reopen with zero re-init.
+  if (keepMounted) {
+    return (
+      <div
+        ref={overlayRef}
+        className={styles.overlay}
+        style={{
+          paddingLeft: inset,
+          paddingRight: inset,
+          paddingBottom: inset,
+          pointerEvents: open ? 'auto' : 'none',
+        }}
+        role="presentation"
+        aria-hidden={!open}
+      >
+        <motion.button
+          type="button"
+          className={styles.scrim}
+          aria-label="Dismiss"
+          initial={false}
+          animate={{ opacity: open ? 1 : 0 }}
+          transition={scrimTransition}
+          onClick={onDismiss}
+          tabIndex={open ? 0 : -1}
+        />
+        <motion.div
+          className={styles.sheetMotion}
+          initial={false}
+          animate={{ y: open ? 0 : '110%' }}
+          transition={sheetTransition}
+        >
+          {panel}
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <AnimatePresence initial={false}>
       {open ? (
@@ -139,20 +203,7 @@ export function BottomSheet({
             exit={{ y: '110%' }}
             transition={sheetTransition}
           >
-            <FrostPanel
-              className={styles.sheet}
-              tint={sheetGlass.tint}
-              tintBlur={sheetGlass.tintBlur}
-              edge={sheetGlass.edge}
-              edgeGlint={sheetGlass.edgeGlint}
-              edgeWidth={sheetGlass.edgeWidth}
-              shadow={sheetGlass.shadow}
-              radius={topRadius ?? sheetGlass.radius}
-              cornerSmoothing={sheetGlass.cornerSmoothing}
-              cornerRadii={cornerRadii}
-            >
-              <div className={styles.sheetInner}>{children}</div>
-            </FrostPanel>
+            {panel}
           </motion.div>
         </motion.div>
       ) : null}
