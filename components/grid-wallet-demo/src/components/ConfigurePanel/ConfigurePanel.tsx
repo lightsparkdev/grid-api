@@ -67,12 +67,12 @@ export function ConfigurePanel({
           </section>
 
           <section className={styles.section}>
-            <SectionDivider label="Platform" />
+            <SectionDivider label="Choose platform" />
             <UseCasePicker selected={useCase} onSelect={setUseCase} />
           </section>
 
           <section className={styles.section}>
-            <SectionDivider label="Authentication" />
+            <SectionDivider label="Configure auth" />
             <AuthMethodPicker
               methods={methods}
               onToggle={onToggleMethod}
