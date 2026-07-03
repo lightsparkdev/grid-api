@@ -35,6 +35,11 @@ const TAP_INSERT_DELAY_MS = 900;
 // dismissed, so the slide-down insert is visible on the settled wallet (same
 // beat as tap-to-pay).
 const SHEET_INSERT_DELAY_MS = 700;
+// Success-screen skins (sheet stays up until Done): after the sheet slides
+// away, tick the balance once home is settled, then grow the row in while the
+// tick is still rolling.
+const SETTLE_DELTA_DELAY_MS = 450;
+const SETTLE_INSERT_DELAY_MS = 950;
 // Receive: tapping Share/Copy lets the action register, then the sheet closes;
 // the inbound payment "arrives" a beat after that (real receives are async, so
 // the gap sells it — sharing your details doesn't instantly cause a payment).
@@ -361,31 +366,58 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     if (mode === 'receive') return;
     onTransferExecute?.(mode, cents);
     setSheetConfirming(false);
-    setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
     // A skin with its own success screen keeps the sheet up (Done closes it) and
-    // owns the confirmation, so skip the auto-close + toast here.
-    if (!transferSuccessScreen) {
-      setSheetOpen(false);
-      const sentTo =
-        dest?.kind === 'crypto'
-          ? truncateAddress(dest.address)
-          : dest?.kind === 'bank'
-            ? dest.recipientName || dest.bankName
-            : 'recipient';
-      showToast(
-        mode === 'add'
-          ? `${toastUsd(cents)} added to balance`
-          : mode === 'withdraw'
-            ? `${toastUsd(cents)} withdrawn from balance`
-            : `${toastUsd(cents)} sent to ${sentTo}`,
-      );
+    // owns the confirmation — hold the balance move + Activity insert until the
+    // sheet is dismissed so both play out on the visible home (balance ticks,
+    // row grows in) instead of settling silently behind the success screen.
+    if (transferSuccessScreen) {
+      pendingSettle.current = { mode, cents, dest };
+      return;
     }
+    setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
+    setSheetOpen(false);
+    const sentTo =
+      dest?.kind === 'crypto'
+        ? truncateAddress(dest.address)
+        : dest?.kind === 'bank'
+          ? dest.recipientName || dest.bankName
+          : 'recipient';
+    showToast(
+      mode === 'add'
+        ? `${toastUsd(cents)} added to balance`
+        : mode === 'withdraw'
+          ? `${toastUsd(cents)} withdrawn from balance`
+          : `${toastUsd(cents)} sent to ${sentTo}`,
+    );
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
       setActivity((prev) => [makeTransferRow(mode, cents, dest), ...prev]);
     }, SHEET_INSERT_DELAY_MS);
   };
   useEffect(() => () => window.clearTimeout(sheetInsertTimer.current), []);
+
+  // Success-screen skins settle on the HOME screen: once the success sheet has
+  // slid away, the balance ticks to its new value, then the Activity row grows
+  // in a beat later.
+  const pendingSettle = useRef<{
+    mode: WalletTransferMode;
+    cents: number;
+    dest: TransferActivity | null;
+  } | null>(null);
+  const settleDeltaTimer = useRef(0);
+  useEffect(() => {
+    if (sheetOpen || !pendingSettle.current) return;
+    const { mode, cents, dest } = pendingSettle.current;
+    pendingSettle.current = null;
+    settleDeltaTimer.current = window.setTimeout(() => {
+      setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
+    }, SETTLE_DELTA_DELAY_MS);
+    window.clearTimeout(sheetInsertTimer.current);
+    sheetInsertTimer.current = window.setTimeout(() => {
+      setActivity((prev) => [makeTransferRow(mode, cents, dest), ...prev]);
+    }, SETTLE_INSERT_DELAY_MS);
+  }, [sheetOpen]);
+  useEffect(() => () => window.clearTimeout(settleDeltaTimer.current), []);
 
   // Confirm tapped in a transfer sheet: stash the amount + destination for the
   // Activity row, then run Face ID (which calls finishTransfer on done).

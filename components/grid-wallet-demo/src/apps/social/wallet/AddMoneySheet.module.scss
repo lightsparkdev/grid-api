@@ -1367,7 +1367,7 @@
   flex-direction: column;
   gap: 4px;
   margin: 0 8px;
-  padding: 0 0 16px;
+  padding: 4px 0 24px;
 }
 
 .confirmTitle {
@@ -1378,19 +1378,13 @@
   font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
 }
 
-.confirmSub {
-  margin: 0;
-  @include ios.ios-text-subheadline;
-  color: var(--ios-label-secondary);
-}
-
 /* Value-over-label rows under a hairline divider (both indented 8px → 32px). */
 .confirmRows {
   display: flex;
   flex-direction: column;
   gap: 18px;
   margin: 0 8px;
-  padding: 18px 0 28px;
+  padding: 28px 0 28px;
   border-top: 0.5px solid var(--z-hairline);
 }
 

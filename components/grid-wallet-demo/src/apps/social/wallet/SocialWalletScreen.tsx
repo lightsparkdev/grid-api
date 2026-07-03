@@ -3,6 +3,7 @@
 import { useState, type ComponentType } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
+import NumericText from '@/components/NumericText';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { Toast } from '@/apps/shared/Toast';
@@ -152,7 +153,15 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
             <span className={styles.balanceLabel}>{SOCIAL_MONEY.balanceLabel}</span>
             <IconEyeSlash size={16} className={styles.muted} />
           </div>
-          <span className={styles.balanceAmount}>{formatUsdCents(availableCents)}</span>
+          <span className={styles.balanceAmount}>
+            {/* numericText roll (the shared SwiftUI port) — a settled transfer
+                ticks the balance on the visible home instead of snapping. */}
+            <NumericText
+              value={availableCents / 100}
+              format={{ style: 'currency', currency: 'USD' }}
+              style={{ padding: '0.08em 0' }}
+            />
+          </span>
         </motion.div>
 
         <motion.div {...enter(2)} className={styles.actions}>

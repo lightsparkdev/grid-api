@@ -483,16 +483,10 @@ export function AddMoneySheet({
 
   // ── Confirm sheet + success copy (per mode) ─────────────────────────────────
   const ctaLabel = mode === 'add' ? 'Deposit' : mode === 'withdraw' ? 'Withdraw' : 'Send';
-  const modeNoun = mode === 'add' ? 'deposit' : mode === 'withdraw' ? 'withdrawal' : 'transfer';
+  const modeNoun = mode === 'add' ? 'deposit' : mode === 'withdraw' ? 'withdrawal' : 'send';
   const confirmTitle = `Confirm ${modeNoun}`;
-  const confirmSub =
-    mode === 'add'
-      ? 'Funds will be available instantly'
-      : mode === 'withdraw'
-        ? 'Your funds will arrive instantly'
-        : 'They’ll receive the funds instantly';
   const successHeadline = `Your ${formatAmountShort(cents)} ${modeNoun} was successful`;
-  // Confirm rows (value-over-label): the typed amount is LOCKED at the top; the fee
+  // Confirm rows (label-over-value): the typed amount is LOCKED at the top; the fee
   // is the sender's, so "You pay" = amount + fee, anchored at the BOTTOM. Between
   // them: what the recipient gets (converted, send/withdraw only), the rate + ETA.
   const hasConversion = fxLabel !== 'USD';
@@ -1493,13 +1487,12 @@ export function AddMoneySheet({
       <div className={styles.confirmBody}>
         <div className={styles.confirmHead}>
           <h2 className={styles.confirmTitle}>{confirmTitle}</h2>
-          <p className={styles.confirmSub}>{confirmSub}</p>
         </div>
         <div className={styles.confirmRows}>
           {confirmSheetRows.map(([label, value]) => (
             <div key={label} className={styles.confirmRow}>
-              <span className={styles.confirmValue}>{value}</span>
               <span className={styles.confirmLabel}>{label}</span>
+              <span className={styles.confirmValue}>{value}</span>
             </div>
           ))}
         </div>
