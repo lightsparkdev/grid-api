@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, type ComponentType } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
@@ -10,7 +11,6 @@ import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { motionTransition } from '@/lib/easing';
 import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
 import type { SkinWalletScreenProps } from '@/apps/types';
-import type { SkinIcon } from '../types';
 // Z's own money sheet (forked from Glitch's flat sheet onto the shared brain).
 import { AddMoneySheet } from './AddMoneySheet';
 import { CardIssuanceSheet } from './CardIssuanceSheet';
@@ -19,13 +19,11 @@ import {
   IconCircleQuestionmark,
   IconSettingsGear2,
   IconEyeSlash,
-  IconArrowInbox,
-  IconArrowOutOfBox,
-  IconPaperPlaneTopRight,
 } from '../icons';
 import { SOCIAL_MONEY, SOCIAL_TAB_BAR } from '../config';
 import { SocialTabBar } from '../blocks/SocialTabBar';
 import { SocialActivityList } from './SocialActivityList';
+import { DepositIcon, WithdrawIcon, SendIcon } from './MoneyActionIcons';
 import { ZCardGraphic } from './ZCardGraphic';
 import styles from './SocialWalletScreen.module.scss';
 
@@ -36,17 +34,19 @@ const CARD_HOVER = 1.02;
 const CARD_PRESS = 1.04;
 
 /** One Deposit/Withdraw/Send chip (Figma 2543:21247) — squircle-clipped
- *  (Safari-safe), solid fill, Aurora scale on hover/press. */
+ *  (Safari-safe), solid fill, Aurora scale on hover/press. Hover also plays
+ *  one loop cycle of the chip's animated glyph. */
 function ActionChip({
   Icon,
   label,
   onClick,
 }: {
-  Icon: SkinIcon;
+  Icon: ComponentType<{ size?: number; playKey?: number }>;
   label: string;
   onClick: () => void;
 }) {
   const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 16 });
+  const [playKey, setPlayKey] = useState(0);
   return (
     <motion.button
       type="button"
@@ -54,10 +54,11 @@ function ActionChip({
       onClick={onClick}
       ref={clip.ref}
       style={clip.style}
+      onHoverStart={() => setPlayKey((k) => k + 1)}
       whileHover={{ scale: CARD_HOVER, transition: PRESS }}
       whileTap={{ scale: CARD_PRESS, transition: PRESS }}
     >
-      <Icon size={20} />
+      <Icon size={20} playKey={playKey} />
       <span className={styles.actionLabel}>{label}</span>
     </motion.button>
   );
@@ -155,9 +156,9 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
         </motion.div>
 
         <motion.div {...enter(2)} className={styles.actions}>
-          <ActionChip Icon={IconArrowInbox} label="Deposit" onClick={() => openSheet('add')} />
-          <ActionChip Icon={IconArrowOutOfBox} label="Withdraw" onClick={() => openSheet('withdraw')} />
-          <ActionChip Icon={IconPaperPlaneTopRight} label="Send" onClick={startSend} />
+          <ActionChip Icon={DepositIcon} label="Deposit" onClick={() => openSheet('add')} />
+          <ActionChip Icon={WithdrawIcon} label="Withdraw" onClick={() => openSheet('withdraw')} />
+          <ActionChip Icon={SendIcon} label="Send" onClick={startSend} />
         </motion.div>
 
         <motion.div {...enter(3)} className={styles.tiles}>
