@@ -6,7 +6,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
-  background: var(--surface-base);
+  background: var(--color-gray-025);
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   overflow: clip;
@@ -24,7 +24,7 @@
   gap: var(--spacing-sm);
   min-width: 0;
   padding: var(--spacing-md);
-  background: var(--surface-base);
+  background: var(--color-gray-025);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: clip;
   cursor: pointer;
@@ -54,7 +54,7 @@
   // Hover only with a real pointer — avoids the fill sticking after a tap on touch.
   @media (hover: hover) {
     &:not(:disabled):hover {
-      background: color-mix(in srgb, var(--surface-base) 96%, black);
+      background: color-mix(in srgb, var(--color-gray-025) 96%, black);
 
       :global([data-theme='dark']) & {
         background: var(--color-alpha-white-04);
@@ -64,7 +64,7 @@
 
   // Tap/press feedback — works on touch and resets on release (unlike :hover).
   &:not(:disabled):active {
-    background: color-mix(in srgb, var(--surface-base) 96%, black);
+    background: color-mix(in srgb, var(--color-gray-025) 96%, black);
 
     :global([data-theme='dark']) & {
       background: var(--color-alpha-white-04);

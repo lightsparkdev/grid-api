@@ -17,7 +17,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
-  background: var(--surface-base);
+  background: var(--color-gray-025);
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   // Ring extends past cell bounds (and morphs across cells during layout animation).
@@ -37,7 +37,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   align-items: center;
   min-width: 0;
   padding: var(--spacing-md);
-  background: var(--surface-base);
+  background: var(--color-gray-025);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: visible;
   cursor: pointer;
@@ -84,7 +84,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   // tap on touch (mobile emulates :hover until you tap elsewhere).
   @media (hover: hover) {
     &:not(:disabled):not(.cardSelected):hover {
-      background: color-mix(in srgb, var(--surface-base) 96%, black);
+      background: color-mix(in srgb, var(--color-gray-025) 96%, black);
 
       :global([data-theme='dark']) & {
         background: var(--color-alpha-white-04);
@@ -95,7 +95,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   // Tap/press feedback — applies on touch too and resets on release (unlike
   // :hover, which sticks after a tap). Same fill as the hover state.
   &:not(:disabled):not(.cardSelected):active {
-    background: color-mix(in srgb, var(--surface-base) 96%, black);
+    background: color-mix(in srgb, var(--color-gray-025) 96%, black);
 
     :global([data-theme='dark']) & {
       background: var(--color-alpha-white-04);
@@ -180,11 +180,11 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
 .icon {
   display: block;
-  // 20px glyph centered in a 24px slot — the stroke icons in the sibling grids
+  // 22px glyph centered in a 24px slot — the stroke icons in the sibling grids
   // carry built-in padding, so a full-bleed 24px app icon reads heavier.
-  width: 20px;
-  height: 20px;
-  margin: 2px;
+  width: 22px;
+  height: 22px;
+  margin: 1px;
   flex-shrink: 0;
   object-fit: contain;
   transform-origin: center;
