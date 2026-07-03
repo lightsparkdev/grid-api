@@ -12,7 +12,7 @@
   overflow: clip;
 
   :global([data-theme='dark']) & {
-    background: var(--color-gray-925);
+    background: var(--color-gray-950);
   }
 }
 
@@ -31,7 +31,7 @@
   transition: background 100ms ease;
 
   :global([data-theme='dark']) & {
-    background: var(--color-gray-925);
+    background: var(--color-gray-950);
   }
 
   &:nth-child(odd) {
@@ -54,7 +54,7 @@
   // Hover only with a real pointer — avoids the fill sticking after a tap on touch.
   @media (hover: hover) {
     &:not(:disabled):hover {
-      background: color-mix(in srgb, var(--surface-base) 98%, black);
+      background: color-mix(in srgb, var(--surface-base) 96%, black);
 
       :global([data-theme='dark']) & {
         background: var(--color-alpha-white-04);
@@ -64,7 +64,7 @@
 
   // Tap/press feedback — works on touch and resets on release (unlike :hover).
   &:not(:disabled):active {
-    background: color-mix(in srgb, var(--surface-base) 98%, black);
+    background: color-mix(in srgb, var(--surface-base) 96%, black);
 
     :global([data-theme='dark']) & {
       background: var(--color-alpha-white-04);
