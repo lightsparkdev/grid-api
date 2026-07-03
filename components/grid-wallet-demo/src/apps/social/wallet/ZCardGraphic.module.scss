@@ -1,5 +1,6 @@
-/* Tilted metallic placeholder card. Solid (no glass); a soft shadow gives the
-   "floating card" read. Fills the Z Card tile's lower area. */
+/* Pre-baked 3D card render peeking from the tile's bottom-right. The image
+   carries its own lighting/material; the drop shadow gives the floating read.
+   152px wide (real card aspect ≈ 1.57 from the capture's alpha crop). */
 .graphic {
   position: absolute;
   inset: 0;
@@ -11,22 +12,13 @@
   position: absolute;
   right: -16px;
   bottom: -14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 152px;
-  height: 96px;
-  border-radius: 12px;
-  transform: rotate(-10deg);
-  background: linear-gradient(135deg, #e2e6e9 0%, #c3cacf 42%, #d6dbdf 64%, #aeb5ba 100%);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+  width: 142px;
+  height: auto;
+  /* Hand-placed with the dev tile tuner (x -21, y -5, rotate -7, size 142). */
+  transform: translate(-21px, -5px) rotate(-7deg);
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.14));
 
   :global([data-theme='dark']) & {
-    background: linear-gradient(135deg, #6b7075 0%, #4a4e52 44%, #5c6166 66%, #3c4044 100%);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.4));
   }
-}
-
-.mark {
-  color: rgba(255, 255, 255, 0.82);
 }

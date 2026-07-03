@@ -32,6 +32,10 @@ const FAN_PITCH_DRIFT = 1.0; // ± pitch amplitude swept across the visible arc
 const FAN_PITCH_PHASE = 0.55; // shifts the pitch wave toward the right/entering side so the rotation
 // "starts earlier" — and parks the near-flat (intersecting) trough off the right edge
 const FAN_SPIN = 0.04; // rad/s — slow continuous wheel rotation
+// Fan-scene environment orientation (hand-tuned with the dev EnvTuner) — rakes
+// the studio light across the cards as they carousel through mid-screen.
+const FAN_ENV_X = -0.16;
+const FAN_ENV_Y = 0.88;
 
 // ── Reveal timeline (seconds from reveal mount). ONE continuous timeline whose
 // curves overlap generously — tilt, rise and spin all blend mid-flight (no
@@ -72,7 +76,7 @@ const REVEAL_SWEEP = [1.25, 2.25] as const;
 const REVEAL_SWEEP_FROM = 0.5; // rad — stripe parked off the card at flight start
 // Where the light settles on the resolved card (hand-tuned with the EnvTuner).
 const REVEAL_SETTLE_X = -0.38;
-const REVEAL_SETTLE_Y = -0.15;
+const REVEAL_SETTLE_Y = 0.12;
 
 // Hover tilt (resolved card only): the card pivots a few degrees under the
 // pointer — the hovered edge dips away, like pressing a physical card resting
@@ -119,6 +123,16 @@ export type CardStage = 'fan' | 'reveal';
 function FanGroup({ maps }: { maps: CardMaps | null }) {
   const groupRef = useRef<THREE.Group>(null);
   const pitchRefs = useRef<(THREE.Group | null)[]>([]);
+  const scene = useThree((s) => s.scene);
+
+  // Park the env at the fan's tuned orientation; hand it back neutral for the
+  // reveal stage (which drives its own sweep) on unmount.
+  useEffect(() => {
+    scene.environmentRotation.set(FAN_ENV_X, FAN_ENV_Y, 0);
+    return () => {
+      scene.environmentRotation.set(0, 0, 0);
+    };
+  }, [scene]);
 
   useFrame((state) => {
     const rot = state.clock.elapsedTime * FAN_SPIN;
@@ -280,11 +294,13 @@ function RevealCard({
     // the X-rotation pass rakes its reflection across the polished Z as the card
     // resolves and settles it across the middle; the small residual sines keep
     // the metal breathing afterwards instead of freezing on one flat tone.
+    // The env sweep rakes the dark stripe across the Z as the card resolves,
+    // then the light parks DEAD STILL at the settle point — no idle sway (the
+    // reveal's motion is the show; the landed card holds rock-solid).
     const sweep = seg(REVEAL_SWEEP);
     scene.environmentRotation.set(
-      THREE.MathUtils.lerp(REVEAL_SWEEP_FROM, REVEAL_SETTLE_X, sweep) +
-        Math.sin(now * 0.17) * 0.04,
-      REVEAL_SETTLE_Y * sweep + Math.sin(now * 0.26) * 0.12,
+      THREE.MathUtils.lerp(REVEAL_SWEEP_FROM, REVEAL_SETTLE_X, sweep),
+      REVEAL_SETTLE_Y * sweep,
       0,
     );
 
