@@ -9556,7 +9556,7 @@ components:
         - OTHER
       description: The intended purpose for using the Grid account
       example: CONTRACTOR_PAYOUTS
-    SourceOfFunds:
+    SourceOfFundsCategory:
       type: string
       enum:
         - OPERATING_REVENUE
@@ -9566,7 +9566,7 @@ components:
         - PERSONAL_SAVINGS
         - DONATIONS
         - OTHER
-      description: The primary source of funds for the business
+      description: A structured source-of-funds category for the business
       example: OPERATING_REVENUE
     BusinessInfoUpdate:
       type: object
@@ -9649,7 +9649,7 @@ components:
         sourceOfFundsCategories:
           type: array
           items:
-            $ref: '#/components/schemas/SourceOfFunds'
+            $ref: '#/components/schemas/SourceOfFundsCategory'
           description: Structured source-of-funds categories for the business
           example:
             - OPERATING_REVENUE
@@ -9771,7 +9771,7 @@ components:
         sourceOfFundsCategories:
           type: array
           items:
-            $ref: '#/components/schemas/SourceOfFunds'
+            $ref: '#/components/schemas/SourceOfFundsCategory'
           description: Structured source-of-funds categories for the business
           example:
             - OPERATING_REVENUE
@@ -10118,7 +10118,7 @@ components:
         sourceOfFundsCategories:
           type: array
           items:
-            $ref: '#/components/schemas/SourceOfFunds'
+            $ref: '#/components/schemas/SourceOfFundsCategory'
           description: Structured source-of-funds categories for the business
           example:
             - OPERATING_REVENUE

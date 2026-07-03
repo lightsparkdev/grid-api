@@ -78,7 +78,7 @@ properties:
   sourceOfFundsCategories:
     type: array
     items:
-      $ref: ./SourceOfFunds.yaml
+      $ref: ./SourceOfFundsCategory.yaml
     description: Structured source-of-funds categories for the business
     example:
       - OPERATING_REVENUE
