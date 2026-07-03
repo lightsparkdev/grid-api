@@ -217,7 +217,10 @@ function RevealCard({
   onResolved?: () => void;
 }) {
   const ref = useRef<THREE.Group>(null);
-  const startRef = useRef<number | null>(null);
+  // Timeline time accumulates from per-frame deltas — NOT the global clock,
+  // which resets to 0 when the paused frameloop (sheet closed) restarts and
+  // would throw the parked card back to its flat entrance pose on reopen.
+  const timeRef = useRef(instant ? REVEAL_DONE + 0.1 : 0);
   const resolvedFiredRef = useRef(false);
   const scene = useThree((s) => s.scene);
   // Hover tilt state — target follows the pointer (landed card only), current
@@ -243,15 +246,11 @@ function RevealCard({
     [scene],
   );
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     const g = ref.current;
     if (!g) return;
-    const now = state.clock.elapsedTime;
-    if (startRef.current === null) {
-      // `instant` (sheet reopened on an already-created card): skip to the end.
-      startRef.current = instant ? now - (REVEAL_DONE + 0.1) : now;
-    }
-    const t = now - startRef.current;
+    timeRef.current += delta;
+    const t = timeRef.current;
     const seg = ([a, b]: readonly [number, number]) => easeInOutSoft((t - a) / (b - a));
     const segOut = ([a, b]: readonly [number, number]) => easeOutSoft((t - a) / (b - a));
 
