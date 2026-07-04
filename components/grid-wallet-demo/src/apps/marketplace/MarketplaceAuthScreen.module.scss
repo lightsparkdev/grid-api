@@ -70,7 +70,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 0;
+  padding: 24px 24px 0;
 }
 .headerSlot {
   display: inline-flex;
@@ -271,7 +271,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 24px 24px;
+  /* 24px side gutters; 48px bottom gutter under the pinned pill. */
+  padding: 8px 24px 48px;
 }
 .confirmTitle {
   margin: 16px 0 0;
@@ -283,7 +284,7 @@
   color: var(--app-text-primary);
 }
 .confirmSub {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   font-size: 17px;
   line-height: normal;
   font-weight: 400;
@@ -291,11 +292,12 @@
   color: var(--app-text-secondary);
 }
 
-/* One bordered rounded field holding the six dash → digit slots. */
+/* One bordered rounded field holding the six dash → digit slots.
+   64px screen gutters: the confirm content's 24px padding + 40px margin. */
 .codeShell {
   position: relative;
-  width: 100%;
-  margin-top: 32px;
+  align-self: stretch;
+  margin: 32px 40px 0;
   cursor: text;
 }
 .codeClip {
@@ -362,7 +364,7 @@
 
 .resendRow {
   margin: 24px 0 0;
-  font-size: 16px;
+  font-size: 14px;
   line-height: normal;
   font-weight: 400;
   text-align: center;
@@ -391,7 +393,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 56px;
+  height: 48px;
   flex: none;
   border: 0;
   background: var(--mk-surface);
