@@ -215,11 +215,14 @@ export function GlassNotification({
             ) : (
               // Frost (Safari + no-backdrop callers): backdrop-filter over the
               // REAL screen — live-synced, squircle-clipped, iOS material.
+              // Light tint carries a hint of iOS systemGray so the capsule
+              // reads as a distinct translucent layer even over a flat white
+              // app (pure white milk on white looked opaque).
               <FrostPanel
                 className={styles.glass}
                 radius={28.8}
                 cornerSmoothing={PHONE_SHELL_GLASS.cornerSmoothing}
-                tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.74)'}
+                tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(242, 242, 247, 0.7)'}
                 tintBlur={24}
                 // Quiet rim body so the bright top glint reads specular, not
                 // like a uniform stroke.

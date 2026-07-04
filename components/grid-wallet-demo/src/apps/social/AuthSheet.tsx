@@ -14,12 +14,7 @@ import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-2-
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
-import { PhoneStatusBar } from '@/apps/shared/AppShell/PhoneStatusBar';
-import {
-  GlassNotification,
-  NOTIFICATION_INSET_PX,
-  NOTIFICATION_TOP_PX,
-} from '@/apps/shared/GlassNotification';
+import { GlassNotification } from '@/apps/shared/GlassNotification';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -290,34 +285,9 @@ export function AuthSheet({
     );
   };
 
-  // The notification's refraction backdrop — Z's flat app surface + the status
-  // bar (no brand wash; behind the banner is the solid app background).
-  const COPY_BLEED = 48;
-  const refractionCopy = (
-    <div
-      aria-hidden
-      style={{
-        position: 'absolute',
-        inset: -COPY_BLEED,
-        overflow: 'hidden',
-        contain: 'layout paint',
-        pointerEvents: 'none',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          top: COPY_BLEED - NOTIFICATION_TOP_PX,
-          left: COPY_BLEED - NOTIFICATION_INSET_PX,
-          width: 402,
-          height: 874,
-        }}
-      >
-        <div style={{ position: 'absolute', inset: 0, background: 'var(--app-bg)' }} />
-        <PhoneStatusBar tone="default" />
-      </div>
-    </div>
-  );
+  // No refraction copy: Z's surface is flat, so a copied backdrop gives the
+  // lens nothing to bend (an all-white copy reads opaque on light). The
+  // notification's frost path samples the REAL screen instead.
   const notification = (
     <GlassNotification
       show={notifOn}
@@ -326,7 +296,6 @@ export function AuthSheet({
       title={cfg.notification.title}
       body={cfg.notification.body}
       bodyLines={cfg.notification.bodyLines}
-      backdropNode={refractionCopy}
       onTap={autofill}
     />
   );
