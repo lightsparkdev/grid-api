@@ -97,10 +97,16 @@ export function CardIssuanceSheet({
   // Fade the 3D graphic in only once its maps are generated (no placeholder, no
   // untextured flash).
   const [graphicReady, setGraphicReady] = useState(false);
-  // Mount the canvas only after the sheet's slide settles, so WebGL init +
-  // shader compile never compete with the open animation (the graphic fades in
-  // afterwards anyway).
-  const [settled, setSettled] = useState(false);
+  // Canvas mount gate — flips on idle pre-boot (preferred: everything expensive
+  // happens before the user even taps the flow) or, failing that, after the
+  // first open's slide settles, so WebGL init + shader compile never compete
+  // with the open animation.
+  const [booted, setBooted] = useState(false);
+  // Post-boot warm-up: run the live render loop for a moment while the sheet is
+  // still closed (canvas is offscreen). A single on-demand frame leaves some
+  // shader programs / GPU uploads for the first live frame — this flushes ALL
+  // of them on idle, so the first open renders with zero one-time cost.
+  const [warming, setWarming] = useState(false);
   const [flow, setFlow] = useState<Flow>(
     cardView === 'ready' || cardView === 'home' ? 'resolved' : 'fan',
   );
@@ -140,22 +146,37 @@ export function CardIssuanceSheet({
   const [heroFrac, setHeroFrac] = useState<{ y: number; w: number; lift: number } | null>(
     null,
   );
+  // Retries next frame while layout reports zero-sized rects — Safari can
+  // deliver those mid sheet-transition, and a missed measure would leave the
+  // card parked at its (much larger) reveal-perch pose.
+  const heroRetryRaf = useRef(0);
   const measureHero = useCallback(() => {
     const root = rootRef.current;
     const heroEl = heroRef.current;
-    if (!root || !heroEl || root.offsetHeight === 0) return;
+    if (!root || !heroEl) return;
     // Rect-based (not offset chains) so it survives the phone shell's CSS
     // scale — both rects scale together and the fractions cancel it out.
     const rootRect = root.getBoundingClientRect();
     const rect = heroEl.getBoundingClientRect();
+    if (root.offsetHeight === 0 || rootRect.height === 0 || rect.width === 0) {
+      cancelAnimationFrame(heroRetryRaf.current);
+      heroRetryRaf.current = requestAnimationFrame(measureHero);
+      return;
+    }
+    // Gutter clamp: the hero sits inside 16px gutters BY DESIGN, so never
+    // accept a wider reading — Safari has been observed handing back a
+    // full-bleed rect (pre-style measurement), which rendered the card
+    // edge-to-edge. Width is clamped by construction; y stays layout-driven.
+    const gutterFrac = (16 * 2) / root.offsetWidth;
     setHeroFrac({
       y: (rect.top + rect.height / 2 - rootRect.top) / rootRect.height,
-      w: rect.width / rootRect.width,
+      w: Math.min(rect.width / rootRect.width, 1 - gutterFrac),
       // The tap-to-pay lift, as a screen fraction (56 layout px; rect heights
       // are in the same scaled space as rootRect, so use the layout height).
       lift: -TAP_LIFT / root.offsetHeight,
     });
   }, []);
+  useEffect(() => () => cancelAnimationFrame(heroRetryRaf.current), []);
   useEffect(() => {
     if (cardView !== 'home') {
       // Clear only when a NEW issuance starts (the reveal must fly to the
@@ -165,15 +186,22 @@ export function CardIssuanceSheet({
       return;
     }
     measureHero();
+    window.addEventListener('resize', measureHero);
     const el = heroRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measureHero);
-    ro.observe(el);
-    return () => ro.disconnect();
+    const ro =
+      el && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measureHero) : null;
+    if (el) ro?.observe(el);
+    return () => {
+      window.removeEventListener('resize', measureHero);
+      ro?.disconnect();
+    };
   }, [cardView, measureHero]);
 
-  // Prewarm on idle: fetch + parse the three.js chunk and generate both texture
-  // variants while nothing is animating, so the first open doesn't stutter.
+  // Prewarm on idle: fetch + parse the three.js chunk and load both texture
+  // variants while nothing is animating, THEN mount the (hidden, paused)
+  // canvas — the sheet subtree is kept mounted while closed, so WebGL init,
+  // shader compile and the GPU texture uploads all happen off-screen on idle.
+  // Opening the sheet then just slides a fully warm scene in.
   useEffect(() => {
     const win = window as Window & {
       requestIdleCallback?: (cb: () => void) => number;
@@ -182,19 +210,28 @@ export function CardIssuanceSheet({
     const schedule = win.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 400));
     const cancel = win.cancelIdleCallback ?? window.clearTimeout;
     const id = schedule(() => {
-      void import('./card3d/ZCardCanvas').then((m) => m.prewarmCardAssets(cardNumber));
+      void import('./card3d/ZCardCanvas').then(async (m) => {
+        await m.prewarmCardAssets(cardNumber);
+        setBooted(true);
+        setWarming(true);
+        window.setTimeout(() => setWarming(false), 700);
+      });
     });
     return () => cancel(id);
   }, [cardNumber]);
 
-  // STICKY: once settled (first open's slide done), stays true forever — the
-  // canvas never unmounts again (the sheet keeps it alive while closed, with
-  // the render loop paused), so reopening skips WebGL init + shader compile.
+  // Fallback boot for an open that beats the idle prewarm (e.g. the sidebar
+  // flow mounts the wallet WITH the sheet already open): wait out the slide AND
+  // the copy stagger, so the boot's one-time hitch (WebGL init + env bake +
+  // shader compiles + 2048-texture uploads land in one frame) hits a static
+  // screen — the fan fades in right after. STICKY either way — the canvas never
+  // unmounts again (the sheet keeps it alive while closed, render loop on
+  // demand), so nothing is ever paid twice.
   useEffect(() => {
-    if (!open || settled) return;
-    const t = window.setTimeout(() => setSettled(true), SHEET_DURATION * 1000 + 80);
+    if (!open || booted) return;
+    const t = window.setTimeout(() => setBooted(true), SHEET_DURATION * 1000 + 450);
     return () => window.clearTimeout(t);
-  }, [open, settled]);
+  }, [open, booted]);
 
   // Drive the creation choreography off the brain's cardView.
   useEffect(() => {
@@ -311,7 +348,7 @@ export function CardIssuanceSheet({
             Flat fallback during load / when WebGL is unavailable; reduced-motion
             renders the card static. */}
         <div className={styles.graphic} aria-hidden>
-          {support?.webgl && settled && (
+          {support?.webgl && booted && (
             <CanvasErrorBoundary fallback={null}>
               <Suspense fallback={null}>
                 <motion.div
@@ -320,6 +357,10 @@ export function CardIssuanceSheet({
                   animate={{
                     opacity: graphicVisible ? 1 : 0,
                     filter: graphicVisible ? 'blur(0px)' : 'blur(6px)',
+                    // Lift the filter once the fade lands: a lingering blur(0px)
+                    // forces WebKit to composite the WebGL canvas through a
+                    // filter every frame (jank on the slide + all card motion).
+                    ...(graphicVisible ? { transitionEnd: { filter: 'none' } } : null),
                   }}
                   transition={{
                     duration: flow === 'swap' ? GRAPHIC_SWAP_MS / 1000 : 0.5,
@@ -328,7 +369,7 @@ export function CardIssuanceSheet({
                 >
                   <ZCardCanvas
                     stage={flow === 'reveal' || flow === 'resolved' ? 'reveal' : 'fan'}
-                    paused={!open}
+                    paused={!open && !warming}
                     dark={themeMode === 'dark'}
                     issued={issued}
                     cardNumber={cardNumber}

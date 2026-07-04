@@ -30,13 +30,17 @@ function Exposure({ dark }: { dark: boolean }) {
 }
 
 /**
- * Generate + cache both texture variants ahead of time (called from the host on
+ * Load + composite both texture variants ahead of time (called from the host on
  * idle, through the same dynamic import that code-splits three.js). Makes the
- * first open cheap and the mid-reveal issued swap free.
+ * first open cheap and the mid-reveal issued swap free. Serial on purpose: if
+ * the baked assets are missing, this falls back to the live generator, and two
+ * interleaved bakes double the per-slice main-thread cost (Safari has no
+ * requestIdleCallback, so this can land during the entrance).
  */
-export function prewarmCardAssets(cardNumber: string): void {
-  void getCardMaps({ issued: false, cardNumber });
-  void getCardMaps({ issued: true, cardNumber });
+export function prewarmCardAssets(cardNumber: string): Promise<void> {
+  return getCardMaps({ issued: false, cardNumber })
+    .then(() => getCardMaps({ issued: true, cardNumber }))
+    .then(() => undefined);
 }
 
 export interface ZCardCanvasProps {
@@ -85,7 +89,12 @@ export default function ZCardCanvas({
   return (
     <Canvas
       dpr={[1, 2]}
-      frameloop={paused ? 'never' : reducedMotion ? 'demand' : 'always'}
+      // Paused (sheet closed / pre-booted before first open): 'demand', not
+      // 'never' — the canvas still renders ONE frame when each texture arrives
+      // (r3f auto-invalidates on React commits), which is what forces shader
+      // compile + GPU texture upload to happen on idle instead of stalling the
+      // open slide's first frames.
+      frameloop={paused || reducedMotion ? 'demand' : 'always'}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       // The canvas is a full-screen overlay; the camera is pulled back so the
       // world-units-per-pixel match the old nav-to-copy framing (cards render at

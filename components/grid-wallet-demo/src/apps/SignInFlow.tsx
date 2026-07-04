@@ -33,8 +33,16 @@ const SWAP_FADE = motionTransition(easeOutQuick, 0.25);
 
 // Skin switch: the old skin's view blur-fades out while the new one fades in —
 // same state, new face. Short, same motion language as the app's step swaps.
+// The resting layer must carry NO filter: a lingering blur(0px) is a no-op on
+// Chrome but forces WebKit to composite the whole wallet (3D canvas included)
+// through the filter path — Safari drops the entrance stagger and stalls first
+// paints. `transitionEnd` strips it the moment the fade lands.
 const SKIN_FADE = motionTransition(easeOutQuick, 0.3);
-const SKIN_ENTER = { opacity: 1, filter: 'blur(0px)' };
+const SKIN_ENTER = {
+  opacity: 1,
+  filter: 'blur(0px)',
+  transitionEnd: { filter: 'none' as const },
+};
 const SKIN_HIDDEN = { opacity: 0, filter: 'blur(8px)' };
 // The exiting layer must never eat taps meant for the incoming skin.
 const SKIN_EXIT = { ...SKIN_HIDDEN, pointerEvents: 'none' as const };
