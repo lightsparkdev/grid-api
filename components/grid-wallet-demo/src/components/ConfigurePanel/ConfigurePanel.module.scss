@@ -5,14 +5,12 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  /* Matches the grid-visualizer sidebar (and the Mintlify docs sidebar chrome):
-     surface-secondary #F0F0EE light, gray-975 #111111 dark. */
-  background: var(--surface-secondary);
+  background: var(--surface-primary);
   border-right: var(--stroke-xs) solid var(--border-primary);
   overflow: hidden;
 
   :global([data-theme='dark']) & {
-    background: var(--color-gray-975);
+    background: var(--color-gray-950);
   }
 }
 

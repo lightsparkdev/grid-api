@@ -17,14 +17,14 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
-  background: var(--color-gray-025);
+  background: var(--surface-base);
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   // Ring extends past cell bounds (and morphs across cells during layout animation).
   overflow: visible;
 
   :global([data-theme='dark']) & {
-    background: var(--color-gray-950);
+    background: var(--color-gray-925);
   }
 }
 
@@ -37,14 +37,14 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   align-items: center;
   min-width: 0;
   padding: var(--spacing-md);
-  background: var(--color-gray-025);
+  background: var(--surface-base);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: visible;
   cursor: pointer;
   transition: background 100ms ease;
 
   :global([data-theme='dark']) & {
-    background: var(--color-gray-950);
+    background: var(--color-gray-925);
   }
 
   &:nth-child(odd) {
@@ -84,7 +84,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   // tap on touch (mobile emulates :hover until you tap elsewhere).
   @media (hover: hover) {
     &:not(:disabled):not(.cardSelected):hover {
-      background: color-mix(in srgb, var(--color-gray-025) 96%, black);
+      background: color-mix(in srgb, var(--surface-base) 98%, black);
 
       :global([data-theme='dark']) & {
         background: var(--color-alpha-white-04);
@@ -95,7 +95,7 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   // Tap/press feedback — applies on touch too and resets on release (unlike
   // :hover, which sticks after a tap). Same fill as the hover state.
   &:not(:disabled):not(.cardSelected):active {
-    background: color-mix(in srgb, var(--color-gray-025) 96%, black);
+    background: color-mix(in srgb, var(--surface-base) 98%, black);
 
     :global([data-theme='dark']) & {
       background: var(--color-alpha-white-04);
