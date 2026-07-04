@@ -42,6 +42,20 @@ export function ConfigurePanel({
           <PlaygroundIntro />
 
           <section className={styles.section}>
+            <SectionDivider label="Select platform" />
+            <UseCasePicker selected={useCase} onSelect={setUseCase} />
+          </section>
+
+          <section className={styles.section}>
+            <SectionDivider label="Configure auth" />
+            <AuthMethodPicker
+              methods={methods}
+              onToggle={onToggleMethod}
+              disabled={running}
+            />
+          </section>
+
+          <section className={styles.section}>
             <SectionDivider
               label="Explore flows"
               action={
@@ -59,20 +73,6 @@ export function ConfigurePanel({
               }
             />
             <FlowPicker wallet={wallet} running={running} onAction={onAction} />
-          </section>
-
-          <section className={styles.section}>
-            <SectionDivider label="Change platform" />
-            <UseCasePicker selected={useCase} onSelect={setUseCase} />
-          </section>
-
-          <section className={styles.section}>
-            <SectionDivider label="Configure auth" />
-            <AuthMethodPicker
-              methods={methods}
-              onToggle={onToggleMethod}
-              disabled={running}
-            />
           </section>
         </div>
       </div>
