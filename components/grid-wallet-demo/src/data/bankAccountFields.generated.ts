@@ -71,6 +71,15 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "example": "1234567890"
       },
       {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
+      },
+      {
         "key": "branchCode",
         "required": false,
         "kind": "text",
@@ -202,10 +211,19 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
       }
     ]
   },
-  "COP_ACCOUNT": {
-    "accountType": "COP_ACCOUNT",
-    "currency": "COP",
+  "CNY_ACCOUNT": {
+    "accountType": "CNY_ACCOUNT",
+    "currency": "CNY",
     "fields": [
+      {
+        "key": "accountNumber",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 34,
+        "description": "The account number of the bank",
+        "example": "1234567890"
+      },
       {
         "key": "bankName",
         "required": true,
@@ -216,8 +234,24 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "example": "Example Bank"
       },
       {
+        "key": "phoneNumber",
+        "required": false,
+        "kind": "text",
+        "pattern": "^\\+[0-9]{6,14}$",
+        "minLength": 7,
+        "maxLength": 15,
+        "description": "The phone number in international format",
+        "example": "+1234567890"
+      }
+    ]
+  },
+  "COP_ACCOUNT": {
+    "accountType": "COP_ACCOUNT",
+    "currency": "COP",
+    "fields": [
+      {
         "key": "accountNumber",
-        "required": true,
+        "required": false,
         "kind": "text",
         "minLength": 1,
         "maxLength": 34,
@@ -226,7 +260,7 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
       },
       {
         "key": "bankAccountType",
-        "required": true,
+        "required": false,
         "kind": "select",
         "enum": [
           "CHECKING",
@@ -234,6 +268,25 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         ],
         "description": "The bank account type",
         "example": "CHECKING"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
+      },
+      {
+        "key": "phoneNumber",
+        "required": false,
+        "kind": "text",
+        "pattern": "^\\+[0-9]{6,14}$",
+        "minLength": 7,
+        "maxLength": 15,
+        "description": "The phone number in international format",
+        "example": "+1234567890"
       }
     ]
   },
@@ -268,24 +321,6 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
     "currency": "EGP",
     "fields": [
       {
-        "key": "bankName",
-        "required": true,
-        "kind": "text",
-        "minLength": 1,
-        "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
-      },
-      {
-        "key": "accountNumber",
-        "required": true,
-        "kind": "text",
-        "minLength": 1,
-        "maxLength": 34,
-        "description": "The account number of the bank",
-        "example": "1234567890"
-      },
-      {
         "key": "iban",
         "required": false,
         "kind": "text",
@@ -296,14 +331,23 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "example": "EG380019000500000000263180002"
       },
       {
-        "key": "swiftCode",
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
+      },
+      {
+        "key": "phoneNumber",
         "required": false,
         "kind": "text",
-        "pattern": "^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$",
-        "minLength": 8,
-        "maxLength": 11,
-        "description": "The SWIFT/BIC code of the bank",
-        "example": "NBEGEGCX"
+        "pattern": "^\\+[0-9]{6,14}$",
+        "minLength": 7,
+        "maxLength": 15,
+        "description": "The phone number in international format",
+        "example": "+1234567890"
       }
     ]
   },
@@ -371,6 +415,15 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "maxLength": 34,
         "description": "The account number of the bank",
         "example": "1234567890"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
       },
       {
         "key": "phoneNumber",
@@ -711,6 +764,15 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
     "currency": "PKR",
     "fields": [
       {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
+      },
+      {
         "key": "accountNumber",
         "required": false,
         "kind": "text",
@@ -738,15 +800,6 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "maxLength": 15,
         "description": "The phone number in international format",
         "example": "+1234567890"
-      },
-      {
-        "key": "bankName",
-        "required": false,
-        "kind": "text",
-        "minLength": 1,
-        "maxLength": 255,
-        "description": "The name of the bank",
-        "example": "Example Bank"
       }
     ]
   },
@@ -781,11 +834,11 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
     "fields": [
       {
         "key": "bankName",
-        "required": true,
+        "required": false,
         "kind": "text",
         "minLength": 1,
         "maxLength": 255,
-        "description": "Name of the beneficiary's bank",
+        "description": "Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation.",
         "example": "DBS Bank Ltd"
       },
       {
@@ -806,6 +859,105 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         "maxLength": 11,
         "description": "The SWIFT/BIC code of the bank",
         "example": "DBSSSGSG"
+      }
+    ]
+  },
+  "SLV_ACCOUNT": {
+    "accountType": "SLV_ACCOUNT",
+    "currency": "SLV",
+    "fields": [
+      {
+        "key": "bankName",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank (BANK_TRANSFER only)",
+        "example": "Banco Cuscatlan"
+      },
+      {
+        "key": "accountNumber",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 34,
+        "description": "The account number of the bank (BANK_TRANSFER only)",
+        "example": "0123456789"
+      },
+      {
+        "key": "bankAccountType",
+        "required": false,
+        "kind": "select",
+        "enum": [
+          "CHECKING",
+          "SAVINGS"
+        ],
+        "description": "The bank account type (BANK_TRANSFER only)",
+        "example": "CHECKING"
+      },
+      {
+        "key": "phoneNumber",
+        "required": false,
+        "kind": "text",
+        "pattern": "^\\+[0-9]{6,14}$",
+        "minLength": 7,
+        "maxLength": 15,
+        "description": "The phone number in international format (MOBILE_MONEY only — e.g. Tigo Money)",
+        "example": "+50312345678"
+      }
+    ]
+  },
+  "SWIFT_ACCOUNT": {
+    "accountType": "SWIFT_ACCOUNT",
+    "currency": "SWIFT",
+    "fields": [
+      {
+        "key": "country",
+        "required": true,
+        "kind": "text",
+        "pattern": "^[A-Z]{2}$",
+        "minLength": 2,
+        "maxLength": 2,
+        "description": "The ISO 3166-1 alpha-2 country code of the bank account",
+        "example": "NG"
+      },
+      {
+        "key": "swiftCode",
+        "required": true,
+        "kind": "text",
+        "pattern": "^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$",
+        "minLength": 8,
+        "maxLength": 11,
+        "description": "The SWIFT/BIC code of the bank",
+        "example": "DEUTDEFF"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Deutsche Bank"
+      },
+      {
+        "key": "accountNumber",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 34,
+        "description": "The bank account number. Required for most corridors. Use iban instead for IBAN-only corridors (e.g. BR, GB).",
+        "example": "1234567890"
+      },
+      {
+        "key": "iban",
+        "required": false,
+        "kind": "text",
+        "pattern": "^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$",
+        "minLength": 15,
+        "maxLength": 34,
+        "description": "The IBAN of the bank account. Required for IBAN-only corridors (e.g. BR, GB). Use accountNumber for all other corridors.",
+        "example": "GB29NWBK60161331926819"
       }
     ]
   },
