@@ -235,9 +235,18 @@ export function GlassNotification({
                 cornerSmoothing={PHONE_SHELL_GLASS.cornerSmoothing}
                 tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(242, 242, 247, 0.7)'}
                 tintBlur={24}
-                // Quiet rim body so the bright top glint reads specular, not
-                // like a uniform stroke.
-                edge="rgba(255, 255, 255, 0.16)"
+                // Baked geometry-aware specular (the glass buttons' highlight):
+                // hot rim on the lit corners along the diagonal, so the frost
+                // reads as glass rather than a flat material. Replaces the flat
+                // hairline stroke (edge) so the rim isn't doubled.
+                edge="none"
+                specular={{
+                  rotation: 45,
+                  edgeStrength: 1.7,
+                  edgeWidth: 1.5,
+                  glowStrength: 0.1,
+                  strength: 1.6,
+                }}
               >
                 {inner}
               </FrostPanel>
