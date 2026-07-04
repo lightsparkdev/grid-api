@@ -38,8 +38,8 @@ function MkCard({ children, className }: { children: ReactNode; className?: stri
   );
 }
 
-/** Deposit / Withdraw pill (decorative this pass — press feel only). */
-function ActionPill({ label }: { label: string }) {
+/** Deposit / Withdraw pill (no onClick = decorative, press feel only). */
+function ActionPill({ label, onClick }: { label: string; onClick?: () => void }) {
   const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 12 });
   return (
     <motion.button
@@ -47,6 +47,7 @@ function ActionPill({ label }: { label: string }) {
       className={styles.actionPill}
       ref={clip.ref}
       style={clip.style}
+      onClick={onClick}
       whileHover={{ scale: HOVER_SCALE, transition: PRESS }}
       whileTap={{ scale: PRESS_SCALE, transition: PRESS }}
     >
@@ -100,6 +101,8 @@ export interface MarketplaceHomeContentProps {
   entrance?: boolean;
   /** Balance rolls (NumericText) on the live home; static on the backdrop. */
   animatedBalance?: boolean;
+  /** Opens the deposit flow (absent on the zeroed auth backdrop). */
+  onDeposit?: () => void;
 }
 
 /** The marketplace Wallet home content (Figma 2610:11075) — gear nav, title,
@@ -117,6 +120,7 @@ export function MarketplaceHomeContent({
   showActivity = false,
   entrance = false,
   animatedBalance = false,
+  onDeposit,
 }: MarketplaceHomeContentProps) {
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
@@ -162,7 +166,7 @@ export function MarketplaceHomeContent({
               </span>
             </div>
             <div className={styles.balanceActions}>
-              <ActionPill label="Deposit" />
+              <ActionPill label="Deposit" onClick={onDeposit} />
               <ActionPill label="Withdraw" />
               <SendButton />
             </div>

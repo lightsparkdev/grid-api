@@ -3,6 +3,11 @@
  *  variant of the same glyph (see MarketplaceTabBar). */
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
+import { IconChevronLeftMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronLeftMedium';
+import { IconChevronRightMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRightMedium';
+// Deposit page source list.
+import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
+import { IconCash } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCash';
 import { IconGoogle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGoogle';
 import { IconApple } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconApple';
 import { IconPasskeys } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPasskeys';
@@ -21,6 +26,10 @@ import { IconWallet2 as IconWallet2Bold } from '@central-icons-react/round-outli
 export {
   IconCrossMedium,
   IconArrowLeft,
+  IconChevronLeftMedium,
+  IconChevronRightMedium,
+  IconBank,
+  IconCash,
   IconGoogle,
   IconApple,
   IconPasskeys,

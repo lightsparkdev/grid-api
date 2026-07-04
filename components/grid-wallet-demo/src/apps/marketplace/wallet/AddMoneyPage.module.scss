@@ -1,0 +1,212 @@
+/* Deposit page — an iOS navigation push over the wallet. Flat marketplace
+   surface; left-edge drop shadow reads while the page slides over the
+   (parallax-shifted) wallet, and naturally leaves the screen at rest. */
+
+.page {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  /* The left-edge drop shadow is ANIMATED inline (rides the slide in/out). */
+}
+
+/* ── Header bar — the wallet home's bar shape (extends under the status bar),
+   back chevron left; hairline + centered 14px title once collapsed. ────────── */
+.headerBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  height: 118px; /* 62 status bar + 56 bar */
+  padding: 70px 24px 8px;
+  box-sizing: border-box;
+  background: var(--app-bg);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--mk-header-border);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  &[data-collapsed]::after {
+    opacity: 1;
+  }
+}
+
+/* Icon-sized (24px) like the auth sheet's header buttons, so the arrow sits
+   exactly on the bar's 24px gutter. */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Collapsed bar title — 14px, centered in the bar (slides up as it fades in). */
+.barTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+
+/* ── Scroll (content passes under the opaque bar) ────────────────────────── */
+.scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 118px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Large title — same voice as the wallet home's; scrolls away with content. */
+.title {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 24px;
+  font-size: 32px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.64px;
+  color: var(--app-text-primary);
+}
+
+/* ── Source list — bare icons, two lines, inset dividers (24px gutters) ──── */
+.list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+
+  /* No-op sources (Cash App / Apple Pay — no demo path) read normal at rest;
+     entering the list fades them to signal they're unavailable, and leaving
+     restores them (Aurora's treatment). */
+  @media (hover: hover) {
+    &:hover .row:disabled {
+      opacity: 0.4;
+    }
+  }
+}
+
+/* Rows carry the 24px gutters themselves so the hover fill runs FULL BLEED;
+   content stays aligned with everything else. */
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 24px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s ease,
+    opacity 0.25s ease;
+
+  &:not(:disabled):hover {
+    background: var(--mk-row-hover);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  /* Divider between rows — inset to the 24px gutters (not full bleed). */
+  &[data-bordered]::after {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 0;
+    height: 1px;
+    background: var(--mk-hairline);
+  }
+}
+
+.rowIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+.rowLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.rowSub {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+.rowChevron {
+  flex: none;
+  display: inline-flex;
+  color: #8c8c8c;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}

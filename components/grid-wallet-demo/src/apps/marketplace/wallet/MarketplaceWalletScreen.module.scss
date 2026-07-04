@@ -8,3 +8,20 @@
   background: var(--app-bg);
   color: var(--app-text-primary);
 }
+
+/* The home + tab bar — parallax-shifts left behind a pushed page. */
+.underlay {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dim over the receding wallet while a page sits on top (below the page's z). */
+.pushScrim {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: var(--mk-push-scrim);
+  pointer-events: none;
+}

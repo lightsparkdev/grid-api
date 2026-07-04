@@ -24,6 +24,7 @@
     /* Marketplace palette — consumed by the marketplace faces. */
     --mk-surface: #f2f2f2; /* action pills, gear circle, Try another way */
     --mk-surface-press: #e8e8e8;
+    --mk-row-hover: #f7f7f7; /* full-bleed list-row hover fill */
     --mk-card-bg: #ffffff;
     --mk-card-border: rgba(34, 34, 34, 0.08); /* 0.5px outside hairline on cards */
     --mk-header-border: #eaebeb; /* collapsed large-title header hairline */
@@ -45,6 +46,8 @@
     --auth-sheet-bg: #ffffff;
     --app-sheet-glass-backdrop: transparent;
     --sheet-scrim: rgba(0, 0, 0, 0.4);
+    /* Dim over the parallax-receding wallet while a page is pushed on top. */
+    --mk-push-scrim: rgba(0, 0, 0, 0.12);
 
     /* Decorative bottom tab bar (Figma 2610:11833). */
     --mk-tabbar-bg: #ffffff;
@@ -61,6 +64,7 @@
 
       --mk-surface: #2a2a2a;
       --mk-surface-press: #333333;
+      --mk-row-hover: #1c1c1e;
       --mk-card-bg: #1c1c1e;
       --mk-card-border: rgba(255, 255, 255, 0.12);
       --mk-header-border: #2c2c2c;
@@ -76,6 +80,7 @@
 
       --auth-sheet-bg: #1c1c1e;
       --sheet-scrim: rgba(0, 0, 0, 0.6);
+      --mk-push-scrim: rgba(0, 0, 0, 0.4);
 
       --mk-tabbar-bg: #121212;
       --mk-tabbar-border: #2c2c2c;
