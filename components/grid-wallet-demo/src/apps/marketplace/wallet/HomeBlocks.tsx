@@ -79,14 +79,15 @@ const DEMO_ACTIVITY = [
     photo: '/assets/marketplace/listing-cabin.png',
     paid: 'Paid Apr 2',
     source: `${BRAND} Debit`,
-    stay: 'Madrid \u2022 Mar 28\u2013Apr 1',
+    // Middle-dot separators (U+00B7) — Circular's real bullet is huge.
+    stay: 'Madrid \u00b7 Mar 28\u2013Apr 1',
     amount: '+ $641.50',
   },
   {
     photo: '/assets/marketplace/listing-palm-springs.png',
     paid: 'Paid Apr 1',
     source: `${BRAND} Debit`,
-    stay: 'Palm Springs \u2022 Mar 27\u2013Apr 3',
+    stay: 'Palm Springs \u00b7 Mar 27\u2013Apr 3',
     amount: '+ $1,034.10',
   },
 ];

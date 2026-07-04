@@ -98,11 +98,12 @@ const CAPTION_REST = { opacity: 1, y: 0, filter: 'blur(0px)' };
 const SHAKE = { x: [0, 8, -8, 8, 0] };
 const SHAKE_OPTS = { duration: 0.28, ease: 'linear' as const };
 
-/** "patcapulong@gmail.com" → "p•••g@gmail.com" (the reference photo's mask). */
+/** "patcapulong@gmail.com" → "p···g@gmail.com" (the reference photo's mask;
+ *  middle dots — Circular's real bullet is huge). */
 function maskEmail(email: string): string {
   const [user, domain] = email.split('@');
   if (!domain || user.length < 2) return email;
-  return `${user[0]}\u2022\u2022\u2022${user[user.length - 1]}@${domain}`;
+  return `${user[0]}\u00b7\u00b7\u00b7${user[user.length - 1]}@${domain}`;
 }
 
 function looksLikePhone(v: string): boolean {
@@ -418,7 +419,12 @@ export function MarketplaceAuthScreen({
       : value.includes('@')
         ? value.trim()
         : DEMO_EMAIL;
-  const masked = method === 'phone' ? maskUsPhone(maskSource) : maskEmail(maskSource);
+  // maskUsPhone is shared chrome (bullets suit SF Pro); swap to middle dots
+  // here — Circular's bullet glyph is comically large.
+  const masked = (method === 'phone' ? maskUsPhone(maskSource) : maskEmail(maskSource)).replace(
+    /\u2022/g,
+    '\u00b7',
+  );
 
   // No refraction copy: this app's surface is flat, so a copied backdrop gives
   // the lens nothing to bend (an all-white copy reads opaque on light). The

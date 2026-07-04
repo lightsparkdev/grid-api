@@ -1,0 +1,13 @@
+/* Fills whatever tile it's placed in; the inlined SVG keeps its own 512
+   viewBox, so stretching it to 100% shows the full square art. */
+.flag {
+  display: block;
+  width: 100%;
+  height: 100%;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}

@@ -82,6 +82,34 @@
   pointer-events: none;
 }
 
+/* ── In-page steps (source ⇄ banks) — same push mechanism as the page ────── */
+.steps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.step {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--app-bg);
+}
+
+/* Dim over the receding underlayer during a step push — same token as the
+   wallet-level push scrim. DOM order puts it above a z-1 step; the z-2 top
+   screen still covers it. */
+.stepScrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--mk-push-scrim);
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ── Scroll (content passes under the opaque bar) ────────────────────────── */
 .scroll {
   position: relative;
@@ -209,4 +237,176 @@
     display: block;
     flex: none;
   }
+}
+
+/* ── Bank rows (Select bank) — 40px squircle flag tile, NO dividers ──────── */
+.flagTile {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  background: var(--mk-surface);
+}
+
+/* Header "Add bank" pill — the Airbnb "Details" header button: full-round
+   gray pill, top right of the bar. */
+.headerPill {
+  margin-left: auto;
+  /* 16px gutter to the screen edge — the bar itself pads 24px. */
+  margin-right: -8px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+}
+
+/* Brand-pink CTA — hugs contents, 48px tall. */
+.pinkCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 24px;
+  border: 0;
+  background: var(--mk-cta);
+  color: var(--mk-cta-fg);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-cta-press);
+  }
+}
+
+/* ── "Select bank" empty state — skeleton hold → cover → message reveal ──── */
+.empty {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.skeletonList {
+  position: relative;
+  margin-top: 8px;
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+}
+
+.skeletonTile {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  background: var(--mk-surface);
+}
+
+.skeletonLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeletonPill {
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--mk-surface);
+}
+
+/* Cover that fades the skeleton down before the message reveals. */
+.skeletonCover {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--cover-duration, 550ms) cubic-bezier(0.19, 1, 0.22, 1);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--app-bg) 50%, transparent) 0%,
+    var(--app-bg) 64%
+  );
+
+  &[data-visible] {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonCover {
+    transition: none;
+  }
+}
+
+.emptyMessageLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  pointer-events: none;
+}
+
+.emptyMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  pointer-events: auto;
+}
+
+.emptyText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.emptySub {
+  margin: 0 auto;
+  max-width: 260px;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+  text-wrap: balance;
 }
