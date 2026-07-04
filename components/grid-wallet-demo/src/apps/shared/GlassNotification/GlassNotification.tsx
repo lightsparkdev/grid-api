@@ -240,7 +240,7 @@ export function GlassNotification({
                 radius={28.8}
                 cornerSmoothing={PHONE_SHELL_GLASS.cornerSmoothing}
                 tint={theme === 'dark' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(242, 242, 247, 0.7)'}
-                tintBlur={24}
+                tintBlur={4}
                 // Baked geometry-aware specular (the glass buttons' highlight):
                 // hot rim on the lit corners along the diagonal, so the frost
                 // reads as glass rather than a flat material. Replaces the flat
