@@ -433,7 +433,7 @@
 
   .sourceRow {
     position: relative;
-    padding-left: 32px;
+    padding-left: 24px;
   }
   /* Row content sits above the inset highlight. */
   .sourceRow > * {
@@ -441,12 +441,12 @@
     z-index: 1;
   }
   /* Squircle hover/press highlight that leaves a 12px gutter around the row
-     content (the icon sits at 32px, so the fill starts at 20px; full height gives
+     content (the icon sits at 24px, so the fill starts at 12px; full height gives
      the same 12px above/below the 40px icon), with the chooser cards' 20px radius. */
   .sourceRow::before {
     content: '';
     position: absolute;
-    inset: 0 20px;
+    inset: 0 12px;
     z-index: 0;
     border-radius: 20px;
     corner-shape: var(--corner-shape);
@@ -469,7 +469,7 @@
     transition: none;
   }
   .sourceContent {
-    padding-right: 32px;
+    padding-right: 24px;
   }
 }
 
@@ -598,7 +598,9 @@
 .addressBody {
   display: flex;
   align-items: center;
+  gap: 16px;
   width: 100%;
+  padding-right: 8px;
 }
 
 .addressLabels {
@@ -607,7 +609,7 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  padding: 12px 0;
+  padding: 12px 8px;
 }
 
 /* Filled state trims the bottom pad a touch. */
@@ -649,7 +651,7 @@
    out 8px of the wrap's 24px gutter so it sits 16px off the phone edges. */
 .addressBtnWrap {
   margin: 0 -8px;
-  padding: 8px 0 0;
+  padding: 8px 8px 0;
 }
 
 /* Medium content-area button (same metrics as the list-section CTA). */
@@ -1122,10 +1124,10 @@
   right: 0;
   bottom: 0;
   z-index: 2;
-  /* 16px sides + 56px from the screen bottom (clears the phone-shell curve); the
+  /* 24px sides + 56px from the screen bottom (clears the phone-shell curve); the
      32px top keeps the gradient fade above the button. The full-screen flows sit
      on the base bg, so the fade resolves to --app-bg. */
-  padding: 32px 16px 56px;
+  padding: 32px 24px 56px;
   background: linear-gradient(to top, var(--app-bg), var(--app-bg) 56%, transparent);
 }
 
