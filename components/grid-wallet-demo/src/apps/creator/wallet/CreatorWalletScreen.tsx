@@ -18,7 +18,7 @@ import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { Toast } from '@/apps/shared/Toast';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
+import { formatUsdCents } from '@/apps/shared/wallet';
 import { AddMoneySheet } from './AddMoneySheet';
 import { CardHomeContent } from './CardHomeContent';
 import { CardIssuanceSheet } from './CardIssuanceSheet';
@@ -168,7 +168,7 @@ function FloatingCard({
  *  card issuance is a stacked sheet with a floating card that morphs into
  *  card-home, and tap-to-pay reuses the shared flow. */
 export function CreatorWalletScreen(props: SkinWalletScreenProps) {
-  const { entrance = false, onQuoteCreate, onLinkExternalAccount, onCardIssued } = props;
+  const { entrance = false, home, money, onCardIssued } = props;
   const reduceMotion = useReducedMotion();
   const overlayEl = useScreenOverlay();
 
@@ -187,7 +187,6 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
     setSendReceiveOpen,
     toast,
     setToast,
-    showToast,
     availableCents,
     apyPercent,
     homeActivity,
@@ -201,7 +200,7 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
     finishTransfer,
     confirmTransfer,
     handleReceivePayment,
-  } = useWalletHome(props);
+  } = home;
 
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
@@ -565,24 +564,10 @@ export function CreatorWalletScreen(props: SkinWalletScreenProps) {
       />
 
       <AddMoneySheet
+        m={money}
         open={sheetOpen}
         mode={sheetMode}
-        availableCents={availableCents}
         confirming={sheetConfirming}
-        onDismiss={() => setSheetOpen(false)}
-        onQuote={(cents, dest) => {
-          if (sheetMode !== 'receive') onQuoteCreate?.(sheetMode, cents, dest);
-        }}
-        onLinkExternalAccount={(input, label) => {
-          onLinkExternalAccount?.(input, label);
-          showToast(
-            label === 'Add bank account'
-              ? 'Bank account saved'
-              : label === 'Add crypto wallet'
-                ? 'Wallet added'
-                : 'Recipient saved',
-          );
-        }}
         onReceive={handleReceivePayment}
         onConfirm={confirmTransfer}
       />

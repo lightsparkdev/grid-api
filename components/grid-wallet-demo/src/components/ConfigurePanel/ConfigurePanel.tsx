@@ -48,11 +48,10 @@ export function ConfigurePanel({
 
           <section className={styles.section}>
             <SectionDivider label="Configure auth" />
-            <AuthMethodPicker
-              methods={methods}
-              onToggle={onToggleMethod}
-              disabled={running}
-            />
+            {/* Never disabled: the auth screens render live from `methods`, and
+                an in-flight sign-in has already committed its method — toggling
+                mid-flow just updates the CTA list behind the overlay. */}
+            <AuthMethodPicker methods={methods} onToggle={onToggleMethod} />
           </section>
 
           <section className={styles.section}>

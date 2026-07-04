@@ -31,6 +31,13 @@ export interface AppSkin {
   /** Sign-in OTP overlay. Omit to fall back to Aurora's (DemoPhone default).
    *  (The passkey sheet is shared iOS system chrome — not skinnable.) */
   AuthSheet?: SkinAuthSheet;
+  /** Per-skin wallet-brain options (the brain itself is hosted above the skin
+   *  so its state survives skin switches — see SignInFlow's WalletHost). */
+  walletOptions?: {
+    /** The skin shows its own in-sheet success screen after a transfer
+     *  (Done closes it) instead of auto-close + toast. */
+    transferSuccessScreen?: boolean;
+  };
 }
 
 const SF_PRO = "'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
@@ -63,6 +70,7 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     AuthScreen: SocialAuthScreen,
     WalletScreen: SocialWalletScreen,
     AuthSheet: SocialAuthSheet,
+    walletOptions: { transferSuccessScreen: true },
   },
   marketplace: {
     id: 'marketplace',

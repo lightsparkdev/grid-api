@@ -91,6 +91,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     <SignInFlow
       AuthScreen={skin.AuthScreen!}
       WalletScreen={skin.WalletScreen!}
+      skinId={skin.id}
       screen={
         props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth'
       }
@@ -99,6 +100,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       onSignIn={signIn}
       skipIntro={props.skipIntro}
       entry={props.walletEntry}
+      walletOptions={skin.walletOptions}
       onQuoteCreate={props.onQuoteCreate}
       onLinkExternalAccount={props.onLinkExternalAccount}
       onTransferExecute={props.onTransferExecute}

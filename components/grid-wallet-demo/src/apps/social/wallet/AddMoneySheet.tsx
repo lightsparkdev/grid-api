@@ -37,10 +37,8 @@ import { SfSymbol } from '@/apps/shared/icons';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import { randomNetworkAddress } from '@/lib/cryptoAddresses';
 import { currencyFor, type BankCountry } from '@/data/bankCountries';
-import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import {
-  useMoneySheet,
   formatUsdCents,
   truncateAddress,
   typedToCents,
@@ -53,6 +51,7 @@ import {
   accountLast4,
   fieldLabel,
   receiveFields,
+  type MoneySheet,
   type Step,
   type SavedBank,
   type CryptoRecipient,
@@ -208,22 +207,19 @@ function formatAmountShort(cents: number): string {
 }
 
 interface AddMoneySheetProps {
+  /** The money-sheet brain — hosted above the skin (survives skin switches);
+   *  this face only reads it and renders. */
+  m: MoneySheet;
   open: boolean;
   /** Direction of the flow — flips titles, source rows, card order, and copy. */
   mode: MoneySheetMode;
-  /** Live cash balance (cents) — displayed, and the withdraw over-balance cap. */
-  availableCents: number;
   /** Face ID running — Confirm shows a spinner and input locks. */
   confirming: boolean;
+  /** Direct close (the success screen's Done — skips the brain's confirm guard). */
   onDismiss: () => void;
   /** Confirm tapped with the typed amount (cents). Parent runs Face ID.
    *  `activity` carries the real destination for the Activity row + toast. */
   onConfirm: (cents: number, activity: TransferActivity) => void;
-  /** Amount committed (the quote beat) — parent logs the create-quote call.
-   *  `dest` lets a send reference the recipient's bank/crypto wallet. */
-  onQuote?: (cents: number, dest?: TransferDest) => void;
-  /** A bank/crypto recipient was added — parent logs POST /customers/external-accounts. */
-  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
   /** Receive flow: Share/Copy fired a (simulated) inbound payment. */
   onReceive?: (payment: ReceivedPayment) => void;
 }
@@ -238,14 +234,12 @@ interface AddMoneySheetProps {
  * amount — address paste card + contacts — and runs in USDC at 1:1.
  */
 export function AddMoneySheet({
+  m,
   open,
   mode,
-  availableCents,
   confirming,
   onDismiss,
   onConfirm,
-  onQuote,
-  onLinkExternalAccount,
   onReceive,
 }: AddMoneySheetProps) {
   const reduceMotion = useReducedMotion();
@@ -253,19 +247,6 @@ export function AddMoneySheet({
   // animation stay in the view (DOM-coupled). The hook signals via shakeNonce.
   const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
 
-  // The brain — step machine, keypad, bank/recipient state, FX, API callbacks —
-  // lives in the shared hook. This view only reads it and renders.
-  const m = useMoneySheet({
-    open,
-    mode,
-    availableCents,
-    confirming,
-    onDismiss,
-    onConfirm,
-    onQuote,
-    onLinkExternalAccount,
-    onReceive,
-  });
   const {
     titles,
     sources,
@@ -518,7 +499,10 @@ export function AddMoneySheet({
   ];
   // The confirm sheet rides over the amount screen while on the confirm step
   // (hidden during the success handoff so it slides down before the push left).
-  const confirmOpen = step === 'confirm' && !hideConfirm && !successOpen;
+  // Gated on `open` too: the brain's step only resets on the NEXT open, so a
+  // closed sheet can still be parked on 'confirm' (e.g. a transfer finished in
+  // another skin before switching here).
+  const confirmOpen = open && step === 'confirm' && !hideConfirm && !successOpen;
 
   // iOS push: forward = in from the right / out to the left; back = reverse.
   // Variants + `custom` (not inline objects): an EXITING screen never re-renders,

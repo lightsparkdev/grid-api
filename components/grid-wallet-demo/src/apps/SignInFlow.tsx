@@ -6,9 +6,15 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { AuthMethod } from '@/data/flow';
 import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import { useMoneySheet, useWalletHome } from '@/apps/shared/wallet';
 import type { WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
 import type { SkinAuthScreen, SkinWalletScreen } from './types';
 import styles from './SignInFlow.module.scss';
+
+/** Per-skin wallet-brain options (mirrors AppSkin.walletOptions). */
+interface WalletBrainOptions {
+  transferSuccessScreen?: boolean;
+}
 
 // The auth screen plays the sign-in intro (content out → mask dissolve → logo
 // to center → "Creating your account..." hold) on `dismissed`. The exit is
@@ -25,10 +31,20 @@ const REVEAL_IN = motionTransition(easeOutSnappy, 0.4);
 // Reduced motion (and the wallet's entry beneath): a plain quick crossfade.
 const SWAP_FADE = motionTransition(easeOutQuick, 0.25);
 
+// Skin switch: the old skin's view blur-fades out while the new one fades in —
+// same state, new face. Short, same motion language as the app's step swaps.
+const SKIN_FADE = motionTransition(easeOutQuick, 0.3);
+const SKIN_ENTER = { opacity: 1, filter: 'blur(0px)' };
+const SKIN_HIDDEN = { opacity: 0, filter: 'blur(8px)' };
+// The exiting layer must never eat taps meant for the incoming skin.
+const SKIN_EXIT = { ...SKIN_HIDDEN, pointerEvents: 'none' as const };
+
 interface SignInFlowProps {
   /** The active skin's auth + wallet screens (from the registry). */
   AuthScreen: SkinAuthScreen;
   WalletScreen: SkinWalletScreen;
+  /** Active skin id — keys the skin-switch crossfade. */
+  skinId: string;
   /** Demo screen from the wallet logic — flips auth → wallet on sign-in. */
   screen: 'auth' | 'wallet';
   busy?: boolean;
@@ -39,6 +55,8 @@ interface SignInFlowProps {
   skipIntro?: boolean;
   /** Jump command handed to the wallet so the sidebar can provision + open a flow. */
   entry?: WalletEntry;
+  /** The active skin's wallet-brain options (from the registry). */
+  walletOptions?: WalletBrainOptions;
   /** Wallet events bubbled up so the demo logs the matching Grid API calls. */
   onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
   onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
@@ -48,6 +66,95 @@ interface SignInFlowProps {
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
   /** Auth-side overlays (passkey / email sheets) — rendered with the auth screen. */
   children?: ReactNode;
+}
+
+interface WalletHostProps {
+  WalletScreen: SkinWalletScreen;
+  /** Active skin id — keys the view crossfade on skin switch. */
+  skinId: string;
+  entrance: boolean;
+  entry?: WalletEntry;
+  walletOptions?: WalletBrainOptions;
+  onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
+  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
+  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
+  onCardIssued?: () => void;
+  onTapToPay?: (cents: number, merchant: string) => void;
+  onReceivePayment?: (info: ReceivePaymentInfo) => void;
+}
+
+/**
+ * Hosts the wallet + money-sheet BRAINS above the skin boundary. This component
+ * stays mounted across skin switches (only the `WalletScreen` view type swaps
+ * beneath it), so balance, activity, saved banks, mid-flow sheet position, and
+ * the consumed `entry` nonce all survive a platform change — switching skins is
+ * literally just a reskin. It unmounts on reset / return-to-sign-in, which is
+ * what clears the session.
+ */
+function WalletHost({
+  WalletScreen,
+  skinId,
+  entrance,
+  entry,
+  walletOptions,
+  onQuoteCreate,
+  onLinkExternalAccount,
+  onTransferExecute,
+  onCardIssued,
+  onTapToPay,
+  onReceivePayment,
+}: WalletHostProps) {
+  const home = useWalletHome({
+    entrance,
+    entry,
+    transferSuccessScreen: walletOptions?.transferSuccessScreen,
+    onTransferExecute,
+    onTapToPay,
+    onReceivePayment,
+  });
+  // The money-sheet brain rides the wallet brain's sheet state. The wiring here
+  // (quote guard, save-confirmation toasts) was identical across every skin —
+  // it lives with the brains now.
+  const money = useMoneySheet({
+    open: home.sheetOpen,
+    mode: home.sheetMode,
+    availableCents: home.availableCents,
+    confirming: home.sheetConfirming,
+    onDismiss: () => home.setSheetOpen(false),
+    onConfirm: home.confirmTransfer,
+    onQuote: (cents, dest) => {
+      // Receive never reaches the amount step, so no quote fires for it.
+      if (home.sheetMode !== 'receive') onQuoteCreate?.(home.sheetMode, cents, dest);
+    },
+    onLinkExternalAccount: (input, label) => {
+      onLinkExternalAccount?.(input, label);
+      // Confirm the save (fires after the sheet's 500ms validate beat).
+      home.showToast(
+        label === 'Add bank account'
+          ? 'Bank account saved'
+          : label === 'Add crypto wallet'
+            ? 'Wallet added'
+            : 'Recipient saved',
+      );
+    },
+    onReceive: home.handleReceivePayment,
+  });
+
+  return (
+    // Skin switch = same brain, new face: the outgoing view blur-fades out over
+    // the incoming one, exactly where it was (same sheet step, same balance).
+    <AnimatePresence initial={false}>
+      <motion.div
+        key={skinId}
+        className={styles.skinLayer}
+        initial={SKIN_HIDDEN}
+        animate={{ ...SKIN_ENTER, transition: SKIN_FADE }}
+        exit={{ ...SKIN_EXIT, transition: SKIN_FADE }}
+      >
+        <WalletScreen entrance={entrance} home={home} money={money} onCardIssued={onCardIssued} />
+      </motion.div>
+    </AnimatePresence>
+  );
 }
 
 /**
@@ -61,12 +168,14 @@ interface SignInFlowProps {
 export function SignInFlow({
   AuthScreen,
   WalletScreen,
+  skinId,
   screen,
   busy,
   methods,
   onSignIn,
   skipIntro,
   entry,
+  walletOptions,
   onQuoteCreate,
   onLinkExternalAccount,
   onTransferExecute,
@@ -132,13 +241,25 @@ export function SignInFlow({
                 : { opacity: 0, filter: 'blur(10px)', transition: REVEAL_OUT }
             }
           >
-            <AuthScreen
-              busy={busy}
-              methods={methods}
-              dismissed={intro !== 'none'}
-              leaving={intro === 'leaving'}
-              onSignIn={onSignIn}
-            />
+            {/* Keyed on the skin so a platform switch crossfades the auth face
+                too (the overlays below are shared chrome and stay put). */}
+            <AnimatePresence initial={false}>
+              <motion.div
+                key={skinId}
+                className={styles.skinLayer}
+                initial={SKIN_HIDDEN}
+                animate={{ ...SKIN_ENTER, transition: SKIN_FADE }}
+                exit={{ ...SKIN_EXIT, transition: SKIN_FADE }}
+              >
+                <AuthScreen
+                  busy={busy}
+                  methods={methods}
+                  dismissed={intro !== 'none'}
+                  leaving={intro === 'leaving'}
+                  onSignIn={onSignIn}
+                />
+              </motion.div>
+            </AnimatePresence>
             {children}
           </motion.div>
         ) : (
@@ -151,9 +272,12 @@ export function SignInFlow({
             // then unmount hidden — no peek at the background mid-transition.
             exit={{ opacity: 1, transition: REVEAL_IN }}
           >
-            <WalletScreen
+            <WalletHost
+              WalletScreen={WalletScreen}
+              skinId={skinId}
               entrance={!reduceMotion}
               entry={entry}
+              walletOptions={walletOptions}
               onQuoteCreate={onQuoteCreate}
               onLinkExternalAccount={onLinkExternalAccount}
               onTransferExecute={onTransferExecute}

@@ -10,7 +10,7 @@ import { Toast } from '@/apps/shared/Toast';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { motionTransition } from '@/lib/easing';
-import { formatUsdCents, useWalletHome } from '@/apps/shared/wallet';
+import { formatUsdCents } from '@/apps/shared/wallet';
 import type { SkinWalletScreenProps } from '@/apps/types';
 // Z's own money sheet (forked from Glitch's flat sheet onto the shared brain).
 import { AddMoneySheet } from './AddMoneySheet';
@@ -71,7 +71,7 @@ function ActionChip({
  *  chips drive the reused flat money sheet (which logs the Grid API calls). Flat,
  *  no glass; cards use the squircle clip + Aurora press scale. */
 export function SocialWalletScreen(props: SkinWalletScreenProps) {
-  const { entrance = false, onQuoteCreate, onLinkExternalAccount, onCardIssued } = props;
+  const { entrance = false, home, money, onCardIssued } = props;
   const overlayEl = useScreenOverlay();
 
   const {
@@ -81,7 +81,6 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     sheetConfirming,
     toast,
     setToast,
-    showToast,
     availableCents,
     earningsTodayCents,
     apyPercent,
@@ -103,8 +102,9 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     startTapToPay,
     transactions,
     // Z keeps the sheet open after confirm and shows an in-sheet success screen
-    // (Done closes it) instead of the toast.
-  } = useWalletHome({ ...props, transferSuccessScreen: true });
+    // (Done closes it) instead of the toast — via the skin registry's
+    // walletOptions (the brain is hosted above the skin).
+  } = home;
 
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
@@ -208,24 +208,11 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
       <SocialTabBar {...SOCIAL_TAB_BAR} />
 
       <AddMoneySheet
+        m={money}
         open={sheetOpen}
         mode={sheetMode}
-        availableCents={availableCents}
         confirming={sheetConfirming}
         onDismiss={() => setSheetOpen(false)}
-        onQuote={(cents, dest) => {
-          if (sheetMode !== 'receive') onQuoteCreate?.(sheetMode, cents, dest);
-        }}
-        onLinkExternalAccount={(input, label) => {
-          onLinkExternalAccount?.(input, label);
-          showToast(
-            label === 'Add bank account'
-              ? 'Bank account saved'
-              : label === 'Add crypto wallet'
-                ? 'Wallet added'
-                : 'Recipient saved',
-          );
-        }}
         onReceive={handleReceivePayment}
         onConfirm={confirmTransfer}
       />

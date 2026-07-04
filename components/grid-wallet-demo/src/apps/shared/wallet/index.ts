@@ -24,7 +24,7 @@ export {
   randomReceiveCents,
   toastUsd,
 } from './activity';
-export { useWalletHome, type UseWalletHomeOptions } from './useWalletHome';
+export { useWalletHome, type UseWalletHomeOptions, type WalletHome } from './useWalletHome';
 export { useMoneySheet, type MoneySheet, type UseMoneySheetOptions } from './useMoneySheet';
 export {
   MODES,

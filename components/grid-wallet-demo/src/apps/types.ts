@@ -1,7 +1,6 @@
 import type { ComponentType } from 'react';
 import type { AuthMethod } from '@/data/flow';
-import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
-import type { WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
+import type { MoneySheet, WalletHome } from '@/apps/shared/wallet';
 
 /** Contract every skin's auth screen implements, so the shared SignInFlow can
  *  drive it (the sign-in intro `dismissed`/`leaving` beats + method CTAs). */
@@ -13,18 +12,18 @@ export interface SkinAuthScreenProps {
   onSignIn: (method: AuthMethod) => void;
 }
 
-/** Contract every skin's wallet screen implements. All app logic lives in the
- *  shared `useWalletHome`; these are the demo wiring + sign-in entrance. */
+/** Contract every skin's wallet screen implements. The wallet + money-sheet
+ *  brains are hosted ABOVE the skin (SignInFlow's WalletHost) so their state
+ *  survives skin switches — the view just reads them and renders. */
 export interface SkinWalletScreenProps {
-  balance?: string;
+  /** The persistent wallet brain (balance, activity, sheets, card/tap state). */
+  home: WalletHome;
+  /** The persistent money-sheet brain (step machine, banks, amounts, FX). */
+  money: MoneySheet;
+  /** One-shot sign-in entrance stagger. */
   entrance?: boolean;
-  entry?: WalletEntry;
-  onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
-  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
-  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
+  /** A virtual card finished issuing on the phone — log the issue call. */
   onCardIssued?: () => void;
-  onTapToPay?: (cents: number, merchant: string) => void;
-  onReceivePayment?: (info: ReceivePaymentInfo) => void;
 }
 
 export type SkinAuthScreen = ComponentType<SkinAuthScreenProps>;

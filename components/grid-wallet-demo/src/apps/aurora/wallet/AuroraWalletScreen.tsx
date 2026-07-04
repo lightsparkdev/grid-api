@@ -12,9 +12,7 @@ import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
-import { useWalletHome } from '@/apps/shared/wallet';
-import type { WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
+import type { SkinWalletScreenProps } from '@/apps/types';
 import { AddMoneySheet, formatUsdCents } from './AddMoneySheet';
 import { CardHomeContent } from './CardHomeContent';
 import { CreatingCaption, IntroContent, ReadyContent } from './CardIssuanceContent';
@@ -55,33 +53,11 @@ const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
 const CONTENT_HIDDEN = { opacity: 0, y: 12, filter: 'blur(8px)' };
 const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
-interface AuroraWalletScreenProps {
-  /** Formatted balance from demo state, e.g. "$0.00". */
-  balance?: string;
-  /** One-shot mount stagger (card, balance, actions, insights) — the sign-in
-   *  intro reveal. Off = everything renders at rest, exactly as before. */
-  entrance?: boolean;
-  /** Jump command from the sidebar — provision + open a flow out of order. */
-  entry?: WalletEntry;
-  /** Amount committed in a transfer sheet — log the create-quote call. `dest`
-   *  lets a send reference the recipient's bank/crypto wallet. */
-  onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
-  /** A bank/crypto recipient was added — log POST /customers/external-accounts. */
-  onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
-  /** Transfer confirmed (Face ID) — log execute + settle and move the balance. */
-  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
-  /** A virtual card finished issuing on the phone. */
-  onCardIssued?: () => void;
-  /** A tap-to-pay charge landed on the phone. */
-  onTapToPay?: (cents: number, merchant: string) => void;
-  /** A payment was received (Receive flow) — log the inbound webhook + settle. */
-  onReceivePayment?: (info: ReceivePaymentInfo) => void;
-}
-
 /** Aurora wallet home + debit card issuance flow (Figma Bitcoin 2026). The
- *  view layer — all state/effects/handlers live in the shared `useWalletHome`. */
-export function AuroraWalletScreen(props: AuroraWalletScreenProps) {
-  const { entrance = false, onQuoteCreate, onLinkExternalAccount, onCardIssued } = props;
+ *  view layer — the wallet + money-sheet brains arrive as props (hosted above
+ *  the skin so their state survives skin switches). */
+export function AuroraWalletScreen(props: SkinWalletScreenProps) {
+  const { entrance = false, home, money, onCardIssued } = props;
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
@@ -101,7 +77,6 @@ export function AuroraWalletScreen(props: AuroraWalletScreenProps) {
     setSendReceiveOpen,
     toast,
     setToast,
-    showToast,
     availableCents,
     earningsTodayCents,
     weeklyBars,
@@ -121,7 +96,7 @@ export function AuroraWalletScreen(props: AuroraWalletScreenProps) {
     finishTransfer,
     confirmTransfer,
     handleReceivePayment,
-  } = useWalletHome(props);
+  } = home;
 
   // Sign-in entrance: card → balance → actions → insights reveal in once on
   // mount (the issuance stagger language); the Activity card's own skeleton
@@ -408,28 +383,13 @@ export function AuroraWalletScreen(props: AuroraWalletScreenProps) {
       />
 
       {/* Add money / Withdraw / Send — one mode-switched sheet; Confirm hands
-          off to the Face ID overlay. */}
+          off to the Face ID overlay. The brain (step machine, banks, FX + the
+          quote/save callbacks) is the lifted `money` — this face just renders it. */}
       <AddMoneySheet
+        m={money}
         open={sheetOpen}
         mode={sheetMode}
-        availableCents={availableCents}
         confirming={sheetConfirming}
-        onDismiss={() => setSheetOpen(false)}
-        onQuote={(cents, dest) => {
-          // Receive never reaches the amount step, so no quote fires for it.
-          if (sheetMode !== 'receive') onQuoteCreate?.(sheetMode, cents, dest);
-        }}
-        onLinkExternalAccount={(input, label) => {
-          onLinkExternalAccount?.(input, label);
-          // Confirm the save (fires after the sheet's 500ms validate beat).
-          showToast(
-            label === 'Add bank account'
-              ? 'Bank account saved'
-              : label === 'Add crypto wallet'
-                ? 'Wallet added'
-                : 'Recipient saved',
-          );
-        }}
         onReceive={handleReceivePayment}
         onConfirm={confirmTransfer}
       />

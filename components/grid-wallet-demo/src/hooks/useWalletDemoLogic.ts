@@ -71,9 +71,13 @@ export function useWalletDemoLogic() {
   const [persona, setPersona] = useState<Persona>('fintech');
   const [useCase, setUseCaseState] = useState<UseCaseId>('fintech');
   // Picking a use-case also switches the persona so the phone renders that
-  // skin's app. The picker only calls this for built use-cases.
+  // skin's app. The picker only calls this for built use-cases. The wallet
+  // brain persists across the switch (it's hosted above the skin), so also
+  // drop any already-consumed flow command — a skin switch should never
+  // replay the last sidebar jump.
   const setUseCase = useCallback((id: UseCaseId) => {
     setUseCaseState(id);
+    setWalletEntry(undefined);
     const next = USE_CASES.find((u) => u.id === id)?.persona;
     if (next) setPersona(next);
   }, []);

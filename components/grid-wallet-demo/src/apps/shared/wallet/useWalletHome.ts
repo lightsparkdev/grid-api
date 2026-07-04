@@ -502,3 +502,8 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     handleReceivePayment,
   };
 }
+
+/** The wallet brain's full surface — hosted above the skin boundary (see
+ *  SignInFlow's WalletHost) and handed to each skin's view as a prop, so the
+ *  state survives skin switches. */
+export type WalletHome = ReturnType<typeof useWalletHome>;
