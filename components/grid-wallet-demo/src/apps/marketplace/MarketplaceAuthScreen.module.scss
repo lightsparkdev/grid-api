@@ -1,0 +1,428 @@
+/* Marketplace sign-in — permanent iOS pageSheet over the zeroed Wallet home.
+   Sheet content per Figma 2375:11741; confirm screen per IMG_0614. Flat. */
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* The receding card (shared PresentationStage) — carries the app surface. */
+.stage {
+  background: var(--app-bg);
+}
+
+.backdropHome {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Dim over the receded card (the BottomSheet scrim's role, same token). */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--sheet-scrim);
+  pointer-events: none;
+}
+
+/* ── The pageSheet ────────────────────────────────────────────────────────── */
+/* Top at 74px: 12px of the receded card (offset 62) peeks above the sheet. */
+.sheetLayer {
+  position: absolute;
+  top: 74px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--mk-sheet-bg);
+  color: var(--app-text-primary);
+}
+
+.sheetInner {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header: back (code step only) left, no-op X right ───────────────────── */
+.sheetHeader {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+.headerSlot {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+}
+.headerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* ── Steps host (entry ⇄ confirm push) ───────────────────────────────────── */
+.steps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.step {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── Entry step (Figma 2375:11741 — centered column, gap 30/32) ──────────── */
+.entryContent {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 0 24px 56px;
+}
+.logo {
+  flex: none;
+}
+.entryBlock {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.heading {
+  margin: 0 0 32px;
+  font-size: 26px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.26px;
+  text-align: center;
+  color: var(--app-text-primary);
+}
+
+.cluster {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Input + Continue (collapses when phone/email are both off). */
+.formRow {
+  width: 100%;
+}
+.formInner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.continueBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--mk-cta);
+  color: var(--mk-cta-fg);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-cta-press);
+  }
+  &:disabled {
+    cursor: default;
+  }
+}
+
+/* "or" divider (Figma 2375:11751) — hairline + 16px Book. */
+.orRow {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.orLine {
+  flex: 1;
+  height: 1px;
+  background: var(--mk-hairline);
+}
+.orText {
+  flex: none;
+  margin: 0 16px;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-primary);
+}
+
+/* Square login tiles (Figma 2375:11755) — 62px, border #ddd, r12 squircle. */
+.squares {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: center;
+}
+.square {
+  position: relative;
+  flex: none;
+  width: 62px;
+  height: 62px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+.squareFill {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mk-sheet-bg);
+  transition: background 0.15s ease;
+
+  .square:hover & {
+    background: var(--mk-surface);
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+.squareHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--mk-tile-border);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+/* ── Confirm step (IMG_0614) ─────────────────────────────────────────────── */
+.confirmContent {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 24px 24px;
+}
+.confirmTitle {
+  margin: 16px 0 0;
+  font-size: 26px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.26px;
+  text-align: center;
+  color: var(--app-text-primary);
+}
+.confirmSub {
+  margin: 12px 0 0;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 400;
+  text-align: center;
+  color: var(--app-text-secondary);
+}
+
+/* One bordered rounded field holding the six dash → digit slots. */
+.codeShell {
+  position: relative;
+  width: 100%;
+  margin-top: 32px;
+  cursor: text;
+}
+.codeClip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 62px;
+  padding: 0 28px;
+  box-sizing: border-box;
+  background: var(--mk-sheet-bg);
+}
+.codeHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--mk-input-border);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    transition: stroke 0.18s ease;
+  }
+}
+.codeShell:focus-within .codeHalo path {
+  stroke: var(--mk-input-border-focus);
+}
+.codeInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.codeSlot {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 18px;
+  font-size: 20px;
+  line-height: normal;
+  font-weight: 500;
+  text-align: center;
+  color: var(--app-text-secondary);
+  pointer-events: none;
+  transition: color 0.12s ease;
+
+  &[data-filled] {
+    color: var(--app-text-primary);
+  }
+}
+
+.resendRow {
+  margin: 24px 0 0;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 400;
+  text-align: center;
+  color: var(--app-text-primary);
+}
+.resendLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  color: var(--app-text-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.confirmSpacer {
+  flex: 1;
+  min-height: 16px;
+}
+
+.tryAnother {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 56px;
+  flex: none;
+  border: 0;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+}
+
+/* ── "Creating your account…" beat (post-dismiss hold) ───────────────────── */
+.creatingSlot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  pointer-events: none;
+}
+.creatingLabel {
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}

@@ -9,6 +9,10 @@ import { SocialAuthScreen } from './social/SocialAuthScreen';
 import { SocialWalletScreen } from './social/wallet';
 import { AuthSheet as SocialAuthSheet } from './social/AuthSheet';
 import { BRAND as SOCIAL_BRAND } from './social/config';
+import { MarketplaceAuthScreen } from './marketplace/MarketplaceAuthScreen';
+import { MarketplaceWalletScreen } from './marketplace/wallet';
+import { AuthSheet as MarketplaceAuthSheet } from './marketplace/AuthSheet';
+import { BRAND as MARKETPLACE_BRAND } from './marketplace/config';
 import type {
   SkinAuthScreen,
   SkinWalletScreen,
@@ -31,6 +35,11 @@ export interface AppSkin {
   /** Sign-in OTP overlay. Omit to fall back to Aurora's (DemoPhone default).
    *  (The passkey sheet is shared iOS system chrome — not skinnable.) */
   AuthSheet?: SkinAuthSheet;
+  /** The auth ⇄ wallet reveal style. 'blur' (default) blur-dissolves the auth
+   *  screen; 'fade' is a plain quick crossfade — for skins whose auth screen
+   *  already ends ON the wallet layout (marketplace dismisses its sheet over a
+   *  wallet backdrop, so a blur pulse there would read as a glitch). */
+  authReveal?: 'blur' | 'fade';
   /** Per-skin wallet-brain options (the brain itself is hosted above the skin
    *  so its state survives skin switches — see SignInFlow's WalletHost). */
   walletOptions?: {
@@ -42,6 +51,7 @@ export interface AppSkin {
 
 const SF_PRO = "'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
 const GEIST = 'var(--font-family-geist), system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+const CIRCULAR = "'Circular', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
 
 /** Persona → app skin. Swap fontFamily per skin; metrics stay on ios-type stack. */
 export const APP_SKINS: Record<Persona, AppSkin> = {
@@ -75,8 +85,12 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
   marketplace: {
     id: 'marketplace',
     persona: 'marketplace',
-    label: 'Bazaar',
-    fontFamily: SF_PRO,
+    label: MARKETPLACE_BRAND,
+    fontFamily: CIRCULAR,
+    AuthScreen: MarketplaceAuthScreen,
+    WalletScreen: MarketplaceWalletScreen,
+    AuthSheet: MarketplaceAuthSheet,
+    authReveal: 'fade',
   },
 };
 

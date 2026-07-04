@@ -99,6 +99,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       methods={props.methods ?? [props.method]}
       onSignIn={signIn}
       skipIntro={props.skipIntro}
+      authReveal={skin.authReveal}
       entry={props.walletEntry}
       walletOptions={skin.walletOptions}
       onQuoteCreate={props.onQuoteCreate}

@@ -52,7 +52,7 @@ export const USE_CASES: UseCaseOption[] = [
     label: 'Marketplace',
     iconSrc: '/assets/app-icon-marketplace.png',
     enabled: true,
-    built: false,
+    built: true,
   },
   {
     id: 'ondemand',

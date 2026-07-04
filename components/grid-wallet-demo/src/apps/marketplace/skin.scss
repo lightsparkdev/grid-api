@@ -1,6 +1,86 @@
-/* Bazaar (marketplace) skin — SF Pro until brand palette lands. */
+/* Marketplace skin — Airbnb-style: Circular type, coral brand, flat (NO glass
+   outside shared system chrome). Light values sampled from the Figma frames
+   (2375:11741 auth, 2610:11075 home, 2610:11833 tab bar); the real product has
+   no dark mode, so the dark block is a best-guess adaptation. */
 @mixin tokens {
   &[data-app='marketplace'] {
-    --ios-font-family: var(--font-family-sf-pro);
+    --ios-font-family: var(--font-family-circular);
+
+    /* Brand — the coral house. CTA fill is the slightly deeper Figma red. */
+    --app-tint: #ff385c;
+    --ios-tint: var(--app-tint);
+    --mk-brand: #ff385c;
+    --mk-cta: #f32c55;
+    --mk-cta-press: #d92048;
+    --mk-cta-fg: #ffffff;
+
+    /* Surfaces + text (light). */
+    --app-bg: #ffffff;
+    --ios-label-primary: #222222;
+    --app-text-primary: #222222;
+    --app-text-secondary: #6a6a6a;
+    --app-text-tertiary: #6f6f6f;
+
+    /* Marketplace palette — consumed by the marketplace faces. */
+    --mk-surface: #f2f2f2; /* action pills, gear circle, Try another way */
+    --mk-surface-press: #e8e8e8;
+    --mk-card-bg: #ffffff;
+    --mk-card-border: rgba(34, 34, 34, 0.08); /* 0.5px outside hairline on cards */
+    --mk-header-border: #eaebeb; /* collapsed large-title header hairline */
+    --mk-card-shadow: 0 6px 36px 2px rgba(0, 0, 0, 0.08);
+    --mk-hairline: #ebebeb; /* the "or" rule */
+    --mk-input-border: #8c8c8c; /* resting input stroke */
+    --mk-input-border-focus: #222222;
+    --mk-tile-border: #dddddd; /* social square buttons */
+    --mk-green: #4aa499; /* performance delta */
+    --mk-sheet-bg: #ffffff; /* the auth pageSheet surface */
+
+    /* Primary filled pill (ContentAreaButton filled) — brand CTA. */
+    --p-fill: var(--mk-cta);
+    --p-fg: var(--mk-cta-fg);
+    --content-secondary-bg: var(--mk-surface);
+    --content-secondary-fg: var(--app-text-primary);
+
+    /* Flat sheets — no glass in this app. */
+    --auth-sheet-bg: #ffffff;
+    --app-sheet-glass-backdrop: transparent;
+    --sheet-scrim: rgba(0, 0, 0, 0.4);
+
+    /* Decorative bottom tab bar (Figma 2610:11833). */
+    --mk-tabbar-bg: #ffffff;
+    --mk-tabbar-border: #eaebeb;
+    --mk-tabbar-fg: #6a6a6a;
+    --mk-tabbar-active: #ff385c;
+
+    :global([data-theme='dark']) & {
+      --app-bg: #000000;
+      --ios-label-primary: #f7f7f7;
+      --app-text-primary: #f7f7f7;
+      --app-text-secondary: #b0b0b0;
+      --app-text-tertiary: #8c8c8c;
+
+      --mk-surface: #2a2a2a;
+      --mk-surface-press: #333333;
+      --mk-card-bg: #1c1c1e;
+      --mk-card-border: rgba(255, 255, 255, 0.12);
+      --mk-header-border: #2c2c2c;
+      --mk-card-shadow: 0 6px 36px 2px rgba(0, 0, 0, 0.5);
+      --mk-hairline: #333333;
+      --mk-input-border: #8c8c8c;
+      --mk-input-border-focus: #f7f7f7;
+      --mk-tile-border: #444444;
+      --mk-sheet-bg: #1c1c1e;
+
+      --content-secondary-bg: var(--mk-surface);
+      --content-secondary-fg: var(--app-text-primary);
+
+      --auth-sheet-bg: #1c1c1e;
+      --sheet-scrim: rgba(0, 0, 0, 0.6);
+
+      --mk-tabbar-bg: #121212;
+      --mk-tabbar-border: #2c2c2c;
+      --mk-tabbar-fg: #9b9b9b;
+      --mk-tabbar-active: #ff385c;
+    }
   }
 }

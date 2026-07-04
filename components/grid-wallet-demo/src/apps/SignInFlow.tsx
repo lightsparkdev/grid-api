@@ -61,6 +61,11 @@ interface SignInFlowProps {
   onSignIn: (method: AuthMethod) => void;
   /** Skip the sign-in intro hold (fast-forward jumps land on the wallet instantly). */
   skipIntro?: boolean;
+  /** Auth ⇄ wallet reveal style (from the skin registry). 'blur' (default)
+   *  blur-dissolves the auth layer; 'fade' is the plain quick crossfade (what
+   *  reduced motion already uses) — for skins whose auth screen ends on the
+   *  wallet layout, where a full-screen blur pulse would read as a glitch. */
+  authReveal?: 'blur' | 'fade';
   /** Jump command handed to the wallet so the sidebar can provision + open a flow. */
   entry?: WalletEntry;
   /** The active skin's wallet-brain options (from the registry). */
@@ -182,6 +187,7 @@ export function SignInFlow({
   methods,
   onSignIn,
   skipIntro,
+  authReveal = 'blur',
   entry,
   walletOptions,
   onQuoteCreate,
@@ -193,6 +199,9 @@ export function SignInFlow({
   children,
 }: SignInFlowProps) {
   const reduceMotion = useReducedMotion();
+  // Plain crossfade instead of the blur dissolve: reduced motion, or a skin
+  // that opts out because its auth screen already ends on the wallet layout.
+  const plainSwap = reduceMotion || authReveal === 'fade';
   const [shown, setShown] = useState(screen);
   // 'hold' = intro playing (creating beat); 'leaving' = caption exiting.
   const [intro, setIntro] = useState<'none' | 'hold' | 'leaving'>('none');
@@ -237,14 +246,14 @@ export function SignInFlow({
             // Above the entering wallet so the exit reads as the auth screen
             // dissolving off the home, not the home fading in over it.
             className={clsx(styles.screen, styles.screenAuth)}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, filter: 'blur(10px)' }}
+            initial={plainSwap ? { opacity: 0 } : { opacity: 0, filter: 'blur(10px)' }}
             animate={
-              reduceMotion
+              plainSwap
                 ? { opacity: 1, transition: SWAP_FADE }
                 : { opacity: 1, filter: 'blur(0px)', transition: REVEAL_IN }
             }
             exit={
-              reduceMotion
+              plainSwap
                 ? { opacity: 0, transition: SWAP_FADE }
                 : { opacity: 0, filter: 'blur(10px)', transition: REVEAL_OUT }
             }

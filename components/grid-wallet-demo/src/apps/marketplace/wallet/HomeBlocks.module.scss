@@ -1,0 +1,427 @@
+/* Marketplace Wallet home (Figma 2610:11075) — flat, Circular type. Cards are
+   squircle-clipped with SVG hairline halos; shadows live on the shells. */
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  /* Clear the status bar (screenBody underlaps it; see AppShell). */
+  padding-top: 62px;
+}
+
+/* ── Header bar (gear right; Figma 2610:11809 — h56, px16 py8) ────────────
+   Pinned over the scroll; opaque so content passes beneath. Extends UP under
+   the status bar (which paints above it) so scrolled content can't peek into
+   the status-bar strip — the scroll container's top padding doesn't clip.
+   The hairline fades in once the large title has fully migrated in. */
+.headerBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 118px; /* 62 status bar + 56 bar */
+  padding: 70px 16px 8px;
+  box-sizing: border-box;
+  background: var(--app-bg);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--mk-header-border);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  &[data-collapsed]::after {
+    opacity: 1;
+  }
+}
+.gearBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  /* A true circle — exempt from the app-wide squircle corner-shape. */
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* ── Title (Figma 2610:11077 — Bold 32, −0.64) ──────────────────────────── */
+/* The large title rides the scroll 1:1 (translate = −scrollTop up to the
+   collapse range) while shrinking to 22px (scale 0.6875) into the header bar. */
+.titleLayer {
+  position: absolute;
+  top: 118px;
+  left: 24px;
+  z-index: 4;
+  pointer-events: none;
+  transform-origin: top left;
+  transform: translateY(calc(var(--collapse, 0) * -42px))
+    scale(calc(1 - var(--collapse, 0) * 0.3125));
+  will-change: transform;
+}
+.title {
+  margin: 0;
+  font-size: 32px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.64px;
+  color: var(--app-text-primary);
+}
+
+/* ── Body (scrolls under the pinned header; Figma 2610:11087 — p24, gap16) ─
+   Top padding = header bar (56) + large title (42) + the content gap (24). */
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 122px 24px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Card shell: shadow + halo outside the squircle clip ────────────────── */
+.cardShell {
+  position: relative;
+  /* The blurred shadow silhouette; close enough to the squircle at 36px blur. */
+  border-radius: 22px;
+  box-shadow: var(--mk-card-shadow);
+}
+.cardClip {
+  position: relative;
+  z-index: 1;
+  background: var(--mk-card-bg);
+}
+/* OUTSIDE border, the AppShell screenBorder trick: the 1px stroke sits BELOW
+   the opaque card fill, which hides its inner half — a crisp 0.5px hairline
+   entirely outside the shape, so the shadow edge stays clean. */
+.cardHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--mk-card-border);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+/* ── Balance card (Figma 2610:11100) ────────────────────────────────────── */
+.balanceTop {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 24px 0;
+}
+.balanceLabel {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: 0.14px;
+  color: var(--app-text-primary);
+}
+.balanceAmount {
+  font-size: 40px;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  color: var(--app-text-primary);
+}
+.balanceActions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px 24px;
+}
+.actionPill {
+  display: inline-flex;
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.34px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+}
+.actionSquare {
+  flex: 0 0 50px;
+  width: 50px;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* ── Debit card promo (Figma 2610:11944) ────────────────────────────────── */
+.promo {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 24px;
+}
+.promoArt {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  background: #d4d4d4;
+}
+.promoCopy {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.promoTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+.promoSub {
+  font-size: 12px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+/* ── Rewards + Performance tiles (Figma 2610:11120 — h201, p16) ─────────── */
+.tiles {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+.tileShell {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.rewardsTile,
+.performanceTile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 201px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.tileHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tileTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: 0.16px;
+  color: var(--app-text-primary);
+}
+.tileSub {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: 0.14px;
+  color: var(--app-text-secondary);
+}
+.rewardsFoot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rewardsCaption {
+  font-size: 12px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: 0.12px;
+  color: var(--app-text-secondary);
+}
+.rewardsAmount {
+  font-size: 32px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.64px;
+  color: var(--app-text-primary);
+}
+.performanceDelta {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: 0.14px;
+  color: var(--mk-green);
+  white-space: nowrap;
+}
+
+/* Two rounded gradient bars (Figma 2610:11132) — bottom-aligned. */
+.bars {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+.bar {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 66px;
+  border-radius: 8px;
+  border: 0.5px solid #ffffff;
+  overflow: hidden;
+  box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.12);
+  background: #f7f7f7;
+}
+.barFull {
+  height: 100px;
+  background: linear-gradient(to bottom, #f74b42, #c2319c);
+}
+.barSplit {
+  height: 80px;
+}
+/* Dashed-future block: pink projection with a magenta outline, top ~63%. */
+.barProjection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 63.5%;
+  background: #efceea;
+  border: 1px solid #d32690;
+  border-radius: 8px 8px 0 0;
+  box-sizing: border-box;
+}
+.barFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 37.5%;
+  background: linear-gradient(to bottom, #f74b42, #c2319c);
+}
+
+/* ── Activity (Figma 2610:11139) ────────────────────────────────────────── */
+.activity {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+.activityTitle {
+  margin: 0;
+  font-size: 24px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+.activityRows {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 24px;
+}
+.activityRow {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.activityThumb {
+  flex: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+.activityLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: 0.14px;
+}
+.activityPaid {
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+.activityMeta {
+  font-weight: 400;
+  color: var(--app-text-tertiary);
+}
+.activityRight {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: 0.14px;
+  text-align: right;
+  color: var(--app-text-primary);
+}
+.activityAmount {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.activityCurrency {
+  font-weight: 400;
+}
