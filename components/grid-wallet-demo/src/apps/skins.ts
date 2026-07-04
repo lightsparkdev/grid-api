@@ -11,7 +11,6 @@ import { AuthSheet as SocialAuthSheet } from './social/AuthSheet';
 import { BRAND as SOCIAL_BRAND } from './social/config';
 import { MarketplaceAuthScreen } from './marketplace/MarketplaceAuthScreen';
 import { MarketplaceWalletScreen } from './marketplace/wallet';
-import { AuthSheet as MarketplaceAuthSheet } from './marketplace/AuthSheet';
 import { BRAND as MARKETPLACE_BRAND } from './marketplace/config';
 import type {
   SkinAuthScreen,
@@ -35,6 +34,10 @@ export interface AppSkin {
   /** Sign-in OTP overlay. Omit to fall back to Aurora's (DemoPhone default).
    *  (The passkey sheet is shared iOS system chrome — not skinnable.) */
   AuthSheet?: SkinAuthSheet;
+  /** The skin renders the OTP flow INLINE in its auth screen: no AuthSheet
+   *  overlay is mounted; the flow arrives as the auth screen's `authFlow` prop
+   *  instead (same render clock as `dismissed` — see SkinAuthFlow). */
+  inlineAuthFlow?: boolean;
   /** The auth ⇄ wallet reveal style. 'blur' (default) blur-dissolves the auth
    *  screen; 'fade' is a plain quick crossfade — for skins whose auth screen
    *  already ends ON the wallet layout (marketplace dismisses its sheet over a
@@ -89,7 +92,9 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     fontFamily: CIRCULAR,
     AuthScreen: MarketplaceAuthScreen,
     WalletScreen: MarketplaceWalletScreen,
-    AuthSheet: MarketplaceAuthSheet,
+    // The confirm screen pushes in INSIDE the permanent sign-in sheet — the
+    // flow rides the auth screen's props, not a separate overlay.
+    inlineAuthFlow: true,
     authReveal: 'fade',
   },
 };

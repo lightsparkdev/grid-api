@@ -8,7 +8,7 @@ import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/d
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { useMoneySheet, useWalletHome } from '@/apps/shared/wallet';
 import type { WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
-import type { SkinAuthScreen, SkinWalletScreen } from './types';
+import type { SkinAuthFlow, SkinAuthScreen, SkinWalletScreen } from './types';
 import styles from './SignInFlow.module.scss';
 
 /** Per-skin wallet-brain options (mirrors AppSkin.walletOptions). */
@@ -66,6 +66,10 @@ interface SignInFlowProps {
    *  reduced motion already uses) — for skins whose auth screen ends on the
    *  wallet layout, where a full-screen blur pulse would read as a glitch. */
   authReveal?: 'blur' | 'fade';
+  /** The live OTP flow, for skins that render it INLINE in their auth screen
+   *  (registry `inlineAuthFlow`) — handed through so it shares the auth
+   *  screen's render clock. Undefined for overlay (AuthSheet) skins. */
+  authFlow?: SkinAuthFlow;
   /** Jump command handed to the wallet so the sidebar can provision + open a flow. */
   entry?: WalletEntry;
   /** The active skin's wallet-brain options (from the registry). */
@@ -188,6 +192,7 @@ export function SignInFlow({
   onSignIn,
   skipIntro,
   authReveal = 'blur',
+  authFlow,
   entry,
   walletOptions,
   onQuoteCreate,
@@ -274,6 +279,7 @@ export function SignInFlow({
                   dismissed={intro !== 'none'}
                   leaving={intro === 'leaving'}
                   onSignIn={onSignIn}
+                  authFlow={authFlow}
                 />
               </motion.div>
             </AnimatePresence>

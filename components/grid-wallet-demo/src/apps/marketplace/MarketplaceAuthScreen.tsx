@@ -22,7 +22,7 @@ import { MarketplaceHomeContent } from './wallet/HomeBlocks';
 import { MarketplaceTabBar } from './blocks/MarketplaceTabBar';
 import { FloatingLabelInput } from './blocks/FloatingLabelInput';
 import { MarketplaceLogo } from './MarketplaceLogo';
-import { useAuthFlow, stashAuthValue, takeAuthValue } from './authFlow';
+import { stashAuthValue, takeAuthValue } from './authValue';
 import {
   IconCrossMedium,
   IconArrowLeft,
@@ -225,9 +225,12 @@ export function MarketplaceAuthScreen({
   dismissed = false,
   leaving = false,
   onSignIn,
+  authFlow,
 }: SkinAuthScreenProps) {
   const reduceMotion = useReducedMotion();
-  const flow = useAuthFlow();
+  // The OTP flow arrives as a prop (registry `inlineAuthFlow`) — same render
+  // clock as `dismissed`, so the step logic below is race-free derivation.
+  const flow = authFlow;
 
   // The sheet is ALREADY presented on arrival (no slide-up on load — you land
   // on the login sheet, wallet receded behind it); it only animates for the
@@ -275,56 +278,32 @@ export function MarketplaceAuthScreen({
   useEffect(() => () => window.clearTimeout(prefillTimer.current), []);
 
   // ── Steps: entry ⇄ confirm (push) ─────────────────────────────────────────
-  // `confirm` goes up when we hand the value to the flow; the flow's own
-  // sending/codeActive keep it up (and cover a mid-flow skin switch).
-  const [confirm, setConfirm] = useState(false);
-  const step: 'entry' | 'code' =
-    confirm || flow?.sending || flow?.codeActive ? 'code' : 'entry';
+  // A pure derivation — no latches. The confirm screen shows while the flow is
+  // sending or prompting, and HOLDS after a successful code submit (`submitted`)
+  // through the demo's post-verify breather + the sign-in dismissal, where the
+  // flow is already closed. Everything arrives on one render clock, so a
+  // remount mid-flow (skin switch) lands on the right step for free.
   const [back, setBack] = useState(false);
   const navDir: NavDir = { back, reduceMotion: !!reduceMotion };
-
-  // A REMOUNTED screen (mid-flow skin switch) lands on the code step via the
-  // flow alone — latch `confirm` so the post-verify choreography (which holds
-  // the confirm screen through `dismissed`) matches a native run; without it,
-  // the flow closing a beat before the dismissal reaches us flips the step to
-  // entry mid-blur (a phantom push). `back` guards the moment right after a
-  // Back press, when the store still shows the stale code step.
-  useEffect(() => {
-    if ((flow?.codeActive || flow?.sending) && !confirm && !back) setConfirm(true);
-  }, [flow, confirm, back]);
+  const [code, setCode] = useState('');
+  const submitted = useRef(false);
+  const step: 'entry' | 'code' =
+    (flow && (flow.sending || flow.codeActive)) || (submitted.current && !flow?.open)
+      ? 'code'
+      : 'entry';
 
   // The entry step is invisible in this skin: when the flow arms it, submit the
-  // stashed value immediately — the visible beat is the push to the confirm
-  // screen, which already happened on Continue. An armed entry with NO stash
-  // means something backed the flow out (e.g. a skin switch mid-OTP) — slide
-  // back to entry.
+  // stashed value from Continue immediately — the visible beat is the push to
+  // the confirm screen once the send starts. No stash (a backed-out or
+  // switched-in flow) just leaves the entry step showing.
   useEffect(() => {
     if (!flow?.open || flow.codeActive || flow.sending) return;
     const stashed = takeAuthValue();
     if (stashed != null) {
       setBack(false);
-      setConfirm(true);
       flow.onSubmit(stashed);
-    } else if (confirm) {
-      setBack(true);
-      setConfirm(false);
-      setCode('');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flow]);
-
-  // Flow closed by a cancel/reset → land back on entry. On SUCCESS the demo
-  // logic also closes the flow, then breathes ~400ms before the wallet flip
-  // raises `dismissed` — `submitted` marks that close as success so the
-  // confirm screen holds through the gap and the dismissal blur plays over it,
-  // not over a phantom push back to entry.
-  useEffect(() => {
-    if (!flow?.open && !dismissed && confirm && !submitted.current) {
-      setConfirm(false);
-      setCode('');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flow?.open, dismissed]);
 
   const [entryScope, animateEntry] = useAnimate<HTMLDivElement>();
   const submitEntry = () => {
@@ -337,7 +316,6 @@ export function MarketplaceAuthScreen({
     setBack(false);
     if (flow?.open && !flow.codeActive) {
       // Re-armed entry (the user came Back) — feed the waiting flow directly.
-      setConfirm(true);
       flow.onSubmit(clean);
     } else {
       stashAuthValue(clean);
@@ -347,23 +325,24 @@ export function MarketplaceAuthScreen({
 
   const goBack = () => {
     setBack(true);
-    setConfirm(false);
     setCode('');
     if (flow?.codeActive) flow.onBack?.();
     else flow?.onCancel?.();
   };
 
   // ── Verification code ─────────────────────────────────────────────────────
-  const [code, setCode] = useState('');
   const codeRef = useRef<HTMLInputElement>(null);
   const fillTimers = useRef<number[]>([]);
-  const submitted = useRef(false);
   useEffect(() => {
     if (step === 'code' && flow?.codeActive) {
       submitted.current = false;
       codeRef.current?.focus({ preventScroll: true });
     }
   }, [step, flow?.codeActive]);
+  // Leaving the code step (back / cancel) clears the typed code.
+  useEffect(() => {
+    if (step === 'entry') setCode('');
+  }, [step]);
   useEffect(
     () => () => {
       for (const t of fillTimers.current) window.clearTimeout(t);

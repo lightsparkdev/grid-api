@@ -12,6 +12,7 @@ import { AppShell } from '@/apps/shared/AppShell';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
 import { getAppSkin, type AppSkin } from '@/apps/skins';
+import type { SkinAuthFlow } from '@/apps/types';
 
 interface DemoPhoneProps extends PhoneProps {
   glassConfig?: GlassConfig;
@@ -55,20 +56,24 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       !entry?.active &&
       !props.otp?.active,
   );
-  const authSheet = flowActive ? (
-    <AuthSheet
-      method={sheetMethod ?? 'email'}
-      open={Boolean(entry?.active || sheetSending || props.otp?.active)}
-      sending={sheetSending}
-      codeActive={Boolean(props.otp?.active)}
-      onSubmit={entry?.onSubmit ?? (() => {})}
-      onSubmitCode={props.otp?.onSubmit}
-      // The X is BACK past the first step (code → entry re-prompt); the scrim
-      // still cancels the whole flow.
-      onBack={props.otp?.onBack}
-      onCancel={props.otp?.active ? props.otp?.onCancel : entry?.onCancel}
-    />
-  ) : null;
+  // ONE flow surface, two deliveries: an AuthSheet overlay (the default), or —
+  // for skins registered with `inlineAuthFlow` — the auth screen's `authFlow`
+  // prop, so a skin can render the OTP steps inside its own sign-in surface on
+  // the same render clock as `dismissed` (no overlay, no side-channel).
+  const flow: SkinAuthFlow = {
+    method: sheetMethod ?? 'email',
+    open: Boolean(entry?.active || sheetSending || props.otp?.active),
+    sending: sheetSending,
+    codeActive: Boolean(props.otp?.active),
+    onSubmit: entry?.onSubmit ?? (() => {}),
+    onSubmitCode: props.otp?.onSubmit,
+    // The X is BACK past the first step (code → entry re-prompt); the scrim
+    // still cancels the whole flow.
+    onBack: props.otp?.onBack,
+    onCancel: props.otp?.active ? props.otp?.onCancel : entry?.onCancel,
+  };
+  const authSheet =
+    flowActive && !skin.inlineAuthFlow ? <AuthSheet {...flow} /> : null;
 
   // Airbnb-model OAuth: OUR CTA opens the REAL provider popup synchronously
   // inside the tap gesture (any await first would trip popup blockers), and
@@ -100,6 +105,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       onSignIn={signIn}
       skipIntro={props.skipIntro}
       authReveal={skin.authReveal}
+      authFlow={skin.inlineAuthFlow ? flow : undefined}
       entry={props.walletEntry}
       walletOptions={skin.walletOptions}
       onQuoteCreate={props.onQuoteCreate}

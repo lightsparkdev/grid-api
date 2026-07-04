@@ -176,6 +176,16 @@ use-case tiles only (add the persona in step 1 first).
    `AuthScreen`/`WalletScreen` stays dark ("coming soon"). (The passkey sheet is shared
    system chrome — not registered per skin.)
 
+   OTP UI, two shapes: the default is an **AuthSheet overlay** (above). A skin whose
+   OTP steps live INSIDE its auth screen (marketplace: the confirm screen pushes in
+   within its permanent sign-in sheet) instead sets `inlineAuthFlow: true` — no
+   overlay is mounted, and the flow arrives as the auth screen's `authFlow` prop
+   (`SkinAuthFlow` in `apps/types.ts`), on the same render clock as
+   `dismissed`/`leaving`. Consume the prop directly; do NOT mirror it through a
+   store/bridge (a side-channel lags a commit and breeds step races). Other
+   registry knobs: `authReveal: 'fade'` swaps the auth → wallet blur dissolve for
+   a plain crossfade (for auth screens that already end on the wallet layout).
+
 ## Design conventions (learned building Z)
 
 - **8pt grid + iOS type ramp.** Spacing in 4/8-multiples; text styles map to the
