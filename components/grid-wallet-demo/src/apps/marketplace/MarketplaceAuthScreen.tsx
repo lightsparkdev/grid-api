@@ -283,6 +283,16 @@ export function MarketplaceAuthScreen({
   const [back, setBack] = useState(false);
   const navDir: NavDir = { back, reduceMotion: !!reduceMotion };
 
+  // A REMOUNTED screen (mid-flow skin switch) lands on the code step via the
+  // flow alone — latch `confirm` so the post-verify choreography (which holds
+  // the confirm screen through `dismissed`) matches a native run; without it,
+  // the flow closing a beat before the dismissal reaches us flips the step to
+  // entry mid-blur (a phantom push). `back` guards the moment right after a
+  // Back press, when the store still shows the stale code step.
+  useEffect(() => {
+    if ((flow?.codeActive || flow?.sending) && !confirm && !back) setConfirm(true);
+  }, [flow, confirm, back]);
+
   // The entry step is invisible in this skin: when the flow arms it, submit the
   // stashed value immediately — the visible beat is the push to the confirm
   // screen, which already happened on Continue. An armed entry with NO stash
