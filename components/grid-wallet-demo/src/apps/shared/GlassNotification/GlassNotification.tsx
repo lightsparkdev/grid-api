@@ -34,20 +34,23 @@ const ENTER_TRANSITION = {
 const EXIT_TUCK = motionTransition(easeOutQuick, 0.25);
 // Starts fully OFF-SCREEN above the phone (clears the 70px slot + capsule +
 // shadow), hard-squished on the horizontal axis.
-const HIDDEN = { y: -150, scaleX: 0.25, scaleY: 0.55, opacity: 0, filter: 'blur(10px)' };
-// The resting capsule must carry NO filter: a lingering blur(0px) makes the
-// button a backdrop root, which kills the frost's backdrop-filter (the sheet
-// edge showed through hard, unblurred). Same trap as SignInFlow's SKIN_ENTER —
-// transitionEnd strips it the moment the swoop lands.
-const SHOWN = {
-  y: 0,
-  scaleX: 1,
-  scaleY: 1,
-  opacity: 1,
+// Base swoop (no self-blur): any `filter` on the capsule makes it a backdrop
+// root, which kills the frost path's backdrop-filter — the glass would only
+// come alive once the spring settled. Frost capsules fly filter-free so the
+// blur is live the WHOLE flight; the lens paths (GlassOver / WebGL, which
+// don't use backdrop-filter) layer their entrance blur back on below.
+const HIDDEN = { y: -150, scaleX: 0.25, scaleY: 0.55, opacity: 0 };
+const SHOWN = { y: 0, scaleX: 1, scaleY: 1, opacity: 1 };
+const DISMISSED = { y: -150, scaleX: 0.5, scaleY: 0.7, opacity: 0 };
+const LENS_HIDDEN = { ...HIDDEN, filter: 'blur(10px)' };
+// The resting capsule must still carry NO filter (a lingering blur(0px) is the
+// same backdrop-root trap) — transitionEnd strips it when the swoop lands.
+const LENS_SHOWN = {
+  ...SHOWN,
   filter: 'blur(0px)',
   transitionEnd: { filter: 'none' as const },
 };
-const DISMISSED = { y: -150, scaleX: 0.5, scaleY: 0.7, opacity: 0, filter: 'blur(8px)' };
+const LENS_DISMISSED = { ...DISMISSED, filter: 'blur(8px)' };
 
 interface GlassNotificationProps {
   show: boolean;
@@ -122,6 +125,9 @@ export function GlassNotification({
   const [lensFailed, setLensFailed] = useState(false);
   const webglLens =
     Boolean(backdropNode) && IS_SAFARI && !lensFailed && Boolean(renderSafariLens);
+  // Lens capsules (no backdrop-filter involved) keep the entrance self-blur;
+  // frost capsules must fly filter-free — see the variant comment above.
+  const lensMode = refract || webglLens;
 
   const multiline = bodyLines > 1;
   const inner = (
@@ -162,12 +168,12 @@ export function GlassNotification({
             key="notification"
             type="button"
             className={styles.capsule}
-            initial={reduceMotion ? { opacity: 0 } : HIDDEN}
-            animate={reduceMotion ? { opacity: 1 } : SHOWN}
+            initial={reduceMotion ? { opacity: 0 } : lensMode ? LENS_HIDDEN : HIDDEN}
+            animate={reduceMotion ? { opacity: 1 } : lensMode ? LENS_SHOWN : SHOWN}
             exit={
               reduceMotion
                 ? { opacity: 0, transition: EXIT_TUCK }
-                : { ...DISMISSED, transition: EXIT_TUCK }
+                : { ...(lensMode ? LENS_DISMISSED : DISMISSED), transition: EXIT_TUCK }
             }
             transition={ENTER_TRANSITION}
             onClick={onTap}
