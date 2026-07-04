@@ -6,8 +6,9 @@ restyle a skin freely without touching — or breaking — any other skin (Auror
 shipped; treat it as untouchable unless you're explicitly changing Aurora).
 
 Aurora (`apps/aurora/`) is the reference skin ("skin zero"). The **creator** skin
-(`apps/creator/`, brand "Glitch") is a worked example of a fully custom skin. Copy
-from them.
+(`apps/creator/`, brand "Glitch") and the **social** skin (`apps/social/`, brand
+"Z" — flat, no glass, Geist type, custom 3D metal card) are worked examples of
+fully custom skins. Copy from them.
 
 **Naming — code is the category, brand is data.** Name a skin's code by its stable
 *category*: folder `apps/creator/`, components `CreatorWalletScreen`, `id: 'creator'`,
@@ -19,10 +20,31 @@ edit; never bake a brand name into a filename or identifier. (Aurora keeps its
 
 ## The one rule
 
-**A per-skin file is presentational only.** It calls `useWalletHome()`, reads the
-shared data, and renders. It must NOT re-implement balance math, FX/fees, API
-calls, card issuance, tap-to-pay, or bank/address data — all of that is the shared
-brain.
+**A per-skin file is presentational only.** The brains arrive as props — the
+wallet screen gets `home` (the `useWalletHome` surface) and `money` (the
+`useMoneySheet` surface) — it reads them and renders. It must NOT re-implement
+balance math, FX/fees, API calls, card issuance, tap-to-pay, or bank/address
+data — all of that is the shared brain.
+
+## State lives ABOVE the skin (switching platforms = a reskin)
+
+The brains are instantiated once in `SignInFlow`'s **`WalletHost`**, which stays
+mounted across skin switches — only the skin's view component swaps beneath it
+(with a blur crossfade, keyed on `skinId`). That means balance, activity, saved
+banks/recipients, and even the mid-flow sheet step all survive a platform
+switch; the host unmounts on Reset / return-to-sign-in, which is what clears a
+session. Consequences for skin authors:
+
+- **Never call `useWalletHome` / `useMoneySheet` in a skin.** Consume the
+  `home` / `money` props. A skin-local hook instance would fork the state and
+  die on switch.
+- Per-skin brain OPTIONS (e.g. social's in-sheet success screen) go in the
+  registry: `walletOptions: { transferSuccessScreen: true }` on the skin's
+  `APP_SKINS` entry — the host reads them from the active skin.
+- Your faces must render sanely from ANY brain state, because the user can
+  switch onto your skin mid-flow (sheet open at any step). Gate derived
+  "sub-sheet open" flags on the brain's `sheetOpen` — see the `confirmOpen`
+  gating in `social/wallet/AddMoneySheet.tsx` for the canonical example.
 
 ## Layers
 
@@ -48,9 +70,13 @@ src/apps/
                     #   WalletCardDetailHeader, WalletListSection/Card/Item, Flag.
   creator/          # full worked example (brand "Glitch"): owns every face (auth, overlays,
                     #   home, + all flow faces) — each a thin view over the brains.
+  social/           # full worked example (brand "Z"): flat/no-glass design language,
+                    #   Geist type, per-app central icons (icons.ts), animated action
+                    #   glyphs (MoneyActionIcons), and the r3f 3D metal card (wallet/card3d/).
   <yourskin>/       # your skin lives here
-  skins.ts          # persona -> skin registry (AuthScreen / WalletScreen / overlays)
-  SignInFlow.tsx    # shared auth <-> wallet handoff (generic; don't fork)
+  skins.ts          # persona -> skin registry (AuthScreen / WalletScreen / overlays / walletOptions)
+  SignInFlow.tsx    # shared auth <-> wallet handoff + WalletHost (hosts the brains
+                    #   above the skin boundary + the skin-switch crossfade; don't fork)
   types.ts          # SkinAuthScreenProps / SkinWalletScreenProps contracts
 data/, lib/, hooks/ # shared data + logic (apiCalls, bankCountries, cryptoAddresses, useWalletDemoLogic, FX, …)
 ```
@@ -60,7 +86,7 @@ data/, lib/, hooks/ # shared data + logic (apiCalls, bankCountries, cryptoAddres
   (shared by all skins), and `apps/aurora/**` (the shipped app). To change a skin,
   edit that skin's folder.
 
-## What `useWalletHome()` gives you (consume, never rebuild)
+## What the `home` prop gives you (consume, never rebuild)
 
 State/derived: `cardView`, `issued`, `tapPhase`, `transactions`, `sheetMode`,
 `sheetOpen`, `sheetConfirming`, `sendReceiveOpen`, `toast`, `availableCents`,
@@ -72,6 +98,11 @@ Setters/handlers: `setCardView`, `setSheetOpen`, `setSendReceiveOpen`,
 `openCard`, `startTapToPay`, `finishTransfer`, `confirmTransfer`,
 `handleReceivePayment`.
 
+The `money` prop is the full `MoneySheet` surface (step machine, keypad, saved
+banks/recipients, FX + confirm rows, country picker, `dismiss`) — pass it to your
+`AddMoneySheet` face as `m`. The quote/save-toast callback wiring lives in
+`WalletHost`, not in your skin.
+
 Shared contract (from `@/apps/shared/wallet`): `formatUsdCents`, `truncateAddress`,
 `typedToCents`, and the data-shape types (`MoneySheetMode`, `TransferActivity`,
 `ReceivedPayment`, `WalletListItemData`, `WalletItemAvatar`).
@@ -81,19 +112,19 @@ implements `SkinAuthScreenProps` (both in `apps/types.ts`).
 
 ## Sheets & flows: the face is yours, the brain isn't
 
-A flow's **brain** (step machine, validation, FX, API callbacks) is a shared hook;
-its **face** (the sheet UI) is per-skin. Add money is fully split: `useMoneySheet()`
-(in `apps/shared/wallet`) is the brain, and both Aurora's and the creator skin's
-`wallet/AddMoneySheet.tsx` are thin views over it. `BottomSheet` (rise/scrim) is a
-shared mechanic.
+A flow's **brain** (step machine, validation, FX, API callbacks) is shared; its
+**face** (the sheet UI) is per-skin. Add money is fully split: the `money` prop
+(a `MoneySheet`) is the brain, and Aurora's / creator's / social's
+`wallet/AddMoneySheet.tsx` are thin views over it, each taking it as an
+`m: MoneySheet` prop. `BottomSheet` (rise/scrim) is a shared mechanic.
 
 To give your skin its own sheet:
 
 - **Fork the face** — copy `apps/aurora/wallet/AddMoneySheet.tsx` (+ its
   `.module.scss`) into `apps/<skin>/wallet/`, point `WalletScreen` at it, and
-  restyle freely (the creator skin flattened the frosted search pill into a solid one, for
-  example). Because the face is a thin view over `useMoneySheet`, the copy carries
-  **no logic** — the brain stays single-source, so flow changes happen once.
+  restyle freely (the creator skin flattened the frosted search pill into a solid one;
+  social went fully flat with its own two-sheet confirm + success flow). The face
+  carries **no logic** — it renders the `m` prop, so flow changes happen once.
 - **Reuse Aurora's face** — `import { AddMoneySheet } from '@/apps/aurora/wallet/AddMoneySheet'`
   when Aurora's look is fine.
 
@@ -117,9 +148,9 @@ opposite — that's *your* branded auth UI, so it stays a per-skin face.
 
 ## Add a new skin (step by step)
 
-`creator` (built; brand "Glitch") is the convention example. `social` and
-`marketplace` are registered too (token-only so far; brands "Pulse"/"Bazaar" live as
-the registry `label` until those skins get a `config.ts`). `ondemand`/`messaging` are
+`creator` (brand "Glitch") and `social` (brand "Z") are built convention
+examples. `marketplace` is registered but token-only (brand "Bazaar" lives as
+the registry `label` until it gets a `config.ts`). `ondemand`/`messaging` are
 use-case tiles only (add the persona in step 1 first).
 
 1. **Persona wiring:**
@@ -134,36 +165,62 @@ use-case tiles only (add the persona in step 1 first).
    Reusable auth blocks (marquee, brand header, CTA list) can live in `apps/<skin>/blocks/`.
 4. **Wallet** — `apps/<skin>/wallet/<Skin>WalletScreen.tsx` implementing
    `SkinWalletScreenProps`. Start from `creator/wallet/CreatorWalletScreen.tsx` (custom
-   home) or `aurora/wallet/AuroraWalletScreen.tsx` (baseline), call
-   `useWalletHome(props)`, render your layout + the flow faces (reused or copied).
+   home) or `social/wallet/SocialWalletScreen.tsx` (flat design language),
+   destructure `props.home` / `props.money`, render your layout + the flow faces
+   (reused or copied — pass `m={money}` to your AddMoneySheet).
 5. **Register** — add the entry to `APP_SKINS` in `apps/skins.ts`
    (`{ id, persona, label, fontFamily, AuthScreen, WalletScreen }`, plus an optional
-   `AuthSheet` to own the branded OTP overlay — omit it to fall back to Aurora's) and
+   `AuthSheet` to own the branded OTP overlay — omit it to fall back to Aurora's —
+   and optional `walletOptions` for brain behavior like `transferSuccessScreen`) and
    the id to `AppSkinId`. `DemoPhone` routes by persona automatically; a skin with no
    `AuthScreen`/`WalletScreen` stays dark ("coming soon"). (The passkey sheet is shared
    system chrome — not registered per skin.)
 
+## Design conventions (learned building Z)
+
+- **8pt grid + iOS type ramp.** Spacing in 4/8-multiples; text styles map to the
+  iOS Dynamic Type ramp (`ios-text-*` mixins). When a designer says "add 4px",
+  it's usually literal — apply it exactly, don't re-round.
+- **Squircle corners** via `useSquircleClip` (clip-path — works in Safari), same
+  pattern as Aurora's card buttons. Hover/press feel: slight grow on hover,
+  slightly more on press (see `PRESS`/`CARD_HOVER`/`CARD_PRESS` in social).
+- **Per-skin icon set:** a skin's `icons.ts` re-exports its central-icons variant
+  (Z uses `@central-icons-react/round-outlined-radius-2-stroke-2`) so stroke/radius
+  stay consistent app-wide. Don't hand-draw icons; ask for the asset.
+- **Skins can ban shared aesthetics** — Z is flat with NO glass anywhere; its
+  faces use solid fills and `variant="flat"` toasts. Respect a skin's design
+  constraints over the shared components' defaults.
+
 ## Run + verify
 
 - Dev server: `npm run dev` (port 4000). The playground left rail picks the persona.
-- Typecheck: `npx tsc --noEmit`. Baseline has 3 pre-existing errors (`cornerShape`×2
-  in `AppShell`, `superellipse` in `LiquidGlass`) — ignore those; add none.
+- Typecheck: `./node_modules/.bin/tsc --noEmit`. Baseline has 4 pre-existing errors
+  (`cornerShape`×2 in `AppShell`, `superellipse` in `LiquidGlass`, a TS2367 in
+  social's `CardIssuanceSheet`) — ignore those; add none.
 - The build uses `ignoreBuildErrors: true`; the dev-server compile is the real signal.
-- Verify both skins after a shared change: Aurora (Financial app) must look
-  identical to before, and your skin must still work.
+- Verify ALL built skins after a shared change (Aurora, Glitch, Z): they must look
+  identical to before, and your skin must still work. Also verify a mid-flow skin
+  switch INTO your skin renders sanely.
+- Playwright tips (headless verification): `?theme=dark` forces dark; the phone is
+  `locator('[class*=phone]').first()`; sidebar is `getByRole('complementary')`;
+  CTAs rendered through `TextMorph` have per-character accessible names — click
+  them via a wrapper class (e.g. `[class*=ctaWrap] button`), not by name.
 
 ## Gotchas
 
 - Selecting a use-case switches the rendered persona (`useWalletDemoLogic` keeps
   `useCase` + `persona` in sync) — only personas in the `Persona` union work.
+  Switching PRESERVES wallet state by design (see "State lives above the skin").
 - Passkey sign-in needs real WebAuthn (won't auto-confirm in headless browsers);
-  use the left-rail flow jumps (Add money, Issue a card, Tap to pay) to reach the
+  use the left-rail flow jumps (Deposit, Issue card, Tap to pay) to reach the
   wallet for testing.
 - `--font-family-inter` isn't loaded on this branch; the creator skin's `skin.scss`
   references it and falls back to the SF Pro stack. Load Inter (or change the token)
-  for the intended type.
+  for the intended type. (Z loads Geist through `next/font` → `--font-family-geist`.)
 
 ## Pointers
 
 - Branch: `pat/wallet-demo-skins` (off the launched `origin/main`).
-- Copy-from templates: `apps/aurora/` (baseline) and `apps/creator/` (custom home + auth).
+- Copy-from templates: `apps/aurora/` (baseline glass), `apps/creator/` (custom
+  home + auth), `apps/social/` (flat design language, two-sheet money flow,
+  custom auth marquee, 3D card flow).
