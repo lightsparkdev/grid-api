@@ -417,7 +417,19 @@ export function MarketplaceAuthScreen({
 
   const method = flow?.method ?? 'email';
   const notifCfg = NOTIFICATIONS[method];
-  const masked = method === 'phone' ? maskUsPhone(value.trim()) : maskEmail(value.trim());
+  // The typed value is THIS skin's local state — a mid-flow skin switch lands
+  // on the code step without it (the shared contracts don't carry the entry
+  // value). Fall back to the method's demo default, which is what the other
+  // skins prefill, so the recipient line never reads "sent a code to .".
+  const maskSource =
+    method === 'phone'
+      ? value.replace(/\D/g, '').length === 10
+        ? value.trim()
+        : DEMO_PHONE
+      : value.includes('@')
+        ? value.trim()
+        : DEMO_EMAIL;
+  const masked = method === 'phone' ? maskUsPhone(maskSource) : maskEmail(maskSource);
 
   // No refraction copy: this app's surface is flat, so a copied backdrop gives
   // the lens nothing to bend (an all-white copy reads opaque on light). The
