@@ -35,7 +35,18 @@ const EXIT_TUCK = motionTransition(easeOutQuick, 0.25);
 // Starts fully OFF-SCREEN above the phone (clears the 70px slot + capsule +
 // shadow), hard-squished on the horizontal axis.
 const HIDDEN = { y: -150, scaleX: 0.25, scaleY: 0.55, opacity: 0, filter: 'blur(10px)' };
-const SHOWN = { y: 0, scaleX: 1, scaleY: 1, opacity: 1, filter: 'blur(0px)' };
+// The resting capsule must carry NO filter: a lingering blur(0px) makes the
+// button a backdrop root, which kills the frost's backdrop-filter (the sheet
+// edge showed through hard, unblurred). Same trap as SignInFlow's SKIN_ENTER —
+// transitionEnd strips it the moment the swoop lands.
+const SHOWN = {
+  y: 0,
+  scaleX: 1,
+  scaleY: 1,
+  opacity: 1,
+  filter: 'blur(0px)',
+  transitionEnd: { filter: 'none' as const },
+};
 const DISMISSED = { y: -150, scaleX: 0.5, scaleY: 0.7, opacity: 0, filter: 'blur(8px)' };
 
 interface GlassNotificationProps {
