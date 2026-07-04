@@ -9,6 +9,12 @@
   color: var(--app-text-primary);
 }
 
+/* The presenting card (shared PresentationStage) — carries the app surface so
+   nothing shows through the rounded corners while receded. */
+.stage {
+  background: var(--app-bg);
+}
+
 /* The home + tab bar — parallax-shifts left behind a pushed page. */
 .underlay {
   flex: 1;

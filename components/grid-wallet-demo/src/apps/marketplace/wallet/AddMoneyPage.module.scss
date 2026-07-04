@@ -39,7 +39,8 @@
     opacity: 0;
     transition: opacity 0.15s ease;
   }
-  &[data-collapsed]::after {
+  /* The hairline lands as soon as the content scrolls (not at title collapse). */
+  &[data-bordered]::after {
     opacity: 1;
   }
 }
@@ -78,6 +79,7 @@
   font-size: 14px;
   line-height: normal;
   font-weight: 500;
+  letter-spacing: -0.14px;
   color: var(--app-text-primary);
   pointer-events: none;
 }
@@ -135,7 +137,7 @@
   font-size: 32px;
   line-height: normal;
   font-weight: 700;
-  letter-spacing: -0.64px;
+  letter-spacing: -0.96px; /* in step with the home large title */
   color: var(--app-text-primary);
 }
 
@@ -267,6 +269,7 @@
   font-size: 14px;
   line-height: normal;
   font-weight: 500;
+  letter-spacing: -0.14px;
   white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -291,6 +294,7 @@
   font-size: 16px;
   line-height: normal;
   font-weight: 500;
+  letter-spacing: -0.16px;
   white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;

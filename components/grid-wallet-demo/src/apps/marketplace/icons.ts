@@ -8,6 +8,8 @@ import { IconChevronRightMedium } from '@central-icons-react/round-outlined-radi
 // Deposit page source list.
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCash } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCash';
+// Add-bank sheet (country search).
+import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
 import { IconGoogle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGoogle';
 import { IconApple } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconApple';
 import { IconPasskeys } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPasskeys';
@@ -30,6 +32,7 @@ export {
   IconChevronRightMedium,
   IconBank,
   IconCash,
+  IconMagnifyingGlass,
   IconGoogle,
   IconApple,
   IconPasskeys,

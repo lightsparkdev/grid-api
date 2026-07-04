@@ -136,7 +136,7 @@
   font-size: 26px;
   line-height: normal;
   font-weight: 700;
-  letter-spacing: -0.26px;
+  letter-spacing: -0.52px; /* Figma -1% plus a hair */
   text-align: center;
   color: var(--app-text-primary);
 }
@@ -173,6 +173,7 @@
   font-size: 17px;
   line-height: normal;
   font-weight: 500;
+  letter-spacing: -0.17px;
   white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -279,7 +280,7 @@
   font-size: 26px;
   line-height: normal;
   font-weight: 700;
-  letter-spacing: -0.26px;
+  letter-spacing: -0.52px; /* Figma -1% plus a hair */
   text-align: center;
   color: var(--app-text-primary);
 }
@@ -402,6 +403,7 @@
   font-size: 17px;
   line-height: normal;
   font-weight: 500;
+  letter-spacing: -0.17px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s ease;

@@ -34,30 +34,27 @@ const EDGE_SHADOW_OFF = '-16px 0 48px rgba(0, 0, 0, 0)';
 const TITLE_COLLAPSE_AT = 46;
 
 // In-page step navigation — the SAME layered push as wallet home → this page:
-// the deeper screen slides in ON TOP (edge shadow riding the travel, z 2)
-// while the one underneath parallax-shifts back behind a scrim (z 1). On pop
-// the top screen slides back out and the underlayer glides forward again.
-// The element travelling the full width is always the top layer, so z-order
-// follows the direction: forward → the ENTERING step is on top; back → the
-// EXITING one is.
-type NavDir = { back: boolean; reduceMotion: boolean };
-const stepVariants = {
-  enter: ({ back, reduceMotion }: NavDir) =>
-    reduceMotion
-      ? { x: 0, opacity: 1 }
-      : back
-        ? { x: -MARKETPLACE_PUSH_PARALLAX, zIndex: 1, boxShadow: EDGE_SHADOW_OFF }
-        : { x: '100%', zIndex: 2, boxShadow: EDGE_SHADOW_OFF },
-  center: ({ back, reduceMotion }: NavDir) =>
-    reduceMotion
-      ? { x: 0, opacity: 1 }
-      : { x: 0, zIndex: back ? 1 : 2, boxShadow: back ? EDGE_SHADOW_OFF : EDGE_SHADOW_ON },
-  exit: ({ back, reduceMotion }: NavDir) =>
-    reduceMotion
-      ? { opacity: 0 }
-      : back
-        ? { x: '100%', zIndex: 2, boxShadow: EDGE_SHADOW_OFF }
-        : { x: -MARKETPLACE_PUSH_PARALLAX, zIndex: 1, boxShadow: EDGE_SHADOW_OFF },
+// the deeper screen slides in ON TOP (edge shadow riding the travel) while the
+// one underneath parallax-shifts back behind a scrim. Each layer's ROLE is
+// fixed by step depth (source = under, banks = over), never by nav direction —
+// deriving z from direction flipped the settled banks layer below the scrim
+// whenever the brain walked "back" onto it (e.g. dismissing the Add bank
+// sheet). Direction is implicit: the under layer only ever travels the
+// parallax distance; the over layer only ever travels the full width.
+type NavDir = { reduceMotion: boolean };
+const underStepVariants = {
+  enter: ({ reduceMotion }: NavDir) =>
+    reduceMotion ? { x: 0, opacity: 1 } : { x: -MARKETPLACE_PUSH_PARALLAX, opacity: 1 },
+  center: { x: 0, opacity: 1 },
+  exit: ({ reduceMotion }: NavDir) =>
+    reduceMotion ? { opacity: 0 } : { x: -MARKETPLACE_PUSH_PARALLAX, opacity: 1 },
+};
+const overStepVariants = {
+  enter: ({ reduceMotion }: NavDir) =>
+    reduceMotion ? { x: 0, opacity: 1 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
+  center: { x: 0, boxShadow: EDGE_SHADOW_ON, opacity: 1 },
+  exit: ({ reduceMotion }: NavDir) =>
+    reduceMotion ? { opacity: 0 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
 };
 
 // Empty-state reveal (the Z/Aurora WalletListCard choreography): skeleton rows
@@ -100,7 +97,7 @@ interface AddMoneyPageProps {
  */
 export function AddMoneyPage({ m, open, onDismiss }: AddMoneyPageProps) {
   const reduceMotion = useReducedMotion();
-  const navDir: NavDir = { back: m.back, reduceMotion: !!reduceMotion };
+  const navDir: NavDir = { reduceMotion: !!reduceMotion };
 
   // Only source + banks have marketplace faces so far. A mid-flow skin switch
   // can land the brain DEEPER (country/amount/…) — show the nearest built view
@@ -114,11 +111,18 @@ export function AddMoneyPage({ m, open, onDismiss }: AddMoneyPageProps) {
   };
 
   // Large-title collapse tracks the CURRENT step's scroll; a push lands on a
-  // fresh, un-collapsed screen.
+  // fresh, un-collapsed screen. Two thresholds: the hairline lands the moment
+  // you scroll; the centered bar title waits for the full title collapse.
+  const [scrolled, setScrolled] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => setCollapsed(false), [viewStep]);
+  useEffect(() => {
+    setScrolled(false);
+    setCollapsed(false);
+  }, [viewStep]);
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
-    setCollapsed(e.currentTarget.scrollTop >= TITLE_COLLAPSE_AT);
+    const top = e.currentTarget.scrollTop;
+    setScrolled(top > 0);
+    setCollapsed(top >= TITLE_COLLAPSE_AT);
   };
 
   // Saved banks only (the shared list can carry crypto recipients in send mode).
@@ -135,7 +139,7 @@ export function AddMoneyPage({ m, open, onDismiss }: AddMoneyPageProps) {
           exit={reduceMotion ? { opacity: 0 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF }}
           transition={PUSH_TRANSITION}
         >
-          <header className={styles.headerBar} data-collapsed={collapsed || undefined}>
+          <header className={styles.headerBar} data-bordered={scrolled || undefined}>
             <button type="button" className={styles.backBtn} aria-label="Back" onClick={handleBack}>
               <IconArrowLeft size={24} />
             </button>
@@ -165,6 +169,7 @@ export function AddMoneyPage({ m, open, onDismiss }: AddMoneyPageProps) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={BAR_TITLE_TRANSITION}
+                  onClick={m.openAddBank}
                 >
                   Add bank
                 </motion.button>
@@ -178,8 +183,9 @@ export function AddMoneyPage({ m, open, onDismiss }: AddMoneyPageProps) {
                 <motion.div
                   key="source"
                   className={styles.step}
+                  style={{ zIndex: 1 }}
                   custom={navDir}
-                  variants={stepVariants}
+                  variants={underStepVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
@@ -218,8 +224,9 @@ export function AddMoneyPage({ m, open, onDismiss }: AddMoneyPageProps) {
                 <motion.div
                   key="banks"
                   className={styles.step}
+                  style={{ zIndex: 2 }}
                   custom={navDir}
-                  variants={stepVariants}
+                  variants={overStepVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
@@ -228,7 +235,7 @@ export function AddMoneyPage({ m, open, onDismiss }: AddMoneyPageProps) {
                   <div className={styles.scroll} onScroll={handleScroll}>
                     <h1 className={styles.title}>{m.titles.banks}</h1>
                     {banks.length === 0 ? (
-                      <BanksEmptyState reduceMotion={!!reduceMotion} />
+                      <BanksEmptyState reduceMotion={!!reduceMotion} onAddBank={m.openAddBank} />
                     ) : (
                       <div className={styles.list}>
                         {banks.map((b) => (
@@ -298,7 +305,13 @@ function PinkCta({ children, onClick }: { children: ReactNode; onClick?: () => v
  * for a beat, a cover gradient fades them down, and the centered message +
  * pink CTA blur/slide in.
  */
-function BanksEmptyState({ reduceMotion }: { reduceMotion: boolean }) {
+function BanksEmptyState({
+  reduceMotion,
+  onAddBank,
+}: {
+  reduceMotion: boolean;
+  onAddBank: () => void;
+}) {
   const [coverVisible, setCoverVisible] = useState(reduceMotion);
   const [contentVisible, setContentVisible] = useState(reduceMotion);
 
@@ -341,7 +354,7 @@ function BanksEmptyState({ reduceMotion }: { reduceMotion: boolean }) {
             <p className={styles.emptyTitle}>No bank accounts yet</p>
             <p className={styles.emptySub}>Add a bank account in 65+ countries to get started</p>
           </div>
-          <PinkCta>Add bank</PinkCta>
+          <PinkCta onClick={onAddBank}>Add bank</PinkCta>
         </motion.div>
       </div>
     </div>

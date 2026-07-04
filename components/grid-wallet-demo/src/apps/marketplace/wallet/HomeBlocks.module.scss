@@ -93,7 +93,7 @@
   font-size: 32px;
   line-height: normal;
   font-weight: 700;
-  letter-spacing: -0.64px;
+  letter-spacing: -0.96px; /* Figma -2% plus a hair (-3%) — Circular runs loose */
   color: var(--app-text-primary);
 }
 
@@ -187,7 +187,7 @@
   font-family: inherit;
   font-size: 17px;
   font-weight: 500;
-  letter-spacing: -0.34px;
+  letter-spacing: -0.51px; /* -2% plus a hair */
   white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -362,6 +362,7 @@
   font-size: 24px;
   line-height: normal;
   font-weight: 500;
+  letter-spacing: -0.48px; /* -2% — the section-title voice, a hair tight */
   color: var(--app-text-primary);
 }
 .activityRows {
