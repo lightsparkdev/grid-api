@@ -760,6 +760,48 @@
   gap: 8px;
 }
 
+/* ── Enter address (send → crypto) ──────────────────────────────────────── */
+.recipientLayout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.addressWrap {
+  position: relative;
+  flex-shrink: 0;
+  /* .scroll has no side padding (rows carry their own gutters). */
+  margin: 16px 24px 0;
+}
+
+/* The destination-box voice, as a static card: 1px squircle border via the
+   halo, sticker + two lines when filled, placeholder text when empty. */
+.addressBox {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 76px;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  background: var(--app-bg);
+}
+
+.addressPlaceholder {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-secondary);
+}
+
+.recipientCtaWrap {
+  flex-shrink: 0;
+  padding: 12px 24px 40px;
+}
+
 /* Rounded-rect (squircle-clipped) icon buttons on the secondary fill. */
 .rowIconBtn {
   display: inline-flex;

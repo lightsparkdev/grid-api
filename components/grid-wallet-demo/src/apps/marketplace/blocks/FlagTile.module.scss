@@ -35,6 +35,23 @@
   overflow: hidden;
 }
 
+/* Icon sticker art — neutral surface fill, primary glyph. */
+.artNeutral {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
 /* Icon sticker art — brand-pink fill, white glyph. */
 .artBrand {
   display: flex;

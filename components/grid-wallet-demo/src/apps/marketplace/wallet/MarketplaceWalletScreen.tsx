@@ -12,6 +12,8 @@ import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import { MarketplaceHomeContent } from './HomeBlocks';
 import { AddMoneyPage } from './AddMoneyPage';
 import { AddBankSheet } from './AddBankSheet';
+import { SendReceiveSheet } from './SendReceiveSheet';
+import { PasteAddressSheet } from './PasteAddressSheet';
 import { MarketplaceTabBar } from '../blocks/MarketplaceTabBar';
 import {
   MARKETPLACE_PUSH_DURATION,
@@ -35,8 +37,11 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
   const { home, money } = props;
   const reduceMotion = useReducedMotion();
   const pageOpen = home.sheetOpen;
-  // The Add bank pageSheet presents while the brain sits on its two steps.
-  const addBankOpen = pageOpen && (money.step === 'country' || money.step === 'bankForm');
+  // The pageSheet presents while the brain sits on a sheet step: Add bank's
+  // country/bankForm, plus Receive's funding instructions.
+  const addBankOpen =
+    pageOpen &&
+    (money.step === 'country' || money.step === 'bankForm' || money.step === 'fundingDetails');
 
   // Face ID (transfer confirm) + the glass toast render in AppShell's overlay
   // layer so they frost/slide over the status bar — shared system chrome.
@@ -80,6 +85,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
               showActivity
               animatedBalance
               onDeposit={() => home.openSheet('add')}
+              onSend={() => home.setSendReceiveOpen(true)}
             />
             <MarketplaceTabBar />
           </motion.div>
@@ -101,6 +107,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
 
           <AddMoneyPage
             m={money}
+            mode={home.sheetMode}
             open={pageOpen}
             onDismiss={money.dismiss}
             confirming={home.sheetConfirming}
@@ -109,7 +116,30 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
           />
         </PresentationStage>
 
-        <AddBankSheet m={money} open={addBankOpen} onDismiss={() => money.go('banks', true)} />
+        <AddBankSheet
+          m={money}
+          open={addBankOpen}
+          // X walks the brain back to the step the sheet launched from
+          // (add: banks; send: the Add-recipient chooser; receive: the list).
+          onDismiss={() => money.go(money.backFrom.country ?? 'banks', true)}
+        />
+
+        {/* Paste address — the network sheet stacked over the send flow
+            (iOS stack effect: the whole nav stack scales down behind it). */}
+        <PasteAddressSheet
+          m={money}
+          open={pageOpen && money.pickerOpen}
+          onDismiss={() => money.setPickerOpen(false)}
+        />
+
+        {/* "Send or receive" chooser — a partial-height Airbnb sheet over
+            home; picking either drops it as the flow pushes in. */}
+        <SendReceiveSheet
+          open={home.sendReceiveOpen}
+          onDismiss={() => home.setSendReceiveOpen(false)}
+          onSend={home.startSend}
+          onReceive={home.startReceive}
+        />
       </SheetPresentationProvider>
 
       {overlayEl ? createPortal(overlayContent, overlayEl) : overlayContent}

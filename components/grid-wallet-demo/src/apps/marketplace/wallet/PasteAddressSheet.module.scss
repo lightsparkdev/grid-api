@@ -1,0 +1,123 @@
+/* "Paste address" — partial-height Airbnb sheet WITH the iOS stack recede
+   (the send flow scales behind it via the shared presentation stage). */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  background: var(--sheet-scrim);
+  opacity: 0;
+}
+
+.layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  background: var(--mk-sheet-bg);
+  color: var(--app-text-primary);
+  padding-bottom: 24px; /* the rows carry their own gutters; clear the indicator */
+}
+
+.headerBar {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--mk-hairline);
+}
+
+.barTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.32px;
+}
+
+.closeBtn {
+  position: absolute;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+}
+
+/* The Select-bank row voice: sticker + two lines, full-bleed hover. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 14px 24px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-row-hover);
+  }
+}
+
+.netLogo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scale(1.25); /* crop the logo's own rounding past the squircle */
+}
+
+.rowLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rowTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.rowSub {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}

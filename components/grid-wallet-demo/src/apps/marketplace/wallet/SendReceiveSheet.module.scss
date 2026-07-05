@@ -1,0 +1,108 @@
+/* "Send or receive" chooser — Airbnb partial-height bottom sheet (IMG_0630):
+   flat white card, centered bar title + X, dim-only presentation. */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  background: var(--sheet-scrim);
+  opacity: 0;
+}
+
+.layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 13;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  background: var(--mk-sheet-bg);
+  color: var(--app-text-primary);
+  /* Clear the home indicator zone. */
+  padding-bottom: 40px;
+}
+
+/* IMG_0630's bar: centered bold title, X on the right, hairline beneath. */
+.headerBar {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--mk-hairline);
+}
+
+.barTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.32px;
+}
+
+.closeBtn {
+  position: absolute;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+.sub {
+  margin: 20px 24px 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 24px 0;
+}
+
+/* The home action-pill voice: 50px secondary-fill squircle buttons. */
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.51px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+}

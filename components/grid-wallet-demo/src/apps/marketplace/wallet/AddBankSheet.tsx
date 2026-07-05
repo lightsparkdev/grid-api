@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type UIEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { fieldLabel, type MoneySheet } from '@/apps/shared/wallet';
+import { fieldLabel, receiveFields, type MoneySheet } from '@/apps/shared/wallet';
 import { useRegisterSheet } from '@/apps/shared/SheetPresentation';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { currencyFor, type BankCountry } from '@/data/bankCountries';
@@ -13,6 +13,8 @@ import {
   IconCrossMedium,
   IconMagnifyingGlass,
   IconLoadingCircle,
+  IconSquareBehindSquare6,
+  IconCheckmark2Small,
 } from '../icons';
 import { MARKETPLACE_SHEET_DURATION } from '../config';
 import { FlagTile } from '../blocks/FlagTile';
@@ -61,13 +63,20 @@ interface AddBankSheetProps {
  */
 export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
   const reduceMotion = useReducedMotion();
-  const step: 'country' | 'bankForm' = m.step === 'bankForm' ? 'bankForm' : 'country';
+  const step: 'country' | 'bankForm' | 'fundingDetails' =
+    m.step === 'bankForm' ? 'bankForm' : m.step === 'fundingDetails' ? 'fundingDetails' : 'country';
   const navDir: NavDir = { back: m.back, reduceMotion: !!reduceMotion };
 
   // Top corners match the auth pageSheet (Aurora's 40, squircle-scaled).
   const sheetClip = useSquircleClip<HTMLDivElement>({ figmaRadii: [40, 40, 0, 0] });
 
-  const title = step === 'bankForm' ? m.titles.bankForm : m.titles.country;
+  // The funding step titles itself "Receive from {country}" (displayTitle).
+  const title =
+    step === 'bankForm'
+      ? m.titles.bankForm
+      : step === 'fundingDetails'
+        ? m.displayTitle
+        : m.titles.country;
   // Two thresholds: the hairline lands the moment you scroll; the centered bar
   // title waits until the large title is fully under the bar.
   const [scrolled, setScrolled] = useState(false);
@@ -110,11 +119,11 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
               chrome — the hairline rides it instead (see .searchWrap). */}
           <header
             className={styles.headerBar}
-            data-bordered={(scrolled && step === 'bankForm') || undefined}
+            data-bordered={(scrolled && step !== 'country') || undefined}
           >
             <span className={styles.headerSlot}>
               <AnimatePresence initial={false}>
-                {step === 'bankForm' && (
+                {step !== 'country' && (
                   <motion.button
                     key="back"
                     type="button"
@@ -257,11 +266,81 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
                   </div>
                 </motion.div>
               )}
+
+              {/* Receive — the picked country's inbound funding instructions:
+                  the bank-details rows with a copy button each, then Share
+                  (which also fires the simulated inbound payment). */}
+              {step === 'fundingDetails' && m.pickedCountry && (
+                <motion.div
+                  key="fundingDetails"
+                  className={styles.step}
+                  custom={navDir}
+                  variants={stepVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={STEP_TRANSITION}
+                >
+                  <div className={styles.scroll} onScroll={handleScroll}>
+                    <h1 className={styles.title}>{m.displayTitle}</h1>
+                    <div className={styles.fields}>
+                      {receiveFields(m.pickedCountry, m.formBeneficiary).map(([label, value]) => {
+                        const id = `fd-${label}`;
+                        const copied = m.copiedChainId === id;
+                        return (
+                          <div key={label} className={styles.fieldRow}>
+                            <span className={styles.fieldLines}>
+                              <span className={styles.fieldLabel}>{label}</span>
+                              <span className={styles.fieldValue}>{value}</span>
+                            </span>
+                            <CopyBtn
+                              copied={copied}
+                              label={copied ? 'Copied' : `Copy ${label}`}
+                              onClick={() => m.copyValue(id, value)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className={styles.fundingNote}>
+                      Share these details with anyone paying you
+                    </p>
+                  </div>
+                  <div className={styles.ctaWrap}>
+                    <SaveCta label="Share details" saving={false} onClick={m.shareFundingAndReceive} />
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>
       </motion.div>
     </>
+  );
+}
+
+/** Copy-value icon button — a 32px squircle rect on the secondary fill. */
+function CopyBtn({
+  copied,
+  label,
+  onClick,
+}: {
+  copied: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 9 });
+  return (
+    <button
+      type="button"
+      ref={clip.ref}
+      style={clip.style}
+      className={styles.copyBtn}
+      aria-label={label}
+      onClick={onClick}
+    >
+      {copied ? <IconCheckmark2Small size={18} /> : <IconSquareBehindSquare6 size={18} />}
+    </button>
   );
 }
 
@@ -304,9 +383,17 @@ function FieldRow({
   );
 }
 
-/** Full-width pink "Add bank account" (Continue's h50/r13 voice) with the
- *  500ms saving spinner beat. */
-function SaveCta({ saving, onClick }: { saving: boolean; onClick: () => void }) {
+/** Full-width pink CTA (Continue's h50/r13 voice) with the 500ms saving
+ *  spinner beat. */
+function SaveCta({
+  saving,
+  onClick,
+  label = 'Add bank account',
+}: {
+  saving: boolean;
+  onClick: () => void;
+  label?: string;
+}) {
   const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 13 });
   return (
     <button
@@ -321,7 +408,7 @@ function SaveCta({ saving, onClick }: { saving: boolean; onClick: () => void }) 
           <IconLoadingCircle size={20} />
         </span>
       ) : (
-        'Add bank account'
+        label
       )}
     </button>
   );

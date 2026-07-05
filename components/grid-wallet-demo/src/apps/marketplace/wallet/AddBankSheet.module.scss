@@ -341,6 +341,41 @@
   text-decoration: underline;
 }
 
+/* Copy-value button on the funding rows — squircle rect, secondary fill. */
+.copyBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: var(--mk-surface);
+  color: var(--app-text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Under the funding rows — the "who is this for" caption. */
+.fundingNote {
+  margin: 16px 24px 24px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
 /* ── Pinned CTA (Continue's h50/r13 voice, brand pink) ────────────────────── */
 .ctaWrap {
   flex-shrink: 0;

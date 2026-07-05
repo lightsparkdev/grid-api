@@ -56,13 +56,14 @@ function ActionPill({ label, onClick }: { label: string; onClick?: () => void })
   );
 }
 
-function SendButton() {
+function SendButton({ onClick }: { onClick?: () => void }) {
   const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 12 });
   return (
     <motion.button
       type="button"
       className={clsx(styles.actionPill, styles.actionSquare)}
       aria-label="Send"
+      onClick={onClick}
       ref={clip.ref}
       style={clip.style}
       whileHover={{ scale: HOVER_SCALE, transition: PRESS }}
@@ -104,6 +105,8 @@ export interface MarketplaceHomeContentProps {
   animatedBalance?: boolean;
   /** Opens the deposit flow (absent on the zeroed auth backdrop). */
   onDeposit?: () => void;
+  /** Opens the Send/Receive chooser sheet (absent on the auth backdrop). */
+  onSend?: () => void;
 }
 
 /** The marketplace Wallet home content (Figma 2610:11075) — gear nav, title,
@@ -122,6 +125,7 @@ export function MarketplaceHomeContent({
   entrance = false,
   animatedBalance = false,
   onDeposit,
+  onSend,
 }: MarketplaceHomeContentProps) {
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
@@ -169,7 +173,7 @@ export function MarketplaceHomeContent({
             <div className={styles.balanceActions}>
               <ActionPill label="Deposit" onClick={onDeposit} />
               <ActionPill label="Withdraw" />
-              <SendButton />
+              <SendButton onClick={onSend} />
             </div>
           </MkCard>
         </motion.div>

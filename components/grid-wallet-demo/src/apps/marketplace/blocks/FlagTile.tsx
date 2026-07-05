@@ -21,8 +21,16 @@ export function FlagTile({ code }: { code: string }) {
 }
 
 /** The same sticker chrome around arbitrary art — e.g. the cash-balance tile
- *  (brand-pink fill + white glyph). */
-export function StickerTile({ children, brand = false }: { children: ReactNode; brand?: boolean }) {
+ *  (brand-pink fill + white glyph) or a neutral glyph tile (surface fill). */
+export function StickerTile({
+  children,
+  brand = false,
+  neutral = false,
+}: {
+  children: ReactNode;
+  brand?: boolean;
+  neutral?: boolean;
+}) {
   const outer = useSquircleClip<HTMLSpanElement>({ figmaRadii: 12 });
   const inner = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 });
   return (
@@ -31,7 +39,7 @@ export function StickerTile({ children, brand = false }: { children: ReactNode; 
         <span
           ref={inner.ref}
           style={inner.style}
-          className={brand ? styles.artBrand : styles.art}
+          className={brand ? styles.artBrand : neutral ? styles.artNeutral : styles.art}
         >
           {children}
         </span>

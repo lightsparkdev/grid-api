@@ -17,6 +17,7 @@ import {
   KEYPAD,
   truncateAddress,
   type MoneySheet,
+  type MoneySheetMode,
   type ReceivedPayment,
   type SavedBank,
   type TransferActivity,
@@ -96,6 +97,37 @@ const midStepVariants = {
   exit: ({ reduceMotion }: NavDir) =>
     reduceMotion ? { opacity: 0 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
 };
+// Send mode's middle layer (the Add-recipient chooser) is a FULL nav layer —
+// it pushes over the recipient list AND gets pushed over by the address step —
+// so both moves need the direction (travel only; z stays fixed at 20).
+const navMidVariants = {
+  enter: ({ back, reduceMotion }: NavDir) =>
+    reduceMotion
+      ? { x: 0, opacity: 1 }
+      : back
+        ? { x: -MARKETPLACE_PUSH_PARALLAX, boxShadow: EDGE_SHADOW_ON, opacity: 1 }
+        : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
+  center: { x: 0, boxShadow: EDGE_SHADOW_ON, opacity: 1 },
+  exit: ({ back, reduceMotion }: NavDir) =>
+    reduceMotion
+      ? { opacity: 0 }
+      : back
+        ? { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 }
+        : { x: -MARKETPLACE_PUSH_PARALLAX, boxShadow: EDGE_SHADOW_ON, opacity: 1 },
+};
+// The TOP nav layer (enter address): pops back off to the right; on a forward
+// exit (saving pops the stack while the amount screen rises over it) it just
+// fades beneath the cover — travel there would telegraph through the rise.
+const navTopVariants = {
+  enter: ({ reduceMotion }: NavDir) =>
+    reduceMotion ? { x: 0, opacity: 1 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
+  center: { x: 0, boxShadow: EDGE_SHADOW_ON, opacity: 1 },
+  exit: ({ back, reduceMotion }: NavDir) =>
+    reduceMotion || !back
+      ? { opacity: 0 }
+      : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
+};
+
 // Enter amount — a Z-style vertical presentation: the screen (own header, X
 // top left) RISES from the bottom over the bank list, shadow riding the lift.
 const RISE_SHADOW_ON = '0 -16px 48px rgba(0, 0, 0, 0.2)';
@@ -145,15 +177,23 @@ const SOURCE_COPY: Record<string, { Icon: MarketplaceIcon; title: string; sub: s
   applepay: { Icon: IconApple, title: 'Apple Pay', sub: 'Use Apple Wallet' },
 };
 
+/** Send mode's "Add recipient" chooser reframes the same two rows. */
+const SEND_SOURCE_COPY: Record<string, { Icon: MarketplaceIcon; title: string; sub: string }> = {
+  bank: { Icon: IconBank, title: 'Bank account', sub: 'Send to 65+ countries' },
+  crypto: { Icon: IconWallet2, title: 'Crypto wallet', sub: 'Spark, Solana, Base address' },
+};
+
 const PAGE_TITLE = 'Deposit';
 
 /** Steps that have a marketplace face so far — a source row only navigates when
  *  its target is built (the rest stay press-feel no-ops until designed). */
-const BUILT_STEPS = new Set(['banks', 'deposit']);
+const BUILT_STEPS = new Set(['banks', 'deposit', 'country', 'recipient']);
 
 interface AddMoneyPageProps {
   /** The shared money-sheet brain (step machine, sources, banks, routing). */
   m: MoneySheet;
+  /** Flow direction — reframes the same page: add (Deposit), send, receive. */
+  mode: MoneySheetMode;
   open: boolean;
   onDismiss: () => void;
   /** Face ID running — the confirm CTA spins and input locks. */
@@ -175,6 +215,7 @@ interface AddMoneyPageProps {
  */
 export function AddMoneyPage({
   m,
+  mode,
   open,
   onDismiss,
   confirming,
@@ -183,18 +224,26 @@ export function AddMoneyPage({
 }: AddMoneyPageProps) {
   const reduceMotion = useReducedMotion();
   const navDir: NavDir = { back: m.back, reduceMotion: !!reduceMotion };
+  const isSend = mode === 'send';
+  const isReceive = mode === 'receive';
 
-  // The brain steps with a marketplace face. The Add bank sheet steps
-  // (country/bankForm) keep the banks view beneath them; anything else
-  // unbuilt falls back to the nearest built view so the page never blanks.
-  const viewStep: 'source' | 'banks' | 'deposit' | 'amount' =
-    m.step === 'source'
+  // The brain steps with a marketplace face. Sheet-presented steps (country /
+  // bankForm / fundingDetails ride the pageSheet) keep the view they launched
+  // from beneath them; anything unbuilt falls back to the nearest built view
+  // so the page never blanks.
+  const viewStep: 'source' | 'banks' | 'deposit' | 'recipient' | 'amount' = isReceive
+    ? 'deposit'
+    : m.step === 'source'
       ? 'source'
       : m.step === 'deposit'
         ? 'deposit'
-        : m.step === 'amount' || m.step === 'confirm'
-          ? 'amount'
-          : 'banks';
+        : m.step === 'recipient'
+          ? 'recipient'
+          : m.step === 'amount' || m.step === 'confirm'
+            ? 'amount'
+            : isSend && (m.step === 'country' || m.step === 'bankForm')
+              ? 'source'
+              : 'banks';
   // The amount screen rises OVER the page header carrying its own chrome, so
   // the page header keeps showing the view beneath it (banks) during the lift.
   const headerView = viewStep === 'amount' ? 'banks' : viewStep;
@@ -203,7 +252,11 @@ export function AddMoneyPage({
       ? m.titles.banks
       : headerView === 'deposit'
         ? m.titles.deposit
-        : PAGE_TITLE;
+        : headerView === 'recipient'
+          ? m.titles.recipient
+          : isSend
+            ? m.titles.source
+            : PAGE_TITLE;
   const handleBack = () => {
     const backTo = m.backFrom[m.step];
     if (m.isEntryStep || !backTo) onDismiss();
@@ -257,8 +310,8 @@ export function AddMoneyPage({
                 </motion.span>
               )}
             </AnimatePresence>
-            {/* "Add bank" pill (the Airbnb "Details" header button) — rides the
-                banks step, empty or not. */}
+            {/* "Add bank" / "Add recipient" pill (the Airbnb "Details" header
+                button) — rides the list step, empty or not. */}
             <AnimatePresence initial={false}>
               {headerView === 'banks' && (
                 <motion.button
@@ -271,7 +324,7 @@ export function AddMoneyPage({
                   transition={BAR_TITLE_TRANSITION}
                   onClick={m.openAddBank}
                 >
-                  Add bank
+                  {isSend ? 'Add recipient' : 'Add bank'}
                 </motion.button>
               )}
             </AnimatePresence>
@@ -279,23 +332,29 @@ export function AddMoneyPage({
 
           <div className={styles.steps} key={m.openKey}>
             <AnimatePresence initial={false} custom={navDir}>
-              {viewStep === 'source' && (
+              {/* Source list — add mode's ENTRY (under layer); in send mode
+                  it's the "Add recipient" chooser, a full nav layer pushed
+                  over the recipient list and pushed over by the address step
+                  (it stays mounted beneath that step). */}
+              {(isSend
+                ? viewStep === 'source' || viewStep === 'recipient'
+                : viewStep === 'source') && (
                 <motion.div
                   key="source"
                   className={styles.step}
-                  style={{ zIndex: 10 }}
+                  style={{ zIndex: isSend ? 20 : 10 }}
                   custom={navDir}
-                  variants={underStepVariants}
+                  variants={isSend ? navMidVariants : underStepVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
                   transition={STEP_TRANSITION}
                 >
                   <div className={styles.scroll} onScroll={handleScroll}>
-                    <h1 className={styles.title}>{PAGE_TITLE}</h1>
+                    <h1 className={styles.title}>{isSend ? m.titles.source : PAGE_TITLE}</h1>
                     <div className={styles.list}>
                       {m.sources.map((id, i) => {
-                        const copy = SOURCE_COPY[id];
+                        const copy = (isSend ? SEND_SOURCE_COPY : SOURCE_COPY)[id];
                         if (!copy) return null;
                         const { Icon } = copy;
                         const active = m.activeSources.find((a) => a.id === id);
@@ -309,7 +368,20 @@ export function AddMoneyPage({
                             bordered={i < m.sources.length - 1}
                             onClick={
                               active && BUILT_STEPS.has(active.next)
-                                ? () => m.go(active.next)
+                                ? () => {
+                                    // Crypto starts a fresh address; the bank
+                                    // path drops any crypto destination so the
+                                    // two never bleed together (Aurora's rule).
+                                    if (id === 'crypto') {
+                                      m.setSelectedBankId(null);
+                                      m.setCryptoDest(null);
+                                      m.setPasted(false);
+                                      m.setPastedAddress('');
+                                    } else {
+                                      m.setCryptoDest(null);
+                                    }
+                                    m.go(active.next);
+                                  }
                                 : undefined
                             }
                           />
@@ -320,17 +392,19 @@ export function AddMoneyPage({
                 </motion.div>
               )}
 
-              {/* Banks STAYS MOUNTED under the amount step: its forward "exit"
-                  is a hold-still (no values change), which Framer completes
+              {/* The list step — Select bank (add/withdraw) or Send to (send,
+                  where it's the ENTRY under-layer: recipients of both kinds).
+                  STAYS MOUNTED under the amount step: its forward "exit" is a
+                  hold-still (no values change), which Framer completes
                   instantly — unmounting the list mid-rise and flashing bare
-                  scrim. It only truly exits when popping back to source. */}
+                  scrim. It only truly exits when popping (add: to source). */}
               {(viewStep === 'banks' || viewStep === 'amount') && (
                 <motion.div
                   key="banks"
                   className={styles.step}
-                  style={{ zIndex: 20 }}
+                  style={{ zIndex: isSend ? 10 : 20 }}
                   custom={navDir}
-                  variants={midStepVariants}
+                  variants={isSend ? underStepVariants : midStepVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
@@ -338,30 +412,70 @@ export function AddMoneyPage({
                 >
                   <div className={styles.scroll} onScroll={handleScroll}>
                     <h1 className={styles.title}>{m.titles.banks}</h1>
-                    {banks.length === 0 ? (
-                      <BanksEmptyState reduceMotion={!!reduceMotion} onAddBank={m.openAddBank} />
+                    {m.banks.length === 0 ? (
+                      <BanksEmptyState
+                        reduceMotion={!!reduceMotion}
+                        title={isSend ? 'No recipients yet' : 'No bank accounts yet'}
+                        sub={
+                          isSend
+                            ? 'Send to a bank account in 65+ countries or any crypto wallet'
+                            : 'Add a bank account in 65+ countries to get started'
+                        }
+                        cta={isSend ? 'Add recipient' : 'Add bank'}
+                        onAddBank={m.openAddBank}
+                      />
                     ) : (
                       <div className={styles.list}>
-                        {banks.map((b) => (
-                          <button
-                            key={b.id}
-                            type="button"
-                            className={styles.row}
-                            onClick={() => m.selectBank(b.id)}
-                          >
-                            <FlagTile code={b.country.code} />
-                            <span className={styles.rowLines}>
-                              <span className={styles.rowTitle}>{b.bankName}</span>
-                              <span className={styles.rowSub}>
-                                {/* Middle dots (U+00B7) — Circular's real bullet is huge. */}
-                                {b.country.name} &middot;&middot;&middot;&middot; {accountLast4(b.values)}
+                        {(isSend ? m.banks : banks).map((b) =>
+                          'address' in b ? (
+                            <button
+                              key={b.id}
+                              type="button"
+                              className={styles.row}
+                              onClick={() => m.selectBank(b.id)}
+                            >
+                              <StickerTile>
+                                <img
+                                  className={styles.netLogo}
+                                  src={b.logo}
+                                  alt=""
+                                  draggable={false}
+                                />
+                              </StickerTile>
+                              <span className={styles.rowLines}>
+                                <span className={styles.rowTitle}>
+                                  {truncateAddress(b.address)}
+                                </span>
+                                <span className={styles.rowSub}>{b.network} wallet</span>
                               </span>
-                            </span>
-                            <span className={styles.rowChevron} aria-hidden>
-                              <IconChevronRightMedium size={20} />
-                            </span>
-                          </button>
-                        ))}
+                              <span className={styles.rowChevron} aria-hidden>
+                                <IconChevronRightMedium size={20} />
+                              </span>
+                            </button>
+                          ) : (
+                            <button
+                              key={b.id}
+                              type="button"
+                              className={styles.row}
+                              onClick={() => m.selectBank(b.id)}
+                            >
+                              <FlagTile code={b.country.code} />
+                              <span className={styles.rowLines}>
+                                <span className={styles.rowTitle}>
+                                  {isSend ? b.beneficiary : b.bankName}
+                                </span>
+                                <span className={styles.rowSub}>
+                                  {/* Middle dots (U+00B7) — Circular's real bullet is huge. */}
+                                  {isSend ? b.bankName : b.country.name}{' '}
+                                  &middot;&middot;&middot;&middot; {accountLast4(b.values)}
+                                </span>
+                              </span>
+                              <span className={styles.rowChevron} aria-hidden>
+                                <IconChevronRightMedium size={20} />
+                              </span>
+                            </button>
+                          ),
+                        )}
                       </div>
                     )}
                   </div>
@@ -375,9 +489,11 @@ export function AddMoneyPage({
                 <motion.div
                   key="deposit"
                   className={styles.step}
-                  style={{ zIndex: 20 }}
+                  // Receive's ENTRY layer (no push to arrive); add mode pushes
+                  // it over the source list like the banks step.
+                  style={{ zIndex: isReceive ? 10 : 20 }}
                   custom={navDir}
-                  variants={midStepVariants}
+                  variants={isReceive ? underStepVariants : midStepVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
@@ -386,6 +502,28 @@ export function AddMoneyPage({
                   <div className={styles.scroll} onScroll={handleScroll}>
                     <h1 className={styles.title}>{m.titles.deposit}</h1>
                     <div className={styles.list}>
+                      {/* Receive leads with the bank drill-in (add-from-crypto
+                          is crypto-only — bank is its own source row there). */}
+                      {isReceive && (
+                        <button
+                          type="button"
+                          className={styles.row}
+                          onClick={m.openAddBank}
+                        >
+                          <StickerTile neutral>
+                            <IconBank size={22} />
+                          </StickerTile>
+                          <span className={styles.rowLines}>
+                            <span className={styles.rowTitle}>Bank account</span>
+                            <span className={styles.rowSub}>
+                              Local transfer in 65+ countries &middot; Instant
+                            </span>
+                          </span>
+                          <span className={styles.rowChevron} aria-hidden>
+                            <IconChevronRightMedium size={20} />
+                          </span>
+                        </button>
+                      )}
                       {DEPOSIT_CHAINS.map((chain) => {
                         const copied = m.copiedChainId === chain.id;
                         return (
@@ -439,6 +577,25 @@ export function AddMoneyPage({
                 </motion.div>
               )}
 
+              {/* Enter address (send → crypto) — the TOP nav layer over the
+                  Add-recipient chooser. Paste opens the network sheet (iOS
+                  stack recede); a filled card saves + rises the amount. */}
+              {viewStep === 'recipient' && (
+                <motion.div
+                  key="recipient"
+                  className={styles.step}
+                  style={{ zIndex: 30 }}
+                  custom={navDir}
+                  variants={navTopVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={STEP_TRANSITION}
+                >
+                  <RecipientStep m={m} />
+                </motion.div>
+              )}
+
               {viewStep === 'amount' && (
                 <motion.div
                   key="amount"
@@ -455,6 +612,7 @@ export function AddMoneyPage({
                 >
                   <AmountStep
                     m={m}
+                    mode={mode}
                     reduceMotion={!!reduceMotion}
                     confirming={confirming}
                     onConfirm={onConfirm}
@@ -467,14 +625,35 @@ export function AddMoneyPage({
                 the wallet-level pushScrim behind this page. */}
             {!reduceMotion && (
               <>
+                {/* Over the z10 entry layer (add: source; send: the list). */}
                 <motion.div
                   className={styles.stepScrim}
                   style={{ zIndex: 15 }}
                   initial={false}
-                  animate={{ opacity: viewStep === 'source' ? 0 : 1 }}
+                  animate={{
+                    opacity: (
+                      isSend
+                        ? viewStep === 'source' || viewStep === 'recipient'
+                        : !isReceive && viewStep !== 'source'
+                    )
+                      ? 1
+                      : 0,
+                  }}
                   transition={STEP_TRANSITION}
                   aria-hidden
                 />
+                {/* Send only: over the chooser (z20) while the address step
+                    (z30) rides on top. */}
+                {isSend && (
+                  <motion.div
+                    className={styles.stepScrim}
+                    style={{ zIndex: 25 }}
+                    initial={false}
+                    animate={{ opacity: viewStep === 'recipient' ? 1 : 0 }}
+                    transition={STEP_TRANSITION}
+                    aria-hidden
+                  />
+                )}
                 <motion.div
                   className={styles.stepScrim}
                   // Above the page header (z 40): the amount screen rises OVER
@@ -507,16 +686,20 @@ export function AddMoneyPage({
  */
 function AmountStep({
   m,
+  mode,
   reduceMotion,
   confirming,
   onConfirm,
 }: {
   m: MoneySheet;
+  mode: MoneySheetMode;
   reduceMotion: boolean;
   confirming: boolean;
   onConfirm: (cents: number, activity: TransferActivity) => void;
 }) {
   const isReview = m.step === 'confirm';
+  const isSend = mode === 'send';
+  const reviewTitle = isSend ? 'Review send' : REVIEW_TITLE;
   const navDir: NavDir = { back: m.back, reduceMotion };
 
   // Shake on an invalid attempt — the brain bumps shakeNonce. The nonce
@@ -559,6 +742,7 @@ function AmountStep({
   }, [isReview]);
 
   const bank = m.selectedBank;
+  const crypto = m.selectedCrypto;
   const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 13 });
   const destClip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 16 });
   const locked = confirming || m.quoting;
@@ -605,7 +789,7 @@ function AmountStep({
           {/* nbsp: spaced text makes torph segment by WORD — non-breaking
               spaces force grapheme morphing so shared letters glide. */}
           <TextMorph as="span" duration={MORPH_MS} ease={cubicBezierCss(easeOutSwift)}>
-            {(isReview ? REVIEW_TITLE : m.titles.amount).replace(/ /g, '\u00a0')}
+            {(isReview ? reviewTitle : m.titles.amount).replace(/ /g, '\u00a0')}
           </TextMorph>
         </span>
         <span className={styles.amountHeaderSlot}>
@@ -677,8 +861,10 @@ function AmountStep({
                 </p>
               </div>
 
-              {/* Destination — the selected bank in a 1px-bordered box. */}
-              {bank && (
+              {/* Destination — the selected recipient in a 1px-bordered box:
+                  a bank account (flag sticker) or a crypto wallet (network
+                  logo sticker). */}
+              {(bank || crypto) && (
                 <div className={styles.destWrap}>
                   <button
                     type="button"
@@ -688,14 +874,39 @@ function AmountStep({
                     disabled={locked}
                     onClick={() => m.go('banks', true)}
                   >
-                    <FlagTile code={bank.country.code} />
-                    <span className={styles.rowLines}>
-                      <span className={styles.rowTitle}>{bank.bankName}</span>
-                      <span className={styles.rowSub}>
-                        {bank.country.name} &middot;&middot;&middot;&middot;{' '}
-                        {accountLast4(bank.values)}
-                      </span>
-                    </span>
+                    {bank ? (
+                      <>
+                        <FlagTile code={bank.country.code} />
+                        <span className={styles.rowLines}>
+                          <span className={styles.rowTitle}>
+                            {isSend ? bank.beneficiary : bank.bankName}
+                          </span>
+                          <span className={styles.rowSub}>
+                            {isSend ? bank.bankName : bank.country.name}{' '}
+                            &middot;&middot;&middot;&middot; {accountLast4(bank.values)}
+                          </span>
+                        </span>
+                      </>
+                    ) : (
+                      crypto && (
+                        <>
+                          <StickerTile>
+                            <img
+                              className={styles.netLogo}
+                              src={crypto.logo}
+                              alt=""
+                              draggable={false}
+                            />
+                          </StickerTile>
+                          <span className={styles.rowLines}>
+                            <span className={styles.rowTitle}>
+                              {truncateAddress(crypto.address)}
+                            </span>
+                            <span className={styles.rowSub}>{crypto.network} wallet</span>
+                          </span>
+                        </>
+                      )
+                    )}
                     <span className={styles.rowChevron} aria-hidden>
                       <IconChevronRightMedium size={20} />
                     </span>
@@ -754,10 +965,10 @@ function AmountStep({
               exit="exit"
               transition={STEP_TRANSITION}
             >
-              {bank && (
+              {(bank || crypto) && (
                 <ReviewScreen
                   m={m}
-                  bank={bank}
+                  mode={mode}
                   confirming={confirming}
                   onConfirm={onConfirm}
                 />
@@ -789,19 +1000,21 @@ function AmountStep({
  */
 function ReviewScreen({
   m,
-  bank,
+  mode,
   confirming,
   onConfirm,
 }: {
   m: MoneySheet;
-  bank: SavedBank;
+  mode: MoneySheetMode;
   confirming: boolean;
   onConfirm: (cents: number, activity: TransferActivity) => void;
 }) {
+  const isSend = mode === 'send';
+  const bank = m.selectedBank;
+  const crypto = m.selectedCrypto;
   // 18 = the wallet home card radius (MkCard), so the two card voices match.
   const boxClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 18 });
   const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 13 });
-  const detail = (label: string) => m.confirmDetails.find(([l]) => l === label)?.[1] ?? '';
   const totalCents = m.cents + m.feeCents;
   const local = (cents: number) =>
     ((cents / 100) * m.fxRate).toLocaleString('en-US', {
@@ -809,33 +1022,61 @@ function ReviewScreen({
       maximumFractionDigits: m.fxFractionDigits,
     });
 
+  // The itinerary endpoints: money flows INTO the wallet on add (bank →
+  // balance) and OUT on send (balance → recipient).
+  const balanceRow = (
+    <div className={styles.routeRow}>
+      <StickerTile brand>
+        <CircleDollarIcon size={22} />
+      </StickerTile>
+      <span className={styles.rowLines}>
+        <span className={styles.rowTitle}>Cash balance</span>
+        <span className={styles.rowSub}>USD</span>
+      </span>
+    </div>
+  );
+  const counterpartyRow = bank ? (
+    <div className={styles.routeRow}>
+      <FlagTile code={bank.country.code} />
+      <span className={styles.rowLines}>
+        <span className={styles.rowTitle}>{isSend ? bank.beneficiary : bank.bankName}</span>
+        <span className={styles.rowSub}>
+          {isSend ? bank.bankName : bank.country.name} &middot;&middot;&middot;&middot;{' '}
+          {accountLast4(bank.values)}
+        </span>
+      </span>
+    </div>
+  ) : crypto ? (
+    <div className={styles.routeRow}>
+      <StickerTile>
+        <img className={styles.netLogo} src={crypto.logo} alt="" draggable={false} />
+      </StickerTile>
+      <span className={styles.rowLines}>
+        <span className={styles.rowTitle}>{truncateAddress(crypto.address)}</span>
+        <span className={styles.rowSub}>{crypto.network} wallet</span>
+      </span>
+    </div>
+  ) : null;
+
   return (
     <div className={styles.review}>
       <div className={styles.reviewScroll}>
-        {/* Summary box — the ROUTE (IMG_0668's itinerary): bank sticker →
-            connector line → cash-balance sticker, then the amount row. */}
+        {/* Summary box — the ROUTE (IMG_0668's itinerary): source sticker →
+            connector line → destination sticker, then the amount row. */}
         <div className={styles.reviewBoxWrap}>
           <div ref={boxClip.ref} style={boxClip.style} className={styles.reviewBox}>
             <div className={styles.routeRows}>
-              <div className={styles.routeRow}>
-                <FlagTile code={bank.country.code} />
-                <span className={styles.rowLines}>
-                  <span className={styles.rowTitle}>{bank.bankName}</span>
-                  <span className={styles.rowSub}>
-                    {bank.country.name} &middot;&middot;&middot;&middot;{' '}
-                    {accountLast4(bank.values)}
-                  </span>
-                </span>
-              </div>
-              <div className={styles.routeRow}>
-                <StickerTile brand>
-                  <CircleDollarIcon size={22} />
-                </StickerTile>
-                <span className={styles.rowLines}>
-                  <span className={styles.rowTitle}>Cash balance</span>
-                  <span className={styles.rowSub}>USD</span>
-                </span>
-              </div>
+              {isSend ? (
+                <>
+                  {balanceRow}
+                  {counterpartyRow}
+                </>
+              ) : (
+                <>
+                  {counterpartyRow}
+                  {balanceRow}
+                </>
+              )}
             </div>
             <div className={styles.reviewBoxRow}>
               <span className={styles.reviewRowLines}>
@@ -863,34 +1104,53 @@ function ReviewScreen({
         {/* Flexible gap — the details pack against the CTA, not the box. */}
         <div className={styles.reviewSpacer} aria-hidden />
 
-        {/* Payment details — the supporting math (rate, fee), then the two
-            bold answers: what leaves the bank and what lands in the wallet. */}
+        {/* Payment details — the supporting math (rate, fee, timing) from the
+            brain, then the two bold answers: what leaves and what lands. */}
         <h2 className={styles.reviewSectionTitle}>Payment details</h2>
         <div className={styles.priceRows}>
-          <div className={styles.priceRow}>
-            <span>Exchange rate</span>
-            <span>{detail('Exchange rate')}</span>
-          </div>
-          <div className={styles.priceRow}>
-            <span>Fee</span>
-            <span>
-              {detail('Fee')} ({local(m.feeCents)} {m.fxLabel})
-            </span>
-          </div>
-          <div className={styles.priceRow}>
-            <span>Arrives</span>
-            <span>{detail('Arrives')}</span>
-          </div>
-          <div className={styles.priceTotalRow}>
-            <span>You&rsquo;ll pay</span>
-            <span>
-              {local(totalCents)} {m.fxLabel}
-            </span>
-          </div>
-          <div className={styles.priceTotalRow}>
-            <span>You&rsquo;ll get</span>
-            <span>{formatUsdCents(m.cents)}</span>
-          </div>
+          {m.confirmDetails.map(([label, value]) => (
+            <div key={label} className={styles.priceRow}>
+              <span>{label}</span>
+              <span>
+                {label === 'Fee' && !isSend && bank ? (
+                  <>
+                    {value} ({local(m.feeCents)} {m.fxLabel})
+                  </>
+                ) : (
+                  value
+                )}
+              </span>
+            </div>
+          ))}
+          {isSend ? (
+            <>
+              {/* Send: you pay in USD from the balance; they get the settled
+                  currency (stablecoin / local fiat). */}
+              <div className={styles.priceTotalRow}>
+                <span>You&rsquo;ll pay</span>
+                <span>{formatUsdCents(totalCents)}</span>
+              </div>
+              <div className={styles.priceTotalRow}>
+                <span>They&rsquo;ll get</span>
+                <span>
+                  {local(m.cents)} {m.fxLabel}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className={styles.priceTotalRow}>
+                <span>You&rsquo;ll pay</span>
+                <span>
+                  {local(totalCents)} {m.fxLabel}
+                </span>
+              </div>
+              <div className={styles.priceTotalRow}>
+                <span>You&rsquo;ll get</span>
+                <span>{formatUsdCents(m.cents)}</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -911,13 +1171,82 @@ function ReviewScreen({
               <span className={styles.ctaFaceId} aria-hidden>
                 <SfSymbol name="faceid" size={18} />
               </span>
-              Confirm deposit
+              {isSend ? 'Confirm send' : 'Confirm deposit'}
             </span>
           )}
         </button>
         <p className={styles.reviewTerms}>
           By selecting the button, I agree to the <span>transfer terms</span>.
         </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Enter address (send → crypto) — the address card in the destination-box
+ * voice: empty it invites a paste; Paste opens the network sheet (the iOS
+ * stacked pageSheet); a pick fills the card and the CTA morphs Paste →
+ * Add recipient, runs the save beat, and the amount screen rises.
+ */
+function RecipientStep({ m }: { m: MoneySheet }) {
+  const boxClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 16 });
+  const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 13 });
+  const net = m.pickedNetwork;
+  const filled = m.pasted && net;
+  return (
+    <div className={styles.recipientLayout}>
+      <div className={styles.scroll}>
+        <h1 className={styles.title}>{m.titles.recipient}</h1>
+        <div className={styles.addressWrap}>
+          <div ref={boxClip.ref} style={boxClip.style} className={styles.addressBox}>
+            {filled ? (
+              <>
+                <StickerTile>
+                  <img className={styles.netLogo} src={net.logo} alt="" draggable={false} />
+                </StickerTile>
+                <span className={styles.rowLines}>
+                  <span className={styles.rowTitle}>{truncateAddress(m.pastedAddress)}</span>
+                  <span className={styles.rowSub}>{net.name} wallet</span>
+                </span>
+              </>
+            ) : (
+              <span className={styles.rowLines}>
+                <span className={styles.addressPlaceholder}>Enter any address</span>
+                <span className={styles.rowSub}>Spark, Solana, Base, Ethereum &mdash; anything</span>
+              </span>
+            )}
+          </div>
+          <SquircleFocusHalo
+            path={boxClip.path}
+            width={boxClip.width}
+            height={boxClip.height}
+            className={styles.destHalo}
+          />
+        </div>
+      </div>
+      <div className={styles.recipientCtaWrap}>
+        <button
+          type="button"
+          className={styles.amountCta}
+          ref={cta.ref}
+          style={cta.style}
+          onClick={() => {
+            if (m.saving) return;
+            if (m.pasted) m.addCryptoRecipient();
+            else m.setPickerOpen(true);
+          }}
+        >
+          {m.saving ? (
+            <span className={styles.ctaSpinner} aria-label="Saving">
+              <IconLoadingCircle size={20} />
+            </span>
+          ) : (
+            <TextMorph as="span" duration={MORPH_MS} ease={cubicBezierCss(easeOutSwift)}>
+              {(m.pasted ? 'Add recipient' : 'Paste').replace(/ /g, '\u00a0')}
+            </TextMorph>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -956,9 +1285,15 @@ function PinkCta({ children, onClick }: { children: ReactNode; onClick?: () => v
  */
 function BanksEmptyState({
   reduceMotion,
+  title,
+  sub,
+  cta,
   onAddBank,
 }: {
   reduceMotion: boolean;
+  title: string;
+  sub: string;
+  cta: string;
   onAddBank: () => void;
 }) {
   const [coverVisible, setCoverVisible] = useState(reduceMotion);
@@ -1000,10 +1335,10 @@ function BanksEmptyState({
           transition={motionTransition(undefined, EMPTY_REVEAL_DURATION_S)}
         >
           <div className={styles.emptyText}>
-            <p className={styles.emptyTitle}>No bank accounts yet</p>
-            <p className={styles.emptySub}>Add a bank account in 65+ countries to get started</p>
+            <p className={styles.emptyTitle}>{title}</p>
+            <p className={styles.emptySub}>{sub}</p>
           </div>
-          <PinkCta onClick={onAddBank}>Add bank</PinkCta>
+          <PinkCta onClick={onAddBank}>{cta}</PinkCta>
         </motion.div>
       </div>
     </div>
