@@ -216,9 +216,11 @@
 }
 .promoArt {
   flex: none;
+  display: block;
   width: 56px;
   height: 56px;
-  background: #d4d4d4;
+  object-fit: contain;
+  user-select: none;
 }
 .promoCopy {
   display: flex;

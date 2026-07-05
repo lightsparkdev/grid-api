@@ -15,7 +15,7 @@ import {
   IconLoadingCircle,
 } from '../icons';
 import { MARKETPLACE_SHEET_DURATION } from '../config';
-import { SquareFlag } from '../blocks/SquareFlag';
+import { FlagTile } from '../blocks/FlagTile';
 import styles from './AddBankSheet.module.scss';
 
 const SHEET_TRANSITION = motionTransition(easeOutSnappy, MARKETPLACE_SHEET_DURATION);
@@ -100,6 +100,10 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
         initial={false}
         animate={{ y: open ? 0 : '110%' }}
         transition={reduceMotion ? { duration: 0 } : SHEET_TRANSITION}
+        // Parked off-screen it must not trap clicks/focus or expose its
+        // controls to the accessibility tree.
+        style={{ pointerEvents: open ? 'auto' : 'none' }}
+        aria-hidden={!open}
       >
         <div ref={sheetClip.ref} style={sheetClip.style} className={styles.sheet}>
           {/* On the country step the pinned SEARCH is the bottom of the header
@@ -269,12 +273,9 @@ function CountryRow({
   country: BankCountry;
   onSelect: (c: BankCountry) => void;
 }) {
-  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 });
   return (
     <button type="button" className={styles.row} onClick={() => onSelect(country)}>
-      <span ref={clip.ref} style={clip.style} className={styles.flagTile} aria-hidden>
-        <SquareFlag code={country.code} />
-      </span>
+      <FlagTile code={country.code} />
       <span className={styles.rowLines}>
         <span className={styles.rowTitle}>{country.name}</span>
         <span className={styles.rowSub}>{currencyFor(country)}</span>

@@ -5,6 +5,7 @@ import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-st
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
 import { IconChevronLeftMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronLeftMedium';
 import { IconChevronRightMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRightMedium';
+import { IconChevronDownMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronDownMedium';
 // Deposit page source list.
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCash } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCash';
@@ -30,6 +31,7 @@ export {
   IconArrowLeft,
   IconChevronLeftMedium,
   IconChevronRightMedium,
+  IconChevronDownMedium,
   IconBank,
   IconCash,
   IconMagnifyingGlass,

@@ -36,14 +36,18 @@
 /* ── Header: back (bank details only) left, X (country only) right ───────── */
 .headerBar {
   position: relative;
+  /* Opaque + above the steps: fractional viewport scaling can leave a subpixel
+     seam between the bar and the sticky search — the bar paints over it. */
+  z-index: 3;
+  background: var(--mk-sheet-bg);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
-  height: 60px;
+  height: 68px;
   /* 24px top gutter matching the sides (the auth-sheet header's spec). */
-  padding: 24px 24px 12px;
+  padding: 24px 24px 20px;
 
   &::after {
     content: '';
@@ -87,13 +91,15 @@
   }
 }
 
-/* Collapsed bar title — 14px, centered (same voice as the deposit header). */
+/* Collapsed bar title — 14px, centered (same voice as the deposit header).
+   Insets match the bar's 24/20 padding so it centers WITH the X, not in the
+   full bar box (which sat it high). */
 .barTitle {
   position: absolute;
   left: 48px;
   right: 48px;
-  top: 0;
-  bottom: 0;
+  top: 24px;
+  bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -140,7 +146,9 @@
    padding and docks flush against the header when pinned. */
 .title {
   flex-shrink: 0;
-  margin: 4px 0 16px;
+  /* Negative top: claw back the 8px the header grew, so the large title sits
+     where it did before the bar's extra bottom padding. */
+  margin: -4px 0 16px;
   padding: 0 24px;
   font-size: 26px;
   line-height: normal;
@@ -159,6 +167,20 @@
   z-index: 2;
   padding: 0 24px 12px;
   background: var(--mk-sheet-bg);
+
+  /* Bleed the fill a few px ABOVE the wrap: under fractional scaling the
+     docked search can round a hair short of the header, letting rows peek
+     through the seam. At rest this sits inside the title's bottom margin
+     (background only), so nothing visible is covered. */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -8px;
+    height: 8px;
+    background: var(--mk-sheet-bg);
+  }
 
   &::after {
     content: '';
@@ -210,8 +232,16 @@
 }
 
 .sectionLabel {
-  margin: 12px 0 4px;
+  /* Equal margins — the rows above/below pad 12px each side, so the visual
+     gap is symmetric (20px both ways). */
+  margin: 8px 0;
   padding: 0 24px;
+
+  /* The first label sits right under the search (which pads 12px already) —
+     drop its top margin so the gap isn't compounded. */
+  .searchWrap + & {
+    margin-top: 0;
+  }
   font-size: 14px;
   line-height: normal;
   font-weight: 400;
@@ -227,6 +257,9 @@
   padding: 12px 24px;
   border: 0;
   background: transparent;
+  /* Buttons DON'T inherit font-family — without this the rows render in the
+     system font, not Circular (the weights then look off-ramp). */
+  font-family: inherit;
   text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -235,14 +268,6 @@
   &:hover {
     background: var(--mk-row-hover);
   }
-}
-
-.flagTile {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  overflow: hidden;
-  background: var(--mk-surface);
 }
 
 .rowLines {
@@ -256,7 +281,7 @@
 .rowTitle {
   font-size: 16px;
   line-height: normal;
-  font-weight: 500;
+  font-weight: 500; /* Circular Medium — real, now that the button inherits */
   color: var(--app-text-primary);
 }
 

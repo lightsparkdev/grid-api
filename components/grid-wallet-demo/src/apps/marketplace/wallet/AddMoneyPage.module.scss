@@ -20,7 +20,8 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 3;
+  /* Above every step layer (they z-slot at 10–30). */
+  z-index: 40;
   display: flex;
   align-items: center;
   height: 118px; /* 62 status bar + 56 bar */
@@ -100,16 +101,506 @@
   background: var(--app-bg);
 }
 
-/* Dim over the receding underlayer during a step push — same token as the
-   wallet-level push scrim. DOM order puts it above a z-1 step; the z-2 top
-   screen still covers it. */
+/* Dim over a receding underlayer during a step push — same token as the
+   wallet-level push scrim. z is slotted inline between the fixed-depth
+   layers (15 between source and banks; 45 above the page header (40) for
+   the amount rise, whose screen covers the header at 50). */
 .stepScrim {
   position: absolute;
   inset: 0;
-  z-index: 1;
   background: var(--mk-push-scrim);
   opacity: 0;
   pointer-events: none;
+}
+
+/* ── Enter amount (the Z amount screen, marketplace chrome) ───────────────── */
+.amountLayout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* NO header padding here — the inner screens pad themselves past the
+     header instead, so .innerSteps (an overflow clipper) spans the full
+     screen and the review card's shadow isn't cut at the header line. */
+}
+
+/* The rising screen's own header — page-header geometry (70px status zone),
+   above the inner layers (they z-slot at 10–20) but TRANSPARENT: neither
+   inner screen scrolls in practice, and an opaque fill would paint over the
+   review card's shadow reaching up into the header zone (a hard clip line
+   at the header's bottom edge). */
+.amountHeader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  height: 118px;
+  padding: 70px 24px 8px;
+  box-sizing: border-box;
+}
+
+.amountHeaderSlot {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+
+  &:last-child {
+    margin-left: auto;
+  }
+}
+
+/* Amount ⇄ Review — separate screens pushed side-by-side under the header. */
+.innerSteps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.innerStep {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--app-bg);
+}
+
+/* The amount screen doesn't scroll, so it simply pads past the header; the
+   review pads INSIDE its scroll area instead (shadow room + slide-under). */
+.innerStepPad {
+  padding-top: 118px;
+}
+
+/* Centered header title (IMG_0631's bar) — sits between the X and the edge. */
+.amountHeaderTitle {
+  position: absolute;
+  left: 56px;
+  right: 56px;
+  top: 70px; /* the header's status-bar padding */
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.16px;
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+
+/* The amount floats free (flat, no card), centered above the destination. */
+.amountFree {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  text-align: center;
+}
+
+/* Destination box — 1px squircle border (halo stroke), NO shadow/hairline. */
+.destWrap {
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 24px 16px;
+}
+
+.destBox {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 20px;
+  border: 0;
+  background: var(--app-bg);
+  /* Buttons don't inherit font-family — keep the row in Circular. */
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.destHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--mk-tile-border);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.amountValue {
+  display: flex;
+  /* Stretch to the card width (a centered flex child shrink-wraps otherwise)
+     so the fit measurement has a real bound. */
+  align-self: stretch;
+  justify-content: center;
+  margin: 0;
+  font-size: 64px;
+  line-height: 72px;
+  font-weight: 500;
+  letter-spacing: -1.92px; /* -3%, the large-title voice */
+  color: var(--app-text-primary);
+}
+
+/* Fit-to-width wrapper — scales toward 0.5 as the amount outgrows the row. */
+.amountFit {
+  display: inline-flex;
+  transform-origin: center;
+  white-space: nowrap;
+}
+
+.amountGhost {
+  color: var(--app-text-tertiary);
+}
+
+.amountSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: center;
+  margin: 0;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px 12px 8px;
+}
+
+/* ── Review deposit (IMG_0631/0632) ───────────────────────────────────────── */
+.review {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.reviewScroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  /* Top = 118px header + the 8px content gap — padded inside the scroll so
+     the summary card's shadow has room instead of clipping at the header.
+     Bottom: 18px + the last total row's 6px bottom padding = 24px above
+     the CTA. */
+  padding: 126px 24px 18px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Flexible gap — absorbs the leftover height ABOVE the details so they anchor
+   against the CTA (collapses to 24px minimum on short screens). */
+.reviewSpacer {
+  flex: 1 1 0;
+  min-height: 24px;
+}
+
+/* Summary box — flat: 1px squircle border (the destination-box voice), no
+   shadow, 16px inset all around (the rows carry the rest of the rhythm). */
+.reviewBoxWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.reviewBox {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+  padding: 16px;
+}
+
+/* The route (IMG_0668's itinerary): two sticker rows joined by a thin line
+   running through the tile axis. The line sits UNDER the opaque stickers
+   (they paint over it), so only the gap segment shows. */
+.routeRows {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* Top inset comes from the box's own 16px; keep 20px above the hairline. */
+  padding: 0 0 20px;
+  border-bottom: 1px solid var(--mk-hairline);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 20px; /* the 40px tile's center */
+    top: 20px; /* first tile's center */
+    bottom: 40px; /* second tile's center */
+    width: 1.5px;
+    transform: translateX(-50%);
+    background: var(--mk-hairline);
+  }
+}
+
+.routeRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Label-over-value rows with an optional Change pill; hairlines between. */
+.reviewBoxRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+
+  & + & {
+    border-top: 1px solid var(--mk-hairline);
+  }
+
+  /* The box's own 16px is the bottom inset. */
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.reviewRowLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reviewRowLabel {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.reviewRowValue {
+  font-size: 15px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+/* "Change" pill — the header pill's voice, inside the box rows. */
+.changePill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.reviewSectionTitle {
+  /* 12px margin + the first price row's 6px top padding = 18px visual gap. */
+  margin: 0 0 12px;
+  font-size: 22px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.44px;
+  color: var(--app-text-primary);
+}
+
+/* Flat 2-col price rows; the total gets a hairline above and full weight. */
+.priceRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-primary);
+}
+
+/* The two bold answers at the end — the first carries the hairline off the
+   supporting rows; the second follows without another rule. Vertical padding
+   matches .priceRow so the list reads on one rhythm. */
+.priceTotalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  /* The divider gets a full row-gap (12px) on BOTH sides: 6px from the row
+     above + 6px margin, then 12px padding beneath it. Row-to-row gaps stay
+     12px, so the whole list reads on one rhythm. */
+  margin-top: 6px;
+  padding: 12px 0 6px;
+  border-top: 1px solid var(--mk-hairline);
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 700;
+  color: var(--app-text-primary);
+
+  & + & {
+    margin-top: 0;
+    padding: 6px 0;
+    border-top: 0;
+  }
+}
+
+.reviewCtaWrap {
+  flex-shrink: 0;
+  /* 0 top: the 24px gap above the CTA comes from the scroll area's 18px
+     bottom padding + the last total row's 6px bottom padding. */
+  padding: 0 24px 24px;
+}
+
+.ctaInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctaFaceId {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+}
+
+.reviewTerms {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: normal;
+  font-weight: 400;
+  text-align: center;
+  color: var(--app-text-secondary);
+
+  span {
+    text-decoration: underline;
+  }
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 58px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 24px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.24px;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease-out;
+
+  &:active {
+    transform: scale(0.96);
+    transition: none;
+  }
+}
+
+.amountCtaWrap {
+  flex-shrink: 0;
+  padding: 8px 24px 40px;
+}
+
+/* Full-width pink CTA (Continue's h50/r13 voice). */
+.amountCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--mk-cta);
+  color: var(--mk-cta-fg);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.17px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-cta-press);
+  }
+}
+
+.ctaSpinner {
+  display: inline-flex;
+
+  svg {
+    display: block;
+    animation: amount-spin 0.9s linear infinite;
+  }
+}
+
+@keyframes amount-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Scroll (content passes under the opaque bar) ────────────────────────── */
@@ -219,7 +710,7 @@
 .rowTitle {
   font-size: 16px;
   line-height: normal;
-  font-weight: 500;
+  font-weight: 500; /* Circular Medium — real, now that the buttons inherit */
   color: var(--app-text-primary);
 }
 
@@ -239,15 +730,6 @@
     display: block;
     flex: none;
   }
-}
-
-/* ── Bank rows (Select bank) — 40px squircle flag tile, NO dividers ──────── */
-.flagTile {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  overflow: hidden;
-  background: var(--mk-surface);
 }
 
 /* Header "Add bank" pill — the Airbnb "Details" header button: full-round

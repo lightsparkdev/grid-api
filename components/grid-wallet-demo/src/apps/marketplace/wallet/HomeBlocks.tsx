@@ -177,7 +177,12 @@ export function MarketplaceHomeContent({
         <motion.div {...enter(2)}>
           <MkCard>
             <div className={styles.promo}>
-              <span className={styles.promoArt} aria-hidden />
+              <img
+                className={styles.promoArt}
+                src="/assets/marketplace/card-promo.webp"
+                alt=""
+                draggable={false}
+              />
               <div className={styles.promoCopy}>
                 <span className={styles.promoTitle}>Get your free debit card</span>
                 <span className={styles.promoSub}>

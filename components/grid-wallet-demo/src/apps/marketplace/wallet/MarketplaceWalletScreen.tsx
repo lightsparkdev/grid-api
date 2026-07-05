@@ -1,8 +1,12 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { SkinWalletScreenProps } from '@/apps/types';
 import { SheetPresentationProvider, PresentationStage } from '@/apps/shared/SheetPresentation';
+import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
+import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
+import { Toast } from '@/apps/shared/Toast';
 import { figmaSquircleRadius } from '@/apps/shared/figmaSquircleRadius';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import { MarketplaceHomeContent } from './HomeBlocks';
@@ -33,6 +37,21 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
   const pageOpen = home.sheetOpen;
   // The Add bank pageSheet presents while the brain sits on its two steps.
   const addBankOpen = pageOpen && (money.step === 'country' || money.step === 'bankForm');
+
+  // Face ID (transfer confirm) + the glass toast render in AppShell's overlay
+  // layer so they frost/slide over the status bar — shared system chrome.
+  const overlayEl = useScreenOverlay();
+  const overlayContent = (
+    <>
+      <FaceIdAuth
+        active={home.sheetConfirming}
+        onDone={() => {
+          if (home.sheetConfirming) home.finishTransfer();
+        }}
+      />
+      <Toast toast={home.toast} onDismiss={() => home.setToast(null)} />
+    </>
+  );
 
   return (
     <div className={styles.root}>
@@ -80,11 +99,19 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
             )}
           </AnimatePresence>
 
-          <AddMoneyPage m={money} open={pageOpen} onDismiss={money.dismiss} />
+          <AddMoneyPage
+            m={money}
+            open={pageOpen}
+            onDismiss={money.dismiss}
+            confirming={home.sheetConfirming}
+            onConfirm={home.confirmTransfer}
+          />
         </PresentationStage>
 
         <AddBankSheet m={money} open={addBankOpen} onDismiss={() => money.go('banks', true)} />
       </SheetPresentationProvider>
+
+      {overlayEl ? createPortal(overlayContent, overlayEl) : overlayContent}
     </div>
   );
 }
