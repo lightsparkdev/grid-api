@@ -1,0 +1,62 @@
+/* The Waterbnb debit card (Figma 2631:12225). Shadow on the unclipped shell
+   as a drop-shadow so it hugs the squircle silhouette. */
+.shell {
+  position: relative;
+  flex: none;
+  filter: drop-shadow(0 5.5px 22px rgba(0, 0, 0, 0.25));
+}
+
+.card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background: var(--mk-brand, #ff385c);
+  overflow: hidden;
+}
+
+/* The house mark — white stroke at 40% via screen blend, a soft watermark. */
+.house {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: screen;
+}
+
+.bottomRow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.number {
+  font-size: 1em;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.brandCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  align-items: flex-end;
+}
+
+.debit {
+  font-size: 1em;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(235, 235, 245, 0.7);
+}
+
+.visa {
+  display: block;
+}

@@ -1,0 +1,292 @@
+/* The debit-card flow — full-screen rise over the wallet. Gradient intro with
+   the world-map marquee; white card home with the transactions list. */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 7; /* over the deposit page (5) — a full modal cover */
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  overflow: hidden;
+}
+
+/* ── Card-pink backdrop + the 4% white world-map marquee ─────────────────── */
+/* A background-COLOR (not a gradient image) on purpose: the adaptive status
+   bar samples backgroundColor to pick its glyph tone — a gradient reads as
+   transparent and the glyphs stayed dark over the pink. */
+/* NOT pointer-events:none: elementsFromPoint (the sampler) skips those. It
+   sits behind all content, so it only catches clicks on bare backdrop. */
+.brandBg {
+  position: absolute;
+  inset: 0;
+  background-color: var(--mk-brand, #ff385c);
+  overflow: hidden;
+}
+
+/* Two tiles marquee left, looping seamlessly at -50%. The gradient mask fades
+   the map to transparent over the bottom content area (pitch + CTA), same as
+   the creator card sheet's speed lines. */
+.mapMarquee {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  width: max-content;
+  animation: map-marquee 80s linear infinite;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 74%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 74%);
+}
+
+@keyframes map-marquee {
+  to {
+    translate: -50% 0;
+  }
+}
+
+/* Land masses only, white at 4%, filling the screen VERTICALLY — the SVG is
+   a mask so the fill is ours. */
+.mapTile {
+  flex: none;
+  height: 100%;
+  aspect-ratio: 2170 / 1200; /* matches the SVG viewBox, cropped to the land */
+  background: #ffffff;
+  opacity: 0.12;
+  mask: url('/assets/marketplace/world-map.svg') center / cover no-repeat;
+  -webkit-mask: url('/assets/marketplace/world-map.svg') center / cover no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapMarquee {
+    animation: none;
+  }
+}
+
+/* ── Header (the page-header geometry) ───────────────────────────────────── */
+.header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 118px; /* 62 status bar + 56 bar */
+  padding: 62px 24px 8px;
+  box-sizing: border-box;
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.3s ease;
+
+  &[data-on-gradient] {
+    color: #ffffff;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* ── Content column ──────────────────────────────────────────────────────── */
+.column {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 24px 0;
+}
+
+/* The card slot: pinned near the top on the card home; on the pitch it takes
+   the leftover space above the copy and CENTERS the card in it. */
+.cardSlot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0 0;
+
+  &[data-centered] {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* Intro pitch — white on the card pink, centered, ANCHORED to the CTA,
+   on the standard 24px gutters. */
+.pitch {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 12px; /* + ctaWrap's 12px top = 24px description→CTA */
+  text-align: center;
+}
+
+.pitchTitle {
+  margin: 0;
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 500;
+  letter-spacing: -0.96px;
+  color: #ffffff;
+  text-wrap: balance;
+}
+
+.pitchSub {
+  margin: 0 auto;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
+  text-wrap: pretty;
+}
+
+/* Pinned intro CTA — near-black pill (the Airbnb primary), agreement below. */
+.ctaWrap {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  padding: 12px 24px 24px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: #ffffff;
+  color: #222222;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.17px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The Card Holder Agreement line (the Z/Aurora issuance fine print) — full
+   width, gutter to gutter (the ctaWrap's 24px). */
+.agreement {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  text-align: center;
+  text-wrap: pretty;
+  color: rgba(255, 255, 255, 0.6);
+
+  span {
+    text-decoration: underline;
+  }
+}
+
+.ctaSpinner {
+  display: inline-flex;
+
+  svg {
+    display: block;
+    animation: cta-spin 0.9s linear infinite;
+  }
+}
+
+@keyframes cta-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Card home (post-reveal) ─────────────────────────────────────────────── */
+.homeBody {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Fixed-height zone so Tap to pay ⇄ reader status swap without reflow. */
+.tapZone {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 110px;
+  padding-top: 20px;
+}
+
+.tapBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.51px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+.tapStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Section title — the home Activity voice. */
+.txTitle {
+  margin: 12px 0 0;
+  font-size: 24px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.48px;
+  color: var(--app-text-primary);
+}

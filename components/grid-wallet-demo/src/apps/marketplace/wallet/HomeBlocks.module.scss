@@ -211,12 +211,26 @@
   }
 }
 
-/* ── Debit card promo (Figma 2610:11944) ────────────────────────────────── */
+/* Compositor-pinned at rest so the hover scale doesn't re-rasterize the text
+   (the action-pill fix). */
+.promoScale {
+  will-change: transform;
+}
+
+/* ── Debit card promo (Figma 2610:11944) — opens the card flow ──────────── */
 .promo {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+  width: 100%;
   padding: 24px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .promoArt {
   flex: none;

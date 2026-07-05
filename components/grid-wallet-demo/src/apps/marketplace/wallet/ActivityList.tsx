@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import type { WalletListItemData } from '@/apps/shared/wallet';
+import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
+import { IconCheeseburger } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheeseburger';
+import { IconStore1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStore1';
+import { IconCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCup';
+import { IconFashion } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFashion';
+import { IconShoppingBag1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconShoppingBag1';
+import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
+import { IconSofa } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSofa';
+import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconDeskLamp';
+import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
+import type { MerchantCategory, WalletListItemData } from '@/apps/shared/wallet';
 import { useNow } from '@/hooks/useNow';
 import { relativeTime } from '@/lib/relativeTime';
 import { motionTransition } from '@/lib/easing';
@@ -22,6 +32,21 @@ const MESSAGE_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
 /** Activity graphics run larger than the list stickers (the stay-thumb scale). */
 const TILE_SIZE = 56;
+
+/** Tap-to-pay merchant icons — the marketplace variant (radius-3, stroke-1.5).
+ *  The brain supplies only the `category`; the icon style is the skin's. */
+const MERCHANT_ICONS: Record<MerchantCategory, typeof IconHotDrinkCup> = {
+  coffee: IconHotDrinkCup,
+  'fast-food': IconCheeseburger,
+  convenience: IconStore1,
+  cafe: IconCup,
+  fashion: IconFashion,
+  apparel: IconShoppingBag1,
+  accessories: IconTag,
+  furniture: IconSofa,
+  homeware: IconDeskLamp,
+  grocery: IconBasket1,
+};
 
 /** Soft "graphic" avatar tints (the Airbnb beige-circle voice) — a small
  *  palette picked deterministically per person so a counterparty keeps their
@@ -85,6 +110,17 @@ function RowAvatar({ item }: { item: WalletListItemData }) {
       </span>
     );
   }
+  // Card charges — the merchant's category glyph on the neutral sticker.
+  if (item.category) {
+    const Icon = MERCHANT_ICONS[item.category];
+    return (
+      <span className={styles.avatarWrap} aria-hidden>
+        <StickerTile neutral size={TILE_SIZE}>
+          <Icon size={28} />
+        </StickerTile>
+      </span>
+    );
+  }
   return (
     <span className={styles.avatarWrap} aria-hidden>
       <StickerTile brand size={TILE_SIZE}>
@@ -105,6 +141,8 @@ export function MarketplaceActivityList({
   items,
   frozen = false,
   onDeposit,
+  emptyTitle = 'No activity yet',
+  emptySub = 'Money you add, send, and receive will show up here',
 }: {
   items: WalletListItemData[];
   /** Hold the skeletons forever (no reveal) — for the zeroed auth backdrop,
@@ -113,6 +151,8 @@ export function MarketplaceActivityList({
   frozen?: boolean;
   /** Empty-state CTA — opens the deposit flow. */
   onDeposit?: () => void;
+  emptyTitle?: string;
+  emptySub?: string;
 }) {
   const reduceMotion = useReducedMotion();
   const now = useNow();
@@ -175,10 +215,8 @@ export function MarketplaceActivityList({
             transition={motionTransition(undefined, REVEAL_DURATION_S)}
           >
             <div className={styles.emptyText}>
-              <p className={styles.emptyTitle}>No activity yet</p>
-              <p className={styles.emptySub}>
-                Money you add, send, and receive will show up here
-              </p>
+              <p className={styles.emptyTitle}>{emptyTitle}</p>
+              <p className={styles.emptySub}>{emptySub}</p>
             </div>
             {onDeposit && <PinkCta onClick={onDeposit}>Deposit</PinkCta>}
           </motion.div>

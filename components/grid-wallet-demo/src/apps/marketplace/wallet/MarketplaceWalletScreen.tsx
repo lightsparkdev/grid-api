@@ -12,6 +12,7 @@ import { easeOutSnappy, motionTransition } from '@/lib/easing';
 import { MarketplaceHomeContent } from './HomeBlocks';
 import { AddMoneyPage } from './AddMoneyPage';
 import { AddBankSheet } from './AddBankSheet';
+import { MarketplaceCardScreen } from './CardScreen';
 import { SendReceiveSheet } from './SendReceiveSheet';
 import { PasteAddressSheet } from './PasteAddressSheet';
 import { MarketplaceTabBar } from '../blocks/MarketplaceTabBar';
@@ -48,15 +49,17 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
     pageOpen &&
     (money.step === 'country' || money.step === 'bankForm' || money.step === 'fundingDetails');
 
-  // Face ID (transfer confirm) + the glass toast render in AppShell's overlay
-  // layer so they frost/slide over the status bar — shared system chrome.
+  // Face ID (transfer confirm + the tap-to-pay auth beat) and the toast render
+  // in AppShell's overlay layer so they slide over the status bar.
+  const tapAuth = home.tapPhase === 'auth';
   const overlayEl = useScreenOverlay();
   const overlayContent = (
     <>
       <FaceIdAuth
-        active={home.sheetConfirming}
+        active={home.sheetConfirming || tapAuth}
         onDone={() => {
-          if (home.sheetConfirming) home.finishTransfer();
+          if (tapAuth) home.setTapPhase('done');
+          else if (home.sheetConfirming) home.finishTransfer();
         }}
       />
       <Toast toast={home.toast} onDismiss={() => home.setToast(null)} variant="inverted" />
@@ -93,6 +96,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
               onDeposit={() => home.openSheet('add')}
               onWithdraw={() => home.openSheet('withdraw')}
               onSend={() => home.setSendReceiveOpen(true)}
+              onCard={home.openCard}
             />
             <MarketplaceTabBar />
           </motion.div>
@@ -120,6 +124,17 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
             confirming={home.sheetConfirming}
             onConfirm={home.confirmTransfer}
             onReceive={home.handleReceivePayment}
+          />
+
+          {/* The debit-card flow — a full-screen rise over everything. */}
+          <MarketplaceCardScreen
+            cardView={home.cardView}
+            tapPhase={home.tapPhase}
+            transactions={home.transactions}
+            onClose={() => home.setCardView('closed')}
+            onCreate={() => home.setCardView('creating')}
+            onRevealed={() => home.setCardView('home')}
+            onTapToPay={home.startTapToPay}
           />
         </PresentationStage>
 

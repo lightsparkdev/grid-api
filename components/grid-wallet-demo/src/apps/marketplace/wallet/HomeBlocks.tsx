@@ -95,6 +95,8 @@ export interface MarketplaceHomeContentProps {
   onWithdraw?: () => void;
   /** Opens the Send/Receive chooser sheet (absent on the auth backdrop). */
   onSend?: () => void;
+  /** Opens the debit-card flow (absent on the auth backdrop). */
+  onCard?: () => void;
 }
 
 /** The marketplace Wallet home content (Figma 2610:11075) — gear nav, title,
@@ -117,6 +119,7 @@ export function MarketplaceHomeContent({
   onDeposit,
   onWithdraw,
   onSend,
+  onCard,
 }: MarketplaceHomeContentProps) {
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
@@ -170,8 +173,16 @@ export function MarketplaceHomeContent({
         </motion.div>
 
         <motion.div {...enter(2)}>
+          {/* The whole card is the button — the press feel scales card, shadow
+              and halo together (a nested layer so it composes with the
+              entrance reveal above). */}
+          <motion.div
+            className={styles.promoScale}
+            whileHover={{ scale: HOVER_SCALE, transition: PRESS }}
+            whileTap={{ scale: PRESS_SCALE, transition: PRESS }}
+          >
           <MkCard>
-            <div className={styles.promo}>
+            <button type="button" className={styles.promo} onClick={onCard}>
               <img
                 className={styles.promoArt}
                 src="/assets/marketplace/card-promo.webp"
@@ -184,8 +195,9 @@ export function MarketplaceHomeContent({
                   Spend your balance online, in person, and around the world.
                 </span>
               </div>
-            </div>
+            </button>
           </MkCard>
+          </motion.div>
         </motion.div>
 
         <motion.div {...enter(3)} className={styles.tiles}>
