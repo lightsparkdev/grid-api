@@ -218,7 +218,10 @@ export function MarketplaceHomeContent({
             <div className={styles.performanceTile}>
               <div className={styles.tileHead}>
                 <span className={styles.tileTitle}>Performance</span>
-                <span className={styles.performanceDelta}>+$1,224.21 in April</span>
+                <span className={styles.performanceDelta}>
+                  +$1,224.21 in{' '}
+                  {new Date().toLocaleDateString('en-US', { month: 'long' })}
+                </span>
               </div>
               <div className={styles.bars} aria-hidden>
                 <span className={clsx(styles.bar, styles.barFull)} />
