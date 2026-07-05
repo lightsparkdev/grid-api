@@ -43,6 +43,27 @@
   border: 0.5px solid color-mix(in srgb, var(--ios-label-primary) 8%, transparent);
 }
 
+/* Inverted (solid contrast) surface — near-black pill in light mode, white in
+   dark; the label flips with it. The Airbnb toast voice (Marketplace). */
+.inverted {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #222222;
+
+  .label {
+    color: #ffffff;
+  }
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+
+    .label {
+      color: #222222;
+    }
+  }
+}
+
 /* Subheadline/Emphasized 15/590 — same compact type as the medium content-area
    chip; themed label matches the neutral surface it sits on. */
 .label {

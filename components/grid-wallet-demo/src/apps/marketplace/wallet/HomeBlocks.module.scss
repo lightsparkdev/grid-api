@@ -192,6 +192,10 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s ease;
+  /* Stay on a compositor layer at rest: the hover scale otherwise promotes the
+     button mid-interaction and the label re-rasterizes a hair lower (the whole
+     phone stage sits at a fractional scale). */
+  will-change: transform;
 
   &:hover {
     background: var(--mk-surface-press);

@@ -30,9 +30,10 @@ interface ToastProps {
   toast: ToastData | null;
   /** Hold elapsed — parent clears `toast`, which plays the exit. */
   onDismiss: () => void;
-  /** Surface variant: 'glass' (refractive lens — Aurora) or 'flat' (frosted pill —
-   *  flat skins like Glitch). Default 'glass'. */
-  variant?: 'glass' | 'flat';
+  /** Surface variant: 'glass' (refractive lens — Aurora), 'flat' (frosted pill —
+   *  flat skins like Glitch), or 'inverted' (solid contrast pill — dark on light
+   *  mode, light on dark; the Airbnb voice, Marketplace). Default 'glass'. */
+  variant?: 'glass' | 'flat' | 'inverted';
 }
 
 /**
@@ -73,9 +74,15 @@ export function Toast({ toast, onDismiss, variant = 'glass' }: ToastProps) {
             animate={reduceMotion ? { opacity: 1, transition: ENTER } : { y: 0, transition: ENTER }}
             exit={reduceMotion ? { opacity: 0, transition: EXIT } : { y: ENTER_Y, transition: EXIT }}
           >
-            {variant === 'flat' ? (
-              // Flat skins (Glitch): a flat frosted pill — backdrop blur, no lens.
-              <div className={clsx(styles.surface, styles.flat)}>
+            {variant === 'flat' || variant === 'inverted' ? (
+              // Flat skins: a frosted pill (Glitch) or a solid contrast pill
+              // (Marketplace) — no lens either way.
+              <div
+                className={clsx(
+                  styles.surface,
+                  variant === 'inverted' ? styles.inverted : styles.flat,
+                )}
+              >
                 <span className={styles.label}>{toast.text}</span>
               </div>
             ) : (

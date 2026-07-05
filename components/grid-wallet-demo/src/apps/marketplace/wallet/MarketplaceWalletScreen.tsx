@@ -49,7 +49,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
           if (home.sheetConfirming) home.finishTransfer();
         }}
       />
-      <Toast toast={home.toast} onDismiss={() => home.setToast(null)} />
+      <Toast toast={home.toast} onDismiss={() => home.setToast(null)} variant="inverted" />
     </>
   );
 
