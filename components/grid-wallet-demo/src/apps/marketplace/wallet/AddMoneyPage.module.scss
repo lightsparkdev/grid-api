@@ -675,6 +675,13 @@
   }
 }
 
+/* Contact-style lists (Select bank / Send to) — tighter rhythm than the
+   source list: 12px + 12px = 24px between rows. */
+.listTight .row {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
 /* Rows carry the 24px gutters themselves so the hover fill runs FULL BLEED;
    content stays aligned with everything else. */
 .row {
@@ -827,6 +834,28 @@
 .recipientCtaWrap {
   flex-shrink: 0;
   padding: 12px 24px 40px;
+}
+
+/* The session address book under the address card (withdraw). */
+.walletBook {
+  margin-top: 24px;
+
+  /* Tighter rhythm than the full-page lists: 12px + 12px = 24px between rows. */
+  .row {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+
+.walletBookLabel {
+  /* 12px + the first row's 12px top padding = 24px below, matching the 24px
+     above (the book's margin-top). */
+  margin: 0 0 12px;
+  padding: 0 24px;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-secondary);
 }
 
 /* Rounded-rect (squircle-clipped) icon buttons on the secondary fill. */

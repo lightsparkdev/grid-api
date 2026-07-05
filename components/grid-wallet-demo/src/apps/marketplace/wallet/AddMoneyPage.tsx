@@ -254,7 +254,12 @@ export function AddMoneyPage({
       : headerView === 'deposit'
         ? m.titles.deposit
         : headerView === 'recipient'
-          ? m.titles.recipient
+          ? // Withdraw's screen SELECTS a wallet (paste new or tap a saved
+            // one — the address book), pairing with "Select bank"; send's is
+            // pure address entry.
+            isSend
+            ? m.titles.recipient
+            : 'Select wallet'
           : mode === 'add'
             ? PAGE_TITLE
             : m.titles.source;
@@ -277,7 +282,11 @@ export function AddMoneyPage({
   if (m.step !== prevStep) {
     setPrevStep(m.step);
     if (m.step === 'amount') {
-      setRiseReady(prevStep === 'banks' || prevStep === 'confirm');
+      // Defer only when a SAVE popped the stack to a list (bank form, or
+      // send's address step). Withdraw's address step is amount's own back
+      // target — nothing pops, so the rise is immediate over it (and a tap
+      // on a saved wallet goes straight to the amount by design).
+      setRiseReady(!(prevStep === 'bankForm' || (prevStep === 'recipient' && isSend)));
     }
   }
   useEffect(() => {
@@ -289,6 +298,12 @@ export function AddMoneyPage({
     return () => window.clearTimeout(t);
   }, [riseReady]);
   const amountUp = viewStep === 'amount' && riseReady;
+
+  // The layer that stays mounted BENEATH the risen amount screen is amount's
+  // own back target — withdraw-to-crypto returns to the address step, so the
+  // banks list must not mount (it would push in visibly under the rise).
+  const amountRevealView: 'banks' | 'recipient' =
+    m.backFrom.amount === 'recipient' ? 'recipient' : 'banks';
 
   // Large-title collapse tracks the CURRENT step's scroll; a push lands on a
   // fresh, un-collapsed screen. Two thresholds: the hairline lands the moment
@@ -427,7 +442,8 @@ export function AddMoneyPage({
                   hold-still (no values change), which Framer completes
                   instantly — unmounting the list mid-rise and flashing bare
                   scrim. It only truly exits when popping (add: to source). */}
-              {(viewStep === 'banks' || viewStep === 'amount') && (
+              {(viewStep === 'banks' ||
+                (viewStep === 'amount' && amountRevealView === 'banks')) && (
                 <motion.div
                   key="banks"
                   className={styles.step}
@@ -454,7 +470,7 @@ export function AddMoneyPage({
                         onAddBank={m.openAddBank}
                       />
                     ) : (
-                      <div className={styles.list}>
+                      <div className={`${styles.list} ${styles.listTight}`}>
                         {(isSend ? m.banks : banks).map((b) =>
                           'address' in b ? (
                             <button
@@ -606,10 +622,12 @@ export function AddMoneyPage({
                 </motion.div>
               )}
 
-              {/* Enter address (send → crypto) — the TOP nav layer over the
-                  Add-recipient chooser. Paste opens the network sheet (iOS
-                  stack recede); a filled card saves + rises the amount. */}
-              {viewStep === 'recipient' && (
+              {/* Enter address (send / withdraw → crypto) — the TOP nav layer.
+                  Paste opens the network sheet (iOS stack recede); a filled
+                  card saves + rises the amount. In withdraw it's also the
+                  amount's back target, so it STAYS MOUNTED beneath the rise. */}
+              {(viewStep === 'recipient' ||
+                (viewStep === 'amount' && amountRevealView === 'recipient')) && (
                 <motion.div
                   key="recipient"
                   className={styles.step}
@@ -1255,7 +1273,7 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
   return (
     <div className={styles.recipientLayout}>
       <div className={styles.scroll}>
-        <h1 className={styles.title}>{m.titles.recipient}</h1>
+        <h1 className={styles.title}>{isSend ? m.titles.recipient : 'Select wallet'}</h1>
         <div className={styles.addressWrap}>
           <div ref={boxClip.ref} style={boxClip.style} className={styles.addressBox}>
             {filled ? (
@@ -1282,6 +1300,32 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
             className={styles.destHalo}
           />
         </div>
+        {/* The session address book (withdraw only — send's list is its own
+            entry screen): wallets saved by either flow, one tap → amount. */}
+        {!isSend && m.savedWallets.length > 0 && (
+          <div className={styles.walletBook}>
+            <p className={styles.walletBookLabel}>Your wallets</p>
+            {m.savedWallets.map((w) => (
+              <button
+                key={w.id}
+                type="button"
+                className={styles.row}
+                onClick={() => m.selectWallet(w.id)}
+              >
+                <StickerTile>
+                  <img className={styles.netLogo} src={w.logo} alt="" draggable={false} />
+                </StickerTile>
+                <span className={styles.rowLines}>
+                  <span className={styles.rowTitle}>{truncateAddress(w.address)}</span>
+                  <span className={styles.rowSub}>{w.network} wallet</span>
+                </span>
+                <span className={styles.rowChevron} aria-hidden>
+                  <IconChevronRightMedium size={20} />
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className={styles.recipientCtaWrap}>
         <button

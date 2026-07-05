@@ -98,6 +98,13 @@ export function useMoneySheet({
   const isSend = mode === 'send';
   const [savedBanks, setSavedBanks] = useState<SavedBank[]>([]);
   const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
+  // The session ADDRESS BOOK: crypto wallets accumulated from BOTH flows (a
+  // wallet you sent to is a wallet you might withdraw to). Deduped by address.
+  const [savedWallets, setSavedWallets] = useState<CryptoRecipient[]>([]);
+  const rememberWallet = (w: CryptoRecipient) =>
+    setSavedWallets((list) =>
+      list.some((x) => x.address === w.address) ? list : [...list, w],
+    );
   // The active list for the current mode: send = recipients; add/withdraw = banks.
   const banks: SavedRecipient[] = isSend ? savedRecipients : savedBanks;
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
@@ -313,6 +320,7 @@ export function useMoneySheet({
     window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       setSavedRecipients((r) => [...r, recipient]);
+      rememberWallet(recipient);
       onLinkExternalAccount?.(
         {
           kind: 'crypto',
@@ -332,6 +340,18 @@ export function useMoneySheet({
   };
   const selectBank = (id: string) => {
     setSelectedBankId(id);
+    // A bank pick drops any lingering one-off crypto destination so the two
+    // never bleed together on the amount/confirm screens.
+    setCryptoDest(null);
+    go('amount');
+  };
+
+  // Pick a saved wallet from the address book — straight to the amount.
+  const selectWallet = (id: string) => {
+    const w = savedWallets.find((x) => x.id === id);
+    if (!w) return;
+    setCryptoDest(w);
+    setSelectedBankId(null);
     go('amount');
   };
 
@@ -351,6 +371,14 @@ export function useMoneySheet({
     window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       setCryptoDest(dest);
+      // "Wallet added" now means it: the wallet joins the session address
+      // book so the next withdrawal can pick it instead of re-pasting.
+      rememberWallet(dest);
+      // The address moved into the destination (+ book) — reset the entry
+      // card so walking back lands on a fresh field, not the stale paste
+      // (send's addCryptoRecipient does the same).
+      setPasted(false);
+      setPastedAddress('');
       onLinkExternalAccount?.(
         {
           kind: 'crypto',
@@ -621,6 +649,8 @@ export function useMoneySheet({
     selectedBankId,
     setSelectedBankId,
     selectBank,
+    savedWallets,
+    selectWallet,
     saving,
     addBank,
     addCryptoRecipient,
