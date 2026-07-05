@@ -176,7 +176,9 @@ export const MODES: Record<
       banks: 'Select bank',
       country: 'Select country',
       bankForm: 'Enter bank details',
-      recipient: 'Enter address',
+      // "Select" (not "Enter"): the screen pairs with Select bank — paste a
+      // new address OR tap one from the session address book.
+      recipient: 'Select wallet',
       amount: 'Enter amount',
       confirm: 'Confirm withdrawal',
       deposit: '',

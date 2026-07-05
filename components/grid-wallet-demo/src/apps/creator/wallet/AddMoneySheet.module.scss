@@ -479,6 +479,16 @@
 /* Saved bank / recipient / contact picker — a contained card with the same bg
    fill as the "Add money from" + country lists, but carrying the gray circle
    icon (flag, crypto logo, initials) instead of the choosers' bare glyphs. */
+/* The session address book under the address card (withdraw). */
+.walletBook {
+  flex-shrink: 0;
+  margin-top: 8px;
+
+  .bankList {
+    margin-top: 0;
+  }
+}
+
 .bankList {
   width: auto; // base .card is width:100%; the side margins would otherwise overflow
   margin: 4px 16px 0;

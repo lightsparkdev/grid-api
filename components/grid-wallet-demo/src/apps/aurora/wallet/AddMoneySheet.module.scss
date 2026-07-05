@@ -426,6 +426,16 @@
   margin: 4px 16px 0;
 }
 
+/* The session address book under the address card (withdraw). */
+.walletBook {
+  flex-shrink: 0;
+  margin-top: 8px;
+
+  .bankList {
+    margin-top: 0;
+  }
+}
+
 /* Empty saved-banks state: pull the shared list card's 16px top inset back to
    the 4px the "Add money from" list uses, so the header→list gap matches. */
 .banksEmptyOffset {

@@ -833,6 +833,12 @@
    the country picker (.pickerCard): no container surface/rounding, no dividers,
    rows hug their content with a 12px top/bottom inset and carry a bare 40px icon
    (flag) instead of the gray circle the old card used. */
+/* The session address book under the address card (withdraw). */
+.walletBook {
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
 .bankList {
   width: 100%;
   margin: 0; // full-bleed: rows span the screen edges (content keeps its inset)

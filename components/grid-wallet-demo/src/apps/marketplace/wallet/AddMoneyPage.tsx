@@ -254,12 +254,7 @@ export function AddMoneyPage({
       : headerView === 'deposit'
         ? m.titles.deposit
         : headerView === 'recipient'
-          ? // Withdraw's screen SELECTS a wallet (paste new or tap a saved
-            // one — the address book), pairing with "Select bank"; send's is
-            // pure address entry.
-            isSend
-            ? m.titles.recipient
-            : 'Select wallet'
+          ? m.titles.recipient
           : mode === 'add'
             ? PAGE_TITLE
             : m.titles.source;
@@ -1273,7 +1268,7 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
   return (
     <div className={styles.recipientLayout}>
       <div className={styles.scroll}>
-        <h1 className={styles.title}>{isSend ? m.titles.recipient : 'Select wallet'}</h1>
+        <h1 className={styles.title}>{m.titles.recipient}</h1>
         <div className={styles.addressWrap}>
           <div ref={boxClip.ref} style={boxClip.style} className={styles.addressBox}>
             {filled ? (

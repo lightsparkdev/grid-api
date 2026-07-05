@@ -266,6 +266,8 @@ export function AddMoneySheet({
     selectedBankId,
     setSelectedBankId,
     selectBank,
+    savedWallets,
+    selectWallet,
     saving,
     addBank,
     addCryptoRecipient,
@@ -1211,6 +1213,48 @@ export function AddMoneySheet({
                       </div>
                     </div>
                   </div>
+
+                  {/* The session address book (withdraw only — send's list is
+                      its own entry screen): wallets saved by either flow, one
+                      tap → amount. The banks-list row voice. */}
+                  {!isSend && savedWallets.length > 0 && (
+                    <div className={styles.walletBook}>
+                      <p className={styles.sectionLabel}>Your wallets</p>
+                      <div className={clsx(styles.card, styles.cardFlush, styles.bankList)}>
+                        {savedWallets.map((w, i) => (
+                          <button
+                            key={w.id}
+                            type="button"
+                            className={styles.sourceRow}
+                            onClick={() => selectWallet(w.id)}
+                          >
+                            <span className={styles.recipientAvatar} aria-hidden>
+                              <img
+                                className={styles.tokenIconSm}
+                                src={w.logo}
+                                alt=""
+                                draggable={false}
+                              />
+                            </span>
+                            <span
+                              className={clsx(
+                                styles.sourceContent,
+                                i < savedWallets.length - 1 && styles.sourceContentBordered,
+                              )}
+                            >
+                              <span className={styles.sourceLabels}>
+                                <span className={styles.rowTitle}>
+                                  {truncateAddress(w.address)}
+                                </span>
+                                <span className={styles.rowSub}>{w.network} wallet</span>
+                              </span>
+                              <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
