@@ -1,7 +1,7 @@
 'use client';
 
 import { SEND_NETWORKS, truncateAddress, type MoneySheet } from '@/apps/shared/wallet';
-import { StickerTile } from '../blocks/FlagTile';
+import { NetworkTile } from '../blocks/NetworkTile';
 import { PartialSheet } from './PartialSheet';
 import styles from './PasteAddressSheet.module.scss';
 
@@ -30,9 +30,7 @@ export function PasteAddressSheet({ m, open, onDismiss }: PasteAddressSheetProps
             className={styles.row}
             onClick={() => m.pickNetwork(net)}
           >
-            <StickerTile>
-              <img className={styles.netLogo} src={net.logo} alt="" draggable={false} />
-            </StickerTile>
+            <NetworkTile logo={net.logo} />
             <span className={styles.rowLines}>
               <span className={styles.rowTitle}>{truncateAddress(net.address)}</span>
               <span className={styles.rowSub}>{net.name} wallet</span>

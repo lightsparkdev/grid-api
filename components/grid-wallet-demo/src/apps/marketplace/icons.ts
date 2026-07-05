@@ -21,7 +21,9 @@ import { IconApple } from '@central-icons-react/round-outlined-radius-3-stroke-1
 import { IconPasskeys } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPasskeys';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { IconSettingsGear2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSettingsGear2';
-import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlaneTopRight';
+// 2px stroke: sits alone in a pill on the balance card — the 1.5px weight
+// reads thin next to the labeled pills.
+import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconPaperPlaneTopRight';
 // Tab bar (Figma 2610:11833).
 import { IconBookmark } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBookmark';
 import { IconCalendar2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCalendar2';

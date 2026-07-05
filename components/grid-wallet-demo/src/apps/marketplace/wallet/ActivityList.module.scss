@@ -16,10 +16,18 @@
   min-height: 296px;
 }
 
-/* Top-aligned like the static stay rows: title, amount, and graphic all
-   hang from the row's top edge. */
+/* The text group (left lines + right amount) centers vertically against the
+   avatar; WITHIN the group the two columns top-align to each other. */
 .row {
   display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.content {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
   gap: 16px;
   align-items: flex-start;
 }
@@ -47,14 +55,7 @@
   letter-spacing: 0.18px;
 }
 
-/* Network logos are self-contained rounded tiles (rx 33%) — scale past the
-   sticker's inner squircle so their own corners crop off. */
-.netLogo {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform: scale(1.25);
-}
+/* Network stickers render via the shared NetworkTile block. */
 
 /* The circular country flag riding the sticker's bottom-right corner, on a
    card-surface ring so it reads as a badge over any tint. */
@@ -76,9 +77,9 @@
   flex: 1 1 0;
   min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
   font-size: 14px;
-  line-height: normal;
+  line-height: 18px;
   letter-spacing: 0.14px;
 }
 
@@ -100,9 +101,9 @@
   flex: none;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3px;
+  gap: 0;
   font-size: 14px;
-  line-height: normal;
+  line-height: 18px; /* matches .lines so the columns stay in step */
   letter-spacing: 0.14px;
   color: var(--app-text-primary);
 }
@@ -127,7 +128,7 @@
 .skeletonRow {
   display: flex;
   gap: 16px;
-  align-items: flex-start;
+  align-items: center;
 }
 
 /* The sticker silhouette (56px; r scales with the shell: 12 × 56∕40 ≈ 17). */

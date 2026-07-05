@@ -54,6 +54,7 @@ import {
   MARKETPLACE_SHEET_DURATION,
 } from '../config';
 import { FlagTile, StickerTile } from '../blocks/FlagTile';
+import { NetworkTile } from '../blocks/NetworkTile';
 import { CircleDollarIcon } from '../blocks/CircleDollarIcon';
 import styles from './AddMoneyPage.module.scss';
 
@@ -522,14 +523,7 @@ export function AddMoneyPage({
                               className={styles.row}
                               onClick={() => m.selectBank(b.id)}
                             >
-                              <StickerTile>
-                                <img
-                                  className={styles.netLogo}
-                                  src={b.logo}
-                                  alt=""
-                                  draggable={false}
-                                />
-                              </StickerTile>
+                              <NetworkTile logo={b.logo} />
                               <span className={styles.rowLines}>
                                 <span className={styles.rowTitle}>
                                   {truncateAddress(b.address)}
@@ -589,7 +583,7 @@ export function AddMoneyPage({
                 >
                   <div className={styles.scroll} onScroll={handleScroll}>
                     <h1 className={styles.title}>{m.titles.deposit}</h1>
-                    <div className={styles.list}>
+                    <div className={`${styles.list} ${styles.listTight}`}>
                       {/* Receive leads with the bank drill-in (add-from-crypto
                           is crypto-only — bank is its own source row there). */}
                       {isReceive && (
@@ -616,14 +610,7 @@ export function AddMoneyPage({
                         const copied = m.copiedChainId === chain.id;
                         return (
                           <div key={chain.id} className={styles.cryptoRow}>
-                            <StickerTile>
-                              <img
-                                className={styles.netLogo}
-                                src={chain.logo}
-                                alt=""
-                                draggable={false}
-                              />
-                            </StickerTile>
+                            <NetworkTile logo={chain.logo} />
                             <span className={styles.rowLines}>
                               <span className={styles.rowTitle}>{chain.name}</span>
                               <span className={styles.rowSub}>
@@ -1000,14 +987,7 @@ function AmountStep({
                     ) : (
                       crypto && (
                         <>
-                          <StickerTile>
-                            <img
-                              className={styles.netLogo}
-                              src={crypto.logo}
-                              alt=""
-                              draggable={false}
-                            />
-                          </StickerTile>
+                          <NetworkTile logo={crypto.logo} />
                           <span className={styles.rowLines}>
                             <span className={styles.rowTitle}>
                               {truncateAddress(crypto.address)}
@@ -1160,9 +1140,7 @@ function ReviewScreen({
     </div>
   ) : crypto ? (
     <div className={styles.routeRow}>
-      <StickerTile>
-        <img className={styles.netLogo} src={crypto.logo} alt="" draggable={false} />
-      </StickerTile>
+      <NetworkTile logo={crypto.logo} />
       <span className={styles.rowLines}>
         <span className={styles.rowTitle}>{truncateAddress(crypto.address)}</span>
         <span className={styles.rowSub}>{crypto.network} wallet</span>
@@ -1321,9 +1299,7 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
           <div ref={boxClip.ref} style={boxClip.style} className={styles.addressBox}>
             {filled ? (
               <>
-                <StickerTile>
-                  <img className={styles.netLogo} src={net.logo} alt="" draggable={false} />
-                </StickerTile>
+                <NetworkTile logo={net.logo} />
                 <span className={styles.rowLines}>
                   <span className={styles.rowTitle}>{truncateAddress(m.pastedAddress)}</span>
                   <span className={styles.rowSub}>{net.name} wallet</span>
@@ -1355,9 +1331,7 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
                 className={styles.row}
                 onClick={() => m.selectWallet(w.id)}
               >
-                <StickerTile>
-                  <img className={styles.netLogo} src={w.logo} alt="" draggable={false} />
-                </StickerTile>
+                <NetworkTile logo={w.logo} />
                 <span className={styles.rowLines}>
                   <span className={styles.rowTitle}>{truncateAddress(w.address)}</span>
                   <span className={styles.rowSub}>{w.network} wallet</span>

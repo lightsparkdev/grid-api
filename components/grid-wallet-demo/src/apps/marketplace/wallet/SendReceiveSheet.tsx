@@ -25,7 +25,11 @@ export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendRec
   return (
     <PartialSheet open={open} onDismiss={onDismiss}>
       <h2 className={styles.title}>Send or receive</h2>
-      <p className={styles.sub}>Move money to and from any bank account or wallet</p>
+      <p className={styles.sub}>
+        Move money to and from any
+        <br />
+        bank account or wallet
+      </p>
       <div className={styles.actions}>
         <button
           type="button"

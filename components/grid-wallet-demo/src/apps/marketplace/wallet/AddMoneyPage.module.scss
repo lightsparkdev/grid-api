@@ -654,7 +654,7 @@
   padding: 0 24px;
   font-size: 32px;
   line-height: normal;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.96px; /* in step with the home large title */
   color: var(--app-text-primary);
 }
@@ -675,9 +675,10 @@
   }
 }
 
-/* Contact-style lists (Select bank / Send to) — tighter rhythm than the
-   source list: 12px + 12px = 24px between rows. */
-.listTight .row {
+/* Contact-style lists (Select bank / Send to / the deposit-address list) —
+   tighter rhythm than the source list: 12px + 12px = 24px between rows. */
+.listTight .row,
+.listTight .cryptoRow {
   padding-top: 12px;
   padding-bottom: 12px;
 }
@@ -774,17 +775,6 @@
   gap: 16px;
   padding: 20px 24px;
   color: var(--app-text-primary);
-}
-
-/* The network logos are self-contained brand tiles with their OWN rounded
-   corners (rx 33%) — larger than the sticker's inner squircle (r10), which
-   would leave bare slivers at the corners. Scaling past the clip crops the
-   logo's rounding off; the marks sit well inside the safe zone. */
-.netLogo {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform: scale(1.25);
 }
 
 .rowActions {

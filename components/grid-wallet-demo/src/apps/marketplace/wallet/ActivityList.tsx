@@ -8,6 +8,7 @@ import { relativeTime } from '@/lib/relativeTime';
 import { motionTransition } from '@/lib/easing';
 import { CircleDollarIcon } from '../blocks/CircleDollarIcon';
 import { FlagTile, StickerTile } from '../blocks/FlagTile';
+import { NetworkTile } from '../blocks/NetworkTile';
 import styles from './ActivityList.module.scss';
 
 // Same reveal clock as the Select bank empty state (the Z/Aurora choreography):
@@ -70,10 +71,7 @@ function RowAvatar({ item }: { item: WalletListItemData }) {
   if (item.imageSquare && item.image) {
     return (
       <span className={styles.avatarWrap} aria-hidden>
-        <StickerTile size={TILE_SIZE}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={styles.netLogo} src={item.image} alt="" draggable={false} />
-        </StickerTile>
+        <NetworkTile logo={item.image} size={TILE_SIZE} />
       </span>
     );
   }
@@ -137,14 +135,16 @@ export function MarketplaceActivityList({ items }: { items: WalletListItemData[]
           ].map(([title, sub, sub2], i) => (
             <div key={i} className={styles.skeletonRow}>
               <span className={styles.skeletonTile} />
-              <span className={styles.skeletonLines}>
-                <span className={styles.skeletonPill} style={{ width: title, height: 12 }} />
-                <span className={styles.skeletonPill} style={{ width: sub, height: 10 }} />
-                <span className={styles.skeletonPill} style={{ width: sub2, height: 10 }} />
-              </span>
-              <span className={styles.skeletonRight}>
-                <span className={styles.skeletonPill} style={{ width: 56, height: 12 }} />
-                <span className={styles.skeletonPill} style={{ width: 30, height: 10 }} />
+              <span className={styles.content}>
+                <span className={styles.skeletonLines}>
+                  <span className={styles.skeletonPill} style={{ width: title, height: 12 }} />
+                  <span className={styles.skeletonPill} style={{ width: sub, height: 10 }} />
+                  <span className={styles.skeletonPill} style={{ width: sub2, height: 10 }} />
+                </span>
+                <span className={styles.skeletonRight}>
+                  <span className={styles.skeletonPill} style={{ width: 56, height: 12 }} />
+                  <span className={styles.skeletonPill} style={{ width: 30, height: 10 }} />
+                </span>
               </span>
             </div>
           ))}
@@ -184,14 +184,18 @@ export function MarketplaceActivityList({ items }: { items: WalletListItemData[]
             transition={motionTransition(undefined, 0.45)}
           >
             <RowAvatar item={item} />
-            <div className={styles.lines}>
-              <span className={styles.lineTitle}>{item.title}</span>
-              <span className={styles.lineMeta}>{item.detail}</span>
-              <span className={styles.lineMeta}>{relativeTime(item.timestamp, now)}</span>
-            </div>
-            <div className={styles.right}>
-              <span className={styles.amount}>{item.amount}</span>
-              <span className={styles.currency}>USD</span>
+            {/* Text columns grouped so the PAIR centers against the avatar;
+                within it, title and amount stay top-aligned to each other. */}
+            <div className={styles.content}>
+              <div className={styles.lines}>
+                <span className={styles.lineTitle}>{item.title}</span>
+                <span className={styles.lineMeta}>{item.detail}</span>
+                <span className={styles.lineMeta}>{relativeTime(item.timestamp, now)}</span>
+              </div>
+              <div className={styles.right}>
+                <span className={styles.amount}>{item.amount}</span>
+                <span className={styles.currency}>USD</span>
+              </div>
             </div>
           </motion.div>
         ))}

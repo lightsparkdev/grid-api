@@ -1,16 +1,18 @@
-/* Shadow lives on the UNCLIPPED shell (a clip-path would slice it off);
-   the border-radius approximates the squircle silhouette for the blur. */
+/* Shadow lives on the UNCLIPPED shell — but as a FILTER, not a box-shadow:
+   box-shadow paints from the element's border-radius BOX, which can only
+   approximate the squircle (the box corner peeked past the ring's clipped
+   corner as a ghost layer). drop-shadow follows the rendered alpha — the
+   ring's actual clip-path silhouette — at any size. */
 .shell {
   position: relative;
   flex: none;
   display: block;
   width: 40px;
   height: 40px;
-  border-radius: 12px; /* shadow silhouette tracks the outer squircle */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.16));
 
   :global([data-theme='dark']) & {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
   }
 }
 

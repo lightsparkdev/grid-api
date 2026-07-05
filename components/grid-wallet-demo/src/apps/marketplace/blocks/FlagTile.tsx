@@ -22,8 +22,9 @@ export function FlagTile({ code, size }: { code: string; size?: number }) {
 
 /** The same sticker chrome around arbitrary art — e.g. the cash-balance tile
  *  (brand-pink fill + white glyph) or a neutral glyph tile (surface fill).
- *  `size` scales the whole sticker; the radii scale with it (12/10 at 40),
- *  the 2px ring stays constant weight. */
+ *  `size` scales the WHOLE construction proportionally — ring width AND both
+ *  radii (2/12/10 at 40) — so a big sticker is exactly the small one enlarged
+ *  and the corner geometry can't drift. */
 export function StickerTile({
   children,
   brand = false,
@@ -35,15 +36,16 @@ export function StickerTile({
   neutral?: boolean;
   size?: number;
 }) {
-  const outer = useSquircleClip<HTMLSpanElement>({ figmaRadii: (size * 12) / 40 });
-  const inner = useSquircleClip<HTMLSpanElement>({ figmaRadii: (size * 10) / 40 });
+  const s = size / 40;
+  const outer = useSquircleClip<HTMLSpanElement>({ figmaRadii: 12 * s });
+  const inner = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 * s });
   return (
-    <span
-      className={styles.shell}
-      style={{ width: size, height: size, borderRadius: (size * 12) / 40 }}
-      aria-hidden
-    >
-      <span ref={outer.ref} style={outer.style} className={styles.ring}>
+    <span className={styles.shell} style={{ width: size, height: size }} aria-hidden>
+      <span
+        ref={outer.ref}
+        style={{ ...outer.style, padding: 2 * s }}
+        className={styles.ring}
+      >
         <span
           ref={inner.ref}
           style={inner.style}
