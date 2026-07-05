@@ -1,75 +1,21 @@
-/* "Paste address" — partial-height Airbnb sheet WITH the iOS stack recede
-   (the send flow scales behind it via the shared presentation stage). */
+/* "Paste address" content — centered title (IMG_0612's voice), then the
+   network rows. The PartialSheet owns the card + floating X + recede. */
 
-.scrim {
-  position: absolute;
-  inset: 0;
-  z-index: 14;
-  background: var(--sheet-scrim);
-  opacity: 0;
-}
-
-.layer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 15;
-  display: flex;
-  flex-direction: column;
-}
-
-.sheet {
-  display: flex;
-  flex-direction: column;
-  background: var(--mk-sheet-bg);
-  color: var(--app-text-primary);
-  padding-bottom: 24px; /* the rows carry their own gutters; clear the indicator */
-}
-
-.headerBar {
-  position: relative;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 60px;
-  padding: 0 24px;
-  border-bottom: 1px solid var(--mk-hairline);
-}
-
-.barTitle {
-  font-size: 16px;
-  line-height: normal;
+.title {
+  /* Clear the floating X (24px top pad + 24px glyph) before the title. */
+  margin: 40px 24px 0;
+  font-size: 26px;
+  line-height: 32px;
   font-weight: 700;
-  letter-spacing: -0.32px;
-}
-
-.closeBtn {
-  position: absolute;
-  right: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  letter-spacing: -0.52px;
+  text-align: center;
   color: var(--app-text-primary);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-
-  svg {
-    display: block;
-    flex: none;
-  }
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  padding-top: 8px;
+  padding-top: 16px;
 }
 
 /* The Select-bank row voice: sticker + two lines, full-bleed hover. */

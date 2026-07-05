@@ -113,19 +113,20 @@ const navMidVariants = {
       ? { opacity: 0 }
       : back
         ? { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 }
-        : { x: -MARKETPLACE_PUSH_PARALLAX, boxShadow: EDGE_SHADOW_ON, opacity: 1 },
+        : // Forward exit = a save popped the stack to the list: this layer sits
+          // BENEATH the top layer's slide-off, so it just fades — the reveal
+          // beat belongs to the top layer alone.
+          { opacity: 0 },
 };
-// The TOP nav layer (enter address): pops back off to the right; on a forward
-// exit (saving pops the stack while the amount screen rises over it) it just
-// fades beneath the cover — travel there would telegraph through the rise.
+// The TOP nav layer (enter address): pops off to the right in BOTH directions —
+// back is the nav pop, and a save's "dismiss the flow, then rise" sequence
+// opens with the same slide-off revealing the list beneath.
 const navTopVariants = {
   enter: ({ reduceMotion }: NavDir) =>
     reduceMotion ? { x: 0, opacity: 1 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
   center: { x: 0, boxShadow: EDGE_SHADOW_ON, opacity: 1 },
-  exit: ({ back, reduceMotion }: NavDir) =>
-    reduceMotion || !back
-      ? { opacity: 0 }
-      : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
+  exit: ({ reduceMotion }: NavDir) =>
+    reduceMotion ? { opacity: 0 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
 };
 
 // Enter amount — a Z-style vertical presentation: the screen (own header, X
@@ -262,6 +263,32 @@ export function AddMoneyPage({
     if (m.isEntryStep || !backTo) onDismiss();
     else m.go(backTo, true);
   };
+
+  // Graceful amount rise: saving a recipient plays as a SEQUENCE, not a pile
+  // of simultaneous motions — first the covering screen dismisses (the address
+  // step pops off right / the pageSheet slides down), revealing the list with
+  // its new row; THEN the amount screen rises. Arriving from the list itself
+  // (tapping a saved recipient) rises immediately.
+  // Derived DURING render (not an effect — that commits a one-frame early
+  // mount): only a save lands on amount from somewhere other than the list,
+  // and that's the case that needs the dismiss beat first.
+  const [prevStep, setPrevStep] = useState(m.step);
+  const [riseReady, setRiseReady] = useState(true);
+  if (m.step !== prevStep) {
+    setPrevStep(m.step);
+    if (m.step === 'amount') {
+      setRiseReady(prevStep === 'banks' || prevStep === 'confirm');
+    }
+  }
+  useEffect(() => {
+    if (riseReady) return;
+    const t = window.setTimeout(
+      () => setRiseReady(true),
+      (MARKETPLACE_SHEET_DURATION + 0.15) * 1000,
+    );
+    return () => window.clearTimeout(t);
+  }, [riseReady]);
+  const amountUp = viewStep === 'amount' && riseReady;
 
   // Large-title collapse tracks the CURRENT step's scroll; a push lands on a
   // fresh, un-collapsed screen. Two thresholds: the hairline lands the moment
@@ -596,7 +623,7 @@ export function AddMoneyPage({
                 </motion.div>
               )}
 
-              {viewStep === 'amount' && (
+              {amountUp && (
                 <motion.div
                   key="amount"
                   className={styles.step}
@@ -660,7 +687,7 @@ export function AddMoneyPage({
                   // the header (z 50), so its scrim must dim the header too.
                   style={{ zIndex: 45 }}
                   initial={false}
-                  animate={{ opacity: viewStep === 'amount' ? 1 : 0 }}
+                  animate={{ opacity: amountUp ? 1 : 0 }}
                   transition={STEP_TRANSITION}
                   aria-hidden
                 />
