@@ -82,7 +82,7 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
     toast,
     setToast,
     availableCents,
-    earningsTodayCents,
+    earningsMonthCents,
     apyPercent,
     homeActivity,
     openSheet,
@@ -182,7 +182,8 @@ export function SocialWalletScreen(props: SkinWalletScreenProps) {
             <span className={styles.tileHeading}>{SOCIAL_MONEY.rewardsLabel}</span>
             <div className={styles.rewardsFooter}>
               <span className={styles.apy}>{apyPercent.toFixed(2)}% APY</span>
-              <span className={styles.rewardsAmount}>{formatUsdCents(earningsTodayCents)}</span>
+              {/* The month's accrued yield (daily compounding, shared brain). */}
+              <span className={styles.rewardsAmount}>{formatUsdCents(earningsMonthCents)}</span>
             </div>
           </motion.button>
 

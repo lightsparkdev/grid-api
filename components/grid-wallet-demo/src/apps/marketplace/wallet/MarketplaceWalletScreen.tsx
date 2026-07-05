@@ -86,7 +86,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
             <MarketplaceHomeContent
               balanceCents={home.availableCents}
               apyPercent={home.apyPercent}
-              rewardsMonthCents={Math.round(home.earningsTodayCents * 30)}
+              rewardsMonthCents={home.earningsMonthCents}
               showActivity
               activity={home.homeActivity}
               animatedBalance

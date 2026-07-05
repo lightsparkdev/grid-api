@@ -79,6 +79,7 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
     setToast,
     availableCents,
     earningsTodayCents,
+    earningsMonthCents,
     weeklyBars,
     weeklySpentCents,
     homeActivity,
@@ -290,6 +291,7 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
                 weeklyBars={weeklyBars}
                 weeklySpentCents={weeklySpentCents}
                 earningsTodayCents={earningsTodayCents}
+                earningsMonthCents={earningsMonthCents}
                 apyPercent={apyPercent}
               />
             </motion.div>

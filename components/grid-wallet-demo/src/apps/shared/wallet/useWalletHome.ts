@@ -114,6 +114,10 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   // map the most recent card charges (up to WEEKLY_BAR_COUNT), normalized to the
   // busiest charge so heights vary by amount.
   const earningsTodayCents = Math.round((availableCents * EARNINGS_APY_PERCENT) / 100 / 365);
+  // A month of accruing yield with DAILY COMPOUNDING: balance × ((1+r)³⁰ − 1),
+  // r = APY/365 — not today's (rounded) accrual × 30, which understates it.
+  const dailyRate = EARNINGS_APY_PERCENT / 100 / 365;
+  const earningsMonthCents = Math.round(availableCents * (Math.pow(1 + dailyRate, 30) - 1));
   const visibleSpend = spendBars.slice(-WEEKLY_BAR_COUNT);
   const maxSpendCents = Math.max(1, ...visibleSpend);
   const weeklyBars = visibleSpend.map((cents) => cents / maxSpendCents);
@@ -481,6 +485,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     // Derived money / activity
     availableCents,
     earningsTodayCents,
+    earningsMonthCents,
     weeklyBars,
     weeklySpentCents,
     homeActivity,
