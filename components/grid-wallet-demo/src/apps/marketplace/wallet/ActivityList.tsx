@@ -9,6 +9,7 @@ import { motionTransition } from '@/lib/easing';
 import { CircleDollarIcon } from '../blocks/CircleDollarIcon';
 import { FlagTile, StickerTile } from '../blocks/FlagTile';
 import { NetworkTile } from '../blocks/NetworkTile';
+import { PinkCta } from '../blocks/PinkCta';
 import styles from './ActivityList.module.scss';
 
 // Same reveal clock as the Select bank empty state (the Z/Aurora choreography):
@@ -103,12 +104,15 @@ function RowAvatar({ item }: { item: WalletListItemData }) {
 export function MarketplaceActivityList({
   items,
   frozen = false,
+  onDeposit,
 }: {
   items: WalletListItemData[];
   /** Hold the skeletons forever (no reveal) — for the zeroed auth backdrop,
    *  so the sign-in crossfade lands on pixel-identical content and the reveal
    *  beat plays on the LIVE home after landing. */
   frozen?: boolean;
+  /** Empty-state CTA — opens the deposit flow. */
+  onDeposit?: () => void;
 }) {
   const reduceMotion = useReducedMotion();
   const now = useNow();
@@ -170,10 +174,13 @@ export function MarketplaceActivityList({
             animate={contentVisible ? MESSAGE_VISIBLE : MESSAGE_HIDDEN}
             transition={motionTransition(undefined, REVEAL_DURATION_S)}
           >
-            <p className={styles.emptyTitle}>No activity yet</p>
-            <p className={styles.emptySub}>
-              Money you add, send, and receive will show up here
-            </p>
+            <div className={styles.emptyText}>
+              <p className={styles.emptyTitle}>No activity yet</p>
+              <p className={styles.emptySub}>
+                Money you add, send, and receive will show up here
+              </p>
+            </div>
+            {onDeposit && <PinkCta onClick={onDeposit}>Deposit</PinkCta>}
           </motion.div>
         </div>
       </div>

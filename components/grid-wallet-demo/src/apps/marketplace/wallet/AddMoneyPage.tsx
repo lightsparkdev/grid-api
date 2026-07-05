@@ -56,6 +56,7 @@ import {
 import { FlagTile, StickerTile } from '../blocks/FlagTile';
 import { NetworkTile } from '../blocks/NetworkTile';
 import { CircleDollarIcon } from '../blocks/CircleDollarIcon';
+import { PinkCta } from '../blocks/PinkCta';
 import styles from './AddMoneyPage.module.scss';
 
 const PUSH_TRANSITION = motionTransition(easeOutSnappy, MARKETPLACE_PUSH_DURATION);
@@ -1375,16 +1376,6 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
   );
 }
 
-
-/** Brand-pink CTA — hugs its contents, 48px tall. */
-function PinkCta({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
-  const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 12 });
-  return (
-    <button type="button" className={styles.pinkCta} ref={clip.ref} style={clip.style} onClick={onClick}>
-      {children}
-    </button>
-  );
-}
 
 /**
  * "Select bank" empty state — the Z/Aurora reveal on marketplace chrome:

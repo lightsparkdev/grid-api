@@ -192,8 +192,16 @@
 .emptyMessage {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 20px;
   text-align: center;
+  pointer-events: auto; /* the CTA lives in a pointer-events:none layer */
+}
+
+.emptyText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .emptyTitle {

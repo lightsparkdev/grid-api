@@ -225,7 +225,11 @@ export function MarketplaceHomeContent({
         <motion.div {...enter(4)} className={styles.activity}>
           <h2 className={styles.activityTitle}>Activity</h2>
           {showActivity ? (
-            <MarketplaceActivityList items={activity} frozen={activityFrozen} />
+            <MarketplaceActivityList
+              items={activity}
+              frozen={activityFrozen}
+              onDeposit={onDeposit}
+            />
           ) : null}
         </motion.div>
       </div>
