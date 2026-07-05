@@ -105,6 +105,8 @@ export interface MarketplaceHomeContentProps {
   animatedBalance?: boolean;
   /** Opens the deposit flow (absent on the zeroed auth backdrop). */
   onDeposit?: () => void;
+  /** Opens the withdraw flow (absent on the auth backdrop). */
+  onWithdraw?: () => void;
   /** Opens the Send/Receive chooser sheet (absent on the auth backdrop). */
   onSend?: () => void;
 }
@@ -125,6 +127,7 @@ export function MarketplaceHomeContent({
   entrance = false,
   animatedBalance = false,
   onDeposit,
+  onWithdraw,
   onSend,
 }: MarketplaceHomeContentProps) {
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
@@ -172,7 +175,7 @@ export function MarketplaceHomeContent({
             </div>
             <div className={styles.balanceActions}>
               <ActionPill label="Deposit" onClick={onDeposit} />
-              <ActionPill label="Withdraw" />
+              <ActionPill label="Withdraw" onClick={onWithdraw} />
               <SendButton onClick={onSend} />
             </div>
           </MkCard>

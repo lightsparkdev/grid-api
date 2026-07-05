@@ -255,9 +255,9 @@ export function AddMoneyPage({
         ? m.titles.deposit
         : headerView === 'recipient'
           ? m.titles.recipient
-          : isSend
-            ? m.titles.source
-            : PAGE_TITLE;
+          : mode === 'add'
+            ? PAGE_TITLE
+            : m.titles.source;
   const handleBack = () => {
     const backTo = m.backFrom[m.step];
     if (m.isEntryStep || !backTo) onDismiss();
@@ -378,7 +378,9 @@ export function AddMoneyPage({
                   transition={STEP_TRANSITION}
                 >
                   <div className={styles.scroll} onScroll={handleScroll}>
-                    <h1 className={styles.title}>{isSend ? m.titles.source : PAGE_TITLE}</h1>
+                    <h1 className={styles.title}>
+                      {mode === 'add' ? PAGE_TITLE : m.titles.source}
+                    </h1>
                     <div className={styles.list}>
                       {m.sources.map((id, i) => {
                         const copy = (isSend ? SEND_SOURCE_COPY : SOURCE_COPY)[id];
@@ -619,7 +621,7 @@ export function AddMoneyPage({
                   exit="exit"
                   transition={STEP_TRANSITION}
                 >
-                  <RecipientStep m={m} />
+                  <RecipientStep m={m} isSend={isSend} />
                 </motion.div>
               )}
 
@@ -726,7 +728,13 @@ function AmountStep({
 }) {
   const isReview = m.step === 'confirm';
   const isSend = mode === 'send';
-  const reviewTitle = isSend ? 'Review send' : REVIEW_TITLE;
+  // Outflows (withdraw / send) spend the balance — they get the Use max chip.
+  const outbound = mode !== 'add';
+  const reviewTitle =
+    mode === 'withdraw' ? 'Review withdrawal' : isSend ? 'Review send' : REVIEW_TITLE;
+  // Where the X lands: the list, except withdraw-to-crypto (its one-off
+  // wallet came from the address step, so the pop returns there).
+  const closeTo = m.backFrom.amount ?? 'banks';
   const navDir: NavDir = { back: m.back, reduceMotion };
 
   // Shake on an invalid attempt — the brain bumps shakeNonce. The nonce
@@ -801,7 +809,7 @@ function AmountStep({
                 type="button"
                 className={styles.backBtn}
                 aria-label="Close"
-                onClick={() => !locked && m.go('banks', true)}
+                onClick={() => !locked && m.go(closeTo, true)}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -827,7 +835,7 @@ function AmountStep({
                 type="button"
                 className={styles.backBtn}
                 aria-label="Close"
-                onClick={() => !locked && m.go('banks', true)}
+                onClick={() => !locked && m.go(closeTo, true)}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -875,8 +883,10 @@ function AmountStep({
                   </span>
                 </p>
                 <p className={styles.amountSub}>
+                  {/* netCents: maxed pays the fee from inside, so the line
+                      shows what actually lands at the destination. */}
                   <NumericText
-                    value={(m.cents / 100) * m.fxRate}
+                    value={(m.netCents / 100) * m.fxRate}
                     format={{
                       minimumFractionDigits: m.fxFractionDigits,
                       maximumFractionDigits: m.fxFractionDigits,
@@ -886,6 +896,18 @@ function AmountStep({
                   {`\u00A0${m.fxLabel}`}
                   <SfSymbol name="arrow.up.arrow.down" size={11} />
                 </p>
+                {/* Balance-sourced outflows get the Use max chip (Aurora's
+                    109:29074), in the header-pill voice. */}
+                {outbound && (
+                  <button
+                    type="button"
+                    className={styles.useMaxBtn}
+                    disabled={locked}
+                    onClick={m.useMax}
+                  >
+                    Use max
+                  </button>
+                )}
               </div>
 
               {/* Destination — the selected recipient in a 1px-bordered box:
@@ -899,7 +921,7 @@ function AmountStep({
                     style={destClip.style}
                     className={styles.destBox}
                     disabled={locked}
-                    onClick={() => m.go('banks', true)}
+                    onClick={() => m.go(closeTo, true)}
                   >
                     {bank ? (
                       <>
@@ -1037,12 +1059,14 @@ function ReviewScreen({
   onConfirm: (cents: number, activity: TransferActivity) => void;
 }) {
   const isSend = mode === 'send';
+  // Outflows (withdraw / send) leave the balance: itinerary runs balance →
+  // counterparty, and the totals price in USD out / settled currency in.
+  const outbound = mode !== 'add';
   const bank = m.selectedBank;
   const crypto = m.selectedCrypto;
   // 18 = the wallet home card radius (MkCard), so the two card voices match.
   const boxClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 18 });
   const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 13 });
-  const totalCents = m.cents + m.feeCents;
   const local = (cents: number) =>
     ((cents / 100) * m.fxRate).toLocaleString('en-US', {
       minimumFractionDigits: m.fxFractionDigits,
@@ -1093,7 +1117,7 @@ function ReviewScreen({
         <div className={styles.reviewBoxWrap}>
           <div ref={boxClip.ref} style={boxClip.style} className={styles.reviewBox}>
             <div className={styles.routeRows}>
-              {isSend ? (
+              {outbound ? (
                 <>
                   {balanceRow}
                   {counterpartyRow}
@@ -1139,7 +1163,7 @@ function ReviewScreen({
             <div key={label} className={styles.priceRow}>
               <span>{label}</span>
               <span>
-                {label === 'Fee' && !isSend && bank ? (
+                {label === 'Fee' && mode === 'add' && bank ? (
                   <>
                     {value} ({local(m.feeCents)} {m.fxLabel})
                   </>
@@ -1149,18 +1173,20 @@ function ReviewScreen({
               </span>
             </div>
           ))}
-          {isSend ? (
+          {outbound ? (
             <>
-              {/* Send: you pay in USD from the balance; they get the settled
-                  currency (stablecoin / local fiat). */}
+              {/* Outflow: you pay in USD from the balance (EXACTLY the
+                  balance when maxed — the fee splits out of the inside); the
+                  destination gets the settled currency — "they" for a send,
+                  still you for a withdrawal. */}
               <div className={styles.priceTotalRow}>
                 <span>You&rsquo;ll pay</span>
-                <span>{formatUsdCents(totalCents)}</span>
+                <span>{formatUsdCents(m.payCents)}</span>
               </div>
               <div className={styles.priceTotalRow}>
-                <span>They&rsquo;ll get</span>
+                <span>{isSend ? 'They\u2019ll get' : 'You\u2019ll get'}</span>
                 <span>
-                  {local(m.cents)} {m.fxLabel}
+                  {local(m.netCents)} {m.fxLabel}
                 </span>
               </div>
             </>
@@ -1169,12 +1195,12 @@ function ReviewScreen({
               <div className={styles.priceTotalRow}>
                 <span>You&rsquo;ll pay</span>
                 <span>
-                  {local(totalCents)} {m.fxLabel}
+                  {local(m.payCents)} {m.fxLabel}
                 </span>
               </div>
               <div className={styles.priceTotalRow}>
                 <span>You&rsquo;ll get</span>
-                <span>{formatUsdCents(m.cents)}</span>
+                <span>{formatUsdCents(m.netCents)}</span>
               </div>
             </>
           )}
@@ -1198,7 +1224,11 @@ function ReviewScreen({
               <span className={styles.ctaFaceId} aria-hidden>
                 <SfSymbol name="faceid" size={18} />
               </span>
-              {isSend ? 'Confirm send' : 'Confirm deposit'}
+              {mode === 'withdraw'
+                ? 'Confirm withdrawal'
+                : isSend
+                  ? 'Confirm send'
+                  : 'Confirm deposit'}
             </span>
           )}
         </button>
@@ -1211,12 +1241,13 @@ function ReviewScreen({
 }
 
 /**
- * Enter address (send → crypto) — the address card in the destination-box
- * voice: empty it invites a paste; Paste opens the network sheet (the iOS
- * stacked pageSheet); a pick fills the card and the CTA morphs Paste →
- * Add recipient, runs the save beat, and the amount screen rises.
+ * Enter address (send / withdraw → crypto) — the address card in the
+ * destination-box voice: empty it invites a paste; Paste opens the network
+ * sheet (the iOS stacked pageSheet); a pick fills the card and the CTA morphs
+ * Paste → Add recipient (send saves a recipient) or Continue (withdraw uses a
+ * one-off wallet), runs the save beat, and the amount screen rises.
  */
-function RecipientStep({ m }: { m: MoneySheet }) {
+function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
   const boxClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 16 });
   const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 13 });
   const net = m.pickedNetwork;
@@ -1260,8 +1291,9 @@ function RecipientStep({ m }: { m: MoneySheet }) {
           style={cta.style}
           onClick={() => {
             if (m.saving) return;
-            if (m.pasted) m.addCryptoRecipient();
-            else m.setPickerOpen(true);
+            if (!m.pasted) m.setPickerOpen(true);
+            else if (isSend) m.addCryptoRecipient();
+            else m.useCryptoWithdraw();
           }}
         >
           {m.saving ? (
@@ -1270,7 +1302,10 @@ function RecipientStep({ m }: { m: MoneySheet }) {
             </span>
           ) : (
             <TextMorph as="span" duration={MORPH_MS} ease={cubicBezierCss(easeOutSwift)}>
-              {(m.pasted ? 'Add recipient' : 'Paste').replace(/ /g, '\u00a0')}
+              {(m.pasted ? (isSend ? 'Add recipient' : 'Continue') : 'Paste').replace(
+                / /g,
+                '\u00a0',
+              )}
             </TextMorph>
           )}
         </button>

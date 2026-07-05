@@ -78,6 +78,8 @@ export function useMoneySheet({
   const [openKey, setOpenKey] = useState(0);
   const [raw, setRaw] = useState(''); // typed amount, e.g. "1500.5"
   const [started, setStarted] = useState(false); // Swift's hasStartedTyping
+  // "Use max" mode — the fee-inclusive quote shape (see the fee model below).
+  const [maxed, setMaxed] = useState(false);
   const [quoting, setQuoting] = useState(false); // fake quote beat on Continue
   const [saving, setSaving] = useState(false); // 500ms validate+save beat on add
   const [pasted, setPasted] = useState(false); // send: address card filled
@@ -150,6 +152,7 @@ export function useMoneySheet({
       setBack(false);
       setRaw('');
       setStarted(false);
+      setMaxed(false);
       setQuoting(false);
       setSaving(false);
       setPasted(false);
@@ -409,7 +412,8 @@ export function useMoneySheet({
   const isEntryStep =
     mode === 'receive' ? step === 'deposit' : isSend ? step === 'banks' : step === 'source';
 
-  // Mirrors the Swift KeypadInputModel.handleKey.
+  // Mirrors the Swift KeypadInputModel.handleKey. (Exported wrapped — a manual
+  // edit drops "max" mode; see pressAndUnmax below.)
   const press = (key: string) => {
     if (confirming) return;
     if (key === 'del') {
@@ -448,11 +452,29 @@ export function useMoneySheet({
 
   const cents = typedToCents(raw);
 
-  // Confirm details: mid-market rate + a 0.30% spread fee (the real FX model).
+  // "Send max" is a FIRST-CLASS quote shape (pattern 3): tapping Use max asks
+  // to spend the ENTIRE balance, so the quote splits the fee out of the inside
+  // (you pay exactly the balance; the destination gets balance − fee). A typed
+  // amount keeps the fee ON TOP (you asked to deliver that amount), capped so
+  // amount + fee never exceeds the balance. Editing the amount drops max mode.
+  //
+  // Fee model: crypto destinations pay a flat network/rail fee (BTC tracks
+  // tx size, not amount); fiat corridors pay a 0.30% FX spread (the real
+  // model). Fee-inclusive max backs the spread out of the total instead.
   const FEE_BPS = 30;
-  const feeCents = Math.round((cents * FEE_BPS) / 10000);
+  const flatFeeCents = isBtcDest ? Math.round(BTC_NETWORK_FEE_USD * 100) : 60;
+  const feeCents = stablecoinDest
+    ? flatFeeCents
+    : maxed
+      ? Math.round((cents * FEE_BPS) / (10000 + FEE_BPS))
+      : Math.round((cents * FEE_BPS) / 10000);
+  /** What leaves the balance — maxed spends exactly the typed total. */
+  const payCents = maxed ? cents : cents + feeCents;
+  /** What lands at the destination — maxed pays the fee from inside. */
+  const netCents = maxed ? cents - feeCents : cents;
+
   const cryptoDetails: Array<[string, string]> = [
-    ['Fee', isBtcDest ? formatUsdCents(Math.round(BTC_NETWORK_FEE_USD * 100)) : '$0.60'],
+    ['Fee', formatUsdCents(feeCents)],
     [
       'Conversion rate',
       isBtcDest ? `1 BTC = ${formatUsdCents(BTC_USD * 100)}` : `1 USD = 1 ${cryptoCurrency}`,
@@ -469,18 +491,26 @@ export function useMoneySheet({
       ? cryptoDetails
       : details;
 
-  // "Use max" (withdraw) — fill the typed amount with the exact balance.
+  // "Use max" (withdraw/send) — spend the exact balance, fee inside.
   const useMax = () => {
     if (confirming) return;
     setStarted(true);
     setRaw((availableCents / 100).toFixed(2));
+    setMaxed(true);
+  };
+
+  // Any manual edit is a typed amount again (fee back on top).
+  const pressAndUnmax = (key: string) => {
+    setMaxed(false);
+    press(key);
   };
 
   // Continue: invalid amount errors out with a shake; a valid amount "creates a
-  // quote" (CTA spins a beat) before the confirm step.
+  // quote" (CTA spins a beat) before the confirm step. Outflows must cover the
+  // fee too: what leaves the balance (payCents) is what's capped.
   const tryContinue = () => {
     if (confirming || quoting) return;
-    if (cents > 0 && (mode === 'add' || cents <= availableCents)) {
+    if (cents > 0 && (mode === 'add' || payCents <= availableCents)) {
       const dest: TransferDest | undefined = selectedCrypto
         ? { kind: 'crypto', currency: selectedCrypto.currency }
         : selectedBank
@@ -502,9 +532,9 @@ export function useMoneySheet({
   useEffect(() => {
     if (!open || step !== 'amount') return;
     const onKey = (e: KeyboardEvent) => {
-      if (/^[0-9]$/.test(e.key)) press(e.key);
-      else if (e.key === '.') press('.');
-      else if (e.key === 'Backspace') press('del');
+      if (/^[0-9]$/.test(e.key)) pressAndUnmax(e.key);
+      else if (e.key === '.') pressAndUnmax('.');
+      else if (e.key === 'Backspace') pressAndUnmax('del');
       else if (e.key === 'Enter') tryContinue();
       else return;
       e.preventDefault();
@@ -562,13 +592,16 @@ export function useMoneySheet({
     fracTyped,
     amountFraction,
     balance,
-    press,
+    press: pressAndUnmax,
     useMax,
     tryContinue,
     quoting,
     shakeNonce,
     // confirm / fx
     feeCents,
+    maxed,
+    payCents,
+    netCents,
     fxRate,
     fxFractionDigits,
     fxLabel,

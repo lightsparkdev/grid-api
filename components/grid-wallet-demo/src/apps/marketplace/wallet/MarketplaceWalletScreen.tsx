@@ -85,6 +85,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
               showActivity
               animatedBalance
               onDeposit={() => home.openSheet('add')}
+              onWithdraw={() => home.openSheet('withdraw')}
               onSend={() => home.setSendReceiveOpen(true)}
             />
             <MarketplaceTabBar />

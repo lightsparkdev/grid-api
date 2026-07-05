@@ -287,6 +287,33 @@
   color: var(--app-text-secondary);
 }
 
+/* "Use max" chip — the header-pill voice, riding under the fx line on
+   balance-sourced outflows (withdraw / send). */
+.useMaxBtn {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+}
+
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

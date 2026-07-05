@@ -265,6 +265,8 @@ export function AddMoneySheet({
     quoting,
     shakeNonce,
     feeCents,
+    payCents,
+    netCents,
     fxRate,
     fxFractionDigits,
     fxLabel,
@@ -471,11 +473,13 @@ export function AddMoneySheet({
   // is the sender's, so "You pay" = amount + fee, anchored at the BOTTOM. Between
   // them: what the recipient gets (converted, send/withdraw only), the rate + ETA.
   const hasConversion = fxLabel !== 'USD';
+  // netCents: a maxed outflow pays the fee from INSIDE the amount (pattern 3 —
+  // "spend my whole balance"), so the recipient line shows the net.
   const convertedStr = `${new Intl.NumberFormat(undefined, {
     minimumFractionDigits: fxFractionDigits,
     maximumFractionDigits: fxFractionDigits,
-  }).format((cents / 100) * fxRate)} ${fxLabel}`;
-  const youPayCents = cents + feeCents;
+  }).format((netCents / 100) * fxRate)} ${fxLabel}`;
+  const youPayCents = payCents;
   // Deposit is funded from a foreign bank, so "You pay" shows the USD total with
   // the bank-currency charge in parens, e.g. "$50.15 (876.87 MXN)".
   const youPayLocalStr = new Intl.NumberFormat(undefined, {
