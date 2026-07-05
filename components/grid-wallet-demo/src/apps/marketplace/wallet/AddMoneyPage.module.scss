@@ -952,11 +952,13 @@
   margin-top: 8px;
 }
 
+/* Mirrors the real contact row: 12px vertical padding (the listTight
+   rhythm), 40px sticker silhouette, title/sub line pair. */
 .skeletonRow {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 24px;
+  padding: 12px 24px;
 }
 
 .skeletonTile {
@@ -971,7 +973,7 @@
   flex: 1 1 0;
   min-width: 0;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .skeletonPill {

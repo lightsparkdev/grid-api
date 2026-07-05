@@ -1,0 +1,214 @@
+/* Live Activity list — the static stay-row shape (50px graphic + three lines
+   + right amount/USD) fed by the wallet brain. Reserves four rows of height
+   so the empty/skeleton state has real presence. */
+
+.list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 24px;
+}
+
+/* Empty/skeleton state reserves four rows of presence:
+   4 rows (56px stickers) + 3 gaps (24px) = 296. */
+.listEmpty {
+  min-height: 296px;
+}
+
+/* Top-aligned like the static stay rows: title, amount, and graphic all
+   hang from the row's top edge. */
+.row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* The graphic — the app's 40px sticker chrome (FlagTile/StickerTile bring
+   their own ring, hairline, and shadow); person rows add ONE circular flag
+   badge riding the bottom-right corner (the Airbnb collage voice). */
+.avatarWrap {
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+}
+
+/* Tinted initials art inside the sticker's inner squircle. */
+.initialsArt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 18px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: 0.18px;
+}
+
+/* Network logos are self-contained rounded tiles (rx 33%) — scale past the
+   sticker's inner squircle so their own corners crop off. */
+.netLogo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scale(1.25);
+}
+
+/* The circular country flag riding the sticker's bottom-right corner, on a
+   card-surface ring so it reads as a badge over any tint. */
+.flagBadge {
+  position: absolute;
+  right: -6px;
+  bottom: -5px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  corner-shape: round;
+  border: 2px solid var(--mk-card-bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.lines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: 0.14px;
+}
+
+.lineTitle {
+  font-weight: 500;
+  color: var(--app-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineMeta {
+  font-weight: 400;
+  color: var(--app-text-tertiary);
+}
+
+.right {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: 0.14px;
+  color: var(--app-text-primary);
+}
+
+.amount {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.currency {
+  font-weight: 400;
+}
+
+/* ── Skeleton + empty reveal (the Select-bank choreography) ──────────────── */
+.skeletons {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.skeletonRow {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* The sticker silhouette (56px; r scales with the shell: 12 × 56∕40 ≈ 17). */
+.skeletonTile {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 17px;
+  background: var(--mk-surface);
+}
+
+.skeletonLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.skeletonRight {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.skeletonPill {
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--mk-surface);
+}
+
+.skeletonCover {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--cover-duration, 550ms) cubic-bezier(0.19, 1, 0.22, 1);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--app-bg) 50%, transparent) 0%,
+    var(--app-bg) 64%
+  );
+
+  &[data-visible] {
+    opacity: 1;
+  }
+}
+
+.emptyLayer {
+  position: absolute;
+  inset: 24px 0 0; /* under the list's own top padding */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  pointer-events: none;
+}
+
+.emptyMessage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.emptySub {
+  margin: 0 auto;
+  max-width: 260px;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+  text-wrap: balance;
+}

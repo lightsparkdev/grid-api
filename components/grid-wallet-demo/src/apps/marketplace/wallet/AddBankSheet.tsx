@@ -107,7 +107,13 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
       <motion.div
         className={styles.sheetLayer}
         initial={false}
-        animate={{ y: open ? 0 : '110%' }}
+        // visibility:hidden once parked — aria-hidden alone leaves the closed
+        // sheet's controls TABBABLE, and focusing one scrolls the phone screen.
+        animate={
+          open
+            ? { y: 0, visibility: 'visible' }
+            : { y: '110%', transitionEnd: { visibility: 'hidden' } }
+        }
         transition={reduceMotion ? { duration: 0 } : SHEET_TRANSITION}
         // Parked off-screen it must not trap clicks/focus or expose its
         // controls to the accessibility tree.

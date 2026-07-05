@@ -37,6 +37,11 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
   const { home, money } = props;
   const reduceMotion = useReducedMotion();
   const pageOpen = home.sheetOpen;
+  // A close from the confirm step = a completed transfer: the page settles
+  // DOWN (sheet dismissal) instead of popping right, so the wallet must
+  // already SIT at rest beneath it — no parallax return to watch. The brain
+  // keeps its step until the next open, so this reads the close reason.
+  const confirmedClose = !pageOpen && money.step === 'confirm';
   // The pageSheet presents while the brain sits on a sheet step: Add bank's
   // country/bankForm, plus Receive's funding instructions.
   const addBankOpen =
@@ -76,13 +81,14 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
             className={styles.underlay}
             initial={false}
             animate={{ x: pageOpen && !reduceMotion ? -MARKETPLACE_PUSH_PARALLAX : 0 }}
-            transition={PUSH_TRANSITION}
+            transition={confirmedClose ? { duration: 0 } : PUSH_TRANSITION}
           >
             <MarketplaceHomeContent
               balanceCents={home.availableCents}
               apyPercent={home.apyPercent}
               rewardsMonthCents={Math.round(home.earningsTodayCents * 30)}
               showActivity
+              activity={home.homeActivity}
               animatedBalance
               onDeposit={() => home.openSheet('add')}
               onWithdraw={() => home.openSheet('withdraw')}

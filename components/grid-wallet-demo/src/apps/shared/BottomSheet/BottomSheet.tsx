@@ -159,7 +159,14 @@ export function BottomSheet({
         <motion.div
           className={styles.sheetMotion}
           initial={false}
-          animate={{ y: open ? 0 : '110%' }}
+          // visibility:hidden once the slide-out settles: aria-hidden alone
+          // leaves the parked sheet's buttons TABBABLE, and focusing one makes
+          // the browser scroll the overflow-hidden phone screen to reveal it.
+          animate={
+            open
+              ? { y: 0, visibility: 'visible' }
+              : { y: '110%', transitionEnd: { visibility: 'hidden' } }
+          }
           transition={sheetTransition}
         >
           {panel}

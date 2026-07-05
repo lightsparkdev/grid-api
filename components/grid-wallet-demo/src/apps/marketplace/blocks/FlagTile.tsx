@@ -12,29 +12,37 @@ import styles from './FlagTile.module.scss';
  * wallet-card outside hairline (a halo stroke under the opaque fill, so only
  * the outer ~0.33px shows) and a soft drop shadow on the unclipped shell.
  */
-export function FlagTile({ code }: { code: string }) {
+export function FlagTile({ code, size }: { code: string; size?: number }) {
   return (
-    <StickerTile>
+    <StickerTile size={size}>
       <SquareFlag code={code} />
     </StickerTile>
   );
 }
 
 /** The same sticker chrome around arbitrary art — e.g. the cash-balance tile
- *  (brand-pink fill + white glyph) or a neutral glyph tile (surface fill). */
+ *  (brand-pink fill + white glyph) or a neutral glyph tile (surface fill).
+ *  `size` scales the whole sticker; the radii scale with it (12/10 at 40),
+ *  the 2px ring stays constant weight. */
 export function StickerTile({
   children,
   brand = false,
   neutral = false,
+  size = 40,
 }: {
   children: ReactNode;
   brand?: boolean;
   neutral?: boolean;
+  size?: number;
 }) {
-  const outer = useSquircleClip<HTMLSpanElement>({ figmaRadii: 12 });
-  const inner = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 });
+  const outer = useSquircleClip<HTMLSpanElement>({ figmaRadii: (size * 12) / 40 });
+  const inner = useSquircleClip<HTMLSpanElement>({ figmaRadii: (size * 10) / 40 });
   return (
-    <span className={styles.shell} aria-hidden>
+    <span
+      className={styles.shell}
+      style={{ width: size, height: size, borderRadius: (size * 12) / 40 }}
+      aria-hidden
+    >
       <span ref={outer.ref} style={outer.style} className={styles.ring}>
         <span
           ref={inner.ref}

@@ -54,6 +54,7 @@ import {
   MARKETPLACE_SHEET_DURATION,
 } from '../config';
 import { FlagTile, StickerTile } from '../blocks/FlagTile';
+import { CircleDollarIcon } from '../blocks/CircleDollarIcon';
 import styles from './AddMoneyPage.module.scss';
 
 const PUSH_TRANSITION = motionTransition(easeOutSnappy, MARKETPLACE_PUSH_DURATION);
@@ -67,6 +68,29 @@ const BAR_TITLE_TRANSITION = motionTransition(easeOutQuick, 0.2);
 const EDGE_SHADOW_ON = '-16px 0 48px rgba(0, 0, 0, 0.2)';
 const EDGE_SHADOW_OFF = '-16px 0 48px rgba(0, 0, 0, 0)';
 
+// The page enters as a nav push (from the right) but its EXIT depends on how
+// it closes: a plain dismissal pops back off right; a CONFIRMED transfer
+// (Face ID done on the review screen) settles the whole risen stack DOWN —
+// a sheet dismissal, not a reverse push. AnimatePresence re-resolves `custom`
+// for exiting children, so the direction is read at close time.
+type PageExit = { down: boolean; reduceMotion: boolean };
+const pageVariants = {
+  enter: ({ reduceMotion }: PageExit) =>
+    reduceMotion ? { opacity: 0 } : { x: '100%', y: 0, boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
+  center: { x: 0, y: 0, boxShadow: EDGE_SHADOW_ON, opacity: 1 },
+  exit: ({ down, reduceMotion }: PageExit) =>
+    reduceMotion
+      ? { opacity: 0 }
+      : down
+        ? {
+            y: '100%',
+            boxShadow: EDGE_SHADOW_OFF,
+            opacity: 1,
+            transition: motionTransition(easeOutSnappy, MARKETPLACE_SHEET_DURATION),
+          }
+        : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
+};
+
 /** Scroll distance (px) after which the large title is fully under the header
  *  bar — the hairline shows and the 14px bar title slides in. */
 const TITLE_COLLAPSE_AT = 46;
@@ -79,10 +103,19 @@ const TITLE_COLLAPSE_AT = 46;
 // when the brain walked "back" onto it). Every layer only ever travels one
 // way (parallax / full width) — banks stays mounted beneath the amount
 // screen rather than exiting forward.
-type NavDir = { back: boolean; reduceMotion: boolean };
+type NavDir = {
+  back: boolean;
+  reduceMotion: boolean;
+  /** A SHEET save just popped the stack under the amount rise: the reveal
+   *  layer mounts static (nothing slid off above it — the sheet went down),
+   *  and the layer it replaces just fades. Nav pops keep their parallax. */
+  sheetReveal?: boolean;
+};
 const underStepVariants = {
-  enter: ({ reduceMotion }: NavDir) =>
-    reduceMotion ? { x: 0, opacity: 1 } : { x: -MARKETPLACE_PUSH_PARALLAX, opacity: 1 },
+  enter: ({ reduceMotion, sheetReveal }: NavDir) =>
+    reduceMotion || sheetReveal
+      ? { x: 0, opacity: 1 }
+      : { x: -MARKETPLACE_PUSH_PARALLAX, opacity: 1 },
   center: { x: 0, opacity: 1 },
   exit: ({ reduceMotion }: NavDir) =>
     reduceMotion ? { opacity: 0 } : { x: -MARKETPLACE_PUSH_PARALLAX, opacity: 1 },
@@ -114,8 +147,8 @@ const navMidVariants = {
       : back
         ? { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 }
         : // Forward exit = a save popped the stack to the list: this layer sits
-          // BENEATH the top layer's slide-off, so it just fades — the reveal
-          // beat belongs to the top layer alone.
+          // BENEATH the top layer's slide-off (or a sheet's descent), so it
+          // just fades — the reveal beat isn't this layer's to play.
           { opacity: 0 },
 };
 // The TOP nav layer (enter address): pops off to the right in BOTH directions —
@@ -224,7 +257,6 @@ export function AddMoneyPage({
   onReceive,
 }: AddMoneyPageProps) {
   const reduceMotion = useReducedMotion();
-  const navDir: NavDir = { back: m.back, reduceMotion: !!reduceMotion };
   const isSend = mode === 'send';
   const isReceive = mode === 'receive';
 
@@ -273,10 +305,14 @@ export function AddMoneyPage({
   // mount): only a save lands on amount from somewhere other than the list,
   // and that's the case that needs the dismiss beat first.
   const [prevStep, setPrevStep] = useState(m.step);
+  const [cameFrom, setCameFrom] = useState<typeof m.step | null>(null);
   const [riseReady, setRiseReady] = useState(true);
   if (m.step !== prevStep) {
     setPrevStep(m.step);
     if (m.step === 'amount') {
+      // Remember the origin: the reveal choreography differs (a nav pop
+      // parallaxes the list in; a sheet save reveals it static).
+      setCameFrom(prevStep);
       // Defer only when a SAVE popped the stack to a list (bank form, or
       // send's address step). Withdraw's address step is amount's own back
       // target — nothing pops, so the rise is immediate over it (and a tap
@@ -284,6 +320,13 @@ export function AddMoneyPage({
       setRiseReady(!(prevStep === 'bankForm' || (prevStep === 'recipient' && isSend)));
     }
   }
+  // A bank-form save reveals the list under a DESCENDING SHEET — the list
+  // mounts static (no parallax-in; nothing slid off above it).
+  const navDir: NavDir = {
+    back: m.back,
+    reduceMotion: !!reduceMotion,
+    sheetReveal: viewStep === 'amount' && cameFrom === 'bankForm',
+  };
   useEffect(() => {
     if (riseReady) return;
     const t = window.setTimeout(
@@ -318,15 +361,20 @@ export function AddMoneyPage({
   // Saved banks only (the shared list can carry crypto recipients in send mode).
   const banks = m.banks.filter((b): b is SavedBank => !('address' in b));
 
+  // A close from the confirm step is a completed transfer — settle DOWN.
+  const pageExit: PageExit = { down: m.step === 'confirm', reduceMotion: !!reduceMotion };
+
   return (
-    <AnimatePresence initial={false}>
+    <AnimatePresence initial={false} custom={pageExit}>
       {open && (
         <motion.div
           key="deposit-page"
           className={styles.page}
-          initial={reduceMotion ? { opacity: 0 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF }}
-          animate={reduceMotion ? { opacity: 1 } : { x: 0, boxShadow: EDGE_SHADOW_ON }}
-          exit={reduceMotion ? { opacity: 0 } : { x: '100%', boxShadow: EDGE_SHADOW_OFF }}
+          custom={pageExit}
+          variants={pageVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
           transition={PUSH_TRANSITION}
         >
           <header className={styles.headerBar} data-bordered={scrolled || undefined}>
@@ -1353,20 +1401,6 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
   );
 }
 
-/** The round filled dollar (Aurora's cash-balance glyph, inlined so it takes
- *  currentColor — white on the brand-pink sticker). */
-function CircleDollarIcon({ size = 24 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12ZM12 5.5C12.5523 5.5 13 5.94772 13 6.5V7.12367C13.804 7.32711 14.5135 7.77457 14.9759 8.41405C15.2995 8.86159 15.199 9.48674 14.7515 9.81035C14.304 10.134 13.6788 10.0335 13.3552 9.58595C13.1379 9.28549 12.6534 9 12 9H11.7222C10.8274 9 10.5 9.54492 10.5 9.77778V9.8541C10.5 10.0514 10.6491 10.3826 11.1525 10.584L13.5902 11.5591C14.6572 11.9858 15.5 12.9386 15.5 14.1459C15.5 15.6189 14.323 16.6144 13 16.9091V17.5C13 18.0523 12.5523 18.5 12 18.5C11.4477 18.5 11 18.0523 11 17.5V16.8763C10.196 16.6729 9.4865 16.2254 9.02411 15.586C8.7005 15.1384 8.80096 14.5133 9.24851 14.1897C9.69605 13.866 10.3212 13.9665 10.6448 14.414C10.8621 14.7145 11.3466 15 12 15H12.1824C13.1298 15 13.5 14.4209 13.5 14.1459C13.5 13.9486 13.3509 13.6174 12.8475 13.416L10.4098 12.4409C9.34283 12.0142 8.5 11.0614 8.5 9.8541V9.77778C8.5 8.31377 9.68936 7.33904 11 7.07331V6.5C11 5.94772 11.4477 5.5 12 5.5Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
 /** Brand-pink CTA — hugs its contents, 48px tall. */
 function PinkCta({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
@@ -1447,13 +1481,14 @@ function BanksEmptyState({
 }
 
 function SkeletonBankRow({ titleWidth, subWidth }: { titleWidth: number; subWidth: number }) {
-  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 });
+  // r12 — the sticker SHELL radius, so the silhouette matches the real tile.
+  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 12 });
   return (
     <div className={styles.skeletonRow}>
       <span ref={clip.ref} style={clip.style} className={styles.skeletonTile} />
       <span className={styles.skeletonLines}>
-        <span className={styles.skeletonPill} style={{ width: titleWidth, height: 14 }} />
-        <span className={styles.skeletonPill} style={{ width: subWidth, height: 12 }} />
+        <span className={styles.skeletonPill} style={{ width: titleWidth, height: 13 }} />
+        <span className={styles.skeletonPill} style={{ width: subWidth, height: 11 }} />
       </span>
     </div>
   );

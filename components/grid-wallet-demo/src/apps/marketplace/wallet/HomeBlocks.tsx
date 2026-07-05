@@ -7,10 +7,10 @@ import NumericText from '@/components/NumericText';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
-import { formatUsdCents } from '@/apps/shared/wallet';
+import { formatUsdCents, type WalletListItemData } from '@/apps/shared/wallet';
 import { motionTransition } from '@/lib/easing';
 import { IconSettingsGear2, IconPaperPlaneTopRight } from '../icons';
-import { BRAND } from '../config';
+import { MarketplaceActivityList } from './ActivityList';
 import styles from './HomeBlocks.module.scss';
 
 // Aurora press feel — slight grow on hover, a bit more on press.
@@ -74,31 +74,14 @@ function SendButton({ onClick }: { onClick?: () => void }) {
   );
 }
 
-/** Static activity rows (Figma 2610:11139) — listing thumbnails + paid stays. */
-const DEMO_ACTIVITY = [
-  {
-    photo: '/assets/marketplace/listing-cabin.png',
-    paid: 'Paid Apr 2',
-    source: `${BRAND} Debit`,
-    // Middle-dot separators (U+00B7) — Circular's real bullet is huge.
-    stay: 'Madrid \u00b7 Mar 28\u2013Apr 1',
-    amount: '+ $641.50',
-  },
-  {
-    photo: '/assets/marketplace/listing-palm-springs.png',
-    paid: 'Paid Apr 1',
-    source: `${BRAND} Debit`,
-    stay: 'Palm Springs \u00b7 Mar 27\u2013Apr 3',
-    amount: '+ $1,034.10',
-  },
-];
-
 export interface MarketplaceHomeContentProps {
   balanceCents: number;
   apyPercent: number;
   rewardsMonthCents: number;
-  /** Demo rows on the signed-in home; none on the zeroed auth backdrop. */
+  /** Live rows on the signed-in home; none on the zeroed auth backdrop. */
   showActivity?: boolean;
+  /** The wallet brain's activity feed (transfers + received payments). */
+  activity?: WalletListItemData[];
   /** One-shot sign-in entrance stagger. */
   entrance?: boolean;
   /** Balance rolls (NumericText) on the live home; static on the backdrop. */
@@ -124,6 +107,7 @@ export function MarketplaceHomeContent({
   apyPercent,
   rewardsMonthCents,
   showActivity = false,
+  activity = [],
   entrance = false,
   animatedBalance = false,
   onDeposit,
@@ -236,27 +220,7 @@ export function MarketplaceHomeContent({
 
         <motion.div {...enter(4)} className={styles.activity}>
           <h2 className={styles.activityTitle}>Activity</h2>
-          {showActivity ? (
-            <div className={styles.activityRows}>
-              {DEMO_ACTIVITY.map((item) => (
-                <div key={item.paid} className={styles.activityRow}>
-                  <span className={styles.activityThumb}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.photo} alt="" />
-                  </span>
-                  <div className={styles.activityLines}>
-                    <span className={styles.activityPaid}>{item.paid}</span>
-                    <span className={styles.activityMeta}>{item.source}</span>
-                    <span className={styles.activityMeta}>{item.stay}</span>
-                  </div>
-                  <div className={styles.activityRight}>
-                    <span className={styles.activityAmount}>{item.amount}</span>
-                    <span className={styles.activityCurrency}>USD</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
+          {showActivity ? <MarketplaceActivityList items={activity} /> : null}
         </motion.div>
       </div>
     </div>
