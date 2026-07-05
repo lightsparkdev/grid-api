@@ -100,14 +100,23 @@ function RowAvatar({ item }: { item: WalletListItemData }) {
  * skeletons hold, then reveal into the "No activity yet" message. New rows
  * fade in at the top while the rest layout-shift down.
  */
-export function MarketplaceActivityList({ items }: { items: WalletListItemData[] }) {
+export function MarketplaceActivityList({
+  items,
+  frozen = false,
+}: {
+  items: WalletListItemData[];
+  /** Hold the skeletons forever (no reveal) — for the zeroed auth backdrop,
+   *  so the sign-in crossfade lands on pixel-identical content and the reveal
+   *  beat plays on the LIVE home after landing. */
+  frozen?: boolean;
+}) {
   const reduceMotion = useReducedMotion();
   const now = useNow();
 
-  const [coverVisible, setCoverVisible] = useState(reduceMotion);
-  const [contentVisible, setContentVisible] = useState(reduceMotion);
+  const [coverVisible, setCoverVisible] = useState(!frozen && reduceMotion);
+  const [contentVisible, setContentVisible] = useState(!frozen && reduceMotion);
   useEffect(() => {
-    if (reduceMotion || items.length > 0) return;
+    if (frozen || reduceMotion || items.length > 0) return;
     const coverTimer = window.setTimeout(
       () => setCoverVisible(true),
       INITIAL_DELAY_S * 1000,
@@ -120,7 +129,7 @@ export function MarketplaceActivityList({ items }: { items: WalletListItemData[]
       window.clearTimeout(coverTimer);
       window.clearTimeout(contentTimer);
     };
-  }, [reduceMotion, items.length]);
+  }, [frozen, reduceMotion, items.length]);
 
   if (items.length === 0) {
     return (

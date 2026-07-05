@@ -20,5 +20,5 @@ export const MARKETPLACE_PUSH_PARALLAX = 120;
 /** Auth sheet copy. */
 export const MARKETPLACE_AUTH = {
   heading: 'Log in or sign up',
-  creating: 'Creating your account\u2026',
+  creating: 'Signing you in\u2026',
 };

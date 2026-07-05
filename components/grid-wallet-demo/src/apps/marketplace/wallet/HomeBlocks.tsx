@@ -82,6 +82,9 @@ export interface MarketplaceHomeContentProps {
   showActivity?: boolean;
   /** The wallet brain's activity feed (transfers + received payments). */
   activity?: WalletListItemData[];
+  /** Auth-backdrop mode: hold the activity skeletons with no reveal, so the
+   *  sign-in crossfade lands on pixel-identical content. */
+  activityFrozen?: boolean;
   /** One-shot sign-in entrance stagger. */
   entrance?: boolean;
   /** Balance rolls (NumericText) on the live home; static on the backdrop. */
@@ -108,6 +111,7 @@ export function MarketplaceHomeContent({
   rewardsMonthCents,
   showActivity = false,
   activity = [],
+  activityFrozen = false,
   entrance = false,
   animatedBalance = false,
   onDeposit,
@@ -220,7 +224,9 @@ export function MarketplaceHomeContent({
 
         <motion.div {...enter(4)} className={styles.activity}>
           <h2 className={styles.activityTitle}>Activity</h2>
-          {showActivity ? <MarketplaceActivityList items={activity} /> : null}
+          {showActivity ? (
+            <MarketplaceActivityList items={activity} frozen={activityFrozen} />
+          ) : null}
         </motion.div>
       </div>
     </div>

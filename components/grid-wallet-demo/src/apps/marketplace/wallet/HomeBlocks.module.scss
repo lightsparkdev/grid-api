@@ -262,8 +262,15 @@
   flex-direction: column;
   justify-content: space-between;
   height: 201px;
-  padding: 16px;
+  /* Sides match the balance card's 24px inset; vertical pulls in 4px (the
+     tiles' type sits optically low otherwise). */
+  padding: 20px 24px;
   box-sizing: border-box;
+}
+
+.performanceTile {
+  /* The bars hug the bottom edge — keep the full 24px beneath them. */
+  padding-bottom: 24px;
 }
 .tileHead {
   display: flex;

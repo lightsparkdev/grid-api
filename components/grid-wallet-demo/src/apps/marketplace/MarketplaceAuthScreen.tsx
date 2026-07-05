@@ -477,6 +477,12 @@ export function MarketplaceAuthScreen({
               balanceCents={0}
               apyPercent={EARNINGS_APY_PERCENT}
               rewardsMonthCents={0}
+              // Match the LIVE home pixel-for-pixel so the sign-in crossfade
+              // is invisible: same NumericText balance metrics, same held
+              // activity skeletons (the reveal beat plays after landing).
+              animatedBalance
+              showActivity
+              activityFrozen
             />
             <MarketplaceTabBar />
           </div>
