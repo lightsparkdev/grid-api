@@ -105,6 +105,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
             onDismiss={money.dismiss}
             confirming={home.sheetConfirming}
             onConfirm={home.confirmTransfer}
+            onReceive={home.handleReceivePayment}
           />
         </PresentationStage>
 

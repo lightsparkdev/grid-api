@@ -732,6 +732,59 @@
   }
 }
 
+/* Crypto deposit rows — the .row anatomy, but the ROW isn't tappable (the
+   copy/QR buttons are the actions), so no full-bleed hover fill. */
+.cryptoRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  color: var(--app-text-primary);
+}
+
+/* The network logos are self-contained brand tiles with their OWN rounded
+   corners (rx 33%) — larger than the sticker's inner squircle (r10), which
+   would leave bare slivers at the corners. Scaling past the clip crops the
+   logo's rounding off; the marks sit well inside the safe zone. */
+.netLogo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scale(1.25);
+}
+
+.rowActions {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Rounded-rect (squircle-clipped) icon buttons on the secondary fill. */
+.rowIconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: var(--mk-surface);
+  color: var(--app-text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mk-surface-press);
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
 /* Header "Add bank" pill — the Airbnb "Details" header button: full-round
    gray pill, top right of the bar. */
 .headerPill {

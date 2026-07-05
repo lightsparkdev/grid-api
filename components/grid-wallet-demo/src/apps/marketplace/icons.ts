@@ -9,6 +9,11 @@ import { IconChevronDownMedium } from '@central-icons-react/round-outlined-radiu
 // Deposit page source list.
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCash } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCash';
+// Crypto deposit list (copy / QR actions). QR only ships in the radius-1 set —
+// the glyph reads identically at this size.
+import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
+import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
+import { IconQrCode } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconQrCode';
 // Add-bank sheet (country search).
 import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
 import { IconGoogle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGoogle';
@@ -34,6 +39,9 @@ export {
   IconChevronDownMedium,
   IconBank,
   IconCash,
+  IconSquareBehindSquare6,
+  IconCheckmark2Small,
+  IconQrCode,
   IconMagnifyingGlass,
   IconGoogle,
   IconApple,

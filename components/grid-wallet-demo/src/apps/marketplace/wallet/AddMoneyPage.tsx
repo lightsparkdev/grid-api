@@ -12,12 +12,16 @@ import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/re
 import { TextMorph } from 'torph/react';
 import {
   accountLast4,
+  DEPOSIT_CHAINS,
   formatUsdCents,
   KEYPAD,
+  truncateAddress,
   type MoneySheet,
+  type ReceivedPayment,
   type SavedBank,
   type TransferActivity,
 } from '@/apps/shared/wallet';
+import { randomNetworkAddress } from '@/lib/cryptoAddresses';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -38,6 +42,9 @@ import {
   IconCash,
   IconApple,
   IconLoadingCircle,
+  IconSquareBehindSquare6,
+  IconCheckmark2Small,
+  IconQrCode,
   type MarketplaceIcon,
 } from '../icons';
 import {
@@ -142,7 +149,7 @@ const PAGE_TITLE = 'Deposit';
 
 /** Steps that have a marketplace face so far — a source row only navigates when
  *  its target is built (the rest stay press-feel no-ops until designed). */
-const BUILT_STEPS = new Set(['banks']);
+const BUILT_STEPS = new Set(['banks', 'deposit']);
 
 interface AddMoneyPageProps {
   /** The shared money-sheet brain (step machine, sources, banks, routing). */
@@ -153,6 +160,9 @@ interface AddMoneyPageProps {
   confirming: boolean;
   /** Confirm tapped — the parent runs Face ID then settles the transfer. */
   onConfirm: (cents: number, activity: TransferActivity) => void;
+  /** Copying a crypto deposit address simulates funds landing a beat later —
+   *  the wallet brain closes the page and settles the top-up. */
+  onReceive?: (payment: ReceivedPayment) => void;
 }
 
 /**
@@ -163,23 +173,37 @@ interface AddMoneyPageProps {
  * Header echoes the wallet home's bar; on scroll the large title tucks under
  * the bar, which then gains its hairline + a 14px centered bar title.
  */
-export function AddMoneyPage({ m, open, onDismiss, confirming, onConfirm }: AddMoneyPageProps) {
+export function AddMoneyPage({
+  m,
+  open,
+  onDismiss,
+  confirming,
+  onConfirm,
+  onReceive,
+}: AddMoneyPageProps) {
   const reduceMotion = useReducedMotion();
   const navDir: NavDir = { back: m.back, reduceMotion: !!reduceMotion };
 
   // The brain steps with a marketplace face. The Add bank sheet steps
   // (country/bankForm) keep the banks view beneath them; anything else
   // unbuilt falls back to the nearest built view so the page never blanks.
-  const viewStep: 'source' | 'banks' | 'amount' =
+  const viewStep: 'source' | 'banks' | 'deposit' | 'amount' =
     m.step === 'source'
       ? 'source'
-      : m.step === 'amount' || m.step === 'confirm'
-        ? 'amount'
-        : 'banks';
+      : m.step === 'deposit'
+        ? 'deposit'
+        : m.step === 'amount' || m.step === 'confirm'
+          ? 'amount'
+          : 'banks';
   // The amount screen rises OVER the page header carrying its own chrome, so
   // the page header keeps showing the view beneath it (banks) during the lift.
   const headerView = viewStep === 'amount' ? 'banks' : viewStep;
-  const stepTitle = headerView === 'banks' ? m.titles.banks : PAGE_TITLE;
+  const stepTitle =
+    headerView === 'banks'
+      ? m.titles.banks
+      : headerView === 'deposit'
+        ? m.titles.deposit
+        : PAGE_TITLE;
   const handleBack = () => {
     const backTo = m.backFrom[m.step];
     if (m.isEntryStep || !backTo) onDismiss();
@@ -340,6 +364,77 @@ export function AddMoneyPage({ m, open, onDismiss, confirming, onConfirm }: AddM
                         ))}
                       </div>
                     )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Add from crypto — the deposit-address list. Same mid-layer
+                  push as banks (they're sibling drill-ins off the source
+                  list, never up at once). */}
+              {viewStep === 'deposit' && (
+                <motion.div
+                  key="deposit"
+                  className={styles.step}
+                  style={{ zIndex: 20 }}
+                  custom={navDir}
+                  variants={midStepVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={STEP_TRANSITION}
+                >
+                  <div className={styles.scroll} onScroll={handleScroll}>
+                    <h1 className={styles.title}>{m.titles.deposit}</h1>
+                    <div className={styles.list}>
+                      {DEPOSIT_CHAINS.map((chain) => {
+                        const copied = m.copiedChainId === chain.id;
+                        return (
+                          <div key={chain.id} className={styles.cryptoRow}>
+                            <StickerTile>
+                              <img
+                                className={styles.netLogo}
+                                src={chain.logo}
+                                alt=""
+                                draggable={false}
+                              />
+                            </StickerTile>
+                            <span className={styles.rowLines}>
+                              <span className={styles.rowTitle}>{chain.name}</span>
+                              <span className={styles.rowSub}>
+                                {truncateAddress(chain.address)} &middot; {chain.time}
+                              </span>
+                            </span>
+                            <span className={styles.rowActions}>
+                              <RowIconBtn
+                                label={copied ? 'Copied' : `Copy ${chain.name} address`}
+                                onClick={() => {
+                                  m.copyValue(chain.id, chain.address);
+                                  // Copying an address simulates funds landing
+                                  // on that chain a beat later — the brain
+                                  // closes the page and settles the top-up.
+                                  onReceive?.({
+                                    via: 'crypto',
+                                    network: chain.name,
+                                    logo: chain.logo,
+                                    address: randomNetworkAddress(chain.name),
+                                  });
+                                }}
+                              >
+                                {copied ? (
+                                  <IconCheckmark2Small size={20} />
+                                ) : (
+                                  <IconSquareBehindSquare6 size={20} />
+                                )}
+                              </RowIconBtn>
+                              {/* QR is a visual affordance only (no-op). */}
+                              <RowIconBtn label={`Show ${chain.name} QR code`}>
+                                <IconQrCode size={20} />
+                              </RowIconBtn>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -925,6 +1020,31 @@ function SkeletonBankRow({ titleWidth, subWidth }: { titleWidth: number; subWidt
         <span className={styles.skeletonPill} style={{ width: subWidth, height: 12 }} />
       </span>
     </div>
+  );
+}
+
+/** Crypto-row action button — a 36px squircle rect on the secondary fill. */
+function RowIconBtn({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 10 });
+  return (
+    <button
+      type="button"
+      ref={clip.ref}
+      style={clip.style}
+      className={styles.rowIconBtn}
+      aria-label={label}
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
 
