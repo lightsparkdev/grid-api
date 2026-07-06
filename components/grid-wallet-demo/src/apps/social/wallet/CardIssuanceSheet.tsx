@@ -404,6 +404,14 @@ export function CardIssuanceSheet({
             status while a tap runs. pointer-events pass through to the canvas
             everywhere except the interactive area, so the hero card keeps its
             hover tilt. */}
+        {/* Own AnimatePresence so the home content mounts as a FRESH presence
+            child: the skin-switch AnimatePresence up in SignInFlow carries
+            initial={false}, and this keepMounted sheet lives inside its
+            first-generation subtree — without this wrapper, that presence
+            context suppresses the `initial` of everything mounting later
+            here, popping the home content in with no entrance (the Aurora
+            WalletListCard lesson). */}
+        <AnimatePresence initial={false}>
         {showHome && (
           <motion.div
             key="home"
@@ -475,6 +483,7 @@ export function CardIssuanceSheet({
             </motion.div>
           </motion.div>
         )}
+        </AnimatePresence>
 
         <div
           className={clsx(styles.content, flow === 'fan' && styles.contentSolid)}

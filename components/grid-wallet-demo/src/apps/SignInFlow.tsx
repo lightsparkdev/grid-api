@@ -132,6 +132,13 @@ function WalletHost({
   // The money-sheet brain rides the wallet brain's sheet state. The wiring here
   // (quote guard, save-confirmation toasts) was identical across every skin —
   // it lives with the brains now.
+  // The skin this host MOUNTED with — any other id means the user switched
+  // platforms mid-session, so the incoming view is a fresh face over live
+  // state (not the sign-in reveal). Skins that skip the sign-in stagger on
+  // their live home (marketplace) still cascade in on a switch.
+  const mountSkin = useRef(skinId);
+  const switchedIn = skinId !== mountSkin.current;
+
   const money = useMoneySheet({
     open: home.sheetOpen,
     mode: home.sheetMode,
@@ -168,7 +175,13 @@ function WalletHost({
         animate={{ ...SKIN_ENTER, transition: SKIN_FADE }}
         exit={{ ...SKIN_EXIT, transition: SKIN_FADE }}
       >
-        <WalletScreen entrance={entrance} home={home} money={money} onCardIssued={onCardIssued} />
+        <WalletScreen
+          entrance={entrance}
+          switchedIn={switchedIn}
+          home={home}
+          money={money}
+          onCardIssued={onCardIssued}
+        />
       </motion.div>
     </AnimatePresence>
   );
@@ -293,7 +306,11 @@ export function SignInFlow({
             // fades. Cross-fading both (wallet 0→1 while auth 1→0) lets the
             // page background bleed through mid-fade (~25% at the midpoint),
             // a visible flash even when the two layers are pixel-identical.
-            initial={false}
+            // An EXPLICIT solid pose, not initial={false}: false propagates
+            // down the motion tree and suppresses every descendant's entrance
+            // (the wallet home's stagger reveal hard-cut in instead of
+            // cascading under the dissolving auth layer).
+            initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
             // Stay solid underneath while the auth screen blur-fades in over it,
             // then unmount hidden — no peek at the background mid-transition.
