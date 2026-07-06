@@ -48,6 +48,7 @@ properties:
       | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
       | INCOMPLETE | Document is missing pages or sides |
       | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
+      | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
       | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
@@ -87,6 +88,7 @@ properties:
       - UNSUITABLE_DOCUMENT
       - INCOMPLETE
       - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
+      - SMS_OTP_CREDENTIAL_ALREADY_EXISTS
       - PASSKEY_CREDENTIAL_ALREADY_EXISTS
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED

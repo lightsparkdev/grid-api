@@ -120,6 +120,9 @@ private fun buildQuoteSource(sourceNode: JsonNode): QuoteSourceOneOf {
             .currency(sourceNode.get("currency").asText())
             .apply {
                 sourceNode.optText("customerId")?.let { customerId(it) }
+                // Required when funding from a crypto currency (e.g. USDC): selects the
+                // network the customer deposits on so the right deposit address is issued.
+                sourceNode.optText("cryptoNetwork")?.let { cryptoNetwork(it) }
             }
             .build()
         return QuoteSourceOneOf.ofRealtimeFundingQuoteSource(realtimeSource)

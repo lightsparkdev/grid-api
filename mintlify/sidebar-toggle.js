@@ -12,10 +12,6 @@
 (function () {
   var DESKTOP_MIN = 1024;
   var KEY = 'ls-nav-collapsed';
-  // NOTE: keep in sync with the demo-path check in docs.json head.raw — the
-  // pre-paint script collapses the playground before this runs (no flash). The
-  // path lives in both because the pre-paint must run inline, before this file.
-  var DEMO_PATHS = ['/global-accounts/demo', '/global-accounts/demo/'];
   var MIN_WIDTH = 280; // the original sidebar width — only resizes wider
   var MAX_WIDTH = 420;
   var SNAP_COLLAPSE = 240; // drag left past this x -> collapse
@@ -25,10 +21,6 @@
 
   function isDesktop() {
     return window.innerWidth >= DESKTOP_MIN;
-  }
-
-  function isDemo() {
-    return DEMO_PATHS.indexOf(location.pathname) !== -1;
   }
 
   // #sidebar-content is in the DOM on every docs page, but custom-layout pages
@@ -66,11 +58,10 @@
     document.documentElement.style.setProperty('--ls-sidebar-width', w + 'px');
   }
 
-  // The playground (demo) always starts collapsed — it needs the horizontal
-  // space — regardless of the saved preference. Every other page follows the
-  // remembered preference (default expanded).
+  // Follow the saved preference; default expanded everywhere (including the
+  // playground) so the docs nav is visible by default. The rail is still there
+  // to collapse the sidebar for more room.
   function shouldCollapse() {
-    if (isDemo()) return true;
     return getPref() === '1';
   }
 

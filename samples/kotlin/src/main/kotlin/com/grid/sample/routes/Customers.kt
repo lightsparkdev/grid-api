@@ -29,6 +29,7 @@ fun Route.customerRoutes() {
                     .apply {
                         json.optText("platformCustomerId")?.let { platformCustomerId(it) }
                         json.optText("fullName")?.let { fullName(it) }
+                        json.optText("email")?.let { email(it) }
                         json.optText("nationality")?.let { nationality(it) }
                         json.optText("birthDate")?.let { birthDate(LocalDate.parse(it)) }
                         json.get("address")?.takeIf { !it.isNull }?.let { addrNode ->

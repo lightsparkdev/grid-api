@@ -120,12 +120,18 @@ func generateClientKeyPair() -> ClientKeyPair {
 
 Grid returns an `otpEncryptionTargetBundle` whenever it initiates or reissues an OTP challenge, including `POST /auth/credentials/{id}/challenge` and add-EMAIL_OTP signed-retry responses. First-time EMAIL_OTP wallet bootstrap registration can omit it; if the registration response has no bundle, call `POST /auth/credentials/{id}/challenge` for that credential before verifying. The bundle is a signed enclave bundle whose `data` field is hex-encoded JSON carrying the enclave's HPKE target key as `targetPublic`. Pull out `targetPublic`, HPKE-encrypt `{ otp_code, public_key }` to it, and submit the library's `{ encappedPublic, ciphertext }` output as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`.
 
-Use an HPKE library so you don't hand-roll the suite, `info`, or AAD — `@turnkey/crypto`'s `hpkeEncrypt` + `formatHpkeBuf` produce exactly the shape the enclave expects:
+Use an HPKE library so you don't hand-roll the suite, `info`, or AAD. The
+helper below assumes your crypto layer returns the JSON string Grid expects for
+`encryptedOtpBundle`.
 
 ```typescript Web (TypeScript)
-// npm i @turnkey/crypto @noble/hashes
-import { hpkeEncrypt, formatHpkeBuf } from "@turnkey/crypto";
+// npm i @noble/hashes
 import { hexToBytes } from "@noble/hashes/utils";
+
+declare function hpkeEncryptToGridBundle(args: {
+  plainTextBuf: Uint8Array;
+  targetKeyBuf: Uint8Array;
+}): string;
 
 // otpEncryptionTargetBundle: from the registration response when present, or /challenge
 // clientPublicKeyHex: the uncompressed public key you generated in step 1
@@ -145,7 +151,10 @@ function buildEncryptedOtpBundle(
   const plainTextBuf = new TextEncoder().encode(
     JSON.stringify({ otp_code: otp, public_key: clientPublicKeyHex }),
   );
-  return formatHpkeBuf(hpkeEncrypt({ plainTextBuf, targetKeyBuf: hexToBytes(targetPublic) }));
+  return hpkeEncryptToGridBundle({
+    plainTextBuf,
+    targetKeyBuf: hexToBytes(targetPublic),
+  });
 }
 ```
 
@@ -165,7 +174,7 @@ Grid encrypts the session signing key with **HPKE** (RFC 9180) using the suite:
 - KDF: HKDF-SHA256
 - AEAD: AES-256-GCM
 
-The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag). For HPKE itself, uncompress the encapsulated key to 65-byte SEC1 form, set `info` to UTF-8 `turnkey_hpke`, and authenticate with AAD `encappedPublicUncompressed || recipientPublicKeyUncompressed`.
+The wire format is a base58check string. Decoded, the payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext (ciphertext || 16-byte auth tag). For HPKE itself, uncompress the encapsulated key to 65-byte SEC1 form, use Grid's session-bundle HPKE info value, and authenticate with AAD `encappedPublicUncompressed || recipientPublicKeyUncompressed`.
 
 <Note>
   Sandbox supports the same decryptable `encryptedSessionSigningKey` format for production-shaped `PASSKEY` and `OAUTH` tests. The legacy `Grid-Wallet-Signature: sandbox-valid-signature` shortcut is still accepted, but using real session bundles and stamps catches client-side format bugs before production.
@@ -181,7 +190,7 @@ import { DhkemP256HkdfSha256 } from "@hpke/dhkem-p256";
 import { p256 } from "@noble/curves/nist.js";
 import bs58check from "bs58check";
 
-const TURNKEY_HPKE_INFO = new TextEncoder().encode("turnkey_hpke");
+declare function gridSessionBundleHpkeInfo(): Uint8Array;
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
@@ -219,7 +228,7 @@ async function decryptSessionSigningKey(
   const recipient = await suite.createRecipientContext({
     recipientKey: clientKeyPair.privateKey,
     enc,
-    info: TURNKEY_HPKE_INFO,
+    info: gridSessionBundleHpkeInfo(),
   });
   const plaintext = await recipient.open(ciphertext, aad);
   return new Uint8Array(plaintext); // 32-byte P-256 session private key (scalar)
@@ -254,7 +263,7 @@ fun decryptSessionSigningKey(
         HPKE.kdf_HKDF_SHA256,
         HPKE.aead_AES_GCM256,
     )
-    val recipient = hpke.setupBaseR(enc, privateKey, "turnkey_hpke".toByteArray())
+    val recipient = hpke.setupBaseR(enc, privateKey, gridSessionBundleHpkeInfo())
     return recipient.open(aad, ciphertext)
 }
 ```
@@ -278,7 +287,7 @@ func decryptSessionSigningKey(
     var recipient = try HPKE.Recipient(
         privateKey: clientPrivateKey,
         ciphersuite: .P256_SHA256_AES_GCM_256,
-        info: Data("turnkey_hpke".utf8),
+        info: gridSessionBundleHpkeInfo(),
         encapsulatedKey: enc,
     )
     return try recipient.open(Data(ciphertext), authenticating: aad)
@@ -296,7 +305,7 @@ Grid returns `payloadToSign` strings from several endpoints:
 - `POST /auth/credentials` (adding an additional credential) — 202 response body.
 - `DELETE /auth/credentials/{id}`, `DELETE /auth/sessions/{id}`, `POST /auth/sessions/{id}/refresh`, `POST /internal-accounts/{id}/export`, `PATCH /internal-accounts/{id}`, `PATCH /customers/{id}` for tied `EMAIL_OTP` email updates — all 202 response bodies.
 
-Stamp the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The session signing key is a Turnkey API key: derive its compressed P-256 public key, sign the payload with the private scalar, then base64url-encode the Turnkey stamp JSON:
+Stamp the payload **byte-for-byte as returned** (do not re-parse, re-serialize, or trim whitespace). The session signing key produces a Grid wallet signature: derive its compressed P-256 public key, sign the payload with the private scalar, then base64url-encode the signature envelope:
 
 ```json
 {
@@ -314,11 +323,13 @@ Pass that full stamp as the `Grid-Wallet-Signature` header on the retry (and, fo
 
 <CodeGroup>
 ```typescript Web (TypeScript)
-// npm i @turnkey/api-key-stamper @turnkey/crypto
-import { signWithApiKey } from "@turnkey/api-key-stamper";
-import { getPublicKey } from "@turnkey/crypto";
+declare function deriveCompressedP256PublicKey(privateKeyHex: string): string;
+declare function signP256Sha256Der(args: {
+  content: string;
+  privateKeyHex: string;
+}): Promise<string>;
 
-const TURNKEY_STAMP_SCHEME = "SIGNATURE_SCHEME_TK_API_P256";
+const GRID_STAMP_SCHEME = "SIGNATURE_SCHEME_TK_API_P256";
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -337,15 +348,14 @@ async function buildGridWalletSignature(
   payloadToSign: string,
 ): Promise<string> {
   const apiPrivateKey = bytesToHex(sessionPrivateKeyBytes);
-  const apiPublicKey = bytesToHex(getPublicKey(apiPrivateKey, true));
-  const signature = await signWithApiKey({
+  const apiPublicKey = deriveCompressedP256PublicKey(apiPrivateKey);
+  const signature = await signP256Sha256Der({
     content: payloadToSign,
-    publicKey: apiPublicKey,
-    privateKey: apiPrivateKey,
+    privateKeyHex: apiPrivateKey,
   });
   const stamp = JSON.stringify({
     publicKey: apiPublicKey,
-    scheme: TURNKEY_STAMP_SCHEME,
+    scheme: GRID_STAMP_SCHEME,
     signature,
   });
   return base64url(new TextEncoder().encode(stamp));
@@ -361,7 +371,7 @@ import java.security.spec.ECPrivateKeySpec
 import java.security.spec.ECParameterSpec
 import org.bouncycastle.jce.ECNamedCurveTable
 
-private const val TURNKEY_STAMP_SCHEME = "SIGNATURE_SCHEME_TK_API_P256"
+private const val GRID_STAMP_SCHEME = "SIGNATURE_SCHEME_TK_API_P256"
 
 private fun ByteArray.hex(): String = joinToString("") { "%02x".format(it) }
 
@@ -390,7 +400,7 @@ fun buildGridWalletSignature(
     }
     val derSignatureHex = signer.sign().hex() // JCE returns DER-encoded ECDSA.
     val publicKeyHex = compressedPublicKeyHex(privateKey as ECPrivateKey) // 33-byte SEC1 form.
-    val stampJson = """{"publicKey":"$publicKeyHex","scheme":"$TURNKEY_STAMP_SCHEME","signature":"$derSignatureHex"}"""
+    val stampJson = """{"publicKey":"$publicKeyHex","scheme":"$GRID_STAMP_SCHEME","signature":"$derSignatureHex"}"""
     return base64url(stampJson)
 }
 ```

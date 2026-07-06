@@ -1,4 +1,4 @@
-export type FlowKey = 'payout' | 'embedded-wallet'
+export type FlowKey = 'payout' | 'usdc-payout' | 'exchange-rates' | 'embedded-wallet'
 
 interface FlowEntry {
   key: FlowKey
@@ -8,9 +8,19 @@ interface FlowEntry {
 
 const FLOWS: FlowEntry[] = [
   {
+    key: 'exchange-rates',
+    label: 'Exchange Rates',
+    description: 'Look up FX rates and fees for a corridor',
+  },
+  {
     key: 'payout',
     label: 'Payout to Bank Account',
     description: 'Send a real-time payment funded with USDC',
+  },
+  {
+    key: 'usdc-payout',
+    label: 'Send USDC to a Wallet',
+    description: 'Send USDC on-chain to an external wallet, funded with USD',
   },
   {
     key: 'embedded-wallet',

@@ -5,10 +5,11 @@ post:
     source backed by an Embedded Wallet internal account to a
     Grid-custodied P-256 API key. Grid uses the requested card and internal
     account to identify the wallet funding source, generates the keypair
-    server-side, creates a non-root Turnkey user holding the public key, then
-    a policy granting that user signing authority. The private key is
-    custodied by Grid and never returned. Both activities must be authorized
-    by the wallet owner, so creation is a three-leg signed-retry flow:
+    server-side, creates an isolated signer identity holding the public key,
+    then policies granting that identity signing and self-revocation authority.
+    The private key is custodied by Grid and never returned. Both activities
+    must be authorized by the wallet owner, so creation is a three-leg
+    signed-retry flow:
 
 
     1. Call `POST /auth/delegated-keys` with no signature headers. Grid
@@ -30,19 +31,19 @@ post:
 
 
     The same request body must be sent on all three legs. A flow abandoned
-    after the second leg leaves the key in `PENDING` status: the delegated
-    user exists but holds no policy, so it cannot sign. After activation,
-    Grid uses the custodied key to authorize signing for the card's Embedded
-    Wallet funding account in place of a session keypair; the platform never
-    handles the key material.
+    after the second leg leaves the key in `PENDING` status: the signer
+    identity exists but holds no policies, so it cannot sign or revoke itself.
+    Abandoned `PENDING` keys do not block creating another delegated key.
+    After activation, Grid uses the custodied key to authorize signing for the
+    card's Embedded Wallet funding account in place of a session keypair; the
+    platform never handles the key material.
 
 
-    Each card funding source may have at most one non-revoked delegated key
-    (`ACTIVE` or `PENDING`) for its Embedded Wallet funding account; revoke
-    the existing key before creating a new one. A delegated key authorizes
-    raw-payload signing for the wallet and cannot be scoped to amounts or
-    recipients by Turnkey. Revoke it with
-    `DELETE /auth/delegated-keys/{id}` when no longer needed.
+    Each card funding source may have at most one `ACTIVE` delegated key for
+    its Embedded Wallet funding account; revoke the existing active key before
+    creating a new one. A delegated key authorizes raw-payload signing for the
+    wallet and cannot be scoped to amounts or recipients by the public API.
+    Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
   operationId: createDelegatedKey
   tags:
     - Embedded Wallet Auth
@@ -139,8 +140,8 @@ post:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        A non-revoked delegated key (`ACTIVE` or `PENDING`) already exists
-        for this card funding source. Revoke it with
+        An `ACTIVE` delegated key already exists for this card funding source.
+        Revoke it with
         `DELETE /auth/delegated-keys/{id}` before creating a new one.
       content:
         application/json:

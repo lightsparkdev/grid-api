@@ -3,6 +3,7 @@ required:
   - id
   - status
   - type
+  - direction
   - destination
   - customerId
   - platformCustomerId
@@ -15,6 +16,9 @@ properties:
     $ref: ./TransactionStatus.yaml
   type:
     $ref: ./TransactionType.yaml
+  direction:
+    $ref: ./TransactionDirection.yaml
+    description: Whether this transaction credits or debits the customer's account.
   destination:
     $ref: ./TransactionDestinationOneOf.yaml
   customerId:

@@ -45,26 +45,15 @@ get:
 delete:
   summary: Revoke a delegated signing key
   description: >
-    Revoke a delegated signing key. Revocation is a single signed-retry flow:
+    Revoke an `ACTIVE` delegated signing key. Grid uses the custodied
+    delegated key to authorize deleting its own signer identity. Deleting the
+    identity also removes its API key, after which the delegated key can no
+    longer sign. The response is `204` when revocation completes.
 
 
-    1. Call `DELETE /auth/delegated-keys/{id}` with no headers. The response
-    is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
-
-
-    2. Stamp `payloadToSign` with the session API keypair of a verified
-    credential on the delegated key's Embedded Wallet funding account and
-    retry with `Grid-Wallet-Signature` and `Request-Id` headers. This deletes
-    the delegated user and its API key, after which the key can no longer
-    sign, and the response is `204`.
-
-
-    Deleting the user is the kill switch: it removes the API key the
-    delegated key authenticated with, so signing stops regardless of the
-    policy. The policy is left in place — its consensus references the
-    now-deleted user, so it can never authorize anything (Turnkey user IDs
-    are never reused), and deleting it is unnecessary for correctness or
-    security.
+    The underlying signing policies are left in place. Their consensus
+    references the now-deleted signer identity, so they can never authorize
+    anything, and deleting them is unnecessary for correctness or security.
   operationId: revokeDelegatedKey
   tags:
     - Embedded Wallet Auth
@@ -80,54 +69,20 @@ delete:
       schema:
         type: string
       example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
-    - name: Grid-Wallet-Signature
-      in: header
-      required: false
-      description: >-
-        Full API-key stamp built over the prior `payloadToSign` with the
-        session API keypair of a verified credential on the same internal
-        account. Required on the signed retries; ignored on the initial
-        call.
-      schema:
-        type: string
-      example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
-    - name: Request-Id
-      in: header
-      required: false
-      description: >-
-        The `requestId` returned in the prior `202` response, echoed back
-        exactly on the signed retry so the server can correlate it with the
-        issued challenge. Required on the signed retries; must be paired
-        with `Grid-Wallet-Signature`.
-      schema:
-        type: string
-      example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
   responses:
-    '202':
-      description: >-
-        Challenge issued. Stamp `payloadToSign` and retry to complete
-        revocation.
-      content:
-        application/json:
-          schema:
-            $ref: ../../components/schemas/auth/DelegatedKeySignedRequestChallenge.yaml
     '204':
       description: >-
         Delegated key revoked. The key can no longer authorize signing.
     '400':
       description: >-
         Bad request. Returned when the delegated key has already been
-        revoked.
+        revoked or is not `ACTIVE`.
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error400.yaml
     '401':
-      description: >-
-        Unauthorized. Returned when the provided `Grid-Wallet-Signature` is
-        missing on a retry, malformed, or does not match the pending
-        challenge, or when the `Request-Id` does not match an unexpired
-        pending challenge.
+      description: Unauthorized.
       content:
         application/json:
           schema:

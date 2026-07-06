@@ -323,7 +323,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     The TEK public key is now the session API key. The TEK private key **is** the session signing key — the client already has it.
   </Step>
   <Step title="Client stamps the quote payload">
-    The client <a href="client-keys#4-sign-a-payloadtosign">stamps the quote's `payloadToSign`</a> with the same TEK private key. Return the full Turnkey API-key stamp to your backend.
+    The client <a href="client-keys#4-sign-a-payloadtosign">signs the quote's `payloadToSign`</a> with the same TEK private key. Return the full Grid wallet signature to your backend.
   </Step>
 </Steps>
 

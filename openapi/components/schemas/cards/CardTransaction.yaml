@@ -1,14 +1,15 @@
+title: Card Transaction
 type: object
 required:
+  - type
   - id
-  - cardId
   - status
+  - direction
   - merchant
   - authorizedAmount
   - accountId
-  - pullSummary
-  - refundSummary
-  - settlementSummary
+  - customerId
+  - platformCustomerId
   - authorizedAt
   - createdAt
   - updatedAt
@@ -20,6 +21,11 @@ description: >-
   webhook stream (extends the Transaction model with a card
   destination type) on every transition.
 properties:
+  type:
+    type: string
+    enum:
+      - CARD
+    description: Discriminator identifying this transaction as a card transaction in the `Transaction` list.
   id:
     type: string
     description: System-generated unique card transaction identifier
@@ -29,6 +35,14 @@ properties:
     type: string
     description: The id of the `Card` this transaction was made on.
     example: Card:019542f5-b3e7-1d02-0000-000000000010
+  customerId:
+    type: string
+    description: System ID of the customer (cardholder) this transaction belongs to.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  platformCustomerId:
+    type: string
+    description: Platform-specific ID of the customer (cardholder) this transaction belongs to.
+    example: 18d3e5f7b4a9c2
   issuerTransactionToken:
     type: string
     description: >-
@@ -38,6 +52,10 @@ properties:
     readOnly: true
   status:
     $ref: ./CardTransactionStatus.yaml
+  direction:
+    $ref: ../transactions/TransactionDirection.yaml
+    description: Card transactions debit the customer's account.
+    example: DEBIT
   merchant:
     $ref: ./CardMerchant.yaml
   authorizedAmount:

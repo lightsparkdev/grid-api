@@ -3,7 +3,7 @@ info:
   title: Grid API
   description: |
     API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://docs.lightspark.com/.
-  version: '2025-10-13'
+  version: '2026-06-29'
   contact:
     name: Lightspark Support
     email: support@lightspark.com
@@ -229,7 +229,7 @@ paths:
                           symbol: ₹
                         destinationPaymentRail: UPI
                         receivingAmount: 825000
-                        exchangeRate: 82.5
+                        exchangeRate: 0.012121
                         fees:
                           fixed: 100
                           total: 150
@@ -248,8 +248,8 @@ paths:
                           name: Euro
                           symbol: €
                         destinationPaymentRail: SEPA_INSTANT
-                        receivingAmount: 18500
-                        exchangeRate: 0.925
+                        receivingAmount: 9250
+                        exchangeRate: 1.081081
                         fees:
                           fixed: 10
                           total: 15
@@ -368,6 +368,8 @@ paths:
                   fullName: Jane Smith
                   birthDate: '1990-01-15'
                   nationality: US
+                  email: jane.smith@example.com
+                  phoneNumber: '+14155551234'
               individualCustomerInferred:
                 summary: Create an individual customer with inferred currencies
                 value:
@@ -377,6 +379,7 @@ paths:
                   fullName: Carlos García
                   birthDate: '1988-05-22'
                   nationality: MX
+                  phoneNumber: '+525512345678'
               businessCustomer:
                 summary: Create a business customer
                 value:
@@ -386,6 +389,8 @@ paths:
                   currencies:
                     - USD
                     - USDC
+                  email: finance@acme.com
+                  phoneNumber: '+14155559876'
                   businessInfo:
                     legalName: Acme Corporation
                     doingBusinessAs: Acme
@@ -621,11 +626,13 @@ paths:
       description: |
         Update a customer's metadata by their system-generated ID.
 
-        Most customer updates complete synchronously and return `200` with the updated customer. If the request changes `email` for a customer that has one or more tied Embedded Wallet internal accounts with `EMAIL_OTP` credentials, the email change uses the two-step signed-retry flow so the customer's wallet session authorizes the authentication credential update. On the signed retry, Grid updates the customer email and every tied `EMAIL_OTP` credential across all tied Embedded Wallets as one logical operation. If any tied credential cannot be updated, the customer email is not changed.
+        Most customer updates complete synchronously and return `200` with the updated customer. If the request changes `email` for a customer that has one or more tied Embedded Wallet internal accounts with `EMAIL_OTP` credentials, or changes `phoneNumber` for a customer that has one or more tied Embedded Wallet internal accounts with `SMS_OTP` credentials, the contact update uses the two-step signed-retry flow so the customer's wallet session authorizes the authentication credential update. On the signed retry, Grid updates the customer contact field and every tied matching OTP credential across all tied Embedded Wallets as one logical operation. If any tied credential cannot be updated, the customer contact field is not changed.
 
-        For an Embedded Wallet email update:
+        Update `email` and `phoneNumber` in separate PATCH calls. A request that includes both fields is rejected.
 
-        1. Call `PATCH /customers/{customerId}` with the full update body and no signature headers. Grid returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. The pending challenge binds the submitted update fields and the set of tied Embedded Wallet email OTP credentials that must be updated.
+        For an Embedded Wallet email or SMS auth phone update:
+
+        1. Call `PATCH /customers/{customerId}` with the full update body and no signature headers. Grid returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. The pending challenge binds the submitted update fields and the set of tied Embedded Wallet OTP credentials that must be updated.
 
         2. Use the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the same update fields submitted in step 1. The signed retry returns `200` with the updated customer.
       operationId: updateCustomerById
@@ -637,14 +644,14 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets. Required on the signed retry for Embedded Wallet email updates; ignored on the initial call and on customer updates that complete synchronously.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets. Required on the signed retry for Embedded Wallet email or SMS auth phone updates; ignored on the initial call and on customer updates that complete synchronously.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry for Embedded Wallet email updates; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry for Embedded Wallet email or SMS auth phone updates; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
           example: Request:019542f5-b3e7-1d02-0000-000000000010
@@ -693,15 +700,26 @@ paths:
                 value:
                   customerType: INDIVIDUAL
                   email: john.smith@example.com
+              embeddedWalletPhoneUpdate:
+                summary: Embedded Wallet SMS auth phone update request (both steps)
+                value:
+                  customerType: INDIVIDUAL
+                  phoneNumber: '+14155559876'
+              combinedContactUpdateRejected:
+                summary: Combined email and phone update request (rejected)
+                value:
+                  customerType: INDIVIDUAL
+                  email: john.smith@example.com
+                  phoneNumber: '+14155559876'
       responses:
         '200':
-          description: Customer updated successfully. For Embedded Wallet email updates, this is returned only on the signed retry after the customer email and all tied email OTP credentials have been updated.
+          description: Customer updated successfully. For Embedded Wallet email or SMS auth phone updates, this is returned only on the signed retry after the customer contact field and all tied matching OTP credentials have been updated.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomerOneOf'
         '202':
-          description: Challenge issued for an Embedded Wallet email update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+          description: Challenge issued for an Embedded Wallet email or SMS auth phone update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
           content:
             application/json:
               schema:
@@ -713,6 +731,12 @@ paths:
                     payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"john.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
+                embeddedWalletPhoneUpdate:
+                  summary: Embedded Wallet customer SMS auth phone update challenge
+                  value:
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                    requestId: Request:019542f5-b3e7-1d02-0000-000000000011
+                    expiresAt: '2026-04-08T15:35:00Z'
         '400':
           description: Bad request
           content:
@@ -720,7 +744,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Also returned for Embedded Wallet email update retries when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match the pending customer update challenge, when the `Request-Id` does not match an unexpired pending challenge, or when the retry body does not match the update fields bound into `payloadToSign` on the initial call.
+          description: Unauthorized. Also returned for Embedded Wallet email or SMS auth phone update retries when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match the pending customer update challenge, when the `Request-Id` does not match an unexpired pending challenge, or when the retry body does not match the update fields bound into `payloadToSign` on the initial call.
           content:
             application/json:
               schema:
@@ -732,13 +756,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential on this or another internal account, or when the tied Embedded Wallet email OTP credential set changed between the initial `202` challenge and the signed retry.
+          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential, or the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account, or when the tied Embedded Wallet OTP credential set changed between the initial `202` challenge and the signed retry.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
         '424':
-          description: Failed dependency. Returned when Grid cannot update one or more tied Embedded Wallet email OTP credentials. The customer email is not changed unless all tied credentials are updated successfully.
+          description: Failed dependency. Returned when Grid cannot update one or more tied Embedded Wallet OTP credentials. The customer contact field is not changed unless all tied credentials are updated successfully.
           content:
             application/json:
               schema:
@@ -2397,6 +2421,7 @@ paths:
                     accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
                     paymentRail: ACH
                   amount: 12550
+                  remittanceInformation: '12345'
       responses:
         '201':
           description: Transfer-out request created successfully
@@ -2784,7 +2809,7 @@ paths:
 
         When the quote's `source` is an internal account of type `EMBEDDED_WALLET`,
         the request must include a `Grid-Wallet-Signature` header. The header value
-        is the full Turnkey API-key stamp built over the `payloadToSign` value from
+        is the full Grid wallet signature built over the `payloadToSign` value from
         the quote's `paymentInstructions[].accountOrWalletInfo` entry with the
         session private key of a verified authentication credential on the source
         Embedded Wallet.
@@ -2814,7 +2839,7 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full Turnkey API-key stamp over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          description: Full Grid wallet signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
@@ -2864,6 +2889,11 @@ paths:
         Retrieve a paginated list of transactions with optional filtering.
         The transactions can be filtered by customer ID, platform customer ID, UMA address,
         date range, status, and transaction type.
+
+        Card transactions are included and identified by `type: CARD`. In Sandbox this is how
+        you discover a `CardTransaction` id after simulating an authorization — list the
+        transactions, take the card transaction's `id`, and pass it as the `cardTransactionId`
+        to the clearing and return simulate endpoints.
       operationId: listTransactions
       tags:
         - Transactions
@@ -4302,9 +4332,9 @@ paths:
       description: |
         Register an authentication credential for an Embedded Wallet customer.
 
-        Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`OAUTH` or `PASSKEY`), or to add `EMAIL_OTP` back after it has been removed. Only one `EMAIL_OTP` credential is supported per internal account; multiple distinct `PASSKEY` credentials may be registered.
+        Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`SMS_OTP`, `OAUTH`, or `PASSKEY`), or to add `EMAIL_OTP` / `SMS_OTP` back after it has been removed. Only one `EMAIL_OTP` and one `SMS_OTP` credential are supported per internal account; multiple distinct `PASSKEY` credentials may be registered.
 
-        Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (decrypted client-side from its `encryptedSessionSigningKey`) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For `EMAIL_OTP`, the OTP email is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+        Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (decrypted client-side from its `encryptedSessionSigningKey`) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -4337,6 +4367,11 @@ paths:
                 value:
                   type: EMAIL_OTP
                   accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              smsOtp:
+                summary: Add an SMS OTP credential
+                value:
+                  type: SMS_OTP
+                  accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
               oauth:
                 summary: Add an OAuth credential
                 value:
@@ -4359,7 +4394,7 @@ paths:
                       - hybrid
       responses:
         '201':
-          description: Authentication credential created successfully. The body is the created `AuthMethod` for all three credential types. For `EMAIL_OTP`, the email is the customer email tied to the internal account. When the response is for adding EMAIL_OTP back to an existing wallet through the signed-retry flow, it also carries `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. First-time EMAIL_OTP wallet bootstrap responses may omit that bundle; if it is absent, call `POST /auth/credentials/{id}/challenge` for the new credential to issue a fresh OTP and receive `otpEncryptionTargetBundle` before verifying. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
+          description: Authentication credential created successfully. The body is the created `AuthMethod`. For `EMAIL_OTP`, the nickname is the customer email tied to the internal account; for `SMS_OTP`, it is the customer phone number. OTP responses that trigger a secure OTP challenge carry `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. First-time EMAIL_OTP wallet bootstrap responses may omit that bundle; if it is absent, call `POST /auth/credentials/{id}/challenge` for the new credential to issue a fresh OTP and receive `otpEncryptionTargetBundle` before verifying. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
           content:
             application/json:
               schema:
@@ -4372,6 +4407,16 @@ paths:
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
                     nickname: example@lightspark.com
+                    otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
+                    createdAt: '2026-04-08T15:30:01Z'
+                    updatedAt: '2026-04-08T15:30:01Z'
+                smsOtp:
+                  summary: SMS OTP credential created
+                  value:
+                    id: AuthMethod:019542f5-b3e7-1d02-0000-000000000001
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    type: SMS_OTP
+                    nickname: '+14155550123'
                     otpEncryptionTargetBundle: '''{version:v1.0.0,data:7b227461726765745075626c6963...,dataSignature:30450221...,enclaveQuorumPublic:04a1b2c3...}'''
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
@@ -4407,6 +4452,13 @@ paths:
                     payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"jane@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
+                smsOtp:
+                  summary: Additional SMS OTP credential challenge
+                  value:
+                    type: SMS_OTP
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155550123"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                    requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+                    expiresAt: '2026-04-08T15:35:00Z'
                 oauth:
                   summary: Additional OAuth credential challenge
                   value:
@@ -4422,7 +4474,7 @@ paths:
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
-          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while one already exists, or `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer.
+          description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while one already exists, `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer.
           content:
             application/json:
               schema:
@@ -4595,12 +4647,12 @@ paths:
       description: |
         Complete the verification step for a previously created authentication credential and issue a session.
 
-        For `EMAIL_OTP` credentials, submit the `encryptedOtpBundle` produced by HPKE-encrypting `{otp_code, public_key}` under the `otpEncryptionTargetBundle` returned from registration when present, or from `POST /auth/credentials/{id}/challenge` when registration omitted it or the OTP must be reissued. The server is a pass-through and never sees the plaintext OTP code. On success the response is `202` with a `payloadToSign` carrying the `verificationToken` bound to the client's TEK public key — sign that token with the matching TEK private key, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`. The signed retry returns `200` with the issued `AuthSession`. The TEK public key becomes the session API key on successful completion.
-        In sandbox mode, the EMAIL_OTP flow runs real HPKE end-to-end against a sandbox enclave keypair — clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code (`"000000"`) the user "receives" instead of a real email delivery.
+        For `EMAIL_OTP` and `SMS_OTP` credentials, submit the `encryptedOtpBundle` produced by HPKE-encrypting `{otp_code, public_key}` under the `otpEncryptionTargetBundle` returned from registration when present, or from `POST /auth/credentials/{id}/challenge` when registration omitted it or the OTP must be reissued. The server is a pass-through and never sees the plaintext OTP code. On success the response is `202` with a `payloadToSign` carrying the `verificationToken` bound to the client's TEK public key — sign that token with the matching TEK private key, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`. The signed retry returns `200` with the issued `AuthSession`. The TEK public key becomes the session API key on successful completion.
+        In sandbox mode, the OTP flow runs real HPKE end-to-end against a sandbox enclave keypair — clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code (`"000000"`) the user "receives" instead of a real email or SMS delivery.
 
         For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
 
-        On success for `OAUTH` and `PASSKEY`, and on the signed retry for `EMAIL_OTP`, the response contains an `AuthSession`. For `OAUTH` and `PASSKEY` the session signing key is delivered as `encryptedSessionSigningKey` (HPKE-sealed to the supplied `clientPublicKey`); for `EMAIL_OTP` the client already holds the session signing key (the TEK private key it generated) and that field is omitted from the response. The `expiresAt` timestamp marks when the session expires.
+        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. For `OAUTH` and `PASSKEY` the session signing key is delivered as `encryptedSessionSigningKey` (HPKE-sealed to the supplied `clientPublicKey`); for OTP credentials the client already holds the session signing key (the TEK private key it generated) and that field is omitted from the response. The `expiresAt` timestamp marks when the session expires.
       operationId: verifyAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -4616,14 +4668,14 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the TEK (Target Encryption Key) keypair the client generated for this login. Required on the signed retry that completes an `EMAIL_OTP` verification. Not used by `OAUTH` or `PASSKEY` verification, which complete in a single call.
+          description: Full API-key stamp built over the prior `payloadToSign` with the TEK (Target Encryption Key) keypair the client generated for this login. Required on the signed retry that completes an `EMAIL_OTP` or `SMS_OTP` verification. Not used by `OAUTH` or `PASSKEY` verification, which complete in a single call.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response from this endpoint, echoed back exactly here so the server can correlate the signed retry with the issued challenge. Required on the signed retry that completes an `EMAIL_OTP` verification; must be paired with `Grid-Wallet-Signature`. For `PASSKEY` verification, the `requestId` issued from `POST /auth/credentials/{id}/challenge` is echoed here instead so the server can correlate the assertion with the pending challenge.
+          description: The `requestId` returned in a prior `202` response from this endpoint, echoed back exactly here so the server can correlate the signed retry with the issued challenge. Required on the signed retry that completes an `EMAIL_OTP` or `SMS_OTP` verification; must be paired with `Grid-Wallet-Signature`. For `PASSKEY` verification, the `requestId` issued from `POST /auth/credentials/{id}/challenge` is echoed here instead so the server can correlate the assertion with the pending challenge.
           schema:
             type: string
           example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
@@ -4638,6 +4690,11 @@ paths:
                 summary: Verify an email OTP credential (first leg)
                 value:
                   type: EMAIL_OTP
+                  encryptedOtpBundle: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
+              smsOtp:
+                summary: Verify an SMS OTP credential (first leg)
+                value:
+                  type: SMS_OTP
                   encryptedOtpBundle: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
               emailOtpSignedRetry:
                 summary: Signed retry completing an email OTP verification
@@ -4668,7 +4725,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthSession'
         '202':
-          description: Verification challenge issued. Returned only for `EMAIL_OTP` credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
+          description: Verification challenge issued. Returned only for OTP credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
           content:
             application/json:
               schema:
@@ -4688,7 +4745,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP`), for an OIDC token whose signature, issuer, identity, nonce, or `iat` freshness check failed (`OAUTH`), or for a WebAuthn assertion whose signature, challenge, or credential match failed (`PASSKEY`). Also returned for `PASSKEY` when `Request-Id` is missing, does not match an unexpired pending challenge for this credential, or was already consumed. For `EMAIL_OTP` signed retries, returned when `Grid-Wallet-Signature` is missing, malformed, signed by a public key that does not match the one bound into the `verificationToken`, or when `Request-Id` does not match an unexpired pending verification challenge.
+          description: Unauthorized. Returned for an invalid or expired OTP (`EMAIL_OTP` or `SMS_OTP`), for an OIDC token whose signature, issuer, identity, nonce, or `iat` freshness check failed (`OAUTH`), or for a WebAuthn assertion whose signature, challenge, or credential match failed (`PASSKEY`). Also returned for `PASSKEY` when `Request-Id` is missing, does not match an unexpired pending challenge for this credential, or was already consumed. For OTP signed retries, returned when `Grid-Wallet-Signature` is missing, malformed, signed by a public key that does not match the one bound into the `verificationToken`, or when `Request-Id` does not match an unexpired pending verification challenge.
           content:
             application/json:
               schema:
@@ -4722,11 +4779,11 @@ paths:
       description: |
         Re-issue the challenge for an existing authentication credential.
 
-        For `EMAIL_OTP` credentials, this triggers a new one-time password email to the address on file and returns a fresh `otpEncryptionTargetBundle` for the client to HPKE-encrypt the OTP attempt against. After the user receives the new OTP, build the `encryptedOtpBundle` under the new target bundle and call `POST /auth/credentials/{id}/verify` to begin the secure OTP login flow.
+        For `EMAIL_OTP` and `SMS_OTP` credentials, this triggers a new one-time password to the contact on file and returns a fresh `otpEncryptionTargetBundle` for the client to HPKE-encrypt the OTP attempt against. After the user receives the new OTP, build the `encryptedOtpBundle` under the new target bundle and call `POST /auth/credentials/{id}/verify` to begin the secure OTP login flow.
 
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
-        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the Turnkey session-creation payload the returned challenge is computed from — this seals the resulting session signing key to the client. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical Turnkey session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from — this seals the resulting session signing key to the client. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -4740,7 +4797,7 @@ paths:
           schema:
             type: string
       requestBody:
-        description: Request body. Required when re-challenging a `PASSKEY` credential (must carry `clientPublicKey`). Ignored for `EMAIL_OTP`, where the credential type alone is sufficient — the OTP is delivered out-of-band. OAuth credentials do not use this endpoint.
+        description: Request body. Required when re-challenging a `PASSKEY` credential (must carry `clientPublicKey`). Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient — the OTP is delivered out-of-band. OAuth credentials do not use this endpoint.
         required: false
         content:
           application/json:
@@ -4754,9 +4811,12 @@ paths:
               emailOtp:
                 summary: Re-challenge an email-OTP credential (empty body)
                 value: {}
+              smsOtp:
+                summary: Re-challenge an SMS-OTP credential (empty body)
+                value: {}
       responses:
         '200':
-          description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` the body is a plain `AuthMethod` and a new OTP email has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the passkey `credentialId`, freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`.
+          description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` and `SMS_OTP` the body is a plain `AuthMethod` and a new OTP has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the passkey `credentialId`, freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`.
           content:
             application/json:
               schema:
@@ -4941,7 +5001,7 @@ paths:
       description: |
         Refresh an active Embedded Wallet auth session and create a new session signing key. Session refresh is a two-step signed-retry flow:
 
-        1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a Turnkey create-read-write-session payload, binds the supplied `clientPublicKey` into that payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+        1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a Grid session-refresh payload, binds the supplied `clientPublicKey` into that payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
         2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession` with an `encryptedSessionSigningKey` sealed to that client public key.
 
@@ -5044,7 +5104,7 @@ paths:
     post:
       summary: Create a delegated signing key
       description: |
-        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card and internal account to identify the wallet funding source, generates the keypair server-side, creates a non-root Turnkey user holding the public key, then a policy granting that user signing authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
+        Delegate Spark token-transaction signing authority for a card funding source backed by an Embedded Wallet internal account to a Grid-custodied P-256 API key. Grid uses the requested card and internal account to identify the wallet funding source, generates the keypair server-side, creates an isolated signer identity holding the public key, then policies granting that identity signing and self-revocation authority. The private key is custodied by Grid and never returned. Both activities must be authorized by the wallet owner, so creation is a three-leg signed-retry flow:
 
         1. Call `POST /auth/delegated-keys` with no signature headers. Grid generates the delegated keypair and the response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
 
@@ -5052,9 +5112,9 @@ paths:
 
         3. Stamp the new `payloadToSign` with the same session keypair and retry once more with the new `Request-Id`. The signed retry returns `201` with the created `DelegatedKey` in `ACTIVE` status.
 
-        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the delegated user exists but holds no policy, so it cannot sign. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
+        The same request body must be sent on all three legs. A flow abandoned after the second leg leaves the key in `PENDING` status: the signer identity exists but holds no policies, so it cannot sign or revoke itself. Abandoned `PENDING` keys do not block creating another delegated key. After activation, Grid uses the custodied key to authorize signing for the card's Embedded Wallet funding account in place of a session keypair; the platform never handles the key material.
 
-        Each card funding source may have at most one non-revoked delegated key (`ACTIVE` or `PENDING`) for its Embedded Wallet funding account; revoke the existing key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by Turnkey. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
+        Each card funding source may have at most one `ACTIVE` delegated key for its Embedded Wallet funding account; revoke the existing active key before creating a new one. A delegated key authorizes raw-payload signing for the wallet and cannot be scoped to amounts or recipients by the public API. Revoke it with `DELETE /auth/delegated-keys/{id}` when no longer needed.
       operationId: createDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -5133,7 +5193,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: A non-revoked delegated key (`ACTIVE` or `PENDING`) already exists for this card funding source. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
+          description: An `ACTIVE` delegated key already exists for this card funding source. Revoke it with `DELETE /auth/delegated-keys/{id}` before creating a new one.
           content:
             application/json:
               schema:
@@ -5237,13 +5297,9 @@ paths:
     delete:
       summary: Revoke a delegated signing key
       description: |
-        Revoke a delegated signing key. Revocation is a single signed-retry flow:
+        Revoke an `ACTIVE` delegated signing key. Grid uses the custodied delegated key to authorize deleting its own signer identity. Deleting the identity also removes its API key, after which the delegated key can no longer sign. The response is `204` when revocation completes.
 
-        1. Call `DELETE /auth/delegated-keys/{id}` with no headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
-
-        2. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account and retry with `Grid-Wallet-Signature` and `Request-Id` headers. This deletes the delegated user and its API key, after which the key can no longer sign, and the response is `204`.
-
-        Deleting the user is the kill switch: it removes the API key the delegated key authenticated with, so signing stops regardless of the policy. The policy is left in place — its consensus references the now-deleted user, so it can never authorize anything (Turnkey user IDs are never reused), and deleting it is unnecessary for correctness or security.
+        The underlying signing policies are left in place. Their consensus references the now-deleted signer identity, so they can never authorize anything, and deleting them is unnecessary for correctness or security.
       operationId: revokeDelegatedKey
       tags:
         - Embedded Wallet Auth
@@ -5257,37 +5313,17 @@ paths:
           schema:
             type: string
           example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified credential on the same internal account. Required on the signed retries; ignored on the initial call.
-          schema:
-            type: string
-          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
-        - name: Request-Id
-          in: header
-          required: false
-          description: The `requestId` returned in the prior `202` response, echoed back exactly on the signed retry so the server can correlate it with the issued challenge. Required on the signed retries; must be paired with `Grid-Wallet-Signature`.
-          schema:
-            type: string
-          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
-        '202':
-          description: Challenge issued. Stamp `payloadToSign` and retry to complete revocation.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
         '204':
           description: Delegated key revoked. The key can no longer authorize signing.
         '400':
-          description: Bad request. Returned when the delegated key has already been revoked.
+          description: Bad request. Returned when the delegated key has already been revoked or is not `ACTIVE`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing on a retry, malformed, or does not match the pending challenge, or when the `Request-Id` does not match an unexpired pending challenge.
+          description: Unauthorized.
           content:
             application/json:
               schema:
@@ -6288,7 +6324,7 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full Turnkey API-key stamp over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
+          description: Full Grid wallet signature over the `payloadToSign` returned in the quote's `paymentInstructions[].accountOrWalletInfo` entry, produced with the session private key of a verified authentication credential on the source Embedded Wallet. Required when the quote's source is an internal account of type `EMBEDDED_WALLET`; ignored for other source types.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
@@ -7680,6 +7716,7 @@ webhooks:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: PENDING
                     type: INCOMING
+                    direction: CREDIT
                     destination:
                       destinationType: UMA_ADDRESS
                       umaAddress: $recipient@uma.domain
@@ -7715,6 +7752,7 @@ webhooks:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: COMPLETED
                     type: INCOMING
+                    direction: CREDIT
                     destination:
                       destinationType: UMA_ADDRESS
                       umaAddress: $recipient@uma.domain
@@ -7823,6 +7861,7 @@ webhooks:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: COMPLETED
                     type: OUTGOING
+                    direction: DEBIT
                     source:
                       sourceType: ACCOUNT
                       accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
@@ -7870,6 +7909,7 @@ webhooks:
                     id: Transaction:019542f5-b3e7-1d02-0000-000000000005
                     status: FAILED
                     type: OUTGOING
+                    direction: DEBIT
                     source:
                       sourceType: ACCOUNT
                       accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
@@ -8530,7 +8570,8 @@ webhooks:
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     currency: USD
-                    issuerRef: lithic_card_4f8d3a2b1c
+                    processorRef: card_b81c2a4f
+                    issuerRef: lead_card_7a1b9c3d
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:11:00Z'
               issuerRejected:
@@ -9046,6 +9087,7 @@ components:
             | UNSUITABLE_DOCUMENT | Document type is not accepted or not supported |
             | INCOMPLETE | Document is missing pages or sides |
             | EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS | An EMAIL_OTP credential is already registered on the target internal account; only one email OTP credential is supported per internal account at this time |
+            | SMS_OTP_CREDENTIAL_ALREADY_EXISTS | An SMS_OTP credential is already registered on the target internal account; only one SMS OTP credential is supported per internal account at this time |
             | PASSKEY_CREDENTIAL_ALREADY_EXISTS | A PASSKEY credential with the same WebAuthn credentialId is already registered on the target internal account |
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
@@ -9085,6 +9127,7 @@ components:
             - UNSUITABLE_DOCUMENT
             - INCOMPLETE
             - EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS
+            - SMS_OTP_CREDENTIAL_ALREADY_EXISTS
             - PASSKEY_CREDENTIAL_ALREADY_EXISTS
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
@@ -9241,7 +9284,7 @@ components:
           type: number
           description: Number of sending currency units per receiving currency unit.
           exclusiveMinimum: 0
-          example: 82.5
+          example: 0.012121
         fees:
           $ref: '#/components/schemas/ExchangeRateFees'
         updatedAt:
@@ -9348,6 +9391,11 @@ components:
           format: email
           description: Email address for the customer.
           example: john.doe@example.com
+        phoneNumber:
+          type: string
+          pattern: ^\+[1-9]\d{1,14}$
+          description: Phone number for the customer in strict E.164 format.
+          example: '+14155551234'
         umaAddress:
           type: string
           description: Full UMA address (always present in responses, even if system-generated). This is an optional identifier to route payments to the customer.
@@ -9892,6 +9940,11 @@ components:
           format: email
           description: Email address for the customer.
           example: john.doe@example.com
+        phoneNumber:
+          type: string
+          pattern: ^\+[1-9]\d{1,14}$
+          description: Phone number for the customer in strict E.164 format.
+          example: '+14155551234'
         umaAddress:
           type: string
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
@@ -9901,6 +9954,15 @@ components:
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/IndividualCustomerFields'
+        - type: object
+          properties:
+            idType:
+              $ref: '#/components/schemas/IdentificationType'
+            identifier:
+              type: string
+              writeOnly: true
+              description: The individual's tax identification number. Required to onboard the individual as a US account holder. Only SSN and ITIN are currently accepted for an individual account holder; other identification types are rejected. Write-only — never returned in customer responses.
+              example: 123-45-6789
     BusinessInfo:
       type: object
       description: Additional information required for business entities
@@ -10105,7 +10167,7 @@ components:
           additionalProperties: true
     CustomerUpdateRequest:
       title: Customer Update Request
-      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential across all tied Embedded Wallets through the endpoint's signed-retry flow.
+      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential through the endpoint's signed-retry flow. When `phoneNumber` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer phone number and every tied `SMS_OTP` credential through the same signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
       type: object
       required:
         - customerType
@@ -10126,6 +10188,11 @@ components:
           format: email
           description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
           example: john.doe@example.com
+        phoneNumber:
+          type: string
+          pattern: ^\+[1-9]\d{1,14}$
+          description: Phone number for the customer in strict E.164 format. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `SMS_OTP` credential across all tied Embedded Wallets. Send phone number and email updates as separate PATCH calls.
+          example: '+14155551234'
         umaAddress:
           type: string
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
@@ -12235,6 +12302,7 @@ components:
         - accountType
         - accountNumber
         - bankAccountType
+        - bankName
       properties:
         accountType:
           type: string
@@ -12251,10 +12319,17 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
+          example: Banco GYT Continental
       example:
         accountType: GTQ_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
+        bankName: Banco GYT Continental
     GtqAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GtqAccountInfoBase'
@@ -12334,6 +12409,7 @@ components:
         - accountNumber
         - branchCode
         - bankAccountType
+        - bankName
       properties:
         accountType:
           type: string
@@ -12356,11 +12432,18 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
+          example: Bank of Nova Scotia
       example:
         accountType: JMD_ACCOUNT
         accountNumber: '1234567890'
         branchCode: '11111'
         bankAccountType: CHECKING
+        bankName: Bank of Nova Scotia
     JmdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/JmdAccountInfoBase'
@@ -12542,7 +12625,7 @@ components:
               description: Discriminator value identifying this as Embedded Wallet payment instructions.
             payloadToSign:
               type: string
-              description: JSON-encoded transaction signing payload that must be stamped, as-is (byte-for-byte, without re-serialization), with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting Turnkey API-key stamp is passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
+              description: JSON-encoded transaction signing payload that must be stamped, as-is (byte-for-byte, without re-serialization), with the session private key of a verified authentication credential on the source Embedded Wallet. The resulting Grid wallet signature is passed as the `Grid-Wallet-Signature` header on `POST /quotes/{quoteId}/execute` to authorize the outbound transfer from the wallet.
               example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
     SwiftAccountInfoBase:
       type: object
@@ -16642,6 +16725,12 @@ components:
         | `FAILED` | An error occurred during payment |
         | `REFUNDED` | Payment was unable to complete and refunded |
         | `EXPIRED` | Quote has expired |
+    TransactionDirection:
+      type: string
+      enum:
+        - CREDIT
+        - DEBIT
+      description: 'Whether the transaction credits (funds in) or debits (funds out) the customer''s account. Independent of `type`: an incoming transaction is normally a `CREDIT`, but an inbound ACH pull, for example, is an `INCOMING` transaction with a `DEBIT` direction.'
     TransactionDestinationType:
       type: string
       enum:
@@ -16719,6 +16808,7 @@ components:
         - id
         - status
         - type
+        - direction
         - destination
         - customerId
         - platformCustomerId
@@ -16731,6 +16821,9 @@ components:
           $ref: '#/components/schemas/TransactionStatus'
         type:
           $ref: '#/components/schemas/TransactionType'
+        direction:
+          $ref: '#/components/schemas/TransactionDirection'
+          description: Whether this transaction credits or debits the customer's account.
         destination:
           $ref: '#/components/schemas/TransactionDestinationOneOf'
         customerId:
@@ -17092,6 +17185,13 @@ components:
         - FUNDING_AMOUNT_MISMATCH
         - COUNTERPARTY_POST_TX_FAILED
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+    RailSelectionMode:
+      type: string
+      enum:
+        - AUTO
+        - MANUAL
+      description: How the payment rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it.
+      example: AUTO
     OutgoingTransaction:
       title: Outgoing Transaction
       allOf:
@@ -17164,15 +17264,213 @@ components:
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
+            paymentRail:
+              anyOf:
+                - $ref: '#/components/schemas/PaymentRail'
+                - type: 'null'
+              description: The payment rail used to settle this transaction (e.g. ACH, WIRE, NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null when no external rail is used (e.g. instant or intra-network transfers, or non-direct-destination transactions) or before a rail is resolved.
+            railSelectionMode:
+              anyOf:
+                - $ref: '#/components/schemas/RailSelectionMode'
+                - type: 'null'
+              description: How the rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it. Null when no rail is resolved.
+            expectedSettlementAt:
+              type:
+                - string
+                - 'null'
+              format: date-time
+              description: Expected settlement time at the beneficiary. Null for instant rails (settlement is immediate) and before a rail with deferred settlement is resolved.
+            settlementTimelineSeconds:
+              type:
+                - integer
+                - 'null'
+              description: Expected number of seconds from quote creation to settlement. Null when not yet known.
+    CardTransactionStatus:
+      type: string
+      enum:
+        - AUTHORIZED
+        - PARTIALLY_SETTLED
+        - SETTLED
+        - REFUNDED
+        - EXCEPTION
+      description: |
+        Lifecycle status of a card transaction.
+
+        | Status | Description |
+        |--------|-------------|
+        | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
+        | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
+        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
+        | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
+        | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
+    CardMerchant:
+      type: object
+      required:
+        - descriptor
+      properties:
+        descriptor:
+          type: string
+          description: Merchant descriptor string captured from the card network at authorization time.
+          example: BLUE BOTTLE COFFEE SF
+        mcc:
+          type: string
+          description: Merchant Category Code (ISO 18245) — four-digit numeric string.
+          example: '5814'
+        country:
+          type: string
+          description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
+          example: US
+    CardPullSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Total number of pulls (debits) executed against the funding source for this transaction. `> 1` indicates one or more post-hoc pulls — e.g. restaurant tip / over-auth clearings.
+          example: 2
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all pull amounts in the smallest unit of the funding source's currency.
+          example: 1500
+        pendingCount:
+          type: integer
+          description: Number of pulls still in the `PENDING` state. Drops to zero when every pull has reached a terminal state. Non-zero values that persist beyond the expected settlement window are an early signal for the `EXCEPTION` path.
+          example: 0
+    CardRefundSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Number of refund (return) events received for this transaction.
+          example: 0
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all refund amounts in the smallest unit of the funding source's currency.
+          example: 0
+    CardSettlementSummary:
+      type: object
+      required:
+        - count
+        - totalAmount
+      properties:
+        count:
+          type: integer
+          description: Number of settlement (clearing) events received for this transaction.
+          example: 1
+        totalAmount:
+          type: integer
+          format: int64
+          description: Sum of all settled amounts in the smallest unit of the funding source's currency.
+          example: 1500
+    CardTransaction:
+      title: Card Transaction
+      type: object
+      required:
+        - type
+        - id
+        - status
+        - direction
+        - merchant
+        - authorizedAmount
+        - accountId
+        - customerId
+        - platformCustomerId
+        - authorizedAt
+        - createdAt
+        - updatedAt
+      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
+      properties:
+        type:
+          type: string
+          enum:
+            - CARD
+          description: Discriminator identifying this transaction as a card transaction in the `Transaction` list.
+        id:
+          type: string
+          description: System-generated unique card transaction identifier
+          readOnly: true
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+        cardId:
+          type: string
+          description: The id of the `Card` this transaction was made on.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        customerId:
+          type: string
+          description: System ID of the customer (cardholder) this transaction belongs to.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        platformCustomerId:
+          type: string
+          description: Platform-specific ID of the customer (cardholder) this transaction belongs to.
+          example: 18d3e5f7b4a9c2
+        issuerTransactionToken:
+          type: string
+          description: Opaque identifier for the transaction on the underlying issuer. Used to cross-reference Grid records against issuer dashboards and webhooks.
+          example: lithic_txn_b81c2a4f
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/CardTransactionStatus'
+        direction:
+          $ref: '#/components/schemas/TransactionDirection'
+          description: Card transactions debit the customer's account.
+          example: DEBIT
+        merchant:
+          $ref: '#/components/schemas/CardMerchant'
+        authorizedAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        settledAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        refundedAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        accountId:
+          type: string
+          description: Internal account id that funded this transaction (the funding source selected by Authorization Decisioning at auth time).
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        pullSummary:
+          $ref: '#/components/schemas/CardPullSummary'
+        refundSummary:
+          $ref: '#/components/schemas/CardRefundSummary'
+        settlementSummary:
+          $ref: '#/components/schemas/CardSettlementSummary'
+        authorizedAt:
+          type: string
+          format: date-time
+          description: When the auth was approved.
+          example: '2026-05-08T14:30:00Z'
+        lastEventAt:
+          type: string
+          format: date-time
+          description: Timestamp of the most recent reconcile event (pull / clearing / refund) against this transaction.
+          example: '2026-05-08T15:42:11Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (same as `authorizedAt` for card transactions).
+          readOnly: true
+          example: '2026-05-08T14:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          readOnly: true
+          example: '2026-05-08T15:42:11Z'
     TransactionOneOf:
       oneOf:
         - $ref: '#/components/schemas/IncomingTransaction'
         - $ref: '#/components/schemas/OutgoingTransaction'
+        - $ref: '#/components/schemas/CardTransaction'
       discriminator:
         propertyName: type
         mapping:
           INCOMING: '#/components/schemas/IncomingTransaction'
           OUTGOING: '#/components/schemas/OutgoingTransaction'
+          CARD: '#/components/schemas/CardTransaction'
     ExternalAccountDestinationReference:
       type: object
       required:
@@ -17203,6 +17501,11 @@ components:
           format: int64
           description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
           example: 12550
+        remittanceInformation:
+          type: string
+          maxLength: 80
+          description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
+          example: '12345'
     CurrencyPreference:
       type: object
       required:
@@ -18199,11 +18502,13 @@ components:
       enum:
         - OAUTH
         - EMAIL_OTP
+        - SMS_OTP
         - PASSKEY
       description: |-
         The type of authentication credential.
         - `OAUTH`: OpenID Connect (OIDC) token issued by an identity provider such as Google or Apple.
         - `EMAIL_OTP`: A one-time password delivered to the user's email address.
+        - `SMS_OTP`: A one-time password delivered to the user's phone number.
         - `PASSKEY`: A WebAuthn passkey bound to the user's device.
     AuthMethod:
       type: object
@@ -18231,7 +18536,7 @@ components:
           example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
         nickname:
           type: string
-          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time.
+          description: Human-readable identifier for this credential. For EMAIL_OTP credentials this is the email address; for SMS_OTP credentials this is the E.164 phone number; for OAUTH credentials it is typically the email claim from the OIDC token; for PASSKEY credentials it is the validated nickname provided at registration time.
           example: example@lightspark.com
         createdAt:
           type: string
@@ -18280,6 +18585,21 @@ components:
       allOf:
         - $ref: '#/components/schemas/AuthCredentialCreateRequest'
         - $ref: '#/components/schemas/EmailOtpCredentialCreateRequestFields'
+    SmsOtpCredentialCreateRequestFields:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - SMS_OTP
+          description: Discriminator value identifying this as an SMS OTP credential.
+    SmsOtpCredentialCreateRequest:
+      title: SMS OTP Credential Create Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialCreateRequest'
+        - $ref: '#/components/schemas/SmsOtpCredentialCreateRequestFields'
     OauthCredentialCreateRequestFields:
       type: object
       required:
@@ -18365,35 +18685,37 @@ components:
     AuthCredentialCreateRequestOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpCredentialCreateRequest'
+        - $ref: '#/components/schemas/SmsOtpCredentialCreateRequest'
         - $ref: '#/components/schemas/OauthCredentialCreateRequest'
         - $ref: '#/components/schemas/PasskeyCredentialCreateRequest'
       discriminator:
         propertyName: type
         mapping:
           EMAIL_OTP: '#/components/schemas/EmailOtpCredentialCreateRequest'
+          SMS_OTP: '#/components/schemas/SmsOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
     AuthMethodResponse:
       title: Auth Method Response
       description: |-
-        Strict wrapper around `AuthMethod`. Used directly as the registration response on `POST /auth/credentials` (all three credential types) and inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` branch of `POST /auth/credentials/{id}/challenge`. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.
+        Strict wrapper around `AuthMethod`. Used directly as the registration response on `POST /auth/credentials` and inside `AuthCredentialResponseOneOf` for the `EMAIL_OTP` / `SMS_OTP` branches of `POST /auth/credentials/{id}/challenge`. The only difference from `AuthMethod` is `unevaluatedProperties: false`, which disambiguates the oneOf against `PasskeyAuthChallenge` — without the strictness, an `AuthMethod` with extra fields would ambiguously match both branches.
 
-        For `EMAIL_OTP` credentials, responses that initiate or reissue an OTP challenge carry `otpEncryptionTargetBundle` so the client can HPKE-encrypt the OTP code in the subsequent `POST /auth/credentials/{id}/verify` call without the plaintext code ever transiting the server. First-time EMAIL_OTP wallet bootstrap registration can omit it; call `POST /auth/credentials/{id}/challenge` if it is absent.
+        For `EMAIL_OTP` and `SMS_OTP` credentials, responses that initiate or reissue an OTP challenge carry `otpEncryptionTargetBundle` so the client can HPKE-encrypt the OTP code in the subsequent `POST /auth/credentials/{id}/verify` call without the plaintext code ever transiting the server. First-time EMAIL_OTP wallet bootstrap registration can omit it; call `POST /auth/credentials/{id}/challenge` if it is absent.
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
         - type: object
           properties:
             otpEncryptionTargetBundle:
               type: string
-              description: HPKE encryption target bundle for a freshly initiated OTP challenge. Returned only on `EMAIL_OTP` responses that initiate or reissue an OTP challenge, such as `POST /auth/credentials/{id}/challenge` and the add-EMAIL_OTP signed-retry response. It is omitted from first-time EMAIL_OTP wallet bootstrap registration; call `POST /auth/credentials/{id}/challenge` for the new credential if it is absent. The client generates an ephemeral P-256 keypair (the Target Encryption Key, or TEK) and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching TEK private key must remain on the client and is used to sign the `verificationToken` returned on the subsequent signed-retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
+              description: HPKE encryption target bundle for a freshly initiated OTP challenge. Returned only on `EMAIL_OTP` and `SMS_OTP` responses that initiate or reissue an OTP challenge, such as `POST /auth/credentials/{id}/challenge` and signed-retry add responses. It is omitted from first-time EMAIL_OTP wallet bootstrap registration; call `POST /auth/credentials/{id}/challenge` for the new credential if it is absent. The client generates an ephemeral P-256 keypair (the Target Encryption Key, or TEK) and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching TEK private key must remain on the client and is used to sign the `verificationToken` returned on the subsequent signed-retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
               example: '{"version":"v1.0.0","data":"7b227461726765745075626c6963...","dataSignature":"30450221...","enclaveQuorumPublic":"04a1b2c3..."}'
       unevaluatedProperties: false
     AuthSignedRequestChallenge:
       title: Authentication Signed Request Challenge
       description: |-
-        202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), `DELETE /auth/sessions/{id}` (revoking a session), and the `EMAIL_OTP` branch of `POST /auth/credentials/{id}/verify` (the secure OTP login flow, where the client submits an `encryptedOtpBundle` and receives a `verificationToken` to sign for the second-leg session issuance). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, revoked, that issued the session being revoked, or being authenticated). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
+        202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), `DELETE /auth/sessions/{id}` (revoking a session), and the `EMAIL_OTP` / `SMS_OTP` branch of `POST /auth/credentials/{id}/verify` (the secure OTP login flow, where the client submits an `encryptedOtpBundle` and receives a `verificationToken` to sign for the second-leg session issuance). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, revoked, that issued the session being revoked, or being authenticated). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
 
-        The keypair used to compute the stamp depends on the operation. For credential / session management retries, sign with the session API keypair of an existing verified credential on the same internal account. For the `EMAIL_OTP` verify retry, sign with the ephemeral Target Encryption Key (TEK) the client generated for this login — its public key is the one carried inside the `encryptedOtpBundle` and bound into the `verificationToken`, and it becomes the client's session API key on successful completion.
+        The keypair used to compute the stamp depends on the operation. For credential / session management retries, sign with the session API keypair of an existing verified credential on the same internal account. For OTP verify retries, sign with the ephemeral Target Encryption Key (TEK) the client generated for this login — its public key is the one carried inside the `encryptedOtpBundle` and bound into the `verificationToken`, and it becomes the client's session API key on successful completion.
       allOf:
         - $ref: '#/components/schemas/SignedRequestChallenge'
         - type: object
@@ -18402,7 +18724,7 @@ components:
           properties:
             type:
               $ref: '#/components/schemas/AuthMethodType'
-              description: 'Credential type relevant to this challenge: the credential type being added (`POST /auth/credentials`), revoked (`DELETE /auth/credentials/{id}`), or authenticated (`EMAIL_OTP` branch of `POST /auth/credentials/{id}/verify`). For session revocation, this is the type of credential that issued the session (`DELETE /auth/sessions/{id}`).'
+              description: 'Credential type relevant to this challenge: the credential type being added (`POST /auth/credentials`), revoked (`DELETE /auth/credentials/{id}`), or authenticated (`EMAIL_OTP` / `SMS_OTP` branch of `POST /auth/credentials/{id}/verify`). For session revocation, this is the type of credential that issued the session (`DELETE /auth/sessions/{id}`).'
     AuthCredentialVerifyRequest:
       type: object
       required:
@@ -18434,6 +18756,27 @@ components:
       allOf:
         - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
         - $ref: '#/components/schemas/EmailOtpCredentialVerifyRequestFields'
+    SmsOtpCredentialVerifyRequestFields:
+      type: object
+      required:
+        - type
+        - encryptedOtpBundle
+      description: Verify an SMS-OTP credential via the same secure two-leg flow as email OTP. The client HPKE-encrypts the OTP code (together with its public key) under the `otpEncryptionTargetBundle` returned from registration or `POST /auth/credentials/{id}/challenge`, submits the result here, and receives `202` with a `payloadToSign` carrying a `verificationToken` bound to the client's public key. The client signs that token with the matching private key and retries this request with `Grid-Wallet-Signature` + `Request-Id` headers to obtain the session. Plaintext OTP codes are never sent over the wire.
+      properties:
+        type:
+          type: string
+          enum:
+            - SMS_OTP
+          description: Discriminator value identifying this as an SMS OTP verification.
+        encryptedOtpBundle:
+          type: string
+          description: HPKE-sealed OTP attempt. Same format and retry semantics as `EmailOtpCredentialVerifyRequest.encryptedOtpBundle`.
+          example: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
+    SmsOtpCredentialVerifyRequest:
+      title: SMS OTP Credential Verify Request
+      allOf:
+        - $ref: '#/components/schemas/AuthCredentialVerifyRequest'
+        - $ref: '#/components/schemas/SmsOtpCredentialVerifyRequestFields'
     OauthCredentialVerifyRequestFields:
       type: object
       required:
@@ -18462,7 +18805,7 @@ components:
     PasskeyAssertion:
       title: Passkey Assertion
       type: object
-      description: WebAuthn assertion returned by `navigator.credentials.get()`. In sandbox, Grid validates the assertion against the registered passkey credential so the client-side flow can match production. In production, Turnkey validates the WebAuthn assertion.
+      description: WebAuthn assertion returned by `navigator.credentials.get()`. In sandbox, Grid validates the assertion against the registered passkey credential so the client-side flow can match production. In production, Grid validates the WebAuthn assertion.
       required:
         - credentialId
         - clientDataJson
@@ -18510,12 +18853,14 @@ components:
     AuthCredentialVerifyRequestOneOf:
       oneOf:
         - $ref: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+        - $ref: '#/components/schemas/SmsOtpCredentialVerifyRequest'
         - $ref: '#/components/schemas/OauthCredentialVerifyRequest'
         - $ref: '#/components/schemas/PasskeyCredentialVerifyRequest'
       discriminator:
         propertyName: type
         mapping:
           EMAIL_OTP: '#/components/schemas/EmailOtpCredentialVerifyRequest'
+          SMS_OTP: '#/components/schemas/SmsOtpCredentialVerifyRequest'
           OAUTH: '#/components/schemas/OauthCredentialVerifyRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialVerifyRequest'
     AuthSession:
@@ -18537,7 +18882,7 @@ components:
               description: |-
                 HPKE-encrypted session signing key, sealed to the `clientPublicKey` supplied on the verification or refresh request. Encoded as a base58check string: the decoded payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.
 
-                Returned only by session-issuing responses for `OAUTH` and `PASSKEY` credentials. `EMAIL_OTP` sessions omit this field — the client generates a TEK keypair before verification and retains the private key throughout, so the server has nothing to deliver. Always omitted from list responses (`GET /auth/sessions`) since Grid does not retain the plaintext key after the client has decrypted it.
+                Returned only by session-issuing responses for `OAUTH` and `PASSKEY` credentials. `EMAIL_OTP` and `SMS_OTP` sessions omit this field — the client generates a TEK keypair before verification and retains the private key throughout, so the server has nothing to deliver. Always omitted from list responses (`GET /auth/sessions`) since Grid does not retain the plaintext key after the client has decrypted it.
               example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
             expiresAt:
               type: string
@@ -18573,7 +18918,7 @@ components:
           additionalProperties: true
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
-      description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the Turnkey session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
+      description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
       type: object
       properties:
         clientPublicKey:
@@ -18581,11 +18926,11 @@ components:
           pattern: ^04[0-9a-fA-F]{128}$
           minLength: 130
           maxLength: 130
-          description: Required for `PASSKEY` credentials. Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid bakes this key into the Turnkey session-creation payload that the returned `challenge` is computed from, so the resulting session signing key is sealed to the client. Ignored for `EMAIL_OTP`.
+          description: Required for `PASSKEY` credentials. Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid bakes this key into the session-creation payload that the returned `challenge` is computed from, so the resulting session signing key is sealed to the client. Ignored for `EMAIL_OTP` and `SMS_OTP`.
           example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
-      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn `credentialId` needed to target the passkey, plus the Grid-issued `challenge`, corresponding `requestId`, and challenge `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical Turnkey session-creation request body, not a base64url string. The client UTF-8 encodes this string as the WebAuthn challenge and signs it with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
+      description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn `credentialId` needed to target the passkey, plus the Grid-issued `challenge`, corresponding `requestId`, and challenge `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation request body, not a base64url string. The client UTF-8 encodes this string as the WebAuthn challenge and signs it with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
         - type: object
@@ -18601,7 +18946,7 @@ components:
               example: KEbWNCc7NgaYnUyrNeFGX9_3Y-8oJ3KwzjnaiD1d1LVTxR7v3CaKfCz2Vy_g_MHSh7yJ8yL0Pxg6jo_o0hYiew
             challenge:
               type: string
-              description: Lowercase hex-encoded SHA-256 digest of the canonical Turnkey session-creation request body for the pending passkey authentication. Do not base64url-decode this field; pass UTF-8 bytes of the string (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge to `navigator.credentials.get()`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
+              description: Lowercase hex-encoded SHA-256 digest of the canonical session-creation request body for the pending passkey authentication. Do not base64url-decode this field; pass UTF-8 bytes of the string (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge to `navigator.credentials.get()`. Single-use; a new challenge is issued on the next call to `POST /auth/credentials/{id}/challenge`.
               example: 6b35a4c41d9aa7a2a0e742f9f9e7a1c2d65a2db33a3fb748f6d4f1ce78d9a729
             requestId:
               type: string
@@ -18614,7 +18959,7 @@ components:
               example: '2026-04-08T15:35:00Z'
     AuthCredentialResponseOneOf:
       title: Auth Credential Response
-      description: Discriminated response shape returned from `POST /auth/credentials/{id}/challenge`. For `EMAIL_OTP` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion. OAuth credentials do not use the challenge endpoint. Registration responses from `POST /auth/credentials` use the simpler `AuthMethodResponse` shape directly for all three credential types.
+      description: Discriminated response shape returned from `POST /auth/credentials/{id}/challenge`. For `EMAIL_OTP` and `SMS_OTP` credentials the body is a plain `AuthMethod` (wrapped as `AuthMethodResponse` to disambiguate the oneOf). For `PASSKEY` credentials the body is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, Grid-issued `challenge`, `requestId`, and `expiresAt` that drive the subsequent assertion. OAuth credentials do not use the challenge endpoint. Registration responses from `POST /auth/credentials` use the simpler `AuthMethodResponse` shape directly for all credential types.
       oneOf:
         - $ref: '#/components/schemas/AuthMethodResponse'
         - $ref: '#/components/schemas/PasskeyAuthChallenge'
@@ -18622,6 +18967,7 @@ components:
         propertyName: type
         mapping:
           EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
+          SMS_OTP: '#/components/schemas/AuthMethodResponse'
           PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
     SessionListResponse:
       type: object
@@ -18635,7 +18981,7 @@ components:
             $ref: '#/components/schemas/AuthSession'
     AuthSessionRefreshRequest:
       title: Auth Session Refresh Request
-      description: Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow. On the initial call, Grid binds this key into the Turnkey session-creation payload returned as `payloadToSign`; on the signed retry, the client echoes the same key back and Grid uses it to encrypt the newly issued session signing key.
+      description: Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow. On the initial call, Grid binds this key into the session-creation payload returned as `payloadToSign`; on the signed retry, the client echoes the same key back and Grid uses it to encrypt the newly issued session signing key.
       type: object
       required:
         - clientPublicKey
@@ -19349,7 +19695,7 @@ components:
         panEmbedUrl:
           type: string
           format: uri
-          description: URL of the card issuer's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
+          description: URL of the card processor's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
           example: https://embed.lithic.com/iframe/...?t=...
         fundingSources:
           type: array
@@ -19364,10 +19710,15 @@ components:
           description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
           example: USD
           readOnly: true
+        processorRef:
+          type: string
+          description: Opaque processor-side reference for the card (e.g. the Lithic card token). Useful for cross-referencing in the processor's dashboards; not used for any Grid request routing.
+          example: card_b81c2a4f
+          readOnly: true
         issuerRef:
           type: string
-          description: Opaque identifier for the card on the underlying issuer. Useful for cross-referencing in issuer dashboards; not used for any Grid request routing.
-          example: lithic_card_4f8d3a2b1c
+          description: Opaque identifier for the card on the issuer of record (e.g. the Lead Bank account/card identifier). Useful for cross-referencing in issuer dashboards; not used for any Grid request routing.
+          example: lead_card_7a1b9c3d
           readOnly: true
         createdAt:
           type: string
@@ -19447,23 +19798,6 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
-    CardMerchant:
-      type: object
-      required:
-        - descriptor
-      properties:
-        descriptor:
-          type: string
-          description: Merchant descriptor string captured from the card network at authorization time.
-          example: BLUE BOTTLE COFFEE SF
-        mcc:
-          type: string
-          description: Merchant Category Code (ISO 18245) — four-digit numeric string.
-          example: '5814'
-        country:
-          type: string
-          description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
-          example: US
     SandboxCardAuthorizationRequest:
       type: object
       required:
@@ -19482,146 +19816,6 @@ components:
           $ref: '#/components/schemas/Currency'
         merchant:
           $ref: '#/components/schemas/CardMerchant'
-    CardTransactionStatus:
-      type: string
-      enum:
-        - AUTHORIZED
-        - PARTIALLY_SETTLED
-        - SETTLED
-        - REFUNDED
-        - EXCEPTION
-      description: |
-        Lifecycle status of a card transaction.
-
-        | Status | Description |
-        |--------|-------------|
-        | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
-        | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
-        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
-        | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
-        | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
-    CardPullSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Total number of pulls (debits) executed against the funding source for this transaction. `> 1` indicates one or more post-hoc pulls — e.g. restaurant tip / over-auth clearings.
-          example: 2
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all pull amounts in the smallest unit of the funding source's currency.
-          example: 1500
-        pendingCount:
-          type: integer
-          description: Number of pulls still in the `PENDING` state. Drops to zero when every pull has reached a terminal state. Non-zero values that persist beyond the expected settlement window are an early signal for the `EXCEPTION` path.
-          example: 0
-    CardRefundSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Number of refund (return) events received for this transaction.
-          example: 0
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all refund amounts in the smallest unit of the funding source's currency.
-          example: 0
-    CardSettlementSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Number of settlement (clearing) events received for this transaction.
-          example: 1
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all settled amounts in the smallest unit of the funding source's currency.
-          example: 1500
-    CardTransaction:
-      type: object
-      required:
-        - id
-        - cardId
-        - status
-        - merchant
-        - authorizedAmount
-        - accountId
-        - pullSummary
-        - refundSummary
-        - settlementSummary
-        - authorizedAt
-        - createdAt
-        - updatedAt
-      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
-      properties:
-        id:
-          type: string
-          description: System-generated unique card transaction identifier
-          readOnly: true
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
-        cardId:
-          type: string
-          description: The id of the `Card` this transaction was made on.
-          example: Card:019542f5-b3e7-1d02-0000-000000000010
-        issuerTransactionToken:
-          type: string
-          description: Opaque identifier for the transaction on the underlying issuer. Used to cross-reference Grid records against issuer dashboards and webhooks.
-          example: lithic_txn_b81c2a4f
-          readOnly: true
-        status:
-          $ref: '#/components/schemas/CardTransactionStatus'
-        merchant:
-          $ref: '#/components/schemas/CardMerchant'
-        authorizedAmount:
-          $ref: '#/components/schemas/CurrencyAmount'
-        settledAmount:
-          $ref: '#/components/schemas/CurrencyAmount'
-        refundedAmount:
-          $ref: '#/components/schemas/CurrencyAmount'
-        accountId:
-          type: string
-          description: Internal account id that funded this transaction (the funding source selected by Authorization Decisioning at auth time).
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        pullSummary:
-          $ref: '#/components/schemas/CardPullSummary'
-        refundSummary:
-          $ref: '#/components/schemas/CardRefundSummary'
-        settlementSummary:
-          $ref: '#/components/schemas/CardSettlementSummary'
-        authorizedAt:
-          type: string
-          format: date-time
-          description: When the auth was approved.
-          example: '2026-05-08T14:30:00Z'
-        lastEventAt:
-          type: string
-          format: date-time
-          description: Timestamp of the most recent reconcile event (pull / clearing / refund) against this transaction.
-          example: '2026-05-08T15:42:11Z'
-        createdAt:
-          type: string
-          format: date-time
-          description: Creation timestamp (same as `authorizedAt` for card transactions).
-          readOnly: true
-          example: '2026-05-08T14:30:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          description: Last update timestamp.
-          readOnly: true
-          example: '2026-05-08T15:42:11Z'
     SandboxCardClearingRequest:
       type: object
       required:

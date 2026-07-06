@@ -5,7 +5,7 @@ description: >-
   `credentialId` needed to target the passkey, plus the Grid-issued
   `challenge`, corresponding `requestId`, and challenge `expiresAt`. The
   `challenge` value is the lowercase hex-encoded SHA-256 digest of the
-  canonical Turnkey session-creation request body, not a base64url string.
+  canonical session-creation request body, not a base64url string.
   The client UTF-8 encodes this string as the WebAuthn challenge and signs it
   with the passkey to produce the assertion submitted to
   `POST /auth/credentials/{id}/verify`.
@@ -29,7 +29,7 @@ allOf:
       challenge:
         type: string
         description: >-
-          Lowercase hex-encoded SHA-256 digest of the canonical Turnkey
+          Lowercase hex-encoded SHA-256 digest of the canonical
           session-creation request body for the pending passkey
           authentication. Do not base64url-decode this field; pass UTF-8 bytes
           of the string (for example, `new TextEncoder().encode(challenge)`) as

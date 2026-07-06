@@ -1,12 +1,13 @@
-Every Global Account action beyond receiving funds must be authorized by a session signing key. Sessions are issued by verifying one of three **credential types** on the account:
+Every Global Account action beyond receiving funds must be authorized by a session signing key. Sessions are issued by verifying one of four **credential types** on the account:
 
 | Type | When to use it |
 |---|---|
 | **`PASSKEY`** | Best default. Biometric, phishing-resistant, usable across the user's devices via iCloud Keychain / Google Password Manager. |
 | **`OAUTH`** | Your platform already authenticates the user via OIDC (Google, Apple, your own IdP) and you want Grid to trust the same identity. |
 | **`EMAIL_OTP`** | Lowest-friction option. Works on any device with email access — no biometric hardware, identity provider, or client SDK required beyond the code entry field. |
+| **`SMS_OTP`** | Same flow as `EMAIL_OTP`, but delivered to the user's phone number instead of email. Useful when phone is the primary contact channel. |
 
-A single internal account can hold one `EMAIL_OTP` credential and multiple distinct `PASSKEY` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
+A single internal account can hold one `EMAIL_OTP` credential, one `SMS_OTP` credential, and multiple distinct `PASSKEY` credentials concurrently. `OAUTH` credentials can be added for each supported provider identity.
 
 ## Registration vs. verification
 
@@ -63,7 +64,7 @@ sequenceDiagram
   C->>C: decrypt with private key, hold session signing key
 ```
 
-The `challenge` on `POST /auth/credentials` is the one your backend issued for WebAuthn registration. The signed-retry `payloadToSign` is the Turnkey registration payload that the customer's current session authorizes. The challenge used for the WebAuthn assertion comes later from `POST /auth/credentials/{id}/challenge` — Grid bakes the `clientPublicKey` you send there into the session-creation payload, sealing the resulting session signing key to the device that generated it. Because that key plumbing happens on `/challenge`, the subsequent `/verify` call carries only the assertion (plus the `Request-Id` header).
+The `challenge` on `POST /auth/credentials` is the one your backend issued for WebAuthn registration. The signed-retry `payloadToSign` is the registration payload that the customer's current session authorizes. The challenge used for the WebAuthn assertion comes later from `POST /auth/credentials/{id}/challenge` — Grid bakes the `clientPublicKey` you send there into the session-creation payload, sealing the resulting session signing key to the device that generated it. Because that key plumbing happens on `/challenge`, the subsequent `/verify` call carries only the assertion (plus the `Request-Id` header).
 
 <Tip>
   Passkeys are domain-bound. Before shipping, set up your `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` entries so the platform authenticator binds the passkey to your origin and app bundles:
@@ -701,7 +702,7 @@ Requires an active session on an *existing* credential on the same account. The 
     ```
   </Step>
   <Step title="Client stamps the payload">
-    Send `payloadToSign` to the client. The client builds a Turnkey API-key stamp with the session signing key from the existing credential's active session — see <a href="client-keys#4-sign-a-payloadtosign">signing payloads</a>.
+    Send `payloadToSign` to the client. The client builds a Grid wallet signature with the session signing key from the existing credential's active session — see <a href="client-keys#4-sign-a-payloadtosign">signing payloads</a>.
   </Step>
   <Step title="Signed retry — credential is created">
     Re-run the same request with the stamp and request id in headers:

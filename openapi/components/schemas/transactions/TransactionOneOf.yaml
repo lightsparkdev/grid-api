@@ -1,8 +1,10 @@
 oneOf:
   - $ref: ./IncomingTransaction.yaml
   - $ref: ./OutgoingTransaction.yaml
+  - $ref: ../cards/CardTransaction.yaml
 discriminator:
   propertyName: type
   mapping:
     INCOMING: ./IncomingTransaction.yaml
     OUTGOING: ./OutgoingTransaction.yaml
+    CARD: ../cards/CardTransaction.yaml

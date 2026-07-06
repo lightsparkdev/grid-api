@@ -1,14 +1,14 @@
-The Grid sandbox lets you exercise Global Account auth flows without moving real money. Email OTP uses the fixed sandbox code `000000` — HPKE-encrypt that code in the `encryptedOtpBundle` just like production. Passkey auth can use the same browser WebAuthn ceremony as production, and signed wallet actions can use the same session signing key and `Grid-Wallet-Signature` stamp as production. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates token claims, freshness, credential identity, and verify-time nonce binding.
+The Grid sandbox lets you exercise Global Account auth flows without moving real money. Email OTP and SMS OTP use the fixed sandbox code `000000` — HPKE-encrypt that code in the `encryptedOtpBundle` just like production. Passkey auth can use the same browser WebAuthn ceremony as production, and signed wallet actions can use the same session signing key and `Grid-Wallet-Signature` stamp as production. OAuth uses JWT-shaped sandbox OIDC tokens: sandbox skips real IdP signature verification, but still validates token claims, freshness, credential identity, and verify-time nonce binding.
 
-Sandbox runs real HPKE end-to-end for EMAIL_OTP: clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code the user "receives" instead of a real email delivery.
+Sandbox runs real HPKE end-to-end for EMAIL_OTP and SMS_OTP: clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code the user "receives" instead of a real email or SMS delivery.
 
 Authentication failures return `401 UNAUTHORIZED` with a `reason` field that names the specific check that failed. A malformed OIDC JWT can return `400 INVALID_INPUT` before authentication starts.
 
-### Email OTP code
+### Email and SMS OTP code
 
-HPKE-encrypt the code `000000` (together with your TEK public key) inside `encryptedOtpBundle`. The sandbox skips email delivery but runs real HPKE decryption and signature verification.
+HPKE-encrypt the code `000000` (together with your TEK public key) inside `encryptedOtpBundle`. The sandbox skips email and SMS delivery but runs real HPKE decryption and signature verification.
 
-See <a href="/global-accounts/integration-guides/client-keys#encrypt-the-otp-code-email_otp-only">Encrypt the OTP code</a> for how to build the bundle. The flow is:
+See <a href="/global-accounts/integration-guides/client-keys#encrypt-the-otp-code-email_otp-only">Encrypt the OTP code</a> for how to build the bundle. The flow is the same for both `EMAIL_OTP` and `SMS_OTP`:
 
 1. Call `POST /auth/credentials/{id}/challenge` to get `otpEncryptionTargetBundle`
 2. Generate a TEK key pair and HPKE-encrypt `{otp_code: "000000", public_key: tekPublicKeyHex}`
@@ -150,7 +150,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/auth/credentials/AuthMet
 
 ### Wallet signature header
 
-For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow **is** the session signing key — no decryption step needed. Use the session signing key to build a Turnkey API-key stamp over the exact `payloadToSign` string returned by Grid, then pass that full stamp as the `Grid-Wallet-Signature` HTTP header on signed flows:
+For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with the private key matching the `clientPublicKey` you supplied on verify or refresh. For `EMAIL_OTP`, the TEK private key you generated for the encrypted OTP flow **is** the session signing key — no decryption step needed. Use the session signing key to build a Grid wallet signature over the exact `payloadToSign` string returned by Grid, then pass that full signature as the `Grid-Wallet-Signature` HTTP header on signed flows:
 
 - `POST /auth/credentials` (add-additional-credential signed retry)
 - `DELETE /auth/credentials/{id}` (revoke credential)
@@ -160,7 +160,7 @@ For `PASSKEY` and `OAUTH` credentials, decrypt `encryptedSessionSigningKey` with
 - `POST /quotes/{quoteId}/execute` (when source is an embedded wallet)
 
 <Note>
-  This example uses the sample signer in the Grid API repo's [scripts directory](https://github.com/lightsparkdev/grid-api/tree/main/scripts). See the [scripts README](https://github.com/lightsparkdev/grid-api/blob/main/scripts/README.md) for setup, or replace `SIGN` with your own Turnkey API-key stamp implementation.
+  This example uses the sample signer in the Grid API repo's [scripts directory](https://github.com/lightsparkdev/grid-api/tree/main/scripts). See the [scripts README](https://github.com/lightsparkdev/grid-api/blob/main/scripts/README.md) for setup, or replace `SIGN` with your own Grid wallet-signature implementation.
 </Note>
 
 ```bash
@@ -174,7 +174,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
   -H "Grid-Wallet-Signature: $STAMP"
 ```
 
-Sandbox validates that the stamp is a P-256 Turnkey API-key stamp over the exact pending Turnkey payload and that the public key belongs to an active sandbox session for the wallet.
+Sandbox validates that the signature is a P-256 signature over the exact pending Grid payload and that the public key belongs to an active sandbox session for the wallet.
 
 <Note>
   The legacy sandbox-only `Grid-Wallet-Signature: sandbox-valid-signature` value is still accepted for compatibility. Use a real session stamp when you want the client implementation to match production.
