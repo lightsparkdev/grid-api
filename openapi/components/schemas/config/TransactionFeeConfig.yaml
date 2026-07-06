@@ -1,0 +1,46 @@
+type: object
+description: >-
+  Platform-collected transaction fee charged on top of corridor fees. Keyed
+  uniquely by `(feeEventType, sourceCurrency)` within a platform. To
+  deactivate a fee, send the same key with `variableFeeBps: 0` and
+  `fixedFee.amount: 0`.
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier.
+    readOnly: true
+    example: TransactionFeeConfig:019542f5-b3e7-1d02-0000-000000000007
+  feeEventType:
+    $ref: ./TransactionFeeEventType.yaml
+  sourceCurrency:
+    type: string
+    description: >-
+      ISO 4217 (fiat) or ticker (crypto) code of the source-side currency this
+      fee applies to. Cross-currency fees are charged in the sending side's
+      currency.
+    example: USD
+  variableFeeBps:
+    type: integer
+    minimum: 0
+    maximum: 10000
+    description: >-
+      Variable fee in basis points (1 bps = 0.01%). Multiplied by the
+      transaction's source-currency amount.
+    example: 25
+  fixedFee:
+    $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      Fixed fee charged per transaction, in the smallest unit of
+      `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`.
+  isActive:
+    type: boolean
+    description: >-
+      Whether this row is currently active. Reads return only active rows
+      unless explicitly filtered otherwise.
+    readOnly: true
+    example: true
+required:
+  - feeEventType
+  - sourceCurrency
+  - variableFeeBps
+  - fixedFee

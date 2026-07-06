@@ -17,3 +17,15 @@ properties:
       Fields omitted from the nested object are left unchanged. Omit this
       field at the top level to leave the embedded-wallet configuration
       unchanged entirely.
+  transactionFeeConfigs:
+    type: array
+    items:
+      $ref: ./TransactionFeeConfig.yaml
+    description: |
+      Merge-by-key upsert of platform transaction fee configs. Each item is
+      keyed by `(feeEventType, sourceCurrency)`. To deactivate a fee, send
+      the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`. Only
+      `feeEventType: CROSS_CURRENCY_TRANSACTION` and `sourceCurrency: USD`
+      are accepted by this endpoint today; other values return a 400 error.
+      Omit this field at the top level to leave all transaction fee configs
+      unchanged.

@@ -38,6 +38,15 @@ properties:
       Embedded-wallet branding and OTP settings for this platform. Present
       only when the platform has configured embedded-wallet support;
       omitted otherwise.
+  transactionFeeConfigs:
+    type: array
+    items:
+      $ref: ./TransactionFeeConfig.yaml
+    description: |
+      Platform-collected transaction fees, keyed uniquely by
+      `(feeEventType, sourceCurrency)`. Returned in reads regardless of
+      `feeEventType` so that operator-created rows (e.g. Transfer Out) are
+      visible even before the corresponding write path is enabled.
   createdAt:
     type: string
     format: date-time
