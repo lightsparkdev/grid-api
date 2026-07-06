@@ -1,0 +1,64 @@
+/* The ChatsApp debit card (Figma 2650:11281) — solid brand green, watermark
+   bubble logo, no chip. Shadow on the unclipped shell as a drop-shadow so it
+   hugs the squircle silhouette. */
+.shell {
+  position: relative;
+  flex: none;
+  filter: drop-shadow(0 5.5px 22px rgba(13, 92, 55, 0.35));
+}
+
+.card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  /* Solid brand green in BOTH themes — it's a physical object. */
+  background: #1daa61;
+  overflow: hidden;
+  /* Hairline so the card doesn't melt into a green-adjacent backdrop. */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Oversized bubble-logo watermark (Figma export — white @ 20% baked into the
+   asset), bleeding off the left edge. */
+.watermark {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+/* ···· 8972 — top-right (Figma 2650:11303). */
+.number {
+  position: absolute;
+  font-size: 1em;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  transition: opacity 0.35s ease;
+
+  &[data-hidden] {
+    opacity: 0;
+  }
+}
+
+/* DEBIT + Visa, stacked bottom-right. */
+.brandCol {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.debit {
+  font-size: 1em;
+  line-height: 1.4;
+  font-weight: 590;
+  letter-spacing: -0.006em;
+  color: rgba(235, 235, 245, 0.7);
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+}
+
+.visa {
+  display: block;
+}

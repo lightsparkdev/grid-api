@@ -34,10 +34,9 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   corner-shape: var(--corner-shape);
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   min-width: 0;
-  padding: var(--spacing-xl) var(--spacing-md);
+  padding: var(--spacing-md);
   background: var(--surface-base);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   overflow: visible;
@@ -173,17 +172,19 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
   position: relative;
   z-index: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-md);
-  padding-top: var(--spacing-xs);
+  gap: var(--spacing-sm);
   width: 100%;
+  min-width: 0;
 }
 
 .icon {
   display: block;
-  width: 48px;
-  height: 48px;
+  // 22px glyph centered in a 24px slot — the stroke icons in the sibling grids
+  // carry built-in padding, so a full-bleed 24px app icon reads heavier.
+  width: 22px;
+  height: 22px;
+  margin: 1px;
   flex-shrink: 0;
   object-fit: contain;
   transform-origin: center;
@@ -211,70 +212,11 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
 .label {
   @include label;
-  width: 100%;
-  text-align: center;
+  flex: 1;
+  min-width: 0;
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
-}
-
-@include layout-laptop {
-  .group {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .card {
-    flex-direction: row;
-    align-items: center;
-    padding: var(--spacing-md);
-    border-right: none;
-    border-radius: 0;
-    border-bottom: var(--stroke-xs) solid var(--border-primary);
-
-    &:nth-child(odd),
-    &:nth-child(even) {
-      border-right: none;
-    }
-
-    &:nth-child(2) {
-      border-top-right-radius: 0;
-    }
-
-    &:nth-last-child(-n + 2) {
-      border-bottom: var(--stroke-xs) solid var(--border-primary);
-    }
-
-    &:nth-last-child(2) {
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-    }
-
-    &:last-child {
-      border-bottom: none;
-      border-bottom-left-radius: var(--corner-radius-md);
-      border-bottom-right-radius: var(--corner-radius-md);
-    }
-
-    &:first-child {
-      border-top-left-radius: var(--corner-radius-md);
-      border-top-right-radius: var(--corner-radius-md);
-    }
-  }
-
-  .content {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding-top: 0;
-  }
-
-  .icon {
-    width: 44px;
-    height: 44px;
-  }
-
-  .label {
-    flex: 1;
-    min-width: 0;
-    text-align: left;
-  }
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

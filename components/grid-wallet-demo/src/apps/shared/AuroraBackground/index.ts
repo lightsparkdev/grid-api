@@ -1,1 +1,0 @@
-export { AuroraBackground } from './AuroraBackground';

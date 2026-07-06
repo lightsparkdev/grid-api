@@ -1,6 +1,0 @@
-/* Bazaar (marketplace) skin — SF Pro until brand palette lands. */
-@mixin tokens {
-  &[data-app='bazaar'] {
-    --ios-font-family: var(--font-family-sf-pro);
-  }
-}

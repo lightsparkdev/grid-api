@@ -61,6 +61,7 @@ export const BANK_COUNTRIES: BankCountry[] = [
   },
   { code: 'bg', name: 'Bulgaria', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'DSK Bank' },
   { code: 'cm', name: 'Cameroon', accountType: 'XAF_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 605, bankName: 'Afriland First Bank', region: 'CM' },
+  { code: 'cn', name: 'China', accountType: 'CNY_ACCOUNT', rail: 'Bank Transfer', usdToLocal: 7.25, bankName: 'ICBC', popularRank: 8, banks: ['ICBC', 'Bank of China', 'China Construction Bank', 'Agricultural Bank of China'] },
   { code: 'hr', name: 'Croatia', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Zagrebacka banka' },
   { code: 'cy', name: 'Cyprus', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Bank of Cyprus' },
   { code: 'cz', name: 'Czech Republic', accountType: 'EUR_ACCOUNT', rail: 'SEPA Instant', usdToLocal: 0.92, bankName: 'Komercni banka' },
@@ -123,7 +124,7 @@ export function currencyFor(country: BankCountry): string {
 const DEMO_RECIPIENTS: Record<string, string> = {
   at: 'Lukas Gruber', be: 'Lucas Peeters', bj: 'Kossi Adjavon', br: 'Lucas Silva',
   bg: 'Georgi Ivanov', cm: 'Jean Mbarga', hr: 'Ivan Horvat', cy: 'Andreas Georgiou',
-  cz: 'Jan Novák', dk: 'Mads Jensen', ee: 'Kristjan Tamm', fi: 'Mikko Virtanen',
+  cn: 'Li Wei', cz: 'Jan Novák', dk: 'Mads Jensen', ee: 'Kristjan Tamm', fi: 'Mikko Virtanen',
   fr: 'Lucas Martin', de: 'Anna Müller', gr: 'Giorgos Papadopoulos', hu: 'Bence Nagy',
   is: 'Jón Jónsson', in: 'Priya Sharma', id: 'Budi Santoso', ie: 'Conor Murphy',
   it: 'Giulia Rossi', ci: 'Kouadio Yao', ke: 'Wanjiru Kamau', lv: 'Jānis Bērziņš',

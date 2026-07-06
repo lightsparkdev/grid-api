@@ -234,7 +234,7 @@ controls — not the per-axis model their article playground uses):
   derive it because our lens comes from the DOM box). Caveat: a lens that
   *morphs* across the capsule boundary would flip math mid-animation — if that
   ever exists, add an explicit override then.
-- The WebGL issuance lens (`apps/shared/glass/AuroraLensButton`) mirrors the
+- The WebGL issuance lens (`apps/aurora/aurora-fx/AuroraLensButton`) mirrors the
   same radial math in GLSL.
 
 ---
@@ -252,9 +252,9 @@ The **WebGL / shader path** is only needed when the thing you're refracting is
 There is **no automatic renderer selection**. The WebGL renderers that exist:
 
 - `glass-gl/StageGL` — bespoke to the phone preview; don't reuse.
-- `apps/shared/glass/AuroraLensButton` — circular lens over the live aurora
+- `apps/aurora/aurora-fx/AuroraLensButton` — circular lens over the live aurora
   (the issuance close X); recomputes the field at bent coordinates.
-- `apps/shared/glass/AuroraLensPanel` — the **rectangular squircle** version
+- `apps/aurora/aurora-fx/AuroraLensPanel` — the **rectangular squircle** version
   (born from the glass notification's Safari branch): ports `displacement.ts`'s
   rounded-rect branch to GLSL term by term (lp-norm squircle SDF, per-axis dome,
   splay, erf edge falloff, specular/glow/rim, in-shader tint), shares the

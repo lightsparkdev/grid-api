@@ -353,7 +353,10 @@ void main(){
 `;
 
 function compile(gl: WebGLRenderingContext, type: number, src: string) {
-  const sh = gl.createShader(type)!;
+  // Safari returns null from createShader when the context is lost at creation
+  // (GPU process restart / context limit) — fail soft, never throw.
+  const sh = gl.createShader(type);
+  if (!sh) return null;
   gl.shaderSource(sh, src);
   gl.compileShader(sh);
   if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {

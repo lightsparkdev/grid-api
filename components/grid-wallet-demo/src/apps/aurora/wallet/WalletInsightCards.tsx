@@ -46,6 +46,8 @@ export interface WalletInsightCardsProps {
   weeklySpentCents?: number;
   /** Yield earned today, USD cents (balance × APY ÷ 365). */
   earningsTodayCents?: number;
+  /** A month of accrued yield (daily compounding) — the headline figure. */
+  earningsMonthCents?: number;
   /** APY shown on the earnings card, percent (e.g. 5 → "5.00% APY"). */
   apyPercent?: number;
 }
@@ -55,6 +57,7 @@ export function WalletInsightCards({
   weeklyBars = DEFAULT_WEEKLY_BARS,
   weeklySpentCents = 0,
   earningsTodayCents = 0,
+  earningsMonthCents = 0,
   apyPercent = 0,
 }: WalletInsightCardsProps) {
   const bars = normalizeBars(weeklyBars);
@@ -98,7 +101,8 @@ export function WalletInsightCards({
       >
         <p className={styles.cardTitle}>Earnings</p>
         <div className={styles.earningsBlock}>
-          <p className={styles.earningsAmount}>{fmtUsd(earningsTodayCents)}</p>
+          {/* Headline = the month's accrued yield; the chip below keeps today. */}
+          <p className={styles.earningsAmount}>{fmtUsd(earningsMonthCents)}</p>
           <p className={styles.earningsApy}>{`${fmtPercent(apyPercent)} APY`}</p>
         </div>
         <MetricLine positive>

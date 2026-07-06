@@ -1,43 +1,38 @@
 'use client';
 
-import type { ComponentType } from 'react';
 import clsx from 'clsx';
-import { Flag } from './Flag';
+import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
+import { IconCheeseburger } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheeseburger';
+import { IconStore1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStore1';
+import { IconCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCup';
+import { IconFashion } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFashion';
+import { IconShoppingBag1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconShoppingBag1';
+import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
+import { IconSofa } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSofa';
+import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconDeskLamp';
+import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
+import { Flag } from '@/apps/shared/Flag';
+import type { WalletListItemData, WalletItemAvatar, MerchantCategory } from '@/apps/shared/wallet';
 import styles from './WalletListItem.module.scss';
 
-/** central-icons component shape (accepts `size`, spreads the rest onto the
- *  svg). `size` includes string to match CentralIconBaseProps exactly — a
- *  narrower number-only signature rejects the icon components' propTypes. */
-type ListIcon = ComponentType<{ size?: number | string; className?: string }>;
+// The row data shape is the shared brain's contract — re-export it so this skin's
+// sibling faces still import it from here; only the rendering below is per-skin.
+export type { WalletListItemData, WalletItemAvatar };
 
-/** Contact-style avatar for a person counterparty — first+last initial in the
- *  circular tile with the country flag badged in the corner. */
-export interface WalletItemAvatar {
-  initials: string;
-  code: string;
-}
-
-export interface WalletListItemData {
-  id: string;
-  /** Glyph graphic (central-icons). */
-  Icon?: ListIcon;
-  /** Image graphic (e.g. a country flag) — wins over Icon when both are set. */
-  image?: string;
-  /** The image is a self-contained brand tile with its own corner radius (e.g. a
-   *  crypto network logo) — skip the circular flag clip. */
-  imageSquare?: boolean;
-  /** Round the 56px tile (crypto payments — coin-style) instead of the square. */
-  tileCircle?: boolean;
-  /** Person counterparty — render the initials avatar (wins over icon/image). */
-  avatar?: WalletItemAvatar;
-  title: string;
-  /** Merchant detail line, e.g. "Tap to Pay". */
-  detail: string;
-  /** Epoch ms — rendered as a live relative label ("Just now", "2m ago"…). */
-  timestamp: number;
-  /** Formatted amount, e.g. "$7.32". */
-  amount: string;
-}
+// Tap-to-pay / transaction merchant icons — Aurora's variant (radius-3, stroke-1.5).
+// The brain supplies only the merchant `category`; the icon style is the skin's.
+const MERCHANT_ICONS: Record<MerchantCategory, typeof IconHotDrinkCup> = {
+  coffee: IconHotDrinkCup,
+  'fast-food': IconCheeseburger,
+  convenience: IconStore1,
+  cafe: IconCup,
+  fashion: IconFashion,
+  apparel: IconShoppingBag1,
+  accessories: IconTag,
+  furniture: IconSofa,
+  homeware: IconDeskLamp,
+  grocery: IconBasket1,
+};
 
 export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'timestamp'> {
   /** Pre-formatted relative time label, e.g. "Just now". */
@@ -50,7 +45,7 @@ export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'ti
  * Reusable across the wallet flows.
  */
 export function WalletListItem({
-  Icon,
+  category,
   image,
   imageSquare,
   tileCircle,
@@ -60,6 +55,7 @@ export function WalletListItem({
   time,
   amount,
 }: WalletListItemProps) {
+  const MerchantIcon = category ? MERCHANT_ICONS[category] : null;
   return (
     <div className={styles.row}>
       <span
@@ -81,7 +77,7 @@ export function WalletListItem({
             draggable={false}
           />
         ) : (
-          Icon && <Icon size={24} />
+          MerchantIcon && <MerchantIcon size={24} />
         )}
       </span>
       <div className={styles.content}>

@@ -1,0 +1,131 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2143:41028 — h 80, pl 16, gap 16, items-center. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  height: 80px;
+  padding-left: 16px;
+}
+
+/* 48px circular tile, tertiary fill, centered 24px glyph. */
+.graphic {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-label-primary);
+
+  /* central-icons bake stroke-width onto each <path>; render at 2px. */
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+/* Crypto payments + person avatars use a true circle (coin/contact style). */
+.graphicCircle {
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+/* Initials avatar (person counterparty) — SF Pro Rounded, like iOS contacts. */
+.avatarInitials {
+  @include ios.ios-type-rounded;
+  font-size: 18px;
+  font-weight: 590;
+  line-height: 1;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+}
+
+/* Country flag badged in the avatar's corner, ringed in the card bg. */
+.avatarFlag {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px var(--list-card-bg, var(--ios-bg-primary));
+}
+
+/* Image graphic (e.g. flag) — circular, 20px: glyphs carry built-in padding at
+   24, so an edge-to-edge image at 24 reads optically bigger than the icons. */
+.graphicImage {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Brand/network tiles (e.g. crypto logos) already carry their own corner radius,
+   so they skip the circular flag clip and sit at 24px (full-bleed reads smaller
+   than a circle, matching the deposit list). */
+.graphicImageSquare {
+  width: 24px;
+  height: 24px;
+  border-radius: 0;
+}
+
+/* Figma 2143:41034 — fills, pr 24, items-center. */
+.content {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  height: 80px;
+  padding-right: 24px;
+}
+
+/* Figma 2143:41035 — labels + amount, gap 16, top-aligned. */
+.container {
+  display: flex;
+  flex: 1 1 0;
+  gap: 16px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.labels {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Footnote/Emphasized 13/18, -0.08. */
+.title {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* Footnote/Regular 13/18, -0.08. */
+.sub {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+}
+
+/* Figma 90:13701 (Amounts) — Footnote/Emphasized 13/18, -0.08, right-aligned. */
+.amount {
+  flex-shrink: 0;
+  margin: 0;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  text-align: right;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
