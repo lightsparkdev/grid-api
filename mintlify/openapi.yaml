@@ -12321,7 +12321,7 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the beneficiary's bank
           minLength: 1
           maxLength: 255
           example: Banco GYT Continental
