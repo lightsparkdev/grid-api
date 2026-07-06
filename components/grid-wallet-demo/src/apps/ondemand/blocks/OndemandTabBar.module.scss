@@ -18,7 +18,12 @@
   box-sizing: border-box;
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--od-tabbar-bg) 0%, transparent) 0,
+    /* Plain transparent, NOT color-mix(... 0%, transparent): cssnano minifies
+       the 0% amount to a unitless 0, which is invalid inside color-mix() — the
+       whole background was dropped in PRODUCTION builds (transparent bar, no
+       fade; dev was fine). Gradient interpolation is premultiplied, so the
+       fully-transparent endpoint's hue doesn't matter. */
+    transparent 0,
     color-mix(in srgb, var(--od-tabbar-bg) 4%, transparent) 4px,
     color-mix(in srgb, var(--od-tabbar-bg) 16%, transparent) 8px,
     color-mix(in srgb, var(--od-tabbar-bg) 32%, transparent) 12px,
