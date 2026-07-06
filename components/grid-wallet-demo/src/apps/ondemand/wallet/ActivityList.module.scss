@@ -1,0 +1,207 @@
+/* Live Activity list — the Figma row anatomy (2636:17853): 56px grey graphic
+   square + stacked labels + right amount, 0.5px bottom hairline on the content
+   only (it starts after the graphic). Full-bleed rows, no cards. */
+
+.list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0;
+}
+
+/* Empty/skeleton state reserves four rows of presence (4 × 80). */
+.listEmpty {
+  min-height: 320px;
+}
+
+/* Row: graphic left-inset 16, content carries the hairline. */
+.row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding-left: 16px;
+}
+
+/* The 56px grey r8 squircle holding one simple centered mark. */
+.graphic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+.graphicInitials {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: 0.16px;
+  color: var(--app-text-primary);
+}
+
+/* Content: 80px tall, hairline along its bottom (Figma 0.5px non-opaque). */
+.content {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 16px;
+  align-items: center;
+  height: 80px;
+  padding-right: 24px;
+  box-shadow: inset 0 -0.5px 0 var(--od-hairline);
+}
+
+.lines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.lineTitle {
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 500;
+  letter-spacing: -0.31px;
+  color: var(--app-text-primary);
+  font-feature-settings: 'salt' 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineMeta {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+  letter-spacing: -0.08px;
+  color: var(--app-text-secondary);
+  font-feature-settings: 'salt' 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount {
+  flex: none;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  letter-spacing: -0.43px;
+  color: var(--app-text-primary);
+  font-feature-settings: 'salt' 1;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* ── Skeleton + empty reveal (the Select-bank choreography) ──────────────── */
+.skeletons {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.skeletonRow {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  height: 80px;
+  padding-left: 16px;
+}
+
+/* The graphic silhouette (56px, r8 — smoothed by the global corner-shape). */
+.skeletonTile {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: var(--od-surface);
+}
+
+.skeletonLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.skeletonRight {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.skeletonPill {
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--od-surface);
+}
+
+.skeletonCover {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--cover-duration, 550ms) cubic-bezier(0.19, 1, 0.22, 1);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--app-bg) 50%, transparent) 0%,
+    var(--app-bg) 64%
+  );
+
+  &[data-visible] {
+    opacity: 1;
+  }
+}
+
+.emptyLayer {
+  position: absolute;
+  inset: 12px 0 0; /* under the list's own top padding */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  pointer-events: none;
+}
+
+.emptyMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+  pointer-events: auto; /* the CTA lives in a pointer-events:none layer */
+}
+
+.emptyText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.emptySub {
+  margin: 0 auto;
+  max-width: 260px;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+  text-wrap: balance;
+}

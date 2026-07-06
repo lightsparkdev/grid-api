@@ -1,0 +1,97 @@
+/* Ondemand skin — Uber-style: Inter type (with the 'salt' alternates the Figma
+   uses as its Uber Move stand-in), black-on-white brand, flat (NO glass
+   anywhere), small 4–8px smoothed radii. Light values sampled from the Figma
+   wallet home (2636:17730); dark is an adaptation. */
+@mixin tokens {
+  &[data-app='ondemand'] {
+    --ios-font-family: var(--font-family-inter);
+
+    /* Brand — black. CTAs are black fill, white text. */
+    --app-tint: #000000;
+    --ios-tint: var(--app-tint);
+    --od-brand: #000000;
+    --od-cta: #000000;
+    --od-cta-press: #2a2a2a;
+    --od-cta-fg: #ffffff;
+
+    /* Surfaces + text (light). */
+    --app-bg: #ffffff;
+    --ios-label-primary: #000000;
+    --app-text-primary: #000000;
+    --app-text-secondary: #4b4b4b;
+    --app-text-tertiary: #727272;
+
+    /* Ondemand palette — consumed by the ondemand faces. */
+    --od-surface: #f3f3f3; /* action tiles, inputs at rest, grey CTAs */
+    --od-surface-press: #e8e8e8;
+    --od-row-hover: #f7f7f7; /* full-bleed list-row hover fill */
+    --od-card-bg: #ffffff;
+    --od-card-border: rgba(0, 0, 0, 0.08);
+    --od-header-border: #ebebeb; /* collapsed large-title header hairline */
+    --od-card-shadow: none; /* flat — no elevation anywhere */
+    --od-hairline: rgba(0, 0, 0, 0.12); /* row separators + the "or" rule */
+    --od-input-border: transparent; /* resting input: grey fill, no stroke */
+    --od-input-border-focus: #000000; /* focused: white fill + 2px black */
+    --od-tile-border: transparent;
+    --od-green: #2e8e37; /* positive delta text */
+    --od-green-bg: #f3fdf5; /* positive delta chip fill */
+    --od-sheet-bg: #ffffff;
+
+    /* Primary filled pill (ContentAreaButton filled) — black CTA. */
+    --p-fill: var(--od-cta);
+    --p-fg: var(--od-cta-fg);
+    --content-secondary-bg: var(--od-surface);
+    --content-secondary-fg: var(--app-text-primary);
+
+    /* Flat sheets — no glass in this app (toasts included). */
+    --auth-sheet-bg: #ffffff;
+    --app-sheet-glass-backdrop: transparent;
+    --sheet-scrim: rgba(0, 0, 0, 0.4);
+    /* Dim over the parallax-receding wallet while a page is pushed on top. */
+    --od-push-scrim: rgba(0, 0, 0, 0.12);
+
+    /* Decorative bottom tab bar (Figma 2636:17926). */
+    --od-tabbar-bg: #ffffff;
+    --od-tabbar-border: #ebebeb;
+    --od-tabbar-fg: #727272;
+    --od-tabbar-active: #000000;
+
+    :global([data-theme='dark']) & {
+      --app-tint: #ffffff;
+      --od-cta: #ffffff;
+      --od-cta-press: #d6d6d6;
+      --od-cta-fg: #000000;
+
+      --app-bg: #000000;
+      --ios-label-primary: #ffffff;
+      --app-text-primary: #ffffff;
+      --app-text-secondary: #b0b0b0;
+      --app-text-tertiary: #8c8c8c;
+
+      --od-surface: #1f1f1f;
+      --od-surface-press: #2c2c2c;
+      --od-row-hover: #161616;
+      --od-card-bg: #141414;
+      --od-card-border: rgba(255, 255, 255, 0.12);
+      --od-header-border: #262626;
+      --od-hairline: rgba(255, 255, 255, 0.15);
+      --od-input-border: transparent;
+      --od-input-border-focus: #ffffff;
+      --od-green: #4fce5d;
+      --od-green-bg: #0f2413;
+      --od-sheet-bg: #141414;
+
+      --content-secondary-bg: var(--od-surface);
+      --content-secondary-fg: var(--app-text-primary);
+
+      --auth-sheet-bg: #000000;
+      --sheet-scrim: rgba(0, 0, 0, 0.6);
+      --od-push-scrim: rgba(0, 0, 0, 0.4);
+
+      --od-tabbar-bg: #0c0c0c;
+      --od-tabbar-border: #262626;
+      --od-tabbar-fg: #8c8c8c;
+      --od-tabbar-active: #ffffff;
+    }
+  }
+}

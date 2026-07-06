@@ -1,0 +1,11 @@
+/* Plain circular list marks — bare images clipped round (a true circle, not
+   the app-wide squircle). */
+.circle {
+  display: block;
+  flex: none;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+  object-fit: cover;
+  user-select: none;
+}

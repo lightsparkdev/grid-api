@@ -1,0 +1,1026 @@
+/* Deposit page — an iOS navigation push over the wallet. Flat ondemand
+   surface; left-edge drop shadow reads while the page slides over the
+   (parallax-shifted) wallet, and naturally leaves the screen at rest. */
+
+.page {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  /* The left-edge drop shadow is ANIMATED inline (rides the slide in/out). */
+}
+
+/* ── Header bar — the wallet home's bar shape (extends under the status bar),
+   back chevron left; hairline + centered 14px title once collapsed. ────────── */
+.headerBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Above every step layer (they z-slot at 10–30). */
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  height: 118px; /* 62 status bar + 56 bar */
+  padding: 70px 24px 8px;
+  box-sizing: border-box;
+  background: var(--app-bg);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--od-header-border);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  /* The hairline lands as soon as the content scrolls (not at title collapse). */
+  &[data-bordered]::after {
+    opacity: 1;
+  }
+}
+
+/* Icon-sized (24px) like the auth sheet's header buttons, so the arrow sits
+   exactly on the bar's 24px gutter. */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Collapsed bar title — 14px, centered in the bar (slides up as it fades in). */
+.barTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+
+/* ── In-page steps (source ⇄ banks) — same push mechanism as the page ────── */
+.steps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.step {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--app-bg);
+}
+
+/* Dim over a receding underlayer during a step push — same token as the
+   wallet-level push scrim. z is slotted inline between the fixed-depth
+   layers (15 between source and banks; 45 above the page header (40) for
+   the amount rise, whose screen covers the header at 50). */
+.stepScrim {
+  position: absolute;
+  inset: 0;
+  background: var(--od-push-scrim);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Enter amount (the Z amount screen, ondemand chrome) ───────────────── */
+.amountLayout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* NO header padding here — the inner screens pad themselves past the
+     header instead, so .innerSteps (an overflow clipper) spans the full
+     screen and the review card's shadow isn't cut at the header line. */
+}
+
+/* The rising screen's own header — page-header geometry (70px status zone),
+   above the inner layers (they z-slot at 10–20) but TRANSPARENT: neither
+   inner screen scrolls in practice, and an opaque fill would paint over the
+   review card's shadow reaching up into the header zone (a hard clip line
+   at the header's bottom edge). */
+.amountHeader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  height: 118px;
+  padding: 70px 24px 8px;
+  box-sizing: border-box;
+}
+
+.amountHeaderSlot {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+
+  &:last-child {
+    margin-left: auto;
+  }
+}
+
+/* Amount ⇄ Review — separate screens pushed side-by-side under the header. */
+.innerSteps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.innerStep {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--app-bg);
+}
+
+/* The amount screen doesn't scroll, so it simply pads past the header; the
+   review pads INSIDE its scroll area instead (shadow room + slide-under). */
+.innerStepPad {
+  padding-top: 118px;
+}
+
+/* Centered header title (IMG_0631's bar) — sits between the X and the edge. */
+.amountHeaderTitle {
+  position: absolute;
+  left: 56px;
+  right: 56px;
+  top: 70px; /* the header's status-bar padding */
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.16px;
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+
+/* The amount floats free (flat, no card), centered above the destination. */
+.amountFree {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  text-align: center;
+}
+
+/* Destination box — 1px squircle border (halo stroke), NO shadow/hairline. */
+.destWrap {
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 24px 16px;
+}
+
+.destBox {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 20px;
+  border: 0;
+  background: var(--app-bg);
+  /* Buttons don't inherit font-family — keep the row in Circular. */
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.destHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--od-tile-border);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.amountValue {
+  display: flex;
+  /* Stretch to the card width (a centered flex child shrink-wraps otherwise)
+     so the fit measurement has a real bound. */
+  align-self: stretch;
+  justify-content: center;
+  margin: 0;
+  font-size: 64px;
+  line-height: 72px;
+  font-weight: 500;
+  letter-spacing: -1.92px; /* -3%, the large-title voice */
+  color: var(--app-text-primary);
+}
+
+/* Fit-to-width wrapper — scales toward 0.5 as the amount outgrows the row. */
+.amountFit {
+  display: inline-flex;
+  transform-origin: center;
+  white-space: nowrap;
+}
+
+.amountGhost {
+  color: var(--app-text-tertiary);
+}
+
+.amountSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: center;
+  margin: 0;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+/* "Use max" chip — the header-pill voice, riding under the fx line on
+   balance-sourced outflows (withdraw / send). */
+.useMaxBtn {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px 12px 8px;
+}
+
+/* ── Review deposit (IMG_0631/0632) ───────────────────────────────────────── */
+.review {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.reviewScroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  /* Top = 118px header + the 8px content gap — padded inside the scroll so
+     the summary card's shadow has room instead of clipping at the header.
+     Bottom: 18px + the last total row's 6px bottom padding = 24px above
+     the CTA. */
+  padding: 126px 24px 18px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Flexible gap — absorbs the leftover height ABOVE the details so they anchor
+   against the CTA (collapses to 24px minimum on short screens). */
+.reviewSpacer {
+  flex: 1 1 0;
+  min-height: 24px;
+}
+
+/* Summary box — flat: 1px squircle border (the destination-box voice), no
+   shadow, 16px inset all around (the rows carry the rest of the rhythm). */
+.reviewBoxWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.reviewBox {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+  padding: 16px;
+}
+
+/* The route (IMG_0668's itinerary): two sticker rows joined by a thin line
+   running through the tile axis. The line sits UNDER the opaque stickers
+   (they paint over it), so only the gap segment shows. */
+.routeRows {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* Top inset comes from the box's own 16px; keep 20px above the hairline. */
+  padding: 0 0 20px;
+  border-bottom: 1px solid var(--od-hairline);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 20px; /* the 40px tile's center */
+    top: 20px; /* first tile's center */
+    bottom: 40px; /* second tile's center */
+    width: 1.5px;
+    transform: translateX(-50%);
+    background: var(--od-hairline);
+  }
+}
+
+.routeRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Label-over-value rows with an optional Change pill; hairlines between. */
+.reviewBoxRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+
+  & + & {
+    border-top: 1px solid var(--od-hairline);
+  }
+
+  /* The box's own 16px is the bottom inset. */
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.reviewRowLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reviewRowLabel {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.reviewRowValue {
+  font-size: 15px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+/* "Change" pill — the header pill's voice, inside the box rows. */
+.changePill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.reviewSectionTitle {
+  /* 12px margin + the first price row's 6px top padding = 18px visual gap. */
+  margin: 0 0 12px;
+  font-size: 22px;
+  line-height: normal;
+  font-weight: 700;
+  letter-spacing: -0.44px;
+  color: var(--app-text-primary);
+}
+
+/* Flat 2-col price rows; the total gets a hairline above and full weight. */
+.priceRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-primary);
+}
+
+/* The two bold answers at the end — the first carries the hairline off the
+   supporting rows; the second follows without another rule. Vertical padding
+   matches .priceRow so the list reads on one rhythm. */
+.priceTotalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  /* The divider gets a full row-gap (12px) on BOTH sides: 6px from the row
+     above + 6px margin, then 12px padding beneath it. Row-to-row gaps stay
+     12px, so the whole list reads on one rhythm. */
+  margin-top: 6px;
+  padding: 12px 0 6px;
+  border-top: 1px solid var(--od-hairline);
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 700;
+  color: var(--app-text-primary);
+
+  & + & {
+    margin-top: 0;
+    padding: 6px 0;
+    border-top: 0;
+  }
+}
+
+.reviewCtaWrap {
+  flex-shrink: 0;
+  /* 0 top: the 24px gap above the CTA comes from the scroll area's 18px
+     bottom padding + the last total row's 6px bottom padding. */
+  padding: 0 24px 24px;
+}
+
+.ctaInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctaFaceId {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+}
+
+.reviewTerms {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: normal;
+  font-weight: 400;
+  text-align: center;
+  color: var(--app-text-secondary);
+
+  span {
+    text-decoration: underline;
+  }
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 58px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 24px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.24px;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease-out;
+
+  &:active {
+    transform: scale(0.96);
+    transition: none;
+  }
+}
+
+.amountCtaWrap {
+  flex-shrink: 0;
+  padding: 8px 24px 40px;
+}
+
+/* Full-width pink CTA (Continue's h50/r13 voice). */
+.amountCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--od-cta);
+  color: var(--od-cta-fg);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.17px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-cta-press);
+  }
+}
+
+.ctaSpinner {
+  display: inline-flex;
+
+  svg {
+    display: block;
+    animation: amount-spin 0.9s linear infinite;
+  }
+}
+
+@keyframes amount-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Scroll (content passes under the opaque bar) ────────────────────────── */
+.scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 118px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Large title — same voice as the wallet home's; scrolls away with content. */
+.title {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 24px;
+  font-size: 32px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.96px; /* in step with the home large title */
+  color: var(--app-text-primary);
+}
+
+/* ── Source list — bare icons, two lines, inset dividers (24px gutters) ──── */
+.list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+
+  /* No-op sources (Cash App / Apple Pay — no demo path) read normal at rest;
+     entering the list fades them to signal they're unavailable, and leaving
+     restores them (Aurora's treatment). */
+  @media (hover: hover) {
+    &:hover .row:disabled {
+      opacity: 0.4;
+    }
+  }
+}
+
+/* Contact-style lists (Select bank / Send to / the deposit-address list) —
+   tighter rhythm than the source list: 12px + 12px = 24px between rows. */
+.listTight .row,
+.listTight .cryptoRow {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+/* Rows carry the 24px gutters themselves so the hover fill runs FULL BLEED;
+   content stays aligned with everything else. */
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 24px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s ease,
+    opacity 0.25s ease;
+
+  &:not(:disabled):hover {
+    background: var(--od-row-hover);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  /* Divider between rows — inset to the 24px gutters (not full bleed). */
+  &[data-bordered]::after {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 0;
+    height: 1px;
+    background: var(--od-hairline);
+  }
+}
+
+.rowIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+    flex: none;
+
+    /* Rendered at 28px from the 24 viewBox, the set's 1.5 stroke scales up to
+       ~1.75 — compensate so it reads 1.5px on screen (1.5 × 24/28). Fill-only
+       glyphs (Apple/Google) have no stroke, so this is a no-op for them. */
+    :is(path, circle, rect, line, ellipse) {
+      stroke-width: 1.2857;
+    }
+  }
+}
+
+.rowLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500; /* Circular Medium — real, now that the buttons inherit */
+  color: var(--app-text-primary);
+}
+
+.rowSub {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+.rowChevron {
+  flex: none;
+  display: inline-flex;
+  color: #8c8c8c;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Crypto deposit rows — the .row anatomy, but the ROW isn't tappable (the
+   copy/QR buttons are the actions), so no full-bleed hover fill. */
+.cryptoRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  color: var(--app-text-primary);
+}
+
+.rowActions {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Enter address (send → crypto) ──────────────────────────────────────── */
+.recipientLayout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.addressWrap {
+  position: relative;
+  flex-shrink: 0;
+  /* .scroll has no side padding (rows carry their own gutters). */
+  margin: 16px 24px 0;
+}
+
+/* The destination-box voice, as a static card: 1px squircle border via the
+   halo, sticker + two lines when filled, placeholder text when empty. */
+.addressBox {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 76px;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  background: var(--app-bg);
+}
+
+.addressPlaceholder {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-secondary);
+}
+
+.recipientCtaWrap {
+  flex-shrink: 0;
+  padding: 12px 24px 40px;
+}
+
+/* The session address book under the address card (withdraw). */
+.walletBook {
+  margin-top: 24px;
+
+  /* Tighter rhythm than the full-page lists: 12px + 12px = 24px between rows. */
+  .row {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+
+.walletBookLabel {
+  /* 12px + the first row's 12px top padding = 24px below, matching the 24px
+     above (the book's margin-top). */
+  margin: 0 0 12px;
+  padding: 0 24px;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-secondary);
+}
+
+/* Rounded-rect (squircle-clipped) icon buttons on the secondary fill. */
+.rowIconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: var(--od-surface);
+  color: var(--app-text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Header "Add bank" pill — the Airbnb "Details" header button: full-round
+   gray pill, top right of the bar. */
+.headerPill {
+  margin-left: auto;
+  /* 16px gutter to the screen edge — the bar itself pads 24px. */
+  margin-right: -8px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+}
+
+/* Brand-pink CTA — hugs contents, 48px tall. */
+/* The pink hug-contents CTA lives in blocks/DarkCta. */
+
+/* ── "Select bank" empty state — skeleton hold → cover → message reveal ──── */
+.empty {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.skeletonList {
+  position: relative;
+  margin-top: 8px;
+}
+
+/* Mirrors the real contact row: 12px vertical padding (the listTight
+   rhythm), 40px sticker silhouette, title/sub line pair. */
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+}
+
+.skeletonTile {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  background: var(--od-surface);
+}
+
+.skeletonLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skeletonPill {
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--od-surface);
+}
+
+/* Cover that fades the skeleton down before the message reveals. */
+.skeletonCover {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--cover-duration, 550ms) cubic-bezier(0.19, 1, 0.22, 1);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--app-bg) 50%, transparent) 0%,
+    var(--app-bg) 64%
+  );
+
+  &[data-visible] {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonCover {
+    transition: none;
+  }
+}
+
+.emptyMessageLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  pointer-events: none;
+}
+
+.emptyMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  pointer-events: auto;
+}
+
+.emptyText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.emptySub {
+  margin: 0 auto;
+  max-width: 260px;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+  text-wrap: balance;
+}

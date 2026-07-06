@@ -1,0 +1,53 @@
+/* Airbnb partial-height bottom sheet (IMG_0612/0626): flat card, the app's
+   standard 40px top squircle, floating X, no header bar. */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  background: var(--sheet-scrim);
+  opacity: 0;
+}
+
+.layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--od-sheet-bg);
+  color: var(--app-text-primary);
+  /* Floating X zone up top; home-indicator clearance below. */
+  padding: 24px 0 40px;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}

@@ -12,13 +12,16 @@ import { BRAND as SOCIAL_BRAND } from './social/config';
 import { MarketplaceAuthScreen } from './marketplace/MarketplaceAuthScreen';
 import { MarketplaceWalletScreen } from './marketplace/wallet';
 import { BRAND as MARKETPLACE_BRAND } from './marketplace/config';
+import { OndemandAuthScreen } from './ondemand/OndemandAuthScreen';
+import { OndemandWalletScreen } from './ondemand/wallet';
+import { BRAND as ONDEMAND_BRAND } from './ondemand/config';
 import type {
   SkinAuthScreen,
   SkinWalletScreen,
   SkinAuthSheet,
 } from './types';
 
-export type AppSkinId = 'aurora' | 'creator' | 'social' | 'marketplace';
+export type AppSkinId = 'aurora' | 'creator' | 'social' | 'marketplace' | 'ondemand';
 
 /** A skin = a per-persona app. `AuthScreen` + `WalletScreen` are the per-skin
  *  view (Aurora is skin zero). When both are set the persona renders the full
@@ -55,6 +58,7 @@ export interface AppSkin {
 const SF_PRO = "'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
 const GEIST = 'var(--font-family-geist), system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
 const CIRCULAR = "'Circular', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+const INTER = "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
 
 /** Persona → app skin. Swap fontFamily per skin; metrics stay on ios-type stack. */
 export const APP_SKINS: Record<Persona, AppSkin> = {
@@ -94,6 +98,18 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     WalletScreen: MarketplaceWalletScreen,
     // The confirm screen pushes in INSIDE the permanent sign-in sheet — the
     // flow rides the auth screen's props, not a separate overlay.
+    inlineAuthFlow: true,
+    authReveal: 'fade',
+  },
+  ondemand: {
+    id: 'ondemand',
+    persona: 'ondemand',
+    label: ONDEMAND_BRAND,
+    fontFamily: INTER,
+    AuthScreen: OndemandAuthScreen,
+    WalletScreen: OndemandWalletScreen,
+    // Auth steps push in full-screen INSIDE the auth screen — the flow rides
+    // the auth screen's props, not a separate overlay.
     inlineAuthFlow: true,
     authReveal: 'fade',
   },

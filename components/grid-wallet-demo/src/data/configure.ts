@@ -56,10 +56,11 @@ export const USE_CASES: UseCaseOption[] = [
   },
   {
     id: 'ondemand',
+    persona: 'ondemand',
     label: 'On-demand',
     iconSrc: '/assets/app-icon-ondemand.png',
     enabled: true,
-    built: false,
+    built: true,
   },
   {
     id: 'messaging',

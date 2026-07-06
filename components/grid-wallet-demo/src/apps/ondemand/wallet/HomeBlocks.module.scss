@@ -1,0 +1,231 @@
+/* Ondemand Wallet home (Figma 2636:17730) — Uber-flat: no cards, no shadows,
+   grey action tiles, full-bleed activity rows. Inter type with 'salt'. */
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  /* Clear the status bar (screenBody underlaps it; see AppShell). */
+  padding-top: 62px;
+}
+
+/* ── Header bar — pinned over the scroll; opaque so content passes beneath.
+   Extends UP under the status bar. The hairline fades in once the large
+   title has fully migrated in. ─────────────────────────────────────────── */
+.headerBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  height: 110px; /* 62 status bar + 48 bar */
+  box-sizing: border-box;
+  background: var(--app-bg);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--od-header-border);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  &[data-collapsed]::after {
+    opacity: 1;
+  }
+}
+
+/* ── Large title (Figma 2636:17734 — Bold 34/41) ────────────────────────── */
+/* Rides the scroll 1:1 (translate = −scrollTop up to the collapse range)
+   while shrinking to 22px into the header bar. */
+.titleLayer {
+  position: absolute;
+  top: 110px;
+  left: 16px;
+  z-index: 4;
+  pointer-events: none;
+  transform-origin: top left;
+  transform: translateY(calc(var(--collapse, 0) * -42px))
+    scale(calc(1 - var(--collapse, 0) * 0.3529));
+  will-change: transform;
+}
+.title {
+  margin: 0;
+  font-size: 34px;
+  line-height: 41px;
+  font-weight: 700;
+  letter-spacing: -0.68px;
+  color: var(--app-text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+/* ── Body (scrolls under the pinned header) ─────────────────────────────── */
+/* Top padding = bar (48) + large title (41) + content gap. */
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 106px 0 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Total balance (Figma 2636:17735 — p16, gap 4) ──────────────────────── */
+.balanceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 16px 16px;
+}
+.balanceRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.balanceLabel {
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 500;
+  letter-spacing: -0.31px;
+  color: var(--app-text-secondary);
+}
+.todayChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 8px;
+  background: var(--od-green-bg);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: -0.08px;
+  color: var(--od-green);
+  white-space: nowrap;
+}
+.balanceAmount {
+  font-size: 34px;
+  line-height: 41px;
+  font-weight: 700;
+  letter-spacing: -1.02px;
+  color: var(--app-text-primary);
+  font-feature-settings: 'salt' 1;
+}
+
+/* ── Action tiles (Figma 2636:17742/17784 — rows px16 py8, gap 12) ──────── */
+.tileRowBig,
+.tileRowSmall {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 16px;
+}
+
+%tile {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  border: 0;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+}
+
+.tileBig {
+  @extend %tile;
+  height: 104px;
+  padding: 8px 16px;
+  justify-content: flex-end;
+}
+.tileSmall {
+  @extend %tile;
+  height: 96px;
+  padding: 8px;
+  justify-content: flex-end;
+}
+
+/* The 3D graphic — big tiles park it right, small tiles center it. */
+.tileArtSlot {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+.tileBig .tileArtSlot {
+  justify-content: flex-end;
+}
+.tileSmall .tileArtSlot {
+  justify-content: center;
+}
+.tileArt {
+  display: block;
+  max-height: 100%;
+  user-select: none;
+}
+.tileBig .tileArt {
+  height: 70px;
+}
+.tileSmall .tileArt {
+  height: 62px;
+}
+
+.tileLabel {
+  flex: none;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: -0.08px;
+  color: var(--app-text-primary);
+  font-feature-settings: 'salt' 1;
+}
+.tileBig .tileLabel {
+  text-align: left;
+}
+.tileSmall .tileLabel {
+  text-align: center;
+}
+
+/* ── Activity (Figma 2636:17849 — title px16 py8, 20 bold) ──────────────── */
+.activity {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0 0;
+}
+.activityTitle {
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 20px;
+  line-height: 25px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--app-text-primary);
+  font-feature-settings: 'salt' 1;
+}
+/* Rows live in ActivityList. */

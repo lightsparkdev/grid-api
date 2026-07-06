@@ -1,0 +1,53 @@
+/* "Send or receive" chooser content — IMG_0612's centered stack: big title +
+   subhead in the content (the PartialSheet owns the card + floating X). */
+
+.title {
+  /* Clear the floating X (24px top pad + 24px glyph) before the title. */
+  margin: 32px 24px 0;
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 500;
+  letter-spacing: -0.52px;
+  text-align: center;
+  color: var(--app-text-primary);
+}
+
+.sub {
+  margin: 8px 40px 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 400;
+  text-align: center;
+  color: var(--app-text-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 24px 0;
+}
+
+/* The home action-pill voice: 50px secondary-fill squircle buttons. */
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.51px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+}

@@ -2,6 +2,7 @@
 @use '../../creator/skin' as creator-skin;
 @use '../../social/skin' as social-skin;
 @use '../../marketplace/skin' as marketplace-skin;
+@use '../../ondemand/skin' as ondemand-skin;
 @use '../colors/ios-colors' as ios-colors;
 @use '../colors/app-colors' as app-colors;
 
@@ -123,6 +124,7 @@
   @include creator-skin.tokens;
   @include social-skin.tokens;
   @include marketplace-skin.tokens;
+  @include ondemand-skin.tokens;
 }
 
 .screenToneLight {

@@ -1,0 +1,54 @@
+/* Decorative tab bar (Figma 2636:17926) — pinned bottom, top hairline,
+   24px sharp icons + 11px labels, Wallet active in primary. */
+
+.bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 84px;
+  padding-top: 8px;
+  box-sizing: border-box;
+  background: var(--od-tabbar-bg);
+  border-top: 1px solid var(--od-tabbar-border);
+}
+
+.item {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* Buttons don't inherit font-family — without this the labels fall back to
+     the UA font instead of Inter. */
+  font-family: inherit;
+  color: var(--od-tabbar-fg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+.label {
+  font-size: 11px;
+  line-height: normal;
+  font-weight: 500;
+  text-align: center;
+  color: var(--od-tabbar-fg);
+  font-feature-settings: 'salt' 1;
+}
+
+.itemActive {
+  color: var(--od-tabbar-active);
+
+  .label {
+    color: var(--od-tabbar-active);
+  }
+}
