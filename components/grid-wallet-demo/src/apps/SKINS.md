@@ -260,6 +260,43 @@ Also marketplace-specific but reusable: AI-generated card-face art lives in
 from reference tiles, cropped + `cwebp -q 82`); the logo stays a vector overlay
 in `WaterbnbCard` so it's never baked into the art.
 
+## Choreography catalog (canonical implementations to fork)
+
+Every polished transition has ONE reference implementation — copy it (with its
+comments; they explain the failure modes) instead of re-deriving the timing:
+
+- **iOS nav push** (page slides in from the right; underlay parallax-shifts
+  left under a scrim): `marketplace/wallet/MarketplaceWalletScreen.tsx`
+  (`MARKETPLACE_PUSH_PARALLAX`, `PUSH_TRANSITION`) + `AddMoneyPage.tsx`.
+- **In-page step stack** (source → list → amount as layered pushes with FIXED
+  z-indices and scrims slotted between; static reveal after a sheet dismissal
+  via the `cameFrom`/`sheetReveal` nav flags): `marketplace/wallet/AddMoneyPage.tsx`.
+- **Sequential sheet-dismiss → rise** (dismiss fully, THEN the next screen
+  rises — never simultaneous; `riseReady` defers the rise):
+  `marketplace/wallet/AddMoneyPage.tsx`.
+- **Sheet over a receding stack** (pageSheet scale/dim):
+  `shared/SheetPresentation` (`useRegisterSheet`) — worn by
+  `marketplace/wallet/AddBankSheet.tsx` (full) and `PartialSheet.tsx`
+  (partial-height, 40px top corners).
+- **Parked-sheet a11y**: closed sheets get
+  `transitionEnd: { visibility: 'hidden' }` or focus can scroll them into view
+  (`shared/BottomSheet`, `PartialSheet`).
+- **Collapsing large-title header** (scroll drives a CSS var, React state only
+  flips at the hairline edge): `marketplace/wallet/HomeBlocks.tsx`.
+- **Full-screen rise** (modal cover on the pageSheet clock):
+  `marketplace/wallet/CardScreen.tsx` (`RISE_TRANSITION`).
+- **Two-beat step changes + persistent-element glides** (one card morphing
+  through intro/creating/ready/home): `marketplace/wallet/CardScreen.tsx`.
+- **Sign-in entrance stagger**: `useStaggerReveal({ baseDelay: 0.05,
+  stagger: 0.07 })` gated on the flow's one-shot `entrance` prop
+  (`HomeBlocks.tsx`, `SocialWalletScreen.tsx`).
+- **Tap-to-pay**: constants + geometry note above; reference
+  `marketplace/wallet/CardScreen.tsx` and `social/wallet/CardIssuanceSheet.tsx`.
+- **Shared clocks**: sheet/nav durations live in each skin's `config.ts`
+  (e.g. `MARKETPLACE_SHEET_DURATION`) with easings from `@/lib/easing`
+  (`easeOutSnappy` for travel, `easeOutQuick` for fades) — reuse them so every
+  surface in a skin moves on the same clock.
+
 ## Run + verify
 
 - Dev server: `npm run dev` (port 4000). The playground left rail picks the persona.
