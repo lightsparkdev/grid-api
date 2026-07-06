@@ -33,6 +33,29 @@
   &::-webkit-scrollbar {
     display: none;
   }
+
+  /* Content alpha-dissolves as it scrolls under the chrome (the country
+     picker's ramp — the blur layers alone read too subtle). Ramps live
+     INSIDE the chrome zones (status bar 62; pill top 83 from the bottom),
+     so resting content — headers at 70, list bottom at 107 — stays solid. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    rgba(0, 0, 0, 0.2) 44px,
+    #000 72px,
+    #000 calc(100% - 104px),
+    rgba(0, 0, 0, 0.2) calc(100% - 56px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    rgba(0, 0, 0, 0.2) 44px,
+    #000 72px,
+    #000 calc(100% - 104px),
+    rgba(0, 0, 0, 0.2) calc(100% - 56px),
+    transparent 100%
+  );
 }
 
 /* ── Progressive scroll-edge blur (the country picker's 3-layer recipe) ──────
@@ -152,23 +175,6 @@
      group-hover dim on the parent reveals it). */
   &[data-noop] {
     cursor: default;
-  }
-}
-
-.headerCircle {
-  width: 40px;
-  height: 40px;
-}
-
-/* The new-payment chip — solid brand green, white glyph (home Figma). */
-.headerCircleGreen {
-  background: var(--msg-cta);
-  color: #ffffff;
-
-  @media (hover: hover) {
-    &:hover:not([data-noop]) {
-      background: var(--msg-cta-press);
-    }
   }
 }
 

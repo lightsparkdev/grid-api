@@ -186,8 +186,9 @@
 .pitchTitle {
   margin: 0;
   @include ios.ios-text-title-1;
-  font-weight: 700;
-  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-1-opsz);
+  /* iOS semibold (590), not bold. */
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-1-opsz);
   color: var(--app-text-primary);
   text-wrap: balance;
 }
@@ -305,13 +306,49 @@
   }
 }
 
-/* Fixed-height zone so Tap to pay ⇄ reader status swap without reflow. */
+/* Fixed-height zone so Tap to pay ⇄ reader status swap without reflow.
+   Pulled up 16px toward the card. */
 .tapZone {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 90px;
+  margin-top: -16px;
+}
+
+/* Flat black pill (flips white in dark) — the GlassCta geometry, no glass. */
+.tapBtn {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: var(--ios-label-primary);
+  color: var(--wallet-bg, var(--ios-bg-primary));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Callout, emphasized (16/21, semibold) — matches the glass CTAs. */
+  @include ios.ios-text-callout;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  transition: transform 0.16s ease-out, opacity 0.12s ease-out;
+
+  @media (hover: hover) {
+    &:hover {
+      opacity: 0.88;
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+    transition: transform 0.08s ease-out;
+  }
 }
 
 /* NFC glyph inside the glass CTA label. */

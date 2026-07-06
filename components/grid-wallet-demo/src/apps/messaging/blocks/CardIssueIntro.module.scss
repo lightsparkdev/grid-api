@@ -1,26 +1,40 @@
-/* Money-chat bubbles over the issuance card — geometry 1:1 from the
+/* Issuance-intro chat → card match cut. Bubble geometry 1:1 from the
    Bitcoin-2026 Figma (363:85386 sent / 363:85388 received). */
 
-/* Covers the card; bubbles hang off its left/right edges. */
-.layer {
+.root {
+  position: relative;
+}
+
+/* The card wrapper — scale rides the match cut, center origin (both beats
+   share it so the cut reads as one motion). */
+.cardBeat {
+  transform-origin: center;
+}
+
+/* The conversation covers the card box; rows may bleed past its edges. */
+.chatLayer {
   position: absolute;
   inset: 0;
-  z-index: 2; // over the card face
+  z-index: 2;
+  transform-origin: center;
   pointer-events: none;
 }
 
-/* One bubble slot — side-anchored so the pop scales from the tail corner. */
-.slot {
+/* One chat row — vertically positioned from the layer's center (y animated),
+   side-anchored so the pop scales from the tail corner. */
+.row {
   position: absolute;
+  top: 50%;
+  margin-top: -18px; /* half the 36px row */
   white-space: nowrap;
 }
 
-.slotSent {
+.rowSent {
   right: -16px;
   transform-origin: bottom right;
 }
 
-.slotReceived {
+.rowReceived {
   left: -16px;
   transform-origin: bottom left;
 }

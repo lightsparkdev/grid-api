@@ -42,10 +42,12 @@
     --msg-tabbar-fill: rgba(253, 254, 254, 0.8);
 
     /* WhatsApp chat bubbles (Bitcoin-2026 Figma 363:85386/85388) — the card
-       issuance flourish. Sent = pale brand green; received = white card. */
+       issuance intro. Sent = pale brand green; received = light gray (WhatsApp
+       uses white, but the intro plays on the paper-white page — white-on-white
+       bubbles vanish; the gray keeps the anatomy readable). */
     --msg-bubble-sent: #d0fecf;
     --msg-bubble-sent-meta: #677e67;
-    --msg-bubble-received: #feffff;
+    --msg-bubble-received: #f2f3f5;
     --msg-bubble-received-meta: #7f7f7f;
     --msg-bubble-text: #0a0a0a;
     --msg-bubble-shadow: rgba(0, 0, 0, 0.08);

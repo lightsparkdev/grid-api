@@ -15,7 +15,7 @@ import {
   IconNfc1,
 } from '../icons';
 import { BRAND, MESSAGING_COVER_DURATION } from '../config';
-import { CardChatBubbles } from '../blocks/CardChatBubbles';
+import { CardIssueIntro } from '../blocks/CardIssueIntro';
 import { ChatsCard } from '../blocks/ChatsCard';
 import { GlassCta } from '../blocks/GlassCta';
 import { MessagingActivityList } from './ActivityList';
@@ -228,10 +228,12 @@ export function MessagingCardScreen({
                     animate={{ scale: centered ? 1 : HOME_CARD_SCALE }}
                     transition={SWAP}
                   >
-                    <ChatsCard width={CARD_W} showNumber={created} />
-                    {/* Money-chat bubbles popping around the card — the pitch
-                        screen's flourish (in place of Super's dot grid). */}
-                    <CardChatBubbles active={intro} />
+                    {/* Intro: a money-chat conversation pops in over the slot,
+                        then match-cuts into the card scaling up (in place of
+                        Super's dot grid). Non-intro entries skip to the card. */}
+                    <CardIssueIntro intro={intro}>
+                      <ChatsCard width={CARD_W} showNumber={created} />
+                    </CardIssueIntro>
                   </motion.div>
                 </div>
 
@@ -353,12 +355,16 @@ export function MessagingCardScreen({
                           animate={{ opacity: 1 }}
                           transition={{ ...SWAP, delay: reduceMotion ? 0 : 0.3 }}
                         >
-                          <GlassCta onClick={onTapToPay}>
+                          <button
+                            type="button"
+                            className={styles.tapBtn}
+                            onClick={onTapToPay}
+                          >
                             <span className={styles.tapLabel}>
                               Tap to pay
                               <IconNfc1 size={20} />
                             </span>
-                          </GlassCta>
+                          </button>
                         </motion.div>
 
                         {/* Second stagger beat — the transactions list. */}

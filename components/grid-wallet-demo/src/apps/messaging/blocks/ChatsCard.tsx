@@ -1,19 +1,24 @@
 'use client';
 
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
-import { IconBubbleAnnotation3 } from '../icons';
-import { BRAND } from '../config';
 import styles from './ChatsCard.module.scss';
 
-/** Card geometry — everything scales off the width (the SuperCard system). */
+/** Card geometry — everything scales off the width (the SuperCard system).
+ *  Figma 2650:11281. */
 const BASE_W = 322.6;
 const BASE_H = 203.4;
 const BASE_RADIUS = 10.946;
+/** Watermark bubble: 222px box, bleeding off the left edge, optically centered
+ *  (2px above true center) — straight from the Figma. */
+const MARK_SIZE = 222;
+const MARK_LEFT = -5;
+const MARK_TOP = BASE_H / 2 - 2 - MARK_SIZE / 2;
 
 /**
- * The ChatsApp debit card — brand-green gradient face: the bubble logo +
- * white wordmark top-left, EMV chip on the left, ···· 8972 bottom-left,
- * Debit + Visa bottom-right. Pure CSS — scales cleanly via `width`.
+ * The ChatsApp debit card (Figma 2650:11281) — solid brand green, an oversized
+ * translucent bubble-logo watermark bleeding off the left edge, ···· 8972
+ * top-right, DEBIT + Visa bottom-right. No chip, no gradient. Pure CSS —
+ * scales cleanly via `width`.
  *
  * `showNumber` — the ···· 8972 only exists once the card is actually created
  * (hidden during issuance; fades in on the reveal).
@@ -37,38 +42,43 @@ export function ChatsCard({
         className={styles.card}
         style={{ ...clip.style, fontSize: 12 * s /* type scales with the card */ }}
       >
-        {/* Soft brand sheen — a lighter sweep so the green reads dimensional. */}
-        <span className={styles.sheen} aria-hidden />
-        <span className={styles.wordmark} style={{ padding: `${18 * s}px ${20 * s}px` }}>
-          <IconBubbleAnnotation3 className={styles.logo} size={20 * s} />
-          {BRAND}
-        </span>
-        {/* EMV chip — real-card proportions (~14% of the width, left third). */}
+        {/* Brand watermark (the Figma-exported asset — baked white @ 20%),
+            clipped by the card's squircle on the left. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          className={styles.chip}
-          style={{ width: 45 * s, height: 30 * s, left: 24 * s, top: 87 * s }}
-          src="/assets/messaging/card-chip.svg"
+          className={styles.watermark}
+          style={{
+            left: MARK_LEFT * s,
+            top: MARK_TOP * s,
+            width: MARK_SIZE * s,
+            height: MARK_SIZE * s,
+          }}
+          src="/assets/messaging/card-watermark.svg"
           alt=""
           draggable={false}
         />
-        <div className={styles.bottomRow} style={{ padding: `0 ${20 * s}px ${16 * s}px` }}>
-          <span className={styles.number} data-hidden={!showNumber || undefined}>
-            {/* Real bullets (U+2022), not middots — the card-mask voice. */}
-            &bull;&bull;&bull;&bull;&nbsp;&nbsp;8972
-          </span>
-          <span className={styles.brandCol}>
-            <span className={styles.debit}>Debit</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              className={styles.visa}
-              style={{ width: 50 * s, height: 16.2 * s }}
-              src="/assets/messaging/visa-logo.svg"
-              alt="Visa"
-              draggable={false}
-            />
-          </span>
-        </div>
+        <span
+          className={styles.number}
+          style={{ top: 13.7 * s, right: 14.6 * s }}
+          data-hidden={!showNumber || undefined}
+        >
+          {/* Real bullets (U+2022), not middots — the card-mask voice. */}
+          &bull;&bull;&bull;&bull;&nbsp;&nbsp;8972
+        </span>
+        <span
+          className={styles.brandCol}
+          style={{ right: 14.6 * s, bottom: 15.5 * s, gap: 3.6 * s }}
+        >
+          <span className={styles.debit}>DEBIT</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className={styles.visa}
+            style={{ width: 56.4 * s, height: 18.2 * s }}
+            src="/assets/messaging/visa-logo.svg"
+            alt="Visa"
+            draggable={false}
+          />
+        </span>
       </div>
     </div>
   );

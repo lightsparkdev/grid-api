@@ -43,8 +43,8 @@ const WEIGHT_BY_SYMBOL = {
   'delete.left': 'semibold',
   viewfinder: 'semibold',
   // Widest tab-bar glyph — the 24px fit-scale is the smallest of the set, so
-  // regular weight reads ~20% thinner than its neighbors; medium compensates.
-  'person.2': 'medium',
+  // lighter weights read ~20% thinner than the neighbors; semibold compensates.
+  'person.2': 'semibold',
 };
 
 const outDir = path.join(root, 'public/assets/symbols');

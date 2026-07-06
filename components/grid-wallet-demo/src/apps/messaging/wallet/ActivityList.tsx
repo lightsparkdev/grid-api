@@ -85,9 +85,10 @@ function SkeletonRow({ bordered }: { bordered?: boolean }) {
 function ActivityRow({ item, now }: { item: WalletListItemData; now: number }) {
   const MerchantIcon = item.category ? MERCHANT_ICONS[item.category] : null;
   const received = item.amount.startsWith('+');
-  // WhatsApp generic-contact tile for human recipients: pastel fill + deeper
-  // same-hue person glyph, color hashed from the name (stable per recipient).
-  const color = item.avatar ? avatarColor(item.title) : null;
+  // WhatsApp generic-contact tile for human recipients AND merchant charges
+  // (tap-to-pay): pastel fill + deeper same-hue glyph, color hashed from the
+  // name (stable per recipient/merchant). Flag/logo images keep their tile.
+  const color = item.avatar || MerchantIcon ? avatarColor(item.title) : null;
   return (
     <div className={styles.row}>
       <span

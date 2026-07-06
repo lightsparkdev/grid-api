@@ -24,6 +24,7 @@ import {
   IconPiggyBank,
   type MessagingIcon,
 } from '../icons';
+import { GlassCircleButton } from '../blocks/GlassCircleButton';
 import { MessagingActivityList } from './ActivityList';
 import { MessagingTabBar } from './MessagingTabBar';
 import { MessagingCardScreen } from './CardScreen';
@@ -104,20 +105,12 @@ export function MessagingWalletScreen(props: SkinWalletScreenProps) {
     <div className={styles.root}>
       <div className={styles.scroll}>
         <motion.div {...enter(0)} className={styles.topRow}>
-          <button
-            type="button"
-            className={clsx(styles.circleBtn, styles.headerCircle)}
-            aria-label="More"
-          >
+          <GlassCircleButton size={40} aria-label="More">
             <SfSymbol name="ellipsis" size={17} />
-          </button>
-          <button
-            type="button"
-            className={clsx(styles.circleBtn, styles.headerCircle, styles.headerCircleGreen)}
-            aria-label="New payment"
-          >
+          </GlassCircleButton>
+          <GlassCircleButton size={40} green aria-label="New payment">
             <SfSymbol name="plus" size={17} />
-          </button>
+          </GlassCircleButton>
         </motion.div>
 
         <motion.h1 {...enter(1)} className={styles.title}>

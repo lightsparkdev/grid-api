@@ -1,6 +1,6 @@
-/* The ChatsApp debit card — brand-green gradient, white wordmark + bubble
-   logo. Shadow on the unclipped shell as a drop-shadow so it hugs the
-   squircle silhouette. */
+/* The ChatsApp debit card (Figma 2650:11281) — solid brand green, watermark
+   bubble logo, no chip. Shadow on the unclipped shell as a drop-shadow so it
+   hugs the squircle silhouette. */
 .shell {
   position: relative;
   flex: none;
@@ -12,68 +12,24 @@
   display: flex;
   width: 100%;
   height: 100%;
-  /* Brand green stays green in BOTH themes — it's a physical object. Deeper
-     toward the bottom-right so the surface reads dimensional, not a flat fill. */
-  background: linear-gradient(145deg, #27c072 0%, #1daa61 46%, #158a4c 100%);
+  /* Solid brand green in BOTH themes — it's a physical object. */
+  background: #1daa61;
   overflow: hidden;
   /* Hairline so the card doesn't melt into a green-adjacent backdrop. */
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* A soft top-left light sweep over the gradient. */
-.sheen {
+/* Oversized bubble-logo watermark (Figma export — white @ 20% baked into the
+   asset), bleeding off the left edge. */
+.watermark {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    120% 90% at 12% 0%,
-    rgba(255, 255, 255, 0.16) 0%,
-    rgba(255, 255, 255, 0.05) 38%,
-    transparent 62%
-  );
+  display: block;
   pointer-events: none;
 }
 
-/* EMV chip — left, mid-face. */
-.chip {
-  position: absolute;
-  display: block;
-}
-
-/* The wordmark — bubble glyph + white SF bold, top-left. */
-.wordmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  font-size: 1.5em;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #ffffff;
-}
-
-.logo {
-  display: block;
-  flex: none;
-
-  path {
-    stroke-width: 2.4;
-  }
-}
-
-.bottomRow {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-}
-
+/* ···· 8972 — top-right (Figma 2650:11303). */
 .number {
+  position: absolute;
   font-size: 1em;
   line-height: 1.4;
   font-weight: 500;
@@ -86,20 +42,21 @@
   }
 }
 
-/* Debit + Visa, stacked bottom-right. */
+/* DEBIT + Visa, stacked bottom-right. */
 .brandCol {
+  position: absolute;
   display: flex;
   flex-direction: column;
-  gap: 0.3em;
   align-items: flex-end;
 }
 
 .debit {
   font-size: 1em;
-  line-height: 1.2;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.4;
+  font-weight: 590;
+  letter-spacing: -0.006em;
+  color: rgba(235, 235, 245, 0.7);
+  font-variation-settings: 'wght' 590, 'wdth' 100;
 }
 
 .visa {
