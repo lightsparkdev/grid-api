@@ -120,9 +120,13 @@ export function OndemandActivityList({
     };
   }, [frozen, reduceMotion, items.length]);
 
-  if (items.length === 0) {
-    return (
-      <div className={`${styles.list} ${styles.listEmpty}`}>
+  // The empty state is NOT an early return: the rows' AnimatePresence below
+  // must already be mounted when the first item arrives, or its
+  // `initial={false}` counts that first row as first-render content and
+  // suppresses the entrance — the first transaction would pop in instantly
+  // while every later one animates.
+  const empty = items.length === 0 && (
+    <>
         <div className={styles.skeletons} aria-hidden>
           {/* Mirrors the real row anatomy: graphic square + lines + amount. */}
           {[
@@ -165,12 +169,12 @@ export function OndemandActivityList({
             {onDeposit && <SecondaryCta onClick={onDeposit}>Add money</SecondaryCta>}
           </motion.div>
         </div>
-      </div>
-    );
-  }
+    </>
+  );
 
   return (
-    <div className={styles.list}>
+    <div className={`${styles.list}${items.length === 0 ? ` ${styles.listEmpty}` : ''}`}>
+      {empty}
       <AnimatePresence initial={false}>
         {items.map((item) => (
           <motion.div
