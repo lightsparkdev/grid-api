@@ -7,7 +7,11 @@ parameters:
       type: string
 get:
   summary: Get a card
-  description: Retrieve a card by its system-generated id.
+  description: >-
+    Retrieve a card by its system-generated id. This is the only endpoint
+    that returns a populated `panEmbedUrl` — a fresh, short-lived signed
+    URL is minted on each call. Fetch the card right before rendering the
+    PAN-reveal iframe.
   operationId: getCardById
   tags:
     - Cards

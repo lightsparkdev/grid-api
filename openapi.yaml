@@ -7030,7 +7030,7 @@ paths:
           type: string
     get:
       summary: Get a card
-      description: Retrieve a card by its system-generated id.
+      description: Retrieve a card by its system-generated id. This is the only endpoint that returns a populated `panEmbedUrl` — a fresh, short-lived signed URL is minted on each call. Fetch the card right before rendering the PAN-reveal iframe.
       operationId: getCardById
       tags:
         - Cards
@@ -8566,7 +8566,7 @@ webhooks:
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
-                    panEmbedUrl: https://embed.lithic.com/iframe/...?t=...
+                    panEmbedUrl: null
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     currency: USD
@@ -19693,9 +19693,11 @@ components:
           description: Card expiration year (four digits).
           example: 2029
         panEmbedUrl:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uri
-          description: URL of the card processor's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
+          description: Signed URL of the card processor's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details. Populated ONLY on `GET /cards/{id}`; null on list, create, and update responses and in webhook payloads. The URL is short-lived (expires within minutes), so fetch the card right before rendering the iframe and never cache the URL.
           example: https://embed.lithic.com/iframe/...?t=...
         fundingSources:
           type: array

@@ -70,7 +70,7 @@ for the full table. When activation completes, a
     "last4": "4242",
     "expMonth": 12,
     "expYear": 2029,
-    "panEmbedUrl": "https://embed.lithic.com/iframe/...?t=...",
+    "panEmbedUrl": null,
     "fundingSources": [
       "InternalAccount:019542f5-b3e7-1d02-0000-000000000002"
     ],
@@ -84,9 +84,11 @@ for the full table. When activation completes, a
 ```
 
 <Note>
-Render `panEmbedUrl` in an iframe in your client to display the full
-PAN, CVV, and expiry to the cardholder. The full card credentials never
-cross your servers.
+To display the full PAN, CVV, and expiry to the cardholder, fetch
+`GET /cards/{id}` and render the returned `panEmbedUrl` in an iframe.
+The URL is short-lived and populated only on the single-card GET (it's
+null in webhook payloads), so fetch it right before rendering. The full
+card credentials never cross your servers.
 </Note>
 
 ## Simulate an authorization

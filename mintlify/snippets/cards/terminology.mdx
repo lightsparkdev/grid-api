@@ -60,4 +60,6 @@ high-urgency reconciliation alerts and are surfaced as
 `panEmbedUrl` on the `Card` resource is the issuer's iframe URL that
 renders the full PAN, CVV, and expiry directly to the cardholder. Render
 it in an iframe in your client; the full credentials never cross
-{` `}Grid's servers.
+{` `}Grid's servers. The URL is short-lived and populated only on
+`GET /cards/{id}` — fetch the card right before rendering the iframe
+rather than caching the URL.
