@@ -66,7 +66,9 @@ sudo security add-trusted-cert -d -r trustRoot \
 
 ## Deploy
 
-Deploy to Vercel as its own project (same as `grid-flow-builder`). The docs page iframes the
+Deploy to Vercel as its own project (same as `grid-flow-builder`). Note the project's
+`ignoreCommand` (vercel.json): a commit only triggers a build if it touches this directory —
+merge commits whose first-parent diff is outside it are skipped. The docs page iframes the
 deployed URL (default `https://grid-wallet-demo.vercel.app`). If the URL differs, update the
 `src` in `mintlify/global-accounts/demo.mdx`.
 
