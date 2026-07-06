@@ -14,6 +14,12 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* Own stacking context: without it the wallet's inner z-indexed content
+     (headers, tab bars, sheets) escapes and paints ABOVE the exiting auth
+     screen, inverting the reveal — the home pops in on top while the auth
+     backdrop fades behind it. (An animating opacity used to create this
+     context implicitly; the solid mount doesn't.) */
+  isolation: isolate;
 }
 
 /* The exiting auth screen blur-fades OVER the freshly mounted wallet. */

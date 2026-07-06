@@ -46,6 +46,10 @@ export interface SkinWalletScreenProps {
   money: MoneySheet;
   /** One-shot sign-in entrance stagger. */
   entrance?: boolean;
+  /** This wallet view mounted because of a SKIN SWITCH, not sign-in. Skins
+   *  whose sign-in reveal pre-plays the home stagger elsewhere (marketplace's
+   *  auth backdrop) use this to still cascade in on a platform change. */
+  switchedIn?: boolean;
   /** A virtual card finished issuing on the phone — log the issue call. */
   onCardIssued?: () => void;
 }
