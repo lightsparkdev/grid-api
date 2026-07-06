@@ -58,6 +58,9 @@ targets:
     package_name: grid
     production_repo: null
   csharp:
+    # Skipped: Stainless's csharp build CI fails on any freshly generated code,
+    # failing the SDK preview check on every spec-changing PR. Unpublished target.
+    skip: true
     edition: csharp.2025-10-08
     package_name: grid
     production_repo: null
