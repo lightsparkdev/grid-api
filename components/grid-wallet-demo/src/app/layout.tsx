@@ -3,10 +3,31 @@ import { GeistSans } from 'geist/font/sans';
 import { easingVarsStylesheet } from '@/lib/easing';
 import './globals.scss';
 
+const TITLE = 'Grid Global Accounts — Live demo';
+const DESCRIPTION =
+  'Create a branded, self-custody dollar account and watch the Grid API calls fire in real time.';
+
 export const metadata: Metadata = {
-  title: 'Grid Global Accounts — Live demo',
-  description:
-    'Create a branded, self-custody dollar account and watch the Grid API calls fire in real time.',
+  // Absolute base for social-card image URLs (scrapers need full URLs).
+  // VERCEL_PROJECT_PRODUCTION_URL covers previews; the default is prod.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : 'https://grid-wallet-demo.vercel.app',
+  ),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: '/og-global-accounts-playground.webp', width: 2400, height: 1260 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ['/og-global-accounts-playground.webp'],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
