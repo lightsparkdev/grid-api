@@ -148,10 +148,10 @@ opposite — that's *your* branded auth UI, so it stays a per-skin face.
 
 ## Add a new skin (step by step)
 
-`creator` (brand "Glitch") and `social` (brand "Z") are built convention
-examples. `marketplace` is registered but token-only (brand "Bazaar" lives as
-the registry `label` until it gets a `config.ts`). `ondemand`/`messaging` are
-use-case tiles only (add the persona in step 1 first).
+`creator` (brand "Glitch"), `social` (brand "Z"), and `marketplace` (brand
+"Waterbnb" — flat Airbnb-style, inline auth flow, design-picker card issuance)
+are built convention examples. `ondemand`/`messaging` are use-case tiles only
+(add the persona in step 1 first).
 
 1. **Persona wiring:**
    - `data/flow.ts` — add the id to the `Persona` union.
@@ -200,6 +200,65 @@ use-case tiles only (add the persona in step 1 first).
 - **Skins can ban shared aesthetics** — Z is flat with NO glass anywhere; its
   faces use solid fills and `variant="flat"` toasts. Respect a skin's design
   constraints over the shared components' defaults.
+
+## Motion craft (learned building marketplace's card flow)
+
+Rules that killed real, hard-to-see bugs — follow them before debugging:
+
+- **Step changes are two beats: fade, THEN move.** When a screen transitions
+  (intro → creating → ready → home), fade the leaving content **in place at
+  full layout size** (`animate={{ opacity: 0 }}`, element stays mounted), then
+  flip the state ~300ms later (`setTimeout`) so the layout glide is the only
+  mover. Unmounting content mid-fade changes the layout under an in-flight
+  glide and the anchored element drifts or snaps.
+- **Exiting flex siblings need `mode="popLayout"`.** A plain AnimatePresence
+  exit keeps the element IN layout until its fade ends — the sibling's layout
+  glide measures a target that then changes, and the element snaps at the end
+  of the glide. popLayout removes it from layout immediately (it fades out
+  absolutely-positioned), so the glide's target is final on frame one.
+- **One mover per element.** Never tween `y`/transforms on an element while a
+  framer `layout` glide runs on it, and never animate the height of an in-flow
+  sibling mid-glide. Express positional intent as LAYOUT (e.g. slot
+  `padding-bottom: 118px` to recenter a group) and let the single glide carry
+  it. Per-key transitions (`transition={{ y: LIFT_T, layout: SWAP }}`) keep the
+  clocks separate when both are unavoidable.
+- **Scroll containers clip shadows AND blur.** `overflow: auto` clips at the
+  element's edges: sticker `drop-shadow`s get sliced at the sides and a
+  `blur(8px)` fade draws a hard line at the top. Break the scroller out of the
+  gutters and carry them as internal padding
+  (`margin: -12px -24px 0; padding: 12px 24px 0`) so bleed stays inside.
+- **Tap-to-pay is system choreography** — identical constants across skins:
+  `TAP_LIFT = -56`, lift `easeOutSnappy 0.5`, content out `easeOutQuick 0.2`,
+  content in `easeOutQuick 0.4 delay 0.3` (blur 8px both ways), header chrome
+  steps away. BUT the chrome-vs-card race is geometry-dependent: Z's card sits
+  far below its header so a simultaneous 0.2s fade just wins; if your card sits
+  close to the header (marketplace: 24px), use a near-instant chrome fade
+  (0.12s) + a ~0.1s lift delay — still reads as one motion, never crossfades
+  chrome over the card.
+- **True circles need `corner-shape: round`.** `globals.scss` applies
+  `corner-shape: superellipse(1.24)` to `*` — a `border-radius: 50%` button
+  still renders squircled until you opt out.
+- **Squircle shadows are `filter: drop-shadow()`**, never `box-shadow` (which
+  paints the border-radius BOX and ghosts past the clipped corners). Note the
+  same shadow reads heavier on bigger tiles — scale the alpha down, not up.
+- **Icon strokes scale with render size.** A 24-viewBox icon rendered at 28px
+  turns a 1.5 stroke into 1.75 effective. Compensate via CSS on the paths:
+  `stroke-width: calc(1.5 * 24 / 28)`. Fill-only glyphs ignore it.
+- **Skin-local UI state dies on skin switch** (the whole skin unmounts; only
+  the brains survive in WalletHost). For cosmetic choices that should persist
+  (e.g. the picked card design), use a module-scope store
+  (`blocks/cardDesigns.ts` → `cardDesignStore`) — not brain state, not
+  component state.
+- **Verify motion with frame traces, not eyes.** Playwright + an rAF loop
+  recording `getBoundingClientRect().top` / computed opacity per frame catches
+  1px dips, end-of-glide snaps, and ordering violations that screenshots miss.
+  Remember the phone stage is scaled (~0.94): divide page px by
+  `screenRect.width / 402` before comparing to CSS px.
+
+Also marketplace-specific but reusable: AI-generated card-face art lives in
+`public/assets/marketplace/card-designs/` (8:5 WebP, ~30–75KB each; generated
+from reference tiles, cropped + `cwebp -q 82`); the logo stays a vector overlay
+in `WaterbnbCard` so it's never baked into the art.
 
 ## Run + verify
 
