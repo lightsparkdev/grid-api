@@ -159,11 +159,17 @@ export function ApiPanelSkeleton() {
                       </div>
                     </div>
                     <div className={styles.codeBlock}>
+                      {/* Mirrors the real CodeTabs at rest: Request (active,
+                          hairline on its trailing edge) then Response — small
+                          text-line bones centered in each tab cell. */}
                       <div className={styles.codeBlockToolbar}>
                         <div className={styles.tabGroup}>
-                          <div className={styles.tabIndicator} aria-hidden />
-                          <div className={clsx(styles.bone, styles.tab)} />
-                          <div className={clsx(styles.bone, styles.tab)} />
+                          <div className={clsx(styles.tab, styles.tabActive)}>
+                            <div className={clsx(styles.bone, styles.tabLabel)} style={{ width: 48 }} />
+                          </div>
+                          <div className={styles.tab}>
+                            <div className={clsx(styles.bone, styles.tabLabel)} style={{ width: 58 }} />
+                          </div>
                         </div>
                       </div>
                       <div className={styles.codeBody}>

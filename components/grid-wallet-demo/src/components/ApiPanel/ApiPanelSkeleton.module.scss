@@ -133,25 +133,25 @@ $skeleton-bone-dark: var(--color-gray-850);
   margin-bottom: -0.5px;
 }
 
-.tabIndicator {
-  position: absolute;
-  z-index: -1;
-  left: 0;
-  top: 0;
-  width: 52px;
-  height: 100%;
+/* One tab cell — the real .tab's geometry (label centered, spacing-md pads). */
+.tab {
   box-sizing: border-box;
-  border-right: 0.5px solid var(--border-tertiary);
-  background: var(--surface-base);
-
-  :global([data-theme='dark']) & {
-    background: var(--color-gray-925);
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 var(--spacing-md);
 }
 
-.tab {
-  width: 52px;
-  height: 100%;
+/* The leading tab is "active": the indicator box reads as its trailing
+   hairline (card bg matches the indicator fill, so the border is the look). */
+.tabActive {
+  border-right: 0.5px solid var(--border-tertiary);
+}
+
+/* Label-sm sized text line. */
+.tabLabel {
+  height: 10px;
 }
 
 .codeBody {
