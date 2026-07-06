@@ -87,6 +87,11 @@ export interface MarketplaceHomeContentProps {
   activityFrozen?: boolean;
   /** One-shot sign-in entrance stagger. */
   entrance?: boolean;
+  /** Park the entrance in its hidden pose until released (flip to false).
+   *  The auth backdrop uses this: items stay hidden behind the sign-in sheet,
+   *  then cascade in as the dismissal reveals them — the stagger plays ON the
+   *  landing instead of re-revealing already-visible content. */
+  entranceHeld?: boolean;
   /** Balance rolls (NumericText) on the live home; static on the backdrop. */
   animatedBalance?: boolean;
   /** Opens the deposit flow (absent on the zeroed auth backdrop). */
@@ -115,6 +120,7 @@ export function MarketplaceHomeContent({
   activity = [],
   activityFrozen = false,
   entrance = false,
+  entranceHeld = false,
   animatedBalance = false,
   onDeposit,
   onWithdraw,
@@ -122,7 +128,8 @@ export function MarketplaceHomeContent({
   onCard,
 }: MarketplaceHomeContentProps) {
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
-  const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
+  const enter = (index: number) =>
+    entrance ? reveal(index, entranceHeld) : { initial: false as const };
 
   // Large-title collapse: scroll drives a CSS var directly (no re-render per
   // frame); React state only flips at the fully-collapsed edge for the hairline.

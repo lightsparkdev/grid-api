@@ -190,6 +190,11 @@
   justify-content: center;
   align-items: flex-end;
   overflow: hidden;
+  /* Above the rail's padding overhang (88px shadow headroom reclaimed by a
+     negative margin). WebKit hands those overlap pixels to the scroll
+     container, which swallows the chevron clicks — Safari's "can't advance". */
+  position: relative;
+  z-index: 1;
 }
 
 .controls {

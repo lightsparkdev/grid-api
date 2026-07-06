@@ -31,10 +31,14 @@ const PUSH_TRANSITION = motionTransition(easeOutSnappy, MARKETPLACE_PUSH_DURATIO
  *  AddMoneyPage in from the right, iOS-nav style, while the home parallax-
  *  shifts left beneath it. Withdraw/Send stay decorative this pass.
  *
- *  One-shot entrance stagger on sign-in (the Z choreography): the flow sets
- *  `entrance` once when the wallet lands after auth. */
+ *  No entrance stagger on the LIVE home: the sign-in stagger plays on the
+ *  auth screen's pixel-identical backdrop (items cascade in as the sheet
+ *  dismisses — MarketplaceAuthScreen's `entranceHeld`), so by the time the
+ *  auth → wallet swap fires, both layers show the fully-revealed layout and
+ *  the crossfade is invisible. Staggering again here would re-reveal visible
+ *  content — a flash of it crossfading on itself. */
 export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
-  const { entrance = false, home, money } = props;
+  const { home, money } = props;
   const reduceMotion = useReducedMotion();
   const pageOpen = home.sheetOpen;
   // A close from the confirm step = a completed transfer: the page settles
@@ -76,6 +80,9 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
           offset={62}
           duration={MARKETPLACE_SHEET_DURATION}
           radius={figmaSquircleRadius(40)}
+          // Dark bg is pure black — lift the receded card so the stacked-sheet
+          // effect stays visible against the black backdrop.
+          darkLift={0.16}
         >
           {/* iOS nav-stack parallax: the home shifts left behind the pushed
               page, in lockstep with the page's slide. */}
@@ -91,7 +98,6 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
               rewardsMonthCents={home.earningsMonthCents}
               showActivity
               activity={home.homeActivity}
-              entrance={entrance}
               animatedBalance
               onDeposit={() => home.openSheet('add')}
               onWithdraw={() => home.openSheet('withdraw')}

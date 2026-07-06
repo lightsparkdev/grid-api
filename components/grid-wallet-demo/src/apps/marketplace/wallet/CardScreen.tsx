@@ -188,12 +188,41 @@ export function MarketplaceCardScreen({
     const i = Math.round(el.scrollLeft / RAIL_STEP);
     setDesignIndex(Math.min(CARD_DESIGNS.length - 1, Math.max(0, i)));
   };
+  // Chevron advance. NOT scrollBy({behavior:'smooth'}) — WebKit cancels
+  // programmatic smooth scrolls inside a mandatory-snap container and
+  // re-snaps to the CURRENT point, so the rail never advances in Safari.
+  // Instead: suspend snap, tween scrollLeft ourselves, land exactly on the
+  // next snap offset (so re-enabling snap is a no-op).
+  const tweenRaf = useRef(0);
   const nudge = (dir: 1 | -1) => {
-    railRef.current?.scrollBy({
-      left: dir * RAIL_STEP,
-      behavior: reduceMotion ? 'auto' : 'smooth',
-    });
+    const el = railRef.current;
+    if (!el) return;
+    const target =
+      Math.min(
+        CARD_DESIGNS.length - 1,
+        Math.max(0, Math.round(el.scrollLeft / RAIL_STEP) + dir),
+      ) * RAIL_STEP;
+    cancelAnimationFrame(tweenRaf.current);
+    if (reduceMotion) {
+      el.scrollLeft = target;
+      return;
+    }
+    el.style.scrollSnapType = 'none';
+    const from = el.scrollLeft;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - t0) / 320, 1);
+      const eased = 1 - (1 - t) ** 3;
+      el.scrollLeft = from + (target - from) * eased;
+      if (t < 1) {
+        tweenRaf.current = requestAnimationFrame(tick);
+      } else {
+        el.style.scrollSnapType = '';
+      }
+    };
+    tweenRaf.current = requestAnimationFrame(tick);
   };
+  useEffect(() => () => cancelAnimationFrame(tweenRaf.current), []);
   useLayoutEffect(() => {
     if (!open) return;
     setScrolled(false);

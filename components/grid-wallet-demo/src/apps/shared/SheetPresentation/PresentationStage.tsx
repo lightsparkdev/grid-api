@@ -30,6 +30,12 @@ interface PresentationStageProps {
   duration?: number;
   /** Corner radius (px) of the receded card (default 16). */
   radius?: number;
+  /** Dark-mode-only white veil (0–1 alpha) over the RECEDED card. For skins
+   *  whose dark bg is pure black (marketplace): black-on-black hides the
+   *  stacked-sheet effect, and brightness() can't lift #000 — a faint white
+   *  veil reads as "the card behind got lighter". No-op in light mode; off by
+   *  default. */
+  darkLift?: number;
 }
 
 /**
@@ -52,6 +58,7 @@ export function PresentationStage({
   offset = DEFAULT_OFFSET,
   duration = DEFAULT_DURATION,
   radius = DEFAULT_RADIUS,
+  darkLift = 0,
 }: PresentationStageProps) {
   const presented = useSheetPresented();
   const reduceMotion = useReducedMotion();
@@ -78,6 +85,19 @@ export function PresentationStage({
         }}
       >
         {children}
+        {darkLift > 0 && (
+          <motion.div
+            className={styles.veil}
+            aria-hidden
+            initial={false}
+            animate={{ opacity: active ? 1 : 0 }}
+            // easeInOut, not the recede's snappy ease: a front-loaded opacity
+            // ramp reads as an instant flash — this builds gradually across
+            // the whole recede.
+            transition={{ duration, ease: 'easeInOut' }}
+            style={{ background: `rgba(255, 255, 255, ${darkLift})` }}
+          />
+        )}
       </motion.div>
     </>
   );

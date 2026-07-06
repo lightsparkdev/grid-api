@@ -469,6 +469,9 @@ export function MarketplaceAuthScreen({
           // The receded wallet card matches the sheet's 40px corners (visually
           // smaller once the card scales to 0.92, like iOS).
           radius={figmaSquircleRadius(40)}
+          // Dark bg is pure black — lift the receded card so the stacked-sheet
+          // effect stays visible against the black backdrop.
+          darkLift={0.16}
         >
           {/* The zeroed wallet behind the sign-in — never interactive, never
               readable once the sheet is up (pointer events off in CSS). */}
@@ -483,6 +486,13 @@ export function MarketplaceAuthScreen({
               animatedBalance
               showActivity
               activityFrozen
+              // The entrance stagger plays HERE, on the backdrop: items park
+              // hidden behind the sheet, and the post-sign-in dismissal
+              // releases the cascade — content staggers in top-to-bottom as
+              // the sheet slides away, then the auth → wallet swap lands on
+              // the identical, fully-revealed layout.
+              entrance
+              entranceHeld={sheetOn}
             />
             <MarketplaceTabBar />
           </div>

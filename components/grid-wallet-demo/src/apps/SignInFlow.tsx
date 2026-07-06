@@ -289,8 +289,12 @@ export function SignInFlow({
           <motion.div
             key="wallet"
             className={styles.screen}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: SWAP_FADE }}
+            // Mount SOLID under the exiting auth screen — only the top layer
+            // fades. Cross-fading both (wallet 0→1 while auth 1→0) lets the
+            // page background bleed through mid-fade (~25% at the midpoint),
+            // a visible flash even when the two layers are pixel-identical.
+            initial={false}
+            animate={{ opacity: 1 }}
             // Stay solid underneath while the auth screen blur-fades in over it,
             // then unmount hidden — no peek at the background mid-transition.
             exit={{ opacity: 1, transition: REVEAL_IN }}

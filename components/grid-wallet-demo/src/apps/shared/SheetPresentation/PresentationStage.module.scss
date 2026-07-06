@@ -28,3 +28,17 @@
      full-screen layer every frame; keeping it static lets the scale stay a pure
      GPU transform. corner-shape above smooths whatever radius is applied. */
 }
+
+/* Dark-mode lift veil (see the `darkLift` prop) — DARK MODE ONLY via the
+   theme gate; the same prop value is a no-op in light mode. */
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  pointer-events: none;
+
+  :global([data-theme='dark']) & {
+    display: block;
+  }
+}
