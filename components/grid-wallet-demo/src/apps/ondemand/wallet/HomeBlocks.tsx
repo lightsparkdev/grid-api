@@ -5,21 +5,30 @@ import NumericText from '@/components/NumericText';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { formatUsdCents, type WalletListItemData } from '@/apps/shared/wallet';
+import { IconDotGrid1x3Horizontal } from '../icons';
+import type { OndemandIcon } from '../icons';
 import { OndemandActivityList } from './ActivityList';
 import styles from './HomeBlocks.module.scss';
 
-/** Action tile (Figma 2636:17743/17785) — grey r8 squircle, 3D graphic,
- *  12px semibold label. Big tiles (h104) label left; small tiles (h96) label
- *  centered with the graphic floating above. No onClick = decorative. */
+/** Action tile (Figma 2636:17743/17785) — grey r8 squircle, 3D graphic OR a
+ *  flat central glyph, 12px semibold label. Big tiles (h104) label left; small
+ *  tiles (h96) label centered with the graphic floating above. No onClick =
+ *  decorative. */
 function ActionTile({
   label,
   art,
+  Icon,
   big = false,
+  artH = 48,
   onClick,
 }: {
   label: string;
-  art: string;
+  art?: string;
+  /** Flat glyph tiles (More) — the sharp set at its native 24px. */
+  Icon?: OndemandIcon;
   big?: boolean;
+  /** Optical art height (px) — the generated art isn't evenly weighted. */
+  artH?: number;
   onClick?: () => void;
 }) {
   const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
@@ -33,7 +42,19 @@ function ActionTile({
       onClick={onClick}
     >
       <span className={styles.tileArtSlot}>
-        <img className={styles.tileArt} src={art} alt="" draggable={false} />
+        {Icon ? (
+          <span className={styles.tileGlyph}>
+            <Icon size={24} />
+          </span>
+        ) : (
+          <img
+            className={styles.tileArt}
+            style={{ height: artH }}
+            src={art}
+            alt=""
+            draggable={false}
+          />
+        )}
       </span>
       <span className={styles.tileLabel}>{label}</span>
     </button>
@@ -118,17 +139,29 @@ export function OndemandHomeContent({
           <ActionTile
             big
             label="Cash out"
-            art="/assets/ondemand/tile-cashout.svg"
+            art="/assets/ondemand/tile-cashout.webp"
+            artH={56}
             onClick={onWithdraw}
           />
-          <ActionTile big label="Send" art="/assets/ondemand/tile-send.svg" onClick={onSend} />
+          <ActionTile
+            big
+            label="Send"
+            art="/assets/ondemand/tile-send.webp"
+            artH={40}
+            onClick={onSend}
+          />
         </motion.div>
 
         <motion.div {...enter(3)} className={styles.tileRowSmall}>
-          <ActionTile label="Add" art="/assets/ondemand/tile-add.svg" onClick={onDeposit} />
-          <ActionTile label="Card" art="/assets/ondemand/tile-card.svg" onClick={onCard} />
-          <ActionTile label="Save" art="/assets/ondemand/tile-save.svg" />
-          <ActionTile label="Bills" art="/assets/ondemand/tile-bills.svg" />
+          <ActionTile label="Add" art="/assets/ondemand/tile-add.webp" onClick={onDeposit} />
+          <ActionTile
+            label="Card"
+            art="/assets/ondemand/tile-card.webp"
+            artH={32}
+            onClick={onCard}
+          />
+          <ActionTile label="Rewards" art="/assets/ondemand/tile-rewards.webp" artH={40} />
+          <ActionTile label="More" Icon={IconDotGrid1x3Horizontal} />
         </motion.div>
 
         <motion.div {...enter(4)} className={styles.activity}>

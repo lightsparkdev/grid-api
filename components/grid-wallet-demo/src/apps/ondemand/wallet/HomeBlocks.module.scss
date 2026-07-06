@@ -148,31 +148,39 @@
   }
 }
 
-/* The 3D graphic — big tiles park it right, small tiles center it. */
+/* The 3D graphic — big tiles park it right (16px inset via tile padding),
+   small tiles center it. */
 .tileArtSlot {
   position: relative;
   flex: 1 1 0;
   min-height: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 .tileBig .tileArtSlot {
   justify-content: flex-end;
 }
-.tileSmall .tileArtSlot {
-  justify-content: center;
+/* Tile pads 16px — the extra 8px lands the art 24px off the right edge. */
+.tileBig .tileArt {
+  margin-right: 8px;
 }
+/* Height rides an inline style per tile (48px default, optically tuned). */
 .tileArt {
   display: block;
   max-height: 100%;
   user-select: none;
 }
-.tileBig .tileArt {
-  height: 70px;
-}
-.tileSmall .tileArt {
-  height: 62px;
+
+/* Flat glyph tiles (More) — the sharp 2px-stroke set, primary ink. */
+.tileGlyph {
+  display: inline-flex;
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+  }
 }
 
 .tileLabel {

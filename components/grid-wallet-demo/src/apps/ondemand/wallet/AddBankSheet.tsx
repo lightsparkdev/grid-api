@@ -114,9 +114,25 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
             className={styles.headerBar}
             data-bordered={(scrolled && step !== 'country') || undefined}
           >
+            {/* Both controls ride the LEFT slot (iOS voice): X dismisses on
+                the root step, the arrow pops steps after that. */}
             <span className={styles.headerSlot}>
-              <AnimatePresence initial={false}>
-                {step !== 'country' && (
+              <AnimatePresence initial={false} mode="wait">
+                {step === 'country' ? (
+                  <motion.button
+                    key="close"
+                    type="button"
+                    className={styles.headerBtn}
+                    aria-label="Close"
+                    onClick={onDismiss}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={FADE}
+                  >
+                    <IconCrossMedium size={24} />
+                  </motion.button>
+                ) : (
                   <motion.button
                     key="back"
                     type="button"
@@ -147,25 +163,8 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
                 </motion.span>
               )}
             </AnimatePresence>
-            <span className={styles.headerSlot}>
-              <AnimatePresence initial={false}>
-                {step === 'country' && (
-                  <motion.button
-                    key="close"
-                    type="button"
-                    className={styles.headerBtn}
-                    aria-label="Close"
-                    onClick={onDismiss}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={FADE}
-                  >
-                    <IconCrossMedium size={24} />
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </span>
+            {/* Empty twin slot keeps the bar title optically centered. */}
+            <span className={styles.headerSlot} aria-hidden />
           </header>
 
           <div className={styles.steps} key={m.openKey}>

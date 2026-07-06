@@ -166,7 +166,9 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 0 24px 12px;
+  /* 20px below matches the row padding, so the first section label sits in
+     the same 28px of air (20+8) above and below. */
+  padding: 0 24px 20px;
   background: var(--od-sheet-bg);
 
   /* Bleed the fill a few px ABOVE the wrap: under fractional scaling the
@@ -209,10 +211,11 @@
 .searchPill {
   display: flex;
   align-items: center;
-  /* h44 with a 20px glyph leaves 12px above/below — match left + gap so the
-     icon sits in even air on three sides (the pill's 16px read too wide once
-     the corners squared up). */
-  gap: 12px;
+  /* h44 with a 20px glyph leaves 12px above/below — match left so the icon
+     sits in even air on three sides (the pill's 16px read too wide once the
+     corners squared up). The text gap runs tighter than the padding: glyph
+     and placeholder read as one unit. */
+  gap: 8px;
   height: 44px;
   padding: 0 16px 0 12px;
   background: var(--od-surface);
@@ -269,27 +272,25 @@
 .sectionLabel {
   /* Equal margins — the rows above/below pad 12px each side, so the visual
      gap is symmetric (20px both ways). */
+  /* 8px margins land 28px of visual air on BOTH sides everywhere: rows pad
+     20px, and the search wrap pads 20px below to match. */
   margin: 8px 0;
   padding: 0 24px;
-
-  /* The first label sits right under the search (which pads 12px already) —
-     drop its top margin so the gap isn't compounded. */
-  .searchWrap + & {
-    margin-top: 0;
-  }
   font-size: 14px;
   line-height: normal;
   font-weight: 400;
   color: var(--app-text-secondary);
 }
 
-/* Country rows — 40px squircle flag tile, name + currency, NO dividers. */
+/* Country rows — 40px squircle flag tile, name + currency, dividers inset on
+   the left gutter and running to the right edge (the app's divider rule). */
 .row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 16px;
   width: 100%;
-  padding: 12px 24px;
+  padding: 20px 24px;
   border: 0;
   background: transparent;
   /* Buttons DON'T inherit font-family — without this the rows render in the
@@ -299,6 +300,22 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.12s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--od-hairline);
+  }
+
+  /* No divider closing a section (before a label) or ending the list. */
+  &:last-child::after,
+  &:has(+ .sectionLabel)::after {
+    display: none;
+  }
 
   &:hover {
     background: var(--od-row-hover);

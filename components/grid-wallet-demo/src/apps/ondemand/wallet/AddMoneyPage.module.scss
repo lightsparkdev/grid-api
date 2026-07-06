@@ -691,6 +691,30 @@
   padding-bottom: 12px;
 }
 
+/* Receive-via list: a touch more air than the other tight lists now the rows
+   are divided. */
+.listDivided .row,
+.listDivided .cryptoRow {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+/* Receive-via list: every row rules a divider (left gutter inset, full-bleed
+   right) except the last. */
+.listDivided .row::after,
+.listDivided .cryptoRow::after {
+  content: '';
+  position: absolute;
+  left: 24px;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--od-hairline);
+}
+.listDivided > :last-child::after {
+  display: none;
+}
+
 /* Rows carry the 24px gutters themselves so the hover fill runs FULL BLEED;
    content stays aligned with everything else. */
 .row {
@@ -781,6 +805,7 @@
 /* Crypto deposit rows — the .row anatomy, but the ROW isn't tappable (the
    copy/QR buttons are the actions), so no full-bleed hover fill. */
 .cryptoRow {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -810,21 +835,6 @@
   margin: 16px 24px 0;
 }
 
-/* The filled address card: circle logo + two lines (empty state is a
-   PlainInput field with help text below). */
-.addressBox {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-  min-height: 76px;
-  padding: 16px 20px;
-  box-sizing: border-box;
-  background: var(--app-bg);
-}
-
 /* Small help text under the address field. */
 .addressHelp {
   margin: 8px 0 0;
@@ -832,6 +842,18 @@
   line-height: 16px;
   font-weight: 400;
   color: var(--app-text-tertiary);
+}
+
+/* Detected-network lockup (fills the help slot once an address lands). */
+.addressNet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-text-secondary);
+
+  img {
+    display: block;
+  }
 }
 
 .recipientCtaWrap {

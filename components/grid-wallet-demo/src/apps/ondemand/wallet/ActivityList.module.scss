@@ -71,6 +71,11 @@
   }
 }
 
+/* No trailing hairline under the list's last (or only) row. */
+.row:last-child .content::after {
+  display: none;
+}
+
 .lines {
   display: flex;
   flex: 1 1 0;

@@ -57,8 +57,9 @@ export function SuperCard({
         />
         <div className={styles.bottomRow} style={{ padding: `0 ${20 * s}px ${16 * s}px` }}>
           <span className={styles.number} data-hidden={!showNumber || undefined}>
-            {/* Real bullets (U+2022), not middots — the card-mask voice. */}
-            &bull; &bull; &bull; &bull;&nbsp;&nbsp;8972
+            {/* Real bullets (U+2022), not middots — the card-mask voice. Set
+                tight: letter-spacing alone airs them out. */}
+            &bull;&bull;&bull;&bull;&nbsp;&nbsp;8972
           </span>
           <span className={styles.brandCol}>
             <span className={styles.debit}>Debit</span>

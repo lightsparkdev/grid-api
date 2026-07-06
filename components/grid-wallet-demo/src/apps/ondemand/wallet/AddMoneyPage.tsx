@@ -582,7 +582,7 @@ export function AddMoneyPage({
                 >
                   <div className={styles.scroll} onScroll={handleScroll}>
                     <h1 className={styles.title}>{m.titles.deposit}</h1>
-                    <div className={`${styles.list} ${styles.listTight}`}>
+                    <div className={`${styles.list} ${styles.listTight} ${styles.listDivided}`}>
                       {/* Receive leads with the bank drill-in (add-from-crypto
                           is crypto-only — bank is its own source row there). */}
                       {isReceive && (
@@ -1305,7 +1305,6 @@ function ReviewScreen({
  * one-off wallet), runs the save beat, and the amount screen rises.
  */
 function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
-  const boxClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 8 });
   const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
   const [typed, setTyped] = useState('');
   const net = m.pickedNetwork;
@@ -1315,31 +1314,22 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
       <div className={styles.scroll}>
         <h1 className={styles.title}>{m.titles.recipient}</h1>
         <div className={styles.addressWrap}>
+          {/* One field for both states: pasting fills it, and the help line
+              flips to the detected-network lockup (the validation voice). */}
+          <PlainInput
+            value={filled ? truncateAddress(m.pastedAddress) : typed}
+            onChange={filled ? () => {} : setTyped}
+            placeholder="Enter any address"
+          />
           {filled ? (
-            <>
-              <div ref={boxClip.ref} style={boxClip.style} className={styles.addressBox}>
-                <CircleLogo src={net.logo} />
-                <span className={styles.rowLines}>
-                  <span className={styles.rowTitle}>{truncateAddress(m.pastedAddress)}</span>
-                  <span className={styles.rowSub}>{net.name} wallet</span>
-                </span>
-              </div>
-              <SquircleFocusHalo
-                path={boxClip.path}
-                width={boxClip.width}
-                height={boxClip.height}
-                className={styles.destHalo}
-              />
-            </>
+            <p className={styles.addressHelp}>
+              <span className={styles.addressNet}>
+                <CircleLogo src={net.logo} size={16} />
+                {net.name} wallet
+              </span>
+            </p>
           ) : (
-            <>
-              {/* A real field in the skin's input voice; the Paste CTA still
-                  drives the demo fill (typing is a free-play affordance). */}
-              <PlainInput value={typed} onChange={setTyped} placeholder="Enter any address" />
-              <p className={styles.addressHelp}>
-                Spark, Solana, Base, Ethereum, anything
-              </p>
-            </>
+            <p className={styles.addressHelp}>Spark, Solana, Base, Ethereum, anything</p>
           )}
         </div>
         {/* The session address book (withdraw only — send's list is its own

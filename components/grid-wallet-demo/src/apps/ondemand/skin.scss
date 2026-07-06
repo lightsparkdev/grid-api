@@ -29,7 +29,7 @@
     --od-card-border: rgba(0, 0, 0, 0.08);
     --od-header-border: #ebebeb; /* collapsed large-title header hairline */
     --od-card-shadow: none; /* flat — no elevation anywhere */
-    --od-hairline: rgba(0, 0, 0, 0.12); /* row separators + the "or" rule */
+    --od-hairline: #f3f3f3; /* row separators + the "or" rule */
     --od-input-border: transparent; /* resting input: grey fill, no stroke */
     --od-input-border-focus: #000000; /* focused: white fill + 2px black */
     --od-tile-border: transparent;
@@ -77,7 +77,8 @@
       --od-card-bg: #141414;
       --od-card-border: rgba(255, 255, 255, 0.12);
       --od-header-border: #262626;
-      --od-hairline: rgba(255, 255, 255, 0.15);
+      /* #f3f3f3 sits ~5% off white; a hair more on black to stay legible. */
+      --od-hairline: rgba(255, 255, 255, 0.08);
       --od-input-border: transparent;
       --od-input-border-focus: #ffffff;
       --od-green: #4fce5d;
