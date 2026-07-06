@@ -10633,7 +10633,11 @@ components:
       type: object
       required:
         - accountType
-        - vpa
+      description: |-
+        Required fields depend on the selected paymentRails:
+        - NEFT: accountNumber, ifsc, rail
+        - RTGS: accountNumber, ifsc, rail
+        - UPI: vpa
       properties:
         accountType:
           type: string
@@ -10646,9 +10650,38 @@ components:
           minLength: 3
           maxLength: 255
           pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$
+        accountNumber:
+          type: string
+          description: Indian bank account number (9–18 digits)
+          minLength: 9
+          maxLength: 18
+          example: '000111222333'
+          pattern: ^[0-9]{9,18}$
+        ifsc:
+          type: string
+          description: The Indian Financial System Code (IFSC) of the beneficiary's bank branch (NEFT/RTGS)
+          example: HDFC0001234
+          minLength: 11
+          maxLength: 11
+          pattern: ^[A-Z]{4}0[A-Z0-9]{6}$
+        rail:
+          type: string
+          description: The payment rail to route the payout over, for currencies that support more than one (e.g. NEFT or RTGS for INR).
+          example: NEFT
+          minLength: 1
+          maxLength: 32
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
       example:
         accountType: INR_ACCOUNT
         vpa: user@upi
+        accountNumber: '000111222333'
+        ifsc: HDFC0001234
+        rail: NEFT
+        bankName: Example Bank
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -10662,6 +10695,8 @@ components:
                 type: string
                 enum:
                   - UPI
+                  - NEFT
+                  - RTGS
     PaymentInrAccountInfo:
       title: INR Account
       allOf:
