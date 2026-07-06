@@ -31,14 +31,16 @@ const PUSH_TRANSITION = motionTransition(easeOutSnappy, MARKETPLACE_PUSH_DURATIO
  *  AddMoneyPage in from the right, iOS-nav style, while the home parallax-
  *  shifts left beneath it. Withdraw/Send stay decorative this pass.
  *
- *  No entrance stagger on the LIVE home: the sign-in stagger plays on the
+ *  No entrance stagger on the SIGN-IN mount: the sign-in stagger plays on the
  *  auth screen's pixel-identical backdrop (items cascade in as the sheet
  *  dismisses — MarketplaceAuthScreen's `entranceHeld`), so by the time the
  *  auth → wallet swap fires, both layers show the fully-revealed layout and
  *  the crossfade is invisible. Staggering again here would re-reveal visible
- *  content — a flash of it crossfading on itself. */
+ *  content — a flash of it crossfading on itself. A SKIN SWITCH is different:
+ *  the incoming face is new content, so it cascades in like every other skin
+ *  (`switchedIn` from the wallet host). */
 export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
-  const { home, money } = props;
+  const { home, money, entrance, switchedIn } = props;
   const reduceMotion = useReducedMotion();
   const pageOpen = home.sheetOpen;
   // A close from the confirm step = a completed transfer: the page settles
@@ -96,6 +98,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
               balanceCents={home.availableCents}
               apyPercent={home.apyPercent}
               rewardsMonthCents={home.earningsMonthCents}
+              entrance={entrance && switchedIn}
               showActivity
               activity={home.homeActivity}
               animatedBalance
