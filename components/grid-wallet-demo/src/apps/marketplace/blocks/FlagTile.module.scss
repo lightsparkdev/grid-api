@@ -14,6 +14,16 @@
   :global([data-theme='dark']) & {
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
   }
+
+  /* Big stickers (activity/txn lists, 56px): the same shadow reads heavier on
+     the larger silhouette — dial the alpha down to match the 40px flags. */
+  &[data-large] {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.09));
+
+    :global([data-theme='dark']) & {
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.32));
+    }
+  }
 }
 
 /* The 2px concentric ring — card surface, clipped to the outer squircle.

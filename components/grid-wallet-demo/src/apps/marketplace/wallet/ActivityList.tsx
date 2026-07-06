@@ -16,8 +16,10 @@ import type { MerchantCategory, WalletListItemData } from '@/apps/shared/wallet'
 import { useNow } from '@/hooks/useNow';
 import { relativeTime } from '@/lib/relativeTime';
 import { motionTransition } from '@/lib/easing';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { CircleDollarIcon } from '../blocks/CircleDollarIcon';
-import { FlagTile, StickerTile } from '../blocks/FlagTile';
+import { StickerTile } from '../blocks/FlagTile';
+import { SquareFlag } from '../blocks/SquareFlag';
 import { NetworkTile } from '../blocks/NetworkTile';
 import { PinkCta } from '../blocks/PinkCta';
 import styles from './ActivityList.module.scss';
@@ -68,8 +70,20 @@ function tintFor(seed: string) {
 /** The row graphic — the app's STICKER chrome (the country-list flag tile),
  *  one shape + one circular badge (the Airbnb collage voice, single badge):
  *  person → tinted initials sticker with the country flag riding bottom-right;
- *  your own bank (deposit/withdraw) → the flag sticker itself; crypto → the
- *  network's brand tile; the balance-only edge case → the pink cash sticker. */
+ *  your own bank (deposit/withdraw) → a mini flag on the neutral sticker;
+ *  crypto → the network's brand tile; the balance-only edge case → the pink
+ *  cash sticker. */
+
+/** 24px flag with 4px smoothed corners, centered on the neutral sticker fill. */
+function MiniFlag({ code }: { code: string }) {
+  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 4 });
+  return (
+    <span ref={clip.ref} style={clip.style} className={styles.miniFlag}>
+      <SquareFlag code={code} />
+    </span>
+  );
+}
+
 function RowAvatar({ item }: { item: WalletListItemData }) {
   if (item.avatar) {
     const tint = tintFor(item.avatar.initials);
@@ -101,12 +115,15 @@ function RowAvatar({ item }: { item: WalletListItemData }) {
       </span>
     );
   }
-  // Your own bank moving the balance — the flag sticker, like everywhere else.
+  // Your own bank moving the balance — a mini flag on the neutral sticker
+  // (full-bleed reads too big at this 56px size; fine everywhere else).
   const flagCode = item.image?.match(/\/flags\/([a-z]+)\.svg$/)?.[1];
   if (flagCode) {
     return (
       <span className={styles.avatarWrap} aria-hidden>
-        <FlagTile code={flagCode} size={TILE_SIZE} />
+        <StickerTile size={TILE_SIZE} neutral>
+          <MiniFlag code={flagCode} />
+        </StickerTile>
       </span>
     );
   }

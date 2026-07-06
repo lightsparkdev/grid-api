@@ -31,11 +31,10 @@ const PUSH_TRANSITION = motionTransition(easeOutSnappy, MARKETPLACE_PUSH_DURATIO
  *  AddMoneyPage in from the right, iOS-nav style, while the home parallax-
  *  shifts left beneath it. Withdraw/Send stay decorative this pass.
  *
- *  No entrance stagger: the sign-in sheet dismisses OVER this exact layout
- *  (the auth screen's zeroed backdrop), so the reveal choreography already
- *  happened — re-staggering the items here would double it. */
+ *  One-shot entrance stagger on sign-in (the Z choreography): the flow sets
+ *  `entrance` once when the wallet lands after auth. */
 export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
-  const { home, money } = props;
+  const { entrance = false, home, money } = props;
   const reduceMotion = useReducedMotion();
   const pageOpen = home.sheetOpen;
   // A close from the confirm step = a completed transfer: the page settles
@@ -92,6 +91,7 @@ export function MarketplaceWalletScreen(props: SkinWalletScreenProps) {
               rewardsMonthCents={home.earningsMonthCents}
               showActivity
               activity={home.homeActivity}
+              entrance={entrance}
               animatedBalance
               onDeposit={() => home.openSheet('add')}
               onWithdraw={() => home.openSheet('withdraw')}

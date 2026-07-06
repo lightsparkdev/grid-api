@@ -15,13 +15,30 @@
   overflow: hidden;
 }
 
-/* The house mark — white stroke at 40% via screen blend, a soft watermark. */
+/* The house mark — solid white, centered. */
 .house {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  mix-blend-mode: screen;
+}
+
+/* Illustrated design face — art fills the card under the chrome. */
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* On art the mark is a smaller solid-white badge (the gift-card look). */
+.houseBadge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.18));
 }
 
 .bottomRow {
@@ -34,12 +51,22 @@
   justify-content: space-between;
 }
 
+/* EMV chip — metal-gradient SVG, positioned by inline style. */
+.chip {
+  position: absolute;
+}
+
 .number {
   font-size: 1em;
   line-height: 1.4;
   font-weight: 500;
   letter-spacing: 0.04em;
   color: #ffffff;
+  transition: opacity 0.35s ease;
+
+  &[data-hidden] {
+    opacity: 0;
+  }
 }
 
 .brandCol {

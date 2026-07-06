@@ -40,7 +40,12 @@ export function StickerTile({
   const outer = useSquircleClip<HTMLSpanElement>({ figmaRadii: 12 * s });
   const inner = useSquircleClip<HTMLSpanElement>({ figmaRadii: 10 * s });
   return (
-    <span className={styles.shell} style={{ width: size, height: size }} aria-hidden>
+    <span
+      className={styles.shell}
+      style={{ width: size, height: size }}
+      data-large={size > 40 || undefined}
+      aria-hidden
+    >
       <span
         ref={outer.ref}
         style={{ ...outer.style, padding: 2 * s }}

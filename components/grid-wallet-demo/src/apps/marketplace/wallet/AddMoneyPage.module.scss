@@ -731,6 +731,13 @@
   svg {
     display: block;
     flex: none;
+
+    /* Rendered at 28px from the 24 viewBox, the set's 1.5 stroke scales up to
+       ~1.75 — compensate so it reads 1.5px on screen (1.5 × 24/28). Fill-only
+       glyphs (Apple/Google) have no stroke, so this is a no-op for them. */
+    :is(path, circle, rect, line, ellipse) {
+      stroke-width: 1.2857;
+    }
   }
 }
 

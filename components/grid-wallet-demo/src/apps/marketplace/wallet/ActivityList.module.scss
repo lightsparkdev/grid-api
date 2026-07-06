@@ -162,6 +162,15 @@
   background: var(--mk-surface);
 }
 
+/* Bank-movement rows: 24px flag, 4px smoothed corners, on the neutral fill. */
+.miniFlag {
+  display: block;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+}
+
 .skeletonCover {
   position: absolute;
   inset: 0;

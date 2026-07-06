@@ -9,8 +9,13 @@ import { IconChevronDownMedium } from '@central-icons-react/round-outlined-radiu
 // Deposit page source list.
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import { IconCash } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCash';
-// Debit card flow (Tap to pay).
-import { IconNfc1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconNfc1';
+// Debit card flow (Tap to pay + the ready screen's value props). The tap CTA's
+// NFC glyph uses the 2px stroke — 1.5 reads thin alone in the pill.
+import { IconNfc1 } from '@central-icons-react/round-outlined-radius-3-stroke-2/IconNfc1';
+import { IconGlobe } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGlobe';
+import { IconCreditCard1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCard1';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
+import { IconDotGrid1x3Horizontal } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconDotGrid1x3Horizontal';
 // Crypto deposit list (copy / QR actions). QR only ships in the radius-1 set —
 // the glyph reads identically at this size.
 import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
@@ -44,6 +49,10 @@ export {
   IconBank,
   IconCash,
   IconNfc1,
+  IconGlobe,
+  IconCreditCard1,
+  IconWallet1,
+  IconDotGrid1x3Horizontal,
   IconSquareBehindSquare6,
   IconCheckmark2Small,
   IconQrCode,
