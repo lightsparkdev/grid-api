@@ -15,13 +15,16 @@ import { BRAND as MARKETPLACE_BRAND } from './marketplace/config';
 import { OndemandAuthScreen } from './ondemand/OndemandAuthScreen';
 import { OndemandWalletScreen } from './ondemand/wallet';
 import { BRAND as ONDEMAND_BRAND } from './ondemand/config';
+import { MessagingAuthScreen } from './messaging/MessagingAuthScreen';
+import { MessagingWalletScreen } from './messaging/wallet';
+import { BRAND as MESSAGING_BRAND } from './messaging/config';
 import type {
   SkinAuthScreen,
   SkinWalletScreen,
   SkinAuthSheet,
 } from './types';
 
-export type AppSkinId = 'aurora' | 'creator' | 'social' | 'marketplace' | 'ondemand';
+export type AppSkinId = 'aurora' | 'creator' | 'social' | 'marketplace' | 'ondemand' | 'messaging';
 
 /** A skin = a per-persona app. `AuthScreen` + `WalletScreen` are the per-skin
  *  view (Aurora is skin zero). When both are set the persona renders the full
@@ -112,6 +115,17 @@ export const APP_SKINS: Record<Persona, AppSkin> = {
     // the auth screen's props, not a separate overlay.
     inlineAuthFlow: true,
     authReveal: 'fade',
+  },
+  messaging: {
+    id: 'messaging',
+    persona: 'messaging',
+    label: MESSAGING_BRAND,
+    fontFamily: SF_PRO,
+    AuthScreen: MessagingAuthScreen,
+    WalletScreen: MessagingWalletScreen,
+    // Phone/email push in full-screen INSIDE the auth screen (iOS nav push) —
+    // the flow rides the auth screen's props, not a separate overlay.
+    inlineAuthFlow: true,
   },
 };
 

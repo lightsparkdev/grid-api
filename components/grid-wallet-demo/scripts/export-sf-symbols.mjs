@@ -42,6 +42,9 @@ const WEIGHT_BY_SYMBOL = {
   'chevron.down': 'semibold',
   'delete.left': 'semibold',
   viewfinder: 'semibold',
+  // Widest tab-bar glyph — the 24px fit-scale is the smallest of the set, so
+  // regular weight reads ~20% thinner than its neighbors; medium compensates.
+  'person.2': 'medium',
 };
 
 const outDir = path.join(root, 'public/assets/symbols');

@@ -64,10 +64,11 @@ export const USE_CASES: UseCaseOption[] = [
   },
   {
     id: 'messaging',
+    persona: 'messaging',
     label: 'Messaging',
     iconSrc: '/assets/app-icon-messaging.png',
     enabled: true,
-    built: false,
+    built: true,
   },
 ];
 

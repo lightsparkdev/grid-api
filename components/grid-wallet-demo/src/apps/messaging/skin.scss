@@ -1,0 +1,81 @@
+/* Messaging skin (brand "ChatsApp") — WhatsApp-style glass app: SF Pro, iOS
+   colors, brand green #1DAA61. Light values sampled from the Figma money home
+   (2640:19597); dark follows WhatsApp's dark surfaces (near-black + elevated
+   grays) with the green brightened a step for contrast. */
+@mixin tokens {
+  &[data-app='messaging'] {
+    --ios-font-family: var(--font-family-sf-pro);
+
+    /* ChatsApp paper white — every "white" surface (page, sheets, cards,
+       tiles) reads #FEFFFF, a hair cooler than pure white. --app-bg and the
+       card tokens all derive from this. Dark resets to the iOS blacks below. */
+    --ios-bg-primary: #feffff;
+    --ios-bg-grouped-secondary: #feffff;
+
+    /* Brand green — CTAs, links, received amounts, the header plus button. */
+    --app-tint: #1daa61;
+    --ios-tint: var(--app-tint);
+    --msg-green: var(--app-tint);
+
+    /* Solid green CTA (the welcome screen's "Agree and continue" pill). */
+    --msg-cta: #1daa61;
+    --msg-cta-press: #178c50;
+    --msg-cta-fg: #ffffff;
+
+    /* Glassy green CTA backdrop — the Aurora primary-glass treatment retinted
+       (GlassOver refracts this gradient; light above, brand mid, deep below). */
+    --msg-cta-glass: linear-gradient(180deg, #35c97d 0%, #1daa61 55%, #148a4c 100%);
+
+    /* Primary filled pill (ContentAreaButton filled) — brand green. */
+    --p-fill: var(--msg-cta);
+    --p-fg: var(--msg-cta-fg);
+
+    /* Money-flow sheet surface — WhatsApp's grouped-sheet gray (IMG_0707),
+       a touch lighter than iOS systemGroupedBackground. Dark pairs with the
+       elevated sheet gray so the #1C1C1E-ish cards still read above it. */
+    --msg-sheet-bg: #f3f4f4;
+
+    /* Floating glass pill tab bar — the FrostPanel's translucent fill over
+       its heavy backdrop blur (tabs are label-primary; active pill is
+       fills/tertiary). Slightly grey in light so the specular rim reads
+       against the white page. */
+    --msg-tabbar-fill: rgba(253, 254, 254, 0.8);
+
+    /* WhatsApp chat bubbles (Bitcoin-2026 Figma 363:85386/85388) — the card
+       issuance flourish. Sent = pale brand green; received = white card. */
+    --msg-bubble-sent: #d0fecf;
+    --msg-bubble-sent-meta: #677e67;
+    --msg-bubble-received: #feffff;
+    --msg-bubble-received-meta: #7f7f7f;
+    --msg-bubble-text: #0a0a0a;
+    --msg-bubble-shadow: rgba(0, 0, 0, 0.08);
+
+    :global([data-theme='dark']) & {
+      /* Reset the paper-white overrides to the global iOS dark values (the
+         skin-scope declaration would otherwise win over the theme flip). */
+      --ios-bg-primary: #000000;
+      --ios-bg-grouped-secondary: #1c1c1e;
+
+      /* WhatsApp dark brightens the brand green for contrast on black. */
+      --app-tint: #21c063;
+      --msg-cta: #21c063;
+      --msg-cta-press: #1daa61;
+      --msg-cta-fg: #ffffff;
+      --msg-cta-glass: linear-gradient(180deg, #2ed374 0%, #1fb35d 55%, #158a48 100%);
+
+      /* Near-black with a hint of lift — keeps the elevated cards reading
+         above the sheet, mirroring the light gray's step off white. */
+      --msg-sheet-bg: #0e0e10;
+
+      --msg-tabbar-fill: rgba(22, 22, 24, 0.75);
+
+      /* WhatsApp dark bubbles: deep green out, elevated gray in. */
+      --msg-bubble-sent: #134d37;
+      --msg-bubble-sent-meta: #7fae95;
+      --msg-bubble-received: #232326;
+      --msg-bubble-received-meta: #98989f;
+      --msg-bubble-text: #f2f2f7;
+      --msg-bubble-shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+}

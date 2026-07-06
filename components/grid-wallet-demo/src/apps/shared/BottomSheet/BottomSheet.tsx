@@ -50,7 +50,15 @@ interface BottomSheetProps {
    * compile again. Default false (closed sheets unmount, as before).
    */
   keepMounted?: boolean;
+  /**
+   * Recede this sheet behind a stacked sheet (the iOS sheet-over-sheet
+   * presentation): scales it back around its top edge while the covering sheet
+   * slides up over it. Drive it with the covering sheet's `open`.
+   */
+  receded?: boolean;
 }
+
+const RECEDED_SCALE = 0.92;
 
 /**
  * iOS-style frosted bottom sheet — composable content slot.
@@ -71,6 +79,7 @@ export function BottomSheet({
   scalesBackground = true,
   duration = SHEET_DURATION,
   keepMounted = false,
+  receded = false,
 }: BottomSheetProps) {
   const overlayGlass = useOverlayGlass();
   const sheetGlass = glass ?? overlayGlass.sheet;
@@ -162,10 +171,11 @@ export function BottomSheet({
           // visibility:hidden once the slide-out settles: aria-hidden alone
           // leaves the parked sheet's buttons TABBABLE, and focusing one makes
           // the browser scroll the overflow-hidden phone screen to reveal it.
+          style={{ transformOrigin: '50% 0%' }}
           animate={
             open
-              ? { y: 0, visibility: 'visible' }
-              : { y: '110%', transitionEnd: { visibility: 'hidden' } }
+              ? { y: 0, scale: receded ? RECEDED_SCALE : 1, visibility: 'visible' }
+              : { y: '110%', scale: 1, transitionEnd: { visibility: 'hidden' } }
           }
           transition={sheetTransition}
         >
@@ -202,11 +212,14 @@ export function BottomSheet({
           />
           <motion.div
             className={styles.sheetMotion}
+            // Scale back around the sheet's top edge when receded, so the top
+            // stays put (peeking above the covering sheet) as the body shrinks.
+            style={{ transformOrigin: '50% 0%' }}
             // 110% (not 100%): inset sheets float above the screen bottom, so
             // a plain full-height travel leaves a sliver of the sheet's top
             // on screen until unmount.
             initial={{ y: '110%' }}
-            animate={{ y: 0 }}
+            animate={{ y: 0, scale: receded ? RECEDED_SCALE : 1 }}
             exit={{ y: '110%' }}
             transition={sheetTransition}
           >
