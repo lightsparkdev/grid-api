@@ -1,26 +1,23 @@
-/* "Add bank" pageSheet — the auth sheet's presentation (40px top squircle,
-   nav stack receded behind the shared scrim) hosting the country picker and
-   the bank-details form. */
+/* "Add bank" — a full-screen slide-up over the flow (no stack recede, no
+   rounded sheet corners) hosting the country picker and the bank-details
+   form. */
 
 .scrim {
   position: absolute;
   inset: 0;
   z-index: 8;
-  background: var(--sheet-scrim);
+  background: var(--od-push-scrim);
   pointer-events: none;
 }
 
-/* Top at 74px: 12px of the receded card (offset 62) peeks above the sheet —
-   the same geometry as the auth pageSheet. */
 .sheetLayer {
   position: absolute;
-  top: 74px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 9;
   display: flex;
   flex-direction: column;
+  /* Top-edge shadow while riding up (matches the flow page's rise). */
+  filter: drop-shadow(0 -16px 48px rgba(0, 0, 0, 0.2));
 }
 
 .sheet {
@@ -29,6 +26,10 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* Clear the status bar — this is a full screen now, not a pageSheet.
+     50 + the header's 24px top pad centers its controls at y86, matching the
+     flow page's header controls. */
+  padding-top: 50px;
   background: var(--od-sheet-bg);
   color: var(--app-text-primary);
 }
@@ -105,7 +106,7 @@
   justify-content: center;
   font-size: 14px;
   line-height: normal;
-  font-weight: 500;
+  font-weight: 700; /* bold — the app's bar-title voice */
   letter-spacing: -0.14px;
   color: var(--app-text-primary);
   pointer-events: none;
@@ -152,7 +153,7 @@
   padding: 0 24px;
   font-size: 26px;
   line-height: normal;
-  font-weight: 500;
+  font-weight: 700; /* bold — the money-flow header voice */
   letter-spacing: -0.52px;
   color: var(--app-text-primary);
 }
@@ -198,15 +199,49 @@
   }
 }
 
+/* Search — PlainInput's voice: r8 squircle rect, grey at rest, white with a
+   2px halo border while focused (the halo lives outside the clip). */
+.searchShell {
+  position: relative;
+  width: 100%;
+}
+
 .searchPill {
   display: flex;
   align-items: center;
-  gap: 10px;
+  /* h44 with a 20px glyph leaves 12px above/below — match left + gap so the
+     icon sits in even air on three sides (the pill's 16px read too wide once
+     the corners squared up). */
+  gap: 12px;
   height: 44px;
-  padding: 0 16px;
-  border-radius: 999px;
-  corner-shape: round;
+  padding: 0 16px 0 12px;
   background: var(--od-surface);
+  transition: background 0.18s ease;
+}
+.searchShell[data-focus] .searchPill {
+  background: var(--od-sheet-bg);
+}
+
+.searchHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--od-input-border-focus);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+}
+.searchShell[data-focus] .searchHalo path {
+  opacity: 1;
 }
 
 .searchIcon {
@@ -293,16 +328,18 @@
 }
 
 /* ── Bank details (IMG_0621) ──────────────────────────────────────────────── */
+/* Left padding only — rows carry the right inset so the hairlines between
+   them run all the way to the right edge. */
 .fields {
   margin-top: 12px;
-  padding: 0 24px;
+  padding: 0 0 0 24px;
 }
 
 .fieldRow {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 0;
+  padding: 20px 24px 20px 0;
 
   & + & {
     border-top: 1px solid var(--od-hairline);
@@ -332,13 +369,20 @@
   overflow-wrap: anywhere;
 }
 
+/* Tiny grey pill — the Uber "View store" voice (IMG_0681). Decorative. */
 .fieldEdit {
   flex: none;
-  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-size: 14px;
   line-height: normal;
   font-weight: 500;
-  color: var(--app-text-primary);
-  text-decoration: underline;
 }
 
 /* Copy-value button on the funding rows — squircle rect, secondary fill. */

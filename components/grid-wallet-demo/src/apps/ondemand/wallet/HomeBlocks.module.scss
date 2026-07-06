@@ -1,5 +1,5 @@
 /* Ondemand Wallet home (Figma 2636:17730) — Uber-flat: no cards, no shadows,
-   grey action tiles, full-bleed activity rows. Inter type with 'salt'. */
+   grey action tiles, full-bleed activity rows. Inter type, default forms. */
 
 .root {
   position: relative;
@@ -14,68 +14,39 @@
   padding-top: 62px;
 }
 
-/* ── Header bar — pinned over the scroll; opaque so content passes beneath.
-   Extends UP under the status bar. The hairline fades in once the large
-   title has fully migrated in. ─────────────────────────────────────────── */
+/* ── Title strip — STATIC (no collapse animation): an opaque block covering
+   the status bar + the Figma title row (62 + py-8 + 41 + py-8 = 119), no
+   border. Content just scrolls under it. ────────────────────────────────── */
 .headerBar {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 3;
-  height: 110px; /* 62 status bar + 48 bar */
+  height: 119px;
+  padding: 70px 16px 8px; /* 62 status bar + the row's py-8 */
   box-sizing: border-box;
   background: var(--app-bg);
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: var(--od-header-border);
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  }
-  &[data-collapsed]::after {
-    opacity: 1;
-  }
-}
-
-/* ── Large title (Figma 2636:17734 — Bold 34/41) ────────────────────────── */
-/* Rides the scroll 1:1 (translate = −scrollTop up to the collapse range)
-   while shrinking to 22px into the header bar. */
-.titleLayer {
-  position: absolute;
-  top: 110px;
-  left: 16px;
-  z-index: 4;
-  pointer-events: none;
-  transform-origin: top left;
-  transform: translateY(calc(var(--collapse, 0) * -42px))
-    scale(calc(1 - var(--collapse, 0) * 0.3529));
-  will-change: transform;
 }
 .title {
   margin: 0;
   font-size: 34px;
   line-height: 41px;
   font-weight: 700;
-  letter-spacing: -0.68px;
   color: var(--app-text-primary);
-  font-feature-settings: 'salt' 1;
 }
 
 /* ── Body (scrolls under the pinned header) ─────────────────────────────── */
-/* Top padding = bar (48) + large title (41) + content gap. */
+/* Top padding = the title row's height (8 + 41 + 8); the root's own 62px
+   status-bar padding already carries the strip above it. */
 .body {
   position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 106px 0 24px;
+  /* Bottom clears the 115px tab-bar overlay (content scrolls under its fade). */
+  padding: 57px 0 128px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -90,7 +61,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 8px 16px 16px;
+  padding: 16px;
 }
 .balanceRow {
   display: flex;
@@ -123,7 +94,6 @@
   font-weight: 700;
   letter-spacing: -1.02px;
   color: var(--app-text-primary);
-  font-feature-settings: 'salt' 1;
 }
 
 /* ── Action tiles (Figma 2636:17742/17784 — rows px16 py8, gap 12) ──────── */
@@ -169,6 +139,15 @@
   justify-content: flex-end;
 }
 
+/* Decorative tile (no onClick — Save, Bills): no press affordance. */
+.tileInert {
+  cursor: default;
+
+  &:hover {
+    background: var(--od-surface);
+  }
+}
+
 /* The 3D graphic — big tiles park it right, small tiles center it. */
 .tileArtSlot {
   position: relative;
@@ -198,12 +177,11 @@
 
 .tileLabel {
   flex: none;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 18px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.08px;
   color: var(--app-text-primary);
-  font-feature-settings: 'salt' 1;
 }
 .tileBig .tileLabel {
   text-align: left;
@@ -212,20 +190,20 @@
   text-align: center;
 }
 
-/* ── Activity (Figma 2636:17849 — title px16 py8, 20 bold) ──────────────── */
+/* ── Activity (Figma 2636:17849 — title px16 no vertical pad, 20 bold;
+   16px section gap above, from the actions section's pb-16) ─────────────── */
 .activity {
   display: flex;
   flex-direction: column;
-  padding: 24px 0 0;
+  padding: 16px 0 0;
 }
 .activityTitle {
   margin: 0;
-  padding: 8px 16px;
+  padding: 0 16px;
   font-size: 20px;
   line-height: 25px;
   font-weight: 700;
   letter-spacing: -0.4px;
   color: var(--app-text-primary);
-  font-feature-settings: 'salt' 1;
 }
 /* Rows live in ActivityList. */

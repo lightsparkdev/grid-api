@@ -1,7 +1,7 @@
-/* Ondemand skin — Uber-style: Inter type (with the 'salt' alternates the Figma
-   uses as its Uber Move stand-in), black-on-white brand, flat (NO glass
-   anywhere), small 4–8px smoothed radii. Light values sampled from the Figma
-   wallet home (2636:17730); dark is an adaptation. */
+/* Ondemand skin — Uber-style: Inter type (default letterforms — NO 'salt'
+   alternates, the single-story a reads wrong), black-on-white brand, flat (NO
+   glass anywhere), small 4–8px smoothed radii. Light values sampled from the
+   Figma wallet home (2636:17730); dark is an adaptation. */
 @mixin tokens {
   &[data-app='ondemand'] {
     --ios-font-family: var(--font-family-inter);
@@ -36,6 +36,9 @@
     --od-green: #2e8e37; /* positive delta text */
     --od-green-bg: #f3fdf5; /* positive delta chip fill */
     --od-sheet-bg: #ffffff;
+    /* Issuance dot-grid dots — grey (not black) so the light field stays
+       subtle; dark mode goes full white for contrast on black. */
+    --od-grid-dot: #969696;
 
     /* Primary filled pill (ContentAreaButton filled) — black CTA. */
     --p-fill: var(--od-cta);
@@ -50,9 +53,9 @@
     /* Dim over the parallax-receding wallet while a page is pushed on top. */
     --od-push-scrim: rgba(0, 0, 0, 0.12);
 
-    /* Decorative bottom tab bar (Figma 2636:17926). */
+    /* Decorative bottom tab bar (Figma 2636:17926) — borderless overlay; the
+       bg must match --app-bg so its top gradient fade blends seamlessly. */
     --od-tabbar-bg: #ffffff;
-    --od-tabbar-border: #ebebeb;
     --od-tabbar-fg: #727272;
     --od-tabbar-active: #000000;
 
@@ -80,6 +83,7 @@
       --od-green: #4fce5d;
       --od-green-bg: #0f2413;
       --od-sheet-bg: #141414;
+      --od-grid-dot: #ffffff;
 
       --content-secondary-bg: var(--od-surface);
       --content-secondary-fg: var(--app-text-primary);
@@ -88,8 +92,7 @@
       --sheet-scrim: rgba(0, 0, 0, 0.6);
       --od-push-scrim: rgba(0, 0, 0, 0.4);
 
-      --od-tabbar-bg: #0c0c0c;
-      --od-tabbar-border: #262626;
+      --od-tabbar-bg: #000000;
       --od-tabbar-fg: #8c8c8c;
       --od-tabbar-active: #ffffff;
     }

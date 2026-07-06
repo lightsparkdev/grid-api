@@ -12,16 +12,14 @@ interface PasteAddressSheetProps {
 }
 
 /**
- * "Paste address" — Aurora's clipboard sheet on the Airbnb partial sheet,
- * WITH the iOS stack effect (the send flow scales down and recedes behind
- * it — the pageSheet mechanic at partial height). Framed as a paste
+ * "Paste address" — the clipboard sheet on the partial sheet (plain slide-up
+ * over a dim scrim; no stack recede in this app). Framed as a paste
  * affordance: each row is a Receive chain's address; tapping one drops it
  * into the recipient card with that network's currency + account type.
  */
 export function PasteAddressSheet({ m, open, onDismiss }: PasteAddressSheetProps) {
   return (
-    <PartialSheet open={open} onDismiss={onDismiss} recede>
-      <h2 className={styles.title}>Paste address</h2>
+    <PartialSheet open={open} onDismiss={onDismiss} title="Paste address">
       <div className={styles.list}>
         {SEND_NETWORKS.map((net) => (
           <button

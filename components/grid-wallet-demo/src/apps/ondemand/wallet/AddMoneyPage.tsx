@@ -54,6 +54,7 @@ import {
   ONDEMAND_SHEET_DURATION,
 } from '../config';
 import { CircleFlag, CircleLogo } from '../blocks/PlainMarks';
+import { PlainInput } from '../blocks/PlainInput';
 import { CircleDollarIcon } from '../blocks/CircleDollarIcon';
 import { DarkCta } from '../blocks/DarkCta';
 import styles from './AddMoneyPage.module.scss';
@@ -62,34 +63,26 @@ const PUSH_TRANSITION = motionTransition(easeOutSnappy, ONDEMAND_PUSH_DURATION);
 const STEP_TRANSITION = PUSH_TRANSITION;
 const BAR_TITLE_TRANSITION = motionTransition(easeOutQuick, 0.2);
 
-// The left-edge drop shadow rides the slide as an ANIMATED value: a static CSS
-// shadow still casts onto the screen when the page sits just off the right
-// edge, then pops when the exit unmounts — fading it with the travel instead
-// makes it arrive and leave with the page.
+// The left-edge drop shadow rides in-flow pushes as an ANIMATED value: a
+// static CSS shadow still casts onto the screen when a layer sits just off
+// the right edge, then pops when the exit unmounts — fading it with the
+// travel instead makes it arrive and leave with the layer.
 const EDGE_SHADOW_ON = '-16px 0 48px rgba(0, 0, 0, 0.2)';
 const EDGE_SHADOW_OFF = '-16px 0 48px rgba(0, 0, 0, 0)';
 
-// The page enters as a nav push (from the right) but its EXIT depends on how
-// it closes: a plain dismissal pops back off right; a CONFIRMED transfer
-// (Face ID done on the review screen) settles the whole risen stack DOWN —
-// a sheet dismissal, not a reverse push. AnimatePresence re-resolves `custom`
-// for exiting children, so the direction is read at close time.
-type PageExit = { down: boolean; reduceMotion: boolean };
+// The page PRESENTS as a full-screen slide-up over the static home (this app
+// has no nav-push from home and no sheet-stack recede) and dismisses back
+// down the same way — top-edge shadow riding the travel.
+const PAGE_SHADOW_ON = '0 -16px 48px rgba(0, 0, 0, 0.2)';
+const PAGE_SHADOW_OFF = '0 -16px 48px rgba(0, 0, 0, 0)';
+const PRESENT_TRANSITION = motionTransition(easeOutSnappy, ONDEMAND_SHEET_DURATION);
+type PageMotion = { reduceMotion: boolean };
 const pageVariants = {
-  enter: ({ reduceMotion }: PageExit) =>
-    reduceMotion ? { opacity: 0 } : { x: '100%', y: 0, boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
-  center: { x: 0, y: 0, boxShadow: EDGE_SHADOW_ON, opacity: 1 },
-  exit: ({ down, reduceMotion }: PageExit) =>
-    reduceMotion
-      ? { opacity: 0 }
-      : down
-        ? {
-            y: '100%',
-            boxShadow: EDGE_SHADOW_OFF,
-            opacity: 1,
-            transition: motionTransition(easeOutSnappy, ONDEMAND_SHEET_DURATION),
-          }
-        : { x: '100%', boxShadow: EDGE_SHADOW_OFF, opacity: 1 },
+  enter: ({ reduceMotion }: PageMotion) =>
+    reduceMotion ? { opacity: 0 } : { y: '100%', boxShadow: PAGE_SHADOW_OFF, opacity: 1 },
+  center: { y: 0, boxShadow: PAGE_SHADOW_ON, opacity: 1 },
+  exit: ({ reduceMotion }: PageMotion) =>
+    reduceMotion ? { opacity: 0 } : { y: '100%', boxShadow: PAGE_SHADOW_OFF, opacity: 1 },
 };
 
 /** Scroll distance (px) after which the large title is fully under the header
@@ -291,10 +284,12 @@ export function AddMoneyPage({
           : mode === 'add'
             ? PAGE_TITLE
             : m.titles.source;
+  // On the entry step the leading control DISMISSES (the page slides back
+  // down) — an X, not a back arrow; deeper steps pop the nav stack.
+  const atEntry = m.isEntryStep || !m.backFrom[m.step];
   const handleBack = () => {
-    const backTo = m.backFrom[m.step];
-    if (m.isEntryStep || !backTo) onDismiss();
-    else m.go(backTo, true);
+    if (atEntry) onDismiss();
+    else m.go(m.backFrom[m.step]!, true);
   };
 
   // Graceful amount rise: saving a recipient plays as a SEQUENCE, not a pile
@@ -362,25 +357,29 @@ export function AddMoneyPage({
   // Saved banks only (the shared list can carry crypto recipients in send mode).
   const banks = m.banks.filter((b): b is SavedBank => !('address' in b));
 
-  // A close from the confirm step is a completed transfer — settle DOWN.
-  const pageExit: PageExit = { down: m.step === 'confirm', reduceMotion: !!reduceMotion };
+  const pageMotion: PageMotion = { reduceMotion: !!reduceMotion };
 
   return (
-    <AnimatePresence initial={false} custom={pageExit}>
+    <AnimatePresence initial={false} custom={pageMotion}>
       {open && (
         <motion.div
           key="deposit-page"
           className={styles.page}
-          custom={pageExit}
+          custom={pageMotion}
           variants={pageVariants}
           initial="enter"
           animate="center"
           exit="exit"
-          transition={PUSH_TRANSITION}
+          transition={PRESENT_TRANSITION}
         >
           <header className={styles.headerBar} data-bordered={scrolled || undefined}>
-            <button type="button" className={styles.backBtn} aria-label="Back" onClick={handleBack}>
-              <IconArrowLeft size={24} />
+            <button
+              type="button"
+              className={styles.backBtn}
+              aria-label={atEntry ? 'Close' : 'Back'}
+              onClick={handleBack}
+            >
+              {atEntry ? <IconCrossMedium size={24} /> : <IconArrowLeft size={24} />}
             </button>
             <AnimatePresence initial={false}>
               {collapsed && (
@@ -593,7 +592,7 @@ export function AddMoneyPage({
                           onClick={m.openAddBank}
                         >
                           <span className={styles.rowIcon}>
-                            <IconBank size={28} />
+                            <IconBank size={24} />
                           </span>
                           <span className={styles.rowLines}>
                             <span className={styles.rowTitle}>Bank account</span>
@@ -868,13 +867,20 @@ function AmountStep({
             )}
           </AnimatePresence>
         </span>
-        <span className={styles.amountHeaderTitle}>
+        {/* Bar title on the amount step only — the review carries its own
+            LARGE title in the body (the Uber receipt voice). */}
+        <motion.span
+          className={styles.amountHeaderTitle}
+          initial={false}
+          animate={{ opacity: isReview ? 0 : 1 }}
+          transition={FADE_SWAP}
+        >
           {/* nbsp: spaced text makes torph segment by WORD — non-breaking
               spaces force grapheme morphing so shared letters glide. */}
           <TextMorph as="span" duration={MORPH_MS} ease={cubicBezierCss(easeOutSwift)}>
-            {(isReview ? reviewTitle : m.titles.amount).replace(/ /g, '\u00a0')}
+            {m.titles.amount.replace(/ /g, '\u00a0')}
           </TextMorph>
-        </span>
+        </motion.span>
         <span className={styles.amountHeaderSlot}>
           <AnimatePresence initial={false}>
             {isReview && (
@@ -1059,6 +1065,7 @@ function AmountStep({
                 <ReviewScreen
                   m={m}
                   mode={mode}
+                  title={reviewTitle}
                   confirming={confirming}
                   onConfirm={onConfirm}
                 />
@@ -1088,14 +1095,27 @@ function AmountStep({
  * hairline rows with a Change pill), flat 2-col Price details with a total,
  * fine print, pinned Confirm CTA over a terms line. Left-aligned throughout.
  */
+/** The activity list's 56px grey-square graphic voice, reused for the
+ *  itinerary marks so the connector line has one fixed axis to run through. */
+function RouteGraphic({ children }: { children: ReactNode }) {
+  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 8 });
+  return (
+    <span ref={clip.ref} style={clip.style} className={styles.routeGraphic} aria-hidden>
+      {children}
+    </span>
+  );
+}
+
 function ReviewScreen({
   m,
   mode,
+  title,
   confirming,
   onConfirm,
 }: {
   m: MoneySheet;
   mode: MoneySheetMode;
+  title: string;
   confirming: boolean;
   onConfirm: (cents: number, activity: TransferActivity) => void;
 }) {
@@ -1105,8 +1125,6 @@ function ReviewScreen({
   const outbound = mode !== 'add';
   const bank = m.selectedBank;
   const crypto = m.selectedCrypto;
-  // 18 = the wallet home card radius (MkCard), so the two card voices match.
-  const boxClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 8 });
   const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
   const local = (cents: number) =>
     ((cents / 100) * m.fxRate).toLocaleString('en-US', {
@@ -1115,12 +1133,13 @@ function ReviewScreen({
     });
 
   // The itinerary endpoints: money flows INTO the wallet on add (bank →
-  // balance) and OUT on send (balance → recipient).
+  // balance) and OUT on send (balance → recipient). Marks ride the activity
+  // list's 56px grey-square containers so the connector centers cleanly.
   const balanceRow = (
     <div className={styles.routeRow}>
-      <span className={styles.rowIcon}>
-        <CircleDollarIcon size={28} />
-      </span>
+      <RouteGraphic>
+        <IconCash size={24} />
+      </RouteGraphic>
       <span className={styles.rowLines}>
         <span className={styles.rowTitle}>Cash balance</span>
         <span className={styles.rowSub}>USD</span>
@@ -1129,7 +1148,9 @@ function ReviewScreen({
   );
   const counterpartyRow = bank ? (
     <div className={styles.routeRow}>
-      <CircleFlag code={bank.country.code} />
+      <RouteGraphic>
+        <IconBank size={24} />
+      </RouteGraphic>
       <span className={styles.rowLines}>
         <span className={styles.rowTitle}>{isSend ? bank.beneficiary : bank.bankName}</span>
         <span className={styles.rowSub}>
@@ -1140,7 +1161,9 @@ function ReviewScreen({
     </div>
   ) : crypto ? (
     <div className={styles.routeRow}>
-      <CircleLogo src={crypto.logo} />
+      <RouteGraphic>
+        <CircleLogo src={crypto.logo} size={28} />
+      </RouteGraphic>
       <span className={styles.rowLines}>
         <span className={styles.rowTitle}>{truncateAddress(crypto.address)}</span>
         <span className={styles.rowSub}>{crypto.network} wallet</span>
@@ -1151,48 +1174,43 @@ function ReviewScreen({
   return (
     <div className={styles.review}>
       <div className={styles.reviewScroll}>
-        {/* Summary box — the ROUTE (IMG_0668's itinerary): source sticker →
-            connector line → destination sticker, then the amount row. */}
-        <div className={styles.reviewBoxWrap}>
-          <div ref={boxClip.ref} style={boxClip.style} className={styles.reviewBox}>
-            <div className={styles.routeRows}>
-              {outbound ? (
-                <>
-                  {balanceRow}
-                  {counterpartyRow}
-                </>
-              ) : (
-                <>
-                  {counterpartyRow}
-                  {balanceRow}
-                </>
-              )}
-            </div>
-            <div className={styles.reviewBoxRow}>
-              <span className={styles.reviewRowLines}>
-                <span className={styles.reviewRowLabel}>Amount</span>
-                <span className={styles.reviewRowValue}>{formatUsdCents(m.cents)}</span>
-              </span>
-              <button
-                type="button"
-                className={styles.changePill}
-                disabled={confirming}
-                onClick={() => m.go('amount', true)}
-              >
-                Change
-              </button>
-            </div>
-          </div>
-          <SquircleFocusHalo
-            path={boxClip.path}
-            width={boxClip.width}
-            height={boxClip.height}
-            className={styles.destHalo}
-          />
+        {/* Uber receipt anatomy (IMG_0698/0700): the LARGE title (the header
+            bar stays empty), then everything stacks from the TOP — itinerary
+            timeline, amount row, then the details — with only the CTA + terms
+            at the bottom. Flat full-bleed sections, hairlines running to the
+            right edge; no summary card. */}
+        <h1 className={styles.reviewTitle}>{title}</h1>
+        <div className={styles.routeRows}>
+          {outbound ? (
+            <>
+              {balanceRow}
+              {counterpartyRow}
+            </>
+          ) : (
+            <>
+              {counterpartyRow}
+              {balanceRow}
+            </>
+          )}
+        </div>
+        <div className={styles.reviewBoxRow}>
+          <span className={styles.reviewRowLines}>
+            <span className={styles.reviewRowLabel}>Amount</span>
+            <span className={styles.reviewRowValue}>{formatUsdCents(m.cents)}</span>
+          </span>
+          <button
+            type="button"
+            className={styles.changePill}
+            disabled={confirming}
+            onClick={() => m.go('amount', true)}
+          >
+            Change
+          </button>
         </div>
 
-        {/* Flexible gap — the details pack against the CTA, not the box. */}
-        <div className={styles.reviewSpacer} aria-hidden />
+        {/* Thick full-bleed section divider (IMG_0700's band) between the
+            receipt summary and the math. */}
+        <div className={styles.bigDivider} aria-hidden />
 
         {/* Payment details — the supporting math (rate, fee, timing) from the
             brain, then the two bold answers: what leaves and what lands. */}
@@ -1289,6 +1307,7 @@ function ReviewScreen({
 function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
   const boxClip = useSquircleClip<HTMLDivElement>({ figmaRadii: 8 });
   const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
+  const [typed, setTyped] = useState('');
   const net = m.pickedNetwork;
   const filled = m.pasted && net;
   return (
@@ -1296,28 +1315,32 @@ function RecipientStep({ m, isSend }: { m: MoneySheet; isSend: boolean }) {
       <div className={styles.scroll}>
         <h1 className={styles.title}>{m.titles.recipient}</h1>
         <div className={styles.addressWrap}>
-          <div ref={boxClip.ref} style={boxClip.style} className={styles.addressBox}>
-            {filled ? (
-              <>
+          {filled ? (
+            <>
+              <div ref={boxClip.ref} style={boxClip.style} className={styles.addressBox}>
                 <CircleLogo src={net.logo} />
                 <span className={styles.rowLines}>
                   <span className={styles.rowTitle}>{truncateAddress(m.pastedAddress)}</span>
                   <span className={styles.rowSub}>{net.name} wallet</span>
                 </span>
-              </>
-            ) : (
-              <span className={styles.rowLines}>
-                <span className={styles.addressPlaceholder}>Enter any address</span>
-                <span className={styles.rowSub}>Spark, Solana, Base, Ethereum &mdash; anything</span>
-              </span>
-            )}
-          </div>
-          <SquircleFocusHalo
-            path={boxClip.path}
-            width={boxClip.width}
-            height={boxClip.height}
-            className={styles.destHalo}
-          />
+              </div>
+              <SquircleFocusHalo
+                path={boxClip.path}
+                width={boxClip.width}
+                height={boxClip.height}
+                className={styles.destHalo}
+              />
+            </>
+          ) : (
+            <>
+              {/* A real field in the skin's input voice; the Paste CTA still
+                  drives the demo fill (typing is a free-play affordance). */}
+              <PlainInput value={typed} onChange={setTyped} placeholder="Enter any address" />
+              <p className={styles.addressHelp}>
+                Spark, Solana, Base, Ethereum, anything
+              </p>
+            </>
+          )}
         </div>
         {/* The session address book (withdraw only — send's list is its own
             entry screen): wallets saved by either flow, one tap → amount. */}
@@ -1508,7 +1531,7 @@ function SourceRow({
       onClick={onClick}
     >
       <span className={styles.rowIcon}>
-        <Icon size={28} />
+        <Icon size={24} />
       </span>
       <span className={styles.rowLines}>
         <span className={styles.rowTitle}>{title}</span>

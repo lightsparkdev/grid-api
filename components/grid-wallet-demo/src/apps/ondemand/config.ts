@@ -7,12 +7,12 @@ export const BRAND = 'Super';
 /** Slide duration (s) for the ondemand full-screen auth pushes. */
 export const ONDEMAND_SHEET_DURATION = 0.5;
 
-/** iOS navigation-push duration (s) — the deposit page's slide-over and the
- *  wallet's parallax shift underneath share it so they move in lockstep. */
+/** iOS navigation-push duration (s) — screens WITHIN a flow push with it
+ *  (home → flow presents as a slide-up instead; see ONDEMAND_SHEET_DURATION). */
 export const ONDEMAND_PUSH_DURATION = 0.4;
 
-/** How far (px) the wallet slides left behind an incoming pushed page (~30% of
- *  the 402px screen — the iOS nav-stack parallax). */
+/** How far (px) an under-layer slides left behind an incoming pushed step
+ *  (~30% of the 402px screen — the iOS nav-stack parallax, in-flow only). */
 export const ONDEMAND_PUSH_PARALLAX = 120;
 
 /** Auth copy. */

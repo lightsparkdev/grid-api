@@ -17,7 +17,7 @@ import { useNow } from '@/hooks/useNow';
 import { relativeTime } from '@/lib/relativeTime';
 import { motionTransition } from '@/lib/easing';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
-import { DarkCta } from '../blocks/DarkCta';
+import { SecondaryCta } from '../blocks/SecondaryCta';
 import { CircleLogo } from '../blocks/PlainMarks';
 import { IconBank, IconCash } from '../icons';
 import styles from './ActivityList.module.scss';
@@ -162,7 +162,7 @@ export function OndemandActivityList({
               <p className={styles.emptyTitle}>{emptyTitle}</p>
               <p className={styles.emptySub}>{emptySub}</p>
             </div>
-            {onDeposit && <DarkCta onClick={onDeposit}>Add money</DarkCta>}
+            {onDeposit && <SecondaryCta onClick={onDeposit}>Add money</SecondaryCta>}
           </motion.div>
         </div>
       </div>

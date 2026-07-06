@@ -79,7 +79,7 @@
   justify-content: center;
   font-size: 14px;
   line-height: normal;
-  font-weight: 500;
+  font-weight: 700; /* bold — the app's bar-title voice */
   letter-spacing: -0.14px;
   color: var(--app-text-primary);
   pointer-events: none;
@@ -187,7 +187,7 @@
   justify-content: center;
   font-size: 16px;
   line-height: normal;
-  font-weight: 500;
+  font-weight: 700; /* bold — the app's bar-title voice */
   letter-spacing: -0.16px;
   color: var(--app-text-primary);
   pointer-events: none;
@@ -337,58 +337,45 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  /* Top = 118px header + the 8px content gap — padded inside the scroll so
-     the summary card's shadow has room instead of clipping at the header.
-     Bottom: 18px + the last total row's 6px bottom padding = 24px above
-     the CTA. */
-  padding: 126px 24px 18px;
+  /* Top = 118px header + the 8px content gap. Left gutter only — sections
+     carry their own right inset so hairlines run to the right edge (the
+     bank-details treatment). */
+  padding: 126px 0 18px 24px;
 
   &::-webkit-scrollbar {
     display: none;
   }
 }
 
-/* Flexible gap — absorbs the leftover height ABOVE the details so they anchor
-   against the CTA (collapses to 24px minimum on short screens). */
-.reviewSpacer {
-  flex: 1 1 0;
-  min-height: 24px;
+/* The review's LARGE title — the header bar stays empty (IMG_0700's voice). */
+.reviewTitle {
+  margin: 0 0 8px;
+  padding-right: 24px;
+  font-size: 26px;
+  line-height: normal;
+  font-weight: 700; /* bold — the money-flow header voice */
+  letter-spacing: -0.52px;
+  color: var(--app-text-primary);
 }
 
-/* Summary box — flat: 1px squircle border (the destination-box voice), no
-   shadow, 16px inset all around (the rows carry the rest of the rhythm). */
-.reviewBoxWrap {
-  position: relative;
-  flex-shrink: 0;
-}
-
-.reviewBox {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--app-bg);
-  padding: 16px;
-}
-
-/* The route (IMG_0668's itinerary): two sticker rows joined by a thin line
-   running through the tile axis. The line sits UNDER the opaque stickers
-   (they paint over it), so only the gap segment shows. */
+/* The route (the Uber receipt's itinerary, IMG_0698): two graphic-square rows
+   joined by a thin line running through the tile axis, flat on the page (no
+   card). The line sits UNDER the opaque tiles (they paint over it), so only
+   the gap segment shows. Hairline below runs to the right edge. */
 .routeRows {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  /* Top inset comes from the box's own 16px; keep 20px above the hairline. */
-  padding: 0 0 20px;
+  gap: 16px;
+  padding: 8px 24px 20px 0;
   border-bottom: 1px solid var(--od-hairline);
 
   &::before {
     content: '';
     position: absolute;
-    left: 20px; /* the 40px tile's center */
-    top: 20px; /* first tile's center */
-    bottom: 40px; /* second tile's center */
+    left: 28px; /* the 56px tile's center */
+    top: 36px; /* first tile's center (8px top pad + 28) */
+    bottom: 48px; /* second tile's center (20px bottom pad + 28) */
     width: 1.5px;
     transform: translateX(-50%);
     background: var(--od-hairline);
@@ -402,21 +389,31 @@
   gap: 16px;
 }
 
-/* Label-over-value rows with an optional Change pill; hairlines between. */
+/* The activity list's 56px grey r8 graphic square, holding one 24px mark. */
+.routeGraphic {
+  position: relative; /* paints over the connector line */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Label-over-value row with an optional Change pill — flat on the page; the
+   thick section band below it owns the separation (no hairline). */
 .reviewBoxRow {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 0;
-
-  & + & {
-    border-top: 1px solid var(--od-hairline);
-  }
-
-  /* The box's own 16px is the bottom inset. */
-  &:last-child {
-    padding-bottom: 0;
-  }
+  padding: 16px 24px 16px 0;
 }
 
 .reviewRowLines {
@@ -472,7 +469,7 @@
 
 .reviewSectionTitle {
   /* 12px margin + the first price row's 6px top padding = 18px visual gap. */
-  margin: 0 0 12px;
+  margin: 24px 24px 12px 0;
   font-size: 22px;
   line-height: normal;
   font-weight: 700;
@@ -480,7 +477,8 @@
   color: var(--app-text-primary);
 }
 
-/* Flat 2-col price rows; the total gets a hairline above and full weight. */
+/* Flat 2-col price rows; the total gets a hairline above and full weight.
+   Rows carry the right inset so the totals hairline runs to the right edge. */
 .priceRows {
   display: flex;
   flex-direction: column;
@@ -491,7 +489,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 6px 0;
+  padding: 6px 24px 6px 0;
   font-size: 16px;
   line-height: normal;
   font-weight: 400;
@@ -510,7 +508,7 @@
      above + 6px margin, then 12px padding beneath it. Row-to-row gaps stay
      12px, so the whole list reads on one rhythm. */
   margin-top: 6px;
-  padding: 12px 0 6px;
+  padding: 12px 24px 6px 0;
   border-top: 1px solid var(--od-hairline);
   font-size: 16px;
   line-height: normal;
@@ -519,9 +517,19 @@
 
   & + & {
     margin-top: 0;
-    padding: 6px 0;
+    padding: 6px 24px 6px 0;
     border-top: 0;
   }
+}
+
+/* Thick full-bleed section divider (IMG_0700's band) — spans EDGE to edge,
+   clawing back the scroll area's left gutter. Sits between the receipt
+   summary and Payment details. */
+.bigDivider {
+  flex-shrink: 0;
+  height: 8px;
+  margin: 2px 0 0 -24px;
+  background: var(--od-surface);
 }
 
 .reviewCtaWrap {
@@ -654,8 +662,8 @@
   padding: 0 24px;
   font-size: 32px;
   line-height: normal;
-  font-weight: 500;
-  letter-spacing: -0.96px; /* in step with the home large title */
+  font-weight: 700; /* bold, in step with the home large title */
+  letter-spacing: -0.96px;
   color: var(--app-text-primary);
 }
 
@@ -711,12 +719,13 @@
     cursor: default;
   }
 
-  /* Divider between rows — inset to the 24px gutters (not full bleed). */
+  /* Divider between rows — inset on the left gutter, running all the way to
+     the right edge (the app's divider rule; the activity list matches). */
   &[data-bordered]::after {
     content: '';
     position: absolute;
     left: 24px;
-    right: 24px;
+    right: 0;
     bottom: 0;
     height: 1px;
     background: var(--od-hairline);
@@ -728,16 +737,11 @@
   display: inline-flex;
   color: var(--app-text-primary);
 
+  /* Rendered at the set's native 24px viewBox, so the 2px stroke is exact —
+     no stroke compensation. */
   svg {
     display: block;
     flex: none;
-
-    /* Rendered at 28px from the 24 viewBox, the set's 1.5 stroke scales up to
-       ~1.75 — compensate so it reads 1.5px on screen (1.5 × 24/28). Fill-only
-       glyphs (Apple/Google) have no stroke, so this is a no-op for them. */
-    :is(path, circle, rect, line, ellipse) {
-      stroke-width: 1.2857;
-    }
   }
 }
 
@@ -806,8 +810,8 @@
   margin: 16px 24px 0;
 }
 
-/* The destination-box voice, as a static card: 1px squircle border via the
-   halo, sticker + two lines when filled, placeholder text when empty. */
+/* The filled address card: circle logo + two lines (empty state is a
+   PlainInput field with help text below). */
 .addressBox {
   position: relative;
   z-index: 1;
@@ -821,11 +825,13 @@
   background: var(--app-bg);
 }
 
-.addressPlaceholder {
-  font-size: 16px;
-  line-height: normal;
-  font-weight: 500;
-  color: var(--app-text-secondary);
+/* Small help text under the address field. */
+.addressHelp {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: var(--app-text-tertiary);
 }
 
 .recipientCtaWrap {

@@ -9,21 +9,27 @@
   color: var(--app-text-primary);
 }
 
-/* The presenting card (shared PresentationStage) — carries the app surface so
-   nothing shows through the rounded corners while receded. */
+/* Hosts the home + presented flow layers. No PresentationStage: this app has
+   no sheet-stack recede — flows slide up full-screen over the static home. */
 .stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--app-bg);
 }
 
-/* The home + tab bar — parallax-shifts left behind a pushed page. */
+/* The home + tab bar — sits still beneath presented flows. */
 .underlay {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-/* Dim over the receding wallet while a page sits on top (below the page's z). */
+/* Dim over the home while a flow page sits on top (below the page's z). */
 .pushScrim {
   position: absolute;
   inset: 0;

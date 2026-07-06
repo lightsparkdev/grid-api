@@ -14,17 +14,16 @@ interface SendReceiveSheetProps {
 }
 
 /**
- * "Send or receive" chooser — the Airbnb partial sheet (IMG_0612's layout):
- * floating X, big centered title + subhead IN the content (no header bar or
- * divider), then Aurora's two actions as full-width pills.
+ * "Send or receive" chooser — the Uber partial sheet (IMG_0678's grammar):
+ * square-top card, centered title bar with a hairline, then the subhead and
+ * Aurora's two actions as full-width pills.
  */
 export function SendReceiveSheet({ open, onDismiss, onSend, onReceive }: SendReceiveSheetProps) {
   const sendClip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
   const receiveClip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
 
   return (
-    <PartialSheet open={open} onDismiss={onDismiss}>
-      <h2 className={styles.title}>Send or receive</h2>
+    <PartialSheet open={open} onDismiss={onDismiss} title="Send or receive">
       <p className={styles.sub}>
         Move money to and from any
         <br />

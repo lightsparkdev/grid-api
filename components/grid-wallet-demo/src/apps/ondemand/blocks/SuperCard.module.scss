@@ -20,6 +20,24 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+/* The dot grid IN the card face — fades in once the card is created. */
+.gridLayer {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+
+  &[data-hidden] {
+    opacity: 0;
+  }
+}
+
+/* EMV chip — left, mid-face. */
+.chip {
+  position: absolute;
+  display: block;
+}
+
 /* The wordmark — white Inter bold, top-left. */
 .wordmark {
   position: absolute;
@@ -30,7 +48,6 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #ffffff;
-  font-feature-settings: 'salt' 1;
 }
 
 .bottomRow {
@@ -54,4 +71,24 @@
   &[data-hidden] {
     opacity: 0;
   }
+}
+
+/* Debit + Visa, stacked bottom-right. */
+.brandCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  align-items: flex-end;
+}
+
+.debit {
+  font-size: 1em;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(235, 235, 245, 0.7);
+}
+
+.visa {
+  display: block;
 }

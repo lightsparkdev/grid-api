@@ -1,21 +1,10 @@
-/* "Paste address" content — centered title (IMG_0612's voice), then the
-   network rows. The PartialSheet owns the card + floating X + recede. */
-
-.title {
-  /* Clear the floating X (24px top pad + 24px glyph) before the title. */
-  margin: 40px 24px 0;
-  font-size: 26px;
-  line-height: 32px;
-  font-weight: 500;
-  letter-spacing: -0.52px;
-  text-align: center;
-  color: var(--app-text-primary);
-}
+/* "Paste address" content — network rows under the PartialSheet's title bar
+   (the sheet owns the card + header + hairline). */
 
 .list {
   display: flex;
   flex-direction: column;
-  padding-top: 16px;
+  padding-top: 8px;
 }
 
 /* The Select-bank row voice: sticker + two lines, full-bleed hover. */

@@ -13,6 +13,28 @@
   overflow: hidden;
 }
 
+/* Ambient dot grid backdrop — under everything on the issuance stage. */
+.gridBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* The pitch's bottom fade (the Glitch issuance pattern) — an --app-bg
+   gradient OVERLAY on the field instead of an alpha mask, so it can FADE with
+   the leaving content in one motion (mask-image isn't animatable). Identical
+   over the flat page. */
+.gridFade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 42%,
+    var(--app-bg) 72%
+  );
+}
+
 /* ── Header (the page-header geometry) ───────────────────────────────────── */
 .header {
   position: relative;
@@ -64,7 +86,7 @@
   align-items: center;
   justify-content: center;
   font-size: 17px;
-  font-weight: 500;
+  font-weight: 700; /* bold — the app's bar-title voice */
   letter-spacing: -0.17px;
   color: var(--app-text-primary);
   pointer-events: none;
@@ -215,7 +237,7 @@
   margin: 0;
   font-size: 32px;
   line-height: 36px;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.96px;
   color: var(--app-text-primary);
   text-wrap: balance;
@@ -242,15 +264,14 @@
 
 .valueProp {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 20px;
 }
 
-/* 24px icon, optically centered against the title's 20px line. */
+/* 24px icon, centered against the whole text block. */
 .valuePropIcon {
   display: inline-flex;
   flex: none;
-  margin-top: -2px;
   color: var(--app-text-primary);
 
   svg {
@@ -341,6 +362,17 @@
    edges, and with the gutters inside, the sticker drop-shadows AND the
    tap-to-pay blur feather (8px) have room to bleed — clipping the blur at the
    top edge drew a hard line under the card. */
+/* The popLayout child — MARGIN-FREE (popLayout absolutizes the exiting
+   element at its measured offset, and margins would apply a second time,
+   shoving the exiting content 24px left). */
+.homeSlot {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+/* The scroller carries the gutter claw-back instead. */
 .homeBody {
   display: flex;
   flex: 1;
@@ -418,7 +450,7 @@
   pointer-events: none;
 }
 
-/* Section title — the home Activity voice (20 bold, salt). */
+/* Section title — the home Activity voice (20 bold). */
 .txTitle {
   margin: 12px 0 0;
   font-size: 20px;
@@ -426,7 +458,6 @@
   font-weight: 700;
   letter-spacing: -0.4px;
   color: var(--app-text-primary);
-  font-feature-settings: 'salt' 1;
 }
 
 /* The activity rows are full-bleed (they self-gutter at 16px) — break them

@@ -1,14 +1,12 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { SkinWalletScreenProps } from '@/apps/types';
-import { SheetPresentationProvider, PresentationStage } from '@/apps/shared/SheetPresentation';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { Toast } from '@/apps/shared/Toast';
-import { figmaSquircleRadius } from '@/apps/shared/figmaSquircleRadius';
-import { easeOutSnappy, motionTransition } from '@/lib/easing';
+import { motionTransition } from '@/lib/easing';
 import { OndemandHomeContent } from './HomeBlocks';
 import { AddMoneyPage } from './AddMoneyPage';
 import { AddBankSheet } from './AddBankSheet';
@@ -16,33 +14,24 @@ import { OndemandCardScreen } from './CardScreen';
 import { SendReceiveSheet } from './SendReceiveSheet';
 import { PasteAddressSheet } from './PasteAddressSheet';
 import { OndemandTabBar } from '../blocks/OndemandTabBar';
-import {
-  ONDEMAND_PUSH_DURATION,
-  ONDEMAND_PUSH_PARALLAX,
-  ONDEMAND_SHEET_DURATION,
-} from '../config';
+import { ONDEMAND_SHEET_DURATION } from '../config';
 import styles from './OndemandWalletScreen.module.scss';
 
-const PUSH_TRANSITION = motionTransition(easeOutSnappy, ONDEMAND_PUSH_DURATION);
+const SCRIM_TRANSITION = motionTransition(undefined, ONDEMAND_SHEET_DURATION);
 
 /** Ondemand Wallet home (Figma 2610:11075) — Airbnb-style, flat. All values
  *  come from the shared wallet brain (`home`); the layout blocks live in
- *  HomeBlocks so the auth screen can reuse them zeroed. Deposit pushes the
- *  AddMoneyPage in from the right, iOS-nav style, while the home parallax-
- *  shifts left beneath it. Withdraw/Send stay decorative this pass.
+ *  HomeBlocks so the auth handoff can render them zeroed. NO iOS sheet
+ *  stacking in this app: tapping a home tile SLIDES the flow page up
+ *  full-screen over the static home (dim scrim, no parallax, no recede);
+ *  screens within a flow push horizontally.
  *
  *  One-shot entrance stagger on sign-in (the Z choreography): the flow sets
  *  `entrance` once when the wallet lands after auth. */
 export function OndemandWalletScreen(props: SkinWalletScreenProps) {
   const { entrance = false, home, money } = props;
-  const reduceMotion = useReducedMotion();
   const pageOpen = home.sheetOpen;
-  // A close from the confirm step = a completed transfer: the page settles
-  // DOWN (sheet dismissal) instead of popping right, so the wallet must
-  // already SIT at rest beneath it — no parallax return to watch. The brain
-  // keeps its step until the next open, so this reads the close reason.
-  const confirmedClose = !pageOpen && money.step === 'confirm';
-  // The pageSheet presents while the brain sits on a sheet step: Add bank's
+  // The Add-bank screen presents while the brain sits on one of its steps:
   // country/bankForm, plus Receive's funding instructions.
   const addBankOpen =
     pageOpen &&
@@ -68,102 +57,86 @@ export function OndemandWalletScreen(props: SkinWalletScreenProps) {
 
   return (
     <div className={styles.root}>
-      <SheetPresentationProvider>
-        {/* The whole nav stack (wallet + pushed deposit page) is the presenting
-            card — it recedes together when the Add bank sheet slides up, the
-            auth-sheet mechanic. */}
-        <PresentationStage
-          className={styles.stage}
-          offset={62}
-          duration={ONDEMAND_SHEET_DURATION}
-          radius={figmaSquircleRadius(40)}
-        >
-          {/* iOS nav-stack parallax: the home shifts left behind the pushed
-              page, in lockstep with the page's slide. */}
-          <motion.div
-            className={styles.underlay}
-            initial={false}
-            animate={{ x: pageOpen && !reduceMotion ? -ONDEMAND_PUSH_PARALLAX : 0 }}
-            transition={confirmedClose ? { duration: 0 } : PUSH_TRANSITION}
-          >
-            <OndemandHomeContent
-              balanceCents={home.availableCents}
-              earningsTodayCents={home.earningsTodayCents}
-              showActivity
-              activity={home.homeActivity}
-              entrance={entrance}
-              animatedBalance
-              onWithdraw={() => home.openSheet('withdraw')}
-              onSend={() => home.setSendReceiveOpen(true)}
-              onPay={home.openCard}
-              onCard={home.openCard}
-              onDeposit={() => home.openSheet('add')}
+      <div className={styles.stage}>
+        {/* The home sits STILL beneath presented flows — no parallax shift,
+            no stack recede. */}
+        <div className={styles.underlay}>
+          <OndemandHomeContent
+            balanceCents={home.availableCents}
+            earningsTodayCents={home.earningsTodayCents}
+            showActivity
+            activity={home.homeActivity}
+            entrance={entrance}
+            animatedBalance
+            onWithdraw={() => home.openSheet('withdraw')}
+            onSend={() => home.setSendReceiveOpen(true)}
+            onCard={home.openCard}
+            onDeposit={() => home.openSheet('add')}
+          />
+          <OndemandTabBar />
+        </div>
+
+        {/* Dim over the home — fades in with the flow page's rise. */}
+        <AnimatePresence initial={false}>
+          {pageOpen && (
+            <motion.div
+              key="present-scrim"
+              className={styles.pushScrim}
+              aria-hidden
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={SCRIM_TRANSITION}
             />
-            <OndemandTabBar />
-          </motion.div>
+          )}
+        </AnimatePresence>
 
-          {/* Dim over the receding wallet — fades in with the page's slide. */}
-          <AnimatePresence initial={false}>
-            {pageOpen && (
-              <motion.div
-                key="push-scrim"
-                className={styles.pushScrim}
-                aria-hidden
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={PUSH_TRANSITION}
-              />
-            )}
-          </AnimatePresence>
-
-          <AddMoneyPage
-            m={money}
-            mode={home.sheetMode}
-            open={pageOpen}
-            onDismiss={money.dismiss}
-            confirming={home.sheetConfirming}
-            onConfirm={home.confirmTransfer}
-            onReceive={home.handleReceivePayment}
-          />
-
-          {/* The debit-card flow — a full-screen rise over everything. */}
-          <OndemandCardScreen
-            cardView={home.cardView}
-            tapPhase={home.tapPhase}
-            transactions={home.transactions}
-            onClose={() => home.setCardView('closed')}
-            onCreate={() => home.setCardView('creating')}
-            onRevealed={() => home.setCardView('home')}
-            onTapToPay={home.startTapToPay}
-          />
-        </PresentationStage>
-
-        <AddBankSheet
+        <AddMoneyPage
           m={money}
-          open={addBankOpen}
-          // X walks the brain back to the step the sheet launched from
-          // (add: banks; send: the Add-recipient chooser; receive: the list).
-          onDismiss={() => money.go(money.backFrom.country ?? 'banks', true)}
+          mode={home.sheetMode}
+          open={pageOpen}
+          onDismiss={money.dismiss}
+          confirming={home.sheetConfirming}
+          onConfirm={home.confirmTransfer}
+          onReceive={home.handleReceivePayment}
         />
 
-        {/* Paste address — the network sheet stacked over the send flow
-            (iOS stack effect: the whole nav stack scales down behind it). */}
-        <PasteAddressSheet
-          m={money}
-          open={pageOpen && money.pickerOpen}
-          onDismiss={() => money.setPickerOpen(false)}
+        {/* The debit-card flow — a full-screen rise over everything. */}
+        <OndemandCardScreen
+          cardView={home.cardView}
+          tapPhase={home.tapPhase}
+          transactions={home.transactions}
+          onClose={() => home.setCardView('closed')}
+          onCreate={() => home.setCardView('creating')}
+          onRevealed={() => home.setCardView('home')}
+          onTapToPay={home.startTapToPay}
         />
+      </div>
 
-        {/* "Send or receive" chooser — a partial-height Airbnb sheet over
-            home; picking either drops it as the flow pushes in. */}
-        <SendReceiveSheet
-          open={home.sendReceiveOpen}
-          onDismiss={() => home.setSendReceiveOpen(false)}
-          onSend={home.startSend}
-          onReceive={home.startReceive}
-        />
-      </SheetPresentationProvider>
+      <AddBankSheet
+        m={money}
+        open={addBankOpen}
+        // X walks the brain back to the step the sheet launched from
+        // (add: banks; send: the Add-recipient chooser; receive: the list).
+        onDismiss={() => money.go(money.backFrom.country ?? 'banks', true)}
+      />
+
+      {/* Paste address — the network chooser on the partial sheet (plain
+          slide-up over a dim scrim). */}
+      <PasteAddressSheet
+        m={money}
+        open={pageOpen && money.pickerOpen}
+        onDismiss={() => money.setPickerOpen(false)}
+      />
+
+      {/* "Send or receive" chooser — a partial-height sheet over home;
+          picking either drops it as the flow presents. */}
+      <SendReceiveSheet
+        open={home.sendReceiveOpen}
+        onDismiss={() => home.setSendReceiveOpen(false)}
+        onSend={home.startSend}
+        onReceive={home.startReceive}
+      />
 
       {overlayEl ? createPortal(overlayContent, overlayEl) : overlayContent}
     </div>

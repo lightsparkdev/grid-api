@@ -3,8 +3,8 @@
 import { useEffect, useState, type UIEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { fieldLabel, receiveFields, type MoneySheet } from '@/apps/shared/wallet';
-import { useRegisterSheet } from '@/apps/shared/SheetPresentation';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import { currencyFor, type BankCountry } from '@/data/bankCountries';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
@@ -38,13 +38,6 @@ const stepVariants = {
     reduceMotion ? { opacity: 0 } : { x: back ? '100%' : '-100%', opacity: 0 },
 };
 
-/** Registers the sheet with the presentation stage (must render under the
- *  provider, beside the stage). */
-function SheetPresenter({ on }: { on: boolean }) {
-  useRegisterSheet(on);
-  return null;
-}
-
 interface AddBankSheetProps {
   m: MoneySheet;
   /** Presented while the brain sits on the country / bankForm steps. */
@@ -54,21 +47,17 @@ interface AddBankSheetProps {
 }
 
 /**
- * "Add bank" — an iOS pageSheet over the deposit flow (the auth-sheet
- * mechanic): the nav stack recedes and dims behind a 40px-top-corner card
- * that slides up. Two steps ride the brain: Select country (flat Z-style
- * search pill + square-flag rows, no dividers) → Enter bank details
- * (IMG_0621: label/value rows with Edit links, prefilled samples) with the
- * pinned pink CTA. Saving pops the whole sheet to reveal the new bank row.
+ * "Add bank" — a full-screen SLIDE-UP over the flow (no iOS sheet stacking in
+ * this app: the flow beneath sits still behind a dim scrim). Two steps ride
+ * the brain: Select country (search pill + circular-flag rows) → Enter bank
+ * details (label/value rows with Edit links, prefilled samples) with the
+ * pinned CTA. Saving drops the whole screen to reveal the new bank row.
  */
 export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
   const reduceMotion = useReducedMotion();
   const step: 'country' | 'bankForm' | 'fundingDetails' =
     m.step === 'bankForm' ? 'bankForm' : m.step === 'fundingDetails' ? 'fundingDetails' : 'country';
   const navDir: NavDir = { back: m.back, reduceMotion: !!reduceMotion };
-
-  // Top corners match the auth pageSheet (Aurora's 40, squircle-scaled).
-  const sheetClip = useSquircleClip<HTMLDivElement>({ figmaRadii: [40, 40, 0, 0] });
 
   // The funding step titles itself "Receive from {country}" (displayTitle).
   const title =
@@ -93,9 +82,7 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
 
   return (
     <>
-      <SheetPresenter on={open} />
-
-      {/* Presentation scrim over the receded nav stack (the shared token). */}
+      {/* Dim over the flow beneath while this screen is up. */}
       <motion.div
         className={styles.scrim}
         aria-hidden
@@ -120,7 +107,7 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
         style={{ pointerEvents: open ? 'auto' : 'none' }}
         aria-hidden={!open}
       >
-        <div ref={sheetClip.ref} style={sheetClip.style} className={styles.sheet}>
+        <div className={styles.sheet}>
           {/* On the country step the pinned SEARCH is the bottom of the header
               chrome — the hairline rides it instead (see .searchWrap). */}
           <header
@@ -200,18 +187,11 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
                         title scrolls away it pins under the bar and BECOMES the
                         header's bottom edge (hairline included). */}
                     <div className={styles.searchWrap} data-bordered={scrolled || undefined}>
-                      <div className={styles.searchPill}>
-                        <IconMagnifyingGlass size={20} className={styles.searchIcon} aria-hidden />
-                        <input
-                          className={styles.searchInput}
-                          type="text"
-                          inputMode="search"
-                          placeholder="Search country or currency"
-                          value={m.countryQuery}
-                          onChange={(e) => m.setCountryQuery(e.target.value)}
-                          aria-label="Search countries"
-                        />
-                      </div>
+                      <SearchField
+                        value={m.countryQuery}
+                        onChange={m.setCountryQuery}
+                        placeholder="Search country or currency"
+                      />
                     </div>
                     {m.countryQ ? (
                       <>
@@ -249,9 +229,9 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
                 >
                   <div className={styles.scroll} onScroll={handleScroll}>
                     <h1 className={styles.title}>{m.titles.bankForm}</h1>
-                    {/* IMG_0621 — label over prefilled value, hairlines between
-                        rows, underlined Edit links (decorative; the demo's
-                        sample values are the point). */}
+                    {/* Label over prefilled value, hairlines running to the
+                        right edge, tiny grey Edit pills (IMG_0681's voice —
+                        decorative; the demo's sample values are the point). */}
                     <div className={styles.fields}>
                       <FieldRow label="Country" value={m.pickedCountry.name} />
                       <FieldRow label="Account holder" value={m.formBeneficiary} editable />
@@ -322,6 +302,45 @@ export function AddBankSheet({ m, open, onDismiss }: AddBankSheetProps) {
         </div>
       </motion.div>
     </>
+  );
+}
+
+/** Country search — PlainInput's rounded-rect voice (r8 squircle, grey at
+ *  rest, white + 2px black halo focused) with a leading magnifier glyph. */
+function SearchField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (raw: string) => void;
+  placeholder: string;
+}) {
+  const clip = useSquircleClip<HTMLDivElement>({ figmaRadii: 8 });
+  const [focused, setFocused] = useState(false);
+  return (
+    <div className={styles.searchShell} data-focus={focused || undefined}>
+      <div ref={clip.ref} style={clip.style} className={styles.searchPill}>
+        <IconMagnifyingGlass size={20} className={styles.searchIcon} aria-hidden />
+        <input
+          className={styles.searchInput}
+          type="text"
+          inputMode="search"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          aria-label="Search countries"
+        />
+      </div>
+      <SquircleFocusHalo
+        path={clip.path}
+        width={clip.width}
+        height={clip.height}
+        className={styles.searchHalo}
+      />
+    </div>
   );
 }
 

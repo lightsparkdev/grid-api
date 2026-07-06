@@ -10,7 +10,7 @@ import { GlassNotification } from '@/apps/shared/GlassNotification';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import { formatUsPhone } from '@/lib/phoneFormat';
+import { formatUsPhone, maskUsPhone } from '@/lib/phoneFormat';
 import { PlainInput } from './blocks/PlainInput';
 import { stashAuthValue, takeAuthValue } from './authValue';
 import {
@@ -42,6 +42,14 @@ const ROW_LABELS: Partial<Record<AuthMethod, string>> = {
 
 const CODE_LENGTH = 6;
 const DEMO_CODE = '123456';
+
+/** "demo@lightspark.com" → "d•••o@lightspark.com" — real bullets (U+2022),
+ *  matching the card's mask voice. */
+function maskEmail(email: string): string {
+  const [user, domain] = email.split('@');
+  if (!domain || user.length < 2) return email;
+  return `${user[0]}\u2022\u2022\u2022${user[user.length - 1]}@${domain}`;
+}
 const DEMO_EMAIL = 'demo@lightspark.com';
 const DEMO_PHONE = '(415) 555-0132';
 /** Focusing the empty field "autofills" the demo value after a beat — the
@@ -69,9 +77,10 @@ const PRESS = motionTransition([0.22, 1, 0.36, 1], 0.28);
 const ROW_HIDDEN = { height: 0, marginBottom: 0, opacity: 0, filter: 'blur(6px)' };
 const ROW_SHOWN = { height: 50, marginBottom: 12, opacity: 1, filter: 'blur(0px)' };
 const FORM_HIDDEN = { height: 0, marginBottom: 0, opacity: 0, filter: 'blur(6px)' };
-const FORM_SHOWN = { height: 118, marginBottom: 4, opacity: 1, filter: 'blur(0px)' };
+// 10 + 10 around the "or" row — symmetric air above and below the divider.
+const FORM_SHOWN = { height: 118, marginBottom: 10, opacity: 1, filter: 'blur(0px)' };
 const OR_HIDDEN = { height: 0, marginBottom: 0, opacity: 0, filter: 'blur(6px)' };
-const OR_SHOWN = { height: 20, marginBottom: 16, opacity: 1, filter: 'blur(0px)' };
+const OR_SHOWN = { height: 20, marginBottom: 10, opacity: 1, filter: 'blur(0px)' };
 
 // Dismiss: content blur-fades out; the "Signing you in…" beat fades in.
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.5);
@@ -407,10 +416,13 @@ export function OndemandAuthScreen({
       : email.includes('@')
         ? email.trim()
         : DEMO_EMAIL;
+  // Bullet-masked (•) — the card mask's voice on the recipient.
+  const maskedRecipient =
+    method === 'phone' ? maskUsPhone(codeRecipient) : maskEmail(codeRecipient);
   const codeTitle =
     method === 'phone'
-      ? `Enter the ${CODE_LENGTH}-digit code sent via SMS at ${codeRecipient}.`
-      : `Enter the ${CODE_LENGTH}-digit code sent to ${codeRecipient}.`;
+      ? `Enter the ${CODE_LENGTH}-digit code sent via SMS at ${maskedRecipient}.`
+      : `Enter the ${CODE_LENGTH}-digit code sent to ${maskedRecipient}.`;
   const codeChangeLabel =
     method === 'phone' ? 'Changed your mobile number?' : 'Changed your email address?';
 

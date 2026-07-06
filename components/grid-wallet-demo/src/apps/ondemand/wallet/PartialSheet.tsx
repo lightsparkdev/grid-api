@@ -2,43 +2,32 @@
 
 import type { ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { useRegisterSheet } from '@/apps/shared/SheetPresentation';
-import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
-import { IconCrossMedium } from '../icons';
 import { ONDEMAND_SHEET_DURATION } from '../config';
 import styles from './PartialSheet.module.scss';
 
 const SHEET_TRANSITION = motionTransition(easeOutSnappy, ONDEMAND_SHEET_DURATION);
 
-/** Registers with the presentation stage so the nav stack scales down. */
-function SheetPresenter({ on }: { on: boolean }) {
-  useRegisterSheet(on);
-  return null;
-}
-
 interface PartialSheetProps {
   open: boolean;
   onDismiss: () => void;
-  /** iOS stack effect — scale the nav stack down behind the sheet (the
-   *  pageSheet mechanic at partial height). Dim-only without it. */
-  recede?: boolean;
+  /** Centered header title — Uber's sheet grammar (IMG_0678): title bar with a
+      hairline below it, no close button (the scrim dismisses). */
+  title: string;
   children: ReactNode;
 }
 
 /**
- * The Airbnb partial-height bottom sheet (IMG_0612/0626): a flat card rising
- * from the bottom edge with the app's standard 40px top squircle (the auth /
- * Add-bank sheet corners), a floating X — no header bar, no divider — and
- * content laid out by the caller (typically a centered title + subhead).
+ * Partial-height bottom sheet, Uber-style (IMG_0678): flat card rising from
+ * the bottom edge over a dim scrim, SQUARE top corners, a centered title bar
+ * with a bottom hairline, no X. NO iOS stack recede: this app presents with
+ * plain slide-ups and pushes only.
  */
-export function PartialSheet({ open, onDismiss, recede = false, children }: PartialSheetProps) {
+export function PartialSheet({ open, onDismiss, title, children }: PartialSheetProps) {
   const reduceMotion = useReducedMotion();
-  const clip = useSquircleClip<HTMLDivElement>({ figmaRadii: [40, 40, 0, 0] });
 
   return (
     <>
-      {recede && <SheetPresenter on={open} />}
       <motion.div
         className={styles.scrim}
         aria-hidden
@@ -62,10 +51,8 @@ export function PartialSheet({ open, onDismiss, recede = false, children }: Part
         style={{ pointerEvents: open ? 'auto' : 'none' }}
         aria-hidden={!open}
       >
-        <div ref={clip.ref} style={clip.style} className={styles.sheet}>
-          <button type="button" className={styles.closeBtn} aria-label="Close" onClick={onDismiss}>
-            <IconCrossMedium size={24} />
-          </button>
+        <div className={styles.sheet}>
+          <h2 className={styles.header}>{title}</h2>
           {children}
         </div>
       </motion.div>

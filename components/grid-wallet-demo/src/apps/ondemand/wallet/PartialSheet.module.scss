@@ -1,5 +1,5 @@
-/* Airbnb partial-height bottom sheet (IMG_0612/0626): flat card, the app's
-   standard 40px top squircle, floating X, no header bar. */
+/* Uber partial-height bottom sheet (IMG_0678): flat card, SQUARE top corners,
+   centered title bar with a bottom hairline, no X. */
 
 .scrim {
   position: absolute;
@@ -25,29 +25,19 @@
   flex-direction: column;
   background: var(--od-sheet-bg);
   color: var(--app-text-primary);
-  /* Floating X zone up top; home-indicator clearance below. */
-  padding: 24px 0 40px;
+  /* Home-indicator clearance below; the header owns the top spacing. */
+  padding: 0 0 40px;
 }
 
-.closeBtn {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+/* Centered title bar — the only chrome; hairline below, content follows. */
+.header {
+  margin: 0;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--od-hairline);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700; /* bold — the money-flow header voice */
+  letter-spacing: -0.36px;
+  text-align: center;
   color: var(--app-text-primary);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-
-  svg {
-    display: block;
-    flex: none;
-  }
 }

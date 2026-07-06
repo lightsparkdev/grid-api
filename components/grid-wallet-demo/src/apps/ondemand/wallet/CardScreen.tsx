@@ -1,22 +1,23 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import type { CardView, TapPhase, WalletListItemData } from '@/apps/shared/wallet';
 import {
-  IconCreditCard1,
+  IconBanknote1,
+  IconCarFrontView,
   IconCrossMedium,
   IconDotGrid1x3Horizontal,
-  IconGlobe,
   IconLoadingCircle,
   IconNfc1,
   IconWallet1,
 } from '../icons';
 import { ONDEMAND_SHEET_DURATION } from '../config';
 import { SuperCard } from '../blocks/SuperCard';
+import { AmbientDotGrid } from '../blocks/AmbientDotGrid';
 import { OndemandActivityList } from './ActivityList';
 import styles from './CardScreen.module.scss';
 
@@ -43,22 +44,22 @@ const TAP_LIFT_DELAY = 0.1;
 const TAP_CHROME_OUT = motionTransition(easeOutQuick, 0.12);
 const TAP_CHROME_IN = motionTransition(easeOutQuick, 0.25, { delay: 0.25 });
 
-/** Ready-screen value props — title + description rows in the Super voice. */
+/** Ready-screen value props — the driver's pitch, in the Super voice. */
 const VALUE_PROPS = [
   {
-    Icon: IconCreditCard1,
-    title: 'Draws from your balance',
-    desc: 'Every purchase comes straight out of your Super balance.',
+    Icon: IconBanknote1,
+    title: 'Spend earnings instantly',
+    desc: 'Every fare and delivery is spendable the moment the trip ends. No cash-outs, no waiting.',
   },
   {
-    Icon: IconGlobe,
-    title: 'Accepted everywhere',
-    desc: 'Pay online and in person in 65+ countries, anywhere cards are accepted.',
+    Icon: IconCarFrontView,
+    title: 'Cash back at the pump',
+    desc: 'Up to 5% back on gas and EV charging while you drive with Super.',
   },
   {
     Icon: IconWallet1,
-    title: 'Add to Apple Wallet',
-    desc: 'Tap to pay with your phone, on all your devices.',
+    title: 'Tap to pay anywhere',
+    desc: 'Add it to Apple Wallet and pay with your phone in 65+ countries.',
   },
 ];
 
@@ -106,24 +107,14 @@ export function OndemandCardScreen({
   // (computed before any narrowing so the fallback stays type-legal).
   const tapStatusPhase: Exclude<TapPhase, 'idle'> = tapPhase === 'idle' ? 'hold' : tapPhase;
   const [scrolled, setScrolled] = useState(false);
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const cta = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
   const ctaContinue = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
   const tapBtn = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
 
-  // Every step change is the same two-beat sequence: fade the leaving content
-  // out FIRST (in place — layout intact so the card holds still), THEN move
-  // the card, then the arriving content fades in.
-
-  // Intro → creating: CTA tapped, intro content fades, then the brain flips.
-  const [createLeaving, setCreateLeaving] = useState(false);
-  const onCreateTap = () => {
-    if (createLeaving) return;
-    setCreateLeaving(true);
-    window.setTimeout(onCreate, reduceMotion ? 0 : 300);
-  };
-  useEffect(() => {
-    if (cardView !== 'intro') setCreateLeaving(false);
-  }, [cardView]);
+  // Button-driven step changes run as ONE motion (overriding the SKINS.md
+  // two-beat rule — the aurora/Z/glitch grammar): the leaving content, the
+  // backdrop's gradient fade, and the card's glide all start on the tap.
 
   // Creating → ready: the brain flips on its own timer, so the VISUAL stage
   // lags it — "Creating card" fades out first, then `settled` runs the glide
@@ -139,16 +130,6 @@ export function OndemandCardScreen({
   }, [cardView, reduceMotion]);
   const readyVisual = ready && settled;
 
-  // Ready → home: Continue tapped, ready content fades, then the brain flips.
-  const [leaving, setLeaving] = useState(false);
-  const onContinue = () => {
-    if (leaving) return;
-    setLeaving(true);
-    window.setTimeout(onRevealed, reduceMotion ? 0 : 300);
-  };
-  useEffect(() => {
-    if (cardView !== 'ready') setLeaving(false);
-  }, [cardView]);
   useLayoutEffect(() => {
     if (open) setScrolled(false);
   }, [open]);
@@ -164,6 +145,29 @@ export function OndemandCardScreen({
           exit={reduceMotion ? { opacity: 0 } : { y: '110%' }}
           transition={RISE_TRANSITION}
         >
+          {/* Ambient dot grid backdrop — the pitch + creating beats only: once
+              the card exists, the grid lives IN the card and the page goes
+              clean. While creating, a brightness ring radiates out from the
+              card's center through the field. */}
+          <motion.div
+            className={styles.gridBackdrop}
+            initial={false}
+            animate={{ opacity: intro || creating ? 1 : 0 }}
+            transition={SWAP}
+            aria-hidden
+          >
+            <AmbientDotGrid pulse={creating} pulseOriginRef={cardRef} />
+            {/* The Glitch-style bottom fade, as an --app-bg gradient OVERLAY
+                (not an alpha mask — mask-image can't animate): on the pitch it
+                clears ground for the copy/CTA; it fades out WITH the leaving
+                content so the create tap reads as one motion. */}
+            <motion.div
+              className={styles.gridFade}
+              initial={false}
+              animate={{ opacity: intro ? 1 : 0 }}
+              transition={SWAP}
+            />
+          </motion.div>
           <header
             className={styles.header}
             data-bordered={(created && scrolled) || undefined}
@@ -192,7 +196,7 @@ export function OndemandCardScreen({
                   animate={{ opacity: 1, transition: TAP_CHROME_IN }}
                   exit={{ opacity: 0, transition: TAP_CHROME_OUT }}
                 >
-                  Your card
+                  Super Card
                 </motion.span>
               )}
               {cardView === 'home' && !isTap && (
@@ -224,9 +228,14 @@ export function OndemandCardScreen({
               data-centered={centered || undefined}
               data-lift={creating || (ready && !settled) || undefined}
             >
+              {/* layout is OFF during tap-to-pay (the Aurora fix, f14bbe7e):
+                  the wrap is transform-lifted then, and a re-render mid-lift
+                  (Face ID mounting at the 'auth' flip) makes the layout
+                  measurement see the shifted position and "correct" it — a
+                  visible card jump. The card never changes slots mid-tap. */}
               <motion.div
                 className={styles.railWrap}
-                layout={reduceMotion ? false : 'position'}
+                layout={!reduceMotion && !isTap ? 'position' : false}
                 initial={false}
                 // The 56px tap-to-pay lift (system); the way up starts a hair
                 // late so the chrome fade wins. Layout glides keep SWAP.
@@ -236,7 +245,7 @@ export function OndemandCardScreen({
                   layout: SWAP,
                 }}
               >
-                <div className={styles.cardWrap}>
+                <div className={styles.cardWrap} ref={cardRef}>
                   {/* On the card home the card scales to full width minus the
                       gutters — a transform, so the same element rides the
                       glide with no re-layout of the scaled face. */}
@@ -245,7 +254,7 @@ export function OndemandCardScreen({
                     animate={{ scale: centered ? 1 : HOME_CARD_SCALE }}
                     transition={SWAP}
                   >
-                    <SuperCard width={CARD_W} showNumber={created} />
+                    <SuperCard width={CARD_W} showNumber={created} dotGrid={created} />
                   </motion.div>
                 </div>
 
@@ -290,34 +299,33 @@ export function OndemandCardScreen({
 
             <AnimatePresence initial={false} mode="popLayout">
               {intro ? (
-                // createLeaving: fade IN PLACE (layout intact — see Continue).
+                // Exits (popLayout fade) WHILE the card glides — one motion.
                 <motion.div
                   key="pitch"
                   className={styles.pitch}
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: createLeaving ? 0 : 1 }}
+                  animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={SWAP}
                 >
-                  <h1 className={styles.pitchTitle}>Spend your earnings anywhere</h1>
+                  <h1 className={styles.pitchTitle}>Your earnings, on a card</h1>
                   <p className={styles.pitchSub}>
-                    Turn your earnings into everyday spending. Your card draws
-                    straight from your Super balance, online and in person.
+                    Every trip you finish is already spendable. No payout
+                    schedule, no cash-out fees. Finish a ride, buy the coffee.
                   </p>
                 </motion.div>
               ) : readyVisual ? (
-                // Leaving (Continue tapped): fade IN PLACE — the block keeps
-                // its layout so the card doesn't recenter until the glide.
+                // Continue: exits (popLayout fade) as the card glides up.
                 <motion.div
                   key="ready"
                   className={styles.pitch}
                   data-ready
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: leaving ? 0 : 1 }}
+                  animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={SWAP}
                 >
-                  <h1 className={styles.pitchTitle}>Your card is ready</h1>
+                  <h1 className={styles.pitchTitle}>Ready to roll</h1>
                   <div className={styles.valueProps}>
                     {VALUE_PROPS.map(({ Icon, title, desc }) => (
                       <div key={title} className={styles.valueProp}>
@@ -333,14 +341,22 @@ export function OndemandCardScreen({
                   </div>
                 </motion.div>
               ) : cardView !== 'home' ? null : (
+                // The popLayout child must be MARGIN-FREE: on exit it gets
+                // position:absolute at its measured offset, and any margins
+                // apply a second time (the content jumped 24px left when the
+                // flow re-ran). The gutter claw-back lives on the inner
+                // scroller instead.
                 <motion.div
                   key="home"
-                  className={styles.homeBody}
+                  className={styles.homeSlot}
                   initial={false}
                   exit={{ opacity: 0 }}
                   transition={SWAP}
-                  onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 2)}
                 >
+                  <div
+                    className={styles.homeBody}
+                    onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 2)}
+                  >
                   {/* Lift layer: rides up 56px with the card while tap-to-pay
                       runs (system choreography). The home content blur-fades
                       IN PLACE (no unmount — the post-Continue stagger below
@@ -412,6 +428,7 @@ export function OndemandCardScreen({
                       )}
                     </AnimatePresence>
                   </motion.div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -428,7 +445,7 @@ export function OndemandCardScreen({
                 key="cta-create"
                 className={styles.ctaWrap}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: createLeaving ? 0 : 1 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={SWAP}
               >
@@ -437,7 +454,7 @@ export function OndemandCardScreen({
                   ref={cta.ref}
                   style={cta.style}
                   className={styles.cta}
-                  onClick={onCreateTap}
+                  onClick={onCreate}
                 >
                   Get your free card
                 </button>
@@ -453,7 +470,7 @@ export function OndemandCardScreen({
                 className={styles.ctaWrap}
                 data-solo
                 initial={{ opacity: 0 }}
-                animate={{ opacity: leaving ? 0 : 1 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={SWAP}
               >
@@ -462,7 +479,7 @@ export function OndemandCardScreen({
                   ref={ctaContinue.ref}
                   style={ctaContinue.style}
                   className={styles.cta}
-                  onClick={onContinue}
+                  onClick={onRevealed}
                 >
                   Continue
                 </button>

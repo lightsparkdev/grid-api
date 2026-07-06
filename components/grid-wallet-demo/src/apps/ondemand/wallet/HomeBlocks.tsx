@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef, useState, type UIEvent } from 'react';
 import { motion } from 'motion/react';
 import NumericText from '@/components/NumericText';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
@@ -10,8 +9,8 @@ import { OndemandActivityList } from './ActivityList';
 import styles from './HomeBlocks.module.scss';
 
 /** Action tile (Figma 2636:17743/17785) — grey r8 squircle, 3D graphic,
- *  11px label. Big tiles (h104) label left; small tiles (h96) label centered
- *  with the graphic floating above. No onClick = decorative. */
+ *  12px semibold label. Big tiles (h104) label left; small tiles (h96) label
+ *  centered with the graphic floating above. No onClick = decorative. */
 function ActionTile({
   label,
   art,
@@ -24,10 +23,11 @@ function ActionTile({
   onClick?: () => void;
 }) {
   const clip = useSquircleClip<HTMLButtonElement>({ figmaRadii: 8 });
+  const tileClass = big ? styles.tileBig : styles.tileSmall;
   return (
     <button
       type="button"
-      className={big ? styles.tileBig : styles.tileSmall}
+      className={onClick ? tileClass : `${tileClass} ${styles.tileInert}`}
       ref={clip.ref}
       style={clip.style}
       onClick={onClick}
@@ -58,17 +58,11 @@ export interface OndemandHomeContentProps {
   onWithdraw?: () => void;
   /** Send → the Send/Receive chooser. */
   onSend?: () => void;
-  /** Pay → the card flow (tap-to-pay lives on the card home). */
-  onPay?: () => void;
   /** Card → the debit-card flow. */
   onCard?: () => void;
   /** Add → the deposit flow. */
   onDeposit?: () => void;
 }
-
-/** Scroll distance (px) over which the large title migrates into the header
- *  bar — matched to its translate so it tracks the content 1:1, iOS-style. */
-const TITLE_COLLAPSE_RANGE = 42;
 
 /** The ondemand Wallet home content (Figma 2636:17730) — large title, total
  *  balance + today chip, 3D action tiles, activity. Purely presentational and
@@ -83,33 +77,23 @@ export function OndemandHomeContent({
   animatedBalance = false,
   onWithdraw,
   onSend,
-  onPay,
   onCard,
   onDeposit,
 }: OndemandHomeContentProps) {
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
 
-  // Large-title collapse: scroll drives a CSS var directly (no re-render per
-  // frame); React state only flips at the fully-collapsed edge for the hairline.
-  const titleLayerRef = useRef<HTMLDivElement>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
-    const p = Math.min(1, Math.max(0, e.currentTarget.scrollTop / TITLE_COLLAPSE_RANGE));
-    titleLayerRef.current?.style.setProperty('--collapse', p.toFixed(4));
-    setCollapsed(p >= 1);
-  };
-
   return (
     <div className={styles.root}>
-      <header className={styles.headerBar} data-collapsed={collapsed || undefined} />
-      <div className={styles.titleLayer} ref={titleLayerRef}>
+      {/* Static opaque title strip — no collapse animation, no hairline;
+          content just scrolls under it. */}
+      <header className={styles.headerBar}>
         <motion.h1 {...enter(0)} className={styles.title}>
           Wallet
         </motion.h1>
-      </div>
+      </header>
 
-      <div className={styles.body} onScroll={handleScroll}>
+      <div className={styles.body}>
         <motion.div {...enter(1)} className={styles.balanceBlock}>
           <div className={styles.balanceRow}>
             <span className={styles.balanceLabel}>Total balance</span>
@@ -141,10 +125,10 @@ export function OndemandHomeContent({
         </motion.div>
 
         <motion.div {...enter(3)} className={styles.tileRowSmall}>
-          <ActionTile label="Pay" art="/assets/ondemand/tile-pay.svg" onClick={onPay} />
+          <ActionTile label="Add" art="/assets/ondemand/tile-add.svg" onClick={onDeposit} />
           <ActionTile label="Card" art="/assets/ondemand/tile-card.svg" onClick={onCard} />
           <ActionTile label="Save" art="/assets/ondemand/tile-save.svg" />
-          <ActionTile label="Add" art="/assets/ondemand/tile-add.svg" onClick={onDeposit} />
+          <ActionTile label="Bills" art="/assets/ondemand/tile-bills.svg" />
         </motion.div>
 
         <motion.div {...enter(4)} className={styles.activity}>

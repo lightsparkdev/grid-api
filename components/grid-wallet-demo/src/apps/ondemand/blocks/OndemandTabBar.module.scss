@@ -1,16 +1,33 @@
-/* Decorative tab bar (Figma 2636:17926) — pinned bottom, top hairline,
-   24px sharp icons + 11px labels, Wallet active in primary. */
+/* Decorative tab bar (Figma 2636:17926) — an OVERLAY pinned to the bottom,
+   no border: the top 32px is a gradient fade (content scrolls under it), the
+   buttons sit at y39, and the strip below them covers the home-indicator
+   zone. The fade's stops follow a smoothstep curve (bezier easing) instead of
+   a linear ramp, so the edge has no visible start/stop lines. */
 
 .bar {
-  flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  height: 84px;
-  padding-top: 8px;
+  height: 115px;
+  padding: 39px 0 36px;
   box-sizing: border-box;
-  background: var(--od-tabbar-bg);
-  border-top: 1px solid var(--od-tabbar-border);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--od-tabbar-bg) 0%, transparent) 0,
+    color-mix(in srgb, var(--od-tabbar-bg) 4%, transparent) 4px,
+    color-mix(in srgb, var(--od-tabbar-bg) 16%, transparent) 8px,
+    color-mix(in srgb, var(--od-tabbar-bg) 32%, transparent) 12px,
+    color-mix(in srgb, var(--od-tabbar-bg) 50%, transparent) 16px,
+    color-mix(in srgb, var(--od-tabbar-bg) 68%, transparent) 20px,
+    color-mix(in srgb, var(--od-tabbar-bg) 84%, transparent) 24px,
+    color-mix(in srgb, var(--od-tabbar-bg) 96%, transparent) 28px,
+    var(--od-tabbar-bg) 32px
+  );
 }
 
 .item {
@@ -42,7 +59,6 @@
   font-weight: 500;
   text-align: center;
   color: var(--od-tabbar-fg);
-  font-feature-settings: 'salt' 1;
 }
 
 .itemActive {
