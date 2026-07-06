@@ -279,9 +279,14 @@ export function MarketplaceCardScreen({
               data-centered={centered || undefined}
               data-lift={creating || (ready && !settled) || undefined}
             >
+              {/* layout is OFF during tap-to-pay (the Aurora fix): the wrap is
+                  transform-lifted then, and a re-render mid-lift (Face ID
+                  mounting at the 'auth' flip) makes the layout measurement see
+                  the shifted position and "correct" it — a visible card jump.
+                  The card never changes slots during a tap anyway. */}
               <motion.div
                 className={styles.railWrap}
-                layout={reduceMotion ? false : 'position'}
+                layout={!reduceMotion && !isTap ? 'position' : false}
                 initial={false}
                 // The 56px tap-to-pay lift (system); the way up starts a hair
                 // late so the chrome fade wins. Layout glides keep SWAP.
