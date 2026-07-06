@@ -351,11 +351,11 @@
   }
 }
 
-/* NFC glyph inside the glass CTA label. */
+/* NFC glyph inside the CTA label. */
 .tapLabel {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
 
   svg {
     display: block;

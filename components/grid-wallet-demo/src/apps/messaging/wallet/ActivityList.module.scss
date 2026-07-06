@@ -3,6 +3,12 @@
 .list {
   display: flex;
   flex-direction: column;
+
+  /* No hairline closing the list — the LAST row's content drops it (rows are
+     wrapped in motion divs, so reach through the last wrapper). */
+  > :last-child .content {
+    box-shadow: none;
+  }
 }
 
 /* Figma 2640:19682 — full-bleed row, 24px left gutter on the avatar, the

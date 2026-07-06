@@ -181,6 +181,8 @@
 .actionCircle {
   width: 56px;
   height: 56px;
+  transition: background-color 0.2s ease-out, color 0.2s ease-out,
+    transform 0.16s ease-out;
 }
 
 /* Large Title/Emphasized — 34/41 bold, +0.4 (Figma 2640:19607). */
@@ -232,11 +234,21 @@
 
 /* No-op actions read normal at rest; entering the GRID dims them to signal
    they're unavailable, and leaving restores them (the money sheet's
-   no-op-source pattern). */
+   no-op-source pattern). Dimmed via COLOR (half-alpha fills/labels), not
+   element opacity: animating opacity promotes the column to its own
+   compositor layer, and the label's antialiasing flip reads as a brightness
+   blip on dark backgrounds. */
 .actionsGroup {
   @media (hover: hover) {
     &:hover .action[data-noop] {
-      opacity: 0.5;
+      .actionCircle {
+        background: color-mix(in srgb, var(--ios-fill-secondary) 50%, transparent);
+        color: color-mix(in srgb, var(--ios-label-primary) 50%, transparent);
+      }
+
+      .actionLabel {
+        color: color-mix(in srgb, var(--ios-label-secondary) 50%, transparent);
+      }
     }
   }
 }
@@ -249,7 +261,6 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  transition: opacity 0.2s ease-out;
 }
 
 /* 28px glyph in the 56px circle — compensate the baked stroke-2 (24 grid)
@@ -266,6 +277,7 @@
   color: var(--ios-label-secondary);
   text-align: center;
   white-space: nowrap;
+  transition: color 0.2s ease-out;
 }
 
 /* Fills the rest of the scroll area so the empty state can center its message

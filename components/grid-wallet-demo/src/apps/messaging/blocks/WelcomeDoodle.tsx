@@ -54,8 +54,8 @@ const SWAP_IN_S = 0.4;
 const SWAP_OUT_S = 0.25;
 /** The scale both beats share at the cut instant. */
 const CUT_SCALE = 0.5;
-const LOGO_HOLD_MS = 3000;
-const PARTS_HOLD_MS = 5000;
+const LOGO_HOLD_MS = 1500;
+const PARTS_HOLD_MS = 3000;
 
 /* Exit ACCELERATES into the cut (ease-in — still moving fast at the swap);
    the enter decelerates out of it. */

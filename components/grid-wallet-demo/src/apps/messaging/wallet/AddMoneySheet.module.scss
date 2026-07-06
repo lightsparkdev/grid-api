@@ -217,93 +217,64 @@
   min-height: 0;
 }
 
-/* Figma 109:27766 — address card container: px 16, 4px top matching the source
-   list's rhythm under the toolbar. NO bottom pad: the captionless contacts
-   card below brings its own 16px top inset (.cardWrap), landing the gap
-   between the two cards at exactly 16. */
-.addressWrap {
-  flex-shrink: 0;
-  padding: 4px 16px 0;
-}
-
-.addressCard {
-  padding: 0;
-  overflow: hidden;
-}
-
-/* Height-animated empty ⇄ filled swap (same REGION_* idea as the keypad). */
-.addressRegion {
-  overflow: hidden;
-}
-
-/* Figma 109:27846 (empty, py 20) / 109:29437 (filled, pt 20 pb 16 + p-16 tile). */
-.addressBody {
+/* ── Enter address (crypto) — the Super app's grammar, ChatsApp voice ─────────
+   Field card + help line up top; the CTA is the pinned bottomCtaWrap. */
+.addressEntry {
   display: flex;
-  align-items: flex-start;
-  width: 100%;
-}
-
-.addressLabels {
-  display: flex;
-  flex: 1 1 0;
   flex-direction: column;
-  min-width: 0;
-  padding: 20px 24px;
+  flex-shrink: 0;
+  gap: 10px;
+  padding: 4px 16px 16px;
 }
 
-/* Filled state trims the bottom pad (Figma 109:29422 — pt 20, pb 16). */
-.addressLabelsFilled {
-  padding-bottom: 16px;
-}
-
-/* Footnote/Emphasized 13/590 — tertiary as the empty prompt, primary once the
-   pasted address fills in (long address wraps inside the card). */
-.addressPlaceholder,
-.addressValue {
+/* One-line input in the auth sheet's field voice (the email/phone group):
+   fills/quaternary surface, 12px corners, 48px row, callout type. */
+.addressInput {
+  box-sizing: border-box;
+  width: 100%;
+  height: 48px;
   margin: 0;
-  @include ios.ios-text-footnote;
-  font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
-  word-break: break-word;
-}
-
-.addressPlaceholder {
-  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
-}
-
-.addressValue {
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-quaternary);
   color: var(--ios-label-primary);
+  caret-color: var(--ios-tint);
+  outline: none;
+  @include ios.ios-text-callout;
+
+  &::placeholder {
+    color: var(--ios-label-tertiary);
+  }
 }
 
-.addressSub {
+/* Help line under the field — hint copy, or the detected-network lockup. */
+.addressHelp {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
   margin: 0;
+  padding: 0 8px;
   @include ios.ios-text-footnote;
   color: var(--ios-label-secondary);
 }
 
-/* Graphic container p 16 — the 56px tile hugs the card's top-right. */
-.addressTile {
-  margin: 16px 16px 0 0;
-}
-
-/* Figma 109:27847 — Paste/Continue spans the card: px 16, pb 16. */
-.addressBtnWrap {
-  padding: 0 16px 16px;
-}
-
-/* Medium content-area button (same metrics as the list-section CTA). */
-.addressBtn {
-  padding: 7px 14px;
-  @include ios.ios-text-subheadline;
+.addressNet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ios-label-primary);
   font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
 }
 
-/* Solana token chip (own rounded-square background baked into the asset). */
-.tokenIcon {
+.addressNetLogo {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round;
 }
 
 .tokenIconSm {

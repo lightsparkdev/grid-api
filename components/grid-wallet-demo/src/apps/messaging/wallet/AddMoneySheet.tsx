@@ -252,8 +252,6 @@ const REGION_EXIT = {
     filter: motionTransition(easeOutSnappy, 0.2),
   },
 };
-const REGION_HIDDEN = { height: 0, opacity: 0, filter: 'blur(6px)' };
-
 /** NumericText needs vertical blur room, but the iOS default (0.35em) inflates
  *  the line box; the wallet doesn't clip, so a slim pad keeps layout tight. */
 const NUMERIC_PAD = { padding: '0.08em 0' };
@@ -379,6 +377,10 @@ export function AddMoneySheet({
     shareFundingAndReceive,
     dismiss,
   } = m;
+
+  // Free-typing in the address field (demo: only Paste actually fills a
+  // usable address — typing never validates, matching the Super app).
+  const [typedAddress, setTypedAddress] = useState('');
 
   // Shake the amount on an invalid attempt — the hook bumps shakeNonce.
   useEffect(() => {
@@ -1228,92 +1230,42 @@ export function AddMoneySheet({
                 transition={STEP_TRANSITION}
               >
                 <div className={styles.recipientWrap}>
-                  <div className={styles.addressWrap}>
-                    {/* Figma 109:27766 (empty) / 109:29332 (pasted) — the address
-                        entry card. Paste fills it with the demo Solana address;
-                        the empty ⇄ filled swap runs through real height (the
-                        keypad REGION_* pattern) so the card grows, not pops. */}
-                    <div className={clsx(styles.card, styles.addressCard)}>
-                      <AnimatePresence initial={false}>
-                        {pasted ? (
-                          <motion.div
-                            key="filled"
-                            className={styles.addressRegion}
-                            initial={reduceMotion ? false : REGION_HIDDEN}
-                            animate={REGION_ENTER}
-                            exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
-                          >
-                            <div className={styles.addressBody}>
-                              <div
-                                className={clsx(styles.addressLabels, styles.addressLabelsFilled)}
-                              >
-                                <p className={styles.addressValue}>{pastedAddress}</p>
-                                <p className={styles.addressSub}>{pickedNetwork?.name ?? ''}</p>
-                              </div>
-                              <span className={clsx(styles.tile, styles.addressTile)} aria-hidden>
-                                <img
-                                  className={styles.tokenIcon}
-                                  src={pickedNetwork?.logo ?? DEFAULT_SEND_NETWORK.logo}
-                                  alt=""
-                                  draggable={false}
-                                />
-                              </span>
-                            </div>
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="empty"
-                            className={styles.addressRegion}
-                            initial={reduceMotion ? false : REGION_HIDDEN}
-                            animate={REGION_ENTER}
-                            exit={reduceMotion ? { height: 0, opacity: 0 } : REGION_EXIT}
-                          >
-                            <div className={styles.addressBody}>
-                              <div className={styles.addressLabels}>
-                                <p className={styles.addressPlaceholder}>Enter any address</p>
-                                <p className={styles.addressSub}>
-                                  Spark, Solana, Base, Ethereum — anything
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                      {/* ONE persistent button: Paste fills, then it goes
-                          prominent and morphs into Continue (Figma 109:29338). */}
-                      <div className={styles.addressBtnWrap}>
-                        <ContentAreaButton
-                          className={styles.addressBtn}
-                          variant={pasted ? 'filled' : 'secondary'}
-                          onClick={() => {
-                            if (saving) return;
-                            // Paste fills a demo address; the prominent state then
-                            // saves it (send → recipient list) or carries it to the
-                            // amount step (withdraw → one-off wallet).
-                            if (pasted) {
-                              if (isSend) addCryptoRecipient();
-                              else useCryptoWithdraw();
-                            } else {
-                              setPickerOpen(true);
-                            }
-                          }}
-                        >
-                          {saving ? (
-                            <span className={styles.spinner} aria-label="Saving">
-                              <IconLoadingCircle size={20} />
-                            </span>
-                          ) : (
-                            <TextMorph
-                              as="span"
-                              duration={MORPH_MS}
-                              ease={cubicBezierCss(easeOutSwift)}
-                            >
-                              {pasted ? (isSend ? 'Add recipient' : 'Continue') : 'Paste'}
-                            </TextMorph>
-                          )}
-                        </ContentAreaButton>
-                      </div>
-                    </div>
+                  {/* Enter address — the Super app's grammar in the ChatsApp
+                      voice: ONE field for both states (Paste fills it), a help
+                      line that flips to the detected-network lockup, and the
+                      CTA pinned to the sheet bottom. */}
+                  <div className={styles.addressEntry}>
+                    <input
+                      className={styles.addressInput}
+                      type="text"
+                      value={pasted ? truncateAddress(pastedAddress) : typedAddress}
+                      onChange={(e) => {
+                        if (!pasted) setTypedAddress(e.target.value);
+                      }}
+                      readOnly={pasted}
+                      placeholder="Enter any address"
+                      aria-label="Wallet address"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                    />
+                    {pasted && pickedNetwork ? (
+                      <p className={styles.addressHelp}>
+                        <span className={styles.addressNet}>
+                          <img
+                            className={styles.addressNetLogo}
+                            src={pickedNetwork.logo}
+                            alt=""
+                            draggable={false}
+                          />
+                          {pickedNetwork.name} wallet
+                        </span>
+                      </p>
+                    ) : (
+                      <p className={styles.addressHelp}>
+                        Spark, Solana, Base, Ethereum — anything
+                      </p>
+                    )}
                   </div>
 
                   {/* The session address book (withdraw only — send's list is
@@ -1357,6 +1309,38 @@ export function AddMoneySheet({
                       </div>
                     </div>
                   )}
+                </div>
+                {/* CTA pinned to the sheet bottom (the bank-form treatment):
+                    Paste opens the network picker, then morphs into the save. */}
+                <div className={styles.bottomCtaWrap}>
+                  <GlassCta
+                    onClick={() => {
+                      if (saving) return;
+                      // Paste fills a demo address; the prominent state then
+                      // saves it (send → recipient list) or carries it to the
+                      // amount step (withdraw → one-off wallet).
+                      if (pasted) {
+                        if (isSend) addCryptoRecipient();
+                        else useCryptoWithdraw();
+                      } else {
+                        setPickerOpen(true);
+                      }
+                    }}
+                  >
+                    {saving ? (
+                      <span className={styles.spinner} aria-label="Saving">
+                        <IconLoadingCircle size={20} />
+                      </span>
+                    ) : (
+                      <TextMorph
+                        as="span"
+                        duration={MORPH_MS}
+                        ease={cubicBezierCss(easeOutSwift)}
+                      >
+                        {pasted ? (isSend ? 'Add recipient' : 'Continue') : 'Paste'}
+                      </TextMorph>
+                    )}
+                  </GlassCta>
                 </div>
               </motion.div>
             )}
