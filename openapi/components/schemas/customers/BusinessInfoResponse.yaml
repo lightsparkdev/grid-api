@@ -89,11 +89,13 @@ properties:
       - OPERATING_REVENUE
   sourceOfFundsOtherDescription:
     type: string
+    minLength: 1
     maxLength: 500
     description: Description of the source of funds when OTHER is selected
     example: Proceeds from a legal settlement
   purposeOfAccountOtherDescription:
     type: string
+    minLength: 1
     maxLength: 500
     description: Description of the account purpose when OTHER is selected
     example: Escrow for equipment leases
