@@ -109,11 +109,13 @@
     rail = null;
   }
 
-  // A visible collapse button in the sidebar footer, next to the theme
-  // switcher — the discoverable affordance (the edge rail only reveals on
-  // hover). Same chrome as the switcher: bordered pill, 28px tall, 12px-ish
-  // glyph. Lives inside #sidebar-content so the collapsed state hides it with
-  // the rest of the footer; reopening is the rail's job.
+  // Collapse button in the sidebar footer, next to the theme switcher — the
+  // discoverable affordance (the edge rail only reveals on hover). This
+  // element is only the invisible HIT TARGET: the visible circle + glyph are
+  // pseudo-elements of the server-rendered switcher (see style.css), so the
+  // button shows from first paint instead of popping in when this script
+  // finally runs. Lives inside #sidebar-content so the collapsed state hides
+  // it with the rest of the footer; reopening is the rail's job.
   var footerBtn = null;
 
   function removeFooterBtn() {
