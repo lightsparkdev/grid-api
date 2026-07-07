@@ -57,8 +57,12 @@ targets:
     edition: go.2026-04-15
     package_name: grid
     production_repo: null
-  # csharp (unpublished) is omitted: its Stainless build CI fails on any
-  # freshly generated code, failing the preview check on spec-changing PRs.
+  csharp:
+    edition: csharp.2025-10-08
+    package_name: grid
+    production_repo: null
+    publish:
+      nuget: false
   php:
     edition: php.2025-10-08
     package_name: grid
