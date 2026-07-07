@@ -1,7 +1,5 @@
 'use client';
 
-import { IconPhoneDynamicIsland } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhoneDynamicIsland';
-import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import type { PhoneProps } from '@/components/Phone';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
@@ -114,7 +112,6 @@ export function AppPanel(phone: DemoLogicPhoneSlice) {
 
   return (
     <section className={styles.panel}>
-      <PanelHeader icon={<IconPhoneDynamicIsland size={20} />} title="App" />
       <div className={styles.body}>
         <div className={styles.phoneStage}>
           <DotGridCanvas glassConfig={PHONE_SHELL_GLASS}>

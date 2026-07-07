@@ -7,6 +7,9 @@
   flex-direction: column;
   overflow: hidden;
   background-color: var(--dot-grid-bg);
+  /* The stage color differs per layout (see globals.scss) — glide it across
+     the stacked ⇄ 3-col crossing instead of snapping. */
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 @media (max-width: ($breakpoint-layout-wide - 1px)) {

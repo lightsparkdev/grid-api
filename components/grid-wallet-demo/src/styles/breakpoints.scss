@@ -1,15 +1,17 @@
 /** App + API side-by-side inside the right column. Above this the layout is 3
-    columns: Configure (475) | App (phone) | API (475 default), so the App column
-    is roughly (viewport − 950). The phone needs ~466px (434 shell + 16px inset
-    each side) to render full size, i.e. ~1416px of viewport; below that the App
-    column squeezes the phone tiny. Stack at 1440px so the phone never shrinks
-    before App + API stack vertically (each full-width). Tune to taste. */
-$breakpoint-layout-wide: 1440px;
+    columns: Configure (400) | App | API. The phone needs ~466px (434 shell +
+    16px inset each side) to render full size, and the API column defaults to
+    680 — below ~1600 the 3-col reads cramped (a MacBook Pro 16" at 1728 with
+    the docs sidebar expanded gives the embed 1448, which should stack; with
+    the sidebar collapsed it gets 1680, which fits 3-col comfortably).
+    TS twin: LAYOUT_WIDE_PX in lib/layout.ts — change them together. */
+$breakpoint-layout-wide: 1600px;
 
 /** Configure stacks above app + API (phone). */
 $breakpoint-layout-mobile: 767px;
 
-/** Configure left, app over API on the right (between mobile and wide). */
+/** Configure left, app over API on the right (between mobile and wide).
+    TS twin: CONFIGURE_COL_PX in lib/layout.ts — change them together. */
 $layout-laptop-config-width: 400px;
 $layout-laptop-content-padding: 40px;
 $layout-laptop-api-content-max-width: 680px;
