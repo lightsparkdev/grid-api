@@ -10,3 +10,5 @@ allOf:
         type: string
         enum:
         - UPI
+        - NEFT
+        - RTGS
