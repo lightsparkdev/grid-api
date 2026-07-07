@@ -8586,6 +8586,7 @@ webhooks:
                     state: CLOSED
                     stateReason: ISSUER_REJECTED
                     form: VIRTUAL
+                    panEmbedUrl: null
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     currency: USD
@@ -8607,6 +8608,7 @@ webhooks:
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
+                    panEmbedUrl: null
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     currency: USD
