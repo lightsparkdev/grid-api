@@ -57,15 +57,8 @@ targets:
     edition: go.2026-04-15
     package_name: grid
     production_repo: null
-  csharp:
-    # Skipped: Stainless's csharp build CI fails on any freshly generated code,
-    # failing the SDK preview check on every spec-changing PR. Unpublished target.
-    skip: true
-    edition: csharp.2025-10-08
-    package_name: grid
-    production_repo: null
-    publish:
-      nuget: false
+  # csharp (unpublished) is omitted: its Stainless build CI fails on any
+  # freshly generated code, failing the preview check on spec-changing PRs.
   php:
     edition: php.2025-10-08
     package_name: grid
