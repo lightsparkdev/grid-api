@@ -155,14 +155,14 @@ body {
   --dot-grid-dot-peak: #b8b8b3;
 }
 
-/* 3-col layout (>= $breakpoint-layout-wide): the light stage steps down a hair
-   so it separates from the raised cards flanking it. Declared BEFORE the dark
-   block below so dark mode (same specificity, later in source) still wins.
-   The JS canvas re-reads the token on resize (StageGL's ResizeObserver). */
-@media (min-width: 1440px) {
-  :root {
-    --dot-grid-bg: #f4f4f3;
-  }
+/* 3-col layout: the light stage steps down a hair so it separates from the
+   raised cards flanking it. Keyed to html's data-layout attribute (set
+   pre-paint by layout.tsx, kept live by page.tsx) so the color rides the
+   same clock as the arrangement flip. Light-only — the dark stage is
+   gray-950 in both arrangements. The JS canvas re-reads the token on resize
+   (StageGL's ResizeObserver), which every arrangement flip triggers. */
+html:not([data-theme='dark']):not([data-layout='stacked']) {
+  --dot-grid-bg: #f4f4f3;
 }
 
 :root {

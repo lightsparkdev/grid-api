@@ -1,9 +1,11 @@
 /** App + API side-by-side inside the right column. Above this the layout is 3
-    columns: Configure (400) | App | API (App and API split the rest 50/50 by
-    default). The phone needs ~466px (434 shell + 16px inset each side) to
-    render full size; stack at 1440px so the phone never shrinks before App +
-    API stack vertically (each full-width). Tune to taste. */
-$breakpoint-layout-wide: 1440px;
+    columns: Configure (400) | App | API. The phone needs ~466px (434 shell +
+    16px inset each side) to render full size, and the API column defaults to
+    680 — below ~1600 the 3-col reads cramped (a MacBook Pro 16" at 1728 with
+    the docs sidebar expanded gives the embed 1448, which should stack; with
+    the sidebar collapsed it gets 1680, which fits 3-col comfortably). Keep in
+    sync with the JS listeners in page.tsx and useColumnResize. */
+$breakpoint-layout-wide: 1600px;
 
 /** Configure stacks above app + API (phone). */
 $breakpoint-layout-mobile: 767px;

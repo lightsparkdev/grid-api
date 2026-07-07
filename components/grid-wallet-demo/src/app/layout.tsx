@@ -44,7 +44,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" href="/fonts/SuisseIntl-Book.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/SuisseIntl-Medium.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/SuisseIntlMono-Regular-WebXL.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        {/* Set data-embed and an initial data-theme before paint to avoid a flash. */}
+        {/* Set data-embed, an initial data-theme, and the stacked ⇄ 3-col
+            data-layout before paint to avoid a flash. The layout attribute
+            must land pre-paint (not in a React effect): the SSR HTML paints
+            long before hydration, and the wide default would flash 3-col on
+            stacked viewports while the JS loads. 1600 matches
+            $breakpoint-layout-wide. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{
@@ -58,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
               }
               document.documentElement.setAttribute('data-theme',t);
+              document.documentElement.setAttribute('data-layout',window.innerWidth<1600?'stacked':'wide');
             }catch(e){}})();`,
           }}
         />

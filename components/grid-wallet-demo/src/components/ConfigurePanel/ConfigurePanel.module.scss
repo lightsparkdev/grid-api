@@ -9,19 +9,20 @@
   background: var(--surface-primary);
   border-right: var(--stroke-xs) solid var(--border-primary);
   overflow: hidden;
+  /* The panel wears the chrome gray only side-by-side — glide the color
+     across the stacked ⇄ 3-col crossing instead of snapping. */
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 
   :global([data-theme='dark']) & {
     background: var(--color-gray-950);
   }
 
-  /* Side-by-side, the configure column wears the docs-chrome gray, matching
-     the API panel (both modes — surface-secondary flips with the theme). */
-  @media (min-width: $breakpoint-layout-wide) {
+  /* Side-by-side (keyed to the JS layout attribute so the color rides the
+     same clock as the arrangement flip), the configure column wears the
+     docs-chrome gray, matching the API panel. surface-secondary flips with
+     the theme, and this selector outweighs the dark override above. */
+  :global(html:not([data-layout='stacked'])) & {
     background: var(--surface-secondary);
-
-    :global([data-theme='dark']) & {
-      background: var(--surface-secondary);
-    }
   }
 }
 

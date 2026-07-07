@@ -13,6 +13,8 @@
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   overflow: clip;
+  // The tile surface steps down side-by-side — glide it across the crossing.
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 
   :global([data-theme='dark']) & {
     --tile-bg: var(--color-gray-925);

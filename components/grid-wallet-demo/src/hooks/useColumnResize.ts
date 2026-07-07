@@ -41,33 +41,40 @@ export function useColumnResize() {
   // user snaps it back to the default.
   const userResized = useRef(false);
 
-  // Crossing the stacked ⇄ side-by-side breakpoint must SNAP, not glide: the
-  // column arrives from a full-width stacked layout, and easing that change
-  // reads as a giant shrink sweep. Kill the transition for a beat around the
-  // crossing (direct DOM write — React state could land a frame late, after
-  // the transition has already started). Width changes WITHIN the wide layout
-  // (nav-sync defaults) keep the ease.
-  useEffect(() => {
-    // Matches $breakpoint-layout-wide.
-    const mql = window.matchMedia('(min-width: 1440px)');
-    let timer = 0;
-    const onChange = () => {
-      apiColRef.current?.setAttribute('data-snap', '');
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => apiColRef.current?.removeAttribute('data-snap'), 120);
-    };
-    mql.addEventListener('change', onChange);
-    return () => {
-      mql.removeEventListener('change', onChange);
-      window.clearTimeout(timer);
-    };
-  }, []);
-
   // Embed contract (same shape as theme-sync): the docs page reports its
   // sidebar width on request and whenever it changes (collapse / drag-resize).
+  //
+  // A nav-driven width change EASES (the glide that runs in parallel with the
+  // docs sidebar wipe); everything else — drags, window resizes, and above
+  // all the stacked ⇄ 3-col breakpoint flip — snaps. The ease is opted into
+  // right here, in the same commit as the width change, instead of being an
+  // always-on transition suppressed around crossings: an always-on transition
+  // races the media flip by a task, and for that 1–2 frame window the API
+  // column still holds its full stacked width inside a row layout — crushing
+  // the app column to zero and blinking the phone out (the ghost frame).
+  const easeTimer = useRef(0);
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.data && e.data.type === 'nav-sync' && typeof e.data.sidebarWidth === 'number') {
+        // Ease only when the column is ALREADY laid out at its tracked inline
+        // width — i.e. the row layout is settled. A viewport check
+        // (min-width: 1600px) is not enough: the embed re-sends nav-sync every
+        // frame of the sidebar wipe, and once the growing iframe crosses the
+        // breakpoint those messages race the stacked → wide attribute flip. If
+        // the easing attribute is live at the flip's style recalc, the width
+        // transition starts from the STACKED computed width (100% of the row)
+        // and the API column spends 240ms nearly full-width, crushing the app
+        // column to zero (the phone blinks out). Mid-flip the painted width is
+        // that full row — miles from the inline width — so this guard skips
+        // the ease; once settled they match and nav glides ease as intended.
+        const el = apiColRef.current;
+        const painted = el ? el.getBoundingClientRect().width : NaN;
+        const tracked = el ? parseFloat(el.style.width) : NaN;
+        if (el && Math.abs(painted - tracked) < 2) {
+          el.setAttribute('data-easing', '');
+          window.clearTimeout(easeTimer.current);
+          easeTimer.current = window.setTimeout(() => el.removeAttribute('data-easing'), 300);
+        }
         setDefaultApi(Math.round(e.data.sidebarWidth) + CONFIGURE_WIDTH);
       }
     };
@@ -75,7 +82,10 @@ export function useColumnResize() {
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ type: 'nav-request' }, '*');
     }
-    return () => window.removeEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      window.clearTimeout(easeTimer.current);
+    };
   }, []);
 
   useLayoutEffect(() => {

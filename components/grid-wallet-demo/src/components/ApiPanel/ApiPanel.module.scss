@@ -8,6 +8,8 @@
   flex-direction: column;
   background: var(--surface-primary);
   overflow: hidden;
+  /* Chrome gray only side-by-side — glide the color across the crossing. */
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 
   :global([data-theme='dark']) & {
     background: var(--color-gray-950);
@@ -57,41 +59,40 @@
   }
 }
 
-@media (max-width: ($breakpoint-layout-wide - 1px)) {
-  .panel {
-    overflow: visible;
-  }
-
-  .body {
-    overflow: visible;
-  }
-
-  .headerStacked {
-    border-top: var(--stroke-xs) solid var(--border-primary);
-  }
+/* Keyed to the JS-managed layout attribute (page.tsx), not the media query,
+   so the panel's structure and chrome follow the arrangement flip exactly —
+   including when a docs-sidebar toggle flips it ahead of the media crossing.
+   (The attribute is 'stacked' on laptop AND mobile, matching the old
+   max-width media block.) */
+:global([data-layout='stacked']) .panel {
+  overflow: visible;
 }
 
-@media (min-width: $breakpoint-layout-wide) {
-  .panel {
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    /* Experiment: side-by-side, the calls column wears the docs-chrome gray
-       (both modes — surface-secondary flips with the theme). */
-    background: var(--surface-secondary);
+:global([data-layout='stacked']) .body {
+  overflow: visible;
+}
 
-    :global([data-theme='dark']) & {
-      background: var(--surface-secondary);
-    }
-  }
+:global([data-layout='stacked']) .headerStacked {
+  border-top: var(--stroke-xs) solid var(--border-primary);
+}
 
-  .body {
-    overflow: visible;
-  }
+/* Side-by-side (attribute absent — also the SSR default; the pre-paint
+   layout effect corrects narrow viewports before first paint). */
+:global(html:not([data-layout='stacked'])) .panel {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* The calls column wears the docs-chrome gray. surface-secondary flips
+     with the theme, and this selector outweighs the base dark override. */
+  background: var(--surface-secondary);
+}
 
-  /* Side-by-side: the calls ARE the column — no header bar needed (it only
-     earns its keep stacked, where it's the peek target + new-call signifier).
-     The resize handle draws the full-height column divider. */
-  .headerStacked {
-    display: none;
-  }
+:global(html:not([data-layout='stacked'])) .body {
+  overflow: visible;
+}
+
+/* Side-by-side: the calls ARE the column — no header bar needed (it only
+   earns its keep stacked, where it's the peek target + new-call signifier).
+   The resize handle draws the full-height column divider. */
+:global(html:not([data-layout='stacked'])) .headerStacked {
+  display: none;
 }

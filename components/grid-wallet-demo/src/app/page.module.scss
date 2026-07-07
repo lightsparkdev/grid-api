@@ -47,45 +47,48 @@
   overflow: hidden;
 }
 
-/* Side-by-side: ease programmatic width changes (the default following a docs
-   sidebar collapse/expand) — but never a live drag, which must track 1:1.
-   Scoped to the wide layout so the stacked breakpoints (width: 100%) flip
-   instantly with the media query. */
+/* Side-by-side: nav-driven width changes (the default following a docs
+   sidebar collapse/expand) opt INTO the ease via data-easing — set in the
+   same commit as the width change, never by default. An always-on transition
+   would race the stacked ⇄ 3-col media flip and hold the column at its full
+   stacked width inside the fresh row layout for a frame or two, crushing the
+   app column to zero (the phone blinks out). Drags always track 1:1. */
 @media (min-width: $breakpoint-layout-wide) {
-  .apiCol {
+  .apiCol[data-easing]:not([data-resizing]) {
     transition: width 240ms cubic-bezier(0.25, 0.1, 0.25, 1);
-  }
-
-  .apiCol[data-resizing],
-  .apiCol[data-snap] {
-    transition: none;
   }
 }
 
-/* Laptop: configure left, app over API on the right. Floored at the mobile
-   breakpoint so these rules never leak into the mobile single-column layout. */
-@media (min-width: ($breakpoint-layout-mobile + 1px)) and (max-width: ($breakpoint-layout-wide - 1px)) {
-  .stackCol {
-    flex-direction: column;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
+/* Laptop: configure left, app over API on the right. Keyed to html's
+   data-layout attribute (set pre-paint by the layout.tsx inline script, kept
+   live by page.tsx) instead of a media query, so the arrangement and the
+   attribute-keyed chrome colors flip on one clock. Floored at the mobile
+   breakpoint so these rules never leak into the mobile single-column layout
+   (whose media rules set the same properties at lower specificity). */
+@media (min-width: ($breakpoint-layout-mobile + 1px)) {
+  :global(html[data-layout='stacked']) {
+    .stackCol {
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
 
-  .appCol {
-    flex: none;
-    width: 100% !important;
-    /* Peek the API panel's header PLUS a strip of its body under the phone —
-       enough to read as content waiting below, not just a bar. */
-    min-height: calc(100% - var(--panel-header-height, 52px) - 64px);
-    overflow: visible;
-  }
+    .appCol {
+      flex: none;
+      width: 100% !important;
+      /* Peek the API panel's header PLUS a strip of its body under the phone —
+         enough to read as content waiting below, not just a bar. */
+      min-height: calc(100% - var(--panel-header-height, 52px) - 64px);
+      overflow: visible;
+    }
 
-  .apiCol {
-    flex: none;
-    width: 100% !important;
-    min-height: 0;
-    overflow: visible;
+    .apiCol {
+      flex: none;
+      width: 100% !important;
+      min-height: 0;
+      overflow: visible;
+    }
   }
 }
 
