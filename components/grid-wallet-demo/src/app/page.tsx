@@ -33,7 +33,7 @@ function withViewTransition(update: () => void) {
 
 export default function Page() {
   const logic = useWalletDemoLogic();
-  const { layoutRef, apiColRef, apiWidth, onResizeStart } = useColumnResize();
+  const { layoutRef, apiColRef, apiWidth, resizing, onResizeStart } = useColumnResize();
 
   // Mobile only (<=767): the layout collapses to one view at a time. On desktop
   // this stays 'configure' forever (the switch is gated to the mobile viewport),
@@ -153,6 +153,7 @@ export default function Page() {
         <div
           ref={apiColRef}
           className={styles.apiCol}
+          data-resizing={resizing || undefined}
           style={{ width: apiWidth, flex: '0 0 auto' }}
         >
           <ApiPanel entries={logic.entries} />

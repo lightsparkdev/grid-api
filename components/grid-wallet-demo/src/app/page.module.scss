@@ -47,6 +47,21 @@
   overflow: hidden;
 }
 
+/* Side-by-side: ease programmatic width changes (the default following a docs
+   sidebar collapse/expand) — but never a live drag, which must track 1:1.
+   Scoped to the wide layout so the stacked breakpoints (width: 100%) flip
+   instantly with the media query. */
+@media (min-width: $breakpoint-layout-wide) {
+  .apiCol {
+    transition: width 240ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  .apiCol[data-resizing],
+  .apiCol[data-snap] {
+    transition: none;
+  }
+}
+
 /* Laptop: configure left, app over API on the right. Floored at the mobile
    breakpoint so these rules never leak into the mobile single-column layout. */
 @media (min-width: ($breakpoint-layout-mobile + 1px)) and (max-width: ($breakpoint-layout-wide - 1px)) {

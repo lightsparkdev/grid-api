@@ -29,6 +29,10 @@ export const WalletDemoEmbed = () => {
       return Number.isFinite(v) ? v : (collapsed ? 48 : 280);
     };
     const sendNav = () => {
+      const html = document.documentElement;
+      const animating = html.classList.contains('ls-nav-animating');
+      const collapsed = html.classList.contains('ls-nav-collapsed');
+      if (animating && !collapsed) return;
       const iframe = document.getElementById('wallet-demo-iframe');
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage({ type: 'nav-sync', sidebarWidth: navWidth() }, '*');
