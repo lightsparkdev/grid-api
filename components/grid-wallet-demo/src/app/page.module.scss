@@ -60,7 +60,9 @@
   .appCol {
     flex: none;
     width: 100% !important;
-    min-height: calc(100% - var(--panel-header-height, 52px));
+    /* Peek the API panel's header PLUS a strip of its body under the phone —
+       enough to read as content waiting below, not just a bar. */
+    min-height: calc(100% - var(--panel-header-height, 52px) - 64px);
     overflow: visible;
   }
 

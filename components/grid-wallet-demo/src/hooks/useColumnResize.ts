@@ -4,40 +4,47 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 const CONFIGURE_WIDTH = 475;
 const MIN_APP = 320;
-// Never resize the API column below its default/snap width (= the configure
-// column width); dragging only widens it from there.
+// Never resize the API column below the configure column width; dragging only
+// widens it from there.
 const MIN_API = CONFIGURE_WIDTH;
 const SNAP_THRESHOLD = 28;
 
-/** Default + snap target — matches configure column width. */
+/** SSR/first-paint fallback — replaced by the 50/50 split once the layout
+ *  measures (pre-paint, in the layout effect below). */
 export const API_DEFAULT_WIDTH = CONFIGURE_WIDTH;
 
 function clampApiWidth(width: number, totalMiddle: number): number {
   return Math.max(MIN_API, Math.min(totalMiddle - MIN_APP, width));
 }
 
-function snapApiWidth(width: number, totalMiddle: number): number {
-  const target = clampApiWidth(API_DEFAULT_WIDTH, totalMiddle);
-  if (Math.abs(width - target) <= SNAP_THRESHOLD) return target;
-  return width;
+/** Default + snap target — the app and API panels split the space right of
+ *  the configure column 50/50. */
+function defaultApiWidth(totalMiddle: number): number {
+  return clampApiWidth(Math.round(totalMiddle / 2), totalMiddle);
 }
 
 export function useColumnResize() {
   const layoutRef = useRef<HTMLElement>(null);
   const apiColRef = useRef<HTMLDivElement>(null);
   const [apiWidth, setApiWidth] = useState(API_DEFAULT_WIDTH);
+  // While the column sits at the default split, window resizes keep it AT the
+  // split (both panels breathe together). A custom drag pins it to a px width
+  // until the user snaps it back to the split.
+  const userResized = useRef(false);
 
   useLayoutEffect(() => {
-    const clampToLayout = () => {
+    const fitToLayout = () => {
       const layout = layoutRef.current;
       if (!layout) return;
       const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_WIDTH;
-      setApiWidth((w) => clampApiWidth(w, totalMiddle));
+      setApiWidth((w) =>
+        userResized.current ? clampApiWidth(w, totalMiddle) : defaultApiWidth(totalMiddle),
+      );
     };
 
-    clampToLayout();
-    window.addEventListener('resize', clampToLayout);
-    return () => window.removeEventListener('resize', clampToLayout);
+    fitToLayout();
+    window.addEventListener('resize', fitToLayout);
+    return () => window.removeEventListener('resize', fitToLayout);
   }, []);
 
   const onResizeStart = useCallback((e: React.MouseEvent) => {
@@ -54,7 +61,11 @@ export function useColumnResize() {
       const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_WIDTH;
       const delta = clientX - startX;
       const raw = clampApiWidth(startApiWidth - delta, totalMiddle);
-      setApiWidth(snapApiWidth(raw, totalMiddle));
+      const target = defaultApiWidth(totalMiddle);
+      const snapped = Math.abs(raw - target) <= SNAP_THRESHOLD ? target : raw;
+      // Snapping back to the split resumes 50/50 tracking on window resize.
+      userResized.current = snapped !== target;
+      setApiWidth(snapped);
     };
 
     const onMove = (ev: MouseEvent) => applyWidth(ev.clientX);
