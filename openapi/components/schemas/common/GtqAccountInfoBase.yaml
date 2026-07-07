@@ -16,7 +16,7 @@ properties:
     maxLength: 34
   bankAccountType:
     type: string
-    description: The bank account type
+    description: The type of the bank account
     enum:
     - CHECKING
     - SAVINGS
