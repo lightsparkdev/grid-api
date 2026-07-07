@@ -2,7 +2,9 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
-const CONFIGURE_WIDTH = 475;
+// Matches $layout-laptop-config-width — the compact configure column is the
+// default at every breakpoint.
+const CONFIGURE_WIDTH = 400;
 const MIN_APP = 320;
 // Never resize the API column below the configure column width; dragging only
 // widens it from there.
