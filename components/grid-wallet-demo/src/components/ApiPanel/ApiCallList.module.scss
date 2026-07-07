@@ -13,7 +13,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 48px;
+  /* Sides match the Configure panel's content padding. */
+  padding: 48px $layout-laptop-content-padding;
   padding-top: calc(var(--spacing-md) + 12px);
 
   // Mobile: match the Configure panel's 24px side padding.
