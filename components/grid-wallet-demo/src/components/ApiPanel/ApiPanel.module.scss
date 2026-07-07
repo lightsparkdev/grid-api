@@ -81,12 +81,10 @@
     overflow: visible;
   }
 
+  /* Side-by-side: the calls ARE the column — no header bar needed (it only
+     earns its keep stacked, where it's the peek target + new-call signifier).
+     The resize handle draws the full-height column divider. */
   .headerStacked {
-    border-left: var(--stroke-xs) solid var(--border-primary);
-  }
-
-  /* Side-by-side: calls are always in view, so no "new" signifier. */
-  .newPill {
     display: none;
   }
 }
