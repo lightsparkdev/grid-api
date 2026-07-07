@@ -769,6 +769,9 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       // static dot field can show immediately.
       paintBootFrame();
       ro = new ResizeObserver(() => {
+        // The palette is media-query-dependent (the light stage color changes
+        // at the wide breakpoint), so a resize can change it too.
+        palette = readDotGridPalette(offCtx);
         markResize();
         lastRadius = NaN;
         invalidate(true);

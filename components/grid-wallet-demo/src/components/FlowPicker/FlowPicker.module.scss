@@ -1,17 +1,29 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+@use '../../styles/breakpoints' as *;
 
 .group {
   corner-shape: var(--corner-shape);
+  /* Single source for the tile surface — press states mix from it, and the
+     wide layout steps it down to sit on the chrome-gray panel. */
+  --tile-bg: var(--surface-base);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
-  background: var(--surface-base);
+  background: var(--tile-bg);
   border: var(--stroke-xs) solid var(--border-primary);
   border-radius: var(--corner-radius-md);
   overflow: clip;
 
   :global([data-theme='dark']) & {
-    background: var(--color-gray-925);
+    --tile-bg: var(--color-gray-925);
+  }
+
+  @media (min-width: $breakpoint-layout-wide) {
+    --tile-bg: var(--surface-primary);
+
+    :global([data-theme='dark']) & {
+      --tile-bg: var(--color-gray-950);
+    }
   }
 }
 
@@ -23,14 +35,10 @@
   gap: var(--spacing-sm);
   min-width: 0;
   padding: var(--spacing-md);
-  background: var(--surface-base);
+  background: var(--tile-bg);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
   cursor: default;
   transition: background 100ms ease;
-
-  :global([data-theme='dark']) & {
-    background: var(--color-gray-925);
-  }
 
   /* Left column of each pair. */
   &:nth-child(odd) {
@@ -49,9 +57,9 @@
   // Hover only with a real pointer — avoids the fill sticking after a tap on touch.
   @media (hover: hover) {
     &:hover {
-      // Opaque equivalent of alpha-black-02 on surface-base — transparent tokens
-      // composite differently depending on parent bg (see use case/auth vs flow).
-      background: color-mix(in srgb, var(--surface-base) 98%, black);
+      // Opaque equivalent of alpha-black-02 on the tile surface — transparent
+      // tokens composite differently depending on parent bg.
+      background: color-mix(in srgb, var(--tile-bg) 98%, black);
 
       :global([data-theme='dark']) & {
         background: var(--color-alpha-white-04);
@@ -61,7 +69,7 @@
 
   // Tap/press feedback — works on touch and resets on release (unlike :hover).
   &:active {
-    background: color-mix(in srgb, var(--surface-base) 98%, black);
+    background: color-mix(in srgb, var(--tile-bg) 98%, black);
 
     :global([data-theme='dark']) & {
       background: var(--color-alpha-white-04);

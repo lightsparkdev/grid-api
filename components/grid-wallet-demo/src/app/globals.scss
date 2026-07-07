@@ -147,14 +147,22 @@ body {
    [data-theme] flips, so the whole backdrop changes in lockstep (no stagger).
    `--dot-grid-dot` is the resting dot; `--dot-grid-dot-peak` is the ripple crest. */
 :root {
-  /* Light: halfway between surface-secondary's sunken stage gray (#F0F0EE —
-     too close to the Mintlify chrome) and the panel surface (#F8F8F7), so the
-     stage reads as its own layer without matching either. Dark overrides to
-     gray-925 below — the WebGL dots' original backdrop; surface-secondary's
-     #111111 reads too dark. */
-  --dot-grid-bg: #f5f5f3;
+  /* Light: surface-primary (#F8F8F7) — the stage sits a step ABOVE the
+     chrome-gray side panels (surface-secondary), matching the raised cards.
+     Dark overrides below mirror it: gray-950 stage over #111111 chrome. */
+  --dot-grid-bg: var(--surface-primary);
   --dot-grid-dot: #deded9;
   --dot-grid-dot-peak: #b8b8b3;
+}
+
+/* 3-col layout (>= $breakpoint-layout-wide): the light stage steps down a hair
+   so it separates from the raised cards flanking it. Declared BEFORE the dark
+   block below so dark mode (same specificity, later in source) still wins.
+   The JS canvas re-reads the token on resize (StageGL's ResizeObserver). */
+@media (min-width: 1440px) {
+  :root {
+    --dot-grid-bg: #f4f4f3;
+  }
 }
 
 :root {
@@ -178,9 +186,11 @@ body {
 }
 
 [data-theme='dark'] {
-  --dot-grid-bg: var(--color-gray-925);
-  --dot-grid-dot: #333330;
-  --dot-grid-dot-peak: #4d4d47;
+  /* gray-950 (#1A1A1A) — a step darker than the chrome-gray side panels'
+     raised cards, mirroring the light stage sitting under the panel surface. */
+  --dot-grid-bg: var(--color-gray-950);
+  --dot-grid-dot: #2d2d2a;
+  --dot-grid-dot-peak: #474741;
   --p-bg: #000000;
   --p-screen: #000000;
   --p-surface: #141414;

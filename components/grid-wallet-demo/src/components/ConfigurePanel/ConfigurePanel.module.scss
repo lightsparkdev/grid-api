@@ -13,6 +13,16 @@
   :global([data-theme='dark']) & {
     background: var(--color-gray-950);
   }
+
+  /* Side-by-side, the configure column wears the docs-chrome gray, matching
+     the API panel (both modes — surface-secondary flips with the theme). */
+  @media (min-width: $breakpoint-layout-wide) {
+    background: var(--surface-secondary);
+
+    :global([data-theme='dark']) & {
+      background: var(--surface-secondary);
+    }
+  }
 }
 
 @media (max-width: $breakpoint-layout-mobile) {
@@ -47,10 +57,6 @@
   flex-direction: column;
   gap: var(--spacing-md);
   width: 100%;
-  /* Center in the panel when there's spare room; auto margins collapse to 0 when
-     the content overflows, so it top-aligns and scrolls without clipping (unlike
-     justify-content: center, which would clip the top). */
-  margin-block: auto;
 }
 
 .section {

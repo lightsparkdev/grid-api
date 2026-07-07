@@ -21,6 +21,20 @@ export const WalletDemoEmbed = () => {
     if (window.__wdHideTimer) { clearTimeout(window.__wdHideTimer); window.__wdHideTimer = null; }
     host.style.display = 'block';
 
+    const navWidth = () => {
+      const root = document.documentElement;
+      const collapsed = root.classList.contains('ls-nav-collapsed');
+      const cs = getComputedStyle(root);
+      const v = parseFloat(cs.getPropertyValue(collapsed ? '--ls-nav-rail-w' : '--ls-sidebar-width'));
+      return Number.isFinite(v) ? v : (collapsed ? 48 : 280);
+    };
+    const sendNav = () => {
+      const iframe = document.getElementById('wallet-demo-iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'nav-sync', sidebarWidth: navWidth() }, '*');
+      }
+    };
+
     let raf = 0;
     let last = { left: -1, top: -1, width: -1, height: -1 };
     const sync = () => {
@@ -33,6 +47,7 @@ export const WalletDemoEmbed = () => {
           host.style.width = r.width + 'px';
           host.style.height = r.height + 'px';
           last = { left: r.left, top: r.top, width: r.width, height: r.height };
+          sendNav();
         }
       }
       raf = requestAnimationFrame(sync);
@@ -53,6 +68,10 @@ export const WalletDemoEmbed = () => {
         sendTheme();
         return;
       }
+      if (e.data && e.data.type === 'nav-request') {
+        sendNav();
+        return;
+      }
       if (e.data && e.data.type === 'theme-sync') {
         const wantsDark = e.data.theme === 'dark';
         if (isDark() !== wantsDark) {
@@ -64,12 +83,14 @@ export const WalletDemoEmbed = () => {
     window.addEventListener('message', handleMessage);
 
     const obs = new MutationObserver(() => {
+      sendNav();
       if (ignoreNextMutation) { ignoreNextMutation = false; return; }
       sendTheme();
     });
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
     sendTheme();
+    sendNav();
     requestAnimationFrame(sendTheme);
 
     return () => {

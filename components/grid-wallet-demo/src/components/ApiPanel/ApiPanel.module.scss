@@ -75,6 +75,13 @@
   .panel {
     overflow-y: auto;
     overscroll-behavior: contain;
+    /* Experiment: side-by-side, the calls column wears the docs-chrome gray
+       (both modes — surface-secondary flips with the theme). */
+    background: var(--surface-secondary);
+
+    :global([data-theme='dark']) & {
+      background: var(--surface-secondary);
+    }
   }
 
   .body {

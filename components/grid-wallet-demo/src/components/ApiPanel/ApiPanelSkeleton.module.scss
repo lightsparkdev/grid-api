@@ -1,6 +1,8 @@
 @use '../../styles/breakpoints' as *;
 
-$skeleton-bone-light: var(--color-gray-075);
+/* gray-100 (was 075): at the feed's 0.5 opacity the pills washed out against
+   the chrome-gray panel — one notch darker keeps them faint but legible. */
+$skeleton-bone-light: var(--color-gray-100);
 $skeleton-bone-dark: var(--color-gray-850);
 
 .list {
@@ -56,6 +58,15 @@ $skeleton-bone-dark: var(--color-gray-850);
 
   :global([data-theme='dark']) & {
     background: var(--color-gray-925);
+  }
+
+  /* Match the live cards' softer surface on the chrome-gray panel (wide). */
+  @media (min-width: $breakpoint-layout-wide) {
+    background: var(--surface-primary);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-gray-950);
+    }
   }
 }
 
