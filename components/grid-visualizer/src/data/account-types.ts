@@ -54,7 +54,11 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   INR_ACCOUNT: {
     accountType: 'INR_ACCOUNT',
     fields: [
-      { name: 'vpa', example: 'customer@okbank' },
+      { name: 'vpa', example: 'customer@okbank', description: 'For UPI' },
+      { name: 'accountNumber', example: '000111222333', description: 'For NEFT/RTGS' },
+      { name: 'ifsc', example: 'HDFC0001234', description: 'For NEFT/RTGS' },
+      { name: 'rail', example: 'NEFT', description: 'NEFT or RTGS' },
+      { name: 'bankName', example: 'HDFC Bank', description: 'Optional' },
     ],
     beneficiaryRequired: true,
   },
@@ -328,7 +332,8 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     accountType: 'GTQ_ACCOUNT',
     fields: [
       { name: 'accountNumber', example: '1234567890' },
-      { name: 'phoneNumber', example: '+50212345678' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
+      { name: 'bankName', example: 'Example Bank' },
     ],
     beneficiaryRequired: true,
   },
@@ -345,6 +350,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
       { name: 'accountNumber', example: '1234567890' },
       { name: 'branchCode', example: '12345', description: '5-digit branch code' },
       { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
+      { name: 'bankName', example: 'Example Bank' },
     ],
     beneficiaryRequired: true,
   },

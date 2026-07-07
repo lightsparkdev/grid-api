@@ -70,9 +70,9 @@ export const currencies: FiatCurrency[] = [
     name: 'Indian Rupee',
     countryCode: 'in',
     accountType: 'INR_ACCOUNT',
-    accountLabel: 'UPI',
+    accountLabel: 'UPI / Bank Account',
     instantRails: ['UPI'],
-    allRails: ['UPI'],
+    allRails: ['UPI', 'NEFT', 'RTGS'],
     examplePerson: { fullName: 'Priya Sharma', nationality: 'IN' },
   },
   {

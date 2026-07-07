@@ -116,8 +116,14 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
         "INR_ACCOUNT" -> {
             val info = InrExternalAccountCreateInfo.builder()
                 .accountType(InrExternalAccountCreateInfo.AccountType.INR_ACCOUNT)
-                .vpa(accountInfo.requireText("vpa"))
                 .beneficiary(buildInrBeneficiary(beneficiaryNode))
+                .apply {
+                    accountInfo.optText("vpa")?.let { vpa(it) }
+                    accountInfo.optText("accountNumber")?.let { accountNumber(it) }
+                    accountInfo.optText("ifsc")?.let { ifsc(it) }
+                    accountInfo.optText("rail")?.let { rail(it) }
+                    accountInfo.optText("bankName")?.let { bankName(it) }
+                }
                 .build()
             ExternalAccountCreate.AccountInfo.ofInrAccount(info)
         }
