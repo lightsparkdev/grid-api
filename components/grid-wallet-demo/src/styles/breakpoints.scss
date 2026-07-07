@@ -3,14 +3,15 @@
     16px inset each side) to render full size, and the API column defaults to
     680 — below ~1600 the 3-col reads cramped (a MacBook Pro 16" at 1728 with
     the docs sidebar expanded gives the embed 1448, which should stack; with
-    the sidebar collapsed it gets 1680, which fits 3-col comfortably). Keep in
-    sync with the JS listeners in page.tsx and useColumnResize. */
+    the sidebar collapsed it gets 1680, which fits 3-col comfortably).
+    TS twin: LAYOUT_WIDE_PX in lib/layout.ts — change them together. */
 $breakpoint-layout-wide: 1600px;
 
 /** Configure stacks above app + API (phone). */
 $breakpoint-layout-mobile: 767px;
 
-/** Configure left, app over API on the right (between mobile and wide). */
+/** Configure left, app over API on the right (between mobile and wide).
+    TS twin: CONFIGURE_COL_PX in lib/layout.ts — change them together. */
 $layout-laptop-config-width: 400px;
 $layout-laptop-content-padding: 40px;
 $layout-laptop-api-content-max-width: 680px;

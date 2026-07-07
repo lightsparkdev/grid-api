@@ -45,6 +45,12 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Pre-hydration width: --api-col-default is set before first paint (from
+     the embed's ?nav param, see layout.tsx) so the wide layout boots at the
+     REAL default instead of re-fitting once React measures. The 680px
+     fallback is the standalone default — keep in sync with API_DEFAULT_WIDTH
+     in useColumnResize. React's inline width takes over after hydration. */
+  width: var(--api-col-default, 680px);
 }
 
 /* Side-by-side: nav-driven width changes (the default following a docs

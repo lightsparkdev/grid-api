@@ -11,6 +11,7 @@ import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResize
 import { ThemeSync } from '@/components/ThemeSync';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useWalletDemoLogic } from '@/hooks/useWalletDemoLogic';
+import { LAYOUT_WIDE_PX } from '@/lib/layout';
 import type { ActionId } from '@/data/actions';
 import styles from './page.module.scss';
 
@@ -41,8 +42,7 @@ export default function Page() {
   // would flash the SSR wide default on stacked viewports while JS loads);
   // this listener only keeps it live across resizes.
   useLayoutEffect(() => {
-    // Matches $breakpoint-layout-wide.
-    const mql = window.matchMedia('(max-width: 1599px)');
+    const mql = window.matchMedia(`(max-width: ${LAYOUT_WIDE_PX - 1}px)`);
     const apply = () =>
       document.documentElement.setAttribute('data-layout', mql.matches ? 'stacked' : 'wide');
     apply();
@@ -173,7 +173,10 @@ export default function Page() {
           ref={apiColRef}
           className={styles.apiCol}
           data-resizing={resizing || undefined}
-          style={{ width: apiWidth, flex: '0 0 auto' }}
+          // No inline width until the post-hydration measure — the stylesheet's
+          // var(--api-col-default) (seeded pre-paint from the embed's ?nav
+          // param) styles the column so the first paint is already correct.
+          style={{ width: apiWidth ?? undefined }}
         >
           <ApiPanel entries={logic.entries} />
         </div>

@@ -59,25 +59,23 @@
   }
 }
 
-/* Keyed to the JS-managed layout attribute (page.tsx), not the media query,
-   so the panel's structure and chrome follow the arrangement flip exactly —
-   including when a docs-sidebar toggle flips it ahead of the media crossing.
-   (The attribute is 'stacked' on laptop AND mobile, matching the old
-   max-width media block.) */
-:global([data-layout='stacked']) .panel {
+/* Keyed to html's data-layout attribute (set pre-paint by layout.tsx, kept
+   live by page.tsx) rather than the media query, so the panel's structure
+   and chrome flip on the same clock as the arrangement. The attribute is
+   'stacked' on laptop AND mobile, matching the old max-width media block. */
+:global(html[data-layout='stacked']) .panel {
   overflow: visible;
 }
 
-:global([data-layout='stacked']) .body {
+:global(html[data-layout='stacked']) .body {
   overflow: visible;
 }
 
-:global([data-layout='stacked']) .headerStacked {
+:global(html[data-layout='stacked']) .headerStacked {
   border-top: var(--stroke-xs) solid var(--border-primary);
 }
 
-/* Side-by-side (attribute absent — also the SSR default; the pre-paint
-   layout effect corrects narrow viewports before first paint). */
+/* Side-by-side. */
 :global(html:not([data-layout='stacked'])) .panel {
   overflow-y: auto;
   overscroll-behavior: contain;

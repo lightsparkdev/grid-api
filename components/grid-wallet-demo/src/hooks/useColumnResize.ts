@@ -1,14 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { CONFIGURE_COL_PX } from '@/lib/layout';
 
-// Matches $layout-laptop-config-width — the compact configure column is the
-// default at every breakpoint.
-const CONFIGURE_WIDTH = 400;
 const MIN_APP = 320;
 // Never resize the API column below the configure column width; dragging only
 // widens it from there.
-const MIN_API = CONFIGURE_WIDTH;
+const MIN_API = CONFIGURE_COL_PX;
 // The DEFAULT width + snap target: the docs sidebar plus the configure column —
 // the combined chrome flanking the embedded playground. Standalone (and until
 // the docs parent reports in) this assumes the expanded sidebar: 280px
@@ -19,9 +17,21 @@ const MIN_API = CONFIGURE_WIDTH;
 const DOCS_SIDEBAR_DEFAULT = 280;
 const SNAP_THRESHOLD = 28;
 
-/** SSR/first-paint fallback — replaced by the chrome-width default once the
- *  layout measures (pre-paint, in the layout effect below). */
-export const API_DEFAULT_WIDTH = DOCS_SIDEBAR_DEFAULT + CONFIGURE_WIDTH;
+/** Standalone fallback — the embed overrides it via the ?nav URL param.
+ *  Kept in sync with the --api-col-default fallback in page.module.scss. */
+export const API_DEFAULT_WIDTH = DOCS_SIDEBAR_DEFAULT + CONFIGURE_COL_PX;
+
+/** The embed bakes the live sidebar width into the iframe URL so the very
+ *  first paint uses the real default: the pre-paint script in layout.tsx
+ *  turns it into the --api-col-default CSS var (which styles the column
+ *  until React takes over below), and this seeds the same value into state
+ *  so the JS width agrees with that paint instead of re-fitting to the
+ *  expanded-sidebar assumption a beat later. */
+function initialDefaultApi(): number {
+  if (typeof window === 'undefined') return API_DEFAULT_WIDTH;
+  const nav = parseFloat(new URLSearchParams(window.location.search).get('nav') ?? '');
+  return Number.isFinite(nav) && nav >= 0 ? Math.round(nav) + CONFIGURE_COL_PX : API_DEFAULT_WIDTH;
+}
 
 function clampApiWidth(width: number, totalMiddle: number): number {
   return Math.max(MIN_API, Math.min(totalMiddle - MIN_APP, width));
@@ -30,8 +40,12 @@ function clampApiWidth(width: number, totalMiddle: number): number {
 export function useColumnResize() {
   const layoutRef = useRef<HTMLElement>(null);
   const apiColRef = useRef<HTMLDivElement>(null);
-  const [defaultApi, setDefaultApi] = useState(API_DEFAULT_WIDTH);
-  const [apiWidth, setApiWidth] = useState(API_DEFAULT_WIDTH);
+  const [defaultApi, setDefaultApi] = useState(initialDefaultApi);
+  // null until the post-hydration measure: SSR and the hydration render emit
+  // NO inline width, leaving the stylesheet's var(--api-col-default) in
+  // charge — which the pre-paint script already set to the true default. An
+  // inline SSR width would paint the wrong column for the whole JS load.
+  const [apiWidth, setApiWidth] = useState<number | null>(null);
   // True while the user drags the divider — the column's width transition is
   // disabled so the drag tracks the pointer 1:1 (it only eases programmatic
   // changes, e.g. the default following a docs-sidebar collapse).
@@ -45,38 +59,27 @@ export function useColumnResize() {
   // sidebar width on request and whenever it changes (collapse / drag-resize).
   //
   // A nav-driven width change EASES (the glide that runs in parallel with the
-  // docs sidebar wipe); everything else — drags, window resizes, and above
-  // all the stacked ⇄ 3-col breakpoint flip — snaps. The ease is opted into
-  // right here, in the same commit as the width change, instead of being an
-  // always-on transition suppressed around crossings: an always-on transition
-  // races the media flip by a task, and for that 1–2 frame window the API
-  // column still holds its full stacked width inside a row layout — crushing
-  // the app column to zero and blinking the phone out (the ghost frame).
+  // docs sidebar wipe); everything else — drags, window resizes, breakpoint
+  // flips — snaps. The ease is opted into per-message via data-easing rather
+  // than an always-on transition, and only when the column is already painted
+  // at its tracked inline width (i.e. the row layout is settled). That guard
+  // is load-bearing: the embed re-sends nav-sync every frame of the sidebar
+  // wipe, and once the growing iframe crosses the breakpoint those messages
+  // race the stacked → wide flip. If the transition arms during the flip's
+  // style recalc, it starts from the STACKED computed width — 100% of the
+  // row — and the column spends 240ms nearly full-width, crushing the app
+  // column to zero (the phone blinks out).
   const easeTimer = useRef(0);
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
-      if (e.data && e.data.type === 'nav-sync' && typeof e.data.sidebarWidth === 'number') {
-        // Ease only when the column is ALREADY laid out at its tracked inline
-        // width — i.e. the row layout is settled. A viewport check
-        // (min-width: 1600px) is not enough: the embed re-sends nav-sync every
-        // frame of the sidebar wipe, and once the growing iframe crosses the
-        // breakpoint those messages race the stacked → wide attribute flip. If
-        // the easing attribute is live at the flip's style recalc, the width
-        // transition starts from the STACKED computed width (100% of the row)
-        // and the API column spends 240ms nearly full-width, crushing the app
-        // column to zero (the phone blinks out). Mid-flip the painted width is
-        // that full row — miles from the inline width — so this guard skips
-        // the ease; once settled they match and nav glides ease as intended.
-        const el = apiColRef.current;
-        const painted = el ? el.getBoundingClientRect().width : NaN;
-        const tracked = el ? parseFloat(el.style.width) : NaN;
-        if (el && Math.abs(painted - tracked) < 2) {
-          el.setAttribute('data-easing', '');
-          window.clearTimeout(easeTimer.current);
-          easeTimer.current = window.setTimeout(() => el.removeAttribute('data-easing'), 300);
-        }
-        setDefaultApi(Math.round(e.data.sidebarWidth) + CONFIGURE_WIDTH);
+      if (!e.data || e.data.type !== 'nav-sync' || typeof e.data.sidebarWidth !== 'number') return;
+      const el = apiColRef.current;
+      if (el && Math.abs(el.getBoundingClientRect().width - parseFloat(el.style.width)) < 2) {
+        el.setAttribute('data-easing', '');
+        window.clearTimeout(easeTimer.current);
+        easeTimer.current = window.setTimeout(() => el.removeAttribute('data-easing'), 300);
       }
+      setDefaultApi(Math.round(e.data.sidebarWidth) + CONFIGURE_COL_PX);
     };
     window.addEventListener('message', onMessage);
     if (window.parent && window.parent !== window) {
@@ -92,9 +95,9 @@ export function useColumnResize() {
     const fitToLayout = () => {
       const layout = layoutRef.current;
       if (!layout) return;
-      const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_WIDTH;
+      const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_COL_PX;
       setApiWidth((w) =>
-        clampApiWidth(userResized.current ? w : defaultApi, totalMiddle),
+        clampApiWidth(userResized.current && w !== null ? w : defaultApi, totalMiddle),
       );
     };
 
@@ -116,7 +119,7 @@ export function useColumnResize() {
       const applyWidth = (clientX: number) => {
         const layout = layoutRef.current;
         if (!layout) return;
-        const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_WIDTH;
+        const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_COL_PX;
         const delta = clientX - startX;
         const raw = clampApiWidth(startApiWidth - delta, totalMiddle);
         const target = clampApiWidth(defaultApi, totalMiddle);
