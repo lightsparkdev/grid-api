@@ -142,7 +142,6 @@
             "pages": [
               "payouts-and-b2b/depositing-funds/depositing-funds",
               "payouts-and-b2b/payment-flow/send-payment",
-              "payouts-and-b2b/payment-flow/swift-payouts",
               "payouts-and-b2b/payment-flow/list-transactions",
               "payouts-and-b2b/payment-flow/receipts",
               "payouts-and-b2b/payment-flow/reconciliation",
