@@ -17228,7 +17228,7 @@ components:
             - 'null'
           items:
             type: string
-          description: The origins the WebAuthn ceremony may run against, present only when `factor` is `PASSKEY`. The origin the assertion is produced against must be one of these and must be echoed back as `ScaAuthorization.origin`.
+          description: The origins the WebAuthn ceremony may run against. Populated for enrollment and login passkey challenges; the origin the assertion is produced against must be one of these and echoed back as `ScaAuthorization.origin`. Per-transaction passkey challenges omit this (they carry `passkeyAssertionOptions` only) — see `ScaAuthorization.origin` for how to source the origin in that case.
           example:
             - https://app.example.com
     Transaction:
@@ -17511,6 +17511,7 @@ components:
       type: string
       enum:
         - PENDING
+        - PENDING_AUTHORIZATION
         - EXPIRED
         - PROCESSING
         - COMPLETED
@@ -17521,6 +17522,7 @@ components:
         | Status | Description |
         |--------|-------------|
         | `PENDING` | Quote is pending confirmation |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers whose provider requires SCA (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
         | `EXPIRED` | Quote wasn't executed before expiry window |
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | Payout successfully reached the destination |
@@ -17937,7 +17939,7 @@ components:
           type:
             - string
             - 'null'
-          description: The WebAuthn origin the `passkeyAssertion` was produced against (one of the challenge's `passkeyAllowedOrigins`). **Required** alongside `passkeyAssertion`; omit it for the `code` path.
+          description: The WebAuthn origin the `passkeyAssertion` was produced against. **Required** alongside `passkeyAssertion`; omit it for the `code` path. When the challenge lists `passkeyAllowedOrigins` (enrollment / login challenges), it must be one of those. A per-transaction passkey challenge carries `passkeyAssertionOptions` but may omit `passkeyAllowedOrigins`; in that case supply the origin your app invoked the WebAuthn API from, which must match the relying party in `passkeyAssertionOptions`.
           example: https://app.example.com
     TransferOutRequest:
       type: object
@@ -17961,6 +17963,9 @@ components:
           maxLength: 80
           description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
           example: '12345'
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for the Strong Customer Authentication challenge this call issues. Only relevant for customers whose provider requires SCA (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
         scaAuthorization:
           $ref: '#/components/schemas/ScaAuthorization'
           description: 'Optional inline Strong Customer Authentication proof. Only relevant for customers whose provider requires SCA (e.g. EU): supply this to satisfy the challenge in the same call once the customer has the code/assertion. Omit it on the first call to receive the transaction in `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately. Ignored for customers whose provider does not require SCA.'
@@ -18384,6 +18389,9 @@ components:
       type: object
       description: Optional body for executing a quote. Only needed to supply an inline Strong Customer Authentication proof; omit the body entirely for quotes that do not require SCA.
       properties:
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for the Strong Customer Authentication challenge this call issues. Only relevant for customers whose provider requires SCA (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
         scaAuthorization:
           $ref: '#/components/schemas/ScaAuthorization'
           description: 'Optional inline Strong Customer Authentication proof. Only relevant for customers whose provider requires SCA (e.g. EU): supply this to satisfy the challenge in the same call once the customer has the code/assertion. Omit it to receive the quote in `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately. Ignored for customers whose provider does not require SCA.'

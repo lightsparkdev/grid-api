@@ -57,8 +57,11 @@ properties:
     items:
       type: string
     description: >-
-      The origins the WebAuthn ceremony may run against, present only when
-      `factor` is `PASSKEY`. The origin the assertion is produced against must
-      be one of these and must be echoed back as `ScaAuthorization.origin`.
+      The origins the WebAuthn ceremony may run against. Populated for
+      enrollment and login passkey challenges; the origin the assertion is
+      produced against must be one of these and echoed back as
+      `ScaAuthorization.origin`. Per-transaction passkey challenges omit this
+      (they carry `passkeyAssertionOptions` only) — see `ScaAuthorization.origin`
+      for how to source the origin in that case.
     example:
       - https://app.example.com
