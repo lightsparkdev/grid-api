@@ -1717,13 +1717,11 @@ div.callout,
   padding: 0 !important;
   overflow: hidden !important;
   border: 0.5px solid var(--ls-black-10) !important;
-  background-color: var(--ls-white) !important;
 }
 
 html.dark .code-group,
 html.dark [data-testid="code-group-select"] {
   border-color: var(--ls-white-06) !important;
-  background-color: var(--ls-gray-975) !important;
 }
 
 /* Code group inner container - no border radius (exclude interactive tabs/buttons) */
@@ -1736,6 +1734,19 @@ html.dark [data-testid="code-group-select"] {
 .code-group [data-component-part="code-block-root"],
 [data-testid="code-group-select"] [data-component-part="code-block-root"] {
   border-radius: 0 !important;
+}
+
+/* Mintlify rounds the content area via a `rounded-xt!` utility that lives in
+   @layer utilities; layered !important beats our unlayered !important no
+   matter the specificity, so this override must join the same layer. Inside
+   the layer the extra `div` type wins the specificity tie against the
+   utility's (0,2,0) selector */
+@layer utilities {
+  .code-group div[data-component-part="code-block-root"],
+  [data-testid="code-group-select"] div[data-component-part="code-block-root"],
+  div:has(> [data-component-part="code-block-header"]) div[data-component-part="code-block-root"] {
+    border-radius: 0 !important;
+  }
 }
 
 /* Restore radius on interactive tabs and pills inside code groups */
