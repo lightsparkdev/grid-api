@@ -9429,7 +9429,8 @@ components:
         - PENDING
         - APPROVED
         - REJECTED
-      description: The current KYC status of a customer
+        - HOLD
+      description: The current KYC status of a customer. `HOLD` means the customer is placed on hold and may be required to update or provide more information.
       example: APPROVED
     Address:
       type: object
@@ -9500,7 +9501,8 @@ components:
         - PENDING
         - APPROVED
         - REJECTED
-      description: The current KYB status of a business customer
+        - HOLD
+      description: The current KYB status of a business customer. `HOLD` means the customer is placed on hold and may be required to update or provide more information.
       example: APPROVED
     EntityType:
       type: string
@@ -10342,6 +10344,7 @@ components:
         - ACTIVE
         - CLOSED
         - FROZEN
+        - FAILED
       description: |-
         Status of a Grid internal account. The status determines whether the account can send or receive payments.
 
@@ -10349,6 +10352,7 @@ components:
         - `ACTIVE`: The account is ready to send and receive payments.
         - `CLOSED`: The account cannot send or receive payments. A customer can initiate the closing of an internal account, after which the account transitions to this status.
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
+        - `FAILED`: The account could not be provisioned. Grid was unable to create the underlying account, so it cannot send or receive payments and requires remediation.
       example: ACTIVE
     CurrencyAmount:
       type: object
