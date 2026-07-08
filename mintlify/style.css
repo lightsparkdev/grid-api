@@ -4591,24 +4591,31 @@ html.dark
   background-color: var(--ls-gray-050);
 }
 
-/* Tame the NEW switcher back to the old one's look: no system option (light/
-   dark only — the pill shrinks from its 3-up width to the classic 52px), and
-   12px glyphs like the old `lg:size-3` sun/moon instead of the chunkier new
-   icons. Scoped to the sidebar-footer group; the old-markup toggle already
-   looks like this and has no system button. */
+/* The NEW switcher's sun + system glyphs are the same 16-grid / 1.5-stroke
+   family as the old toggle's, but its moon is a stock Lucide icon (24-grid,
+   heavier stroke, fuller crescent) that reads chunkier than everything
+   around it. Swap just that glyph back to the OLD component's crescent:
+   hide the Lucide svg and mask-draw the original path (extracted verbatim
+   into IconMoonCrescent.svg) in its place, riding the button's currentColor
+   so the rest/hover/active tints keep working. Old-markup pages are
+   untouched (no Theme preference group there). */
 #sidebar-content
   [role="group"][aria-label="Theme preference"]
-  button[aria-label="Switch to system theme"] {
+  button[aria-label="Switch to dark theme"]
+  svg {
   display: none;
 }
 
-#sidebar-content > div > [role="group"][aria-label="Theme preference"] {
-  width: 52px; /* the old two-icon pill (lg:w-[3.25rem]) */
-}
-
-#sidebar-content [role="group"][aria-label="Theme preference"] button svg {
-  width: 12px;
+#sidebar-content
+  [role="group"][aria-label="Theme preference"]
+  button[aria-label="Switch to dark theme"]::before {
+  content: "";
+  width: 12px; /* lg:size-3, same as the sun */
   height: 12px;
+  background-color: currentColor;
+  -webkit-mask: url("/images/icons/IconMoonCrescent.svg") center / 12px 12px
+    no-repeat;
+  mask: url("/images/icons/IconMoonCrescent.svg") center / 12px 12px no-repeat;
 }
 
 /* The hit target — invisible; the pseudos above are its rendering. Anchored
