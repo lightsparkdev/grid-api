@@ -8,10 +8,10 @@ parameters:
 get:
   summary: Get a card
   description: >-
-    Retrieve a card by its system-generated id. This is the only endpoint
-    that returns a populated `panEmbedUrl` — a fresh, short-lived signed
-    URL is minted on each call. Fetch the card right before rendering the
-    PAN-reveal iframe.
+    Retrieve a card by its system-generated id. To display the card's full
+    PAN, CVV, and expiry to the cardholder, create a reveal session with
+    `POST /cards/{id}/reveal-session` — the card resource itself never
+    carries the reveal URL.
   operationId: getCardById
   tags:
     - Cards

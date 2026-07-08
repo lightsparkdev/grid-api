@@ -62,24 +62,32 @@ terminal — issue a new one with a fresh `platformCardId` to retry.
 
 ## Revealing the PAN
 
-To show the cardholder their full PAN, CVV, and expiry, fetch the
-single card right before rendering:
+To show the cardholder their full PAN, CVV, and expiry, create a reveal
+session right before rendering:
 
 ```bash
-curl -X GET "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
+curl -X POST "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/reveal-session" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-The response includes a `panEmbedUrl` — a signed URL for the card
-processor's iframe that renders the full credentials directly to the
-cardholder. The full PAN and CVV never cross your servers or Grid's.
+```json
+{
+  "panEmbedUrl": "https://embed.lithic.com/iframe/...?t=...",
+  "expiresAt": "2026-05-08T14:16:00Z"
+}
+```
+
+`panEmbedUrl` is a signed URL for the card processor's iframe that
+renders the full credentials directly to the cardholder. The full PAN
+and CVV never cross your servers or Grid's.
 
 <Note>
-`panEmbedUrl` is populated **only** on `GET /cards/{id}` — it is null
-on list, create, and update responses and in webhook payloads. The URL
-is short-lived (it expires within minutes), so fetch the card each time
-the cardholder asks to reveal their details, immediately before
-rendering the iframe. Don't cache or store the URL.
+The reveal session is the **only** way to obtain a reveal URL — the
+`Card` resource never carries one (not in responses, not in webhook
+payloads). The URL expires at `expiresAt` (within minutes), so create a
+session each time the cardholder asks to reveal their details,
+immediately before rendering the iframe. Never store, cache, or log the
+URL. Every session is audit-logged.
 </Note>
 
 ## Errors to handle

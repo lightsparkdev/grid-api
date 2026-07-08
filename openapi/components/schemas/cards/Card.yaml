@@ -50,20 +50,6 @@ properties:
     type: integer
     description: Card expiration year (four digits).
     example: 2029
-  panEmbedUrl:
-    type:
-      - string
-      - 'null'
-    format: uri
-    description: >-
-      Signed URL of the card processor's iframe that securely displays the
-      PAN, CVV, and expiry to the cardholder. The full PAN and CVV never
-      cross Grid's servers — render this URL in an iframe in your client to
-      reveal card details. Populated ONLY on `GET /cards/{id}`; null on
-      list, create, and update responses and in webhook payloads. The URL
-      is short-lived (expires within minutes), so fetch the card right
-      before rendering the iframe and never cache the URL.
-    example: https://embed.lithic.com/iframe/...?t=...
   fundingSources:
     type: array
     description: >-
