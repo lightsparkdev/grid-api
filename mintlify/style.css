@@ -4591,6 +4591,26 @@ html.dark
   background-color: var(--ls-gray-050);
 }
 
+/* Tame the NEW switcher back to the old one's look: no system option (light/
+   dark only — the pill shrinks from its 3-up width to the classic 52px), and
+   12px glyphs like the old `lg:size-3` sun/moon instead of the chunkier new
+   icons. Scoped to the sidebar-footer group; the old-markup toggle already
+   looks like this and has no system button. */
+#sidebar-content
+  [role="group"][aria-label="Theme preference"]
+  button[aria-label="Switch to system theme"] {
+  display: none;
+}
+
+#sidebar-content > div > [role="group"][aria-label="Theme preference"] {
+  width: 52px; /* the old two-icon pill (lg:w-[3.25rem]) */
+}
+
+#sidebar-content [role="group"][aria-label="Theme preference"] button svg {
+  width: 12px;
+  height: 12px;
+}
+
 /* The hit target — invisible; the pseudos above are its rendering. Anchored
    to the footer's 24px side padding, landing exactly on the drawn circle. */
 #sidebar-content > div:has(> button[aria-label="Toggle dark mode"]),
