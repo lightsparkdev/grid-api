@@ -789,6 +789,48 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Note>
 </Tab>
 
+<Tab title="SWIFT (International)">
+**SWIFT / International Wire**
+
+Use a SWIFT account to send payouts to bank accounts in countries or currencies where Grid doesn't offer a local payment rail. Provide the bank's SWIFT/BIC code and the beneficiary's account number (or IBAN for IBAN-based corridors).
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "USD",
+    "platformAccountId": "swift_usd_001",
+    "accountInfo": {
+      "accountType": "SWIFT_ACCOUNT",
+      "country": "NG",
+      "swiftCode": "GTBINGLA",
+      "bankName": "Guaranty Trust Bank",
+      "accountNumber": "1234567890",
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Adaeze Okafor",
+        "birthDate": "1991-03-22",
+        "nationality": "NG",
+        "address": {
+          "line1": "15 Broad Street",
+          "city": "Lagos",
+          "state": "Lagos",
+          "postalCode": "101233",
+          "country": "NG"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  `currency` is the currency the destination account holds, and `country` is where the bank
+  account is located — they can differ. Provide `accountNumber` for most corridors; use `iban`
+  instead for IBAN-only corridors (e.g. GB, BR).
+</Note>
+</Tab>
+
 <Tab title="Cryptocurrency">
 **Bitcoin Lightning (Spark Wallet)**
 

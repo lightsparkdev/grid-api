@@ -81,9 +81,65 @@
     updateRail();
   }
 
+  // Deliberate, animated toggle — shared by the edge rail and the footer
+  // button. ls-nav-animating turns the collapse transition on for this toggle
+  // (it's off by default so navigation never animates) and suppresses the
+  // hover reveal so the button/edge don't flash from the cursor sitting over
+  // the rail mid-transition. Add it + force a reflow before applyState so the
+  // width/opacity change animates from the current value, not snaps.
+  var animTimer = 0;
+  function animatedToggle() {
+    var next = !isCollapsed();
+    setPref(next ? '1' : '0');
+    // Mute the rail tooltip: its copy flips with the state (Collapse ⇄
+    // Expand), so it must not reappear under a cursor that just sat through
+    // the click with the swapped text. A fresh rail mouseenter unmutes.
+    document.documentElement.classList.add('ls-nav-tip-muted');
+    document.documentElement.classList.add('ls-nav-animating');
+    document.documentElement.getBoundingClientRect(); // force reflow to arm the transition
+    applyState(next);
+    clearTimeout(animTimer);
+    animTimer = setTimeout(function () {
+      document.documentElement.classList.remove('ls-nav-animating');
+    }, 320);
+  }
+
   function removeRail() {
     if (rail && rail.parentNode) rail.parentNode.removeChild(rail);
     rail = null;
+  }
+
+  // Collapse button in the sidebar footer, next to the theme switcher — the
+  // discoverable affordance (the edge rail only reveals on hover). This
+  // element is only the invisible HIT TARGET: the visible circle + glyph are
+  // pseudo-elements of the server-rendered switcher (see style.css), so the
+  // button shows from first paint instead of popping in when this script
+  // finally runs. Lives inside #sidebar-content so the collapsed state hides
+  // it with the rest of the footer; reopening is the rail's job.
+  var footerBtn = null;
+
+  function removeFooterBtn() {
+    if (footerBtn && footerBtn.parentNode) footerBtn.parentNode.removeChild(footerBtn);
+    footerBtn = null;
+  }
+
+  function ensureFooterBtn() {
+    if (!isDesktop() || !hasVisibleSidebar()) {
+      removeFooterBtn();
+      return;
+    }
+    if (footerBtn && document.body.contains(footerBtn)) return;
+    var theme = document.querySelector(
+      '#sidebar-content button[aria-label="Toggle dark mode"]'
+    );
+    if (!theme || !theme.parentElement) return;
+    footerBtn = document.createElement('button');
+    footerBtn.type = 'button';
+    footerBtn.className = 'ls-nav-collapse-btn';
+    footerBtn.setAttribute('aria-label', 'Hide navigation');
+    footerBtn.addEventListener('click', animatedToggle);
+    // Rightmost in the footer row: [spacer][theme switcher][collapse].
+    theme.parentElement.insertBefore(footerBtn, theme.nextSibling);
   }
 
   function ensureRail() {
@@ -109,7 +165,6 @@
     var moved = false;
     var dragging = false;
     var dragEndAt = 0;
-    var animTimer = 0;
 
     function onMove(e) {
       if (!moved && Math.abs(e.clientX - startX) > DRAG_THRESHOLD) {
@@ -145,6 +200,11 @@
       }
     }
 
+    // A genuine (re-)entry re-arms the tooltip muted by animatedToggle.
+    el.addEventListener('mouseenter', function () {
+      document.documentElement.classList.remove('ls-nav-tip-muted');
+    });
+
     // Resize only from the expanded edge; the collapsed rail is click-only.
     el.addEventListener('mousedown', function (e) {
       if (e.button !== 0 || isCollapsed()) return;
@@ -158,20 +218,7 @@
 
     el.addEventListener('click', function () {
       if (Date.now() - dragEndAt < 300) return; // swallow the click after a drag
-      var next = !isCollapsed();
-      setPref(next ? '1' : '0');
-      // ls-nav-animating turns the collapse transition on for this deliberate
-      // toggle (it's off by default so navigation never animates) and suppresses
-      // the hover reveal so the button/edge don't flash from the cursor sitting
-      // over the rail mid-transition. Add it + force a reflow before applyState
-      // so the width/opacity change animates from the current value, not snaps.
-      document.documentElement.classList.add('ls-nav-animating');
-      document.documentElement.getBoundingClientRect(); // force reflow to arm the transition
-      applyState(next);
-      clearTimeout(animTimer);
-      animTimer = setTimeout(function () {
-        document.documentElement.classList.remove('ls-nav-animating');
-      }, 320);
+      animatedToggle();
     });
   }
 
@@ -185,6 +232,7 @@
     root.classList.add('ls-nav-snap');
     applyState(shouldCollapse());
     ensureRail();
+    ensureFooterBtn();
     requestAnimationFrame(function () {
       root.classList.remove('ls-nav-snap');
     });
@@ -203,20 +251,26 @@
   // rail never lingers visibly even without per-frame polling here.
   var lastPath = location.pathname;
   var ensureScheduled = false;
-  function scheduleEnsureRail() {
+  function scheduleEnsure() {
     if (ensureScheduled) return;
     ensureScheduled = true;
     requestAnimationFrame(function () {
       ensureScheduled = false;
       ensureRail();
+      ensureFooterBtn();
     });
   }
   var observer = new MutationObserver(function () {
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       sync();
-    } else if (!rail || !document.body.contains(rail)) {
-      scheduleEnsureRail();
+    } else if (
+      !rail ||
+      !document.body.contains(rail) ||
+      !footerBtn ||
+      !document.body.contains(footerBtn)
+    ) {
+      scheduleEnsure();
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
@@ -229,6 +283,7 @@
     requestAnimationFrame(function () {
       rafPending = false;
       ensureRail();
+      ensureFooterBtn();
     });
   });
 })();

@@ -215,7 +215,12 @@ html.dark {
    regular border-radius in unsupported browsers.
    =========================================== */
 
-* {
+/* `*` matches ELEMENTS only — pseudo-elements need naming explicitly, or
+   CSS-drawn chrome (tooltips, the footer collapse button's circle, tags)
+   stays plainly round while everything around it superellipses. */
+*,
+*::before,
+*::after {
   corner-shape: squircle;
 }
 
@@ -4460,6 +4465,220 @@ html.dark.ls-nav-collapsed .ls-nav-rail:hover .ls-nav-rail-btn {
 html.ls-nav-collapsed .ls-nav-rail-btn::before {
   -webkit-mask-image: url("/images/icons/IconSidebarRightArrow.svg");
   mask-image: url("/images/icons/IconSidebarRightArrow.svg");
+}
+
+/* FOOTER collapse button, next to the theme switcher — the always-visible,
+   discoverable affordance (the edge rail only reveals on hover). Chrome
+   matches the switcher: same hairline border + hover step, same icon color,
+   28px (h-7) tall; a circle, since it's one button, not a two-state switch.
+
+   Split on purpose: the PIXELS are pseudo-elements of the server-rendered
+   switcher, so the button is visible in the page's first frame — while the
+   BEHAVIOR is an invisible hit-target button that sidebar-toggle.js mounts
+   over them a couple hundred ms later (Mintlify inlines custom JS after
+   paint; nothing of ours can be in the SSR HTML). Drawing on the injected
+   button instead would pop it in visibly late next to the already-painted
+   switcher. Hover rides :has(+ .ls-nav-collapse-btn:hover) back onto the
+   pseudos, so the pixels have exactly one owner. */
+
+/* Reserve the slot: 28px circle + 8px gap. A permanent margin — the footer
+   never reflows; the pseudos below paint into it from the first frame. */
+#sidebar-content > div > button[aria-label="Toggle dark mode"] {
+  margin-right: 36px;
+}
+
+/* The circle, hung off the switcher's right edge (its border box ends where
+   the reserved margin starts). pointer-events: none so that before the hit
+   target mounts, a click on the drawn button can't reach the SWITCHER and
+   flip the theme. */
+#sidebar-content > div > button[aria-label="Toggle dark mode"]::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 8px);
+  top: calc(50% - 14px);
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  border: 1px solid rgb(223 223 223 / 0.7); /* border-gray-200/70 */
+  pointer-events: none;
+  transition: border-color 150ms ease;
+}
+
+/* The glyph, centered in the circle ((28 − 18) / 2 = 5px in). Masked at
+   18px: the icon is drawn on a 24-grid with a 16-unit body, so this renders
+   a ~12px glyph at 1.125px effective stroke — the same visual size and
+   weight as the switcher's 12px sun/moon (16-grid, 1.5 stroke). */
+#sidebar-content > div > button[aria-label="Toggle dark mode"]::before {
+  content: "";
+  position: absolute;
+  left: calc(100% + 13px);
+  top: calc(50% - 9px);
+  width: 18px;
+  height: 18px;
+  background-color: rgb(80 80 80); /* text-gray-600, same in both modes */
+  -webkit-mask: url("/images/icons/IconSidebarLeftArrow.svg") center / 18px
+    18px no-repeat;
+  mask: url("/images/icons/IconSidebarLeftArrow.svg") center / 18px 18px
+    no-repeat;
+  pointer-events: none;
+  transition: background-color 150ms ease;
+}
+
+html.dark
+  #sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]::after {
+  border-color: rgb(255 255 255 / 0.07); /* dark:border-white/[0.07] */
+}
+
+/* Hovering the hit target: border steps like the switcher's own hover; the
+   icon goes full-contrast like the edge rail button's. */
+#sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::after {
+  border-color: rgb(223 223 223); /* hover:border-gray-200 */
+}
+
+#sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::before {
+  background-color: var(--ls-gray-950);
+}
+
+html.dark
+  #sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::after {
+  border-color: rgb(255 255 255 / 0.1); /* dark:hover:border-white/10 */
+}
+
+html.dark
+  #sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::before {
+  background-color: var(--ls-gray-050);
+}
+
+/* The hit target — invisible; the pseudos above are its rendering. Anchored
+   to the footer's 24px side padding, landing exactly on the drawn circle. */
+#sidebar-content > div:has(> button[aria-label="Toggle dark mode"]) {
+  position: relative;
+}
+
+.ls-nav-collapse-btn {
+  position: absolute;
+  right: 24px;
+  top: calc(50% - 14px);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 9999px; /* round focus ring */
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Tooltips — the playground's "coming soon" tag vocabulary (mono micro-type,
+   hairline edge, soft shadow) but INVERTED like a system tooltip: near-black
+   bubble with primary-light text in light mode, flipped in dark. One shared
+   bubble style; placement + copy per trigger below. Free real estate: the
+   footer hit target renders nothing itself and the rail button's icon is its
+   ::before, so both ::afters are available. */
+.ls-nav-collapse-btn::after,
+.ls-nav-rail-btn::after {
+  position: absolute;
+  padding: 4px 7px;
+  border: 0.5px solid rgb(255 255 255 / 0.14);
+  border-radius: 6px;
+  background: var(--ls-gray-950);
+  color: var(--ls-gray-050);
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  /* Suisse Mono's bold is too heavy — stroke the glyphs to nudge the weight
+     up a hair (same trick as the playground's tag). */
+  -webkit-text-stroke: 0.3px currentColor;
+  white-space: nowrap;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  /* This is the EXIT transition (the rule that applies once :hover drops).
+     A plain ease, not the snappy curve — easeOutSnappy front-loads ~90% of
+     the change into the first few frames, which reads as vanishing
+     instantly. The entry (snappy + hover-intent delay) lives on the :hover
+     rules. */
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+html.dark .ls-nav-collapse-btn::after,
+html.dark .ls-nav-rail-btn::after {
+  border-color: var(--ls-black-10);
+  background: var(--ls-gray-050);
+  color: var(--ls-gray-950);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Copy is one word — the icon already depicts the sidebar, and the footer
+   bubble must fit centered inside #sidebar-content (overflow-x: hidden clips
+   anything past the sidebar's right edge; "Collapse sidebar" wouldn't fit). */
+
+/* Footer button: centered ABOVE (beside it, the bubble would sit on top of
+   the theme switcher), rising up into place — it sits above, so it enters
+   on the same axis. Hover-intent: in after a beat, soft fade on leave. */
+.ls-nav-collapse-btn::after {
+  content: "Collapse";
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+}
+
+.ls-nav-collapse-btn:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 180ms var(--ls-sidebar-ease) 350ms,
+    transform 180ms var(--ls-sidebar-ease) 350ms;
+}
+
+/* Rail button: out of the icon to the RIGHT, in both states — the copy
+   flips with the direction the click would take. */
+.ls-nav-rail-btn::after {
+  content: "Collapse";
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+}
+
+html.ls-nav-collapsed .ls-nav-rail-btn::after {
+  content: "Expand";
+}
+
+.ls-nav-rail:hover .ls-nav-rail-btn::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  transition: opacity 180ms var(--ls-sidebar-ease) 350ms,
+    transform 180ms var(--ls-sidebar-ease) 350ms;
+}
+
+/* Never mid-drag (the edge is a resize handle first). And on a toggle, hide
+   INSTANTLY (no fade) — the copy flips with the state, and a fading bubble
+   would visibly swap Collapse ↔ Expand mid-air. ls-nav-tip-muted then keeps
+   it hidden until the cursor leaves and genuinely re-enters the rail
+   (sidebar-toggle.js), so the tooltip never reappears under a cursor that
+   just sat through the click. */
+html.ls-nav-dragging .ls-nav-rail-btn::after,
+html.ls-nav-animating .ls-nav-rail-btn::after,
+html.ls-nav-tip-muted .ls-nav-rail-btn::after {
+  opacity: 0 !important;
+  transition: none !important;
 }
 
 /* Hover/drag edge highlight: a 2px line at the divider, drawn as an overlay so

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { easingVarsStylesheet } from '@/lib/easing';
+import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX } from '@/lib/layout';
 import './globals.scss';
 
 const TITLE = 'Grid Global Accounts — Live demo';
@@ -44,7 +45,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" href="/fonts/SuisseIntl-Book.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/SuisseIntl-Medium.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/SuisseIntlMono-Regular-WebXL.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        {/* Set data-embed and an initial data-theme before paint to avoid a flash. */}
+        {/* Boot attributes, set before first paint to avoid flashes — an
+            effect is too late (the SSR HTML paints long before hydration):
+            - data-embed / data-theme from the URL (embed) or stored pref
+            - data-layout (stacked ⇄ 3-col) from the viewport width
+            - --api-col-default from the embed's ?nav param (the live docs
+              sidebar width), so the wide layout's code column paints at its
+              real default — sidebar + configure column — instead of the
+              expanded-sidebar assumption and re-fitting after hydration. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{
@@ -58,6 +66,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
               }
               document.documentElement.setAttribute('data-theme',t);
+              document.documentElement.setAttribute('data-layout',window.innerWidth<${LAYOUT_WIDE_PX}?'stacked':'wide');
+              var nav=parseFloat(p.get('nav'));
+              if(isFinite(nav)&&nav>=0){document.documentElement.style.setProperty('--api-col-default',(Math.round(nav)+${CONFIGURE_COL_PX})+'px');}
             }catch(e){}})();`,
           }}
         />
