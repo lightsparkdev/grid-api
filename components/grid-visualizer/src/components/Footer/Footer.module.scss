@@ -90,6 +90,13 @@
     svg {
       width: 12px !important;
       height: 12px !important;
+
+      path {
+        // The docs glyphs must SCALE their strokes (16-grid 1.5 → 1.125px at
+        // 12px, the docs' exact weight); the global non-scaling rule above
+        // would pin them at 1.5px — the chunkiness this mode exists to avoid.
+        vector-effect: none;
+      }
     }
   }
 

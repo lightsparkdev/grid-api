@@ -5,29 +5,39 @@ import { IconSun } from '@central-icons-react/round-outlined-radius-3-stroke-1.5
 import { IconMoon } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMoon';
 import { IconStudioDisplay } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStudioDisplay';
 import { IconGithub } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGithub';
+import { DocsSystemIcon, DocsSunIcon, DocsMoonIcon } from './DocsThemeIcons';
 import styles from './Footer.module.scss';
 import clsx from 'clsx';
 
 interface FooterProps {
   pref: ThemePref;
   setPref: (p: ThemePref) => void;
+  /** Embedded in the docs — the toggle mirrors the docs' sidebar switcher
+   *  pixel-for-pixel, including its exact glyphs. Standalone keeps the flow
+   *  builder's own central-icons set (24-grid, non-scaling 1.5 stroke). */
+  embed?: boolean;
 }
 
 // Mirrors the docs' Mintlify switcher: system / light / dark, in that order,
 // with matching aria-labels — so the embedded footer and the docs sidebar
 // read as the same control.
-const OPTIONS: { mode: ThemePref; label: string; Icon: typeof IconSun }[] = [
-  { mode: 'system', label: 'Switch to system theme', Icon: IconStudioDisplay },
-  { mode: 'light', label: 'Switch to light theme', Icon: IconSun },
-  { mode: 'dark', label: 'Switch to dark theme', Icon: IconMoon },
-];
+const OPTIONS = [
+  {
+    mode: 'system',
+    label: 'Switch to system theme',
+    Icon: IconStudioDisplay,
+    DocsIcon: DocsSystemIcon,
+  },
+  { mode: 'light', label: 'Switch to light theme', Icon: IconSun, DocsIcon: DocsSunIcon },
+  { mode: 'dark', label: 'Switch to dark theme', Icon: IconMoon, DocsIcon: DocsMoonIcon },
+] as const;
 
-export function Footer({ pref, setPref }: FooterProps) {
+export function Footer({ pref, setPref, embed = false }: FooterProps) {
   return (
     <>
       <span className={styles.coordsLabel}>(0, 0, 0)</span>
       <div className={styles.toggle} role="group" aria-label="Theme preference">
-        {OPTIONS.map(({ mode, label, Icon }) => (
+        {OPTIONS.map(({ mode, label, Icon, DocsIcon }) => (
           <button
             key={mode}
             type="button"
@@ -40,7 +50,7 @@ export function Footer({ pref, setPref }: FooterProps) {
             )}
             onClick={() => setPref(mode)}
           >
-            <Icon size={14} />
+            {embed ? <DocsIcon size={12} /> : <Icon size={14} />}
           </button>
         ))}
       </div>

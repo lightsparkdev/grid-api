@@ -233,7 +233,7 @@ export default function Home() {
         </div>
 
         <div className={styles.sidebarFooter}>
-          <Footer pref={pref} setPref={handleThemeChange} />
+          <Footer pref={pref} setPref={handleThemeChange} embed={isEmbed} />
         </div>
       </div>
 
