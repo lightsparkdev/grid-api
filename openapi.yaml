@@ -8961,11 +8961,11 @@ components:
           description: ISO 4217 (fiat) or ticker (crypto) code of the source-side currency this fee applies to. Cross-currency fees are charged in the sending side's currency.
           example: USD
         variableFeeBps:
-          type: integer
-          minimum: 0
-          maximum: 10000
-          description: Variable fee in basis points (1 bps = 0.01%). Multiplied by the transaction's source-currency amount.
-          example: 25
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.\d+)?$
+          maxLength: 255
+          description: Variable fee in basis points (1 bps = 0.01%), as a decimal string to support fractional bps (e.g. "12.5"). Multiplied by the transaction's source-currency amount. Must be at most 10000; the range is server-enforced.
+          example: '12.5'
         fixedFee:
           $ref: '#/components/schemas/CurrencyAmount'
           description: Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`.

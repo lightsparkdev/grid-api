@@ -20,13 +20,15 @@ properties:
       currency.
     example: USD
   variableFeeBps:
-    type: integer
-    minimum: 0
-    maximum: 10000
+    type: string
+    pattern: '^(0|[1-9]\d*)(\.\d+)?$'
+    maxLength: 255
     description: >-
-      Variable fee in basis points (1 bps = 0.01%). Multiplied by the
-      transaction's source-currency amount.
-    example: 25
+      Variable fee in basis points (1 bps = 0.01%), as a decimal string to
+      support fractional bps (e.g. "12.5"). Multiplied by the transaction's
+      source-currency amount. Must be at most 10000; the range is
+      server-enforced.
+    example: '12.5'
   fixedFee:
     $ref: ../common/CurrencyAmount.yaml
     description: >-
