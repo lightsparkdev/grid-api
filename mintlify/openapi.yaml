@@ -7030,7 +7030,7 @@ paths:
           type: string
     get:
       summary: Get a card
-      description: Retrieve a card by its system-generated id.
+      description: Retrieve a card by its system-generated id. To display the card's full PAN, CVV, and expiry to the cardholder, request a reveal with `POST /cards/{id}/reveal` — the card resource itself never carries the reveal URL.
       operationId: getCardById
       tags:
         - Cards
@@ -7176,6 +7176,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+  /cards/{id}/reveal:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Reveal card details
+      description: |-
+        Mint a signed, short-lived URL for the card processor's iframe that displays the card's full PAN, CVV, and expiry to the cardholder. This is the only way to obtain a reveal URL — the `Card` resource never carries one.
+
+        Request the reveal right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
+
+        Every reveal is audit-logged with the requesting actor.
+      operationId: revealCard
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Reveal URL minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRevealResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the reveal against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -8566,7 +8624,6 @@ webhooks:
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
-                    panEmbedUrl: https://embed.lithic.com/iframe/...?t=...
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     currency: USD
@@ -12360,7 +12417,7 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the beneficiary's bank
           minLength: 1
           maxLength: 255
       example:
@@ -19729,11 +19786,6 @@ components:
           type: integer
           description: Card expiration year (four digits).
           example: 2029
-        panEmbedUrl:
-          type: string
-          format: uri
-          description: URL of the card processor's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
-          example: https://embed.lithic.com/iframe/...?t=...
         fundingSources:
           type: array
           description: Internal account ids bound to this card as funding sources, in priority order — the first entry is tried first by Authorization Decisioning. Every card has at least one funding source.
@@ -19835,6 +19887,22 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+    CardRevealResponse:
+      type: object
+      required:
+        - panEmbedUrl
+        - expiresAt
+      properties:
+        panEmbedUrl:
+          type: string
+          format: uri
+          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
+          example: https://embed.lithic.com/iframe/...?t=...
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
+          example: '2026-05-08T14:16:00Z'
     SandboxCardAuthorizationRequest:
       type: object
       required:

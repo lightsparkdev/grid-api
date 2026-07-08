@@ -7,7 +7,11 @@ parameters:
       type: string
 get:
   summary: Get a card
-  description: Retrieve a card by its system-generated id.
+  description: >-
+    Retrieve a card by its system-generated id. To display the card's full
+    PAN, CVV, and expiry to the cardholder, request a reveal with
+    `POST /cards/{id}/reveal` — the card resource itself never
+    carries the reveal URL.
   operationId: getCardById
   tags:
     - Cards
