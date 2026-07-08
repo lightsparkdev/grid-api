@@ -6,7 +6,7 @@ parameters:
     schema:
       type: string
 post:
-  summary: Create a PAN reveal session
+  summary: Reveal card details
   description: >-
     Mint a signed, short-lived URL for the card processor's iframe that
     displays the card's full PAN, CVV, and expiry to the cardholder. This is
@@ -14,26 +14,26 @@ post:
     one.
 
 
-    Create a session right before rendering the iframe and render the
+    Request the reveal right before rendering the iframe and render the
     returned `panEmbedUrl` immediately; it expires at `expiresAt` (within
     minutes). Never store, cache, or log the URL — it is a bearer secret for
     the full card details. The card data renders inside the processor's
     iframe and never crosses Grid's or your servers.
 
 
-    Every session mint is audit-logged with the requesting actor.
-  operationId: createCardRevealSession
+    Every reveal is audit-logged with the requesting actor.
+  operationId: revealCard
   tags:
     - Cards
   security:
     - BasicAuth: []
   responses:
     '200':
-      description: Reveal session created.
+      description: Reveal URL minted.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/cards/CardRevealSession.yaml
+            $ref: ../../components/schemas/cards/CardRevealResponse.yaml
     '401':
       description: Unauthorized
       content:

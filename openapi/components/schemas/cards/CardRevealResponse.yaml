@@ -17,6 +17,6 @@ properties:
     type: string
     format: date-time
     description: >-
-      When the signed URL stops loading. Create a new reveal session rather
-      than re-rendering an expired URL.
+      When the signed URL stops loading. Request a new reveal rather than
+      re-rendering an expired URL.
     example: '2026-05-08T14:16:00Z'

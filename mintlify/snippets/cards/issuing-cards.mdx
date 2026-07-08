@@ -62,11 +62,11 @@ terminal — issue a new one with a fresh `platformCardId` to retry.
 
 ## Revealing the PAN
 
-To show the cardholder their full PAN, CVV, and expiry, create a reveal
-session right before rendering:
+To show the cardholder their full PAN, CVV, and expiry, request a
+reveal right before rendering:
 
 ```bash
-curl -X POST "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/reveal-session" \
+curl -X POST "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/reveal" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
@@ -82,12 +82,12 @@ renders the full credentials directly to the cardholder. The full PAN
 and CVV never cross your servers or Grid's.
 
 <Note>
-The reveal session is the **only** way to obtain a reveal URL — the
-`Card` resource never carries one (not in responses, not in webhook
-payloads). The URL expires at `expiresAt` (within minutes), so create a
-session each time the cardholder asks to reveal their details,
+`POST /cards/{id}/reveal` is the **only** way to obtain a reveal URL —
+the `Card` resource never carries one (not in responses, not in webhook
+payloads). The URL expires at `expiresAt` (within minutes), so request a
+fresh reveal each time the cardholder asks for their details,
 immediately before rendering the iframe. Never store, cache, or log the
-URL. Every session is audit-logged.
+URL. Every reveal is audit-logged.
 </Note>
 
 ## Errors to handle

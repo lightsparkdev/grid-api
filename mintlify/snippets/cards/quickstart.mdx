@@ -83,11 +83,10 @@ for the full table. When activation completes, a
 ```
 
 <Note>
-To display the full PAN, CVV, and expiry to the cardholder, create a
-reveal session with `POST /cards/{id}/reveal-session` and render the
-returned `panEmbedUrl` in an iframe. The URL is short-lived, so create
-the session right before rendering. The full card credentials never
-cross your servers.
+To display the full PAN, CVV, and expiry to the cardholder, request a
+reveal with `POST /cards/{id}/reveal` and render the returned
+`panEmbedUrl` in an iframe. The URL is short-lived, so request it right
+before rendering. The full card credentials never cross your servers.
 </Note>
 
 ## Simulate an authorization

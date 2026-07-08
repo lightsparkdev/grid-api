@@ -7030,7 +7030,7 @@ paths:
           type: string
     get:
       summary: Get a card
-      description: Retrieve a card by its system-generated id. To display the card's full PAN, CVV, and expiry to the cardholder, create a reveal session with `POST /cards/{id}/reveal-session` — the card resource itself never carries the reveal URL.
+      description: Retrieve a card by its system-generated id. To display the card's full PAN, CVV, and expiry to the cardholder, request a reveal with `POST /cards/{id}/reveal` — the card resource itself never carries the reveal URL.
       operationId: getCardById
       tags:
         - Cards
@@ -7188,7 +7188,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
-  /cards/{id}/reveal-session:
+  /cards/{id}/reveal:
     parameters:
       - name: id
         in: path
@@ -7197,25 +7197,25 @@ paths:
         schema:
           type: string
     post:
-      summary: Create a PAN reveal session
+      summary: Reveal card details
       description: |-
         Mint a signed, short-lived URL for the card processor's iframe that displays the card's full PAN, CVV, and expiry to the cardholder. This is the only way to obtain a reveal URL — the `Card` resource never carries one.
 
-        Create a session right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
+        Request the reveal right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
 
-        Every session mint is audit-logged with the requesting actor.
-      operationId: createCardRevealSession
+        Every reveal is audit-logged with the requesting actor.
+      operationId: revealCard
       tags:
         - Cards
       security:
         - BasicAuth: []
       responses:
         '200':
-          description: Reveal session created.
+          description: Reveal URL minted.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardRevealSession'
+                $ref: '#/components/schemas/CardRevealResponse'
         '401':
           description: Unauthorized
           content:
@@ -19850,7 +19850,7 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
-    CardRevealSession:
+    CardRevealResponse:
       type: object
       required:
         - panEmbedUrl
@@ -19864,7 +19864,7 @@ components:
         expiresAt:
           type: string
           format: date-time
-          description: When the signed URL stops loading. Create a new reveal session rather than re-rendering an expired URL.
+          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
           example: '2026-05-08T14:16:00Z'
     SandboxCardAuthorizationRequest:
       type: object

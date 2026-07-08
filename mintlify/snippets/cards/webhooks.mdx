@@ -62,10 +62,10 @@ activation after issuance:
 Common branches to handle in your consumer:
 
 - `state: "ACTIVE"` after `PROCESSING` — the card is live. To reveal
-  the full card details, create a reveal session with
-  `POST /cards/{id}/reveal-session` right before rendering its
-  short-lived `panEmbedUrl` in an iframe — webhook payloads never carry
-  a reveal URL.
+  the full card details, request a reveal with
+  `POST /cards/{id}/reveal` right before rendering its short-lived
+  `panEmbedUrl` in an iframe — webhook payloads never carry a reveal
+  URL.
 - `state: "CLOSED"`, `stateReason: "ISSUER_REJECTED"` — the issuer
   rejected provisioning; offer to issue a new card.
 - `state: "FROZEN"` / `state: "ACTIVE"` — reflect the freeze toggle in
