@@ -29,7 +29,6 @@
   background: var(--surface-secondary);
   border: var(--stroke-xs) solid var(--border-tertiary);
   border-radius: var(--corner-radius-md);
-  cursor: pointer;
   transition: border-color 150ms ease;
 
   :global([data-theme='dark']) & {
@@ -40,16 +39,17 @@
     border-color: var(--border-secondary);
   }
 
-  // Match Mintlify sidebar toggle: 52x28 pill
+  // Match Mintlify's NEW sidebar switcher: 76x28 three-option pill
+  // (system / light / dark), justify-between like theirs.
   :global([data-embed='true']) & {
-    width: 52px;
+    width: 76px;
     height: 28px;
     padding: 4px;
-    gap: 2px;
+    gap: 0;
     border-radius: 9999px;
     background: transparent;
     border-color: rgba(0, 0, 0, 0.07);
-    justify-content: center;
+    justify-content: space-between;
   }
 
   :global([data-embed='true'][data-theme='dark']) & {
@@ -58,6 +58,7 @@
 }
 
 .toggleItem {
+  all: unset;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -66,6 +67,7 @@
   height: 24px;
   border-radius: var(--corner-radius-sm);
   color: var(--icon-secondary);
+  cursor: pointer;
   transition: background 150ms ease, color 150ms ease;
 
   svg path {
@@ -86,18 +88,30 @@
     }
   }
 
-  // CSS-only active state in embed mode (no React flash)
+  // CSS-only active state in embed mode (no React flash) — keyed to the
+  // PREFERENCE attribute (set pre-paint by the layout script), not the
+  // resolved theme, so `system` can be the selected option while the page
+  // renders light or dark.
   // !important ensures these beat the React-applied .toggleItemActive class
-  :global([data-embed='true'][data-theme='light']) &[data-mode='light'],
-  :global([data-embed='true'][data-theme='dark']) &[data-mode='dark'] {
-    color: #9F9F9F !important; // Mintlify text-gray-400 (no matching Origin token)
+  :global([data-embed='true'][data-theme-pref='system']) &[data-mode='system'],
+  :global([data-embed='true'][data-theme-pref='light']) &[data-mode='light'],
+  :global([data-embed='true'][data-theme-pref='dark']) &[data-mode='dark'] {
+    color: #9f9f9f !important; // Mintlify text-gray-400 (no matching Origin token)
   }
 
-  :global([data-embed='true'][data-theme='light']) &[data-mode='light'] {
+  // Active pill fill, on the light and dark chrome respectively. The active
+  // option is the preference; the fill color follows the resolved theme.
+  :global([data-embed='true'][data-theme='light'][data-theme-pref='system'])
+    &[data-mode='system'],
+  :global([data-embed='true'][data-theme='light'][data-theme-pref='light'])
+    &[data-mode='light'] {
     background: rgba(229, 231, 235, 0.5) !important;
   }
 
-  :global([data-embed='true'][data-theme='dark']) &[data-mode='dark'] {
+  :global([data-embed='true'][data-theme='dark'][data-theme-pref='system'])
+    &[data-mode='system'],
+  :global([data-embed='true'][data-theme='dark'][data-theme-pref='dark'])
+    &[data-mode='dark'] {
     background: #171717 !important;
   }
 }

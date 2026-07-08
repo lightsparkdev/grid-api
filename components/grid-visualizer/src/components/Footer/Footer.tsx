@@ -1,46 +1,49 @@
 'use client';
 
-import type { Theme } from '@/hooks/useTheme';
+import type { ThemePref } from '@/hooks/useTheme';
 import { IconSun } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSun';
 import { IconMoon } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMoon';
+import { IconStudioDisplay } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStudioDisplay';
 import { IconGithub } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGithub';
 import styles from './Footer.module.scss';
 import clsx from 'clsx';
 
 interface FooterProps {
-  theme: Theme;
-  setTheme: (t: Theme) => void;
+  pref: ThemePref;
+  setPref: (p: ThemePref) => void;
 }
 
-export function Footer({ theme, setTheme }: FooterProps) {
+// Mirrors the docs' Mintlify switcher: system / light / dark, in that order,
+// with matching aria-labels — so the embedded footer and the docs sidebar
+// read as the same control.
+const OPTIONS: { mode: ThemePref; label: string; Icon: typeof IconSun }[] = [
+  { mode: 'system', label: 'Switch to system theme', Icon: IconStudioDisplay },
+  { mode: 'light', label: 'Switch to light theme', Icon: IconSun },
+  { mode: 'dark', label: 'Switch to dark theme', Icon: IconMoon },
+];
+
+export function Footer({ pref, setPref }: FooterProps) {
   return (
     <>
       <span className={styles.coordsLabel}>(0, 0, 0)</span>
-      <button
-        className={styles.toggle}
-        type="button"
-        aria-label="Toggle theme"
-        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-      >
-        <span
-          data-mode="light"
-          className={clsx(
-            styles.toggleItem,
-            theme === 'light' && styles.toggleItemActive,
-          )}
-        >
-          <IconSun size={14} />
-        </span>
-        <span
-          data-mode="dark"
-          className={clsx(
-            styles.toggleItem,
-            theme === 'dark' && styles.toggleItemActive,
-          )}
-        >
-          <IconMoon size={14} />
-        </span>
-      </button>
+      <div className={styles.toggle} role="group" aria-label="Theme preference">
+        {OPTIONS.map(({ mode, label, Icon }) => (
+          <button
+            key={mode}
+            type="button"
+            aria-label={label}
+            aria-pressed={pref === mode}
+            data-mode={mode}
+            className={clsx(
+              styles.toggleItem,
+              pref === mode && styles.toggleItemActive,
+            )}
+            onClick={() => setPref(mode)}
+          >
+            <Icon size={14} />
+          </button>
+        ))}
+      </div>
 
       <div className={styles.trailing}>
           <a href="https://docs.lightspark.com" className={styles.link} target="_blank" rel="noopener noreferrer">

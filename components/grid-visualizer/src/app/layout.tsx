@@ -50,14 +50,19 @@ export default function RootLayout({
                   if (params.get('embed') === 'true') {
                     document.documentElement.setAttribute('data-embed', 'true');
                   }
-                  var paramTheme = params.get('theme');
-                  var theme = paramTheme || localStorage.getItem('grid-theme');
-                  if (!theme) {
-                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  // Preference (system/light/dark, mirroring the docs' Mintlify
+                  // switcher) and the resolved mode, both set before paint:
+                  // data-theme drives styling, data-theme-pref the footer
+                  // toggle's active option.
+                  var pref = params.get('theme') || localStorage.getItem('grid-theme');
+                  if (pref !== 'dark' && pref !== 'light' && pref !== 'system') {
+                    pref = 'system';
                   }
-                  if (theme === 'dark' || theme === 'light') {
-                    document.documentElement.setAttribute('data-theme', theme);
-                  }
+                  var theme = pref === 'system'
+                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                    : pref;
+                  document.documentElement.setAttribute('data-theme', theme);
+                  document.documentElement.setAttribute('data-theme-pref', pref);
                 } catch (e) {}
               })();
             `,

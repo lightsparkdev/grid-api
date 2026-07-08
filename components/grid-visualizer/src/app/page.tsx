@@ -85,26 +85,40 @@ export default function Home() {
     return () => window.removeEventListener('popstate', handlePop);
   }, [mobileView]);
 
-  const { theme, setTheme } = useTheme();
+  const { theme, pref, setPref } = useTheme();
 
-  const handleThemeChange = useCallback((t: 'light' | 'dark') => {
-    setTheme(t);
+  const handleThemeChange = useCallback((p: 'system' | 'light' | 'dark') => {
+    setPref(p);
     if (isEmbed) {
-      window.parent.postMessage({ type: 'theme-sync', theme: t }, '*');
+      // `theme` is the RESOLVED mode (what old docs handlers expect and
+      // toggle the .dark class from); `pref` lets the new docs handler route
+      // the change through Mintlify's own switcher so its state stays true.
+      const resolved =
+        p === 'system'
+          ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+          : p;
+      window.parent.postMessage({ type: 'theme-sync', theme: resolved, pref: p }, '*');
     }
-  }, [setTheme, isEmbed]);
+  }, [setPref, isEmbed]);
 
   useEffect(() => {
     if (!isEmbed) return;
     const handler = (e: MessageEvent) => {
-      if (e.data?.type === 'theme-sync' && (e.data.theme === 'light' || e.data.theme === 'dark')) {
-        setTheme(e.data.theme);
+      if (e.data?.type !== 'theme-sync') return;
+      // New docs handler reports the Mintlify switcher's PREFERENCE so this
+      // footer mirrors it exactly; old handlers only send the resolved mode.
+      if (e.data.pref === 'system' || e.data.pref === 'light' || e.data.pref === 'dark') {
+        setPref(e.data.pref);
+      } else if (e.data.theme === 'light' || e.data.theme === 'dark') {
+        setPref(e.data.theme);
       }
     };
     window.addEventListener('message', handler);
     window.parent.postMessage({ type: 'theme-request' }, '*');
     return () => window.removeEventListener('message', handler);
-  }, [isEmbed, setTheme]);
+  }, [isEmbed, setPref]);
 
   // Sync iOS status bar color with the top element's background
   useEffect(() => {
@@ -219,7 +233,7 @@ export default function Home() {
         </div>
 
         <div className={styles.sidebarFooter}>
-          <Footer theme={theme} setTheme={handleThemeChange} />
+          <Footer pref={pref} setPref={handleThemeChange} />
         </div>
       </div>
 
