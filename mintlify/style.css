@@ -1717,11 +1717,13 @@ div.callout,
   padding: 0 !important;
   overflow: hidden !important;
   border: 0.5px solid var(--ls-black-10) !important;
+  background-color: var(--ls-white) !important;
 }
 
 html.dark .code-group,
 html.dark [data-testid="code-group-select"] {
   border-color: var(--ls-white-06) !important;
+  background-color: var(--ls-gray-975) !important;
 }
 
 /* Code group inner container - no border radius (exclude interactive tabs/buttons) */
@@ -1785,6 +1787,11 @@ html.dark .code-group [data-component-part="code-block-root"],
 html.dark .code-block-background,
 html.dark .code-group [class*="dark:bg-codeblock"] {
   background-color: var(--ls-gray-975) !important;
+}
+
+/* Match the scroll fade overlay to the dark code block background */
+[data-fade-overlay] {
+  --fade-color-dark: var(--ls-gray-975) !important;
 }
 
 /* API Reference - Try It input fields */
