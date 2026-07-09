@@ -1713,7 +1713,7 @@ paths:
       description: |
         Begin recovering a lost enrolled factor via a liveness-gated, poll-based
         flow. Opens the provider's liveness check and returns a `resetId` plus the
-        opaque liveness handles (`sumsubAccessToken` / `verificationLink`) the end
+        opaque liveness handles (`livenessAccessToken` / `verificationLink`) the end
         user completes it with. Poll
         `GET /customers/{customerId}/sca/factors/reset/{resetId}` until liveness
         passes, then call the complete endpoint.
@@ -12143,6 +12143,12 @@ components:
       description: Completes an SCA login by submitting the proof for the started factor. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being completed and, for `SMS_OTP`, the `challengeId` returned by the login start.
       required:
         - factor
+      anyOf:
+        - required:
+            - code
+        - required:
+            - passkeyAssertion
+            - origin
       properties:
         factor:
           $ref: '#/components/schemas/ScaFactor'
@@ -12188,7 +12194,7 @@ components:
       properties:
         eventType:
           type: string
-          description: The provider-defined event type to record.
+          description: A provider-defined security-event identifier drawn from the provider's accepted set (e.g. `LOGIN`), **not** arbitrary caller text — it is forwarded verbatim to the provider's risk engine, which rejects values outside that set. Left as a string (rather than an enum) so new provider-defined events don't require a spec change; treat it as a closed vocabulary defined by the provider, not free-form input.
           example: LOGIN
     TwoFactorResetStartRequest:
       type: object
@@ -12201,18 +12207,18 @@ components:
           description: The enrolled factor to reset.
     TwoFactorResetStart:
       type: object
-      description: The reset handle plus the opaque provider liveness handles a caller relays to the end-user device to complete the liveness check. `resetId` threads the ceremony together (status and complete reference it). `sumsubAccessToken` and `verificationLink` are omitted when the provider does not return them.
+      description: The reset handle plus the opaque provider liveness handles a caller relays to the end-user device to complete the liveness check. `resetId` threads the ceremony together (status and complete reference it). `livenessAccessToken` and `verificationLink` are omitted when the provider does not return them.
       required:
         - resetId
       properties:
         resetId:
           type: string
           description: Identifier for this reset; pass it to the status and complete endpoints.
-        sumsubAccessToken:
+        livenessAccessToken:
           type:
             - string
             - 'null'
-          description: Access token for the embedded liveness/verification SDK, bound to this reset. Omitted when the provider does not return one.
+          description: Provider-neutral access token for the embedded liveness/verification SDK, bound to this reset. Omitted when the provider does not return one.
         verificationLink:
           type:
             - string
@@ -12306,10 +12312,16 @@ components:
       description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `whitelistedId` returned by the trust start and, when the start issued one, the `challengeId`.
       required:
         - whitelistedId
+      anyOf:
+        - required:
+            - code
+        - required:
+            - passkeyAssertion
+            - origin
       properties:
         whitelistedId:
           type: string
-          description: The provider beneficiary handle returned as `whitelistedId` by the trust start, threaded back so confirm need not re-whitelist.
+          description: The provider beneficiary handle returned as `whitelistedId` by *this account's own* trust start, threaded back so confirm need not re-whitelist. It is scoped to that ceremony — the server rejects a `whitelistedId` issued for a different external account or from an expired/stale start, so do not cache or reuse it across accounts.
         challengeId:
           type:
             - string

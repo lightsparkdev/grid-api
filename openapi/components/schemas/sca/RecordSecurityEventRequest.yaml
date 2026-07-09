@@ -8,5 +8,11 @@ required:
 properties:
   eventType:
     type: string
-    description: The provider-defined event type to record.
+    description: >-
+      A provider-defined security-event identifier drawn from the provider's
+      accepted set (e.g. `LOGIN`), **not** arbitrary caller text — it is
+      forwarded verbatim to the provider's risk engine, which rejects values
+      outside that set. Left as a string (rather than an enum) so new
+      provider-defined events don't require a spec change; treat it as a closed
+      vocabulary defined by the provider, not free-form input.
     example: LOGIN

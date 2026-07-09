@@ -6,6 +6,12 @@ description: >-
   completed and, for `SMS_OTP`, the `challengeId` returned by the login start.
 required:
   - factor
+anyOf:
+  - required:
+      - code
+  - required:
+      - passkeyAssertion
+      - origin
 properties:
   factor:
     $ref: ./ScaFactor.yaml

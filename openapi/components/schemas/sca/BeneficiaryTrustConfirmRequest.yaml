@@ -7,12 +7,21 @@ description: >-
   the `challengeId`.
 required:
   - whitelistedId
+anyOf:
+  - required:
+      - code
+  - required:
+      - passkeyAssertion
+      - origin
 properties:
   whitelistedId:
     type: string
     description: >-
-      The provider beneficiary handle returned as `whitelistedId` by the trust
-      start, threaded back so confirm need not re-whitelist.
+      The provider beneficiary handle returned as `whitelistedId` by *this
+      account's own* trust start, threaded back so confirm need not
+      re-whitelist. It is scoped to that ceremony — the server rejects a
+      `whitelistedId` issued for a different external account or from an
+      expired/stale start, so do not cache or reuse it across accounts.
   challengeId:
     type:
       - string

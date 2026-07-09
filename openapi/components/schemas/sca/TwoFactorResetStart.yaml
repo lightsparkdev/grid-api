@@ -2,8 +2,8 @@ type: object
 description: >-
   The reset handle plus the opaque provider liveness handles a caller relays to
   the end-user device to complete the liveness check. `resetId` threads the
-  ceremony together (status and complete reference it). `sumsubAccessToken` and
-  `verificationLink` are omitted when the provider does not return them.
+  ceremony together (status and complete reference it). `livenessAccessToken`
+  and `verificationLink` are omitted when the provider does not return them.
 required:
   - resetId
 properties:
@@ -11,13 +11,13 @@ properties:
     type: string
     description: >-
       Identifier for this reset; pass it to the status and complete endpoints.
-  sumsubAccessToken:
+  livenessAccessToken:
     type:
       - string
       - 'null'
     description: >-
-      Access token for the embedded liveness/verification SDK, bound to this
-      reset. Omitted when the provider does not return one.
+      Provider-neutral access token for the embedded liveness/verification SDK,
+      bound to this reset. Omitted when the provider does not return one.
   verificationLink:
     type:
       - string
