@@ -4481,17 +4481,32 @@ html.ls-nav-collapsed .ls-nav-rail-btn::before {
    switcher. Hover rides :has(+ .ls-nav-collapse-btn:hover) back onto the
    pseudos, so the pixels have exactly one owner. */
 
+/* THE ANCHOR, in two generations of Mintlify markup. The pinned local CLI
+   (4.2.284) renders a single two-icon toggle: button[aria-label="Toggle
+   dark mode"]. Mintlify's HOSTED renderer (prod + previews — evergreen, not
+   pinnable) has since replaced it with a three-option pill: div[role=
+   "group"][aria-label="Theme preference"] wrapping system/light/dark
+   buttons. Every rule below targets BOTH, or the button silently vanishes
+   on whichever side doesn't match (which is exactly how it shipped broken
+   the first time: built + tested against the old CLI markup only). */
+
 /* Reserve the slot: 28px circle + 8px gap. A permanent margin — the footer
-   never reflows; the pseudos below paint into it from the first frame. */
-#sidebar-content > div > button[aria-label="Toggle dark mode"] {
+   never reflows; the pseudos below paint into it from the first frame. Also
+   declare our own positioning context instead of inheriting it from
+   Mintlify's `relative` utility class (both generations happen to have it,
+   but the pseudos' anchoring shouldn't hinge on their classnames). */
+#sidebar-content > div > button[aria-label="Toggle dark mode"],
+#sidebar-content > div > [role="group"][aria-label="Theme preference"] {
   margin-right: 36px;
+  position: relative;
 }
 
 /* The circle, hung off the switcher's right edge (its border box ends where
    the reserved margin starts). pointer-events: none so that before the hit
    target mounts, a click on the drawn button can't reach the SWITCHER and
    flip the theme. */
-#sidebar-content > div > button[aria-label="Toggle dark mode"]::after {
+#sidebar-content > div > button[aria-label="Toggle dark mode"]::after,
+#sidebar-content > div > [role="group"][aria-label="Theme preference"]::after {
   content: "";
   position: absolute;
   left: calc(100% + 8px);
@@ -4509,7 +4524,8 @@ html.ls-nav-collapsed .ls-nav-rail-btn::before {
    18px: the icon is drawn on a 24-grid with a 16-unit body, so this renders
    a ~12px glyph at 1.125px effective stroke — the same visual size and
    weight as the switcher's 12px sun/moon (16-grid, 1.5 stroke). */
-#sidebar-content > div > button[aria-label="Toggle dark mode"]::before {
+#sidebar-content > div > button[aria-label="Toggle dark mode"]::before,
+#sidebar-content > div > [role="group"][aria-label="Theme preference"]::before {
   content: "";
   position: absolute;
   left: calc(100% + 13px);
@@ -4525,10 +4541,11 @@ html.ls-nav-collapsed .ls-nav-rail-btn::before {
   transition: background-color 150ms ease;
 }
 
+html.dark #sidebar-content > div > button[aria-label="Toggle dark mode"]::after,
 html.dark
   #sidebar-content
   > div
-  > button[aria-label="Toggle dark mode"]::after {
+  > [role="group"][aria-label="Theme preference"]::after {
   border-color: rgb(255 255 255 / 0.07); /* dark:border-white/[0.07] */
 }
 
@@ -4536,33 +4553,89 @@ html.dark
    icon goes full-contrast like the edge rail button's. */
 #sidebar-content
   > div
-  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::after {
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::after,
+#sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]:has(+ .ls-nav-collapse-btn:hover)::after {
   border-color: rgb(223 223 223); /* hover:border-gray-200 */
 }
 
 #sidebar-content
   > div
-  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::before {
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::before,
+#sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]:has(+ .ls-nav-collapse-btn:hover)::before {
   background-color: var(--ls-gray-950);
 }
 
 html.dark
   #sidebar-content
   > div
-  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::after {
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::after,
+html.dark
+  #sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]:has(+ .ls-nav-collapse-btn:hover)::after {
   border-color: rgb(255 255 255 / 0.1); /* dark:hover:border-white/10 */
 }
 
 html.dark
   #sidebar-content
   > div
-  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::before {
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::before,
+html.dark
+  #sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]:has(+ .ls-nav-collapse-btn:hover)::before {
   background-color: var(--ls-gray-050);
+}
+
+/* The NEW switcher's sun + system glyphs are the same 16-grid / 1.5-stroke
+   family as the old toggle's, but its moon is a stock Lucide icon (24-grid,
+   heavier stroke, fuller crescent) that reads chunkier than everything
+   around it. Swap just that glyph back to the OLD component's crescent:
+   hide the Lucide svg and mask-draw the original path (extracted verbatim
+   into IconMoonCrescent.svg) in its place, riding the button's currentColor
+   so the rest/hover/active tints keep working. Old-markup pages are
+   untouched (no Theme preference group there). */
+
+/* Let the switcher glyphs SCALE their strokes: 16-grid / 1.5 authored at
+   12px render = 1.125px — the fine weight. The site-wide non-scaling-stroke
+   rule would pin the inline system/sun svgs at 1.5px absolute, visibly
+   heavier than the mask-drawn crescent (masks aren't DOM svgs, so the rule
+   can't reach them and they always scale). Overriding it here makes all
+   three glyphs render at the same thin weight. Covers the old markup's
+   toggle too, for dev/prod parity. */
+#sidebar-content [role="group"][aria-label="Theme preference"] svg,
+#sidebar-content [role="group"][aria-label="Theme preference"] svg *,
+#sidebar-content button[aria-label="Toggle dark mode"] svg,
+#sidebar-content button[aria-label="Toggle dark mode"] svg * {
+  vector-effect: none;
+}
+#sidebar-content
+  [role="group"][aria-label="Theme preference"]
+  button[aria-label="Switch to dark theme"]
+  svg {
+  display: none;
+}
+
+#sidebar-content
+  [role="group"][aria-label="Theme preference"]
+  button[aria-label="Switch to dark theme"]::before {
+  content: "";
+  width: 12px; /* lg:size-3, same as the sun */
+  height: 12px;
+  background-color: currentColor;
+  -webkit-mask: url("/images/icons/IconMoonCrescent.svg") center / 12px 12px
+    no-repeat;
+  mask: url("/images/icons/IconMoonCrescent.svg") center / 12px 12px no-repeat;
 }
 
 /* The hit target — invisible; the pseudos above are its rendering. Anchored
    to the footer's 24px side padding, landing exactly on the drawn circle. */
-#sidebar-content > div:has(> button[aria-label="Toggle dark mode"]) {
+#sidebar-content > div:has(> button[aria-label="Toggle dark mode"]),
+#sidebar-content > div:has(> [role="group"][aria-label="Theme preference"]) {
   position: relative;
 }
 

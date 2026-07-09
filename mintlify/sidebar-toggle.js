@@ -129,8 +129,12 @@
       return;
     }
     if (footerBtn && document.body.contains(footerBtn)) return;
+    // Two generations of Mintlify markup (keep in sync with the CSS anchors):
+    // the pinned local CLI renders a single "Toggle dark mode" button; the
+    // evergreen hosted renderer (prod + previews) a "Theme preference" group.
     var theme = document.querySelector(
-      '#sidebar-content button[aria-label="Toggle dark mode"]'
+      '#sidebar-content button[aria-label="Toggle dark mode"], ' +
+        '#sidebar-content [role="group"][aria-label="Theme preference"]'
     );
     if (!theme || !theme.parentElement) return;
     footerBtn = document.createElement('button');
