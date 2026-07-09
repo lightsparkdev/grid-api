@@ -4595,12 +4595,24 @@ html.dark
    family as the old toggle's, but its moon is a stock Lucide icon (24-grid,
    heavier stroke, fuller crescent) that reads chunkier than everything
    around it. Swap just that glyph back to the OLD component's crescent:
-   hide the Lucide svg and mask-draw the original path (extracted into
-   IconMoonCrescent.svg — authored at stroke 2 so the mask's x0.75 scale
-   lands on the same 1.5px ABSOLUTE weight the global non-scaling-stroke
-   rule pins the inline sun/system svgs to), riding the button's
-   currentColor so the rest/hover/active tints keep working. Old-markup
-   pages are untouched (no Theme preference group there). */
+   hide the Lucide svg and mask-draw the original path (extracted verbatim
+   into IconMoonCrescent.svg) in its place, riding the button's currentColor
+   so the rest/hover/active tints keep working. Old-markup pages are
+   untouched (no Theme preference group there). */
+
+/* Let the switcher glyphs SCALE their strokes: 16-grid / 1.5 authored at
+   12px render = 1.125px — the fine weight. The site-wide non-scaling-stroke
+   rule would pin the inline system/sun svgs at 1.5px absolute, visibly
+   heavier than the mask-drawn crescent (masks aren't DOM svgs, so the rule
+   can't reach them and they always scale). Overriding it here makes all
+   three glyphs render at the same thin weight. Covers the old markup's
+   toggle too, for dev/prod parity. */
+#sidebar-content [role="group"][aria-label="Theme preference"] svg,
+#sidebar-content [role="group"][aria-label="Theme preference"] svg *,
+#sidebar-content button[aria-label="Toggle dark mode"] svg,
+#sidebar-content button[aria-label="Toggle dark mode"] svg * {
+  vector-effect: none;
+}
 #sidebar-content
   [role="group"][aria-label="Theme preference"]
   button[aria-label="Switch to dark theme"]
