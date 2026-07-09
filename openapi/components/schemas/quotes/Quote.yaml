@@ -112,6 +112,17 @@ properties:
     type: string
     description: The ID of the transaction created from this quote.
     example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+  remittanceInformation:
+    type: string
+    maxLength: 80
+    description: >-
+      Free-form information about the payment that travels with it to the
+      recipient, as provided on the quote request. The field this populates
+      depends on the payment rail: for ACH it populates the Addenda record, for
+      FedNow and RTP it populates the remittanceInformation field, and for wires
+      it populates the OBI (Originator to Beneficiary Information) / beneficiary
+      information.
+    example: '12345'
   counterpartyInformation:
     $ref: ../transactions/CounterpartyInformation.yaml
     description: >-
