@@ -90,13 +90,15 @@
     svg {
       width: 12px !important;
       height: 12px !important;
-    }
 
-    // The docs pin ALL svg strokes at their authored 1.5px (a global
-    // non-scaling-stroke rule in mintlify/style.css) — the flow builder's
-    // own non-scaling rule above does the same here, so the docs glyphs
-    // render at the docs' exact absolute weight. Don't "fix" this back to
-    // scaling: 1.125px reads thin next to the docs switcher.
+      path {
+        // Scale the strokes with the glyph: 16-grid 1.5 at 12px = 1.125px,
+        // the docs switcher's weight (the docs override their site-wide
+        // non-scaling rule for these glyphs the same way). Without this the
+        // non-scaling rule above pins them at a chunkier 1.5px absolute.
+        vector-effect: none;
+      }
+    }
   }
 
   :global([data-embed='true'][data-theme='dark']) & {
