@@ -59,21 +59,26 @@ post:
   responses:
     '200':
       description: >
-        Quote confirmed successfully. The transfer has been initiated and the
-        quote status has been updated.
+        Quote processed. The outcome depends on whether the customer's provider
+        requires Strong Customer Authentication (SCA):
 
 
-        For customers whose provider requires Strong Customer Authentication
-        (e.g. EU): supplying `scaAuthorization` **upfront on this call** satisfies
-        the challenge in one shot and avoids the pending state. Without it, the
-        quote comes back with status `PENDING_AUTHORIZATION` and an
-        `scaChallenge`; from that point the **only** way to release the transfer
-        is `POST /transactions/{transactionId}/authorize` for the quote's
+        - **No SCA required, or a valid `scaAuthorization` is supplied inline on
+        this call:** the transfer is initiated and the quote status advances
+        (`PROCESSING` / `COMPLETED`).
+
+
+        - **SCA required and no inline proof:** the transfer is **not** initiated
+        yet. The quote is returned with status `PENDING_AUTHORIZATION` and an
+        `scaChallenge`, and the **only** way to release the transfer is
+        `POST /transactions/{transactionId}/authorize` for the quote's
         `transactionId` (re-calling `execute` returns 409). The inline
-        `scaAuthorization` field is therefore for the initial call only. (For a
-        realtime-funding quote that returned 202 from `POST /quotes`, authorize
-        the quote itself via `POST /quotes/{quoteId}/authorize` instead.) If an
-        SMS code lapses, re-send it via
+        `scaAuthorization` field is therefore for the initial call only. A
+        client holding a `PENDING_AUTHORIZATION` quote from `execute` always
+        authorizes via the **transaction**-scoped endpoint; the quote-scoped
+        `POST /quotes/{quoteId}/authorize` is only for a realtime-funding quote
+        whose challenge was issued at quote creation (the 202 from `POST
+        /quotes`). If an SMS code lapses, re-send it via
         `POST /transactions/{transactionId}/authorize/resend`.
       content:
         application/json:

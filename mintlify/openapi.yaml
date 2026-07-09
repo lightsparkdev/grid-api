@@ -2864,9 +2864,11 @@ paths:
       responses:
         '200':
           description: |
-            Quote confirmed successfully. The transfer has been initiated and the quote status has been updated.
+            Quote processed. The outcome depends on whether the customer's provider requires Strong Customer Authentication (SCA):
 
-            For customers whose provider requires Strong Customer Authentication (e.g. EU): supplying `scaAuthorization` **upfront on this call** satisfies the challenge in one shot and avoids the pending state. Without it, the quote comes back with status `PENDING_AUTHORIZATION` and an `scaChallenge`; from that point the **only** way to release the transfer is `POST /transactions/{transactionId}/authorize` for the quote's `transactionId` (re-calling `execute` returns 409). The inline `scaAuthorization` field is therefore for the initial call only. (For a realtime-funding quote that returned 202 from `POST /quotes`, authorize the quote itself via `POST /quotes/{quoteId}/authorize` instead.) If an SMS code lapses, re-send it via `POST /transactions/{transactionId}/authorize/resend`.
+            - **No SCA required, or a valid `scaAuthorization` is supplied inline on this call:** the transfer is initiated and the quote status advances (`PROCESSING` / `COMPLETED`).
+
+            - **SCA required and no inline proof:** the transfer is **not** initiated yet. The quote is returned with status `PENDING_AUTHORIZATION` and an `scaChallenge`, and the **only** way to release the transfer is `POST /transactions/{transactionId}/authorize` for the quote's `transactionId` (re-calling `execute` returns 409). The inline `scaAuthorization` field is therefore for the initial call only. A client holding a `PENDING_AUTHORIZATION` quote from `execute` always authorizes via the **transaction**-scoped endpoint; the quote-scoped `POST /quotes/{quoteId}/authorize` is only for a realtime-funding quote whose challenge was issued at quote creation (the 202 from `POST /quotes`). If an SMS code lapses, re-send it via `POST /transactions/{transactionId}/authorize/resend`.
           content:
             application/json:
               schema:
@@ -2925,7 +2927,7 @@ paths:
         requires SCA (e.g. EU customers). For customers whose provider has no such
         requirement, this returns `409`.
 
-        In sandbox, the SMS/TOTP code is always `123456`.
+        In sandbox, the SMS code is always `123456`.
       operationId: authorizeQuote
       tags:
         - Strong Customer Authentication
@@ -2968,6 +2970,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when authorization attempts for this challenge happen too frequently (for example, repeated bad codes brute-forcing the OTP). The provider may invalidate the challenge after too many failed attempts. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -2988,7 +2996,9 @@ paths:
       description: |
         Re-send the one-time code for a realtime-funding quote in
         `PENDING_AUTHORIZATION` status whose `scaChallenge.factor` is `SMS_OTP`. The
-        existing challenge is reused — no new challenge is issued.
+        existing challenge is reused — no new challenge is issued, and its
+        `scaChallenge.expiresAt` is **not** extended; once the challenge is past
+        `expiresAt` it can no longer be authorized.
 
         Only meaningful for customers whose provider requires SCA (e.g. EU); other
         providers return 409. `PASSKEY` challenges cannot be re-sent and return 409.
@@ -3020,6 +3030,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when codes are re-sent too frequently, to avoid spamming the customer's phone. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -3399,7 +3415,7 @@ paths:
         requires SCA (e.g. EU customers). For customers whose provider has no such
         requirement, this returns `409`.
 
-        In sandbox, the SMS/TOTP code is always `123456`.
+        In sandbox, the SMS code is always `123456`.
       operationId: authorizeTransaction
       tags:
         - Strong Customer Authentication
@@ -3442,6 +3458,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when authorization attempts for this challenge happen too frequently (for example, repeated bad codes brute-forcing the OTP). The provider may invalidate the challenge after too many failed attempts. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -3462,8 +3484,9 @@ paths:
       description: |
         Re-send the one-time code for a transaction in `PENDING_AUTHORIZATION`
         status whose `scaChallenge.factor` is `SMS_OTP` (e.g. the customer didn't
-        receive it, or it expired). The existing challenge is reused — no new
-        challenge is issued.
+        receive it). The existing challenge is reused — no new challenge is issued,
+        and its `scaChallenge.expiresAt` is **not** extended; once the challenge is
+        past `expiresAt` it can no longer be authorized.
 
         Only meaningful for customers whose provider requires SCA (e.g. EU); other
         providers return 409. `PASSKEY` challenges cannot be re-sent (there is no
@@ -3496,6 +3519,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when codes are re-sent too frequently, to avoid spamming the customer's phone. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -18376,6 +18405,9 @@ components:
           example: 'Invoice #1234 payment'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for a Strong Customer Authentication challenge issued at quote creation. Only relevant for a realtime-funding source whose provider requires SCA (e.g. EU); ignored otherwise. Valid values are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected. When the quote is returned in `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.
         senderCustomerInfo:
           type: object
           additionalProperties: true
@@ -18395,6 +18427,33 @@ components:
         scaAuthorization:
           $ref: '#/components/schemas/ScaAuthorization'
           description: 'Optional inline Strong Customer Authentication proof. Only relevant for customers whose provider requires SCA (e.g. EU): supply this to satisfy the challenge in the same call once the customer has the code/assertion. Omit it to receive the quote in `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately. Ignored for customers whose provider does not require SCA.'
+    Error429:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 429
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+          enum:
+            - RATE_LIMITED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     TransactionListResponse:
       type: object
       required:
@@ -19367,33 +19426,6 @@ components:
               format: date-time
               description: Timestamp after which the session is no longer valid and the `encryptedSessionSigningKey` must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
-    Error429:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 429
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
-          enum:
-            - RATE_LIMITED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
       description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.

@@ -11,7 +11,9 @@ post:
   description: |
     Re-send the one-time code for a realtime-funding quote in
     `PENDING_AUTHORIZATION` status whose `scaChallenge.factor` is `SMS_OTP`. The
-    existing challenge is reused — no new challenge is issued.
+    existing challenge is reused — no new challenge is issued, and its
+    `scaChallenge.expiresAt` is **not** extended; once the challenge is past
+    `expiresAt` it can no longer be authorized.
 
     Only meaningful for customers whose provider requires SCA (e.g. EU); other
     providers return 409. `PASSKEY` challenges cannot be re-sent and return 409.
@@ -46,6 +48,16 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: >-
+        Too many requests. Returned with `RATE_LIMITED` when codes are re-sent
+        too frequently, to avoid spamming the customer's phone. Clients should
+        back off and retry after the interval indicated by the `Retry-After`
+        response header.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

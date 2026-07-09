@@ -57,6 +57,15 @@ properties:
     example: 'Invoice #1234 payment'
   purposeOfPayment:
     $ref: ./PurposeOfPayment.yaml
+  scaFactor:
+    $ref: ../sca/ScaFactor.yaml
+    description: >-
+      Optional preferred factor for a Strong Customer Authentication challenge
+      issued at quote creation. Only relevant for a realtime-funding source
+      whose provider requires SCA (e.g. EU); ignored otherwise. Valid values are
+      `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required
+      dynamic linking and is rejected. When the quote is returned in
+      `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.
   senderCustomerInfo:
     type: object
     additionalProperties: true

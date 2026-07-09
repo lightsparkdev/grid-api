@@ -21,7 +21,7 @@ post:
     requires SCA (e.g. EU customers). For customers whose provider has no such
     requirement, this returns `409`.
 
-    In sandbox, the SMS/TOTP code is always `123456`.
+    In sandbox, the SMS code is always `123456`.
   operationId: authorizeQuote
   tags:
     - Strong Customer Authentication
@@ -66,6 +66,17 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: >-
+        Too many requests. Returned with `RATE_LIMITED` when authorization
+        attempts for this challenge happen too frequently (for example, repeated
+        bad codes brute-forcing the OTP). The provider may invalidate the
+        challenge after too many failed attempts. Clients should back off and
+        retry after the interval indicated by the `Retry-After` response header.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:
