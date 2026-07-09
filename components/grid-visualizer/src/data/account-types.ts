@@ -328,7 +328,8 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     accountType: 'GTQ_ACCOUNT',
     fields: [
       { name: 'accountNumber', example: '1234567890' },
-      { name: 'phoneNumber', example: '+50212345678' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
+      { name: 'bankName', example: 'Example Bank' },
     ],
     beneficiaryRequired: true,
   },
