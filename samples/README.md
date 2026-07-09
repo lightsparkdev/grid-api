@@ -6,13 +6,15 @@ Sample applications demonstrating the Grid API payout flow — creating a custom
 
 ```
 samples/
-├── frontend/   # Shared React frontend (works with any backend)
-└── kotlin/     # Kotlin (Ktor) backend using the Grid Kotlin SDK
+├── frontend/     # Shared React frontend (works with any backend)
+├── kotlin/       # Kotlin (Ktor) backend using the Grid Kotlin SDK
+└── typescript/   # TypeScript (Express) backend using the Grid TypeScript SDK
 ```
 
 ## Quick Start
 
-See the [Kotlin backend README](kotlin/README.md) for setup instructions.
+- [Kotlin backend](kotlin/README.md)
+- [TypeScript backend](typescript/README.md)
 
 ## Adding a New Language Backend
 
