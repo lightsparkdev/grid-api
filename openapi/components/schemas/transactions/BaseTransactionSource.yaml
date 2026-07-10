@@ -8,3 +8,10 @@ properties:
     type: string
     description: Currency code for the source
     example: USD
+  onChainTransaction:
+    $ref: ./OnChainTransaction.yaml
+    description: >-
+      On-chain transaction that delivered funds from this source, when the source is an
+      external crypto wallet. Populated once the crypto transfer has settled; absent for
+      fiat/UMA sources and for the internal settlement leg of a UMA payment (see
+      `reconciliationInstructions`).

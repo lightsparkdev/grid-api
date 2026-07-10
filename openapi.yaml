@@ -16939,6 +16939,36 @@ components:
         - UMA_ADDRESS
       description: Type of transaction destination
       example: ACCOUNT
+    CryptoNetwork:
+      type: string
+      enum:
+        - ETHEREUM_MAINNET
+        - ETHEREUM_TESTNET
+        - SOLANA_MAINNET
+        - SOLANA_DEVNET
+        - BASE_MAINNET
+        - BASE_TESTNET
+        - POLYGON_MAINNET
+        - POLYGON_TESTNET
+        - TRON_MAINNET
+        - TRON_TESTNET
+        - SPARK_MAINNET
+        - SPARK_REGTEST
+      description: A blockchain network, including the environment (mainnet vs devnet/testnet/regtest) so an on-chain transaction can be looked up on the correct explorer. Sandbox transactions report the devnet/testnet/regtest variant (e.g. SOLANA_DEVNET).
+      example: SOLANA_MAINNET
+    OnChainTransaction:
+      type: object
+      required:
+        - transactionHash
+        - network
+      properties:
+        transactionHash:
+          type: string
+          description: On-chain transaction hash of the crypto transfer for this leg of the transaction.
+          example: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8WgpD9k6oRnJm2pQ7sT1uV3wX5yZ6aB8cD9eF0gH1i
+        network:
+          $ref: '#/components/schemas/CryptoNetwork'
+          description: Blockchain network (incl. environment) the transaction settled on.
     BaseTransactionDestination:
       type: object
       required:
@@ -16950,6 +16980,9 @@ components:
           type: string
           description: Currency code for the destination
           example: EUR
+        onChainTransaction:
+          $ref: '#/components/schemas/OnChainTransaction'
+          description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled; absent for fiat/UMA destinations and for the internal settlement leg of a UMA payment (see `reconciliationInstructions`).
     AccountTransactionDestination:
       title: Account Destination
       allOf:
@@ -17084,6 +17117,9 @@ components:
           type: string
           description: Currency code for the source
           example: USD
+        onChainTransaction:
+          $ref: '#/components/schemas/OnChainTransaction'
+          description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled; absent for fiat/UMA sources and for the internal settlement leg of a UMA payment (see `reconciliationInstructions`).
     AccountTransactionSource:
       title: Account Source
       allOf:
@@ -17188,6 +17224,7 @@ components:
     ReconciliationInstructions:
       type: object
       minProperties: 1
+      description: Instructions for reconciling a payment with this transaction. For the on-chain transaction to or from an external crypto wallet that is the transaction's own source or destination, use the `onChainTransaction` on the relevant source or destination instead.
       properties:
         reference:
           type: string
@@ -17195,7 +17232,7 @@ components:
           example: UMA-Q12345-REF
         transactionHash:
           type: string
-          description: Transaction hash for the crypto transfer that delivered funds to the transaction destination, when available.
+          description: Transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available. This is not a transfer to a customer's own wallet; for that, see the `onChainTransaction` on the transaction's source or destination.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingRateDetails:
       description: 'Details about the rate and fees for an incoming transaction. Note: `gridApiFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'

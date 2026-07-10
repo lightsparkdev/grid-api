@@ -1,0 +1,12 @@
+type: object
+required:
+  - transactionHash
+  - network
+properties:
+  transactionHash:
+    type: string
+    description: On-chain transaction hash of the crypto transfer for this leg of the transaction.
+    example: '4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8WgpD9k6oRnJm2pQ7sT1uV3wX5yZ6aB8cD9eF0gH1i'
+  network:
+    $ref: ../crypto/CryptoNetwork.yaml
+    description: Blockchain network (incl. environment) the transaction settled on.
