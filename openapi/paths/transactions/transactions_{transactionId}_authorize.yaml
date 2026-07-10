@@ -11,13 +11,22 @@ post:
   description: |
     Satisfy the Strong Customer Authentication challenge carried by a
     transaction in `PENDING_AUTHORIZATION` status by submitting an
-    `ScaAuthorization` proof. On success the transaction advances to
-    `PROCESSING` (or `COMPLETED`) and the underlying transfer is released.
+    `ScaAuthorization` proof for the transaction's **current** `scaChallenge`.
+
+    A transaction may require **more than one** authorization in sequence (see
+    `ScaChallenge`). On success, inspect the returned transaction: if it has
+    advanced to `PROCESSING` / `COMPLETED`, the transfer is released; if it is
+    **still** `PENDING_AUTHORIZATION`, it now carries the next `scaChallenge`
+    (a new `id`) — call this endpoint again for that one. Repeat until the
+    transaction leaves `PENDING_AUTHORIZATION`. Do not assume a single call
+    releases the transfer; the number of authorizations is provider-dependent
+    and may change over time.
 
     Transactions enter `PENDING_AUTHORIZATION` from `execute` (embedded-wallet
     quotes) and `transfer-out` when the customer's provider requires SCA. The
-    same authorization can be supplied inline on those calls via their optional
-    `scaAuthorization` field instead of calling this endpoint.
+    first authorization can be supplied inline on those calls via their optional
+    `scaAuthorization` field instead of calling this endpoint; any subsequent
+    authorizations in the sequence use this endpoint.
 
     This endpoint is only meaningful for customers whose payment provider
     requires SCA (e.g. EU customers). For customers whose provider has no such
@@ -37,7 +46,10 @@ post:
           $ref: ../../components/schemas/sca/ScaAuthorization.yaml
   responses:
     '200':
-      description: Challenge authorized; the updated transaction is returned.
+      description: >-
+        Challenge authorized; the updated transaction is returned. It has either
+        advanced (`PROCESSING` / `COMPLETED`) or, if another authorization is
+        required, remains `PENDING_AUTHORIZATION` with the next `scaChallenge`.
       content:
         application/json:
           schema:

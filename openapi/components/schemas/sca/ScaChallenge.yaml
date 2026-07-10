@@ -11,6 +11,19 @@ description: >-
   `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` or
   `POST /transactions/{transactionId}/authorize`, or inline via the optional
   `scaAuthorization` field on the originating `execute` / `transfer-out` call.
+
+
+  **A single operation may require more than one authorization, in sequence.**
+  Treat `scaChallenge` as *the challenge to satisfy now*, not "the only one".
+  After each authorize, re-inspect the returned quote/transaction: if it is
+  still `PENDING_AUTHORIZATION`, it carries the **next** `scaChallenge` (a new
+  `id`) — authorize that too, and repeat until it leaves `PENDING_AUTHORIZATION`.
+  Do not assume one authorization releases the transfer. The number of
+  authorizations is flow- and provider-dependent and **may decrease in future**:
+  for example, a cross-currency send today authorizes the currency conversion
+  and the payout as two separate challenges; a future provider update may
+  collapse them into one. A client written to loop on status handles any count
+  unchanged.
 required:
   - id
   - expiresAt
@@ -40,6 +53,19 @@ properties:
       $ref: ./ScaFactor.yaml
     example:
       - SMS_OTP
+  purpose:
+    type:
+      - string
+      - 'null'
+    description: >-
+      Optional, informational label for what this particular challenge in the
+      sequence authorizes — useful for step UX (e.g. "Authorize the currency
+      conversion" vs "Authorize the payout"). Known values include
+      `CURRENCY_CONVERSION`, `PAYOUT`, and `TRANSFER`, but the set is
+      **non-exhaustive and may grow** — treat unrecognized values as a generic
+      authorization step and do not branch program logic on it. Omitted when the
+      provider does not distinguish steps (e.g. a single-authorization flow).
+    example: PAYOUT
   passkeyAssertionOptions:
     type:
       - object

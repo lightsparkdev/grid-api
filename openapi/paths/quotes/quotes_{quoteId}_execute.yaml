@@ -72,8 +72,11 @@ post:
         yet. The quote is returned with status `PENDING_AUTHORIZATION` and an
         `scaChallenge`, and the **only** way to release the transfer is
         `POST /transactions/{transactionId}/authorize` for the quote's
-        `transactionId` (re-calling `execute` returns 409). The inline
-        `scaAuthorization` field is therefore for the initial call only. A
+        `transactionId` (re-calling `execute` returns 409). That may need to be
+        done **more than once** — the transaction can surface a further
+        `scaChallenge` after each authorization (see `ScaChallenge`); keep
+        authorizing until it leaves `PENDING_AUTHORIZATION`. The inline
+        `scaAuthorization` field satisfies only the **first** challenge. A
         client holding a `PENDING_AUTHORIZATION` quote from `execute` always
         authorizes via the **transaction**-scoped endpoint; the quote-scoped
         `POST /quotes/{quoteId}/authorize` is only for a realtime-funding quote

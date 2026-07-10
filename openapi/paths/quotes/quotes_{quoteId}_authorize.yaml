@@ -17,6 +17,11 @@ post:
     quote advances and its `paymentInstructions` are populated so the customer
     can fund the transfer.
 
+    As with all SCA, a quote may require more than one authorization: after
+    authorizing, if the quote is still `PENDING_AUTHORIZATION` it carries the
+    next `scaChallenge` — authorize that too, repeating until it advances (see
+    `ScaChallenge`).
+
     This endpoint is only meaningful for customers whose payment provider
     requires SCA (e.g. EU customers). For customers whose provider has no such
     requirement, this returns `409`.
