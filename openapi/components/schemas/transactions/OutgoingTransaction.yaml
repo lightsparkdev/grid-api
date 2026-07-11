@@ -37,8 +37,8 @@ allOf:
       reconciliationInstructions:
         $ref: ../common/ReconciliationInstructions.yaml
         description: >-
-          Reconciliation details for this transaction, including crypto
-          transaction hash when available.
+          Reconciliation details for this transaction. For the on-chain hash of a crypto
+          payout to an external wallet, see the destination's `onChainTransaction` instead.
       quoteId:
         type: string
         description: The ID of the quote that was used to trigger this payment
