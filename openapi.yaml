@@ -7463,12 +7463,12 @@ paths:
                     mcc: '5942'
                     country: US
       responses:
-        '200':
-          description: Simulated authorization processed. Returns the resulting card transaction.
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardTransaction'
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -7541,12 +7541,12 @@ paths:
                   cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 0
       responses:
-        '200':
-          description: Simulated clearing processed. Returns the updated card transaction.
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardTransaction'
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -7610,12 +7610,526 @@ paths:
                   cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 1500
       responses:
-        '200':
-          description: Simulated return processed. Returns the updated card transaction.
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardTransaction'
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/balance_inquiry:
+    post:
+      summary: Simulate a card balance inquiry
+      description: |
+        Simulate a balance-inquiry authorization against a card in the sandbox environment. A balance inquiry is always a `0`-amount authorization, so the request carries no `amount` — only the `merchant`. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardBalanceInquiry
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate a balance inquiry against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardBalanceInquiryRequest'
+            examples:
+              balanceInquiry:
+                summary: Balance inquiry at a fuel pump
+                value:
+                  merchant:
+                    descriptor: SHELL OIL 12345678
+                    mcc: '5541'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/credit_authorization:
+    post:
+      summary: Simulate a card credit authorization
+      description: |
+        Simulate an inbound credit authorization (a merchant-initiated credit to the card, e.g. a refund pushed as an authorization) in the sandbox environment. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        As with `simulate/authorization`, the decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` suffix table.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardCreditAuthorization
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate a credit authorization against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              creditAuth:
+                summary: $25.00 credit authorization
+                value:
+                  amount: 2500
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: ACME MARKETPLACE
+                    mcc: '5942'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/financial_authorization:
+    post:
+      summary: Simulate a card financial authorization
+      description: |
+        Simulate a single-message financial authorization (an authorization that clears in the same message, e.g. an ATM withdrawal or other dual-message-exempt flow) against a card in the sandbox environment. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        As with `simulate/authorization`, the decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` suffix table.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardFinancialAuthorization
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate a financial authorization against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              financialAuth:
+                summary: $80.00 single-message ATM withdrawal
+                value:
+                  amount: 8000
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: ATM WITHDRAWAL 24TH ST
+                    mcc: '6011'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/financial_credit_authorization:
+    post:
+      summary: Simulate a card financial credit authorization
+      description: |
+        Simulate a single-message financial credit authorization (a credit to the card that clears in the same message, e.g. an ATM deposit or push credit) against a card in the sandbox environment. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        As with `simulate/authorization`, the decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` suffix table.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardFinancialCreditAuthorization
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate a financial credit authorization against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              financialCreditAuth:
+                summary: $40.00 single-message push credit
+                value:
+                  amount: 4000
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: ACME PAYOUTS
+                    mcc: '6012'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/authorization_advice:
+    post:
+      summary: Simulate a card authorization advice
+      description: |
+        Simulate an `AUTHORIZATION_ADVICE` that re-sizes an existing open authorization on a `CardTransaction` in the sandbox environment. The `amount` is the new *total* authorized amount the advice re-sizes to. The parent transaction must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardAuthorizationAdvice
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the advice applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationAdviceRequest'
+            examples:
+              resizeUp:
+                summary: Re-size an open auth up to a new total of $20.00
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 2000
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/credit_authorization_advice:
+    post:
+      summary: Simulate a card credit authorization advice
+      description: |
+        Simulate a network-initiated `CREDIT_AUTHORIZATION_ADVICE` against a card in the sandbox environment. Like `simulate/credit_authorization`, it is keyed by the card (PAN) and `merchant` rather than an existing transaction. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        As with `simulate/authorization`, the decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` suffix table.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardCreditAuthorizationAdvice
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the advice applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              creditAdvice:
+                summary: $25.00 credit authorization advice
+                value:
+                  amount: 2500
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: ACME MARKETPLACE
+                    mcc: '5942'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/return_reversal:
+    post:
+      summary: Simulate a card return reversal
+      description: |
+        Simulate a `RETURN_REVERSAL` against an existing `REFUNDED` card transaction in the sandbox environment — reversing a previously settled return. The parent transaction must be in `REFUNDED` state. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        Note: authorization reversal / void has no dedicated card-issuer simulate path (the void simulator emits a distinct `VOID` event), so — like authorization expiry — it is not exposed here.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardReturnReversal
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the return reversal applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardTransactionRefRequest'
+            examples:
+              returnReversal:
+                summary: Reverse a settled return on a refunded transaction
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -20681,7 +21195,7 @@ components:
         - amount
         - currency
         - merchant
-      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/authorization`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the endpoint documentation for the suffix table.
+      description: 'Sandbox-only request body shared by the card authorization-family simulate endpoints: `simulate/authorization`, `simulate/credit_authorization`, `simulate/financial_authorization`, `simulate/financial_credit_authorization`, and `simulate/credit_authorization_advice`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` documentation for the suffix table.'
       properties:
         amount:
           type: integer
@@ -20693,6 +21207,16 @@ components:
           $ref: '#/components/schemas/Currency'
         merchant:
           $ref: '#/components/schemas/CardMerchant'
+    SandboxCardSimulationResponse:
+      type: object
+      required:
+        - issuerTransactionToken
+      description: Response body for the sandbox card-event simulators. The simulate call pokes the card issuer's sandbox; the resulting card operation is delivered asynchronously via the issuer's events webhook, never synchronously in this response.
+      properties:
+        issuerTransactionToken:
+          type: string
+          description: The card issuer's transaction token for the simulated event. Correlates the eventual webhook-delivered card operation back to this simulate call.
+          example: f3a1c2d4-5b6e-7890-abcd-ef0123456789
     SandboxCardClearingRequest:
       type: object
       required:
@@ -20727,6 +21251,41 @@ components:
           description: Return amount in the smallest unit of the transaction's currency. Must be less than or equal to the net settled amount (settled minus previously-refunded).
           exclusiveMinimum: 0
           example: 1500
+    SandboxCardBalanceInquiryRequest:
+      type: object
+      required:
+        - merchant
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/balance_inquiry`. Drives a balance-inquiry authorization against the card. A balance inquiry is always a `0`-amount authorization, so it carries no `amount`.
+      properties:
+        merchant:
+          $ref: '#/components/schemas/CardMerchant'
+    SandboxCardAuthorizationAdviceRequest:
+      type: object
+      required:
+        - cardTransactionId
+        - amount
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/authorization_advice`. Drives an `AUTHORIZATION_ADVICE` that re-sizes an existing open authorization.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the `CardTransaction` the advice re-sizes. Must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state.
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: The new *total* authorized amount, in the smallest unit of the transaction's currency, that the advice re-sizes the authorization to.
+          exclusiveMinimum: 0
+          example: 2000
+    SandboxCardTransactionRefRequest:
+      type: object
+      required:
+        - cardTransactionId
+      description: Sandbox-only request body for simulate endpoints keyed only by an existing card transaction — currently `POST /sandbox/cards/{id}/simulate/return_reversal`.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the `CardTransaction` to act against.
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
     StablecoinProvider:
       type: string
       enum:

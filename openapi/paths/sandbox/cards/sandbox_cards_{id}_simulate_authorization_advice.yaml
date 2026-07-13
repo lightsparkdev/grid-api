@@ -1,14 +1,16 @@
 post:
-  summary: Simulate a card return
+  summary: Simulate a card authorization advice
   description: >
-    Simulate a merchant-initiated `RETURN` against an existing settled
-    card transaction in the sandbox environment. Creates a `CardRefund` on
-    the parent and either flips the parent to `REFUNDED` (full refund) or
-    keeps it `SETTLED` with a non-zero `refundedAmount` (partial refund).
+    Simulate an `AUTHORIZATION_ADVICE` that re-sizes an existing open
+    authorization on a `CardTransaction` in the sandbox environment. The
+    `amount` is the new *total* authorized amount the advice re-sizes to. The
+    parent transaction must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state. The
+    resulting card operation is delivered asynchronously via the issuer's events
+    webhook.
 
 
     Production returns `404` on this path.
-  operationId: sandboxSimulateCardReturn
+  operationId: sandboxSimulateCardAuthorizationAdvice
   tags:
     - Sandbox
   security:
@@ -17,7 +19,7 @@ post:
     - name: id
       in: path
       required: true
-      description: The id of the card the return applies to.
+      description: The id of the card the advice applies to.
       schema:
         type: string
       example: Card:019542f5-b3e7-1d02-0000-000000000010
@@ -26,13 +28,13 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../../components/schemas/cards/SandboxCardReturnRequest.yaml
+          $ref: ../../../components/schemas/cards/SandboxCardAuthorizationAdviceRequest.yaml
         examples:
-          fullRefund:
-            summary: Full refund of a $15.00 settled transaction
+          resizeUp:
+            summary: Re-size an open auth up to a new total of $20.00
             value:
               cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
-              amount: 1500
+              amount: 2000
   responses:
     '202':
       description: >-
