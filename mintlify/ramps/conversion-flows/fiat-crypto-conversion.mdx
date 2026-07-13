@@ -113,6 +113,14 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 
 ```javascript
 function displayPaymentInstructions(quote) {
+  // EU customers only: an SCA-gated realtime-funding quote comes back
+  // PENDING_AUTHORIZATION with paymentInstructions withheld until its
+  // scaChallenge is authorized (see "Strong Customer Authentication" below).
+  // Authorize first, then display — don't read paymentInstructions while pending.
+  if (!quote.paymentInstructions?.length) {
+    return { pendingAuthorization: true, scaChallenge: quote.scaChallenge };
+  }
+
   const instructions = quote.paymentInstructions[0];
 
   return {
