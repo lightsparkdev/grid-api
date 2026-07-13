@@ -88,6 +88,47 @@ post:
                   gridApiFixedFee: 10
                   gridApiVariableFeeRate: 0.003
                   gridApiVariableFeeAmount: 30
+          outgoingCompletedCryptoPayment:
+            summary: Completed crypto payout to an external wallet
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+              type: OUTGOING_PAYMENT.COMPLETED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000009
+                status: COMPLETED
+                type: OUTGOING
+                direction: DEBIT
+                source:
+                  sourceType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                  onChainTransaction:
+                    transactionHash: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8WgpD9k6oRnJm2pQ7sT1uV3wX5yZ6aB8cD9eF0gH1i
+                    network: SOLANA_MAINNET
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                sentAmount:
+                  amount: 100000
+                  currency:
+                    code: USDC
+                    name: USD Coin
+                    symbol: ''
+                    decimals: 6
+                receivedAmount:
+                  amount: 100000
+                  currency:
+                    code: USDC
+                    name: USD Coin
+                    symbol: ''
+                    decimals: 6
+                quoteId: Quote:019542f5-b3e7-1d02-0000-000000000010
+                settledAt: '2025-08-15T14:30:00Z'
+                createdAt: '2025-08-15T14:25:18Z'
+                description: USDC withdrawal to self-custody wallet
+                paymentInstructions: []
           failedPayment:
             summary: Failed outgoing payment
             value:
