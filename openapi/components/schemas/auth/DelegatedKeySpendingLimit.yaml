@@ -1,0 +1,22 @@
+title: Delegated Key Spending Limit
+type: object
+required:
+  - currencyCode
+  - maxPerTransaction
+properties:
+  currencyCode:
+    type: string
+    pattern: '^[A-Z0-9]{3,16}$'
+    description: >-
+      Uppercase alphanumeric currency code the limit applies to — ISO 4217 for
+      fiat (e.g. USD), or a Grid token code for stablecoins (e.g. USDB). Must
+      match the card's currency; requests with any other currency are rejected.
+    example: USD
+  maxPerTransaction:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      Largest amount a single card transaction may authorize, in the smallest
+      unit of the currency (e.g., cents for USD).
+    example: 5000

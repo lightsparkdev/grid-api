@@ -19215,6 +19215,24 @@ components:
         - `ACTIVE`: The policy is granted and the key may stamp quote executions.
         - `REVOKED`: The delegated user has been deleted and the key can no longer sign.
       example: ACTIVE
+    DelegatedKeySpendingLimit:
+      title: Delegated Key Spending Limit
+      type: object
+      required:
+        - currencyCode
+        - maxPerTransaction
+      properties:
+        currencyCode:
+          type: string
+          pattern: ^[A-Z0-9]{3,16}$
+          description: Uppercase alphanumeric currency code the limit applies to — ISO 4217 for fiat (e.g. USD), or a Grid token code for stablecoins (e.g. USDB). Must match the card's currency; requests with any other currency are rejected.
+          example: USD
+        maxPerTransaction:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Largest amount a single card transaction may authorize, in the smallest unit of the currency (e.g., cents for USD).
+          example: 5000
     DelegatedKey:
       title: Delegated Key
       type: object
@@ -19256,6 +19274,12 @@ components:
           example: Settlement service key
         status:
           $ref: '#/components/schemas/DelegatedKeyStatus'
+        spendingLimits:
+          type: array
+          uniqueItems: true
+          description: Per-transaction spending limits the key was created with, at most one entry per currency. Absent when the key has no limits.
+          items:
+            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
         createdAt:
           type: string
           format: date-time
@@ -19299,6 +19323,12 @@ components:
           maxLength: 256
           description: Human-readable label for the delegated key.
           example: Card payments key
+        spendingLimits:
+          type: array
+          uniqueItems: true
+          description: Optional per-transaction spending limits for the key, at most one entry per currency — a request with duplicate currency entries is rejected. Grid enforces the limits when authorizing card transactions funded by the key's Embedded Wallet account; a currency with no entry is unlimited. Immutable — revoke the key and create a new one to change limits.
+          items:
+            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
     DelegatedKeySignedRequestChallenge:
       title: Delegated Key Signed Request Challenge
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
