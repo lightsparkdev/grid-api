@@ -7830,6 +7830,38 @@ webhooks:
                     description: Payment for services
                     reconciliationInstructions:
                       reference: REF-123456789
+              incomingCompletedCryptoPayment:
+                summary: Completed payment funded from an external crypto wallet
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+                  type: INCOMING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000006
+                    status: COMPLETED
+                    type: INCOMING
+                    direction: CREDIT
+                    source:
+                      sourceType: REALTIME_FUNDING
+                      currency: USDC
+                      onChainTransaction:
+                        transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
+                        network: SOLANA
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    receivedAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: USDC deposit from self-custody wallet
       responses:
         '200':
           description: |
@@ -7957,6 +7989,47 @@ webhooks:
                       gridApiFixedFee: 10
                       gridApiVariableFeeRate: 0.003
                       gridApiVariableFeeAmount: 30
+              outgoingCompletedCryptoPayment:
+                summary: Completed crypto payout to an external wallet
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+                  type: OUTGOING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000009
+                    status: COMPLETED
+                    type: OUTGOING
+                    direction: DEBIT
+                    source:
+                      sourceType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                      onChainTransaction:
+                        transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+                        network: SOLANA
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    sentAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    receivedAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    quoteId: Quote:019542f5-b3e7-1d02-0000-000000000010
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: USDC withdrawal to self-custody wallet
+                    paymentInstructions: []
               failedPayment:
                 summary: Failed outgoing payment
                 value:
@@ -16950,6 +17023,31 @@ components:
           type: string
           description: Currency code for the destination
           example: EUR
+    CryptoNetwork:
+      type: string
+      enum:
+        - BITCOIN
+        - ETHEREUM
+        - SOLANA
+        - BASE
+        - POLYGON
+        - TRON
+        - SPARK
+      description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
+      example: SOLANA
+    OnChainTransaction:
+      type: object
+      required:
+        - transactionHash
+        - network
+      properties:
+        transactionHash:
+          type: string
+          description: On-chain transaction hash of the crypto transfer for this leg of the transaction.
+          example: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+        network:
+          $ref: '#/components/schemas/CryptoNetwork'
+          description: Blockchain network the transaction settled on (mainnet vs test network is determined by your platform environment).
     AccountTransactionDestination:
       title: Account Destination
       allOf:
@@ -16967,6 +17065,9 @@ components:
               type: string
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Destination account details
     UmaAddressTransactionDestination:
       title: UMA Address Destination
@@ -17101,6 +17202,9 @@ components:
               type: string
               description: Source account identifier
               example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Source account details
     UmaAddressTransactionSource:
       title: UMA Address Source
@@ -17173,6 +17277,9 @@ components:
               type: string
               description: Rail-level tracking identifier for the payment, such as an ACH trace number or a wire IMAD/OMAD, useful for reconciliation.
               example: '021000020123456'
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered the funding, when the funds arrived from an external crypto wallet. Populated once the crypto transfer has settled.
           description: Transaction was funded using an external funding source. All originator fields are optional and populated on a best-effort basis depending on what the funding source provides.
     TransactionSourceOneOf:
       oneOf:
@@ -17188,6 +17295,7 @@ components:
     ReconciliationInstructions:
       type: object
       minProperties: 1
+      description: Instructions for reconciling a payment with this transaction. For the on-chain transaction to or from an external crypto wallet that is the transaction's own source or destination, use the `onChainTransaction` on the relevant source or destination instead.
       properties:
         reference:
           type: string
@@ -17195,7 +17303,7 @@ components:
           example: UMA-Q12345-REF
         transactionHash:
           type: string
-          description: Transaction hash for the crypto transfer that delivered funds to the transaction destination, when available.
+          description: Transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available. This is not a transfer to a customer's own wallet; for that, see the `onChainTransaction` on the transaction's source or destination.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingRateDetails:
       description: 'Details about the rate and fees for an incoming transaction. Note: `gridApiFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
@@ -17430,7 +17538,7 @@ components:
               example: 10
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
-              description: Reconciliation details for this transaction, including crypto transaction hash when available.
+              description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `onChainTransaction` instead.
             quoteId:
               type: string
               description: The ID of the quote that was used to trigger this payment
