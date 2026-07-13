@@ -6,6 +6,7 @@ icon: "/images/icons/paper-plane-top-right.svg"
 ---
 
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+import StrongCustomerAuthentication from '/snippets/sca/strong-customer-authentication.mdx';
 
 Send payments from your customers' internal accounts to their external bank accounts or to other destinations. Grid supports both same-currency transfers and cross-currency transfers with automatic exchange rate handling.
 
@@ -361,6 +362,10 @@ If a transaction fails, Grid initiates a refund automatically. You'll receive `O
 | `COMPLETED`  | Transfer successfully completed            |
 | `FAILED`     | Transfer failed — refund initiated automatically (track via `refund` object) |
 | `EXPIRED`    | Quote expired without execution            |
+
+## Strong Customer Authentication (EU customers)
+
+<StrongCustomerAuthentication />
 
 ## Checking Payment Status
 
