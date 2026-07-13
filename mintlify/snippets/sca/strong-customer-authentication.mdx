@@ -82,8 +82,20 @@ authorize endpoint for the resource:
 </Step>
 </Steps>
 
+<Note>
+For a **realtime-funding quote**, the `202` / `PENDING_AUTHORIZATION` response
+**withholds `paymentInstructions`** until the challenge is authorized. Authorize
+first, then read `paymentInstructions` from the returned (advanced) quote — don't
+read them off the initial pending response, or you'll show the customer nothing
+to fund.
+</Note>
+
 If an SMS code lapses before it's used, re-send it (the existing challenge is
-reused, and its `expiresAt` is not extended):
+reused, and its `expiresAt` is not extended). Use the resend endpoint for the
+resource that carries the challenge:
+
+- Transaction (after `execute` / `transfer-out`): `POST /transactions/{transactionId}/authorize/resend`
+- Realtime-funding quote (from `POST /quotes`): `POST /quotes/{quoteId}/authorize/resend`
 
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/transactions/{transactionId}/authorize/resend \
