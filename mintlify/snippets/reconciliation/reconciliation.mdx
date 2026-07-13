@@ -58,6 +58,13 @@ Sample webhook payload:
   }
 }
 ```
+
+<Note>
+When the transaction's source or destination is an external crypto wallet, that `source` /
+`destination` object also includes an `onChainTransaction` (`transactionHash` + `network`,
+e.g. `SOLANA_MAINNET`) once the crypto transfer settles — use it to match the transfer on a
+block explorer.
+</Note>
 </Step>
 
 <Step title="Process events idempotently">
