@@ -197,7 +197,8 @@ Most receipt fields come directly from the [transaction object](/api-reference/t
 | Total to recipient | `receivedAmount.amount` + `receivedAmount.currency` |
 | Total transfer fees | `fees` (smallest unit of the sending currency) |
 | Exchange rate | `exchangeRate` |
-| Transaction hash / VC address(es) | `source.onChainTransaction` / `destination.onChainTransaction` (`transactionHash` + `network`) when that side is an external crypto wallet; `reconciliationInstructions.transactionHash` carries the internal UMA settlement-leg hash |
+| Transaction hash | `source.onChainTransaction` / `destination.onChainTransaction` (`transactionHash` + `network`) when that side is an external crypto wallet; `reconciliationInstructions.transactionHash` carries the internal UMA settlement-leg hash |
+| VC address(es) | Resolve `destination.accountId` to the external account and read the wallet address from its `accountInfo` |
 
 ## Example: send a receipt on completion
 

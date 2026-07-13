@@ -7845,7 +7845,7 @@ webhooks:
                       sourceType: REALTIME_FUNDING
                       currency: USDC
                       onChainTransaction:
-                        transactionHash: 5Qe2n7Rlr8SgLvF6wR0rQ0Uo7I05Vfrc5yYIatBce9XhqE0l7pSoKn3qR8tU2vW4xY6zA7bC9dE0fG1hI2j
+                        transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
                         network: SOLANA_MAINNET
                     destination:
                       destinationType: ACCOUNT
@@ -8007,7 +8007,7 @@ webhooks:
                       destinationType: ACCOUNT
                       accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
                       onChainTransaction:
-                        transactionHash: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8WgpD9k6oRnJm2pQ7sT1uV3wX5yZ6aB8cD9eF0gH1i
+                        transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
                         network: SOLANA_MAINNET
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
@@ -17051,7 +17051,7 @@ components:
         transactionHash:
           type: string
           description: On-chain transaction hash of the crypto transfer for this leg of the transaction.
-          example: 4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8WgpD9k6oRnJm2pQ7sT1uV3wX5yZ6aB8cD9eF0gH1i
+          example: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
         network:
           $ref: '#/components/schemas/CryptoNetwork'
           description: Blockchain network (incl. environment) the transaction settled on.
@@ -17093,9 +17093,6 @@ components:
               type: string
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
-            onChainTransaction:
-              $ref: '#/components/schemas/OnChainTransaction'
-              description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled.
           description: UMA address destination details
     TransactionDestinationOneOf:
       oneOf:
@@ -17233,9 +17230,6 @@ components:
               type: string
               description: UMA address of the sender
               example: $sender@uma.domain.com
-            onChainTransaction:
-              $ref: '#/components/schemas/OnChainTransaction'
-              description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled.
           description: UMA address source details
     RealtimeFundingTransactionSource:
       title: External Funding Source

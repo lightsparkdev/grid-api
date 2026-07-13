@@ -14,9 +14,4 @@ allOf:
         type: string
         description: UMA address of the recipient
         example: $receiver@uma.domain.com
-      onChainTransaction:
-        $ref: ./OnChainTransaction.yaml
-        description: >-
-          On-chain transaction that delivered funds to this destination, when the destination
-          is an external crypto wallet. Populated once the crypto transfer has settled.
     description: UMA address destination details
