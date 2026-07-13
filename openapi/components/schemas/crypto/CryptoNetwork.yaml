@@ -1,21 +1,15 @@
 type: string
 enum:
-  - BITCOIN_MAINNET
-  - BITCOIN_TESTNET
-  - ETHEREUM_MAINNET
-  - ETHEREUM_TESTNET
-  - SOLANA_MAINNET
-  - SOLANA_DEVNET
-  - BASE_MAINNET
-  - BASE_TESTNET
-  - POLYGON_MAINNET
-  - POLYGON_TESTNET
-  - TRON_MAINNET
-  - TRON_TESTNET
-  - SPARK_MAINNET
-  - SPARK_REGTEST
+  - BITCOIN
+  - ETHEREUM
+  - SOLANA
+  - BASE
+  - POLYGON
+  - TRON
+  - SPARK
 description: >-
-  A blockchain network, including the environment (mainnet vs devnet/testnet/regtest) so an
-  on-chain transaction can be looked up on the correct explorer. Sandbox transactions report
-  the devnet/testnet/regtest variant (e.g. SOLANA_DEVNET).
-example: SOLANA_MAINNET
+  The blockchain network an on-chain transaction settled on. Whether this is the
+  mainnet or a test network (e.g. Solana devnet) is determined by your platform's
+  environment — sandbox platforms operate on test networks, production platforms on
+  mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
+example: SOLANA

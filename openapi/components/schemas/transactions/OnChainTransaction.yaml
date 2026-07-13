@@ -9,4 +9,4 @@ properties:
     example: 'h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx'
   network:
     $ref: ../crypto/CryptoNetwork.yaml
-    description: Blockchain network (incl. environment) the transaction settled on.
+    description: Blockchain network the transaction settled on (mainnet vs test network is determined by your platform environment).
