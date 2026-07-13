@@ -16939,9 +16939,22 @@ components:
         - UMA_ADDRESS
       description: Type of transaction destination
       example: ACCOUNT
+    BaseTransactionDestination:
+      type: object
+      required:
+        - destinationType
+      properties:
+        destinationType:
+          $ref: '#/components/schemas/TransactionDestinationType'
+        currency:
+          type: string
+          description: Currency code for the destination
+          example: EUR
     CryptoNetwork:
       type: string
       enum:
+        - BITCOIN_MAINNET
+        - BITCOIN_TESTNET
         - ETHEREUM_MAINNET
         - ETHEREUM_TESTNET
         - SOLANA_MAINNET
@@ -16969,20 +16982,6 @@ components:
         network:
           $ref: '#/components/schemas/CryptoNetwork'
           description: Blockchain network (incl. environment) the transaction settled on.
-    BaseTransactionDestination:
-      type: object
-      required:
-        - destinationType
-      properties:
-        destinationType:
-          $ref: '#/components/schemas/TransactionDestinationType'
-        currency:
-          type: string
-          description: Currency code for the destination
-          example: EUR
-        onChainTransaction:
-          $ref: '#/components/schemas/OnChainTransaction'
-          description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled; absent for fiat/UMA destinations and for the internal settlement leg of a UMA payment (see `reconciliationInstructions`).
     AccountTransactionDestination:
       title: Account Destination
       allOf:
@@ -17000,6 +16999,9 @@ components:
               type: string
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Destination account details
     UmaAddressTransactionDestination:
       title: UMA Address Destination
@@ -17018,6 +17020,9 @@ components:
               type: string
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled.
           description: UMA address destination details
     TransactionDestinationOneOf:
       oneOf:
@@ -17117,9 +17122,6 @@ components:
           type: string
           description: Currency code for the source
           example: USD
-        onChainTransaction:
-          $ref: '#/components/schemas/OnChainTransaction'
-          description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled; absent for fiat/UMA sources and for the internal settlement leg of a UMA payment (see `reconciliationInstructions`).
     AccountTransactionSource:
       title: Account Source
       allOf:
@@ -17137,6 +17139,9 @@ components:
               type: string
               description: Source account identifier
               example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Source account details
     UmaAddressTransactionSource:
       title: UMA Address Source
@@ -17155,6 +17160,9 @@ components:
               type: string
               description: UMA address of the sender
               example: $sender@uma.domain.com
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled.
           description: UMA address source details
     RealtimeFundingTransactionSource:
       title: External Funding Source
@@ -17209,6 +17217,9 @@ components:
               type: string
               description: Rail-level tracking identifier for the payment, such as an ACH trace number or a wire IMAD/OMAD, useful for reconciliation.
               example: '021000020123456'
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered the funding, when the funds arrived from an external crypto wallet. Populated once the crypto transfer has settled.
           description: Transaction was funded using an external funding source. All originator fields are optional and populated on a best-effort basis depending on what the funding source provides.
     TransactionSourceOneOf:
       oneOf:

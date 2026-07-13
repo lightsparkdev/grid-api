@@ -14,4 +14,9 @@ allOf:
         type: string
         description: UMA address of the sender
         example: $sender@uma.domain.com
+      onChainTransaction:
+        $ref: ./OnChainTransaction.yaml
+        description: >-
+          On-chain transaction that delivered funds from this source, when the source is an
+          external crypto wallet. Populated once the crypto transfer has settled.
     description: UMA address source details

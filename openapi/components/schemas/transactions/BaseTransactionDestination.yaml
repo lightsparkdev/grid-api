@@ -8,10 +8,3 @@ properties:
     type: string
     description: Currency code for the destination
     example: EUR
-  onChainTransaction:
-    $ref: ./OnChainTransaction.yaml
-    description: >-
-      On-chain transaction that delivered funds to this destination, when the destination is
-      an external crypto wallet. Populated once the crypto transfer has settled; absent for
-      fiat/UMA destinations and for the internal settlement leg of a UMA payment (see
-      `reconciliationInstructions`).
