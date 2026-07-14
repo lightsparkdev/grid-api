@@ -1,43 +1,34 @@
 parameters:
-  - name: customerId
+  - name: externalAccountId
     in: path
-    description: The unique identifier of the customer starting an SCA login.
+    description: The unique identifier of the external account (beneficiary) being untrusted.
     required: true
     schema:
       type: string
-    example: Customer:019542f5-b3e7-1d02-0000-000000000001
 post:
-  summary: Start an SCA login
+  summary: Start untrusting a beneficiary
   description: |
-    Begin an SCA login for the customer with the chosen factor, opening the
-    end-user SCA session (an exemption gating read / account access beyond the
-    per-transaction window). Returns factor-specific material: `SMS_OTP`
-    dispatches a code and returns a `challengeId` + `expiresAt`; `TOTP` returns
-    only the factor (the customer reads the code from their app); `PASSKEY`
-    returns WebAuthn `passkeyOptions`. Complete with
-    `POST /customers/{customerId}/sca/login/complete`.
+    Begin untrusting (removing the trusted mark from) an external account, so
+    future sends to it are dynamically linked and require the per-transaction SCA
+    ceremony again. Returns the `scaChallenge` to satisfy (when one is issued).
+    Complete with
+    `POST /customers/external-accounts/{externalAccountId}/untrust/confirm`.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
-  operationId: startScaLogin
+  operationId: startBeneficiaryUntrust
   tags:
     - Strong Customer Authentication
   security:
     - BasicAuth: []
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          $ref: ../../components/schemas/sca/ScaLoginStartRequest.yaml
   responses:
     '200':
-      description: SCA login started; factor-specific material is returned.
+      description: Beneficiary untrust started; the SCA challenge (if any) is returned.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/sca/ScaLoginStart.yaml
+            $ref: ../../components/schemas/sca/BeneficiaryTrustStart.yaml
     '400':
-      description: Invalid or unknown factor
+      description: Invalid request
       content:
         application/json:
           schema:
@@ -49,7 +40,7 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '404':
-      description: Customer not found
+      description: Customer or external account not found
       content:
         application/json:
           schema:

@@ -1,34 +1,40 @@
 parameters:
   - name: customerId
-    in: path
-    description: The unique identifier of the customer completing the reset.
+    in: query
+    description: The unique identifier of the customer the security event is recorded for.
     required: true
     schema:
       type: string
     example: Customer:019542f5-b3e7-1d02-0000-000000000001
-  - name: resetId
-    in: path
-    description: The reset handle returned by the start call.
-    required: true
-    schema:
-      type: string
 post:
-  summary: Complete a 2FA reset
+  summary: Record a security event
   description: |
-    Complete a 2FA reset once liveness has passed, clearing the lost factor so
-    the customer can re-enroll.
+    Record a client-side security-relevant event for the customer with Grid's risk engine (e.g. a sign-in, a sensitive view), to
+    feed adaptive-authentication signals.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
-  operationId: completeTwoFactorReset
+  operationId: recordSecurityEvent
   tags:
     - Strong Customer Authentication
   security:
     - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/RecordSecurityEventRequest.yaml
   responses:
-    '204':
-      description: Reset completed; no content is returned.
+    '200':
+      description: >-
+        Event recorded; the customer's resulting login-security state is
+        returned (including any lockout).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/RecordSecurityEventResponse.yaml
     '400':
-      description: Reset not ready (liveness not yet passed)
+      description: Invalid event type
       content:
         application/json:
           schema:
@@ -40,7 +46,7 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '404':
-      description: Customer or reset not found
+      description: Customer not found
       content:
         application/json:
           schema:
@@ -51,6 +57,14 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '423':
+      description: >-
+        The customer's login is locked (or suspended) after too many failed
+        attempts. `details.lockedUntil` says when they may retry.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error423.yaml
     '500':
       description: Internal service error
       content:

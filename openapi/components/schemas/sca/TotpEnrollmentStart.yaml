@@ -1,14 +1,20 @@
 type: object
 description: >-
   The shared secret a customer's authenticator app needs to enroll a TOTP
-  factor. Returned by `POST /customers/{customerId}/sca/factors/totp`; the
+  factor. Returned by `POST /sca/factors` for a `TOTP` request; the
   customer scans `totpUri` (an `otpauth://` provisioning URI) and confirms with
   the first code their app produces.
 required:
+  - type
   - secret
   - secretBase32Encoded
   - totpUri
 properties:
+  type:
+    type: string
+    enum:
+      - TOTP
+    description: Discriminator identifying this as the TOTP enrollment-start payload.
   secret:
     type: string
     description: The raw TOTP shared secret.

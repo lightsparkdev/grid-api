@@ -3,9 +3,15 @@ description: >-
   The WebAuthn credential a device produced for a passkey registration
   challenge, submitted to enroll the passkey factor.
 required:
+  - type
   - origin
   - credential
 properties:
+  type:
+    type: string
+    enum:
+      - PASSKEY
+    description: Discriminator selecting the passkey confirm variant.
   origin:
     type: string
     description: >-

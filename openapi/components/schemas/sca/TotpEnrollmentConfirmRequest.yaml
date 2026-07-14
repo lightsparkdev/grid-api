@@ -4,9 +4,15 @@ description: >-
   the customer's authenticator app produces, submitted to confirm and finalize
   the TOTP factor.
 required:
+  - type
   - secret
   - code
 properties:
+  type:
+    type: string
+    enum:
+      - TOTP
+    description: Discriminator selecting the TOTP confirm variant.
   secret:
     type: string
     description: >-

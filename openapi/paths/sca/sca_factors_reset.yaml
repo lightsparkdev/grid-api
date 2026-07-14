@@ -1,34 +1,42 @@
 parameters:
   - name: customerId
-    in: path
-    description: The unique identifier of the customer enrolling a TOTP factor.
+    in: query
+    description: The unique identifier of the customer resetting a factor.
     required: true
     schema:
       type: string
     example: Customer:019542f5-b3e7-1d02-0000-000000000001
 post:
-  summary: Start TOTP factor enrollment
+  summary: Start a 2FA reset
   description: |
-    Begin enrolling a time-based one-time-password (TOTP) authenticator factor
-    for the customer. Returns the shared secret and an `otpauth://` provisioning
-    URI; the customer scans it into an authenticator app and confirms with the
-    first code via `POST /customers/{customerId}/sca/factors/totp/confirm`.
+    Begin recovering a lost enrolled factor via a liveness-gated, poll-based
+    flow. Opens the liveness check and returns a `resetId` plus the
+    opaque liveness handles (`livenessAccessToken` / `verificationLink`) the end
+    user completes it with. Poll
+    `GET /sca/factors/reset/{resetId}` until liveness
+    passes, then call the complete endpoint.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
-  operationId: startTotpFactorEnrollment
+  operationId: startTwoFactorReset
   tags:
     - Strong Customer Authentication
   security:
     - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/TwoFactorResetStartRequest.yaml
   responses:
-    '200':
-      description: TOTP enrollment started; the shared secret is returned.
+    '201':
+      description: Reset initiated; the reset handle and liveness material are returned.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/sca/TotpEnrollmentStart.yaml
+            $ref: ../../components/schemas/sca/TwoFactorResetStart.yaml
     '400':
-      description: Invalid request
+      description: Invalid or unknown factor
       content:
         application/json:
           schema:
@@ -51,6 +59,14 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: >-
+        Too many reset attempts. Reset initiation is rate-limited to 5 per 24
+        hours per customer; retry after the window indicated by `Retry-After`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

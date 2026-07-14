@@ -1,35 +1,45 @@
 parameters:
-  - name: customerId
+  - name: externalAccountId
     in: path
-    description: The unique identifier of the customer whose reset status is polled.
+    description: The unique identifier of the external account (beneficiary) being trusted.
     required: true
     schema:
       type: string
-    example: Customer:019542f5-b3e7-1d02-0000-000000000001
-  - name: resetId
-    in: path
-    description: The reset handle returned by the start call.
-    required: true
-    schema:
-      type: string
-get:
-  summary: Get 2FA reset status
+post:
+  summary: Confirm trusting a beneficiary
   description: |
-    Poll the status of an in-progress 2FA reset until it reaches the liveness-passed value, after which the reset can be completed.
+    Finalize trusting a beneficiary (identified by the `externalAccountId` in the
+    path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+    `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
+    one was issued. Returns `trusted: true`.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
-  operationId: getTwoFactorResetStatus
+
+    In sandbox, the SMS/TOTP code is always `123456`.
+  operationId: confirmBeneficiaryTrust
   tags:
     - Strong Customer Authentication
   security:
     - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/BeneficiaryTrustConfirmRequest.yaml
   responses:
     '200':
-      description: The current reset status.
+      description: Beneficiary trusted.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/sca/TwoFactorResetStatus.yaml
+            $ref: ../../components/schemas/sca/BeneficiaryTrustConfirm.yaml
+    '400':
+      description: Invalid or expired proof
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
     '401':
       description: Unauthorized
       content:
@@ -37,7 +47,7 @@ get:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '404':
-      description: Customer or reset not found
+      description: Customer or external account not found
       content:
         application/json:
           schema:

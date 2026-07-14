@@ -1,0 +1,23 @@
+type: object
+description: >-
+  Optional body for completing a 2FA reset. Only needed when resetting the
+  `SMS_OTP` factor to a new phone number; omit the body entirely otherwise.
+properties:
+  mobile:
+    type: object
+    description: >-
+      For an `SMS_OTP` reset, the new mobile number to enroll as the customer
+      completes the reset. Required for an `SMS_OTP` reset; ignored for `TOTP` /
+      `PASSKEY` resets.
+    required:
+      - countryCode
+      - number
+    properties:
+      countryCode:
+        type: string
+        description: The country dialing code, including the leading `+`.
+        example: '+1'
+      number:
+        type: string
+        description: The national subscriber number, without the country code.
+        example: '4155550123'

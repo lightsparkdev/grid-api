@@ -1,48 +1,33 @@
 parameters:
-  - name: customerId
-    in: path
-    description: The unique identifier of the customer who owns the external account.
-    required: true
-    schema:
-      type: string
-    example: Customer:019542f5-b3e7-1d02-0000-000000000001
   - name: externalAccountId
     in: path
-    description: The unique identifier of the external account (beneficiary) being untrusted.
+    description: The unique identifier of the external account (beneficiary) being trusted.
     required: true
     schema:
       type: string
 post:
-  summary: Confirm untrusting a beneficiary
+  summary: Start trusting a beneficiary
   description: |
-    Finalize untrusting a beneficiary (identified by the `externalAccountId` in
-    the path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
-    `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
-    one was issued. Returns `trusted: false`.
+    Begin trusting (whitelisting) an external account so future sends to it can
+    skip the per-transaction SCA ceremony. Returns the `scaChallenge` to satisfy
+    (when one is issued). Complete with
+    `POST /customers/external-accounts/{externalAccountId}/trust/confirm`.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
-
-    In sandbox, the SMS/TOTP code is always `123456`.
-  operationId: confirmBeneficiaryUntrust
+  operationId: startBeneficiaryTrust
   tags:
     - Strong Customer Authentication
   security:
     - BasicAuth: []
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          $ref: ../../components/schemas/sca/BeneficiaryTrustConfirmRequest.yaml
   responses:
     '200':
-      description: Beneficiary untrusted.
+      description: Beneficiary trust started; the SCA challenge (if any) is returned.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/sca/BeneficiaryTrustConfirm.yaml
+            $ref: ../../components/schemas/sca/BeneficiaryTrustStart.yaml
     '400':
-      description: Invalid or expired proof
+      description: Invalid request
       content:
         application/json:
           schema:

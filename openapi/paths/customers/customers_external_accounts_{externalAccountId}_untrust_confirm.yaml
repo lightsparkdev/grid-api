@@ -1,22 +1,22 @@
 parameters:
-  - name: customerId
+  - name: externalAccountId
     in: path
-    description: The unique identifier of the customer confirming a TOTP factor.
+    description: The unique identifier of the external account (beneficiary) being untrusted.
     required: true
     schema:
       type: string
-    example: Customer:019542f5-b3e7-1d02-0000-000000000001
 post:
-  summary: Confirm TOTP factor enrollment
+  summary: Confirm untrusting a beneficiary
   description: |
-    Finalize TOTP factor enrollment by submitting the shared secret from the
-    start call and the first code the customer's authenticator app produces.
-    Returns one-time recovery codes shown to the customer only once.
+    Finalize untrusting a beneficiary (identified by the `externalAccountId` in
+    the path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+    `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
+    one was issued. Returns `trusted: false`.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
-    In sandbox, the code is always `123456`.
-  operationId: confirmTotpFactorEnrollment
+    In sandbox, the SMS/TOTP code is always `123456`.
+  operationId: confirmBeneficiaryUntrust
   tags:
     - Strong Customer Authentication
   security:
@@ -26,16 +26,16 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/sca/TotpEnrollmentConfirmRequest.yaml
+          $ref: ../../components/schemas/sca/BeneficiaryTrustConfirmRequest.yaml
   responses:
     '200':
-      description: TOTP factor enrolled; recovery codes are returned.
+      description: Beneficiary untrusted.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/sca/TotpEnrollmentConfirmResponse.yaml
+            $ref: ../../components/schemas/sca/BeneficiaryTrustConfirm.yaml
     '400':
-      description: Invalid or incorrect confirmation code
+      description: Invalid or expired proof
       content:
         application/json:
           schema:
@@ -47,7 +47,7 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '404':
-      description: Customer not found
+      description: Customer or external account not found
       content:
         application/json:
           schema:

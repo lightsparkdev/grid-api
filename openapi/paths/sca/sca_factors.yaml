@@ -1,0 +1,114 @@
+parameters:
+  - name: customerId
+    in: query
+    description: The unique identifier of the customer whose factors are listed or enrolled.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+get:
+  summary: List enrolled SCA factors
+  description: |
+    List the Strong Customer Authentication factors the customer has enrolled.
+
+    This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+  operationId: listScaFactors
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The customer's enrolled SCA factors.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/ScaFactorList.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: SCA is not required for this customer.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+post:
+  summary: Start SCA factor enrollment
+  description: |
+    Begin enrolling an SCA factor for the customer. The request body's `type`
+    selects the factor — `TOTP` or `PASSKEY`. `SMS_OTP` is not enrollable (it uses
+    the customer's verified phone). Returns the factor-specific material needed to
+    finish via `POST /sca/factors/confirm`.
+
+    A customer may have **only one passkey**. Starting a passkey enrollment when
+    one is already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete it
+    via `DELETE /sca/factors/{credentialId}` first.
+
+    This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+  operationId: startScaFactorEnrollment
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/ScaFactorEnrollRequestOneOf.yaml
+  responses:
+    '200':
+      description: Enrollment started; the factor-specific completion material is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/ScaFactorEnrollStartOneOf.yaml
+    '400':
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        SCA is not required for this customer (`CONFLICT`), or a passkey
+        enrollment was requested while one is already enrolled
+        (`PASSKEY_ALREADY_ENROLLED`) — only one passkey per customer is supported.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

@@ -5,10 +5,16 @@ description: >-
   device's WebAuthn API to produce a credential, then submit that credential to
   the confirm endpoint unmodified.
 required:
+  - type
   - options
   - allowedOrigins
   - relyingPartyId
 properties:
+  type:
+    type: string
+    enum:
+      - PASSKEY
+    description: Discriminator identifying this as the passkey enrollment-start payload.
   options:
     type: object
     additionalProperties: true
