@@ -27,10 +27,13 @@ import SendUMA from '/snippets/sending/uma.mdx'
 
 <SendUMA />
 
-import StrongCustomerAuthentication from '/snippets/sca/strong-customer-authentication.mdx'
-
 ## Strong Customer Authentication (EU customers)
 
-<StrongCustomerAuthentication />
+Customers in SCA-regulated regions (in practice the EU: EUR / USDC) must confirm
+payments with Strong Customer Authentication. When it applies, the payment comes
+back `PENDING_AUTHORIZATION` with an `scaChallenge` that you authorize before the
+transfer is released; for every other customer nothing changes. See
+[Per-transaction authorization](/platform-overview/sca/per-transaction-authorization)
+for the full walkthrough.
 
 

@@ -6,7 +6,6 @@ icon: "/images/icons/paper-plane-top-right.svg"
 ---
 
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
-import StrongCustomerAuthentication from '/snippets/sca/strong-customer-authentication.mdx';
 
 Send payments from your customers' internal accounts to their external bank accounts or to other destinations. Grid supports both same-currency transfers and cross-currency transfers with automatic exchange rate handling.
 
@@ -365,7 +364,12 @@ If a transaction fails, Grid initiates a refund automatically. You'll receive `O
 
 ## Strong Customer Authentication (EU customers)
 
-<StrongCustomerAuthentication />
+Customers in SCA-regulated regions (in practice the EU: EUR / USDC) must confirm
+payments with Strong Customer Authentication. When it applies, the payment comes
+back `PENDING_AUTHORIZATION` with an `scaChallenge` that you authorize before the
+transfer is released; for every other customer nothing changes. See
+[Per-transaction authorization](/platform-overview/sca/per-transaction-authorization)
+for the full walkthrough.
 
 ## Checking Payment Status
 

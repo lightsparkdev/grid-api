@@ -11,10 +11,10 @@ returns **`409`** for other customers.
 </Note>
 
 Trusting a beneficiary is a one-time, SCA-gated step that whitelists an external
-account (an IBAN or crypto address). Once trusted, future sends to that payee are
-no longer dynamically linked; they drop to a lighter authentication instead of a
-full per-transaction challenge. Use it for recurring payouts to known
-destinations.
+account. Only **USDC addresses** can be trusted today. Once trusted, future sends
+to that payee are no longer dynamically linked; they drop to a lighter
+authentication instead of a full per-transaction challenge. Use it for recurring
+payouts to known destinations.
 
 The beneficiary is identified end-to-end by its **`externalAccountId`** in the
 path, so there is no separate whitelist handle to track. All paths below are
@@ -25,7 +25,7 @@ relative to `https://api.lightspark.com/grid/2025-10-13`.
 <Steps>
 <Step title="Start the trust">
 ```bash
-POST /customers/{customerId}/external-accounts/{externalAccountId}/trust
+POST /customers/external-accounts/{externalAccountId}/trust
 ```
 
 Returns the `scaChallenge` to satisfy:
@@ -44,7 +44,7 @@ Submit the SCA proof (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` +
 `origin` for `PASSKEY`), echoing `challengeId` when start issued one.
 
 ```bash
-POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm
+POST /customers/external-accounts/{externalAccountId}/trust/confirm
 
 { "challengeId": "…", "code": "123456" }
 ```
@@ -60,22 +60,33 @@ An invalid or expired proof returns `400`. **In sandbox, the code is always
 
 ## Untrusting a beneficiary
 
-Untrust has no separate start step. You confirm it directly with an SCA proof,
-the same request shape as trust/confirm, and it returns `trusted: false`.
+Untrusting mirrors trusting: a start call issues the challenge, then confirm
+submits the proof.
+
+<Steps>
+<Step title="Start the untrust">
 
 ```bash
-POST /customers/{customerId}/external-accounts/{externalAccountId}/untrust/confirm
-
-{ "code": "123456" }
+POST /customers/external-accounts/{externalAccountId}/untrust
 ```
 
-<Note>
-Because there is no untrust start step, nothing dispatches an SMS code or issues
-passkey options for the untrust. The customer authenticates with a proof they can
-produce on their own, a `TOTP` code, and `challengeId` is omitted. SMS and passkey
-untrust would each need a start step to issue the challenge, which isn't part of
-the current surface.
-</Note>
+Returns the `scaChallenge` to satisfy, omitted when no challenge is issued (the
+caller then confirms without a `challengeId`).
+</Step>
+<Step title="Confirm the untrust">
+
+Submit the SCA proof (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` +
+`origin` for `PASSKEY`), echoing `challengeId` when start issued one. Returns
+`trusted: false`.
+
+```bash
+POST /customers/external-accounts/{externalAccountId}/untrust/confirm
+
+{ "challengeId": "…", "code": "123456" }
+```
+
+</Step>
+</Steps>
 
 Once untrusted, sends to that beneficiary are dynamically linked again and each
 one requires a full per-transaction challenge.

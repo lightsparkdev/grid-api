@@ -16,14 +16,24 @@ them. Enrolled factors then appear in `scaChallenge.availableFactors` and can be
 requested per transaction (see
 [per-transaction authorization](/platform-overview/sca/per-transaction-authorization)).
 
+Enrollment is two calls, both discriminated by a `type` field (`TOTP` or
+`PASSKEY`) — the same shape the [login and session](/platform-overview/sca/login-and-sessions)
+endpoints use:
+
+- `POST /sca/factors` — start enrollment; returns the factor-specific material.
+- `POST /sca/factors/confirm` — finish enrollment with the factor-specific proof.
+
 All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
 
 ## Enroll a TOTP authenticator
 
 <Steps>
 <Step title="Start enrollment">
+
 ```bash
-POST /customers/{customerId}/sca/factors/totp
+POST /sca/factors?customerId={customerId}
+
+{ "type": "TOTP" }
 ```
 
 Returns the shared secret and an `otpauth://` provisioning URI. Render `totpUri`
@@ -32,6 +42,7 @@ add it to their authenticator app.
 
 ```json
 {
+  "type": "TOTP",
   "secret": "…",
   "secretBase32Encoded": "ABC123…",
   "totpUri": "otpauth://totp/Grid:customer@example.com?secret=ABC123&issuer=Grid"
@@ -45,13 +56,13 @@ Grid returns one-time **recovery codes**; surface them to the customer once and
 don't store them server-side.
 
 ```bash
-POST /customers/{customerId}/sca/factors/totp/confirm
+POST /sca/factors/confirm?customerId={customerId}
 
-{ "secret": "…", "code": "123456" }
+{ "type": "TOTP", "secret": "…", "code": "123456" }
 ```
 
 ```json
-{ "recoveryCodes": ["ABCD-EFGH-IJKL", "MNOP-QRST-UVWX"] }
+{ "type": "TOTP", "recoveryCodes": ["ABCD-EFGH-IJKL", "MNOP-QRST-UVWX"] }
 ```
 
 A wrong or expired code returns `400`. **In sandbox, the code is always
@@ -64,14 +75,24 @@ A wrong or expired code returns `400`. **In sandbox, the code is always
 Passkey enrollment is a standard WebAuthn registration ceremony. Grid issues the
 options, the customer's device produces the credential, and you hand it back.
 
+<Note>
+A customer may have **only one passkey**. If one is already enrolled, starting
+another returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete the existing passkey
+first (see below). `GET /sca/factors` therefore lists at most one passkey.
+</Note>
+
 <Steps>
 <Step title="Start enrollment">
+
 ```bash
-POST /customers/{customerId}/sca/factors/passkey
+POST /sca/factors?customerId={customerId}
+
+{ "type": "PASSKEY" }
 ```
 
 ```json
 {
+  "type": "PASSKEY",
   "options": { "…": "opaque WebAuthn PublicKeyCredentialCreationOptions" },
   "allowedOrigins": ["https://app.example.com"],
   "relyingPartyId": "app.example.com"
@@ -86,9 +107,9 @@ Pass `options` unmodified to the device's WebAuthn API
 Submit the credential the device produced and the `origin` it ran against.
 
 ```bash
-POST /customers/{customerId}/sca/factors/passkey/confirm
+POST /sca/factors/confirm?customerId={customerId}
 
-{ "origin": "https://app.example.com", "credential": { "…": "opaque WebAuthn credential" } }
+{ "type": "PASSKEY", "origin": "https://app.example.com", "credential": { "…": "opaque WebAuthn credential" } }
 ```
 
 Returns the enrolled `factor` (an `ScaFactorView`, including the `credentialId`
@@ -99,7 +120,7 @@ you'll use to delete it later). An invalid credential or origin returns `400`.
 ## List enrolled factors
 
 ```bash
-GET /customers/{customerId}/sca/factors
+GET /sca/factors?customerId={customerId}
 ```
 
 ```json
@@ -113,11 +134,12 @@ GET /customers/{customerId}/sca/factors
 
 `credentialId` is populated only for `PASSKEY` factors.
 
-## Delete a passkey
+## Delete a factor
 
 ```bash
-DELETE /customers/{customerId}/sca/factors/passkey/{credentialId}
+DELETE /sca/factors/{credentialId}?customerId={customerId}
 ```
 
 Returns `204`. Use the `credentialId` from the factor list (or the confirm
-response).
+response). Today only passkeys carry a `credentialId`, so this is how you remove
+an enrolled passkey.

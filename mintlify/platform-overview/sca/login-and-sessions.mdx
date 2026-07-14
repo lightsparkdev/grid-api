@@ -16,6 +16,15 @@ covers reads and account access beyond the per-transaction window. Grid provides
 the login plumbing; your application decides when to drive it (for example, when
 a customer opens their account and the previous session has lapsed).
 
+<Note>
+**A customer's EUR / USDC accounts aren't provisioned until their first SCA
+login after KYC approval.** Provisioning is deferred from KYC-approval time to
+the first login that opens a valid SCA session, so a freshly KYC-approved
+customer's EUR / USDC accounts won't appear in `GET /customers/internal-accounts`
+until then. Expect those accounts to be unavailable, and drive the SCA login
+once KYC is approved, before relying on them.
+</Note>
+
 All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
 
 ## Logging in
@@ -24,7 +33,7 @@ All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
 <Step title="Start the login">
 
 ```bash
-POST /customers/{customerId}/sca/login/start
+POST /sca/login/start?customerId={customerId}
 
 { "factor": "SMS_OTP" }
 ```
@@ -44,7 +53,7 @@ Submit the proof for the factor you started with: `code` for `SMS_OTP` / `TOTP`
 `PASSKEY`.
 
 ```bash
-POST /customers/{customerId}/sca/login/complete
+POST /sca/login/complete?customerId={customerId}
 
 { "factor": "SMS_OTP", "challengeId": "…", "code": "123456" }
 ```
@@ -67,12 +76,16 @@ login-security state. Because your application owns the customer's login, you
 report the security-relevant events it sees so the engine can act on them:
 
 ```bash
-POST /customers/{customerId}/sca/record-event
+POST /sca/record-event?customerId={customerId}
 
 { "eventType": "FAILED_LOGIN_ATTEMPT" }
 ```
 
-Returns `204`. `eventType` must be one of:
+Returns the customer's resulting login-security state so you can surface a
+lockout — `{ eventType, suspended, lockedUntil, failedAttempts }`. When the
+customer is locked out, this (and `POST /sca/login/complete`) returns `423` with
+`details.lockedUntil` (when they may retry) and `details.failedAttempts`.
+`eventType` must be one of:
 
 | `eventType` | Effect |
 |---|---|

@@ -40,47 +40,34 @@ field on `execute` / `transfer-out` (`SMS_OTP` default, or `PASSKEY`).
 
 ### Satisfying a challenge
 
-Submit an `ScaAuthorization` proof to the authorization endpoint for the resource
-that carries the challenge. Provide exactly one of `code` (for `SMS_OTP`) or
-`passkeyAssertion` + `origin` (for `PASSKEY`):
+Submit an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` for the
+quote that carries the challenge. Provide exactly one of `code` (for `SMS_OTP`)
+or `passkeyAssertion` + `origin` (for `PASSKEY`):
 
 ```bash
-curl -X POST https://api.lightspark.com/grid/2025-10-13/transactions/{transactionId}/authorize \
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/authorize \
   -u "$GRID_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{ "code": "123456" }'
 ```
 
 <Warning>
-**A single money movement may require more than one authorization, in sequence.**
-Treat `scaChallenge` as the challenge to satisfy *now*, not the only one. After
-each authorization, re-inspect the returned transaction: if it is still
-`PENDING_AUTHORIZATION` it carries the **next** `scaChallenge` (a new `id`).
-Authorize that one too, and repeat until the transaction leaves
-`PENDING_AUTHORIZATION`. Don't assume one authorization releases the transfer.
-
-For example, a cross-currency send today authorizes the currency conversion and
-then the payout as two separate challenges. The optional `scaChallenge.purpose`
-labels each one (`CURRENCY_CONVERSION`, `PAYOUT`) for display only. A client
-written to loop on status handles any number of steps unchanged.
+**A pre-funded send is a single authorization today — but write your client to
+loop.** One `POST /quotes/{quoteId}/authorize` releases a pre-funded send; the
+currency-conversion leg of a cross-currency send is not separately gated. Even
+so, treat `scaChallenge` as the challenge to satisfy *now*, not necessarily the
+only one: after authorizing, re-inspect the returned quote, and if it is still
+`PENDING_AUTHORIZATION` it carries the **next** `scaChallenge` (a new `id`) —
+authorize that one too and repeat until it leaves `PENDING_AUTHORIZATION`. A
+client written to loop on status stays correct if a future flow adds steps.
 </Warning>
 
-You have two ways to supply the first proof:
-
-<Steps>
-<Step title="Inline (one shot)">
-Pass `scaAuthorization` in the body of the originating `execute` / `transfer-out`
-call to satisfy the first challenge in the same request and skip the pending
-state. Any subsequent challenges in the sequence still use the authorize
-endpoint.
-</Step>
-<Step title="Separately, after the fact">
-Omit it, receive `PENDING_AUTHORIZATION` + `scaChallenge`, then call the
-authorize endpoint for the resource:
-- After `execute` / `transfer-out`: `POST /transactions/{transactionId}/authorize`
-- For a realtime-funding quote returned from `POST /quotes`: `POST /quotes/{quoteId}/authorize`
-</Step>
-</Steps>
+Once the quote is in `PENDING_AUTHORIZATION`, authorize it:
+`POST /quotes/{quoteId}/authorize`. This is the single authorize path for both
+`execute` (pre-funded) and realtime-funding quotes. The challenge — and the SMS
+code or passkey assertion that satisfies it — only exists after the challenge is
+issued, so the proof is always supplied on this follow-up call, never on the
+originating request.
 
 <Note>
 For a **realtime-funding quote**, the `202` / `PENDING_AUTHORIZATION` response
@@ -91,14 +78,11 @@ fund.
 </Note>
 
 If an SMS code lapses before it's used, re-send it. The existing challenge is
-reused, and its `expiresAt` is not extended. Use the resend endpoint for the
-resource that carries the challenge:
-
-- Transaction (after `execute` / `transfer-out`): `POST /transactions/{transactionId}/authorize/resend`
-- Realtime-funding quote (from `POST /quotes`): `POST /quotes/{quoteId}/authorize/resend`
+reused, and its `expiresAt` is not extended. Use the quote resend endpoint:
+`POST /quotes/{quoteId}/authorize/resend`.
 
 ```bash
-curl -X POST https://api.lightspark.com/grid/2025-10-13/transactions/{transactionId}/authorize/resend \
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/authorize/resend \
   -u "$GRID_API_TOKEN"
 ```
 

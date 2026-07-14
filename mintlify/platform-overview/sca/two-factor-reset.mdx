@@ -21,14 +21,15 @@ All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
 <Step title="Start the reset">
 
 ```bash
-POST /customers/{customerId}/sca/factors/reset
+POST /sca/factors/reset?customerId={customerId}
 
 { "factor": "TOTP" }
 ```
 
 Returns **`201`** with a `resetId` and opaque liveness handles. Embed
 `livenessAccessToken` in the verification SDK, or send the customer to
-`verificationLink`. `expiresAt` bounds the reset window.
+`verificationLink`. `expiresAt` bounds the reset window. Reset initiation is
+rate-limited to **5 per 24 hours** per customer; beyond that this returns `429`.
 
 ```json
 {
@@ -42,31 +43,40 @@ Returns **`201`** with a `resetId` and opaque liveness handles. Embed
 </Step>
 <Step title="Poll until liveness passes">
 ```bash
-GET /customers/{customerId}/sca/factors/reset/{resetId}
+GET /sca/factors/reset/{resetId}?customerId={customerId}
 ```
 
 ```json
-{ "status": "PENDING" }
+{ "status": "INITIATED" }
 ```
 
-Poll with a short backoff. Two things end the loop: `status` reaches
-`LIVENESS_PASSED` (proceed to complete), or the reset's `expiresAt` passes.
-`status` is passed through verbatim, so match `LIVENESS_PASSED` exactly and treat
-every other value (including `PENDING`) as "not ready yet."
+Poll with a short backoff. `status` is one of `INITIATED`, `PENDING_REVIEW`,
+`LIVENESS_PASSED`, `COMPLETED`, `REJECTED`, or `EXPIRED`:
 
-To keep the loop bounded, stop at `expiresAt`, and apply your own timeout if the
-start response didn't include one. If the window closes before liveness passes
-(for example the customer abandons or fails the check), the reset is over: start
-a new one rather than polling indefinitely.
+- `INITIATED` — reset started, liveness not yet submitted; keep polling.
+- `PENDING_REVIEW` — liveness submitted and under review; keep polling.
+- `LIVENESS_PASSED` — proceed to complete.
+- `COMPLETED` (reset finished, factor cleared), `REJECTED` (liveness failed), and
+  `EXPIRED` (window closed) are **terminal** — stop polling. On `REJECTED` or
+  `EXPIRED`, start a new reset.
+
+The response also carries `factor`, `enrollmentStatus` (`PENDING` until the
+replacement factor is re-enrolled, then `COMPLETED`; `null` for an `SMS_OTP`
+reset), `expiresAt` (the window bound), and `completedAt`. Stop at any terminal
+status or once `expiresAt` passes; never poll indefinitely.
 </Step>
 <Step title="Complete the reset">
 
 ```bash
-POST /customers/{customerId}/sca/factors/reset/{resetId}/complete
+POST /sca/factors/reset/{resetId}/complete?customerId={customerId}
+
+{ "mobile": { "countryCode": "+1", "number": "4155550123" } }
 ```
 
-Returns `204` and clears the lost factor. Calling it before liveness has passed
-returns `400`. The customer can then re-enroll via
+Returns `204` and clears the lost factor. For an `SMS_OTP` reset, include the new
+`mobile` number in the body — it's enrolled as the customer completes the reset;
+other factors need no body. Calling it before liveness has passed returns `400`.
+The customer can then re-enroll via
 [factor enrollment](/platform-overview/sca/factor-enrollment).
 </Step>
 </Steps>
