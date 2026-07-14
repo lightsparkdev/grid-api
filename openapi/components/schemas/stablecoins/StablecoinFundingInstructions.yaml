@@ -1,0 +1,8 @@
+type: object
+description: Provider funding instructions safe to show publicly. Present for wire-funded mint operations and external-source burn operations when available.
+additionalProperties: true
+example:
+  rail: SPARK
+  network: SPARK
+  address: spark1...
+  valueType: ACME

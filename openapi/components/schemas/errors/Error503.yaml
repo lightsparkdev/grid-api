@@ -1,0 +1,26 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    type: integer
+    enum:
+      - 503
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
+    enum:
+      - SERVICE_UNAVAILABLE
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details
+    additionalProperties: true

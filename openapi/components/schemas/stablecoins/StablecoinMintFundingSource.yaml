@@ -1,0 +1,29 @@
+type: object
+required:
+  - type
+properties:
+  type:
+    type: string
+    enum:
+      - WIRE
+      - ACH_DEBIT
+      - SAME_DAY_ACH_DEBIT
+      - GRID_INTERNAL_ACCOUNT
+      - PROVIDER_INTERNAL_BALANCE
+    description: Funding source variant. For `ACH_DEBIT` and `SAME_DAY_ACH_DEBIT`, `externalAccountId` is required. Grid internal account and provider internal balance funding are reserved for follow-up support.
+  externalAccountId:
+    type: string
+    description: Grid `ExternalAccount` used as the ACH debit funding account.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
+  accountId:
+    type: string
+    description: Grid internal funding account id for future Grid-funded mint flows.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000102
+  sourceTokenIdentifier:
+    type: string
+    description: Provider token/value type for future provider internal balance funding.
+    example: USDC
+  cryptoNetwork:
+    type: string
+    description: Source crypto network for future provider internal balance funding.
+    example: SOLANA

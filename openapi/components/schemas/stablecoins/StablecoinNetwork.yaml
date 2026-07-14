@@ -1,0 +1,4 @@
+type: string
+enum:
+  - SPARK
+description: Public network family for the stablecoin token identifier. The concrete Spark network is inferred from the platform mode.

@@ -1,0 +1,8 @@
+type: string
+enum:
+  - NOT_ENABLED
+  - PENDING_APPROVAL
+  - ENABLING
+  - ENABLED
+  - DISABLED
+description: Whether the stablecoin has been enabled for normal Grid operations.

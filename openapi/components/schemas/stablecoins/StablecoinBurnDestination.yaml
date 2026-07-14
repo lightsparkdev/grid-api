@@ -1,0 +1,23 @@
+type: object
+required:
+  - type
+  - externalAccountId
+  - rail
+properties:
+  type:
+    type: string
+    enum:
+      - EXTERNAL_ACCOUNT
+    description: Burn destination variant. V1 supports fiat Grid `ExternalAccount` destinations.
+  externalAccountId:
+    type: string
+    description: Grid bank `ExternalAccount` receiving fiat redemption proceeds.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
+  rail:
+    type: string
+    enum:
+      - WIRE
+      - ACH_CREDIT
+      - SAME_DAY_ACH_CREDIT
+      - RTP_CREDIT
+    description: Fiat payout rail for the burn destination.

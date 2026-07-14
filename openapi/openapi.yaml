@@ -85,8 +85,8 @@ tags:
   - name: Stablecoins
     description: >-
       Stablecoin issuance endpoints. Link provider accounts, register
-      provider-created stablecoins, create mint/burn quotes, execute them, and
-      track the resulting operations.
+      provider-created stablecoins, create direct mint/burn issuer operations,
+      and track operation status.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -304,6 +304,18 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
   /sandbox/cards/{id}/simulate/return:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
+  /stablecoins:
+    $ref: paths/stablecoins/stablecoins.yaml
+  /stablecoins/{stablecoinId}:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}.yaml
+  /stablecoins/{stablecoinId}/mints:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}_mints.yaml
+  /stablecoins/{stablecoinId}/burns:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}_burns.yaml
+  /stablecoins/{stablecoinId}/operations:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}_operations.yaml
+  /stablecoin-operations/{stablecoinOperationId}:
+    $ref: paths/stablecoins/stablecoin-operations_{stablecoinOperationId}.yaml
   /stablecoin-provider-accounts:
     $ref: paths/stablecoins/stablecoin-provider-accounts.yaml
   /stablecoin-provider-accounts/{stablecoinProviderAccountId}:
