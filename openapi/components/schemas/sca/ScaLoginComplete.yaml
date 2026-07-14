@@ -1,13 +1,13 @@
 type: object
-description: The provider-reported status of a completed SCA login session.
+description: The status of a completed SCA login session.
 required:
   - status
 properties:
   status:
     type: string
     description: >-
-      The provider-reported status of the login session, passed through
+      The status of the login session, passed through
       verbatim (Grid does not normalize it). A successful login reports
-      `SUCCESS`; other provider-specific values indicate the login did not
+      `SUCCESS`; other values indicate the login did not
       complete and should be surfaced to the caller.
     example: SUCCESS

@@ -9,8 +9,7 @@ parameters:
 post:
   summary: Record a security event
   description: |
-    Record a client-side security-relevant event for the customer with the
-    underlying provider's risk engine (e.g. a sign-in, a sensitive view), to
+    Record a client-side security-relevant event for the customer with Grid's risk engine (e.g. a sign-in, a sensitive view), to
     feed adaptive-authentication signals.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.

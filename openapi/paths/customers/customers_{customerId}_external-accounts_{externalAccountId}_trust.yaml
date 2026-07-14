@@ -17,7 +17,7 @@ post:
   description: |
     Begin trusting (whitelisting) an external account so future sends to it can
     skip the per-transaction SCA ceremony. Creates the whitelist entry and
-    returns a `whitelistedId` handle plus, when the provider issues one, the
+    returns a `whitelistedId` handle plus, when one is issued, the
     `scaChallenge` to satisfy. Complete with
     `POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm`.
 

@@ -1567,7 +1567,7 @@ paths:
         Finalize an SCA login by submitting the proof for the started factor
         (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for
         `PASSKEY`), echoing the `challengeId` for `SMS_OTP`. Returns the
-        provider-reported session status.
+        reported session status.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
@@ -1632,8 +1632,7 @@ paths:
     post:
       summary: Record a security event
       description: |
-        Record a client-side security-relevant event for the customer with the
-        underlying provider's risk engine (e.g. a sign-in, a sensitive view), to
+        Record a client-side security-relevant event for the customer with Grid's risk engine (e.g. a sign-in, a sensitive view), to
         feed adaptive-authentication signals.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
@@ -1694,7 +1693,7 @@ paths:
       summary: Start a 2FA reset
       description: |
         Begin recovering a lost enrolled factor via a liveness-gated, poll-based
-        flow. Opens the provider's liveness check and returns a `resetId` plus the
+        flow. Opens the liveness check and returns a `resetId` plus the
         opaque liveness handles (`livenessAccessToken` / `verificationLink`) the end
         user completes it with. Poll
         `GET /customers/{customerId}/sca/factors/reset/{resetId}` until liveness
@@ -1767,8 +1766,7 @@ paths:
     get:
       summary: Get 2FA reset status
       description: |
-        Poll the status of an in-progress 2FA reset until it reaches the provider's
-        liveness-passed value, after which the reset can be completed.
+        Poll the status of an in-progress 2FA reset until it reaches the liveness-passed value, after which the reset can be completed.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: getTwoFactorResetStatus
@@ -1887,7 +1885,7 @@ paths:
       description: |
         Begin trusting (whitelisting) an external account so future sends to it can
         skip the per-transaction SCA ceremony. Creates the whitelist entry and
-        returns a `whitelistedId` handle plus, when the provider issues one, the
+        returns a `whitelistedId` handle plus, when one is issued, the
         `scaChallenge` to satisfy. Complete with
         `POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm`.
 
@@ -12148,23 +12146,23 @@ components:
           example: https://app.example.com
     ScaLoginComplete:
       type: object
-      description: The provider-reported status of a completed SCA login session.
+      description: The status of a completed SCA login session.
       required:
         - status
       properties:
         status:
           type: string
-          description: The provider-reported status of the login session, passed through verbatim (Grid does not normalize it). A successful login reports `SUCCESS`; other provider-specific values indicate the login did not complete and should be surfaced to the caller.
+          description: The status of the login session, passed through verbatim (Grid does not normalize it). A successful login reports `SUCCESS`; other values indicate the login did not complete and should be surfaced to the caller.
           example: SUCCESS
     RecordSecurityEventRequest:
       type: object
-      description: Records a client-side security-relevant event for the customer with the underlying provider's risk engine (e.g. a sign-in, a sensitive view). Used to feed the provider's adaptive-authentication signals.
+      description: Records a client-side security-relevant event for the customer with Grid's risk engine (e.g. a sign-in, a sensitive view). Used to feed Grid's adaptive-authentication signals.
       required:
         - eventType
       properties:
         eventType:
           type: string
-          description: A provider-defined security-event identifier drawn from the provider's accepted set (e.g. `LOGIN`), **not** arbitrary caller text — it is forwarded verbatim to the provider's risk engine, which rejects values outside that set. Left as a string (rather than an enum) so new provider-defined events don't require a spec change; treat it as a closed vocabulary defined by the provider, not free-form input.
+          description: A defined security-event identifier drawn from Grid's accepted set (e.g. `LOGIN`), **not** arbitrary caller text — it is forwarded verbatim to Grid's risk engine, which rejects values outside that set. Left as a string (rather than an enum) so new new events don't require a spec change; treat it as a closed vocabulary defined by Grid, not free-form input.
           example: LOGIN
     TwoFactorResetStartRequest:
       type: object
@@ -12177,7 +12175,7 @@ components:
           description: The enrolled factor to reset.
     TwoFactorResetStart:
       type: object
-      description: The reset handle plus the opaque provider liveness handles a caller relays to the end-user device to complete the liveness check. `resetId` threads the ceremony together (status and complete reference it). `livenessAccessToken` and `verificationLink` are omitted when the provider does not return them.
+      description: The reset handle plus the opaque liveness handles a caller relays to the end-user device to complete the liveness check. `resetId` threads the ceremony together (status and complete reference it). `livenessAccessToken` and `verificationLink` are omitted when they are not returned.
       required:
         - resetId
       properties:
@@ -12188,28 +12186,28 @@ components:
           type:
             - string
             - 'null'
-          description: Provider-neutral access token for the embedded liveness/verification SDK, bound to this reset. Omitted when the provider does not return one.
+          description: Access token for the embedded liveness/verification SDK, bound to this reset. Omitted when one is not returned.
         verificationLink:
           type:
             - string
             - 'null'
-          description: Hosted identity-verification page URL for completing liveness. Omitted when the provider does not return one.
+          description: Hosted identity-verification page URL for completing liveness. Omitted when one is not returned.
         expiresAt:
           type:
             - string
             - 'null'
           format: date-time
-          description: Absolute UTC timestamp at the end of the reset window. Omitted when the provider does not return one.
+          description: Absolute UTC timestamp at the end of the reset window. Omitted when one is not returned.
           example: '2025-10-03T12:30:00Z'
     TwoFactorResetStatus:
       type: object
-      description: The provider-reported status of an in-progress 2FA reset, polled until it reaches the provider's liveness-passed value.
+      description: The status of an in-progress 2FA reset, polled until it reaches the liveness-passed value.
       required:
         - status
       properties:
         status:
           type: string
-          description: The provider-reported status of the reset, passed through verbatim (Grid does not normalize it). Keep polling while it reports a non-terminal value such as `PENDING`; once it reaches the liveness-passed value (`LIVENESS_PASSED`), call the complete endpoint. Other provider-specific values may appear, so treat anything other than the liveness-passed sentinel as "not ready yet" rather than failing.
+          description: The status of the reset, passed through verbatim (Grid does not normalize it). Keep polling while it reports a non-terminal value such as `PENDING`; once it reaches the liveness-passed value (`LIVENESS_PASSED`), call the complete endpoint. Other values may appear, so treat anything other than the liveness-passed sentinel as "not ready yet" rather than failing.
           example: PENDING
     ScaChallenge:
       type: object
@@ -12267,16 +12265,16 @@ components:
             - https://app.example.com
     BeneficiaryTrustStart:
       type: object
-      description: The provider handle plus the SCA challenge a caller authorizes to finish trusting (or untrusting) a beneficiary. `whitelistedId` is the provider's beneficiary handle; thread it back on the confirm call so confirm need not re-whitelist (which could trigger a second challenge). `scaChallenge` is omitted when the provider does not surface one on the whitelist response; the caller then confirms without a `challengeId`.
+      description: The whitelist handle plus the SCA challenge a caller authorizes to finish trusting (or untrusting) a beneficiary. `whitelistedId` is the beneficiary handle; thread it back on the confirm call so confirm need not re-whitelist (which could trigger a second challenge). `scaChallenge` is omitted when one is not surfaced on the whitelist response; the caller then confirms without a `challengeId`.
       required:
         - whitelistedId
       properties:
         whitelistedId:
           type: string
-          description: The provider's beneficiary (whitelist) handle. Thread it back on the confirm call.
+          description: The beneficiary (whitelist) handle. Thread it back on the confirm call.
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
-          description: The SCA challenge to satisfy on the confirm call. Omitted when the provider issues no challenge on the whitelist response.
+          description: The SCA challenge to satisfy on the confirm call. Omitted when the no challenge is issued on the whitelist response.
     BeneficiaryTrustConfirmRequest:
       type: object
       description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `whitelistedId` returned by the trust start and, when the start issued one, the `challengeId`.
@@ -12291,7 +12289,7 @@ components:
       properties:
         whitelistedId:
           type: string
-          description: The provider beneficiary handle returned as `whitelistedId` by *this account's own* trust start, threaded back so confirm need not re-whitelist. It is scoped to that ceremony — the server rejects a `whitelistedId` issued for a different external account or from an expired/stale start, so do not cache or reuse it across accounts.
+          description: The beneficiary handle returned as `whitelistedId` by *this account's own* trust start, threaded back so confirm need not re-whitelist. It is scoped to that ceremony — the server rejects a `whitelistedId` issued for a different external account or from an expired/stale start, so do not cache or reuse it across accounts.
         challengeId:
           type:
             - string

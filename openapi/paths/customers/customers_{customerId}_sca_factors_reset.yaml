@@ -10,7 +10,7 @@ post:
   summary: Start a 2FA reset
   description: |
     Begin recovering a lost enrolled factor via a liveness-gated, poll-based
-    flow. Opens the provider's liveness check and returns a `resetId` plus the
+    flow. Opens the liveness check and returns a `resetId` plus the
     opaque liveness handles (`livenessAccessToken` / `verificationLink`) the end
     user completes it with. Poll
     `GET /customers/{customerId}/sca/factors/reset/{resetId}` until liveness

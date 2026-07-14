@@ -12,7 +12,7 @@ post:
     Finalize an SCA login by submitting the proof for the started factor
     (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for
     `PASSKEY`), echoing the `challengeId` for `SMS_OTP`. Returns the
-    provider-reported session status.
+    reported session status.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 

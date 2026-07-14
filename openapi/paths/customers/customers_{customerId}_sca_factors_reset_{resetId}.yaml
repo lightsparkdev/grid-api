@@ -15,8 +15,7 @@ parameters:
 get:
   summary: Get 2FA reset status
   description: |
-    Poll the status of an in-progress 2FA reset until it reaches the provider's
-    liveness-passed value, after which the reset can be completed.
+    Poll the status of an in-progress 2FA reset until it reaches the liveness-passed value, after which the reset can be completed.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
   operationId: getTwoFactorResetStatus

@@ -1,18 +1,17 @@
 type: object
 description: >-
-  Records a client-side security-relevant event for the customer with the
-  underlying provider's risk engine (e.g. a sign-in, a sensitive view). Used to
-  feed the provider's adaptive-authentication signals.
+  Records a client-side security-relevant event for the customer with Grid's risk engine (e.g. a sign-in, a sensitive view). Used to
+  feed Grid's adaptive-authentication signals.
 required:
   - eventType
 properties:
   eventType:
     type: string
     description: >-
-      A provider-defined security-event identifier drawn from the provider's
+      A defined security-event identifier drawn from Grid's
       accepted set (e.g. `LOGIN`), **not** arbitrary caller text — it is
-      forwarded verbatim to the provider's risk engine, which rejects values
+      forwarded verbatim to Grid's risk engine, which rejects values
       outside that set. Left as a string (rather than an enum) so new
-      provider-defined events don't require a spec change; treat it as a closed
-      vocabulary defined by the provider, not free-form input.
+      new events don't require a spec change; treat it as a closed
+      vocabulary defined by Grid, not free-form input.
     example: LOGIN
