@@ -1141,9 +1141,7 @@ paths:
       description: |
         List the Strong Customer Authentication factors the customer has enrolled.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: listScaFactors
       tags:
         - Strong Customer Authentication
@@ -1169,7 +1167,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1197,9 +1195,7 @@ paths:
         URI; the customer scans it into an authenticator app and confirms with the
         first code via `POST /customers/{customerId}/sca/factors/totp/confirm`.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: startTotpFactorEnrollment
       tags:
         - Strong Customer Authentication
@@ -1231,7 +1227,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1258,9 +1254,7 @@ paths:
         start call and the first code the customer's authenticator app produces.
         Returns one-time recovery codes shown to the customer only once.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
         In sandbox, the code is always `123456`.
       operationId: confirmTotpFactorEnrollment
@@ -1300,7 +1294,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1328,9 +1322,7 @@ paths:
         submit the resulting credential via
         `POST /customers/{customerId}/sca/factors/passkey/confirm`.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: startPasskeyFactorEnrollment
       tags:
         - Strong Customer Authentication
@@ -1362,7 +1354,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1389,9 +1381,7 @@ paths:
         device produced for the registration challenge, along with the origin it was
         produced against. Returns the enrolled factor.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: confirmPasskeyFactorEnrollment
       tags:
         - Strong Customer Authentication
@@ -1429,7 +1419,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1460,9 +1450,7 @@ paths:
       description: |
         Delete an enrolled WebAuthn passkey factor by its credential id.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: deletePasskeyFactor
       tags:
         - Strong Customer Authentication
@@ -1484,7 +1472,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1515,9 +1503,7 @@ paths:
         returns WebAuthn `passkeyOptions`. Complete with
         `POST /customers/{customerId}/sca/login/complete`.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: startScaLogin
       tags:
         - Strong Customer Authentication
@@ -1555,7 +1541,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1583,9 +1569,7 @@ paths:
         `PASSKEY`), echoing the `challengeId` for `SMS_OTP`. Returns the
         provider-reported session status.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
         In sandbox, the SMS/TOTP code is always `123456`.
       operationId: completeScaLogin
@@ -1625,7 +1609,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1652,9 +1636,7 @@ paths:
         underlying provider's risk engine (e.g. a sign-in, a sensitive view), to
         feed adaptive-authentication signals.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: recordSecurityEvent
       tags:
         - Strong Customer Authentication
@@ -1688,7 +1670,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1718,9 +1700,7 @@ paths:
         `GET /customers/{customerId}/sca/factors/reset/{resetId}` until liveness
         passes, then call the complete endpoint.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: startTwoFactorReset
       tags:
         - Strong Customer Authentication
@@ -1758,7 +1738,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1790,9 +1770,7 @@ paths:
         Poll the status of an in-progress 2FA reset until it reaches the provider's
         liveness-passed value, after which the reset can be completed.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: getTwoFactorResetStatus
       tags:
         - Strong Customer Authentication
@@ -1818,7 +1796,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1850,9 +1828,7 @@ paths:
         Complete a 2FA reset once liveness has passed, clearing the lost factor so
         the customer can re-enroll.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: completeTwoFactorReset
       tags:
         - Strong Customer Authentication
@@ -1880,7 +1856,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1915,9 +1891,7 @@ paths:
         `scaChallenge` to satisfy. Complete with
         `POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm`.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: startBeneficiaryTrust
       tags:
         - Strong Customer Authentication
@@ -1949,7 +1923,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -1983,9 +1957,7 @@ paths:
         `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
         one was issued. Returns `trusted: true`.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
         In sandbox, the SMS/TOTP code is always `123456`.
       operationId: confirmBeneficiaryTrust
@@ -2025,7 +1997,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -2059,9 +2031,7 @@ paths:
         `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
         one was issued. Returns `trusted: false`.
 
-        This endpoint is only meaningful for customers whose payment provider
-        requires SCA (e.g. EU customers). For customers whose provider has no such
-        requirement, this returns `409`.
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
         In sandbox, the SMS/TOTP code is always `123456`.
       operationId: confirmBeneficiaryUntrust
@@ -2101,7 +2071,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: The customer's payment provider does not require SCA.
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:

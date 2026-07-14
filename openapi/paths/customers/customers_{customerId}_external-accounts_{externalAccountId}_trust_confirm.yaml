@@ -20,9 +20,7 @@ post:
     `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
     one was issued. Returns `trusted: true`.
 
-    This endpoint is only meaningful for customers whose payment provider
-    requires SCA (e.g. EU customers). For customers whose provider has no such
-    requirement, this returns `409`.
+    This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
     In sandbox, the SMS/TOTP code is always `123456`.
   operationId: confirmBeneficiaryTrust
@@ -62,7 +60,7 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
-      description: The customer's payment provider does not require SCA.
+      description: SCA is not required for this customer.
       content:
         application/json:
           schema:

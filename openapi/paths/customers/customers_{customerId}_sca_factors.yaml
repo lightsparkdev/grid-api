@@ -11,9 +11,7 @@ get:
   description: |
     List the Strong Customer Authentication factors the customer has enrolled.
 
-    This endpoint is only meaningful for customers whose payment provider
-    requires SCA (e.g. EU customers). For customers whose provider has no such
-    requirement, this returns `409`.
+    This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
   operationId: listScaFactors
   tags:
     - Strong Customer Authentication
@@ -39,7 +37,7 @@ get:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
-      description: The customer's payment provider does not require SCA.
+      description: SCA is not required for this customer.
       content:
         application/json:
           schema:

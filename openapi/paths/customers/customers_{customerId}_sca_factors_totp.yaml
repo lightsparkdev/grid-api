@@ -14,9 +14,7 @@ post:
     URI; the customer scans it into an authenticator app and confirms with the
     first code via `POST /customers/{customerId}/sca/factors/totp/confirm`.
 
-    This endpoint is only meaningful for customers whose payment provider
-    requires SCA (e.g. EU customers). For customers whose provider has no such
-    requirement, this returns `409`.
+    This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
   operationId: startTotpFactorEnrollment
   tags:
     - Strong Customer Authentication
@@ -48,7 +46,7 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
-      description: The customer's payment provider does not require SCA.
+      description: SCA is not required for this customer.
       content:
         application/json:
           schema:
