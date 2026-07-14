@@ -1,0 +1,15 @@
+---
+icon: "/images/icons/lock.svg"
+title: "Per-transaction authorization"
+description: "Authorize an SCA-gated money movement"
+"og:image": "/images/og/og-get-started.png"
+---
+
+This is the flow you hit most often: an SCA-required customer initiates a money
+movement, it comes back `PENDING_AUTHORIZATION` with an `scaChallenge`, and you
+authorize it before the transfer is released. For where this sits in the wider
+SCA surface, see the [overview](/platform-overview/sca/overview).
+
+import StrongCustomerAuthentication from '/snippets/sca/strong-customer-authentication.mdx';
+
+<StrongCustomerAuthentication />

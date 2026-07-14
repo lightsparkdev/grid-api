@@ -1,0 +1,73 @@
+---
+icon: "/images/icons/checkmark1.svg"
+title: "Trusted beneficiaries"
+description: "Whitelist a payee so future sends skip the per-transaction ceremony"
+"og:image": "/images/og/og-get-started.png"
+---
+
+<Note>
+Applies only to customers in an SCA-required region (EU). Every endpoint here
+returns **`409`** for other customers.
+</Note>
+
+Trusting a beneficiary is a one-time, SCA-gated step that whitelists an external
+account (an IBAN or crypto address). Once trusted, future sends to that payee are
+no longer dynamically linked; they drop to a lighter authentication instead of a
+full per-transaction challenge. Use it for recurring payouts to known
+destinations.
+
+The beneficiary is identified end-to-end by its **`externalAccountId`** in the
+path, so there is no separate whitelist handle to track. All paths below are
+relative to `https://api.lightspark.com/grid/2025-10-13`.
+
+## Trusting a beneficiary
+
+<Steps>
+<Step title="Start the trust">
+```bash
+POST /customers/{customerId}/external-accounts/{externalAccountId}/trust
+```
+
+Returns the `scaChallenge` to satisfy:
+
+```json
+{ "scaChallenge": { "id": "…", "factor": "SMS_OTP", "expiresAt": "2025-10-03T12:05:00Z", "availableFactors": ["SMS_OTP"] } }
+```
+
+<Note>
+`scaChallenge` may be **omitted** when no challenge is issued. In that case,
+confirm directly without a `challengeId`.
+</Note>
+</Step>
+<Step title="Confirm the trust">
+Submit the SCA proof (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` +
+`origin` for `PASSKEY`), echoing `challengeId` when start issued one.
+
+```bash
+POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm
+
+{ "challengeId": "…", "code": "123456" }
+```
+
+```json
+{ "trusted": true }
+```
+
+An invalid or expired proof returns `400`. **In sandbox, the code is always
+`123456`.**
+</Step>
+</Steps>
+
+## Untrusting a beneficiary
+
+Revoking trust is a single confirm call with the SCA proof, the same request
+shape as trust/confirm. Returns `trusted: false`.
+
+```bash
+POST /customers/{customerId}/external-accounts/{externalAccountId}/untrust/confirm
+
+{ "challengeId": "…", "code": "123456" }
+```
+
+Once untrusted, sends to that beneficiary are dynamically linked again and each
+one requires a full per-transaction challenge.

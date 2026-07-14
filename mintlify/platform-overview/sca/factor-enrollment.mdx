@@ -1,0 +1,122 @@
+---
+icon: "/images/icons/key2.svg"
+title: "Factor enrollment"
+description: "Enroll and manage a customer's TOTP and passkey factors"
+"og:image": "/images/og/og-get-started.png"
+---
+
+<Note>
+Applies only to customers in an SCA-required region (EU). Every endpoint here
+returns **`409`** for other customers.
+</Note>
+
+`SMS_OTP` needs no enrollment; a code is sent to the customer's verified phone.
+`TOTP` and `PASSKEY` must be enrolled before a customer can authenticate with
+them. Enrolled factors then appear in `scaChallenge.availableFactors` and can be
+requested per transaction (see
+[per-transaction authorization](/platform-overview/sca/per-transaction-authorization)).
+
+All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
+
+## Enroll a TOTP authenticator
+
+<Steps>
+<Step title="Start enrollment">
+```bash
+POST /customers/{customerId}/sca/factors/totp
+```
+
+Returns the shared secret and an `otpauth://` provisioning URI. Render `totpUri`
+as a QR code (or show `secretBase32Encoded` for manual entry) so the customer can
+add it to their authenticator app.
+
+```json
+{
+  "secret": "…",
+  "secretBase32Encoded": "ABC123…",
+  "totpUri": "otpauth://totp/Grid:customer@example.com?secret=ABC123&issuer=Grid"
+}
+```
+</Step>
+<Step title="Confirm enrollment">
+Submit the `secret` from the start call plus the first code the app produces.
+Grid returns one-time **recovery codes**; surface them to the customer once and
+don't store them server-side.
+
+```bash
+POST /customers/{customerId}/sca/factors/totp/confirm
+
+{ "secret": "…", "code": "123456" }
+```
+
+```json
+{ "recoveryCodes": ["ABCD-EFGH-IJKL", "MNOP-QRST-UVWX"] }
+```
+
+A wrong or expired code returns `400`. **In sandbox, the code is always
+`123456`.**
+</Step>
+</Steps>
+
+## Enroll a passkey
+
+Passkey enrollment is a standard WebAuthn registration ceremony. Grid issues the
+options, the customer's device produces the credential, and you hand it back.
+
+<Steps>
+<Step title="Start enrollment">
+```bash
+POST /customers/{customerId}/sca/factors/passkey
+```
+
+```json
+{
+  "options": { "…": "opaque WebAuthn PublicKeyCredentialCreationOptions" },
+  "allowedOrigins": ["https://app.example.com"],
+  "relyingPartyId": "app.example.com"
+}
+```
+
+Pass `options` unmodified to the device's WebAuthn API
+(`navigator.credentials.create`). The ceremony must run against one of
+`allowedOrigins`.
+</Step>
+<Step title="Confirm enrollment">
+Submit the credential the device produced and the `origin` it ran against.
+
+```bash
+POST /customers/{customerId}/sca/factors/passkey/confirm
+
+{ "origin": "https://app.example.com", "credential": { "…": "opaque WebAuthn credential" } }
+```
+
+Returns the enrolled `factor` (an `ScaFactorView`, including the `credentialId`
+you'll use to delete it later). An invalid credential or origin returns `400`.
+</Step>
+</Steps>
+
+## List enrolled factors
+
+```bash
+GET /customers/{customerId}/sca/factors
+```
+
+```json
+{
+  "factors": [
+    { "factor": "TOTP", "name": "Authenticator app" },
+    { "factor": "PASSKEY", "credentialId": "…", "name": "iPhone" }
+  ]
+}
+```
+
+`credentialId` is populated only for `PASSKEY` factors.
+
+## Delete a passkey
+
+```bash
+DELETE /customers/{customerId}/sca/factors/passkey/{credentialId}
+```
+
+Returns `204`. Use the `credentialId` from the factor list (or the confirm
+response).
