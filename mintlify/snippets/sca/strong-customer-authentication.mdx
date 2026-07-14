@@ -1,6 +1,6 @@
 <Note>
-**This applies only to customers whose payment provider requires Strong Customer
-Authentication — in practice, customers in the EU (EUR / USDC).** For every other
+**This applies only to customers in a region where Strong Customer Authentication
+is required — in practice, customers in the EU (EUR / USDC).** For every other
 customer, none of this appears: money-movement calls complete as usual, no
 `scaChallenge` is returned, and the authorization endpoints are not used. If you
 don't serve EU customers you can skip this section.
@@ -8,8 +8,8 @@ don't serve EU customers you can skip this section.
 
 Under PSD2, EU e-money and e-money-token (EUR / USDC) money movement must be
 confirmed by the end user with Strong Customer Authentication (SCA). Grid wraps
-the provider's SCA so you satisfy it through the same resources you already use —
-there is no separate SCA product to integrate.
+SCA so you satisfy it through the same resources you already use — there is no
+separate SCA product to integrate.
 
 ### When you'll encounter it
 
@@ -112,9 +112,9 @@ Trusting a beneficiary (a one-time SCA-gated whitelisting step) lets subsequent
 sends to that payee skip the per-transaction challenge. Use this for recurring
 payouts to known destinations rather than authorizing every send.
 
-### Calling a customer whose provider doesn't require SCA
+### Calling a customer outside SCA-regulated regions
 
-The authorization endpoints return **`409`** for customers whose provider does
-not require SCA, and no `scaChallenge` is ever attached to their transactions.
+The authorization endpoints return **`409`** for customers outside SCA-regulated
+regions (non-EU), and no `scaChallenge` is ever attached to their transactions.
 You don't need to branch on region — just handle `scaChallenge` when it's present
 and treat its absence as "nothing to do."
