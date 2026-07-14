@@ -1,12 +1,8 @@
-Cards add two webhook event types on top of Grid's existing webhook
+Cards add three webhook event types on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
 [Webhooks](/api-reference/webhooks) for the underlying mechanics.
-
-Card-transaction lifecycle events are not card-specific webhooks —
-they ride on the generic transaction webhook stream (a follow-up
-extends the Transaction model with a card destination type).
 
 ## Event types
 
@@ -14,6 +10,7 @@ extends the Transaction model with a card destination type).
 |------|----------|
 | `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
+| `CARD.TRANSACTION_UPDATE` | Whenever a `CardTransaction` is created or updated by authorization, clearing, refund, or reconciliation activity. |
 
 All three carry the standard envelope:
 
@@ -80,15 +77,63 @@ array. The `data` payload is the full `Card` resource with the
 post-change `fundingSources`, so a consumer that only cares about the
 current set of bindings can replace state wholesale.
 
-## Card-transaction lifecycle
+## CARD.TRANSACTION_UPDATE
 
-Authorization, pull, clearing, refund, and `EXCEPTION` transitions are
-not delivered through a dedicated card webhook. They flow through
-the generic transaction webhook stream that already carries
-outgoing-payment lifecycle events; a follow-up PR adds the card
-destination type to that stream. See
-[Reconciliation](/cards/transactions/reconciliation) for the
-underlying event model.
+Fires whenever a `CardTransaction` is created or updated by
+authorization, clearing, refund, or reconciliation activity. The
+`data` payload is the full post-update `CardTransaction`, including
+its lifecycle status and reconciliation aggregates.
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000040",
+  "type": "CARD.TRANSACTION_UPDATE",
+  "timestamp": "2026-05-08T15:42:11Z",
+  "data": {
+    "type": "CARD",
+    "id": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100",
+    "cardId": "Card:019542f5-b3e7-1d02-0000-000000000010",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "18d3e5f7b4a9c2",
+    "status": "SETTLED",
+    "direction": "DEBIT",
+    "merchant": {
+      "descriptor": "BLUE BOTTLE COFFEE SF",
+      "mcc": "5814",
+      "country": "US"
+    },
+    "authorizedAmount": {
+      "amount": 1250,
+      "currency": { "code": "USD" }
+    },
+    "settledAmount": {
+      "amount": 1500,
+      "currency": { "code": "USD" }
+    },
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "pullSummary": {
+      "count": 2,
+      "totalAmount": 1500,
+      "pendingCount": 0
+    },
+    "refundSummary": {
+      "count": 0,
+      "totalAmount": 0
+    },
+    "settlementSummary": {
+      "count": 1,
+      "totalAmount": 1500
+    },
+    "authorizedAt": "2026-05-08T14:30:00Z",
+    "lastEventAt": "2026-05-08T15:42:11Z",
+    "createdAt": "2026-05-08T14:30:00Z",
+    "updatedAt": "2026-05-08T15:42:11Z"
+  }
+}
+```
+
+See [Reconciliation](/cards/transactions/reconciliation) for the
+underlying event model and `EXCEPTION` handling.
 
 ## Idempotency & retries
 

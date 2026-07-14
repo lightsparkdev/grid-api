@@ -37,10 +37,9 @@ AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED ──► REFUNDED
 | `REFUNDED` | A `RETURN` was received and the net settled amount has been refunded in full or part. |
 | `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
-Every transition is delivered via the generic transaction webhook
-stream carrying the post-change parent (a follow-up extends the
-Transaction model with a card destination type — see
-[Webhooks](/cards/platform-tools/webhooks)).
+Every update is delivered via a `CARD.TRANSACTION_UPDATE` webhook
+carrying the post-update parent. See
+[Webhooks](/cards/platform-tools/webhooks) for the full payload shape.
 
 ## The over-auth path
 
@@ -62,10 +61,10 @@ a settlement but Grid can't pull the matching amount from the funding
 source — typically because the cardholder's balance no longer covers
 the post-hoc difference.
 
-Signal to watch: a transaction webhook with `status: "EXCEPTION"` for
-a card-destination transaction. The payload includes the full parent
-record, so your dashboard's exception view is driven entirely by
-webhook deliveries — there's no list endpoint to poll.
+Signal to watch: a `CARD.TRANSACTION_UPDATE` webhook with
+`data.status: "EXCEPTION"`. The payload includes the full parent record,
+so your dashboard's exception view is driven entirely by webhook
+deliveries — there's no list endpoint to poll.
 
 Exceptions don't roll back automatically. The standard response is to
 top up the funding source (or move the customer to a state where their
@@ -74,10 +73,10 @@ exception to resolution.
 
 ## Idempotency on webhooks
 
-Every transaction webhook carries a unique `id`. Track processed
-webhook IDs and treat duplicates as no-ops — Grid retries failed
-deliveries, and your reconciliation should be safe under at-least-once
-delivery.
+Every `CARD.TRANSACTION_UPDATE` webhook carries a unique `id`. Track
+processed webhook IDs and treat duplicates as no-ops — Grid retries
+failed deliveries, and your reconciliation should be safe under
+at-least-once delivery.
 
 See [Webhooks](/cards/platform-tools/webhooks) for signature
 verification and the full payload shape.
