@@ -237,7 +237,7 @@ Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhoo
   "data": {
     "id": "Transaction:...",
     "status": "FAILED",
-    "failureReason": "INVALID_BANK_ACCOUNT"
+    "failureReason": "ACCOUNT_INVALID"
   }
 }
 ```
@@ -395,15 +395,16 @@ Use for reconciliation and reporting.
 | `QUOTE_EXPIRED` | Quote expired before execution | Create new quote |
 | `QUOTE_EXECUTION_FAILED` | Error executing the quote; no funds were debited | Create new quote |
 | `EXECUTION_FAILED_POST_DEBIT` | Execution failed after debit; funds are refunded automatically | Retry with a new quote |
-| `INSUFFICIENT_BALANCE` | Source account lacks funds | Fund account, retry |
 | `SETTLEMENT_FAILED` | The settlement leg failed | Retry or use alternative rail |
 | `FUNDING_AMOUNT_MISMATCH` | Funding amount doesn't match expected amount | Verify amounts and retry |
-| `ACCOUNT_INVALID` | Recipient account details are wrong or not found | Correct recipient details |
-| `ACCOUNT_CANNOT_RECEIVE` | Recipient account can't accept the payment | Use a different account |
-| `LIMIT_EXCEEDED` | Payout exceeds a partner limit | Reduce amount or contact support |
-| `COMPLIANCE_REJECTED` | Payout partner rejected on compliance grounds | Contact support |
-| `PAYOUT_RETURNED` | Receiving bank returned or reversed the payout | Verify details and retry |
+| `TIMEOUT` | Transaction didn't complete within its processing window | Retry with a new quote |
+| `MANUAL_REFUND` | Transaction was refunded manually | Contact support |
 | `LSP_OPERATIONAL_FAILURE` | Lightspark-internal operational issue | Contact Lightspark |
+| `PAYOUT_RETURNED` | Receiving bank returned or reversed the payout | Verify details and retry |
+| `LIMIT_EXCEEDED` | Payout exceeds a partner limit | Reduce amount or contact support |
+| `ACCOUNT_CANNOT_RECEIVE` | Recipient account can't accept the payment | Use a different account |
+| `ACCOUNT_INVALID` | Recipient account details are wrong or not found | Correct recipient details |
+| `COMPLIANCE_REJECTED` | Payout partner rejected on compliance grounds | Contact support |
 
 The `failureReason` field on a transaction may return additional values, including deprecated reasons (`LIGHTNING_PAYMENT_FAILED`, `COUNTERPARTY_POST_TX_FAILED`) retained for historical transactions.
 
