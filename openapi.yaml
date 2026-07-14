@@ -17950,6 +17950,7 @@ components:
         - PARTIALLY_SETTLED
         - SETTLED
         - REFUNDED
+        - DECLINED
         - EXCEPTION
       description: |
         Lifecycle status of a card transaction.
@@ -17957,6 +17958,7 @@ components:
         | Status | Description |
         |--------|-------------|
         | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
+        | `DECLINED` | The authorization was declined by the issuer or program; no funds moved and the transaction is terminal. |
         | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
         | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
         | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
