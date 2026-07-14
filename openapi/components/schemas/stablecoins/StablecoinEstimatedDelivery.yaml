@@ -1,0 +1,8 @@
+type: object
+description: Static rail timing estimate for fiat redemption delivery. This is guidance, not a guaranteed arrival time.
+additionalProperties: true
+example:
+  rail: ACH_CREDIT
+  amount: '1.00'
+  currency: USD
+  timing: 1-3 business days

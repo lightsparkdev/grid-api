@@ -1,0 +1,18 @@
+type: object
+required:
+  - data
+  - hasMore
+properties:
+  data:
+    type: array
+    items:
+      $ref: Stablecoin.yaml
+  hasMore:
+    type: boolean
+    description: Indicates if more results are available beyond this page.
+  nextCursor:
+    type: string
+    description: Cursor to retrieve the next page of results.
+  totalCount:
+    type: integer
+    description: Total number of stablecoins matching the criteria.

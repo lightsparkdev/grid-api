@@ -1,0 +1,18 @@
+type: object
+required:
+  - type
+properties:
+  type:
+    type: string
+    enum:
+      - EXTERNAL_ACCOUNT
+      - GRID_INTERNAL_ACCOUNT
+    description: Mint destination variant. In the initial Brale-backed flow, `EXTERNAL_ACCOUNT` must reference an active Spark external account.
+  externalAccountId:
+    type: string
+    description: Grid `ExternalAccount` receiving the minted stablecoin.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000201
+  accountId:
+    type: string
+    description: Grid internal receiving account id for future Grid-managed mint destinations.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000202

@@ -1,0 +1,19 @@
+type: object
+required:
+  - type
+properties:
+  type:
+    type: string
+    enum:
+      - EXTERNAL_ACCOUNT
+      - GRID_INTERNAL_ACCOUNT
+      - PROVIDER_INTERNAL_BALANCE
+    description: Burn source variant. `EXTERNAL_ACCOUNT` references an active Spark external account and returns funding instructions. `PROVIDER_INTERNAL_BALANCE` spends stablecoin funds already at the provider. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
+  externalAccountId:
+    type: string
+    description: Grid Spark `ExternalAccount` expected to fund the provider for external-source burns.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000203
+  accountId:
+    type: string
+    description: Grid internal source account id for future Grid-controlled burn flows.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000204
