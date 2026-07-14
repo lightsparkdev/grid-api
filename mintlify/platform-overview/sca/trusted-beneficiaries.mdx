@@ -60,14 +60,22 @@ An invalid or expired proof returns `400`. **In sandbox, the code is always
 
 ## Untrusting a beneficiary
 
-Revoking trust is a single confirm call with the SCA proof, the same request
-shape as trust/confirm. Returns `trusted: false`.
+Untrust has no separate start step. You confirm it directly with an SCA proof,
+the same request shape as trust/confirm, and it returns `trusted: false`.
 
 ```bash
 POST /customers/{customerId}/external-accounts/{externalAccountId}/untrust/confirm
 
-{ "challengeId": "…", "code": "123456" }
+{ "code": "123456" }
 ```
+
+<Note>
+Because there is no untrust start step, nothing dispatches an SMS code or issues
+passkey options for the untrust. The customer authenticates with a proof they can
+produce on their own, a `TOTP` code, and `challengeId` is omitted. SMS and passkey
+untrust would each need a start step to issue the challenge, which isn't part of
+the current surface.
+</Note>
 
 Once untrusted, sends to that beneficiary are dynamically linked again and each
 one requires a full per-transaction challenge.

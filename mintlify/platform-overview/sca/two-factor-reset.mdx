@@ -19,6 +19,7 @@ All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
 
 <Steps>
 <Step title="Start the reset">
+
 ```bash
 POST /customers/{customerId}/sca/factors/reset
 
@@ -37,6 +38,7 @@ Returns **`201`** with a `resetId` and opaque liveness handles. Embed
   "expiresAt": "2025-10-03T12:30:00Z"
 }
 ```
+
 </Step>
 <Step title="Poll until liveness passes">
 ```bash
@@ -47,11 +49,18 @@ GET /customers/{customerId}/sca/factors/reset/{resetId}
 { "status": "PENDING" }
 ```
 
-Keep polling while `status` is non-terminal (e.g. `PENDING`). Once it reaches
-`LIVENESS_PASSED`, proceed. The field is passed through verbatim, so treat any
-value other than `LIVENESS_PASSED` as "not ready yet" rather than a failure.
+Poll with a short backoff. Two things end the loop: `status` reaches
+`LIVENESS_PASSED` (proceed to complete), or the reset's `expiresAt` passes.
+`status` is passed through verbatim, so match `LIVENESS_PASSED` exactly and treat
+every other value (including `PENDING`) as "not ready yet."
+
+To keep the loop bounded, stop at `expiresAt`, and apply your own timeout if the
+start response didn't include one. If the window closes before liveness passes
+(for example the customer abandons or fails the check), the reset is over: start
+a new one rather than polling indefinitely.
 </Step>
 <Step title="Complete the reset">
+
 ```bash
 POST /customers/{customerId}/sca/factors/reset/{resetId}/complete
 ```

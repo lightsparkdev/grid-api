@@ -22,6 +22,7 @@ All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
 
 <Steps>
 <Step title="Start the login">
+
 ```bash
 POST /customers/{customerId}/sca/login/start
 
@@ -80,3 +81,10 @@ Returns `204`. `eventType` must be one of:
 
 Report `FAILED_LOGIN_ATTEMPT` on each failed sign-in and `RESET_PASSWORD_COMPLETED`
 once a password recovery finishes. Any other value returns `400`.
+
+<Note>
+The failed-login counter is cumulative and is **not** reset by a successful
+login; only `RESET_PASSWORD_COMPLETED` clears it. Record that event after a
+password recovery to zero the counter and lift a lockout, rather than relying on
+the customer simply logging in again.
+</Note>
