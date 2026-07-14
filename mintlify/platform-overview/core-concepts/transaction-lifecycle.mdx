@@ -393,7 +393,7 @@ Use for reconciliation and reporting.
 | Failure Reason | Description | Recovery |
 |----------------|-------------|----------|
 | `QUOTE_EXPIRED` | Quote expired before execution | Create new quote |
-| `QUOTE_EXECUTION_FAILED` | Error executing the quote; no funds were debited | Create new quote |
+| `QUOTE_EXECUTION_FAILED` | Error executing the quote | Create new quote |
 | `EXECUTION_FAILED_POST_DEBIT` | Execution failed after debit; funds are refunded automatically | Retry with a new quote |
 | `SETTLEMENT_FAILED` | The settlement leg failed | Retry or use alternative rail |
 | `FUNDING_AMOUNT_MISMATCH` | Funding amount doesn't match expected amount | Verify amounts and retry |

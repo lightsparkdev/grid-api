@@ -17091,7 +17091,7 @@ components:
         | Reason | Description |
         |--------|-------------|
         | `QUOTE_EXPIRED` | The quote was not executed before its expiry window |
-        | `QUOTE_EXECUTION_FAILED` | The quote could not be executed. No funds were debited |
+        | `QUOTE_EXECUTION_FAILED` | The quote could not be executed |
         | `EXECUTION_FAILED_POST_DEBIT` | Execution failed after funds were debited. The amount is refunded automatically |
         | `SETTLEMENT_FAILED` | The settlement leg failed |
         | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
