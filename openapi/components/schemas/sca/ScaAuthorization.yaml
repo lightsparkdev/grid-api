@@ -3,8 +3,8 @@ description: >-
   Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for
   `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`). When supplying a
   `passkeyAssertion`, `origin` is **required** — the WebAuthn assertion is bound
-  to the origin it was produced against, and the provider rejects a passkey
-  confirmation without it.
+  to the origin it was produced against, and a passkey confirmation is rejected
+  without it.
 properties:
   code:
     type:

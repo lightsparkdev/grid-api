@@ -26,9 +26,7 @@ tags:
   - name: Strong Customer Authentication
     description: >-
       Endpoints for authorizing money-movement operations that require Strong
-      Customer Authentication. Relevant only for customers whose payment
-      provider mandates SCA (e.g. EU customers); other providers never surface
-      an SCA challenge and these endpoints return 409.
+      Customer Authentication. Relevant only for customers in a region where SCA is required (e.g. EU); customers outside SCA-regulated regions never see an SCA challenge and these endpoints return 409.
   - name: KYC/KYB Verifications
     description: >-
       Endpoints for Know Your Customer (KYC) and Know Your Business (KYB)

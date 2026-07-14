@@ -15,9 +15,9 @@ post:
     and its `scaChallenge.expiresAt` is **not** extended; once the challenge is
     past `expiresAt` it can no longer be authorized.
 
-    Only meaningful for customers whose provider requires SCA (e.g. EU); other
-    providers return 409. `PASSKEY` challenges cannot be re-sent (there is no
-    code to deliver) and return 409.
+    Only meaningful for customers in a region where SCA is required (e.g. EU);
+    a 409 is returned otherwise. `PASSKEY` challenges cannot be re-sent (there is
+    no code to deliver) and return 409.
 
     In sandbox, the code is always `123456`.
   operationId: resendTransactionScaCode
@@ -42,7 +42,7 @@ post:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        The customer's provider does not require SCA, the transaction has no
+        SCA is not required for this customer, the transaction has no
         pending SMS challenge, or the challenge uses a factor whose code cannot
         be re-sent (e.g. passkey).
       content:

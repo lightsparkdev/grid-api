@@ -40,7 +40,7 @@ post:
         Transfer-out request created successfully.
 
 
-        For customers whose provider requires Strong Customer Authentication
+        For customers in a region where Strong Customer Authentication is required
         (e.g. EU): supplying `scaAuthorization` upfront in the request satisfies
         the **first** challenge in one shot. Without it, the returned transaction
         comes back with status `PENDING_AUTHORIZATION` and an `scaChallenge`;
@@ -48,7 +48,7 @@ post:
         `POST /transactions/{transactionId}/authorize`. This may be required
         **more than once** — the transaction can surface a further `scaChallenge`
         after each authorization (see `ScaChallenge`); keep authorizing until it
-        leaves `PENDING_AUTHORIZATION`. For providers that don't require SCA the
+        leaves `PENDING_AUTHORIZATION`. For customers outside SCA-regulated regions the
         transaction proceeds as usual.
       content:
         application/json:

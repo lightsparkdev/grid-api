@@ -59,8 +59,7 @@ post:
   responses:
     '200':
       description: >
-        Quote processed. The outcome depends on whether the customer's provider
-        requires Strong Customer Authentication (SCA):
+        Quote processed. The outcome depends on whether SCA applies to the customer (currently EU customers):
 
 
         - **No SCA required, or a valid `scaAuthorization` is supplied inline on

@@ -29,7 +29,7 @@ properties:
       - EXPIRED
     description: >-
       Current status of the quote. `PENDING_AUTHORIZATION` occurs only for
-      customers whose provider requires Strong Customer Authentication (e.g.
+      customers in a region where Strong Customer Authentication is required (e.g.
       EU): the quote carries an `scaChallenge` that must be authorized before
       execution, and for realtime-funding sources `paymentInstructions` are
       withheld until it is satisfied.
@@ -133,4 +133,4 @@ properties:
       Present only while `status` is `PENDING_AUTHORIZATION`: the Strong
       Customer Authentication challenge to satisfy before this quote can be
       executed (or, for realtime-funding sources, before `paymentInstructions`
-      are issued). Omitted for customers whose provider does not require SCA.
+      are issued). Omitted for customers outside SCA-regulated regions (non-EU).

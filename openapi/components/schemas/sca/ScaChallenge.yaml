@@ -1,9 +1,7 @@
 type: object
 description: >-
   A Strong Customer Authentication challenge that must be satisfied before a
-  money-movement operation can complete. This object is **only present when the
-  customer's payment provider requires SCA** (e.g. EU customers on an e-money
-  provider); for customers whose provider has no such requirement it is omitted
+  money-movement operation can complete. This object is **only present when the customer is in a region where SCA is required** (the EU); for customers outside SCA-regulated regions it is omitted
   entirely and no action is needed.
 
 
@@ -19,9 +17,9 @@ description: >-
   still `PENDING_AUTHORIZATION`, it carries the **next** `scaChallenge` (a new
   `id`) — authorize that too, and repeat until it leaves `PENDING_AUTHORIZATION`.
   Do not assume one authorization releases the transfer. The number of
-  authorizations is flow- and provider-dependent and **may decrease in future**:
+  authorizations is flow-dependent and **may decrease in future**:
   for example, a cross-currency send today authorizes the currency conversion
-  and the payout as two separate challenges; a future provider update may
+  and the payout as two separate challenges; a future update may
   collapse them into one. A client written to loop on status handles any count
   unchanged.
 required:
@@ -63,8 +61,7 @@ properties:
       conversion" vs "Authorize the payout"). Known values include
       `CURRENCY_CONVERSION`, `PAYOUT`, and `TRANSFER`, but the set is
       **non-exhaustive and may grow** — treat unrecognized values as a generic
-      authorization step and do not branch program logic on it. Omitted when the
-      provider does not distinguish steps (e.g. a single-authorization flow).
+      authorization step and do not branch program logic on it. Omitted when steps are not distinguished (e.g. a single-authorization flow).
     example: PAYOUT
   passkeyAssertionOptions:
     type:

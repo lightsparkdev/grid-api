@@ -22,9 +22,7 @@ post:
     next `scaChallenge` — authorize that too, repeating until it advances (see
     `ScaChallenge`).
 
-    This endpoint is only meaningful for customers whose payment provider
-    requires SCA (e.g. EU customers). For customers whose provider has no such
-    requirement, this returns `409`.
+    This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
 
     In sandbox, the SMS code is always `123456`.
   operationId: authorizeQuote
@@ -65,7 +63,7 @@ post:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        The customer's payment provider does not require SCA, or the quote has
+        SCA is not required for this customer, or the quote has
         no pending challenge to authorize.
       content:
         application/json:
@@ -75,8 +73,7 @@ post:
       description: >-
         Too many requests. Returned with `RATE_LIMITED` when authorization
         attempts for this challenge happen too frequently (for example, repeated
-        bad codes brute-forcing the OTP). The provider may invalidate the
-        challenge after too many failed attempts. Clients should back off and
+        bad codes brute-forcing the OTP). The challenge may be invalidated after too many failed attempts. Clients should back off and
         retry after the interval indicated by the `Retry-After` response header.
       content:
         application/json:

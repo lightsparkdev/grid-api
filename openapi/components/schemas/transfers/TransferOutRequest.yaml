@@ -30,7 +30,7 @@ properties:
     $ref: ../sca/ScaFactor.yaml
     description: >-
       Optional preferred factor for the Strong Customer Authentication challenge
-      this call issues. Only relevant for customers whose provider requires SCA
+      this call issues. Only relevant for customers in a region where SCA is required
       (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge
       are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required
       dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
@@ -38,8 +38,8 @@ properties:
     $ref: ../sca/ScaAuthorization.yaml
     description: >-
       Optional inline Strong Customer Authentication proof. Only relevant for
-      customers whose provider requires SCA (e.g. EU): supply this to satisfy
+      customers in a region where SCA is required (e.g. EU): supply this to satisfy
       the challenge in the same call once the customer has the code/assertion.
       Omit it on the first call to receive the transaction in
       `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately.
-      Ignored for customers whose provider does not require SCA.
+      Ignored for customers outside SCA-regulated regions (non-EU).
