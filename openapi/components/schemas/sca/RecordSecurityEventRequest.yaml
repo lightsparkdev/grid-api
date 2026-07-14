@@ -1,17 +1,21 @@
 type: object
 description: >-
-  Records a client-side security-relevant event for the customer with Grid's risk engine (e.g. a sign-in, a sensitive view). Used to
-  feed Grid's adaptive-authentication signals.
+  Records a client-side security event for the customer so Grid can maintain the
+  customer's login-security state (SCA session revocation and failed-login
+  lockout).
 required:
   - eventType
 properties:
   eventType:
     type: string
-    description: >-
-      A defined security-event identifier drawn from Grid's
-      accepted set (e.g. `LOGIN`), **not** arbitrary caller text — it is
-      forwarded verbatim to Grid's risk engine, which rejects values
-      outside that set. Left as a string (rather than an enum) so new
-      new events don't require a spec change; treat it as a closed
-      vocabulary defined by Grid, not free-form input.
-    example: LOGIN
+    enum:
+      - RESET_PASSWORD_COMPLETED
+      - FAILED_LOGIN_ATTEMPT
+    description: |
+      The security event to record:
+
+      | Value | Effect |
+      |-------|--------|
+      | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
+      | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
+    example: FAILED_LOGIN_ATTEMPT

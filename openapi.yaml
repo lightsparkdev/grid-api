@@ -1884,9 +1884,8 @@ paths:
       summary: Start trusting a beneficiary
       description: |
         Begin trusting (whitelisting) an external account so future sends to it can
-        skip the per-transaction SCA ceremony. Creates the whitelist entry and
-        returns a `whitelistedId` handle plus, when one is issued, the
-        `scaChallenge` to satisfy. Complete with
+        skip the per-transaction SCA ceremony. Returns the `scaChallenge` to satisfy
+        (when one is issued). Complete with
         `POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm`.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
@@ -1897,7 +1896,7 @@ paths:
         - BasicAuth: []
       responses:
         '200':
-          description: Beneficiary trust started; the whitelist handle and any challenge are returned.
+          description: Beneficiary trust started; the SCA challenge (if any) is returned.
           content:
             application/json:
               schema:
@@ -1950,8 +1949,8 @@ paths:
     post:
       summary: Confirm trusting a beneficiary
       description: |
-        Finalize trusting a beneficiary by submitting the `whitelistedId` from the
-        trust start and the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+        Finalize trusting a beneficiary (identified by the `externalAccountId` in the
+        path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
         `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
         one was issued. Returns `trusted: true`.
 
@@ -2024,8 +2023,8 @@ paths:
     post:
       summary: Confirm untrusting a beneficiary
       description: |
-        Finalize untrusting a beneficiary by submitting the `whitelistedId` from the
-        trust start and the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+        Finalize untrusting a beneficiary (identified by the `externalAccountId` in
+        the path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
         `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
         one was issued. Returns `trusted: false`.
 
@@ -12156,14 +12155,23 @@ components:
           example: SUCCESS
     RecordSecurityEventRequest:
       type: object
-      description: Records a client-side security-relevant event for the customer with Grid's risk engine (e.g. a sign-in, a sensitive view). Used to feed Grid's adaptive-authentication signals.
+      description: Records a client-side security event for the customer so Grid can maintain the customer's login-security state (SCA session revocation and failed-login lockout).
       required:
         - eventType
       properties:
         eventType:
           type: string
-          description: A defined security-event identifier drawn from Grid's accepted set (e.g. `LOGIN`), **not** arbitrary caller text — it is forwarded verbatim to Grid's risk engine, which rejects values outside that set. Left as a string (rather than an enum) so new new events don't require a spec change; treat it as a closed vocabulary defined by Grid, not free-form input.
-          example: LOGIN
+          enum:
+            - RESET_PASSWORD_COMPLETED
+            - FAILED_LOGIN_ATTEMPT
+          description: |
+            The security event to record:
+
+            | Value | Effect |
+            |-------|--------|
+            | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
+            | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
+          example: FAILED_LOGIN_ATTEMPT
     TwoFactorResetStartRequest:
       type: object
       description: Selects which enrolled factor to reset via the liveness-gated recovery flow.
@@ -12265,21 +12273,14 @@ components:
             - https://app.example.com
     BeneficiaryTrustStart:
       type: object
-      description: The whitelist handle plus the SCA challenge a caller authorizes to finish trusting (or untrusting) a beneficiary. `whitelistedId` is the beneficiary handle; thread it back on the confirm call so confirm need not re-whitelist (which could trigger a second challenge). `scaChallenge` is omitted when one is not surfaced on the whitelist response; the caller then confirms without a `challengeId`.
-      required:
-        - whitelistedId
+      description: The SCA challenge (if any) a caller authorizes to finish trusting (or untrusting) a beneficiary. The beneficiary is identified by its `externalAccountId`, so the confirm call needs no separate handle. `scaChallenge` is omitted when no challenge is issued; the caller then confirms without a `challengeId`.
       properties:
-        whitelistedId:
-          type: string
-          description: The beneficiary (whitelist) handle. Thread it back on the confirm call.
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
-          description: The SCA challenge to satisfy on the confirm call. Omitted when the no challenge is issued on the whitelist response.
+          description: The SCA challenge to satisfy on the confirm call. Omitted when no challenge is issued.
     BeneficiaryTrustConfirmRequest:
       type: object
-      description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `whitelistedId` returned by the trust start and, when the start issued one, the `challengeId`.
-      required:
-        - whitelistedId
+      description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start issued one, the `challengeId`. The beneficiary is identified by the `externalAccountId` in the path — no separate handle is needed.
       anyOf:
         - required:
             - code
@@ -12287,9 +12288,6 @@ components:
             - passkeyAssertion
             - origin
       properties:
-        whitelistedId:
-          type: string
-          description: The beneficiary handle returned as `whitelistedId` by *this account's own* trust start, threaded back so confirm need not re-whitelist. It is scoped to that ceremony — the server rejects a `whitelistedId` issued for a different external account or from an expired/stale start, so do not cache or reuse it across accounts.
         challengeId:
           type:
             - string

@@ -2,11 +2,9 @@ type: object
 description: >-
   Confirms trusting or untrusting a beneficiary by submitting the SCA proof.
   Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` /
-  `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the
-  `whitelistedId` returned by the trust start and, when the start issued one,
-  the `challengeId`.
-required:
-  - whitelistedId
+  `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start
+  issued one, the `challengeId`. The beneficiary is identified by the
+  `externalAccountId` in the path — no separate handle is needed.
 anyOf:
   - required:
       - code
@@ -14,14 +12,6 @@ anyOf:
       - passkeyAssertion
       - origin
 properties:
-  whitelistedId:
-    type: string
-    description: >-
-      The beneficiary handle returned as `whitelistedId` by *this
-      account's own* trust start, threaded back so confirm need not
-      re-whitelist. It is scoped to that ceremony — the server rejects a
-      `whitelistedId` issued for a different external account or from an
-      expired/stale start, so do not cache or reuse it across accounts.
   challengeId:
     type:
       - string

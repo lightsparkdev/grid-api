@@ -16,9 +16,8 @@ post:
   summary: Start trusting a beneficiary
   description: |
     Begin trusting (whitelisting) an external account so future sends to it can
-    skip the per-transaction SCA ceremony. Creates the whitelist entry and
-    returns a `whitelistedId` handle plus, when one is issued, the
-    `scaChallenge` to satisfy. Complete with
+    skip the per-transaction SCA ceremony. Returns the `scaChallenge` to satisfy
+    (when one is issued). Complete with
     `POST /customers/{customerId}/external-accounts/{externalAccountId}/trust/confirm`.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
@@ -29,7 +28,7 @@ post:
     - BasicAuth: []
   responses:
     '200':
-      description: Beneficiary trust started; the whitelist handle and any challenge are returned.
+      description: Beneficiary trust started; the SCA challenge (if any) is returned.
       content:
         application/json:
           schema:
