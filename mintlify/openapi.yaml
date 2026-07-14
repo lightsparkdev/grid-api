@@ -2429,7 +2429,9 @@ paths:
           description: |
             Transfer-out request created successfully.
 
-            For customers in a region where Strong Customer Authentication is required (e.g. EU): supplying `scaAuthorization` upfront in the request satisfies the **first** challenge in one shot. Without it, the returned transaction comes back with status `PENDING_AUTHORIZATION` and an `scaChallenge`; release the transfer by calling `POST /transactions/{transactionId}/authorize`. This may be required **more than once** — the transaction can surface a further `scaChallenge` after each authorization (see `ScaChallenge`); keep authorizing until it leaves `PENDING_AUTHORIZATION`. For customers outside SCA-regulated regions the transaction proceeds as usual.
+            For customers outside SCA-regulated regions the transaction proceeds as usual.
+
+            **Strong Customer Authentication (EU):** per-transaction SCA is authorized only on the quote resource (`POST /quotes/{quoteId}/authorize`), and `transfer-out` has no associated quote. `transfer-out` is being deprecated, so SCA-gated EU debits are not offered on this endpoint — use the quote + `execute` flow instead.
           content:
             application/json:
               schema:
@@ -2866,9 +2868,9 @@ paths:
           description: |
             Quote processed. The outcome depends on whether SCA applies to the customer (currently EU customers):
 
-            - **No SCA required, or a valid `scaAuthorization` is supplied inline on this call:** the transfer is initiated and the quote status advances (`PROCESSING` / `COMPLETED`).
+            - **No SCA required:** the transfer is initiated and the quote status advances (`PROCESSING` / `COMPLETED`).
 
-            - **SCA required and no inline proof:** the transfer is **not** initiated yet. The quote is returned with status `PENDING_AUTHORIZATION` and an `scaChallenge`, and the **only** way to release the transfer is `POST /transactions/{transactionId}/authorize` for the quote's `transactionId` (re-calling `execute` returns 409). That may need to be done **more than once** — the transaction can surface a further `scaChallenge` after each authorization (see `ScaChallenge`); keep authorizing until it leaves `PENDING_AUTHORIZATION`. The inline `scaAuthorization` field satisfies only the **first** challenge. A client holding a `PENDING_AUTHORIZATION` quote from `execute` always authorizes via the **transaction**-scoped endpoint; the quote-scoped `POST /quotes/{quoteId}/authorize` is only for a realtime-funding quote whose challenge was issued at quote creation (the 202 from `POST /quotes`). If an SMS code lapses, re-send it via `POST /transactions/{transactionId}/authorize/resend`.
+            - **SCA required:** the transfer is **not** initiated yet. The quote is returned with status `PENDING_AUTHORIZATION` and an `scaChallenge`; release the transfer by authorizing the quote you already hold — `POST /quotes/{quoteId}/authorize` (re-calling `execute` returns 409). A pre-funded send is a single challenge, so one authorization releases it. The challenge (and its SMS code / passkey assertion) only comes into existence once this call initiates the transfer, so the proof is always supplied on the follow-up authorize, never inline on this call. If an SMS code lapses, re-send it via `POST /quotes/{quoteId}/authorize/resend`.
           content:
             application/json:
               schema:
@@ -3386,155 +3388,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /transactions/{transactionId}/authorize:
-    parameters:
-      - name: transactionId
-        in: path
-        description: The unique identifier of the transaction whose SCA challenge is being authorized.
-        required: true
-        schema:
-          type: string
-        example: Transaction:019542f5-b3e7-1d02-0000-000000000005
-    post:
-      summary: Authorize a transaction's SCA challenge
-      description: |
-        Satisfy the Strong Customer Authentication challenge carried by a
-        transaction in `PENDING_AUTHORIZATION` status by submitting an
-        `ScaAuthorization` proof for the transaction's **current** `scaChallenge`.
-
-        A transaction may require **more than one** authorization in sequence (see
-        `ScaChallenge`). On success, inspect the returned transaction: if it has
-        advanced to `PROCESSING` / `COMPLETED`, the transfer is released; if it is
-        **still** `PENDING_AUTHORIZATION`, it now carries the next `scaChallenge`
-        (a new `id`) — call this endpoint again for that one. Repeat until the
-        transaction leaves `PENDING_AUTHORIZATION`. Do not assume a single call
-        releases the transfer; the number of authorizations is flow-dependent
-        and may change over time.
-
-        Transactions enter `PENDING_AUTHORIZATION` from `execute` (embedded-wallet
-        quotes) and `transfer-out` when the customer is in a region where SCA is required. The
-        first authorization can be supplied inline on those calls via their optional
-        `scaAuthorization` field instead of calling this endpoint; any subsequent
-        authorizations in the sequence use this endpoint.
-
-        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
-
-        In sandbox, the SMS code is always `123456`.
-      operationId: authorizeTransaction
-      tags:
-        - Strong Customer Authentication
-      security:
-        - BasicAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ScaAuthorization'
-      responses:
-        '200':
-          description: Challenge authorized; the updated transaction is returned. It has either advanced (`PROCESSING` / `COMPLETED`) or, if another authorization is required, remains `PENDING_AUTHORIZATION` with the next `scaChallenge`.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TransactionOneOf'
-        '400':
-          description: Invalid or expired authorization proof
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Transaction not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '409':
-          description: SCA is not required for this customer, or the transaction has no pending challenge to authorize.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
-        '429':
-          description: Too many requests. Returned with `RATE_LIMITED` when authorization attempts for this challenge happen too frequently (for example, repeated bad codes brute-forcing the OTP). The challenge may be invalidated after too many failed attempts. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error429'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /transactions/{transactionId}/authorize/resend:
-    parameters:
-      - name: transactionId
-        in: path
-        description: The unique identifier of the transaction whose SCA challenge code should be re-sent.
-        required: true
-        schema:
-          type: string
-        example: Transaction:019542f5-b3e7-1d02-0000-000000000005
-    post:
-      summary: Resend a transaction's SCA challenge code
-      description: |
-        Re-send the one-time code for a transaction in `PENDING_AUTHORIZATION`
-        status whose `scaChallenge.factor` is `SMS_OTP` (e.g. the customer didn't
-        receive it). The existing challenge is reused — no new challenge is issued,
-        and its `scaChallenge.expiresAt` is **not** extended; once the challenge is
-        past `expiresAt` it can no longer be authorized.
-
-        Only meaningful for customers in a region where SCA is required (e.g. EU);
-        a 409 is returned otherwise. `PASSKEY` challenges cannot be re-sent (there is
-        no code to deliver) and return 409.
-
-        In sandbox, the code is always `123456`.
-      operationId: resendTransactionScaCode
-      tags:
-        - Strong Customer Authentication
-      security:
-        - BasicAuth: []
-      responses:
-        '204':
-          description: Code re-sent.
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Transaction not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '409':
-          description: SCA is not required for this customer, the transaction has no pending SMS challenge, or the challenge uses a factor whose code cannot be re-sent (e.g. passkey).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
-        '429':
-          description: Too many requests. Returned with `RATE_LIMITED` when codes are re-sent too frequently, to avoid spamming the customer's phone. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -17210,74 +17063,6 @@ components:
         FULL_NAME: John Sender
         BIRTH_DATE: '1985-06-15'
         NATIONALITY: DE
-    ScaFactor:
-      type: string
-      enum:
-        - SMS_OTP
-        - TOTP
-        - PASSKEY
-      description: |
-        A Strong Customer Authentication factor.
-
-        | Factor | Description |
-        |--------|-------------|
-        | `SMS_OTP` | One-time code sent by SMS to the customer's verified phone. Requires no prior enrollment. |
-        | `TOTP` | Time-based one-time code from an authenticator app. Requires enrollment. Not valid for per-transaction challenges (cannot carry dynamic linking). |
-        | `PASSKEY` | WebAuthn passkey assertion. Requires enrollment. |
-    ScaChallenge:
-      type: object
-      description: |-
-        A Strong Customer Authentication challenge that must be satisfied before a money-movement operation can complete. This object is **only present when the customer is in a region where SCA is required** (the EU); for customers outside SCA-regulated regions it is omitted entirely and no action is needed.
-
-        When present on a quote or transaction, authorize it by submitting an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` or `POST /transactions/{transactionId}/authorize`, or inline via the optional `scaAuthorization` field on the originating `execute` / `transfer-out` call.
-
-        **A single operation may require more than one authorization, in sequence.** Treat `scaChallenge` as *the challenge to satisfy now*, not "the only one". After each authorize, re-inspect the returned quote/transaction: if it is still `PENDING_AUTHORIZATION`, it carries the **next** `scaChallenge` (a new `id`) — authorize that too, and repeat until it leaves `PENDING_AUTHORIZATION`. Do not assume one authorization releases the transfer. The number of authorizations is flow-dependent and **may decrease in future**: for example, a cross-currency send today authorizes the currency conversion and the payout as two separate challenges; a future update may collapse them into one. A client written to loop on status handles any count unchanged.
-      required:
-        - id
-        - expiresAt
-        - factor
-        - availableFactors
-      properties:
-        id:
-          type: string
-          description: Unique identifier for this challenge. The server resolves the active challenge from the quote or transaction being authorized, so this field need not be supplied back; it is informational (e.g. for logging or correlation).
-          example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
-        expiresAt:
-          type: string
-          format: date-time
-          description: Absolute UTC timestamp after which this challenge can no longer be authorized.
-          example: '2025-10-03T12:05:00Z'
-        factor:
-          $ref: '#/components/schemas/ScaFactor'
-          description: The factor this challenge was issued for. Defaults to `SMS_OTP`.
-        availableFactors:
-          type: array
-          description: The factors the customer may use to satisfy this challenge.
-          items:
-            $ref: '#/components/schemas/ScaFactor'
-          example:
-            - SMS_OTP
-        purpose:
-          type:
-            - string
-            - 'null'
-          description: Optional, informational label for what this particular challenge in the sequence authorizes — useful for step UX (e.g. "Authorize the currency conversion" vs "Authorize the payout"). Known values include `CURRENCY_CONVERSION`, `PAYOUT`, and `TRANSFER`, but the set is **non-exhaustive and may grow** — treat unrecognized values as a generic authorization step and do not branch program logic on it. Omitted when steps are not distinguished (e.g. a single-authorization flow).
-          example: PAYOUT
-        passkeyAssertionOptions:
-          type:
-            - object
-            - 'null'
-          additionalProperties: true
-          description: Opaque WebAuthn assertion request options (including the relying-party id, challenge, and allowed credentials), present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
-        passkeyAllowedOrigins:
-          type:
-            - array
-            - 'null'
-          items:
-            type: string
-          description: The origins the WebAuthn ceremony may run against. Populated for enrollment and login passkey challenges; the origin the assertion is produced against must be one of these and echoed back as `ScaAuthorization.origin`. Per-transaction passkey challenges omit this (they carry `passkeyAssertionOptions` only) — see `ScaAuthorization.origin` for how to source the origin in that case.
-          example:
-            - https://app.example.com
     Transaction:
       type: object
       required:
@@ -17340,10 +17125,6 @@ components:
           example: 'Payment for invoice #1234'
         counterpartyInformation:
           $ref: '#/components/schemas/CounterpartyInformation'
-        scaChallenge:
-          $ref: '#/components/schemas/ScaChallenge'
-          readOnly: true
-          description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this transaction can proceed. Omitted entirely for customers whose provider does not require SCA.'
     TransactionSourceType:
       type: string
       enum:
@@ -17966,28 +17747,20 @@ components:
           description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
-    ScaAuthorization:
-      type: object
-      description: Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`). When supplying a `passkeyAssertion`, `origin` is **required** — the WebAuthn assertion is bound to the origin it was produced against, and a passkey confirmation is rejected without it.
-      properties:
-        code:
-          type:
-            - string
-            - 'null'
-          description: The one-time code the customer received by SMS, or read from their authenticator app. In sandbox, the code is always `123456`.
-          example: '123456'
-        passkeyAssertion:
-          type:
-            - object
-            - 'null'
-          additionalProperties: true
-          description: Opaque WebAuthn assertion produced by the device from the challenge's `passkeyAssertionOptions`. Required when satisfying a `PASSKEY` challenge.
-        origin:
-          type:
-            - string
-            - 'null'
-          description: The WebAuthn origin the `passkeyAssertion` was produced against. **Required** alongside `passkeyAssertion`; omit it for the `code` path. When the challenge lists `passkeyAllowedOrigins` (enrollment / login challenges), it must be one of those. A per-transaction passkey challenge carries `passkeyAssertionOptions` but may omit `passkeyAllowedOrigins`; in that case supply the origin your app invoked the WebAuthn API from, which must match the relying party in `passkeyAssertionOptions`.
-          example: https://app.example.com
+    ScaFactor:
+      type: string
+      enum:
+        - SMS_OTP
+        - TOTP
+        - PASSKEY
+      description: |
+        A Strong Customer Authentication factor.
+
+        | Factor | Description |
+        |--------|-------------|
+        | `SMS_OTP` | One-time code sent by SMS to the customer's verified phone. Requires no prior enrollment. |
+        | `TOTP` | Time-based one-time code from an authenticator app. Requires enrollment. Not valid for per-transaction challenges (cannot carry dynamic linking). |
+        | `PASSKEY` | WebAuthn passkey assertion. Requires enrollment. |
     TransferOutRequest:
       type: object
       required:
@@ -18013,9 +17786,6 @@ components:
         scaFactor:
           $ref: '#/components/schemas/ScaFactor'
           description: Optional preferred factor for the Strong Customer Authentication challenge this call issues. Only relevant for customers in a region where SCA is required (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
-        scaAuthorization:
-          $ref: '#/components/schemas/ScaAuthorization'
-          description: 'Optional inline Strong Customer Authentication proof. Only relevant for customers in a region where SCA is required (e.g. EU): supply this to satisfy the challenge in the same call once the customer has the code/assertion. Omit it on the first call to receive the transaction in `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately. Ignored for customers outside SCA-regulated regions (non-EU).'
     CurrencyPreference:
       type: object
       required:
@@ -18250,6 +18020,60 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
+    ScaChallenge:
+      type: object
+      description: |-
+        A Strong Customer Authentication challenge that must be satisfied before a money-movement operation can complete. This object is **only present when the customer is in a region where SCA is required** (the EU); for customers outside SCA-regulated regions it is omitted entirely and no action is needed.
+
+        When present on a quote, authorize it by submitting an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize`.
+
+        **A single operation may require more than one authorization, in sequence.** Treat `scaChallenge` as *the challenge to satisfy now*, not "the only one". After each authorize, re-inspect the returned quote/transaction: if it is still `PENDING_AUTHORIZATION`, it carries the **next** `scaChallenge` (a new `id`) — authorize that too, and repeat until it leaves `PENDING_AUTHORIZATION`. Do not assume one authorization releases the transfer. The number of authorizations is flow-dependent and **may decrease in future**: for example, a cross-currency send today authorizes the currency conversion and the payout as two separate challenges; a future update may collapse them into one. A client written to loop on status handles any count unchanged.
+      required:
+        - id
+        - expiresAt
+        - factor
+        - availableFactors
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this challenge. The server resolves the active challenge from the quote or transaction being authorized, so this field need not be supplied back; it is informational (e.g. for logging or correlation).
+          example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
+        expiresAt:
+          type: string
+          format: date-time
+          description: Absolute UTC timestamp after which this challenge can no longer be authorized.
+          example: '2025-10-03T12:05:00Z'
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor this challenge was issued for. Defaults to `SMS_OTP`.
+        availableFactors:
+          type: array
+          description: The factors the customer may use to satisfy this challenge.
+          items:
+            $ref: '#/components/schemas/ScaFactor'
+          example:
+            - SMS_OTP
+        purpose:
+          type:
+            - string
+            - 'null'
+          description: Optional, informational label for what this particular challenge in the sequence authorizes — useful for step UX (e.g. "Authorize the currency conversion" vs "Authorize the payout"). Known values include `CURRENCY_CONVERSION`, `PAYOUT`, and `TRANSFER`, but the set is **non-exhaustive and may grow** — treat unrecognized values as a generic authorization step and do not branch program logic on it. Omitted when steps are not distinguished (e.g. a single-authorization flow).
+          example: PAYOUT
+        passkeyAssertionOptions:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion request options (including the relying-party id, challenge, and allowed credentials), present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
+        passkeyAllowedOrigins:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: The origins the WebAuthn ceremony may run against. Populated for enrollment and login passkey challenges; the origin the assertion is produced against must be one of these and echoed back as `ScaAuthorization.origin`. Per-transaction passkey challenges omit this (they carry `passkeyAssertionOptions` only) — see `ScaAuthorization.origin` for how to source the origin in that case.
+          example:
+            - https://app.example.com
     Quote:
       type: object
       required:
@@ -18437,14 +18261,33 @@ components:
             NATIONALITY: FR
     ExecuteQuoteRequest:
       type: object
-      description: Optional body for executing a quote. Only needed to supply an inline Strong Customer Authentication proof; omit the body entirely for quotes that do not require SCA.
+      description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.
       properties:
         scaFactor:
           $ref: '#/components/schemas/ScaFactor'
           description: Optional preferred factor for the Strong Customer Authentication challenge this call issues. Only relevant for customers in a region where SCA is required (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
-        scaAuthorization:
-          $ref: '#/components/schemas/ScaAuthorization'
-          description: 'Optional inline Strong Customer Authentication proof. Only relevant for customers in a region where SCA is required (e.g. EU): supply this to satisfy the challenge in the same call once the customer has the code/assertion. Omit it to receive the quote in `PENDING_AUTHORIZATION` with an `scaChallenge`, then authorize separately. Ignored for customers outside SCA-regulated regions (non-EU).'
+    ScaAuthorization:
+      type: object
+      description: Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`). When supplying a `passkeyAssertion`, `origin` is **required** — the WebAuthn assertion is bound to the origin it was produced against, and a passkey confirmation is rejected without it.
+      properties:
+        code:
+          type:
+            - string
+            - 'null'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. In sandbox, the code is always `123456`.
+          example: '123456'
+        passkeyAssertion:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion produced by the device from the challenge's `passkeyAssertionOptions`. Required when satisfying a `PASSKEY` challenge.
+        origin:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn origin the `passkeyAssertion` was produced against. **Required** alongside `passkeyAssertion`; omit it for the `code` path. When the challenge lists `passkeyAllowedOrigins` (enrollment / login challenges), it must be one of those. A per-transaction passkey challenge carries `passkeyAssertionOptions` but may omit `passkeyAllowedOrigins`; in that case supply the origin your app invoked the WebAuthn API from, which must match the relying party in `passkeyAssertionOptions`.
+          example: https://app.example.com
     Error429:
       type: object
       required:
@@ -20624,6 +20467,7 @@ components:
               type: string
               enum:
                 - OUTGOING_PAYMENT.PENDING
+                - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
                 - OUTGOING_PAYMENT.PROCESSING
                 - OUTGOING_PAYMENT.COMPLETED
                 - OUTGOING_PAYMENT.FAILED

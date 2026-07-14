@@ -62,26 +62,19 @@ post:
         Quote processed. The outcome depends on whether SCA applies to the customer (currently EU customers):
 
 
-        - **No SCA required, or a valid `scaAuthorization` is supplied inline on
-        this call:** the transfer is initiated and the quote status advances
-        (`PROCESSING` / `COMPLETED`).
+        - **No SCA required:** the transfer is initiated and the quote status
+        advances (`PROCESSING` / `COMPLETED`).
 
 
-        - **SCA required and no inline proof:** the transfer is **not** initiated
-        yet. The quote is returned with status `PENDING_AUTHORIZATION` and an
-        `scaChallenge`, and the **only** way to release the transfer is
-        `POST /transactions/{transactionId}/authorize` for the quote's
-        `transactionId` (re-calling `execute` returns 409). That may need to be
-        done **more than once** — the transaction can surface a further
-        `scaChallenge` after each authorization (see `ScaChallenge`); keep
-        authorizing until it leaves `PENDING_AUTHORIZATION`. The inline
-        `scaAuthorization` field satisfies only the **first** challenge. A
-        client holding a `PENDING_AUTHORIZATION` quote from `execute` always
-        authorizes via the **transaction**-scoped endpoint; the quote-scoped
-        `POST /quotes/{quoteId}/authorize` is only for a realtime-funding quote
-        whose challenge was issued at quote creation (the 202 from `POST
-        /quotes`). If an SMS code lapses, re-send it via
-        `POST /transactions/{transactionId}/authorize/resend`.
+        - **SCA required:** the transfer is **not** initiated yet. The quote is
+        returned with status `PENDING_AUTHORIZATION` and an `scaChallenge`;
+        release the transfer by authorizing the quote you already hold —
+        `POST /quotes/{quoteId}/authorize` (re-calling `execute` returns 409). A
+        pre-funded send is a single challenge, so one authorization releases it.
+        The challenge (and its SMS code / passkey assertion) only comes into
+        existence once this call initiates the transfer, so the proof is always
+        supplied on the follow-up authorize, never inline on this call. If an SMS
+        code lapses, re-send it via `POST /quotes/{quoteId}/authorize/resend`.
       content:
         application/json:
           schema:

@@ -40,16 +40,15 @@ post:
         Transfer-out request created successfully.
 
 
-        For customers in a region where Strong Customer Authentication is required
-        (e.g. EU): supplying `scaAuthorization` upfront in the request satisfies
-        the **first** challenge in one shot. Without it, the returned transaction
-        comes back with status `PENDING_AUTHORIZATION` and an `scaChallenge`;
-        release the transfer by calling
-        `POST /transactions/{transactionId}/authorize`. This may be required
-        **more than once** — the transaction can surface a further `scaChallenge`
-        after each authorization (see `ScaChallenge`); keep authorizing until it
-        leaves `PENDING_AUTHORIZATION`. For customers outside SCA-regulated regions the
-        transaction proceeds as usual.
+        For customers outside SCA-regulated regions the transaction proceeds as
+        usual.
+
+
+        **Strong Customer Authentication (EU):** per-transaction SCA is authorized
+        only on the quote resource (`POST /quotes/{quoteId}/authorize`), and
+        `transfer-out` has no associated quote. `transfer-out` is being
+        deprecated, so SCA-gated EU debits are not offered on this endpoint — use
+        the quote + `execute` flow instead.
       content:
         application/json:
           schema:

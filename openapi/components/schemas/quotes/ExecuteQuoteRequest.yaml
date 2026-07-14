@@ -1,8 +1,8 @@
 type: object
 description: >-
-  Optional body for executing a quote. Only needed to supply an inline Strong
-  Customer Authentication proof; omit the body entirely for quotes that do not
-  require SCA.
+  Optional body for executing a quote. Only needed to request a specific Strong
+  Customer Authentication factor (`scaFactor`) for the challenge this call
+  issues; omit the body entirely otherwise.
 properties:
   scaFactor:
     $ref: ../sca/ScaFactor.yaml
@@ -12,11 +12,3 @@ properties:
       (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge
       are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required
       dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
-  scaAuthorization:
-    $ref: ../sca/ScaAuthorization.yaml
-    description: >-
-      Optional inline Strong Customer Authentication proof. Only relevant for
-      customers in a region where SCA is required (e.g. EU): supply this to satisfy
-      the challenge in the same call once the customer has the code/assertion.
-      Omit it to receive the quote in `PENDING_AUTHORIZATION` with an
-      `scaChallenge`, then authorize separately. Ignored for customers outside SCA-regulated regions (non-EU).

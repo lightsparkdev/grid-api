@@ -5,10 +5,8 @@ description: >-
   entirely and no action is needed.
 
 
-  When present on a quote or transaction, authorize it by submitting an
-  `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` or
-  `POST /transactions/{transactionId}/authorize`, or inline via the optional
-  `scaAuthorization` field on the originating `execute` / `transfer-out` call.
+  When present on a quote, authorize it by submitting an `ScaAuthorization` proof
+  to `POST /quotes/{quoteId}/authorize`.
 
 
   **A single operation may require more than one authorization, in sequence.**

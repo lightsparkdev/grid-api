@@ -10,6 +10,7 @@ allOf:
         type: string
         enum:
           - OUTGOING_PAYMENT.PENDING
+          - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
           - OUTGOING_PAYMENT.PROCESSING
           - OUTGOING_PAYMENT.COMPLETED
           - OUTGOING_PAYMENT.FAILED
