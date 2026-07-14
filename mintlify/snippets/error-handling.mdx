@@ -143,8 +143,15 @@ When a transaction fails, the `failureReason` field provides specific details:
 **Common outgoing failure reasons:**
 
 - `QUOTE_EXPIRED` - Quote expired before execution
-- `QUOTE_EXECUTION_FAILED` - Error executing the quote
+- `QUOTE_EXECUTION_FAILED` - Error executing the quote; no funds were debited
+- `EXECUTION_FAILED_POST_DEBIT` - Execution failed after debit; funds are refunded automatically
 - `FUNDING_AMOUNT_MISMATCH` - Funding amount doesn't match expected amount
+- `ACCOUNT_INVALID` - Recipient account details are wrong or not found
+- `ACCOUNT_CANNOT_RECEIVE` - Recipient account can't accept the payment
+- `LIMIT_EXCEEDED` - Payout exceeds a partner limit
+- `COMPLIANCE_REJECTED` - Payout partner rejected on compliance grounds
+- `PAYOUT_RETURNED` - Receiving bank returned or reversed the payout
+- `LSP_OPERATIONAL_FAILURE` - Lightspark-internal operational issue; contact Lightspark
 
 ### Incoming payment failures
 

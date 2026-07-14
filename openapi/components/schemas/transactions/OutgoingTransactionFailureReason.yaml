@@ -2,32 +2,44 @@ type: string
 enum:
   - QUOTE_EXPIRED
   - QUOTE_EXECUTION_FAILED
-  - LIGHTNING_PAYMENT_FAILED
+  - EXECUTION_FAILED_POST_DEBIT
+  - SETTLEMENT_FAILED
   - FUNDING_AMOUNT_MISMATCH
-  - COUNTERPARTY_COMPLIANCE_REJECTED
-  - COUNTERPARTY_ACCOUNT_INVALID
-  - COUNTERPARTY_ACCOUNT_CANNOT_RECEIVE
-  - COUNTERPARTY_LIMIT_EXCEEDED
-  - COUNTERPARTY_PAYOUT_RETURNED
-  - COUNTERPARTY_CURRENCY_EXCHANGE_FAILED
-  - COUNTERPARTY_PAYOUT_EXPIRED
+  - TIMEOUT
+  - MANUAL_REFUND
+  - LSP_OPERATIONAL_FAILURE
+  - PAYOUT_RETURNED
+  - LIMIT_EXCEEDED
+  - ACCOUNT_CANNOT_RECEIVE
+  - ACCOUNT_INVALID
+  - COMPLIANCE_REJECTED
+  - LIGHTNING_PAYMENT_FAILED
   - COUNTERPARTY_POST_TX_FAILED
 description: |
   Reason for failure of an outgoing transaction. This is used to provide more
   context on why a transaction failed. If the transaction is not in a failed
   state, this field is omitted.
 
+  When a payout partner rejects or fails a payment, one of the granular payout
+  reasons (`PAYOUT_RETURNED`, `LIMIT_EXCEEDED`, `ACCOUNT_CANNOT_RECEIVE`,
+  `ACCOUNT_INVALID`, `COMPLIANCE_REJECTED`) is returned when available.
+  `COUNTERPARTY_POST_TX_FAILED` is a coarse fallback used only when no granular
+  reason is available.
+
   | Reason | Description |
   |--------|-------------|
   | `QUOTE_EXPIRED` | The quote was not executed before its expiry window |
-  | `QUOTE_EXECUTION_FAILED` | The quote could not be executed |
-  | `LIGHTNING_PAYMENT_FAILED` | The Lightning settlement leg failed |
+  | `QUOTE_EXECUTION_FAILED` | The quote could not be executed. No funds were debited |
+  | `EXECUTION_FAILED_POST_DEBIT` | Execution failed after funds were debited. The amount is refunded automatically |
+  | `SETTLEMENT_FAILED` | The settlement leg failed |
   | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
-  | `COUNTERPARTY_COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
-  | `COUNTERPARTY_ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
-  | `COUNTERPARTY_ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency isn't supported for that account |
-  | `COUNTERPARTY_LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
-  | `COUNTERPARTY_PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
-  | `COUNTERPARTY_CURRENCY_EXCHANGE_FAILED` | The partner couldn't complete the FX conversion required for the payout |
-  | `COUNTERPARTY_PAYOUT_EXPIRED` | The partner didn't complete the payout within its processing window |
-  | `COUNTERPARTY_POST_TX_FAILED` | Generic payout failure — the partner gave no usable reason |
+  | `TIMEOUT` | The transaction did not complete within its processing window |
+  | `MANUAL_REFUND` | The transaction was refunded manually |
+  | `LSP_OPERATIONAL_FAILURE` | A Lightspark-internal operational issue (for example, insufficient operational balance). Not a client error — contact Lightspark to resolve |
+  | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
+  | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
+  | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency isn't supported for that account |
+  | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
+  | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
+  | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `SETTLEMENT_FAILED`. The Lightning settlement leg failed |
+  | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |

@@ -393,11 +393,19 @@ Use for reconciliation and reporting.
 | Failure Reason | Description | Recovery |
 |----------------|-------------|----------|
 | `QUOTE_EXPIRED` | Quote expired before execution | Create new quote |
-| `QUOTE_EXECUTION_FAILED` | Error executing the quote | Create new quote |
+| `QUOTE_EXECUTION_FAILED` | Error executing the quote; no funds were debited | Create new quote |
+| `EXECUTION_FAILED_POST_DEBIT` | Execution failed after debit; funds are refunded automatically | Retry with a new quote |
 | `INSUFFICIENT_BALANCE` | Source account lacks funds | Fund account, retry |
-| `LIGHTNING_PAYMENT_FAILED` | Lightning network payment could not be routed | Retry or use alternative rail |
+| `SETTLEMENT_FAILED` | The settlement leg failed | Retry or use alternative rail |
 | `FUNDING_AMOUNT_MISMATCH` | Funding amount doesn't match expected amount | Verify amounts and retry |
-| `COUNTERPARTY_POST_TX_FAILED` | Post-transaction processing at counterparty failed | Contact support |
+| `ACCOUNT_INVALID` | Recipient account details are wrong or not found | Correct recipient details |
+| `ACCOUNT_CANNOT_RECEIVE` | Recipient account can't accept the payment | Use a different account |
+| `LIMIT_EXCEEDED` | Payout exceeds a partner limit | Reduce amount or contact support |
+| `COMPLIANCE_REJECTED` | Payout partner rejected on compliance grounds | Contact support |
+| `PAYOUT_RETURNED` | Receiving bank returned or reversed the payout | Verify details and retry |
+| `LSP_OPERATIONAL_FAILURE` | Lightspark-internal operational issue | Contact Lightspark |
+
+The `failureReason` field on a transaction may return additional values, including deprecated reasons (`LIGHTNING_PAYMENT_FAILED`, `COUNTERPARTY_POST_TX_FAILED`) retained for historical transactions.
 
 When a transaction fails, a refund is initiated automatically. Track the refund via the `refund` object on the transaction and `OUTGOING_PAYMENT.REFUND_*` webhook events. See [Refund Object](#refund-object) above.
 
