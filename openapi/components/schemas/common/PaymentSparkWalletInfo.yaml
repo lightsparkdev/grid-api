@@ -8,10 +8,7 @@ allOf:
     properties:
       assetType:
         type: string
-        description: Type of asset
-        enum:
-          - BTC
-          - USDB
+        description: Type of asset or configured Spark token currency code
       invoice:
         type: string
         description: Invoice for the payment
