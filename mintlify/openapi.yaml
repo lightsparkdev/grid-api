@@ -11568,10 +11568,17 @@ components:
           maxLength: 16
           example: '001234567890'
           pattern: ^[0-9]{8,16}$
+        rail:
+          type: string
+          description: The payment rail to route the payout over, for currencies that support more than one (e.g. NEFT or RTGS for INR).
+          example: NEFT
+          minLength: 1
+          maxLength: 32
       example:
         accountType: PHP_ACCOUNT
         bankName: BDO Unibank
         accountNumber: '001234567890'
+        rail: NEFT
     PhpAccountInfo:
       allOf:
         - $ref: '#/components/schemas/PhpAccountInfoBase'
@@ -12835,7 +12842,7 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the beneficiary's bank
+          description: The name of the bank
           minLength: 1
           maxLength: 255
       example:
