@@ -1,0 +1,40 @@
+type: object
+description: >-
+  Source of a stablecoin operation, as reported on a
+  `StablecoinOperation`. A single merged shape (superset of the
+  mint funding source and burn source request variants) so the field
+  is unambiguously deserializable regardless of operation type:
+  `externalAccountId` is present for external-account funded mints and
+  external-account burns, `accountId` for Grid internal account
+  sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider
+  internal balance sources.
+required:
+  - type
+properties:
+  type:
+    type: string
+    enum:
+      - WIRE
+      - ACH_DEBIT
+      - SAME_DAY_ACH_DEBIT
+      - EXTERNAL_ACCOUNT
+      - GRID_INTERNAL_ACCOUNT
+      - PROVIDER_INTERNAL_BALANCE
+    description: Source variant. Mint funding uses `WIRE`, `ACH_DEBIT`, or `SAME_DAY_ACH_DEBIT`; burns use `EXTERNAL_ACCOUNT`. `GRID_INTERNAL_ACCOUNT` and `PROVIDER_INTERNAL_BALANCE` are shared across mint and burn.
+    example: ACH_DEBIT
+  externalAccountId:
+    type: string
+    description: Grid `ExternalAccount` funding the operation, present for ACH debit mints and external-account burns.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
+  accountId:
+    type: string
+    description: Grid internal account id, present for Grid internal account sources.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000102
+  sourceTokenIdentifier:
+    type: string
+    description: Provider token/value type, present for provider internal balance sources.
+    example: USDC
+  cryptoNetwork:
+    type: string
+    description: Source crypto network, present for provider internal balance sources.
+    example: SOLANA

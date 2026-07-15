@@ -1,0 +1,14 @@
+type: object
+required:
+  - type
+properties:
+  type:
+    type: string
+    enum:
+      - WIRE
+      - ACH_DEBIT
+      - SAME_DAY_ACH_DEBIT
+      - GRID_INTERNAL_ACCOUNT
+      - PROVIDER_INTERNAL_BALANCE
+    description: Funding source variant. Grid internal account and provider internal balance funding are reserved for follow-up support.
+    example: ACH_DEBIT
