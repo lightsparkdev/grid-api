@@ -20464,6 +20464,13 @@ components:
           example: card-emp-aary-001
         form:
           $ref: '#/components/schemas/CardForm'
+        threeDSecurePassword:
+          type: string
+          writeOnly: true
+          minLength: 8
+          maxLength: 36
+          description: Optional static 3-D Secure password to set on the card, for card programs whose issuer challenges online purchases with a static password factor (EU/Striga cards). 8-36 characters; Latin letters, digits, and the issuer's allowed special characters. Grid forwards it to the provider and never stores or returns it. When omitted, Grid generates a strong password; the cardholder-facing view/change flow is delivered through the secure card UI. Rejected for card programs without a static-password challenge factor (US/Lithic cards).
+          example: Xk9!qR2#mVp7
         fundingSources:
           type: array
           description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency (USDB in v1); otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
