@@ -14,6 +14,12 @@ get:
   security:
     - BasicAuth: []
   parameters:
+    - name: operationType
+      in: query
+      description: Filter operations by type. When omitted, both mints and burns are returned.
+      required: false
+      schema:
+        $ref: ../../components/schemas/stablecoins/StablecoinOperationType.yaml
     - name: limit
       in: query
       description: Maximum number of results to return (default 20, max 100)

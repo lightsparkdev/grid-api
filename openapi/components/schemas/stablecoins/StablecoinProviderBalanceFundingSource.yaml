@@ -1,0 +1,24 @@
+title: Provider Internal Balance
+allOf:
+  - $ref: ./StablecoinMintFundingSourceBase.yaml
+  - type: object
+    required:
+      - type
+      - sourceTokenIdentifier
+      - cryptoNetwork
+    properties:
+      type:
+        type: string
+        enum:
+          - PROVIDER_INTERNAL_BALANCE
+        description: Provider internal balance funding. Reserved for the follow-up provider-balance mint flow.
+        example: PROVIDER_INTERNAL_BALANCE
+      sourceTokenIdentifier:
+        type: string
+        description: Provider token/value type spent from the provider internal balance.
+        example: USDC
+      cryptoNetwork:
+        type: string
+        description: Source crypto network for the provider internal balance funds.
+        example: SOLANA
+    description: Provider internal balance funding source, reserved for future provider-funded mint flows.

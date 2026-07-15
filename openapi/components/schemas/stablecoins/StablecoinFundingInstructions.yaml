@@ -1,6 +1,30 @@
 type: object
-description: Provider funding instructions safe to show publicly. Present for wire-funded mint operations and external-source burn operations when available.
+description: >-
+  Provider funding instructions safe to show publicly. Present for wire-funded
+  mint operations and external-source burn operations when available. The common
+  fields below are always declared; the exact set of remaining fields is
+  rail- and provider-specific (for example, wire instructions carry bank
+  beneficiary/account/routing details while Spark and on-chain instructions
+  carry a deposit address), so `additionalProperties` stays open to pass those
+  through without a spec change per rail.
 additionalProperties: true
+properties:
+  rail:
+    type: string
+    description: Funding rail these instructions apply to (e.g. `SPARK`, `WIRE`).
+    example: SPARK
+  network:
+    type: string
+    description: Network the funds should be sent on, when applicable.
+    example: SPARK
+  address:
+    type: string
+    description: Deposit address the issuer sends funds to, for on-chain or Spark rails.
+    example: spark1...
+  valueType:
+    type: string
+    description: Provider token/value type the deposit address expects.
+    example: ACME
 example:
   rail: SPARK
   network: SPARK

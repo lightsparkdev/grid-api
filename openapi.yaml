@@ -7812,6 +7812,12 @@ paths:
       security:
         - BasicAuth: []
       parameters:
+        - name: operationType
+          in: query
+          description: Filter operations by type. When omitted, both mints and burns are returned.
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinOperationType'
         - name: limit
           in: query
           description: Maximum number of results to return (default 20, max 100)
@@ -20768,7 +20774,7 @@ components:
           type: string
           description: Provider account link to register against. Optional when exactly one active link exists for the authenticated platform; required to resolve STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED when multiple links exist.
           example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
-    StablecoinMintFundingSource:
+    StablecoinMintFundingSourceBase:
       type: object
       required:
         - type
@@ -20781,24 +20787,124 @@ components:
             - SAME_DAY_ACH_DEBIT
             - GRID_INTERNAL_ACCOUNT
             - PROVIDER_INTERNAL_BALANCE
-          description: Funding source variant. For `ACH_DEBIT` and `SAME_DAY_ACH_DEBIT`, `externalAccountId` is required. Grid internal account and provider internal balance funding are reserved for follow-up support.
-        externalAccountId:
-          type: string
-          description: Grid `ExternalAccount` used as the ACH debit funding account.
-          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
-        accountId:
-          type: string
-          description: Grid internal funding account id for future Grid-funded mint flows.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000102
-        sourceTokenIdentifier:
-          type: string
-          description: Provider token/value type for future provider internal balance funding.
-          example: USDC
-        cryptoNetwork:
-          type: string
-          description: Source crypto network for future provider internal balance funding.
-          example: SOLANA
-    StablecoinMintDestination:
+          description: Funding source variant. Grid internal account and provider internal balance funding are reserved for follow-up support.
+          example: ACH_DEBIT
+    StablecoinWireFundingSource:
+      title: Wire
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - WIRE
+              description: Wire-funded mint. Funding instructions are returned on the resulting operation.
+              example: WIRE
+          description: Wire funding source. The issuer wires fiat to the provider using the returned funding instructions.
+    StablecoinAchDebitFundingSource:
+      title: ACH Debit
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - ACH_DEBIT
+              description: ACH debit funding.
+              example: ACH_DEBIT
+            externalAccountId:
+              type: string
+              description: Grid `ExternalAccount` debited to fund the mint.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
+          description: ACH debit funding source. The provider debits the referenced external account.
+    StablecoinSameDayAchDebitFundingSource:
+      title: Same-Day ACH Debit
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - SAME_DAY_ACH_DEBIT
+              description: Same-day ACH debit funding.
+              example: SAME_DAY_ACH_DEBIT
+            externalAccountId:
+              type: string
+              description: Grid `ExternalAccount` debited to fund the mint.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
+          description: Same-day ACH debit funding source. The provider debits the referenced external account.
+    StablecoinGridInternalFundingSource:
+      title: Grid Internal Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+            - accountId
+          properties:
+            type:
+              type: string
+              enum:
+                - GRID_INTERNAL_ACCOUNT
+              description: Grid internal account funding. Reserved for the follow-up Grid-funded mint flow.
+              example: GRID_INTERNAL_ACCOUNT
+            accountId:
+              type: string
+              description: Grid internal funding account id.
+              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000102
+          description: Grid internal account funding source, reserved for future Grid-funded mint flows.
+    StablecoinProviderBalanceFundingSource:
+      title: Provider Internal Balance
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+            - sourceTokenIdentifier
+            - cryptoNetwork
+          properties:
+            type:
+              type: string
+              enum:
+                - PROVIDER_INTERNAL_BALANCE
+              description: Provider internal balance funding. Reserved for the follow-up provider-balance mint flow.
+              example: PROVIDER_INTERNAL_BALANCE
+            sourceTokenIdentifier:
+              type: string
+              description: Provider token/value type spent from the provider internal balance.
+              example: USDC
+            cryptoNetwork:
+              type: string
+              description: Source crypto network for the provider internal balance funds.
+              example: SOLANA
+          description: Provider internal balance funding source, reserved for future provider-funded mint flows.
+    StablecoinMintFundingSource:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinWireFundingSource'
+        - $ref: '#/components/schemas/StablecoinAchDebitFundingSource'
+        - $ref: '#/components/schemas/StablecoinSameDayAchDebitFundingSource'
+        - $ref: '#/components/schemas/StablecoinGridInternalFundingSource'
+        - $ref: '#/components/schemas/StablecoinProviderBalanceFundingSource'
+      discriminator:
+        propertyName: type
+        mapping:
+          WIRE: '#/components/schemas/StablecoinWireFundingSource'
+          ACH_DEBIT: '#/components/schemas/StablecoinAchDebitFundingSource'
+          SAME_DAY_ACH_DEBIT: '#/components/schemas/StablecoinSameDayAchDebitFundingSource'
+          GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalFundingSource'
+          PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceFundingSource'
+    StablecoinMintDestinationBase:
       type: object
       required:
         - type
@@ -20809,14 +20915,56 @@ components:
             - EXTERNAL_ACCOUNT
             - GRID_INTERNAL_ACCOUNT
           description: Mint destination variant. In the initial Brale-backed flow, `EXTERNAL_ACCOUNT` must reference an active Spark external account.
-        externalAccountId:
-          type: string
-          description: Grid `ExternalAccount` receiving the minted stablecoin.
-          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000201
-        accountId:
-          type: string
-          description: Grid internal receiving account id for future Grid-managed mint destinations.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000202
+          example: EXTERNAL_ACCOUNT
+    StablecoinExternalAccountMintDestination:
+      title: External Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintDestinationBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT
+              description: External account mint destination. Must reference an active Spark external account.
+              example: EXTERNAL_ACCOUNT
+            externalAccountId:
+              type: string
+              description: Grid `ExternalAccount` receiving the minted stablecoin.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000201
+          description: External account mint destination.
+    StablecoinGridInternalMintDestination:
+      title: Grid Internal Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintDestinationBase'
+        - type: object
+          required:
+            - type
+            - accountId
+          properties:
+            type:
+              type: string
+              enum:
+                - GRID_INTERNAL_ACCOUNT
+              description: Grid internal account mint destination. Reserved for future Grid-managed mint destinations.
+              example: GRID_INTERNAL_ACCOUNT
+            accountId:
+              type: string
+              description: Grid internal receiving account id.
+              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000202
+          description: Grid internal account mint destination, reserved for future Grid-managed mint destinations.
+    StablecoinMintDestination:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinExternalAccountMintDestination'
+        - $ref: '#/components/schemas/StablecoinGridInternalMintDestination'
+      discriminator:
+        propertyName: type
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountMintDestination'
+          GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalMintDestination'
     StablecoinMintRequest:
       type: object
       required:
@@ -20855,30 +21003,60 @@ components:
         - FAILED
         - EXPIRED
       description: Stablecoin issuer operation lifecycle status.
-    StablecoinBurnSource:
+    StablecoinOperationSource:
       type: object
+      description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints and external-account burns, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
       required:
         - type
       properties:
         type:
           type: string
           enum:
+            - WIRE
+            - ACH_DEBIT
+            - SAME_DAY_ACH_DEBIT
             - EXTERNAL_ACCOUNT
             - GRID_INTERNAL_ACCOUNT
             - PROVIDER_INTERNAL_BALANCE
-          description: Burn source variant. `EXTERNAL_ACCOUNT` references an active Spark external account and returns funding instructions. `PROVIDER_INTERNAL_BALANCE` spends stablecoin funds already at the provider. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
+          description: Source variant. Mint funding uses `WIRE`, `ACH_DEBIT`, or `SAME_DAY_ACH_DEBIT`; burns use `EXTERNAL_ACCOUNT`. `GRID_INTERNAL_ACCOUNT` and `PROVIDER_INTERNAL_BALANCE` are shared across mint and burn.
+          example: ACH_DEBIT
         externalAccountId:
           type: string
-          description: Grid Spark `ExternalAccount` expected to fund the provider for external-source burns.
-          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000203
+          description: Grid `ExternalAccount` funding the operation, present for ACH debit mints and external-account burns.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
         accountId:
           type: string
-          description: Grid internal source account id for future Grid-controlled burn flows.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000204
+          description: Grid internal account id, present for Grid internal account sources.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000102
+        sourceTokenIdentifier:
+          type: string
+          description: Provider token/value type, present for provider internal balance sources.
+          example: USDC
+        cryptoNetwork:
+          type: string
+          description: Source crypto network, present for provider internal balance sources.
+          example: SOLANA
     StablecoinFundingInstructions:
       type: object
-      description: Provider funding instructions safe to show publicly. Present for wire-funded mint operations and external-source burn operations when available.
+      description: Provider funding instructions safe to show publicly. Present for wire-funded mint operations and external-source burn operations when available. The common fields below are always declared; the exact set of remaining fields is rail- and provider-specific (for example, wire instructions carry bank beneficiary/account/routing details while Spark and on-chain instructions carry a deposit address), so `additionalProperties` stays open to pass those through without a spec change per rail.
       additionalProperties: true
+      properties:
+        rail:
+          type: string
+          description: Funding rail these instructions apply to (e.g. `SPARK`, `WIRE`).
+          example: SPARK
+        network:
+          type: string
+          description: Network the funds should be sent on, when applicable.
+          example: SPARK
+        address:
+          type: string
+          description: Deposit address the issuer sends funds to, for on-chain or Spark rails.
+          example: spark1...
+        valueType:
+          type: string
+          description: Provider token/value type the deposit address expects.
+          example: ACME
       example:
         rail: SPARK
         network: SPARK
@@ -20916,9 +21094,27 @@ components:
       type: object
       description: Static rail timing estimate for fiat redemption delivery. This is guidance, not a guaranteed arrival time.
       additionalProperties: true
+      properties:
+        rail:
+          type: string
+          description: Fiat payout rail the estimate applies to.
+          example: ACH_CREDIT
+        amount:
+          type: string
+          pattern: ^[0-9]+$
+          description: Estimated delivery amount in the smallest unit of `currency` (e.g. cents for USD).
+          example: '100'
+        currency:
+          type: string
+          description: ISO 4217 currency code of the fiat payout.
+          example: USD
+        timing:
+          type: string
+          description: Human-readable rail timing estimate.
+          example: 1-3 business days
       example:
         rail: ACH_CREDIT
-        amount: '1.00'
+        amount: '100'
         currency: USD
         timing: 1-3 business days
     StablecoinOperation:
@@ -20959,10 +21155,8 @@ components:
           type: string
           description: Stablecoin provider account link used for the operation.
           example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
-        fundingSource:
-          $ref: '#/components/schemas/StablecoinMintFundingSource'
         source:
-          $ref: '#/components/schemas/StablecoinBurnSource'
+          $ref: '#/components/schemas/StablecoinOperationSource'
         fundingInstructions:
           $ref: '#/components/schemas/StablecoinFundingInstructions'
         destination:
@@ -21023,6 +21217,85 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    StablecoinBurnSourceBase:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - EXTERNAL_ACCOUNT
+            - GRID_INTERNAL_ACCOUNT
+            - PROVIDER_INTERNAL_BALANCE
+          description: Burn source variant. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
+          example: EXTERNAL_ACCOUNT
+    StablecoinExternalAccountBurnSource:
+      title: External Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnSourceBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT
+              description: External account burn. References an active Spark external account and returns funding instructions.
+              example: EXTERNAL_ACCOUNT
+            externalAccountId:
+              type: string
+              description: Grid Spark `ExternalAccount` expected to fund the provider for the burn.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000203
+          description: External account burn source. The issuer funds the provider from a Spark external account.
+    StablecoinGridInternalBurnSource:
+      title: Grid Internal Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnSourceBase'
+        - type: object
+          required:
+            - type
+            - accountId
+          properties:
+            type:
+              type: string
+              enum:
+                - GRID_INTERNAL_ACCOUNT
+              description: Grid internal account burn. Reserved for the Grid-controlled ledger movement flow.
+              example: GRID_INTERNAL_ACCOUNT
+            accountId:
+              type: string
+              description: Grid internal source account id.
+              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000204
+          description: Grid internal account burn source, reserved for future Grid-controlled burn flows.
+    StablecoinProviderBalanceBurnSource:
+      title: Provider Internal Balance
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnSourceBase'
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - PROVIDER_INTERNAL_BALANCE
+              description: Provider internal balance burn. Spends stablecoin funds already held at the provider.
+              example: PROVIDER_INTERNAL_BALANCE
+          description: Provider internal balance burn source. No external funding is required; the provider spends existing balance.
+    StablecoinBurnSource:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinExternalAccountBurnSource'
+        - $ref: '#/components/schemas/StablecoinGridInternalBurnSource'
+        - $ref: '#/components/schemas/StablecoinProviderBalanceBurnSource'
+      discriminator:
+        propertyName: type
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnSource'
+          GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnSource'
+          PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceBurnSource'
     StablecoinBurnDestination:
       type: object
       required:
