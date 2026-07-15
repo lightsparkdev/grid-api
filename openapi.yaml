@@ -8875,9 +8875,190 @@ webhooks:
                   type: CARD_TRANSACTION.AUTHORIZED
                   timestamp: '2026-05-09T10:00:00Z'
                   data:
+                    type: CARD
                     id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
                     status: AUTHORIZED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 1
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 0
+                      totalAmount: 0
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-09T10:00:00Z'
+              settled:
+                summary: All clearings posted
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+                  type: CARD_TRANSACTION.SETTLED
+                  timestamp: '2026-05-09T15:42:11Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    status: SETTLED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 0
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 12550
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    lastEventAt: '2026-05-09T15:42:11Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-09T15:42:11Z'
+              refunded:
+                summary: Settled funds returned by the merchant
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000042
+                  type: CARD_TRANSACTION.REFUNDED
+                  timestamp: '2026-05-10T09:15:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    status: REFUNDED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    refundedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 0
+                    refundSummary:
+                      count: 1
+                      totalAmount: 12550
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 12550
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    lastEventAt: '2026-05-10T09:15:00Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-10T09:15:00Z'
+              exception:
+                summary: Settled to the network but the funding-source pull failed
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000043
+                  type: CARD_TRANSACTION.EXCEPTION
+                  timestamp: '2026-05-09T16:05:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_c92d3b5a
+                    status: EXCEPTION
+                    direction: DEBIT
+                    merchant:
+                      descriptor: UBER EATS
+                      mcc: '5812'
+                      country: US
+                    authorizedAmount:
+                      amount: 4200
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 4200
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 0
+                      pendingCount: 0
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 4200
+                    authorizedAt: '2026-05-09T15:30:00Z'
+                    lastEventAt: '2026-05-09T16:05:00Z'
+                    createdAt: '2026-05-09T15:30:00Z'
+                    updatedAt: '2026-05-09T16:05:00Z'
       responses:
         '200':
           description: |
