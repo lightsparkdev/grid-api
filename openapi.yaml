@@ -9114,6 +9114,7 @@ components:
         - PHONE_NUMBER
         - EMAIL
         - POSTAL_ADDRESS
+        - REGISTRATION_ADDRESS
         - TAX_ID
         - REGISTRATION_NUMBER
         - USER_TYPE
