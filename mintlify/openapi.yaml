@@ -20904,67 +20904,16 @@ components:
           SAME_DAY_ACH_DEBIT: '#/components/schemas/StablecoinSameDayAchDebitFundingSource'
           GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalFundingSource'
           PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceFundingSource'
-    StablecoinMintDestinationBase:
-      type: object
-      required:
-        - type
-      properties:
-        type:
-          type: string
-          enum:
-            - EXTERNAL_ACCOUNT
-            - GRID_INTERNAL_ACCOUNT
-          description: Mint destination variant. In the initial Brale-backed flow, `EXTERNAL_ACCOUNT` must reference an active Spark external account.
-          example: EXTERNAL_ACCOUNT
-    StablecoinExternalAccountMintDestination:
-      title: External Account
-      allOf:
-        - $ref: '#/components/schemas/StablecoinMintDestinationBase'
-        - type: object
-          required:
-            - type
-            - externalAccountId
-          properties:
-            type:
-              type: string
-              enum:
-                - EXTERNAL_ACCOUNT
-              description: External account mint destination. Must reference an active Spark external account.
-              example: EXTERNAL_ACCOUNT
-            externalAccountId:
-              type: string
-              description: Grid `ExternalAccount` receiving the minted stablecoin.
-              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000201
-          description: External account mint destination.
-    StablecoinGridInternalMintDestination:
-      title: Grid Internal Account
-      allOf:
-        - $ref: '#/components/schemas/StablecoinMintDestinationBase'
-        - type: object
-          required:
-            - type
-            - accountId
-          properties:
-            type:
-              type: string
-              enum:
-                - GRID_INTERNAL_ACCOUNT
-              description: Grid internal account mint destination. Reserved for future Grid-managed mint destinations.
-              example: GRID_INTERNAL_ACCOUNT
-            accountId:
-              type: string
-              description: Grid internal receiving account id.
-              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000202
-          description: Grid internal account mint destination, reserved for future Grid-managed mint destinations.
     StablecoinMintDestination:
-      oneOf:
-        - $ref: '#/components/schemas/StablecoinExternalAccountMintDestination'
-        - $ref: '#/components/schemas/StablecoinGridInternalMintDestination'
-      discriminator:
-        propertyName: type
-        mapping:
-          EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountMintDestination'
-          GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalMintDestination'
+      type: object
+      description: Account that receives the minted stablecoin. External and Grid-managed accounts are represented as a single account reference, matching the `accountId` pattern used elsewhere in the API; the id prefix (`ExternalAccount:` or `InternalAccount:`) determines which. In the initial Brale-backed flow this must reference an active Spark external account.
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: Grid account receiving the minted stablecoin. Accepts an `ExternalAccount:` id (initial Brale-backed flow) or an `InternalAccount:` id for Grid-managed destinations.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000201
     StablecoinMintRequest:
       type: object
       required:
@@ -21064,24 +21013,14 @@ components:
         valueType: ACME
     StablecoinOperationDestination:
       type: object
-      description: 'Destination of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint and burn destination request variants) so the field is unambiguously deserializable regardless of operation type: `rail` is present for burn (fiat payout) destinations and absent for mint destinations.'
+      description: 'Destination of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged (flat) shape so the field is unambiguously deserializable regardless of operation type: `accountId` identifies the receiving account (its `ExternalAccount:` / `InternalAccount:` prefix disambiguates external vs Grid-managed), and `rail` is present for burn (fiat payout) destinations and absent for mint destinations.'
       required:
-        - type
+        - accountId
       properties:
-        type:
-          type: string
-          enum:
-            - EXTERNAL_ACCOUNT
-            - GRID_INTERNAL_ACCOUNT
-          description: Destination variant.
-        externalAccountId:
-          type: string
-          description: Grid `ExternalAccount` id, when the destination is an external account.
-          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
         accountId:
           type: string
-          description: Grid internal account id, when the destination is a Grid-managed account.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000202
+          description: Grid account that received the funds. An `ExternalAccount:` id for external destinations or an `InternalAccount:` id for Grid-managed destinations.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
         rail:
           type: string
           enum:
