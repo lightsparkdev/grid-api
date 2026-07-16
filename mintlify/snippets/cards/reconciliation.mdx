@@ -37,10 +37,9 @@ AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED ──► REFUNDED
 | `REFUNDED` | A `RETURN` was received and the net settled amount has been refunded in full or part. |
 | `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
-Every transition is delivered via the generic transaction webhook
-stream carrying the post-change parent (a follow-up extends the
-Transaction model with a card destination type — see
-[Webhooks](/cards/platform-tools/webhooks)).
+Every transition fires a `CARD_TRANSACTION.*` webhook carrying the
+post-change parent — see [Webhooks](/cards/platform-tools/webhooks)
+for the full list of event types.
 
 ## The over-auth path
 
