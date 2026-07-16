@@ -329,8 +329,6 @@ webhooks:
     $ref: webhooks/verification-update.yaml
   card-state-change:
     $ref: webhooks/card-state-change.yaml
-  card-transaction-update:
-    $ref: webhooks/card-transaction-update.yaml
   card-funding-source-change:
     $ref: webhooks/card-funding-source-change.yaml
   card-transaction:

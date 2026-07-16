@@ -32,14 +32,17 @@ AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED ──► REFUNDED
 | Status | Meaning |
 |--------|---------|
 | `AUTHORIZED` | Auth approved, hold placed, no clearings yet. |
+| `DECLINED` | The authorization was declined by the issuer or program. No funds moved; the transaction is terminal. |
 | `PARTIALLY_SETTLED` | At least one clearing landed, but more are still expected (split shipments, multi-leg trips). |
 | `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. |
 | `REFUNDED` | A `RETURN` was received and the net settled amount has been refunded in full or part. |
 | `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
-Every update is delivered via a `CARD.TRANSACTION_UPDATE` webhook
-carrying the post-update parent. See
-[Webhooks](/cards/platform-tools/webhooks) for the full payload shape.
+Every state transition is delivered via a `CARD_TRANSACTION.*` webhook
+whose type names the new status (`CARD_TRANSACTION.AUTHORIZED`,
+`CARD_TRANSACTION.SETTLED`, ...) and carries the post-update parent.
+See [Webhooks](/cards/platform-tools/webhooks) for the full payload
+shape.
 
 ## The over-auth path
 
@@ -61,10 +64,10 @@ a settlement but Grid can't pull the matching amount from the funding
 source — typically because the cardholder's balance no longer covers
 the post-hoc difference.
 
-Signal to watch: a `CARD.TRANSACTION_UPDATE` webhook with
-`data.status: "EXCEPTION"`. The payload includes the full parent record,
-so your dashboard's exception view is driven entirely by webhook
-deliveries — there's no list endpoint to poll.
+Signal to watch: a `CARD_TRANSACTION.EXCEPTION` webhook. The payload
+includes the full parent record, so your dashboard's exception view is
+driven entirely by webhook deliveries — there's no list endpoint to
+poll.
 
 Exceptions don't roll back automatically. The standard response is to
 top up the funding source (or move the customer to a state where their
@@ -73,7 +76,7 @@ exception to resolution.
 
 ## Idempotency on webhooks
 
-Every `CARD.TRANSACTION_UPDATE` webhook carries a unique `id`. Track
+Every `CARD_TRANSACTION.*` webhook carries a unique `id`. Track
 processed webhook IDs and treat duplicates as no-ops — Grid retries
 failed deliveries, and your reconciliation should be safe under
 at-least-once delivery.
