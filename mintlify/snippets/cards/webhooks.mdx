@@ -1,4 +1,5 @@
-Cards add three webhook event types on top of Grid's existing webhook
+Cards add two card-lifecycle webhook event types plus the
+`CARD_TRANSACTION.*` family on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
@@ -10,9 +11,14 @@ retry behavior are identical to the rest of Grid — see
 |------|----------|
 | `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
-| `CARD.TRANSACTION_UPDATE` | Whenever a `CardTransaction` is created or updated by authorization, clearing, refund, or reconciliation activity. |
+| `CARD_TRANSACTION.AUTHORIZED` | An authorization is approved and the parent `CardTransaction` is created. |
+| `CARD_TRANSACTION.DECLINED` | An authorization is declined; the transaction is terminal and no funds moved. |
+| `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted but more are still expected. |
+| `CARD_TRANSACTION.SETTLED` | All clearings for the auth have posted. |
+| `CARD_TRANSACTION.REFUNDED` | A merchant `RETURN` refunded the net settled amount in part or whole. |
+| `CARD_TRANSACTION.EXCEPTION` | The transaction settled to the network but the funding-source pull failed. |
 
-All three carry the standard envelope:
+All of them carry the standard envelope:
 
 ```json
 {
@@ -77,17 +83,18 @@ array. The `data` payload is the full `Card` resource with the
 post-change `fundingSources`, so a consumer that only cares about the
 current set of bindings can replace state wholesale.
 
-## CARD.TRANSACTION_UPDATE
+## The CARD_TRANSACTION.* family
 
-Fires whenever a `CardTransaction` is created or updated by
-authorization, clearing, refund, or reconciliation activity. The
-`data` payload is the full post-update `CardTransaction`, including
-its lifecycle status and reconciliation aggregates.
+Fires on every state transition of a `CardTransaction` — the webhook
+type names the transaction's new status, so consumers can route purely
+on `type` without inspecting `data.status`. The `data` payload is the
+full post-transition `CardTransaction`, including its lifecycle status
+and reconciliation aggregates.
 
 ```json
 {
   "id": "Webhook:019542f5-b3e7-1d02-0000-000000000040",
-  "type": "CARD.TRANSACTION_UPDATE",
+  "type": "CARD_TRANSACTION.SETTLED",
   "timestamp": "2026-05-08T15:42:11Z",
   "data": {
     "type": "CARD",
