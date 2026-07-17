@@ -1,0 +1,51 @@
+type: object
+description: >-
+  Completes an SCA login by submitting the proof for the started factor. Carries
+  the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`,
+  or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being
+  completed and, for `SMS_OTP`, the `challengeId` returned by the login start.
+required:
+  - factor
+anyOf:
+  - required:
+      - code
+  - required:
+      - passkeyAssertion
+      - origin
+properties:
+  factor:
+    $ref: ./ScaFactor.yaml
+    description: The factor being completed; must match the started login.
+  challengeId:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The challenge handle returned by the login start, required for `SMS_OTP`
+      and omitted for other factors.
+  code:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The one-time code the customer received by SMS, or read from their
+      authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is
+      always `123456`.
+    example: '123456'
+  passkeyAssertion:
+    type:
+      - object
+      - 'null'
+    additionalProperties: true
+    description: >-
+      Opaque WebAuthn assertion produced by the device from the login start's
+      `passkeyOptions`. Required when completing a `PASSKEY` login.
+  origin:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The WebAuthn origin the `passkeyAssertion` was produced against (one of
+      the login start's `allowedOrigins`). Required alongside `passkeyAssertion`;
+      omit it for the `code` path.
+    example: https://app.example.com

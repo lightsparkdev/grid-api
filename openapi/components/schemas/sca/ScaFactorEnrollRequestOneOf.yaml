@@ -1,0 +1,12 @@
+oneOf:
+  - $ref: ./TotpFactorEnrollRequest.yaml
+  - $ref: ./PasskeyFactorEnrollRequest.yaml
+discriminator:
+  propertyName: type
+  mapping:
+    TOTP: ./TotpFactorEnrollRequest.yaml
+    PASSKEY: ./PasskeyFactorEnrollRequest.yaml
+description: >-
+  Which SCA factor to begin enrolling, selected by `type`. `SMS_OTP` is not
+  enrollable (it uses the customer's verified phone), so only `TOTP` and
+  `PASSKEY` are valid here.

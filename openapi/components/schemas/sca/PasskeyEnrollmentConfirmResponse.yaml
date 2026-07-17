@@ -1,0 +1,13 @@
+type: object
+description: The enrolled passkey factor returned after a successful confirmation.
+required:
+  - type
+  - factor
+properties:
+  type:
+    type: string
+    enum:
+      - PASSKEY
+    description: Discriminator identifying this as the passkey enrollment result.
+  factor:
+    $ref: ./ScaFactorView.yaml

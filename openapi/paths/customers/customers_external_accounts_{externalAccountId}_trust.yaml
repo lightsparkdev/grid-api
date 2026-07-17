@@ -1,0 +1,58 @@
+parameters:
+  - name: externalAccountId
+    in: path
+    description: The unique identifier of the external account (beneficiary) being trusted.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Start trusting a beneficiary
+  description: |
+    Begin trusting (whitelisting) an external account so future sends to it can
+    skip the per-transaction SCA ceremony. Returns the `scaChallenge` to satisfy
+    (when one is issued). Complete with
+    `POST /customers/external-accounts/{externalAccountId}/trust/confirm`.
+
+    This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+  operationId: startBeneficiaryTrust
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Beneficiary trust started; the SCA challenge (if any) is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/BeneficiaryTrustStart.yaml
+    '400':
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or external account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: SCA is not required for this customer.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

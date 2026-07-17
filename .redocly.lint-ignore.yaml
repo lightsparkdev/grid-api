@@ -6,6 +6,14 @@ openapi.yaml:
   no-required-schema-properties-undefined:
     - '#/components/schemas/QuoteSource/required/0'
     - '#/components/schemas/Quote/properties/destination/required/0'
+    # anyOf proof-requirement branches reference properties defined at the
+    # parent schema level (valid JSON Schema; the rule is overly strict here).
+    - '#/components/schemas/ScaLoginCompleteRequest/anyOf/0/required/0'
+    - '#/components/schemas/ScaLoginCompleteRequest/anyOf/1/required/0'
+    - '#/components/schemas/ScaLoginCompleteRequest/anyOf/1/required/1'
+    - '#/components/schemas/BeneficiaryTrustConfirmRequest/anyOf/0/required/0'
+    - '#/components/schemas/BeneficiaryTrustConfirmRequest/anyOf/1/required/0'
+    - '#/components/schemas/BeneficiaryTrustConfirmRequest/anyOf/1/required/1'
   no-invalid-media-type-examples:
     - >-
       #/paths/~1customers~1external-accounts/post/requestBody/content/application~1json/schema

@@ -153,6 +153,32 @@ paths:
     $ref: paths/customers/customers_{customerId}_verify-phone.yaml
   /customers/{customerId}/verify-phone/confirm:
     $ref: paths/customers/customers_{customerId}_verify-phone_confirm.yaml
+  /sca/factors:
+    $ref: paths/sca/sca_factors.yaml
+  /sca/factors/confirm:
+    $ref: paths/sca/sca_factors_confirm.yaml
+  /sca/factors/{credentialId}:
+    $ref: paths/sca/sca_factors_{credentialId}.yaml
+  /sca/login/start:
+    $ref: paths/sca/sca_login_start.yaml
+  /sca/login/complete:
+    $ref: paths/sca/sca_login_complete.yaml
+  /sca/record-event:
+    $ref: paths/sca/sca_record-event.yaml
+  /sca/factors/reset:
+    $ref: paths/sca/sca_factors_reset.yaml
+  /sca/factors/reset/{resetId}:
+    $ref: paths/sca/sca_factors_reset_{resetId}.yaml
+  /sca/factors/reset/{resetId}/complete:
+    $ref: paths/sca/sca_factors_reset_{resetId}_complete.yaml
+  /customers/external-accounts/{externalAccountId}/trust:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_trust.yaml
+  /customers/external-accounts/{externalAccountId}/trust/confirm:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_trust_confirm.yaml
+  /customers/external-accounts/{externalAccountId}/untrust:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_untrust.yaml
+  /customers/external-accounts/{externalAccountId}/untrust/confirm:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_untrust_confirm.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:

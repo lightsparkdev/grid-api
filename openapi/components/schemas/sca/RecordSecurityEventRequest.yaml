@@ -1,0 +1,21 @@
+type: object
+description: >-
+  Records a client-side security event for the customer so Grid can maintain the
+  customer's login-security state (SCA session revocation and failed-login
+  lockout).
+required:
+  - eventType
+properties:
+  eventType:
+    type: string
+    enum:
+      - RESET_PASSWORD_COMPLETED
+      - FAILED_LOGIN_ATTEMPT
+    description: |
+      The security event to record:
+
+      | Value | Effect |
+      |-------|--------|
+      | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
+      | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
+    example: FAILED_LOGIN_ATTEMPT

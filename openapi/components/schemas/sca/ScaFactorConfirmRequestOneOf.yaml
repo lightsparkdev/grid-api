@@ -1,0 +1,11 @@
+oneOf:
+  - $ref: ./TotpEnrollmentConfirmRequest.yaml
+  - $ref: ./PasskeyEnrollmentConfirmRequest.yaml
+discriminator:
+  propertyName: type
+  mapping:
+    TOTP: ./TotpEnrollmentConfirmRequest.yaml
+    PASSKEY: ./PasskeyEnrollmentConfirmRequest.yaml
+description: >-
+  The proof that finalizes enrollment, keyed by `type`: the TOTP shared secret +
+  code, or the passkey `origin` + `credential`.

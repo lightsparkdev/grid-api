@@ -1,0 +1,35 @@
+type: object
+description: >-
+  The reset handle plus the opaque liveness handles a caller relays to
+  the end-user device to complete the liveness check. `resetId` threads the
+  ceremony together (status and complete reference it). `livenessAccessToken`
+  and `verificationLink` are omitted when they are not returned.
+required:
+  - resetId
+properties:
+  resetId:
+    type: string
+    description: >-
+      Identifier for this reset; pass it to the status and complete endpoints.
+  livenessAccessToken:
+    type:
+      - string
+      - 'null'
+    description: >-
+      Access token for the embedded liveness/verification SDK,
+      bound to this reset. Omitted when one is not returned.
+  verificationLink:
+    type:
+      - string
+      - 'null'
+    description: >-
+      Hosted identity-verification page URL for completing liveness. Omitted
+      when one is not returned.
+  expiresAt:
+    type:
+      - string
+      - 'null'
+    format: date-time
+    description: >-
+      Absolute UTC timestamp at the end of the reset window. Omitted when one is not returned.
+    example: '2025-10-03T12:30:00Z'

@@ -38,17 +38,6 @@ post:
     '201':
       description: >
         Transfer-out request created successfully.
-
-
-        For customers outside SCA-regulated regions the transaction proceeds as
-        usual.
-
-
-        **Strong Customer Authentication (EU):** per-transaction SCA is authorized
-        only on the quote resource (`POST /quotes/{quoteId}/authorize`), and
-        `transfer-out` has no associated quote. `transfer-out` is being
-        deprecated, so SCA-gated EU debits are not offered on this endpoint — use
-        the quote + `execute` flow instead.
       content:
         application/json:
           schema:

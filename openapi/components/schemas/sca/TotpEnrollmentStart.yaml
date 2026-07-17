@@ -1,0 +1,31 @@
+type: object
+description: >-
+  The shared secret a customer's authenticator app needs to enroll a TOTP
+  factor. Returned by `POST /sca/factors` for a `TOTP` request; the
+  customer scans `totpUri` (an `otpauth://` provisioning URI) and confirms with
+  the first code their app produces.
+required:
+  - type
+  - secret
+  - secretBase32Encoded
+  - totpUri
+properties:
+  type:
+    type: string
+    enum:
+      - TOTP
+    description: Discriminator identifying this as the TOTP enrollment-start payload.
+  secret:
+    type: string
+    description: The raw TOTP shared secret.
+  secretBase32Encoded:
+    type: string
+    description: >-
+      The Base32-encoded shared secret, suitable for manual entry into an
+      authenticator app that does not scan QR codes.
+  totpUri:
+    type: string
+    description: >-
+      The `otpauth://` provisioning URI (the QR-code payload) the customer's
+      authenticator app scans to enroll the factor.
+    example: otpauth://totp/Grid:customer@example.com?secret=ABC123&issuer=Grid
