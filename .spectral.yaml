@@ -176,3 +176,14 @@ rules:
       function: pattern
       functionOptions:
         match: "^(\\/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+$"
+
+# Per-pointer exceptions (mirror .redocly.lint-ignore.yaml - both linters run
+# the same conventions, and spectral has no ignore-file mechanism).
+overrides:
+  # threeDSecurePassword: "threeDSecure" is the industry-standard casing for
+  # 3DS and matches the EU provider's wire field; the camelCase checker
+  # rejects the consecutive-capital hump. Deliberate exception.
+  - files:
+      - "**/openapi.yaml#/components/schemas/CardCreateRequest/properties/threeDSecurePassword"
+    rules:
+      field-names-camelCase: off
