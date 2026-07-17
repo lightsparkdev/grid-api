@@ -18034,6 +18034,7 @@ components:
           $ref: '#/components/schemas/CurrencyAmount'
         refundedAmount:
           $ref: '#/components/schemas/CurrencyAmount'
+          description: Total merchant refunds linked to this transaction. Populated only when the card program's provider links refunds to the original purchase (US programs). EU card programs receive merchant refunds WITHOUT a purchase reference, so those refunds surface as standalone CREDIT-direction card transactions and never update the purchase's `refundedAmount`/`refundSummary`.
         accountId:
           type: string
           description: Internal account id that funded this transaction (the funding source selected by Authorization Decisioning at auth time).
