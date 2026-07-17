@@ -23,6 +23,10 @@ tags:
       Endpoints for verifying a customer's email and phone via one-time codes.
       Required only for customers whose payment provider mandates contact
       verification (e.g. EU customers); other providers return 409.
+  - name: Strong Customer Authentication
+    description: >-
+      Endpoints for authorizing money-movement operations that require Strong
+      Customer Authentication. Relevant only for customers in a region where SCA is required (e.g. EU); customers outside SCA-regulated regions never see an SCA challenge and these endpoints return 409.
   - name: KYC/KYB Verifications
     description: >-
       Endpoints for Know Your Customer (KYC) and Know Your Business (KYB)
@@ -187,6 +191,10 @@ paths:
     $ref: paths/quotes/quotes.yaml
   /quotes/{quoteId}/execute:
     $ref: paths/quotes/quotes_{quoteId}_execute.yaml
+  /quotes/{quoteId}/authorize:
+    $ref: paths/quotes/quotes_{quoteId}_authorize.yaml
+  /quotes/{quoteId}/authorize/resend:
+    $ref: paths/quotes/quotes_{quoteId}_authorize_resend.yaml
   /transactions:
     $ref: paths/transactions/transactions.yaml
   /transactions/{transactionId}:

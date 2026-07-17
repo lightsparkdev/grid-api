@@ -2,6 +2,7 @@ type: string
 enum:
   - CREATED
   - PENDING
+  - PENDING_AUTHORIZATION
   - PROCESSING
   - COMPLETED
   - REJECTED
@@ -15,6 +16,7 @@ description: |
   |--------|-------------|
   | `CREATED` | Initial lookup has been created |
   | `PENDING` | Quote has been created |
+  | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
   | `PROCESSING` | Funding has been received and payment initiated |
   | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
   | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |

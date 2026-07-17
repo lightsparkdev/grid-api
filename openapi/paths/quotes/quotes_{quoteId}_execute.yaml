@@ -50,12 +50,31 @@ post:
       schema:
         type: string
       example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/quotes/ExecuteQuoteRequest.yaml
   responses:
     '200':
       description: >
-        Quote confirmed successfully. The transfer has been initiated and
+        Quote processed. The outcome depends on whether SCA applies to the customer (currently EU customers):
 
-        the quote status has been updated.
+
+        - **No SCA required:** the transfer is initiated and the quote status
+        advances (`PROCESSING` / `COMPLETED`).
+
+
+        - **SCA required:** the transfer is **not** initiated yet. The quote is
+        returned with status `PENDING_AUTHORIZATION` and an `scaChallenge`;
+        release the transfer by authorizing the quote you already hold —
+        `POST /quotes/{quoteId}/authorize` (re-calling `execute` returns 409). A
+        pre-funded send is a single challenge, so one authorization releases it.
+        The challenge (and its SMS code / passkey assertion) only comes into
+        existence once this call initiates the transfer, so the proof is always
+        supplied on the follow-up authorize, never inline on this call. If an SMS
+        code lapses, re-send it via `POST /quotes/{quoteId}/authorize/resend`.
       content:
         application/json:
           schema:

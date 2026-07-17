@@ -1,0 +1,13 @@
+type: string
+enum:
+  - SMS_OTP
+  - TOTP
+  - PASSKEY
+description: |
+  A Strong Customer Authentication factor.
+
+  | Factor | Description |
+  |--------|-------------|
+  | `SMS_OTP` | One-time code sent by SMS to the customer's verified phone. Requires no prior enrollment. |
+  | `TOTP` | Time-based one-time code from an authenticator app. Requires enrollment. Not valid for per-transaction challenges (cannot carry dynamic linking). |
+  | `PASSKEY` | WebAuthn passkey assertion. Requires enrollment. |
