@@ -4832,7 +4832,11 @@ html.ls-nav-collapsed .ls-nav-rail::after {
    no docs sidebar — Mintlify tags them with .is-custom — so there's nothing to
    toggle. The JS won't inject the rail there either; this is the no-flash guard
    during SPA navigation. PERF: class-keyed, not html:has() — the class is set
-   by head.raw (first paint) and sidebar-toggle.js (SPA navigation). */
+   only by sidebar-toggle.js, from the DOM, once the body exists (unlike the
+   path-based ls-page-* classes, head.raw can't set it pre-paint). That's
+   sufficient: on a full load of a custom page the rail is never injected in
+   the first place (hasVisibleSidebar() is false), so this rule only matters
+   for SPA navigation, where the JS is already running. */
 html.ls-page-custom .ls-nav-rail {
   display: none !important;
 }

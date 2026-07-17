@@ -266,11 +266,11 @@
   }
 
   // SPA navigation: Mintlify swaps content without a full reload. On a path
-  // change, re-sync. Otherwise schedule a rAF-debounced ensure pass (one per
-  // mutation burst) that refreshes the page classes and re-adds the rail if
-  // Mintlify wiped it. The class refresh must run on content mutations too,
-  // not just path changes, because the new page's DOM (e.g. .is-custom)
-  // mounts after the pathname flips.
+  // change, re-sync. Otherwise only schedule the rAF-debounced ensure pass
+  // when something is actually out of sync: the rail/footer button got wiped,
+  // or the .is-custom marker (which mounts after the pathname flips) doesn't
+  // match the ls-page-custom class yet — a cheap guard so we don't read
+  // layout every frame.
   var lastPath = location.pathname;
   var ensureScheduled = false;
   function scheduleEnsure() {
@@ -287,7 +287,18 @@
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       sync();
-    } else {
+      return;
+    }
+    var customStale =
+      !!document.querySelector('.is-custom') !==
+      document.documentElement.classList.contains('ls-page-custom');
+    if (
+      customStale ||
+      !rail ||
+      !document.body.contains(rail) ||
+      !footerBtn ||
+      !document.body.contains(footerBtn)
+    ) {
       scheduleEnsure();
     }
   });
