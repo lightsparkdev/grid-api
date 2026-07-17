@@ -1420,6 +1420,24 @@ ul.sidebar-group > li[data-title="Agent Operations"] > button::before {
   background-image: url('/images/icons/prompt.svg') !important;
 }
 
+/* Contact Verification - email check */
+.sidebar-group > li[data-title="Contact Verification"] > button::before,
+ul.sidebar-group > li[data-title="Contact Verification"] > button::before {
+  background-image: url('/images/icons/IconEmail2Check.svg') !important;
+}
+
+/* Cards - credit card */
+.sidebar-group > li[data-title="Cards"] > button::before,
+ul.sidebar-group > li[data-title="Cards"] > button::before {
+  background-image: url('/images/icons/credit-card1.svg') !important;
+}
+
+/* Stablecoins - coins */
+.sidebar-group > li[data-title="Stablecoins"] > button::before,
+ul.sidebar-group > li[data-title="Stablecoins"] > button::before {
+  background-image: url('/images/icons/coins.svg') !important;
+}
+
 
 /* ===========================================
    Main Content Area
