@@ -51,10 +51,17 @@ get:
 post:
   summary: Start SCA factor enrollment
   description: |
-    Begin enrolling an SCA factor for the customer. The request body's `type`
-    selects the factor — `TOTP` or `PASSKEY`. `SMS_OTP` is not enrollable (it uses
-    the customer's verified phone). Returns the factor-specific material needed to
-    finish via `POST /sca/factors/confirm`.
+    Begin enrolling an SCA factor for the customer. Enrollment covers the
+    explicit, opt-in factors a customer chooses to add — the request body's
+    `type` selects `TOTP` or `PASSKEY`. Returns the factor-specific material
+    needed to finish via `POST /sca/factors/confirm`.
+
+    `SMS_OTP` is implicit and is not enrolled through this endpoint. Every
+    customer in an SCA-regulated region has a verified phone number from
+    customer creation (via the Contact Verification flows —
+    `POST /customers/{customerId}/verify-phone` and `.../verify-phone/confirm`),
+    so SMS is always available as a factor with no extra setup and appears
+    among the customer's enrolled factors in `GET /sca/factors`.
 
     A customer may have **only one passkey**. Starting a passkey enrollment when
     one is already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete it
