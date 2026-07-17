@@ -88,7 +88,7 @@ sequenceDiagram
   participant G as Grid
   participant U as End user
 
-  P->>G: Initiate money movement (execute / transfer-out)
+  P->>G: Initiate money movement (execute a quote)
   G-->>P: PENDING_AUTHORIZATION + scaChallenge
   G->>U: Deliver challenge (e.g. SMS OTP)
   loop while status == PENDING_AUTHORIZATION

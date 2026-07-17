@@ -66,9 +66,8 @@ nothing to fund.
 
 <Tab title="Transfer-out">
 `transfer-out` has no associated quote, and per-transaction SCA is authorized
-only on the quote resource. `transfer-out` is being deprecated, so SCA-gated EU
-debits are **not** offered on this endpoint — use the quote + `execute` flow
-above for EU customers. For customers outside SCA-regulated regions,
-`transfer-out` proceeds as usual.
+only on the quote resource, so SCA-gated EU debits are **not** offered on this
+endpoint — use the quote + `execute` flow above for EU customers. For customers
+outside SCA-regulated regions, `transfer-out` proceeds as usual.
 </Tab>
 </Tabs>
