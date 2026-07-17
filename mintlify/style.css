@@ -4096,18 +4096,25 @@ html.dark #flow-builder-container {
   }
 }
 
-/* Prevent outer page scroll when flow-builder is present */
-html:has(#flow-builder-container),
-html:has(#flow-builder-container) body {
+/* Prevent outer page scroll when flow-builder is present.
+
+   PERF: these page-scoped rules key off html.ls-page-flow-builder — a class
+   set from the pathname by head.raw (first paint) and sidebar-toggle.js (SPA
+   navigation) — NOT html:has(#flow-builder-container). A :has() anchored at
+   the root is re-evaluated on DOM mutations anywhere in the document; pages
+   that build DOM incrementally (e.g. mermaid diagrams) made each of those
+   re-evaluations fire thousands of times, freezing navigation for seconds. */
+html.ls-page-flow-builder,
+html.ls-page-flow-builder body {
   overflow: hidden !important;
 }
 
 /* Flow Builder mobile breadcrumb — hide text + chevron, keep hamburger, show (0, 0, 0) */
-html:has(#flow-builder-container) #navbar button[class*="h-14"][class*="text-left"] > *:not(:first-child) {
+html.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"] > *:not(:first-child) {
   display: none !important;
 }
 
-html:has(#flow-builder-container) #navbar button[class*="h-14"][class*="text-left"]::after {
+html.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]::after {
   content: "(0, 0, 0)";
   margin-left: auto;
   font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -4116,7 +4123,7 @@ html:has(#flow-builder-container) #navbar button[class*="h-14"][class*="text-lef
   color: var(--ls-gray-400);
 }
 
-html.dark:has(#flow-builder-container) #navbar button[class*="h-14"][class*="text-left"]::after {
+html.dark.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]::after {
   color: var(--ls-gray-700);
 }
 
@@ -4252,19 +4259,20 @@ html.dark #wallet-demo-host {
   }
 }
 
-/* Prevent outer page scroll when the wallet demo is present */
-html:has(#wallet-demo-container),
-html:has(#wallet-demo-container) body {
+/* Prevent outer page scroll when the wallet demo is present.
+   PERF: class-keyed, not html:has() — see the flow-builder note above. */
+html.ls-page-wallet-demo,
+html.ls-page-wallet-demo body {
   overflow: hidden !important;
 }
 
 /* Wallet demo mobile breadcrumb — hide text + chevron, keep hamburger, show
    (0, 0, 0) on the right (matches the flow-builder tab). */
-html:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left"] > *:not(:first-child) {
+html.ls-page-wallet-demo #navbar button[class*="h-14"][class*="text-left"] > *:not(:first-child) {
   display: none !important;
 }
 
-html:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left"]::after {
+html.ls-page-wallet-demo #navbar button[class*="h-14"][class*="text-left"]::after {
   content: "(0, 0, 0)";
   margin-left: auto;
   font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -4273,7 +4281,7 @@ html:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left
   color: var(--ls-gray-400);
 }
 
-html.dark:has(#wallet-demo-container) #navbar button[class*="h-14"][class*="text-left"]::after {
+html.dark.ls-page-wallet-demo #navbar button[class*="h-14"][class*="text-left"]::after {
   color: var(--ls-gray-700);
 }
 
@@ -4823,8 +4831,9 @@ html.ls-nav-collapsed .ls-nav-rail::after {
 /* Custom-layout pages (frontmatter mode: "custom", e.g. the flow builder) have
    no docs sidebar — Mintlify tags them with .is-custom — so there's nothing to
    toggle. The JS won't inject the rail there either; this is the no-flash guard
-   during SPA navigation. */
-html:has(.is-custom) .ls-nav-rail {
+   during SPA navigation. PERF: class-keyed, not html:has() — the class is set
+   by head.raw (first paint) and sidebar-toggle.js (SPA navigation). */
+html.ls-page-custom .ls-nav-rail {
   display: none !important;
 }
 
