@@ -11893,14 +11893,10 @@ components:
           $ref: '#/components/schemas/ScaFactor'
           description: The kind of enrolled factor.
         credentialId:
-          type:
-            - string
-            - 'null'
+          type: string
           description: The per-credential id, populated only for `PASSKEY` factors (the id passed to delete a passkey). Omitted for `TOTP` and `SMS_OTP`, which have no per-credential id.
         name:
-          type:
-            - string
-            - 'null'
+          type: string
           description: An optional human-readable label for this factor.
     ScaFactorList:
       type: object
