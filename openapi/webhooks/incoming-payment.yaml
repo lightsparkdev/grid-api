@@ -133,6 +133,38 @@ post:
                 description: Payment for services
                 reconciliationInstructions:
                   reference: REF-123456789
+          incomingCompletedCryptoPayment:
+            summary: Completed payment funded from an external crypto wallet
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+              type: INCOMING_PAYMENT.COMPLETED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000006
+                status: COMPLETED
+                type: INCOMING
+                direction: CREDIT
+                source:
+                  sourceType: REALTIME_FUNDING
+                  currency: USDC
+                  onChainTransaction:
+                    transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
+                    network: SOLANA
+                destination:
+                  destinationType: ACCOUNT
+                  accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                receivedAmount:
+                  amount: 100000
+                  currency:
+                    code: USDC
+                    name: USD Coin
+                    symbol: ''
+                    decimals: 6
+                settledAt: '2025-08-15T14:30:00Z'
+                createdAt: '2025-08-15T14:25:18Z'
+                description: USDC deposit from self-custody wallet
   responses:
     '200':
       description: >

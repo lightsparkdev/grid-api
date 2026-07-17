@@ -48,6 +48,14 @@ properties:
     example: Settlement service key
   status:
     $ref: ./DelegatedKeyStatus.yaml
+  spendingLimits:
+    type: array
+    uniqueItems: true
+    description: >-
+      Per-transaction spending limits the key was created with, at most one
+      entry per currency. Absent when the key has no limits.
+    items:
+      $ref: ./DelegatedKeySpendingLimit.yaml
   createdAt:
     type: string
     format: date-time

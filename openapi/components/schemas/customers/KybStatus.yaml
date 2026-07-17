@@ -4,5 +4,8 @@ enum:
   - PENDING
   - APPROVED
   - REJECTED
-description: The current KYB status of a business customer
+  - HOLD
+description: >-
+  The current KYB status of a business customer. `HOLD` means the customer is
+  placed on hold and may be required to update or provide more information.
 example: APPROVED

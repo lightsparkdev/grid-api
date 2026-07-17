@@ -1,0 +1,17 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Flat sheet pills — same 44px height as the old GlassTextButton label. */
+.pill {
+  height: 44px;
+  padding-top: 0;
+  padding-bottom: 0;
+  @include ios.ios-text-callout;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+}
+
+.secondary {
+  font-weight: 400;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  color: var(--ios-tint);
+}

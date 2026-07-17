@@ -3,6 +3,7 @@ required:
 - accountType
 - accountNumber
 - bankAccountType
+- bankName
 properties:
   accountType:
     type: string
@@ -19,7 +20,13 @@ properties:
     enum:
     - CHECKING
     - SAVINGS
+  bankName:
+    type: string
+    description: The name of the beneficiary's bank
+    minLength: 1
+    maxLength: 255
 example:
   accountType: GTQ_ACCOUNT
   accountNumber: '1234567890'
   bankAccountType: CHECKING
+  bankName: Example Bank

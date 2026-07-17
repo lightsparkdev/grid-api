@@ -1,0 +1,32 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Bare icon button — transparent, no fill (like the home brand-header buttons). */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Centre title — matches the Glitch home "Wallet" label (Inter 17 / 590 / -0.43). */
+.title {
+  font-family: var(--font-family-inter);
+  font-size: 17px;
+  font-weight: 590;
+  letter-spacing: -0.43px;
+  color: var(--ios-label-primary);
+}

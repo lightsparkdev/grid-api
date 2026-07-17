@@ -29,7 +29,6 @@
   background: var(--surface-secondary);
   border: var(--stroke-xs) solid var(--border-tertiary);
   border-radius: var(--corner-radius-md);
-  cursor: pointer;
   transition: border-color 150ms ease;
 
   :global([data-theme='dark']) & {
@@ -40,16 +39,17 @@
     border-color: var(--border-secondary);
   }
 
-  // Match Mintlify sidebar toggle: 52x28 pill
+  // Match Mintlify's NEW sidebar switcher: 76x28 three-option pill
+  // (system / light / dark), justify-between like theirs.
   :global([data-embed='true']) & {
-    width: 52px;
+    width: 76px;
     height: 28px;
     padding: 4px;
-    gap: 2px;
+    gap: 0;
     border-radius: 9999px;
     background: transparent;
     border-color: rgba(0, 0, 0, 0.07);
-    justify-content: center;
+    justify-content: space-between;
   }
 
   :global([data-embed='true'][data-theme='dark']) & {
@@ -58,6 +58,7 @@
 }
 
 .toggleItem {
+  all: unset;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -66,39 +67,63 @@
   height: 24px;
   border-radius: var(--corner-radius-sm);
   color: var(--icon-secondary);
+  cursor: pointer;
   transition: background 150ms ease, color 150ms ease;
 
   svg path {
     vector-effect: non-scaling-stroke;
   }
 
-  // Embed mode: smaller items, CSS-only icon size and active state
+  // Embed mode: smaller items, CSS-only icon size and active state. Colors
+  // are measured from Mintlify's live component (their custom gray scale —
+  // no matching Origin tokens); base = INACTIVE on the light chrome.
   :global([data-embed='true']) & {
     width: 20px;
     height: 20px;
     border-radius: 9999px;
-    color: #505050 !important; // Mintlify text-gray-600 (no matching Origin token)
+    // The docs apply corner-shape globally, so their active pill reads as a
+    // soft superellipse square, not a circle — match it.
+    corner-shape: squircle;
+    color: #9f9f9f !important; // inactive, light (their text-gray-400)
     background: none !important;
 
     svg {
       width: 12px !important;
       height: 12px !important;
+
+      path {
+        // Scale the strokes with the glyph: 16-grid 1.5 at 12px = 1.125px,
+        // the docs switcher's weight (the docs override their site-wide
+        // non-scaling rule for these glyphs the same way). Without this the
+        // non-scaling rule above pins them at a chunkier 1.5px absolute.
+        vector-effect: none;
+      }
     }
   }
 
-  // CSS-only active state in embed mode (no React flash)
+  :global([data-embed='true'][data-theme='dark']) & {
+    color: #707070 !important; // inactive, dark (their dark:text-gray-500)
+  }
+
+  // ACTIVE — keyed to the PREFERENCE attribute (set pre-paint by the layout
+  // script), not the resolved theme, so `system` can be the selected option
+  // while the page renders light or dark. The selected option gets the
+  // prominent color + pill fill, per chrome.
   // !important ensures these beat the React-applied .toggleItemActive class
-  :global([data-embed='true'][data-theme='light']) &[data-mode='light'],
-  :global([data-embed='true'][data-theme='dark']) &[data-mode='dark'] {
-    color: #9F9F9F !important; // Mintlify text-gray-400 (no matching Origin token)
+  :global([data-embed='true'][data-theme='light'][data-theme-pref='system'])
+    &[data-mode='system'],
+  :global([data-embed='true'][data-theme='light'][data-theme-pref='light'])
+    &[data-mode='light'] {
+    color: #505050 !important; // active, light (their text-gray-600)
+    background: rgba(223, 223, 223, 0.5) !important; // bg-gray-200/50
   }
 
-  :global([data-embed='true'][data-theme='light']) &[data-mode='light'] {
-    background: rgba(229, 231, 235, 0.5) !important;
-  }
-
-  :global([data-embed='true'][data-theme='dark']) &[data-mode='dark'] {
-    background: #171717 !important;
+  :global([data-embed='true'][data-theme='dark'][data-theme-pref='system'])
+    &[data-mode='system'],
+  :global([data-embed='true'][data-theme='dark'][data-theme-pref='dark'])
+    &[data-mode='dark'] {
+    color: #dfdfdf !important; // active, dark (their dark:text-gray-200)
+    background: #171717 !important; // dark:bg-gray-900
   }
 }
 

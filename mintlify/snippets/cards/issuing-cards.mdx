@@ -54,17 +54,40 @@ issuance is gated on KYC up front.
 `POST /cards` returns immediately with `state: "PROCESSING"`. The
 issuer provisions the card asynchronously; on success a
 `CARD.STATE_CHANGE` webhook fires with the activated `Card` resource
-including the populated `last4`, `expMonth`, `expYear`, and
-`panEmbedUrl`.
+including the populated `last4`, `expMonth`, and `expYear`.
 
 If the issuer rejects provisioning, the same webhook fires with
 `state: "CLOSED"` and `stateReason: "ISSUER_REJECTED"`. That card is
 terminal — issue a new one with a fresh `platformCardId` to retry.
 
+## Revealing the PAN
+
+To show the cardholder their full PAN, CVV, and expiry, request a
+reveal right before rendering:
+
+```bash
+curl -X POST "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010/reveal" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+```json
+{
+  "panEmbedUrl": "https://embed.lithic.com/iframe/...?t=...",
+  "expiresAt": "2026-05-08T14:16:00Z"
+}
+```
+
+`panEmbedUrl` is a signed URL for the card processor's iframe that
+renders the full credentials directly to the cardholder. The full PAN
+and CVV never cross your servers or Grid's.
+
 <Note>
-Render `panEmbedUrl` in an iframe in your client to display the full
-PAN, CVV, and expiry to the cardholder. The full credentials never
-cross your servers.
+`POST /cards/{id}/reveal` is the **only** way to obtain a reveal URL —
+the `Card` resource never carries one (not in responses, not in webhook
+payloads). The URL expires at `expiresAt` (within minutes), so request a
+fresh reveal each time the cardholder asks for their details,
+immediately before rendering the iframe. Never store, cache, or log the
+URL. Every reveal is audit-logged.
 </Note>
 
 ## Errors to handle

@@ -1,0 +1,70 @@
+/* Sparkle layer — extends above the card to cover the rise zone, with a fixed
+   alpha mask that fades to transparent toward the top. Sparkles fly up into the
+   mask and dissolve at the SAME height, not on their own timelines. */
+.layer {
+  position: absolute;
+  /* Extends beyond the card (sides + top) so corner spawns and the rise stay
+     inside the box — the mask clips to its own box, so overflow would be cut. */
+  left: -60px;
+  right: -60px;
+  bottom: 0;
+  top: -210px;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 50%, transparent 76%);
+  mask-image: linear-gradient(to top, #000 0%, #000 50%, transparent 76%);
+
+  /* Sparkle palette (overridden per-mode). */
+  --spark-core: #ffd23a;
+  --spark-r: #ff4d3a;
+  --spark-c: #45ffff;
+}
+
+/* Created screen (white bg): no rise = no fade mask; warmer, more-yellow palette
+   so the sparkles read as yellow on white instead of washing to a white core. */
+.layerTwinkle {
+  -webkit-mask-image: none;
+  mask-image: none;
+  /* Less yellow + stronger red/cyan split = more apparent chroma on white. */
+  --spark-core: #ffde6a;
+  --spark-r: #ff5236;
+  --spark-c: #4cd2ff;
+}
+
+/* Each sparkle: floats/scales/spins (motion). isolate so the R/C channels blend
+   among themselves into the aberrated sparkle; soft 4px blur + warm glow. */
+.sparkle {
+  position: absolute;
+  transform-origin: center;
+  will-change: transform, opacity;
+  isolation: isolate;
+  /* Layered warm glow so each sparkle reads like it's emitting its own light. */
+  filter: blur(1px) drop-shadow(0 0 7px rgba(255, 214, 92, 0.75))
+    drop-shadow(0 0 16px rgba(255, 180, 70, 0.4));
+}
+
+.spark {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Warm-yellow core. */
+.sparkBase {
+  color: var(--spark-core);
+}
+
+/* Chromatic-aberration fringes — split along a per-spark random direction
+   (--cax/--cay), red one way and cyan the other (screen-blended). */
+.sparkR {
+  color: var(--spark-r);
+  mix-blend-mode: screen;
+  transform: translate(calc(var(--cax, 6%) * -1), calc(var(--cay, 4%) * -1));
+}
+
+.sparkC {
+  color: var(--spark-c);
+  mix-blend-mode: screen;
+  transform: translate(var(--cax, 6%), var(--cay, 4%));
+}

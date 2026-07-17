@@ -1,0 +1,22 @@
+type: object
+required:
+  - panEmbedUrl
+  - expiresAt
+properties:
+  panEmbedUrl:
+    type: string
+    format: uri
+    description: >-
+      Signed URL of the card processor's iframe that securely displays the
+      PAN, CVV, and expiry to the cardholder. The full PAN and CVV never
+      cross Grid's servers — render this URL in an iframe in your client to
+      reveal card details. The URL is a short-lived bearer secret: render it
+      immediately and never store, cache, or log it.
+    example: https://embed.lithic.com/iframe/...?t=...
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the signed URL stops loading. Request a new reveal rather than
+      re-rendering an expired URL.
+    example: '2026-05-08T14:16:00Z'

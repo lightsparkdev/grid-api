@@ -1,3 +1,4 @@
+title: Card Transaction
 type: object
 required:
   - type

@@ -9,8 +9,30 @@ export const FlowBuilderEmbed = () => {
   const [src, setSrc] = React.useState(null);
 
   React.useEffect(() => {
+    const prefButtons = () => {
+      const g = document.querySelector('#sidebar-content [role="group"][aria-label="Theme preference"]');
+      if (!g) return null;
+      return {
+        group: g,
+        system: g.querySelector('button[aria-label="Switch to system theme"]'),
+        light: g.querySelector('button[aria-label="Switch to light theme"]'),
+        dark: g.querySelector('button[aria-label="Switch to dark theme"]'),
+      };
+    };
+
+    const currentPref = () => {
+      const b = prefButtons();
+      const pressed = b && b.group.querySelector('button[aria-pressed="true"]');
+      const label = pressed ? pressed.getAttribute('aria-label') || '' : '';
+      if (label.indexOf('system') !== -1) return 'system';
+      if (label.indexOf('light') !== -1) return 'light';
+      if (label.indexOf('dark') !== -1) return 'dark';
+      return null;
+    };
+
     const isDark = document.documentElement.classList.contains('dark');
-    setSrc('https://grid-flow-builder.vercel.app/?embed=true&theme=' + (isDark ? 'dark' : 'light'));
+    const initialPref = currentPref();
+    setSrc('https://grid-flow-builder.vercel.app/?embed=true&theme=' + (initialPref || (isDark ? 'dark' : 'light')));
 
     let ignoreNextMutation = false;
 
@@ -18,7 +40,7 @@ export const FlowBuilderEmbed = () => {
       const t = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       const iframe = document.getElementById('flow-builder-iframe');
       if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({ type: 'theme-sync', theme: t }, '*');
+        iframe.contentWindow.postMessage({ type: 'theme-sync', theme: t, pref: currentPref() || undefined }, '*');
       }
     };
 
@@ -28,9 +50,18 @@ export const FlowBuilderEmbed = () => {
         return;
       }
       if (e.data && e.data.type === 'theme-sync') {
-        const isDark = document.documentElement.classList.contains('dark');
+        const isDarkNow = document.documentElement.classList.contains('dark');
         const wantsDark = e.data.theme === 'dark';
-        if (isDark !== wantsDark) {
+        const want = e.data.pref;
+        const btns = want ? prefButtons() : null;
+        if (btns && btns[want]) {
+          if (currentPref() !== want) {
+            if (isDarkNow !== wantsDark) ignoreNextMutation = true;
+            btns[want].click();
+          }
+          return;
+        }
+        if (isDarkNow !== wantsDark) {
           ignoreNextMutation = true;
           document.documentElement.classList.toggle('dark');
         }

@@ -3,7 +3,7 @@ info:
   title: Grid API
   description: |
     API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://docs.lightspark.com/.
-  version: '2026-06-25'
+  version: '2025-10-13'
   contact:
     name: Lightspark Support
     email: support@lightspark.com
@@ -23,6 +23,8 @@ tags:
     description: Customer management endpoints for creating and updating customer information
   - name: Contact Verification
     description: Endpoints for verifying a customer's email and phone via one-time codes. Required only for customers whose payment provider mandates contact verification (e.g. EU customers); other providers return 409.
+  - name: Strong Customer Authentication
+    description: Endpoints for authorizing money-movement operations that require Strong Customer Authentication. Relevant only for customers in a region where SCA is required (e.g. EU); customers outside SCA-regulated regions never see an SCA challenge and these endpoints return 409.
   - name: KYC/KYB Verifications
     description: Endpoints for Know Your Customer (KYC) and Know Your Business (KYB) verification, including managing beneficial owners and triggering verification for customers.
   - name: Documents
@@ -229,7 +231,7 @@ paths:
                           symbol: ₹
                         destinationPaymentRail: UPI
                         receivingAmount: 825000
-                        exchangeRate: 82.5
+                        exchangeRate: 0.012121
                         fees:
                           fixed: 100
                           total: 150
@@ -248,8 +250,8 @@ paths:
                           name: Euro
                           symbol: €
                         destinationPaymentRail: SEPA_INSTANT
-                        receivingAmount: 18500
-                        exchangeRate: 0.925
+                        receivingAmount: 9250
+                        exchangeRate: 1.081081
                         fees:
                           fixed: 10
                           total: 15
@@ -368,6 +370,8 @@ paths:
                   fullName: Jane Smith
                   birthDate: '1990-01-15'
                   nationality: US
+                  email: jane.smith@example.com
+                  phoneNumber: '+14155551234'
               individualCustomerInferred:
                 summary: Create an individual customer with inferred currencies
                 value:
@@ -377,6 +381,7 @@ paths:
                   fullName: Carlos García
                   birthDate: '1988-05-22'
                   nationality: MX
+                  phoneNumber: '+525512345678'
               businessCustomer:
                 summary: Create a business customer
                 value:
@@ -386,6 +391,8 @@ paths:
                   currencies:
                     - USD
                     - USDC
+                  email: finance@acme.com
+                  phoneNumber: '+14155559876'
                   businessInfo:
                     legalName: Acme Corporation
                     doingBusinessAs: Acme
@@ -621,11 +628,13 @@ paths:
       description: |
         Update a customer's metadata by their system-generated ID.
 
-        Most customer updates complete synchronously and return `200` with the updated customer. If the request changes `email` for a customer that has one or more tied Embedded Wallet internal accounts with `EMAIL_OTP` credentials, the email change uses the two-step signed-retry flow so the customer's wallet session authorizes the authentication credential update. On the signed retry, Grid updates the customer email and every tied `EMAIL_OTP` credential across all tied Embedded Wallets as one logical operation. If any tied credential cannot be updated, the customer email is not changed.
+        Most customer updates complete synchronously and return `200` with the updated customer. If the request changes `email` for a customer that has one or more tied Embedded Wallet internal accounts with `EMAIL_OTP` credentials, or changes `phoneNumber` for a customer that has one or more tied Embedded Wallet internal accounts with `SMS_OTP` credentials, the contact update uses the two-step signed-retry flow so the customer's wallet session authorizes the authentication credential update. On the signed retry, Grid updates the customer contact field and every tied matching OTP credential across all tied Embedded Wallets as one logical operation. If any tied credential cannot be updated, the customer contact field is not changed.
 
-        For an Embedded Wallet email update:
+        Update `email` and `phoneNumber` in separate PATCH calls. A request that includes both fields is rejected.
 
-        1. Call `PATCH /customers/{customerId}` with the full update body and no signature headers. Grid returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. The pending challenge binds the submitted update fields and the set of tied Embedded Wallet email OTP credentials that must be updated.
+        For an Embedded Wallet email or SMS auth phone update:
+
+        1. Call `PATCH /customers/{customerId}` with the full update body and no signature headers. Grid returns `202` with `payloadToSign`, `requestId`, and `expiresAt`. The pending challenge binds the submitted update fields and the set of tied Embedded Wallet OTP credentials that must be updated.
 
         2. Use the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the same update fields submitted in step 1. The signed retry returns `200` with the updated customer.
       operationId: updateCustomerById
@@ -637,14 +646,14 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets. Required on the signed retry for Embedded Wallet email updates; ignored on the initial call and on customer updates that complete synchronously.
+          description: Full API-key stamp built over the prior `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets. Required on the signed retry for Embedded Wallet email or SMS auth phone updates; ignored on the initial call and on customer updates that complete synchronously.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
         - name: Request-Id
           in: header
           required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry for Embedded Wallet email updates; must be paired with `Grid-Wallet-Signature`.
+          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry for Embedded Wallet email or SMS auth phone updates; must be paired with `Grid-Wallet-Signature`.
           schema:
             type: string
           example: Request:019542f5-b3e7-1d02-0000-000000000010
@@ -693,15 +702,26 @@ paths:
                 value:
                   customerType: INDIVIDUAL
                   email: john.smith@example.com
+              embeddedWalletPhoneUpdate:
+                summary: Embedded Wallet SMS auth phone update request (both steps)
+                value:
+                  customerType: INDIVIDUAL
+                  phoneNumber: '+14155559876'
+              combinedContactUpdateRejected:
+                summary: Combined email and phone update request (rejected)
+                value:
+                  customerType: INDIVIDUAL
+                  email: john.smith@example.com
+                  phoneNumber: '+14155559876'
       responses:
         '200':
-          description: Customer updated successfully. For Embedded Wallet email updates, this is returned only on the signed retry after the customer email and all tied email OTP credentials have been updated.
+          description: Customer updated successfully. For Embedded Wallet email or SMS auth phone updates, this is returned only on the signed retry after the customer contact field and all tied matching OTP credentials have been updated.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomerOneOf'
         '202':
-          description: Challenge issued for an Embedded Wallet email update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+          description: Challenge issued for an Embedded Wallet email or SMS auth phone update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
           content:
             application/json:
               schema:
@@ -713,6 +733,12 @@ paths:
                     payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"john.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
+                embeddedWalletPhoneUpdate:
+                  summary: Embedded Wallet customer SMS auth phone update challenge
+                  value:
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                    requestId: Request:019542f5-b3e7-1d02-0000-000000000011
+                    expiresAt: '2026-04-08T15:35:00Z'
         '400':
           description: Bad request
           content:
@@ -720,7 +746,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Also returned for Embedded Wallet email update retries when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match the pending customer update challenge, when the `Request-Id` does not match an unexpired pending challenge, or when the retry body does not match the update fields bound into `payloadToSign` on the initial call.
+          description: Unauthorized. Also returned for Embedded Wallet email or SMS auth phone update retries when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match the pending customer update challenge, when the `Request-Id` does not match an unexpired pending challenge, or when the retry body does not match the update fields bound into `payloadToSign` on the initial call.
           content:
             application/json:
               schema:
@@ -732,13 +758,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential on this or another internal account, or when the tied Embedded Wallet email OTP credential set changed between the initial `202` challenge and the signed retry.
+          description: Conflict. Returned when the supplied email address is already associated with an `EMAIL_OTP` credential, or the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account, or when the tied Embedded Wallet OTP credential set changed between the initial `202` challenge and the signed retry.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
         '424':
-          description: Failed dependency. Returned when Grid cannot update one or more tied Embedded Wallet email OTP credentials. The customer email is not changed unless all tied credentials are updated successfully.
+          description: Failed dependency. Returned when Grid cannot update one or more tied Embedded Wallet OTP credentials. The customer contact field is not changed unless all tied credentials are updated successfully.
           content:
             application/json:
               schema:
@@ -2400,7 +2426,12 @@ paths:
                   remittanceInformation: '12345'
       responses:
         '201':
-          description: Transfer-out request created successfully
+          description: |
+            Transfer-out request created successfully.
+
+            For customers outside SCA-regulated regions the transaction proceeds as usual.
+
+            **Strong Customer Authentication (EU):** per-transaction SCA is authorized only on the quote resource (`POST /quotes/{quoteId}/authorize`), and `transfer-out` has no associated quote. `transfer-out` is being deprecated, so SCA-gated EU debits are not offered on this endpoint — use the quote + `execute` flow instead.
           content:
             application/json:
               schema:
@@ -2737,6 +2768,13 @@ paths:
                 exchangeRate: 0.92
                 feesIncluded: 10
                 transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        '202':
+          description: |
+            Quote created but awaiting Strong Customer Authentication. Returned only for customers whose provider requires SCA (e.g. EU) on a realtime-funding source: the quote has status `PENDING_AUTHORIZATION` and carries an `scaChallenge`, and `paymentInstructions` are **withheld** until the challenge is authorized via `POST /quotes/{quoteId}/authorize`. Once authorized, the quote's `paymentInstructions` are populated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -2819,11 +2857,20 @@ paths:
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteQuoteRequest'
       responses:
         '200':
           description: |
-            Quote confirmed successfully. The transfer has been initiated and
-            the quote status has been updated.
+            Quote processed. The outcome depends on whether SCA applies to the customer (currently EU customers):
+
+            - **No SCA required:** the transfer is initiated and the quote status advances (`PROCESSING` / `COMPLETED`).
+
+            - **SCA required:** the transfer is **not** initiated yet. The quote is returned with status `PENDING_AUTHORIZATION` and an `scaChallenge`; release the transfer by authorizing the quote you already hold — `POST /quotes/{quoteId}/authorize` (re-calling `execute` returns 409). A pre-funded send is a single challenge, so one authorization releases it. The challenge (and its SMS code / passkey assertion) only comes into existence once this call initiates the transfer, so the proof is always supplied on the follow-up authorize, never inline on this call. If an SMS code lapses, re-send it via `POST /quotes/{quoteId}/authorize/resend`.
           content:
             application/json:
               schema:
@@ -2852,6 +2899,148 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /quotes/{quoteId}/authorize:
+    parameters:
+      - name: quoteId
+        in: path
+        description: The unique identifier of the quote whose SCA challenge is being authorized.
+        required: true
+        schema:
+          type: string
+        example: Quote:019542f5-b3e7-1d02-0000-000000000006
+    post:
+      summary: Authorize a quote's SCA challenge
+      description: |
+        Satisfy the Strong Customer Authentication challenge carried by a quote in
+        `PENDING_AUTHORIZATION` status by submitting an `ScaAuthorization` proof.
+
+        This is used for realtime-funding quotes: the quote is returned with an
+        `scaChallenge` and **without** `paymentInstructions`; once authorized, the
+        quote advances and its `paymentInstructions` are populated so the customer
+        can fund the transfer.
+
+        As with all SCA, a quote may require more than one authorization: after
+        authorizing, if the quote is still `PENDING_AUTHORIZATION` it carries the
+        next `scaChallenge` — authorize that too, repeating until it advances (see
+        `ScaChallenge`).
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+
+        In sandbox, the SMS code is always `123456`.
+      operationId: authorizeQuote
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaAuthorization'
+      responses:
+        '200':
+          description: Challenge authorized; the updated quote is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          description: Invalid or expired authorization proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer, or the quote has no pending challenge to authorize.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when authorization attempts for this challenge happen too frequently (for example, repeated bad codes brute-forcing the OTP). The challenge may be invalidated after too many failed attempts. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /quotes/{quoteId}/authorize/resend:
+    parameters:
+      - name: quoteId
+        in: path
+        description: The unique identifier of the quote whose SCA challenge code should be re-sent.
+        required: true
+        schema:
+          type: string
+        example: Quote:019542f5-b3e7-1d02-0000-000000000006
+    post:
+      summary: Resend a quote's SCA challenge code
+      description: |
+        Re-send the one-time code for a realtime-funding quote in
+        `PENDING_AUTHORIZATION` status whose `scaChallenge.factor` is `SMS_OTP`. The
+        existing challenge is reused — no new challenge is issued, and its
+        `scaChallenge.expiresAt` is **not** extended; once the challenge is past
+        `expiresAt` it can no longer be authorized.
+
+        Only meaningful for customers in a region where SCA is required (e.g. EU);
+        a 409 is returned otherwise. `PASSKEY` challenges cannot be re-sent and return 409.
+
+        In sandbox, the code is always `123456`.
+      operationId: resendQuoteScaCode
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Code re-sent.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer, the quote has no pending SMS challenge, or the challenge uses a factor whose code cannot be re-sent (e.g. passkey).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when codes are re-sent too frequently, to avoid spamming the customer's phone. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -7006,7 +7195,7 @@ paths:
           type: string
     get:
       summary: Get a card
-      description: Retrieve a card by its system-generated id.
+      description: Retrieve a card by its system-generated id. To display the card's full PAN, CVV, and expiry to the cardholder, request a reveal with `POST /cards/{id}/reveal` — the card resource itself never carries the reveal URL.
       operationId: getCardById
       tags:
         - Cards
@@ -7152,6 +7341,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+  /cards/{id}/reveal:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Reveal card details
+      description: |-
+        Mint a signed, short-lived URL for the card processor's iframe that displays the card's full PAN, CVV, and expiry to the cardholder. This is the only way to obtain a reveal URL — the `Card` resource never carries one.
+
+        Request the reveal right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
+
+        Every reveal is audit-logged with the requesting actor.
+      operationId: revealCard
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Reveal URL minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRevealResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the reveal against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -7748,6 +7995,38 @@ webhooks:
                     description: Payment for services
                     reconciliationInstructions:
                       reference: REF-123456789
+              incomingCompletedCryptoPayment:
+                summary: Completed payment funded from an external crypto wallet
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+                  type: INCOMING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000006
+                    status: COMPLETED
+                    type: INCOMING
+                    direction: CREDIT
+                    source:
+                      sourceType: REALTIME_FUNDING
+                      currency: USDC
+                      onChainTransaction:
+                        transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
+                        network: SOLANA
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    receivedAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: USDC deposit from self-custody wallet
       responses:
         '200':
           description: |
@@ -7875,6 +8154,47 @@ webhooks:
                       gridApiFixedFee: 10
                       gridApiVariableFeeRate: 0.003
                       gridApiVariableFeeAmount: 30
+              outgoingCompletedCryptoPayment:
+                summary: Completed crypto payout to an external wallet
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+                  type: OUTGOING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000009
+                    status: COMPLETED
+                    type: OUTGOING
+                    direction: DEBIT
+                    source:
+                      sourceType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                      onChainTransaction:
+                        transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+                        network: SOLANA
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    sentAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    receivedAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    quoteId: Quote:019542f5-b3e7-1d02-0000-000000000010
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: USDC withdrawal to self-custody wallet
+                    paymentInstructions: []
               failedPayment:
                 summary: Failed outgoing payment
                 value:
@@ -8542,7 +8862,6 @@ webhooks:
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
-                    panEmbedUrl: https://embed.lithic.com/iframe/...?t=...
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     currency: USD
@@ -8662,6 +8981,249 @@ webhooks:
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:30:00Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+  card-transaction:
+    post:
+      summary: Card transaction
+      description: |
+        Webhook that is called on every state transition of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
+
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: cardTransactionWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardTransactionWebhook'
+            examples:
+              authorized:
+                summary: Authorization approved
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+                  type: CARD_TRANSACTION.AUTHORIZED
+                  timestamp: '2026-05-09T10:00:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    status: AUTHORIZED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 1
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 0
+                      totalAmount: 0
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-09T10:00:00Z'
+              settled:
+                summary: All clearings posted
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+                  type: CARD_TRANSACTION.SETTLED
+                  timestamp: '2026-05-09T15:42:11Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    status: SETTLED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 0
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 12550
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    lastEventAt: '2026-05-09T15:42:11Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-09T15:42:11Z'
+              refunded:
+                summary: Settled funds returned by the merchant
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000042
+                  type: CARD_TRANSACTION.REFUNDED
+                  timestamp: '2026-05-10T09:15:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    status: REFUNDED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    refundedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 0
+                    refundSummary:
+                      count: 1
+                      totalAmount: 12550
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 12550
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    lastEventAt: '2026-05-10T09:15:00Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-10T09:15:00Z'
+              exception:
+                summary: Settled to the network but the funding-source pull failed
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000043
+                  type: CARD_TRANSACTION.EXCEPTION
+                  timestamp: '2026-05-09T16:05:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_c92d3b5a
+                    status: EXCEPTION
+                    direction: DEBIT
+                    merchant:
+                      descriptor: UBER EATS
+                      mcc: '5812'
+                      country: US
+                    authorizedAmount:
+                      amount: 4200
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 4200
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 0
+                      pendingCount: 0
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 4200
+                    authorizedAt: '2026-05-09T15:30:00Z'
+                    lastEventAt: '2026-05-09T16:05:00Z'
+                    createdAt: '2026-05-09T15:30:00Z'
+                    updatedAt: '2026-05-09T16:05:00Z'
       responses:
         '200':
           description: |
@@ -9260,7 +9822,7 @@ components:
           type: number
           description: Number of sending currency units per receiving currency unit.
           exclusiveMinimum: 0
-          example: 82.5
+          example: 0.012121
         fees:
           $ref: '#/components/schemas/ExchangeRateFees'
         updatedAt:
@@ -9367,6 +9929,11 @@ components:
           format: email
           description: Email address for the customer.
           example: john.doe@example.com
+        phoneNumber:
+          type: string
+          pattern: ^\+[1-9]\d{1,14}$
+          description: Phone number for the customer in strict E.164 format.
+          example: '+14155551234'
         umaAddress:
           type: string
           description: Full UMA address (always present in responses, even if system-generated). This is an optional identifier to route payments to the customer.
@@ -9400,7 +9967,8 @@ components:
         - PENDING
         - APPROVED
         - REJECTED
-      description: The current KYC status of a customer
+        - HOLD
+      description: The current KYC status of a customer. `HOLD` means the customer is placed on hold and may be required to update or provide more information.
       example: APPROVED
     Address:
       type: object
@@ -9471,7 +10039,8 @@ components:
         - PENDING
         - APPROVED
         - REJECTED
-      description: The current KYB status of a business customer
+        - HOLD
+      description: The current KYB status of a business customer. `HOLD` means the customer is placed on hold and may be required to update or provide more information.
       example: APPROVED
     EntityType:
       type: string
@@ -9527,6 +10096,18 @@ components:
         - OTHER
       description: The intended purpose for using the Grid account
       example: CONTRACTOR_PAYOUTS
+    SourceOfFundsCategory:
+      type: string
+      enum:
+        - OPERATING_REVENUE
+        - INVESTMENT_INCOME
+        - LOANS
+        - VENTURE_CAPITAL
+        - PERSONAL_SAVINGS
+        - DONATIONS
+        - OTHER
+      description: A structured source-of-funds category for the business
+      example: OPERATING_REVENUE
     BusinessInfoUpdate:
       type: object
       description: Additional information for business entities
@@ -9598,6 +10179,37 @@ components:
           items:
             type: string
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFundsCategory'
+          description: Structured source-of-funds categories for the business
+          example:
+            - OPERATING_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
     BusinessCustomerFields:
@@ -9691,6 +10303,37 @@ components:
           items:
             type: string
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFundsCategory'
+          description: Structured source-of-funds categories for the business
+          example:
+            - OPERATING_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
     BeneficialOwnerRole:
@@ -9911,6 +10554,11 @@ components:
           format: email
           description: Email address for the customer.
           example: john.doe@example.com
+        phoneNumber:
+          type: string
+          pattern: ^\+[1-9]\d{1,14}$
+          description: Phone number for the customer in strict E.164 format.
+          example: '+14155551234'
         umaAddress:
           type: string
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
@@ -9920,6 +10568,15 @@ components:
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/IndividualCustomerFields'
+        - type: object
+          properties:
+            idType:
+              $ref: '#/components/schemas/IdentificationType'
+            identifier:
+              type: string
+              writeOnly: true
+              description: The individual's tax identification number. Required to onboard the individual as a US account holder. Only SSN and ITIN are currently accepted for an individual account holder; other identification types are rejected. Write-only — never returned in customer responses.
+              example: 123-45-6789
     BusinessInfo:
       type: object
       description: Additional information required for business entities
@@ -9995,6 +10652,37 @@ components:
           items:
             type: string
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFundsCategory'
+          description: Structured source-of-funds categories for the business
+          example:
+            - OPERATING_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
     BusinessCustomerCreateRequest:
@@ -10124,7 +10812,7 @@ components:
           additionalProperties: true
     CustomerUpdateRequest:
       title: Customer Update Request
-      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential across all tied Embedded Wallets through the endpoint's signed-retry flow.
+      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential through the endpoint's signed-retry flow. When `phoneNumber` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer phone number and every tied `SMS_OTP` credential through the same signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
       type: object
       required:
         - customerType
@@ -10145,6 +10833,11 @@ components:
           format: email
           description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
           example: john.doe@example.com
+        phoneNumber:
+          type: string
+          pattern: ^\+[1-9]\d{1,14}$
+          description: Phone number for the customer in strict E.164 format. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `SMS_OTP` credential across all tied Embedded Wallets. Send phone number and email updates as separate PATCH calls.
+          example: '+14155551234'
         umaAddress:
           type: string
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
@@ -10294,6 +10987,7 @@ components:
         - ACTIVE
         - CLOSED
         - FROZEN
+        - FAILED
       description: |-
         Status of a Grid internal account. The status determines whether the account can send or receive payments.
 
@@ -10301,6 +10995,7 @@ components:
         - `ACTIVE`: The account is ready to send and receive payments.
         - `CLOSED`: The account cannot send or receive payments. A customer can initiate the closing of an internal account, after which the account transitions to this status.
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
+        - `FAILED`: The account could not be provisioned. Grid was unable to create the underlying account, so it cannot send or receive payments and requires remediation.
       example: ACTIVE
     CurrencyAmount:
       type: object
@@ -10585,7 +11280,11 @@ components:
       type: object
       required:
         - accountType
-        - vpa
+      description: |-
+        Required fields depend on the selected paymentRails:
+        - NEFT: accountNumber, ifsc, rail
+        - RTGS: accountNumber, ifsc, rail
+        - UPI: vpa
       properties:
         accountType:
           type: string
@@ -10598,9 +11297,38 @@ components:
           minLength: 3
           maxLength: 255
           pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$
+        accountNumber:
+          type: string
+          description: Indian bank account number (9–18 digits)
+          minLength: 9
+          maxLength: 18
+          example: '000111222333'
+          pattern: ^[0-9]{9,18}$
+        ifsc:
+          type: string
+          description: The Indian Financial System Code (IFSC) of the beneficiary's bank branch (NEFT/RTGS)
+          example: HDFC0001234
+          minLength: 11
+          maxLength: 11
+          pattern: ^[A-Z]{4}0[A-Z0-9]{6}$
+        rail:
+          type: string
+          description: The payment rail to route the payout over, for currencies that support more than one (e.g. NEFT or RTGS for INR).
+          example: NEFT
+          minLength: 1
+          maxLength: 32
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
       example:
         accountType: INR_ACCOUNT
         vpa: user@upi
+        accountNumber: '000111222333'
+        ifsc: HDFC0001234
+        rail: NEFT
+        bankName: Example Bank
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -10614,6 +11342,8 @@ components:
                 type: string
                 enum:
                   - UPI
+                  - NEFT
+                  - RTGS
     PaymentInrAccountInfo:
       title: INR Account
       allOf:
@@ -11243,10 +11973,7 @@ components:
           properties:
             assetType:
               type: string
-              description: Type of asset
-              enum:
-                - BTC
-                - USDB
+              description: Type of asset or configured Spark token currency code
             invoice:
               type: string
               description: Invoice for the payment
@@ -12254,6 +12981,7 @@ components:
         - accountType
         - accountNumber
         - bankAccountType
+        - bankName
       properties:
         accountType:
           type: string
@@ -12270,10 +12998,16 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the beneficiary's bank
+          minLength: 1
+          maxLength: 255
       example:
         accountType: GTQ_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
+        bankName: Example Bank
     GtqAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GtqAccountInfoBase'
@@ -12353,6 +13087,7 @@ components:
         - accountNumber
         - branchCode
         - bankAccountType
+        - bankName
       properties:
         accountType:
           type: string
@@ -12375,11 +13110,17 @@ components:
           enum:
             - CHECKING
             - SAVINGS
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
       example:
         accountType: JMD_ACCOUNT
         accountNumber: '1234567890'
         branchCode: '11111'
         bankAccountType: CHECKING
+        bankName: Example Bank
     JmdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/JmdAccountInfoBase'
@@ -16502,6 +17243,8 @@ components:
         - APPLICANT_CRIMINAL_RECORD
         - APPLICANT_REJECTED
         - MISSING_BENEFICIAL_OWNER
+        - MISSING_CONTROL_PERSON
+        - MISSING_GOOD_STANDING_DOCUMENT
       description: Type of verification error. The category-specific MISSING_*_DOCUMENT types indicate which document category is needed. Document quality types (POOR_QUALITY_DOCUMENT, SUSPECTED_FRAUD_DOCUMENT, etc.) indicate specific issues with uploaded documents. APPLICANT_* types indicate issues with the applicant themselves (sanctions, fraud, criminal records).
       example: MISSING_FIELD
     VerificationError:
@@ -16642,6 +17385,7 @@ components:
       enum:
         - CREATED
         - PENDING
+        - PENDING_AUTHORIZATION
         - PROCESSING
         - COMPLETED
         - REJECTED
@@ -16655,6 +17399,7 @@ components:
         |--------|-------------|
         | `CREATED` | Initial lookup has been created |
         | `PENDING` | Quote has been created |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
         | `PROCESSING` | Funding has been received and payment initiated |
         | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
@@ -16685,6 +17430,31 @@ components:
           type: string
           description: Currency code for the destination
           example: EUR
+    CryptoNetwork:
+      type: string
+      enum:
+        - BITCOIN
+        - ETHEREUM
+        - SOLANA
+        - BASE
+        - POLYGON
+        - TRON
+        - SPARK
+      description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
+      example: SOLANA
+    OnChainTransaction:
+      type: object
+      required:
+        - transactionHash
+        - network
+      properties:
+        transactionHash:
+          type: string
+          description: On-chain transaction hash of the crypto transfer for this leg of the transaction.
+          example: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+        network:
+          $ref: '#/components/schemas/CryptoNetwork'
+          description: Blockchain network the transaction settled on (mainnet vs test network is determined by your platform environment).
     AccountTransactionDestination:
       title: Account Destination
       allOf:
@@ -16702,6 +17472,9 @@ components:
               type: string
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Destination account details
     UmaAddressTransactionDestination:
       title: UMA Address Destination
@@ -16836,6 +17609,9 @@ components:
               type: string
               description: Source account identifier
               example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Source account details
     UmaAddressTransactionSource:
       title: UMA Address Source
@@ -16908,6 +17684,9 @@ components:
               type: string
               description: Rail-level tracking identifier for the payment, such as an ACH trace number or a wire IMAD/OMAD, useful for reconciliation.
               example: '021000020123456'
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered the funding, when the funds arrived from an external crypto wallet. Populated once the crypto transfer has settled.
           description: Transaction was funded using an external funding source. All originator fields are optional and populated on a best-effort basis depending on what the funding source provides.
     TransactionSourceOneOf:
       oneOf:
@@ -16923,6 +17702,7 @@ components:
     ReconciliationInstructions:
       type: object
       minProperties: 1
+      description: Instructions for reconciling a payment with this transaction. For the on-chain transaction to or from an external crypto wallet that is the transaction's own source or destination, use the `onChainTransaction` on the relevant source or destination instead.
       properties:
         reference:
           type: string
@@ -16930,7 +17710,7 @@ components:
           example: UMA-Q12345-REF
         transactionHash:
           type: string
-          description: Transaction hash for the crypto transfer that delivered funds to the transaction destination, when available.
+          description: Transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available. This is not a transfer to a customer's own wallet; for that, see the `onChainTransaction` on the transaction's source or destination.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingRateDetails:
       description: 'Details about the rate and fees for an incoming transaction. Note: `gridApiFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
@@ -17014,6 +17794,7 @@ components:
       type: string
       enum:
         - PENDING
+        - PENDING_AUTHORIZATION
         - EXPIRED
         - PROCESSING
         - COMPLETED
@@ -17024,6 +17805,7 @@ components:
         | Status | Description |
         |--------|-------------|
         | `PENDING` | Quote is pending confirmation |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
         | `EXPIRED` | Quote wasn't executed before expiry window |
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | Payout successfully reached the destination |
@@ -17125,6 +17907,13 @@ components:
         - TIMEOUT
         - MANUAL_REFUND
       description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+    RailSelectionMode:
+      type: string
+      enum:
+        - AUTO
+        - MANUAL
+      description: How the payment rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it.
+      example: AUTO
     OutgoingTransaction:
       title: Outgoing Transaction
       allOf:
@@ -17162,7 +17951,7 @@ components:
               example: 10
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
-              description: Reconciliation details for this transaction, including crypto transaction hash when available.
+              description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `onChainTransaction` instead.
             quoteId:
               type: string
               description: The ID of the quote that was used to trigger this payment
@@ -17197,6 +17986,27 @@ components:
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
+            paymentRail:
+              anyOf:
+                - $ref: '#/components/schemas/PaymentRail'
+                - type: 'null'
+              description: The payment rail used to settle this transaction (e.g. ACH, WIRE, NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null when no external rail is used (e.g. instant or intra-network transfers, or non-direct-destination transactions) or before a rail is resolved.
+            railSelectionMode:
+              anyOf:
+                - $ref: '#/components/schemas/RailSelectionMode'
+                - type: 'null'
+              description: How the rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it. Null when no rail is resolved.
+            expectedSettlementAt:
+              type:
+                - string
+                - 'null'
+              format: date-time
+              description: Expected settlement time at the beneficiary. Null for instant rails (settlement is immediate) and before a rail with deferred settlement is resolved.
+            settlementTimelineSeconds:
+              type:
+                - integer
+                - 'null'
+              description: Expected number of seconds from quote creation to settlement. Null when not yet known.
     CardTransactionStatus:
       type: string
       enum:
@@ -17282,6 +18092,7 @@ components:
           description: Sum of all settled amounts in the smallest unit of the funding source's currency.
           example: 1500
     CardTransaction:
+      title: Card Transaction
       type: object
       required:
         - type
@@ -17395,6 +18206,20 @@ components:
           description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
+    ScaFactor:
+      type: string
+      enum:
+        - SMS_OTP
+        - TOTP
+        - PASSKEY
+      description: |
+        A Strong Customer Authentication factor.
+
+        | Factor | Description |
+        |--------|-------------|
+        | `SMS_OTP` | One-time code sent by SMS to the customer's verified phone. Requires no prior enrollment. |
+        | `TOTP` | Time-based one-time code from an authenticator app. Requires enrollment. Not valid for per-transaction challenges (cannot carry dynamic linking). |
+        | `PASSKEY` | WebAuthn passkey assertion. Requires enrollment. |
     TransferOutRequest:
       type: object
       required:
@@ -17417,6 +18242,9 @@ components:
           maxLength: 80
           description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
           example: '12345'
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for the Strong Customer Authentication challenge this call issues. Only relevant for customers in a region where SCA is required (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
     CurrencyPreference:
       type: object
       required:
@@ -17651,6 +18479,60 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
+    ScaChallenge:
+      type: object
+      description: |-
+        A Strong Customer Authentication challenge that must be satisfied before a money-movement operation can complete. This object is **only present when the customer is in a region where SCA is required** (the EU); for customers outside SCA-regulated regions it is omitted entirely and no action is needed.
+
+        When present on a quote, authorize it by submitting an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize`.
+
+        **A single operation may require more than one authorization, in sequence.** Treat `scaChallenge` as *the challenge to satisfy now*, not "the only one". After each authorize, re-inspect the returned quote/transaction: if it is still `PENDING_AUTHORIZATION`, it carries the **next** `scaChallenge` (a new `id`) — authorize that too, and repeat until it leaves `PENDING_AUTHORIZATION`. Do not assume one authorization releases the transfer. The number of authorizations is flow-dependent and **may decrease in future**: for example, a cross-currency send today authorizes the currency conversion and the payout as two separate challenges; a future update may collapse them into one. A client written to loop on status handles any count unchanged.
+      required:
+        - id
+        - expiresAt
+        - factor
+        - availableFactors
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this challenge. The server resolves the active challenge from the quote or transaction being authorized, so this field need not be supplied back; it is informational (e.g. for logging or correlation).
+          example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
+        expiresAt:
+          type: string
+          format: date-time
+          description: Absolute UTC timestamp after which this challenge can no longer be authorized.
+          example: '2025-10-03T12:05:00Z'
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor this challenge was issued for. Defaults to `SMS_OTP`.
+        availableFactors:
+          type: array
+          description: The factors the customer may use to satisfy this challenge.
+          items:
+            $ref: '#/components/schemas/ScaFactor'
+          example:
+            - SMS_OTP
+        purpose:
+          type:
+            - string
+            - 'null'
+          description: Optional, informational label for what this particular challenge in the sequence authorizes — useful for step UX (e.g. "Authorize the currency conversion" vs "Authorize the payout"). Known values include `CURRENCY_CONVERSION`, `PAYOUT`, and `TRANSFER`, but the set is **non-exhaustive and may grow** — treat unrecognized values as a generic authorization step and do not branch program logic on it. Omitted when steps are not distinguished (e.g. a single-authorization flow).
+          example: PAYOUT
+        passkeyAssertionOptions:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion request options (including the relying-party id, challenge, and allowed credentials), present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
+        passkeyAllowedOrigins:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: The origins the WebAuthn ceremony may run against. Populated for enrollment and login passkey challenges; the origin the assertion is produced against must be one of these and echoed back as `ScaAuthorization.origin`. Per-transaction passkey challenges omit this (they carry `passkeyAssertionOptions` only) — see `ScaAuthorization.origin` for how to source the origin in that case.
+          example:
+            - https://app.example.com
     Quote:
       type: object
       required:
@@ -17676,11 +18558,12 @@ components:
           type: string
           enum:
             - PENDING
+            - PENDING_AUTHORIZATION
             - PROCESSING
             - COMPLETED
             - FAILED
             - EXPIRED
-          description: Current status of the quote
+          description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution, and for realtime-funding sources `paymentInstructions` are withheld until it is satisfied.'
           example: PENDING
         createdAt:
           type: string
@@ -17749,12 +18632,21 @@ components:
           type: string
           description: The ID of the transaction created from this quote.
           example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        remittanceInformation:
+          type: string
+          maxLength: 80
+          description: 'Free-form information about the payment that travels with it to the recipient, as provided on the quote request. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
+          example: '12345'
         counterpartyInformation:
           $ref: '#/components/schemas/CounterpartyInformation'
           description: Additional information about the counterparty, if available and required by the platform in their configuration.
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.
+        scaChallenge:
+          $ref: '#/components/schemas/ScaChallenge'
+          readOnly: true
+          description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
     QuoteLockSide:
       type: string
       enum:
@@ -17817,8 +18709,16 @@ components:
           type: string
           description: Optional description/memo for the transfer
           example: 'Invoice #1234 payment'
+        remittanceInformation:
+          type: string
+          maxLength: 80
+          description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
+          example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for a Strong Customer Authentication challenge issued at quote creation. Only relevant for a realtime-funding source in a region where SCA is required (e.g. EU); ignored otherwise. Valid values are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected. When the quote is returned in `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.
         senderCustomerInfo:
           type: object
           additionalProperties: true
@@ -17828,6 +18728,62 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
+    ExecuteQuoteRequest:
+      type: object
+      description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.
+      properties:
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for the Strong Customer Authentication challenge this call issues. Only relevant for customers in a region where SCA is required (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
+    ScaAuthorization:
+      type: object
+      description: Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`). When supplying a `passkeyAssertion`, `origin` is **required** — the WebAuthn assertion is bound to the origin it was produced against, and a passkey confirmation is rejected without it.
+      properties:
+        code:
+          type:
+            - string
+            - 'null'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. In sandbox, the code is always `123456`.
+          example: '123456'
+        passkeyAssertion:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion produced by the device from the challenge's `passkeyAssertionOptions`. Required when satisfying a `PASSKEY` challenge.
+        origin:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn origin the `passkeyAssertion` was produced against. **Required** alongside `passkeyAssertion`; omit it for the `code` path. When the challenge lists `passkeyAllowedOrigins` (enrollment / login challenges), it must be one of those. A per-transaction passkey challenge carries `passkeyAssertionOptions` but may omit `passkeyAllowedOrigins`; in that case supply the origin your app invoked the WebAuthn API from, which must match the relying party in `passkeyAssertionOptions`.
+          example: https://app.example.com
+    Error429:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 429
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+          enum:
+            - RATE_LIMITED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     TransactionListResponse:
       type: object
       required:
@@ -18800,33 +19756,6 @@ components:
               format: date-time
               description: Timestamp after which the session is no longer valid and the `encryptedSessionSigningKey` must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
-    Error429:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 429
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
-          enum:
-            - RATE_LIMITED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
       description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
@@ -18915,6 +19844,24 @@ components:
         - `ACTIVE`: The policy is granted and the key may stamp quote executions.
         - `REVOKED`: The delegated user has been deleted and the key can no longer sign.
       example: ACTIVE
+    DelegatedKeySpendingLimit:
+      title: Delegated Key Spending Limit
+      type: object
+      required:
+        - currencyCode
+        - maxPerTransaction
+      properties:
+        currencyCode:
+          type: string
+          pattern: ^[A-Z0-9]{3,16}$
+          description: Uppercase alphanumeric currency code the limit applies to — ISO 4217 for fiat (e.g. USD), or a Grid token code for stablecoins (e.g. USDB). Must match the card's currency; requests with any other currency are rejected.
+          example: USD
+        maxPerTransaction:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Largest amount a single card transaction may authorize, in the smallest unit of the currency (e.g., cents for USD).
+          example: 5000
     DelegatedKey:
       title: Delegated Key
       type: object
@@ -18956,6 +19903,12 @@ components:
           example: Settlement service key
         status:
           $ref: '#/components/schemas/DelegatedKeyStatus'
+        spendingLimits:
+          type: array
+          uniqueItems: true
+          description: Per-transaction spending limits the key was created with, at most one entry per currency. Absent when the key has no limits.
+          items:
+            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
         createdAt:
           type: string
           format: date-time
@@ -18999,6 +19952,12 @@ components:
           maxLength: 256
           description: Human-readable label for the delegated key.
           example: Card payments key
+        spendingLimits:
+          type: array
+          uniqueItems: true
+          description: Optional per-transaction spending limits for the key, at most one entry per currency — a request with duplicate currency entries is rejected. Grid enforces the limits when authorizing card transactions funded by the key's Embedded Wallet account; a currency with no entry is unlimited. Immutable — revoke the key and create a new one to change limits.
+          items:
+            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
     DelegatedKeySignedRequestChallenge:
       title: Delegated Key Signed Request Challenge
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
@@ -19603,11 +20562,6 @@ components:
           type: integer
           description: Card expiration year (four digits).
           example: 2029
-        panEmbedUrl:
-          type: string
-          format: uri
-          description: URL of the card processor's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
-          example: https://embed.lithic.com/iframe/...?t=...
         fundingSources:
           type: array
           description: Internal account ids bound to this card as funding sources, in priority order — the first entry is tried first by Authorization Decisioning. Every card has at least one funding source.
@@ -19709,6 +20663,22 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+    CardRevealResponse:
+      type: object
+      required:
+        - panEmbedUrl
+        - expiresAt
+      properties:
+        panEmbedUrl:
+          type: string
+          format: uri
+          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
+          example: https://embed.lithic.com/iframe/...?t=...
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
+          example: '2026-05-08T14:16:00Z'
     SandboxCardAuthorizationRequest:
       type: object
       required:
@@ -19894,6 +20864,11 @@ components:
         - AGENT_ACTION.PENDING_APPROVAL
         - CARD.STATE_CHANGE
         - CARD.FUNDING_SOURCE_CHANGE
+        - CARD_TRANSACTION.AUTHORIZED
+        - CARD_TRANSACTION.PARTIALLY_SETTLED
+        - CARD_TRANSACTION.SETTLED
+        - CARD_TRANSACTION.REFUNDED
+        - CARD_TRANSACTION.EXCEPTION
         - TEST
       description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
@@ -19996,6 +20971,7 @@ components:
               type: string
               enum:
                 - OUTGOING_PAYMENT.PENDING
+                - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
                 - OUTGOING_PAYMENT.PROCESSING
                 - OUTGOING_PAYMENT.COMPLETED
                 - OUTGOING_PAYMENT.FAILED
@@ -20114,6 +21090,23 @@ components:
               type: string
               enum:
                 - CARD.FUNDING_SOURCE_CHANGE
+    CardTransactionWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/CardTransaction'
+            type:
+              type: string
+              enum:
+                - CARD_TRANSACTION.AUTHORIZED
+                - CARD_TRANSACTION.PARTIALLY_SETTLED
+                - CARD_TRANSACTION.SETTLED
+                - CARD_TRANSACTION.REFUNDED
+                - CARD_TRANSACTION.EXCEPTION
   requestBodies:
     DocumentUploadRequestBody:
       required: true

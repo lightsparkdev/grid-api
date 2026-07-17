@@ -37,7 +37,11 @@ Grid sends webhooks for key events in the ramp lifecycle:
       "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "settledAt": "2025-10-03T15:02:30Z",
       "exchangeRate": 9.5,
-      "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006"
+      "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+      "paymentRail": "ACH",
+      "railSelectionMode": "AUTO",
+      "expectedSettlementAt": "2025-10-04T15:00:00Z",
+      "settlementTimelineSeconds": 86400
     }
   }
   ```
@@ -109,7 +113,7 @@ Grid sends webhooks for key events in the ramp lifecycle:
   ```
   
   <Warning>
-  Account status values: `PENDING` (provisioning), `ACTIVE` (ready for payments), `CLOSED` (customer-initiated), `FROZEN` (compliance/fraud hold). Frozen accounts cannot send or receive payments.
+  Account status values: `PENDING` (provisioning), `ACTIVE` (ready for payments), `CLOSED` (customer-initiated), `FROZEN` (compliance/fraud hold), `FAILED` (provisioning failed). Frozen and failed accounts cannot send or receive payments.
   </Warning>
 </Tab>
 

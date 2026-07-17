@@ -10,6 +10,16 @@ import { topLevelProductName } from '/snippets/variables.mdx'
 ## Base API URL
  `https://api.lightspark.com/grid/2025-10-13`
 
+## Versioning
+
+The date in the base URL is the API's major version. Your integration pins a version through the URL it calls, and that version's behavior does not change underneath you.
+
+**Backwards-compatible changes.** We may extend the current version without changing the date: new endpoints, new optional request parameters, new response fields, and new enum values or webhook event types. Build your integration to ignore unrecognized response fields and to handle unfamiliar enum values gracefully.
+
+**Major version changes.** Breaking changes — removing or renaming fields or endpoints, changing types, or making optional parameters required — ship only in a new dated version. Releasing a new version does not affect existing ones; you upgrade by changing the date in the URL whenever you are ready.
+
+**Deprecation.** When we deprecate a version, we notify your account contact email with the migration steps and a deadline. The migration window is normally at least three months; updates critical to security or compliance may require faster action. After the window, deprecated versions are no longer supported.
+
 ## Sandbox
 Sandbox enables you to test your integration without making real payments. In sandbox, we expose sandbox specific APIs to trigger specific test cases like incoming payments. Additionally you'll find test UMA addresses to simulate different sending scenarios. For more information, see [Sandbox Testing](sandbox-testing).
 

@@ -26,3 +26,11 @@ properties:
       remittanceInformation field, and for wires it populates the OBI
       (Originator to Beneficiary Information) / beneficiary information.
     example: '12345'
+  scaFactor:
+    $ref: ../sca/ScaFactor.yaml
+    description: >-
+      Optional preferred factor for the Strong Customer Authentication challenge
+      this call issues. Only relevant for customers in a region where SCA is required
+      (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge
+      are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required
+      dynamic linking and is rejected here. Omit to default to `SMS_OTP`.

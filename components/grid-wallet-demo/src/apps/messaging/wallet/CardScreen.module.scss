@@ -1,0 +1,400 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* The debit-card flow — full-screen rise over the wallet, on the clean page
+   (the ondemand anatomy, NO dot-grid backdrop): pitch, creating beat under
+   the card, then the card home with the transactions list. */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 7; /* over the home + tab bar — a full modal cover */
+  display: flex;
+  flex-direction: column;
+  background: var(--wallet-bg, var(--app-bg));
+  color: var(--app-text-primary);
+  overflow: hidden;
+}
+
+/* ── Header (the page-header geometry) ───────────────────────────────────── */
+.header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 118px; /* 62 status bar + 56 bar */
+  padding: 62px 24px 8px;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease;
+
+  &[data-bordered] {
+    box-shadow: 0 0.5px 0 var(--ios-separator);
+  }
+}
+
+/* Glass X slot — reappears only after the descending card clears the header
+   zone; hiding is near-instant so it beats the lift into that zone. */
+.closeSlot {
+  display: inline-flex;
+  transition: opacity 0.25s ease 0.25s;
+
+  &[data-hidden] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+  }
+}
+
+/* More menu (glass ellipsis) — top right, card home only. */
+.moreSlot {
+  position: absolute;
+  right: 24px;
+  top: 66px;
+  display: inline-flex;
+}
+
+/* Centered bar title — card home only. Body/Emphasized (17, 590). */
+.headerTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 62px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  @include ios.ios-text-body;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-body-opsz);
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+
+/* ── Content column ──────────────────────────────────────────────────────── */
+.column {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 24px 0;
+}
+
+/* The card slot: pinned near the top on the card home; on the pitch it takes
+   the leftover space above the copy and CENTERS the card in it. */
+.cardSlot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Card home: the card is scale()d to full width — the transform overflows
+     the layout box by ~18px top/bottom; the card's visual top lands ~24px
+     under the X (the ondemand geometry). */
+  padding: 10px 0 28px;
+
+  &[data-centered] {
+    flex: 1;
+    min-height: 0;
+    padding: 12px 0 0;
+  }
+
+  /* Creating: recenter the group in the phone (see data-lift in the TSX) —
+     expressed as LAYOUT so the glide is the only mover. */
+  &[data-lift] {
+    padding-bottom: 118px;
+  }
+}
+
+/* ── The card (intro/creating/ready/home — one persistent element) ───────── */
+/* Full-bleed wrap breaking out of the column's 24px gutters so the card-home
+   scale-up (296 → 354) has room; the creating strip hangs below it. */
+.railWrap {
+  position: relative;
+  flex: none;
+  width: calc(100% + 48px);
+  margin: 0 -24px;
+}
+
+/* Centers the card; vertical padding (reclaimed by negative margins) keeps
+   the drop shadow unclipped at the card home's 1.2x scale. */
+.cardWrap {
+  display: flex;
+  justify-content: center;
+  padding: 88px 0;
+  margin: -88px 0;
+}
+
+/* Anchors the chat-bubble layer to the card's box. */
+.cardFace {
+  position: relative;
+}
+
+/* Below the card: the creating beat. In flow — 64px strip while centered,
+   collapsing to 0 on the card home. */
+.belowRail {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+/* "Creating card" — spinner + label under the card. */
+.creating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 8px;
+  @include ios.ios-text-subheadline;
+  line-height: 40px;
+  font-weight: 500;
+  font-variation-settings: 'wght' 500, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--app-text-secondary);
+}
+
+.spin {
+  display: inline-flex;
+
+  svg {
+    display: block;
+    animation: msg-creating-spin 0.9s linear infinite;
+  }
+}
+
+@keyframes msg-creating-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Intro pitch — centered, ANCHORED to the CTA, on the standard 24px gutters. */
+.pitch {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 12px; /* + ctaWrap's 12px top = 24px description→CTA */
+  text-align: center;
+
+  /* Ready screen: a touch more air between the props and Continue. */
+  &[data-ready] {
+    padding-bottom: 20px;
+  }
+}
+
+/* Title1-weight pitch headline (28/34 bold — the welcome screen's voice). */
+.pitchTitle {
+  margin: 0;
+  @include ios.ios-text-title-1;
+  /* iOS semibold (590), not bold. */
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-1-opsz);
+  color: var(--app-text-primary);
+  text-wrap: balance;
+}
+
+.pitchSub {
+  margin: 0 auto;
+  max-width: 320px;
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+  text-wrap: pretty;
+}
+
+/* Ready-screen value props — icon + title/description rows. */
+.valueProps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 24px;
+  text-align: left;
+}
+
+.valueProp {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* 24px icon in the brand green, centered against the whole text block. */
+.valuePropIcon {
+  display: inline-flex;
+  flex: none;
+  color: var(--ios-tint);
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+.valuePropText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.valuePropTitle {
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--app-text-primary);
+}
+
+.valuePropDesc {
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+  text-wrap: pretty;
+}
+
+/* Pinned intro CTA — the glass green pill, agreement below. */
+.ctaWrap {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  padding: 12px 24px 28px;
+
+  /* CTA with nothing under it (the ready screen's Continue): the app-standard
+     40px bottom gutter. */
+  &[data-solo] {
+    padding-bottom: 40px;
+  }
+}
+
+/* The Card Holder Agreement fine print. */
+.agreement {
+  margin: 24px 0 0;
+  @include ios.ios-text-caption-1;
+  text-align: center;
+  text-wrap: pretty;
+  color: var(--app-text-secondary);
+
+  span {
+    text-decoration: underline;
+  }
+}
+
+/* ── Card home (post-reveal) ─────────────────────────────────────────────── */
+/* The popLayout child — MARGIN-FREE (popLayout absolutizes the exiting
+   element at its measured offset; margins would apply a second time). */
+.homeSlot {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+/* The scroller breaks OUT of the column's gutters and carries them as its own
+   padding: a scroll container clips at its edges, and the tap-to-pay blur
+   feather (8px) needs room to bleed. */
+.homeBody {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  margin: -12px -24px 0;
+  padding: 12px 24px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Fixed-height zone so Tap to pay ⇄ reader status swap without reflow.
+   Pulled up 16px toward the card. */
+.tapZone {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+  margin-top: -16px;
+}
+
+/* Flat black pill (flips white in dark) — the GlassCta geometry, no glass. */
+.tapBtn {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: var(--ios-label-primary);
+  color: var(--wallet-bg, var(--ios-bg-primary));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Callout, emphasized (16/21, semibold) — matches the glass CTAs. */
+  @include ios.ios-text-callout;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  transition: transform 0.16s ease-out, opacity 0.12s ease-out;
+
+  @media (hover: hover) {
+    &:hover {
+      opacity: 0.88;
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+    transition: transform 0.08s ease-out;
+  }
+}
+
+/* NFC glyph inside the CTA label. */
+.tapLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Rides up with the card during tap-to-pay; hosts the status overlay. */
+.homeLift {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Reader status — overlays the (blurred-out) home content. It rides the 56px
+   lift; the pad holds the glyph inside the scroller's clip AFTER the lift. */
+.tapStatus {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 80px;
+  pointer-events: none;
+}
+
+/* Section title — the home Activity voice (Title3/Emphasized, 20/25). */
+.txTitle {
+  margin: 12px 0 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--app-text-primary);
+}
+
+/* The activity rows are full-bleed (they self-gutter at 24px) — break them
+   out of homeBody's 24px padding. */
+.txListBleed {
+  margin: 0 -24px;
+}

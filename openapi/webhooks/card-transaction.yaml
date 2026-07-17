@@ -1,0 +1,259 @@
+post:
+  summary: Card transaction
+  description: >
+    Webhook that is called on every state transition of a card
+    `CardTransaction`. Fires when an authorization is approved
+    (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it
+    (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`),
+    when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and
+    when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`).
+    The payload carries the full `CardTransaction` resource.
+
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+  operationId: cardTransactionWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/CardTransactionWebhook.yaml
+        examples:
+          authorized:
+            summary: Authorization approved
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+              type: CARD_TRANSACTION.AUTHORIZED
+              timestamp: '2026-05-09T10:00:00Z'
+              data:
+                type: CARD
+                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_b81c2a4f
+                status: AUTHORIZED
+                direction: DEBIT
+                merchant:
+                  descriptor: BLUE BOTTLE COFFEE SF
+                  mcc: '5814'
+                  country: US
+                authorizedAmount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                pullSummary:
+                  count: 1
+                  totalAmount: 12550
+                  pendingCount: 1
+                refundSummary:
+                  count: 0
+                  totalAmount: 0
+                settlementSummary:
+                  count: 0
+                  totalAmount: 0
+                authorizedAt: '2026-05-09T10:00:00Z'
+                createdAt: '2026-05-09T10:00:00Z'
+                updatedAt: '2026-05-09T10:00:00Z'
+          settled:
+            summary: All clearings posted
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+              type: CARD_TRANSACTION.SETTLED
+              timestamp: '2026-05-09T15:42:11Z'
+              data:
+                type: CARD
+                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_b81c2a4f
+                status: SETTLED
+                direction: DEBIT
+                merchant:
+                  descriptor: BLUE BOTTLE COFFEE SF
+                  mcc: '5814'
+                  country: US
+                authorizedAmount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                settledAmount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                pullSummary:
+                  count: 1
+                  totalAmount: 12550
+                  pendingCount: 0
+                refundSummary:
+                  count: 0
+                  totalAmount: 0
+                settlementSummary:
+                  count: 1
+                  totalAmount: 12550
+                authorizedAt: '2026-05-09T10:00:00Z'
+                lastEventAt: '2026-05-09T15:42:11Z'
+                createdAt: '2026-05-09T10:00:00Z'
+                updatedAt: '2026-05-09T15:42:11Z'
+          refunded:
+            summary: Settled funds returned by the merchant
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000042
+              type: CARD_TRANSACTION.REFUNDED
+              timestamp: '2026-05-10T09:15:00Z'
+              data:
+                type: CARD
+                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_b81c2a4f
+                status: REFUNDED
+                direction: DEBIT
+                merchant:
+                  descriptor: BLUE BOTTLE COFFEE SF
+                  mcc: '5814'
+                  country: US
+                authorizedAmount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                settledAmount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                refundedAmount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                pullSummary:
+                  count: 1
+                  totalAmount: 12550
+                  pendingCount: 0
+                refundSummary:
+                  count: 1
+                  totalAmount: 12550
+                settlementSummary:
+                  count: 1
+                  totalAmount: 12550
+                authorizedAt: '2026-05-09T10:00:00Z'
+                lastEventAt: '2026-05-10T09:15:00Z'
+                createdAt: '2026-05-09T10:00:00Z'
+                updatedAt: '2026-05-10T09:15:00Z'
+          exception:
+            summary: Settled to the network but the funding-source pull failed
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000043
+              type: CARD_TRANSACTION.EXCEPTION
+              timestamp: '2026-05-09T16:05:00Z'
+              data:
+                type: CARD
+                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_c92d3b5a
+                status: EXCEPTION
+                direction: DEBIT
+                merchant:
+                  descriptor: UBER EATS
+                  mcc: '5812'
+                  country: US
+                authorizedAmount:
+                  amount: 4200
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                settledAmount:
+                  amount: 4200
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                pullSummary:
+                  count: 1
+                  totalAmount: 0
+                  pendingCount: 0
+                refundSummary:
+                  count: 0
+                  totalAmount: 0
+                settlementSummary:
+                  count: 1
+                  totalAmount: 4200
+                authorizedAt: '2026-05-09T15:30:00Z'
+                lastEventAt: '2026-05-09T16:05:00Z'
+                createdAt: '2026-05-09T15:30:00Z'
+                updatedAt: '2026-05-09T16:05:00Z'
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

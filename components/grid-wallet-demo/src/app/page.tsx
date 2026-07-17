@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { IconArrowRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRight';
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
@@ -11,6 +11,7 @@ import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResize
 import { ThemeSync } from '@/components/ThemeSync';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useWalletDemoLogic } from '@/hooks/useWalletDemoLogic';
+import { LAYOUT_WIDE_PX } from '@/lib/layout';
 import type { ActionId } from '@/data/actions';
 import styles from './page.module.scss';
 
@@ -33,7 +34,21 @@ function withViewTransition(update: () => void) {
 
 export default function Page() {
   const logic = useWalletDemoLogic();
-  const { layoutRef, apiColRef, apiWidth, onResizeStart } = useColumnResize();
+  const { layoutRef, apiColRef, apiWidth, resizing, onResizeStart } = useColumnResize();
+
+  // Stacked ⇄ 3-col as a data-layout attribute on <html> so the arrangement,
+  // the panel chrome colors, and the API header all flip on one clock. The
+  // inline script in layout.tsx sets it BEFORE first paint (an effect here
+  // would flash the SSR wide default on stacked viewports while JS loads);
+  // this listener only keeps it live across resizes.
+  useLayoutEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${LAYOUT_WIDE_PX - 1}px)`);
+    const apply = () =>
+      document.documentElement.setAttribute('data-layout', mql.matches ? 'stacked' : 'wide');
+    apply();
+    mql.addEventListener('change', apply);
+    return () => mql.removeEventListener('change', apply);
+  }, []);
 
   // Mobile only (<=767): the layout collapses to one view at a time. On desktop
   // this stays 'configure' forever (the switch is gated to the mobile viewport),
@@ -93,7 +108,11 @@ export default function Page() {
   }, [mobileView]);
 
   return (
-    <main ref={layoutRef} className={styles.layout} data-mobile-view={mobileView}>
+    <main
+      ref={layoutRef}
+      className={styles.layout}
+      data-mobile-view={mobileView}
+    >
       <ThemeSync />
       <div className={styles.configCol}>
         <ConfigurePanel
@@ -102,7 +121,6 @@ export default function Page() {
           methods={logic.methods}
           onToggleMethod={logic.toggleMethod}
           wallet={logic.wallet}
-          completed={logic.completed}
           running={logic.running}
           onAction={onConfigureAction}
           onReset={logic.reset}
@@ -154,7 +172,11 @@ export default function Page() {
         <div
           ref={apiColRef}
           className={styles.apiCol}
-          style={{ width: apiWidth, flex: '0 0 auto' }}
+          data-resizing={resizing || undefined}
+          // No inline width until the post-hydration measure — the stylesheet's
+          // var(--api-col-default) (seeded pre-paint from the embed's ?nav
+          // param) styles the column so the first paint is already correct.
+          style={{ width: apiWidth ?? undefined }}
         >
           <ApiPanel entries={logic.entries} />
         </div>

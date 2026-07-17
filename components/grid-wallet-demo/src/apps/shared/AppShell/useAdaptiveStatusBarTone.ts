@@ -47,20 +47,18 @@ function relativeLuminance(r: number, g: number, b: number): number {
   return 0.2126 * R + 0.7152 * G + 0.0722 * B;
 }
 
-function resolveBackgroundRgb(el: Element, stopAt: Element): { r: number; g: number; b: number } | null {
-  let node: Element | null = el;
-
-  while (node && stopAt.contains(node)) {
-    const style = getComputedStyle(node);
-
-    const bg = parseCssColor(style.backgroundColor);
-    if (bg && bg.a >= 0.45) {
-      return { r: bg.r, g: bg.g, b: bg.b };
-    }
-
-    node = node.parentElement;
+/** The element's OWN background (no ancestor climb). elementsFromPoint already
+ *  yields the full painted stack top-to-bottom, so the caller walks that to find
+ *  the first opaque layer. Climbing ancestors instead would jump from a
+ *  translucent overlay (e.g. a sheet scrim) straight to its opaque ANCESTOR
+ *  (the screen's --app-bg), skipping the colored sibling actually painted behind
+ *  it — which read the light app bg under an open sheet and flipped the glyphs to
+ *  dark even though a colored header sits behind the bar. */
+function resolveBackgroundRgb(el: Element): { r: number; g: number; b: number } | null {
+  const bg = parseCssColor(getComputedStyle(el).backgroundColor);
+  if (bg && bg.a >= 0.45) {
+    return { r: bg.r, g: bg.g, b: bg.b };
   }
-
   return null;
 }
 
@@ -76,7 +74,7 @@ function sampleLuminanceAt(
     if (el === screenEl || el === contentRoot) continue;
     if (!contentRoot.contains(el)) continue;
 
-    const rgb = resolveBackgroundRgb(el, contentRoot);
+    const rgb = resolveBackgroundRgb(el);
     if (rgb) return relativeLuminance(rgb.r, rgb.g, rgb.b);
   }
 

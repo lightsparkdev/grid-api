@@ -24,3 +24,15 @@ properties:
     maxLength: 256
     description: Human-readable label for the delegated key.
     example: Card payments key
+  spendingLimits:
+    type: array
+    uniqueItems: true
+    description: >-
+      Optional per-transaction spending limits for the key, at most one entry
+      per currency — a request with duplicate currency entries is rejected.
+      Grid enforces the limits when authorizing card transactions funded by
+      the key's Embedded Wallet account; a currency with no entry is
+      unlimited. Immutable — revoke the key and create a new one to change
+      limits.
+    items:
+      $ref: ./DelegatedKeySpendingLimit.yaml

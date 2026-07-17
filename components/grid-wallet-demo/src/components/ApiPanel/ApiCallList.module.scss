@@ -13,8 +13,9 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 48px;
-  padding-top: calc(var(--spacing-md) + 4px);
+  /* Sides match the Configure panel's content padding. */
+  padding: 48px $layout-laptop-content-padding;
+  padding-top: calc(var(--spacing-md) + 12px);
 
   // Mobile: match the Configure panel's 24px side padding.
   @media (max-width: $breakpoint-layout-mobile) {
@@ -101,16 +102,19 @@
   corner-shape: var(--corner-shape);
   --badge-height: 20px;
   --row-padding: calc((48px - var(--badge-height)) / 2);
+  /* Single source for the card surface — the endpoint fade + tab indicator
+     must match it exactly, and the wide layout re-tints all three at once. */
+  --call-card-bg: var(--surface-base);
   display: flex;
   flex-direction: column;
   width: 100%;
-  background: var(--surface-base);
+  background: var(--call-card-bg);
   border: 0.5px solid var(--border-tertiary);
   border-radius: var(--corner-radius-md);
   overflow: clip;
 
   :global([data-theme='dark']) & {
-    background: var(--color-gray-925);
+    --call-card-bg: var(--color-gray-925);
   }
 
   &:hover,
@@ -131,10 +135,10 @@
 .endpointBlock,
 .codeBlockToolbar {
   box-sizing: border-box;
-  min-height: 48px;
 }
 
 .endpointBlock {
+  min-height: 48px;
   box-sizing: border-box;
   position: relative;
   display: block;
@@ -189,11 +193,7 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity 150ms ease;
-  background: linear-gradient(to right, transparent, var(--surface-base) 52%);
-
-  :global([data-theme='dark']) & {
-    background: linear-gradient(to right, transparent, var(--color-gray-925) 52%);
-  }
+  background: linear-gradient(to right, transparent, var(--call-card-bg) 52%);
 }
 
 .endpointCopyBtn {
@@ -221,44 +221,57 @@
 }
 
 .codeBlockToolbar {
-  --toolbar-tab-height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-xs);
+  --toolbar-tab-height: 40px;
+  position: relative;
+  min-height: var(--toolbar-tab-height);
+  padding: 0 calc(32px + var(--spacing-xs)) 0 0;
   border-bottom: var(--stroke-xs) solid var(--border-tertiary);
   min-width: 0;
+
+  .copyBtn {
+    position: absolute;
+    right: var(--spacing-xs);
+    top: 50%;
+    transform: translateY(-50%);
+  }
 }
 
 .tabGroup {
-  position: relative;
   display: flex;
-  align-items: center;
+  position: relative;
+  z-index: 1;
+  height: var(--toolbar-tab-height);
+  margin-bottom: calc(-1 * var(--stroke-xs));
 }
 
 .tabIndicator {
   position: absolute;
-  height: 1.5px;
-  background: var(--text-primary);
-  bottom: calc(
-    -1 * var(--spacing-xs) -
-    (48px - 2 * var(--spacing-xs) - var(--toolbar-tab-height)) / 2
-  );
-  z-index: 1;
+  z-index: -1;
+  left: 0;
+  top: 0;
+  height: 100%;
+  box-sizing: border-box;
+  border-left: var(--stroke-xs) solid var(--border-tertiary);
+  border-right: var(--stroke-xs) solid var(--border-tertiary);
+  background: var(--call-card-bg);
   pointer-events: none;
+}
+
+.tabGroupLeadingActive .tabIndicator {
+  border-left: none;
 }
 
 .tab {
   all: unset;
-  corner-shape: var(--corner-shape);
   box-sizing: border-box;
   @include label-sm;
   display: flex;
   align-items: center;
-  height: 24px;
-  padding: 0 var(--spacing-xs);
-  border-radius: var(--corner-radius-xs);
+  justify-content: center;
+  height: 100%;
+  padding: 0 var(--spacing-md);
+  border: 0;
+  background: none;
   cursor: pointer;
   color: var(--text-tertiary);
   white-space: nowrap;
@@ -351,6 +364,19 @@
 
   :global([data-theme='dark']) & {
     color: #85e89d;
+  }
+}
+
+/* Side-by-side the panel wears the docs-chrome gray, so the cards step down
+   with it: pure white (light) / gray-925 (dark) read too hot on the chrome —
+   one notch softer keeps the same card-to-panel delta as the stacked layout. */
+@media (min-width: $breakpoint-layout-wide) {
+  .callCard {
+    --call-card-bg: var(--surface-primary);
+
+    :global([data-theme='dark']) & {
+      --call-card-bg: var(--color-gray-950);
+    }
   }
 }
 

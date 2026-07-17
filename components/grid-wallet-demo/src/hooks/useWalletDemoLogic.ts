@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
-import { primaryAuthMethod, type UseCaseId } from '@/data/configure';
+import { primaryAuthMethod, USE_CASES, type UseCaseId } from '@/data/configure';
 import {
   initialCompleted,
   initialWallet,
@@ -69,7 +69,18 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  */
 export function useWalletDemoLogic() {
   const [persona, setPersona] = useState<Persona>('fintech');
-  const [useCase, setUseCase] = useState<UseCaseId>('fintech');
+  const [useCase, setUseCaseState] = useState<UseCaseId>('fintech');
+  // Picking a use-case also switches the persona so the phone renders that
+  // skin's app. The picker only calls this for built use-cases. The wallet
+  // brain persists across the switch (it's hosted above the skin), so also
+  // drop any already-consumed flow command — a skin switch should never
+  // replay the last sidebar jump.
+  const setUseCase = useCallback((id: UseCaseId) => {
+    setUseCaseState(id);
+    setWalletEntry(undefined);
+    const next = USE_CASES.find((u) => u.id === id)?.persona;
+    if (next) setPersona(next);
+  }, []);
   const [methods, setMethods] = useState<AuthMethod[]>([
     'email_otp',
     'sms',

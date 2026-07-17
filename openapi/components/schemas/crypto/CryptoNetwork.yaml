@@ -1,0 +1,15 @@
+type: string
+enum:
+  - BITCOIN
+  - ETHEREUM
+  - SOLANA
+  - BASE
+  - POLYGON
+  - TRON
+  - SPARK
+description: >-
+  The blockchain network an on-chain transaction settled on. Whether this is the
+  mainnet or a test network (e.g. Solana devnet) is determined by your platform's
+  environment — sandbox platforms operate on test networks, production platforms on
+  mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
+example: SOLANA

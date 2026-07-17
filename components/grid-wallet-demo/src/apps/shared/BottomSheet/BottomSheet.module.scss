@@ -14,7 +14,7 @@
   margin: 0;
   padding: 0;
   border: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--sheet-scrim, rgba(0, 0, 0, 0.2));
   cursor: pointer;
 }
 

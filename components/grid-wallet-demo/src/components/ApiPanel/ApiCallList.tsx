@@ -35,8 +35,6 @@ function methodBadgeVariant(method: ApiCall['method']): 'blue' | 'green' {
   return method === 'GET' ? 'green' : 'blue';
 }
 
-const TAB_INSET_PX = 8;
-
 function CodeTabs({
   tab,
   onTabChange,
@@ -51,12 +49,11 @@ function CodeTabs({
 
   const updateIndicator = useCallback(() => {
     const activeEl = tab === 'request' ? requestRef.current : responseRef.current;
-    const group = tabGroupRef.current;
-    if (!activeEl || !group) return;
+    if (!activeEl) return;
 
     setIndicator({
-      left: activeEl.offsetLeft + TAB_INSET_PX,
-      width: activeEl.offsetWidth - TAB_INSET_PX * 2,
+      left: activeEl.offsetLeft,
+      width: activeEl.offsetWidth,
     });
   }, [tab]);
 
@@ -74,7 +71,12 @@ function CodeTabs({
   }, [updateIndicator]);
 
   return (
-    <div className={styles.tabGroup} ref={tabGroupRef} role="tablist" aria-label="Request or response">
+    <div
+      className={clsx(styles.tabGroup, tab === 'request' && styles.tabGroupLeadingActive)}
+      ref={tabGroupRef}
+      role="tablist"
+      aria-label="Request or response"
+    >
       <motion.span
         className={styles.tabIndicator}
         aria-hidden

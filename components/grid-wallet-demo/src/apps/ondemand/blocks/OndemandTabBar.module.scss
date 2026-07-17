@@ -1,0 +1,75 @@
+/* Decorative tab bar (Figma 2636:17926) — an OVERLAY pinned to the bottom,
+   no border: the top 32px is a gradient fade (content scrolls under it), the
+   buttons sit at y39, and the strip below them covers the home-indicator
+   zone. The fade's stops follow a smoothstep curve (bezier easing) instead of
+   a linear ramp, so the edge has no visible start/stop lines. */
+
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 115px;
+  padding: 39px 0 36px;
+  box-sizing: border-box;
+  background: linear-gradient(
+    to bottom,
+    /* Plain transparent, NOT color-mix(... 0%, transparent): cssnano minifies
+       the 0% amount to a unitless 0, which is invalid inside color-mix() — the
+       whole background was dropped in PRODUCTION builds (transparent bar, no
+       fade; dev was fine). Gradient interpolation is premultiplied, so the
+       fully-transparent endpoint's hue doesn't matter. */
+    transparent 0,
+    color-mix(in srgb, var(--od-tabbar-bg) 4%, transparent) 4px,
+    color-mix(in srgb, var(--od-tabbar-bg) 16%, transparent) 8px,
+    color-mix(in srgb, var(--od-tabbar-bg) 32%, transparent) 12px,
+    color-mix(in srgb, var(--od-tabbar-bg) 50%, transparent) 16px,
+    color-mix(in srgb, var(--od-tabbar-bg) 68%, transparent) 20px,
+    color-mix(in srgb, var(--od-tabbar-bg) 84%, transparent) 24px,
+    color-mix(in srgb, var(--od-tabbar-bg) 96%, transparent) 28px,
+    var(--od-tabbar-bg) 32px
+  );
+}
+
+.item {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* Buttons don't inherit font-family — without this the labels fall back to
+     the UA font instead of Inter. */
+  font-family: inherit;
+  color: var(--od-tabbar-fg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+.label {
+  font-size: 11px;
+  line-height: normal;
+  font-weight: 500;
+  text-align: center;
+  color: var(--od-tabbar-fg);
+}
+
+.itemActive {
+  color: var(--od-tabbar-active);
+
+  .label {
+    color: var(--od-tabbar-active);
+  }
+}

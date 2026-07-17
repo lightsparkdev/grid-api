@@ -1,6 +1,8 @@
 @use '../../styles/breakpoints' as *;
 
-$skeleton-bone-light: var(--color-gray-075);
+/* gray-100 (was 075): at the feed's 0.5 opacity the pills washed out against
+   the chrome-gray panel — one notch darker keeps them faint but legible. */
+$skeleton-bone-light: var(--color-gray-100);
 $skeleton-bone-dark: var(--color-gray-850);
 
 .list {
@@ -16,8 +18,9 @@ $skeleton-bone-dark: var(--color-gray-850);
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 48px;
-  padding-top: calc(var(--spacing-md) + 4px);
+  /* Sides match the Configure panel's content padding. */
+  padding: 48px $layout-laptop-content-padding;
+  padding-top: calc(var(--spacing-md) + 12px);
   gap: var(--spacing-md);
   opacity: 0.5;
 
@@ -55,6 +58,15 @@ $skeleton-bone-dark: var(--color-gray-850);
 
   :global([data-theme='dark']) & {
     background: var(--color-gray-925);
+  }
+
+  /* Match the live cards' softer surface on the chrome-gray panel (wide). */
+  @media (min-width: $breakpoint-layout-wide) {
+    background: var(--surface-primary);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-gray-950);
+    }
   }
 }
 
@@ -120,22 +132,38 @@ $skeleton-bone-dark: var(--color-gray-850);
 }
 
 .codeBlockToolbar {
-  display: flex;
-  align-items: center;
-  min-height: 48px;
-  padding: var(--spacing-xs);
+  position: relative;
+  min-height: 40px;
+  padding: 0 calc(32px + var(--spacing-xs)) 0 0;
   border-bottom: 0.5px solid var(--border-tertiary);
 }
 
 .tabGroup {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+  position: relative;
+  height: 40px;
+  margin-bottom: -0.5px;
 }
 
+/* One tab cell — the real .tab's geometry (label centered, spacing-md pads). */
 .tab {
-  width: 52px;
-  height: 14px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 var(--spacing-md);
+}
+
+/* The leading tab is "active": the indicator box reads as its trailing
+   hairline (card bg matches the indicator fill, so the border is the look). */
+.tabActive {
+  border-right: 0.5px solid var(--border-tertiary);
+}
+
+/* Label-sm sized text line. */
+.tabLabel {
+  height: 10px;
 }
 
 .codeBody {

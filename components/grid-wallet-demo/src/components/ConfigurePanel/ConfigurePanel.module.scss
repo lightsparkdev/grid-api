@@ -1,22 +1,28 @@
 @use '../../styles/breakpoints' as *;
 
 .panel {
-  width: 475px;
+  /* The laptop layout's compact sizing is the default at every breakpoint. */
+  width: $layout-laptop-config-width;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   background: var(--surface-primary);
   border-right: var(--stroke-xs) solid var(--border-primary);
   overflow: hidden;
+  /* The panel wears the chrome gray only side-by-side — glide the color
+     across the stacked ⇄ 3-col crossing instead of snapping. */
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 
   :global([data-theme='dark']) & {
     background: var(--color-gray-950);
   }
-}
 
-@include layout-laptop {
-  .panel {
-    width: $layout-laptop-config-width;
+  /* Side-by-side (keyed to the JS layout attribute so the color rides the
+     same clock as the arrangement flip), the configure column wears the
+     docs-chrome gray, matching the API panel. surface-secondary flips with
+     the theme, and this selector outweighs the dark override above. */
+  :global(html:not([data-layout='stacked'])) & {
+    background: var(--surface-secondary);
   }
 }
 
@@ -26,24 +32,16 @@
     height: 100dvh;
     border-right: none;
   }
-
-  // Hide the "Configure" header bar on mobile — the content has its own heading,
-  // so the panel goes straight to it (the body's 24px top padding matches the sides).
-  .panel .headerBar {
-    display: none;
-  }
 }
 
 .body {
   flex: 1;
-  padding: var(--spacing-4xl);
+  display: flex;
+  flex-direction: column;
+  padding: $layout-laptop-content-padding;
   overflow-y: auto;
   overscroll-behavior: contain;
   min-height: 0;
-
-  @include layout-laptop {
-    padding: $layout-laptop-content-padding;
-  }
 
   // Mobile: tighter 24px padding (32px on top for breathing room under the navbar)
   // + room for the fixed "Explore playground" button. Declared after the base
@@ -77,6 +75,7 @@
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
+  gap: var(--spacing-3xs);
   font-family: var(--font-family-sans);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-regular);

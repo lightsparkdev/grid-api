@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { useId, useState } from 'react';
 import { motion, useAnimate, useReducedMotion } from 'motion/react';
 import { TextMorph } from 'torph/react';
-import { AuroraBackground } from '@/apps/shared/AuroraBackground';
+import { AuroraBackground } from '@/apps/aurora/aurora-fx';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { cubicBezierCss, easeOutOvershoot, easeOutSwift, motionTransition } from '@/lib/easing';
 import styles from './DebitCard.module.scss';

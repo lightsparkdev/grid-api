@@ -36,6 +36,12 @@ properties:
     description: >-
       Email address for the customer.
     example: john.doe@example.com
+  phoneNumber:
+    type: string
+    pattern: '^\+[1-9]\d{1,14}$'
+    description: >-
+      Phone number for the customer in strict E.164 format.
+    example: '+14155551234'
   umaAddress:
     type: string
     description: >-

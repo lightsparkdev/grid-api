@@ -1,0 +1,280 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { IconHotDrinkCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHotDrinkCup';
+import { IconCheeseburger } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheeseburger';
+import { IconStore1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStore1';
+import { IconCup } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCup';
+import { IconFashion } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconFashion';
+import { IconShoppingBag1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconShoppingBag1';
+import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconTag';
+import { IconSofa } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSofa';
+import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconDeskLamp';
+import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
+import type { MerchantCategory, WalletListItemData } from '@/apps/shared/wallet';
+import { useNow } from '@/hooks/useNow';
+import { relativeTime } from '@/lib/relativeTime';
+import { motionTransition } from '@/lib/easing';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { CircleDollarIcon } from '../blocks/CircleDollarIcon';
+import { StickerTile } from '../blocks/FlagTile';
+import { SquareFlag } from '../blocks/SquareFlag';
+import { NetworkTile } from '../blocks/NetworkTile';
+import { PinkCta } from '../blocks/PinkCta';
+import styles from './ActivityList.module.scss';
+
+// Same reveal clock as the Select bank empty state (the Z/Aurora choreography):
+// skeleton rows hold, a cover fades them down, the message blurs/slides in.
+const INITIAL_DELAY_S = 1.2;
+const REVEAL_DURATION_S = 0.55;
+const CONTENT_STAGGER_S = 0.2;
+const MESSAGE_HIDDEN = { opacity: 0, y: 24, filter: 'blur(10px)' };
+const MESSAGE_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
+
+/** Activity graphics run larger than the list stickers (the stay-thumb scale). */
+const TILE_SIZE = 56;
+
+/** Tap-to-pay merchant icons — the marketplace variant (radius-3, stroke-1.5).
+ *  The brain supplies only the `category`; the icon style is the skin's. */
+const MERCHANT_ICONS: Record<MerchantCategory, typeof IconHotDrinkCup> = {
+  coffee: IconHotDrinkCup,
+  'fast-food': IconCheeseburger,
+  convenience: IconStore1,
+  cafe: IconCup,
+  fashion: IconFashion,
+  apparel: IconShoppingBag1,
+  accessories: IconTag,
+  furniture: IconSofa,
+  homeware: IconDeskLamp,
+  grocery: IconBasket1,
+};
+
+/** Soft "graphic" avatar tints (the Airbnb beige-circle voice) — a small
+ *  palette picked deterministically per person so a counterparty keeps their
+ *  color across rows. */
+const AVATAR_TINTS: Array<{ bg: string; fg: string }> = [
+  { bg: '#EFE7DC', fg: '#8A6A4C' }, // beige
+  { bg: '#E4EBE3', fg: '#5F7A5F' }, // sage
+  { bg: '#E9E4F0', fg: '#6F5E8C' }, // lilac
+  { bg: '#F0E4E2', fg: '#8C5E56' }, // clay
+  { bg: '#E2EAEF', fg: '#547182' }, // slate
+];
+
+function tintFor(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return AVATAR_TINTS[h % AVATAR_TINTS.length];
+}
+
+/** The row graphic — the app's STICKER chrome (the country-list flag tile),
+ *  one shape + one circular badge (the Airbnb collage voice, single badge):
+ *  person → tinted initials sticker with the country flag riding bottom-right;
+ *  your own bank (deposit/withdraw) → a mini flag on the neutral sticker;
+ *  crypto → the network's brand tile; the balance-only edge case → the pink
+ *  cash sticker. */
+
+/** 24px flag with 4px smoothed corners, centered on the neutral sticker fill. */
+function MiniFlag({ code }: { code: string }) {
+  const clip = useSquircleClip<HTMLSpanElement>({ figmaRadii: 4 });
+  return (
+    <span ref={clip.ref} style={clip.style} className={styles.miniFlag}>
+      <SquareFlag code={code} />
+    </span>
+  );
+}
+
+function RowAvatar({ item }: { item: WalletListItemData }) {
+  if (item.avatar) {
+    const tint = tintFor(item.avatar.initials);
+    return (
+      <span className={styles.avatarWrap} aria-hidden>
+        <StickerTile size={TILE_SIZE}>
+          <span
+            className={styles.initialsArt}
+            style={{ background: tint.bg, color: tint.fg }}
+          >
+            {item.avatar.initials}
+          </span>
+        </StickerTile>
+        {/* The flag assets are circular by design — badge them as-is. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className={styles.flagBadge}
+          src={`/assets/flags/${item.avatar.code}.svg`}
+          alt=""
+          draggable={false}
+        />
+      </span>
+    );
+  }
+  if (item.imageSquare && item.image) {
+    return (
+      <span className={styles.avatarWrap} aria-hidden>
+        <NetworkTile logo={item.image} size={TILE_SIZE} />
+      </span>
+    );
+  }
+  // Your own bank moving the balance — a mini flag on the neutral sticker
+  // (full-bleed reads too big at this 56px size; fine everywhere else).
+  const flagCode = item.image?.match(/\/flags\/([a-z]+)\.svg$/)?.[1];
+  if (flagCode) {
+    return (
+      <span className={styles.avatarWrap} aria-hidden>
+        <StickerTile size={TILE_SIZE} neutral>
+          <MiniFlag code={flagCode} />
+        </StickerTile>
+      </span>
+    );
+  }
+  // Card charges — the merchant's category glyph on the neutral sticker.
+  if (item.category) {
+    const Icon = MERCHANT_ICONS[item.category];
+    return (
+      <span className={styles.avatarWrap} aria-hidden>
+        <StickerTile neutral size={TILE_SIZE}>
+          <Icon size={28} />
+        </StickerTile>
+      </span>
+    );
+  }
+  return (
+    <span className={styles.avatarWrap} aria-hidden>
+      <StickerTile brand size={TILE_SIZE}>
+        <CircleDollarIcon size={30} />
+      </StickerTile>
+    </span>
+  );
+}
+
+/**
+ * Live Activity list for the marketplace wallet home — the static stay-row
+ * SHAPE (50px graphic + three lines + right-aligned amount/USD) fed by the
+ * shared wallet brain's activity. Empty state reserves four rows of height:
+ * skeletons hold, then reveal into the "No activity yet" message. New rows
+ * fade in at the top while the rest layout-shift down.
+ */
+export function MarketplaceActivityList({
+  items,
+  frozen = false,
+  onDeposit,
+  emptyTitle = 'No activity yet',
+  emptySub = 'Money you add, send, and receive will show up here',
+}: {
+  items: WalletListItemData[];
+  /** Hold the skeletons forever (no reveal) — for the zeroed auth backdrop,
+   *  so the sign-in crossfade lands on pixel-identical content and the reveal
+   *  beat plays on the LIVE home after landing. */
+  frozen?: boolean;
+  /** Empty-state CTA — opens the deposit flow. */
+  onDeposit?: () => void;
+  emptyTitle?: string;
+  emptySub?: string;
+}) {
+  const reduceMotion = useReducedMotion();
+  const now = useNow();
+
+  const [coverVisible, setCoverVisible] = useState(!frozen && reduceMotion);
+  const [contentVisible, setContentVisible] = useState(!frozen && reduceMotion);
+  useEffect(() => {
+    if (frozen || reduceMotion || items.length > 0) return;
+    const coverTimer = window.setTimeout(
+      () => setCoverVisible(true),
+      INITIAL_DELAY_S * 1000,
+    );
+    const contentTimer = window.setTimeout(
+      () => setContentVisible(true),
+      (INITIAL_DELAY_S + CONTENT_STAGGER_S) * 1000,
+    );
+    return () => {
+      window.clearTimeout(coverTimer);
+      window.clearTimeout(contentTimer);
+    };
+  }, [frozen, reduceMotion, items.length]);
+
+  // The empty state is NOT an early return: the rows' AnimatePresence below
+  // must already be mounted when the first item arrives, or its
+  // `initial={false}` counts that first row as first-render content and
+  // suppresses the entrance — the first transaction would pop in instantly
+  // while every later one animates.
+  const empty = items.length === 0 && (
+    <>
+        <div className={styles.skeletons} aria-hidden>
+          {/* Mirrors the real row anatomy: sticker + three lines + amount/USD. */}
+          {[
+            [112, 150, 88],
+            [88, 128, 72],
+            [128, 96, 104],
+            [96, 140, 80],
+          ].map(([title, sub, sub2], i) => (
+            <div key={i} className={styles.skeletonRow}>
+              <span className={styles.skeletonTile} />
+              <span className={styles.content}>
+                <span className={styles.skeletonLines}>
+                  <span className={styles.skeletonPill} style={{ width: title, height: 12 }} />
+                  <span className={styles.skeletonPill} style={{ width: sub, height: 10 }} />
+                  <span className={styles.skeletonPill} style={{ width: sub2, height: 10 }} />
+                </span>
+                <span className={styles.skeletonRight}>
+                  <span className={styles.skeletonPill} style={{ width: 56, height: 12 }} />
+                  <span className={styles.skeletonPill} style={{ width: 30, height: 10 }} />
+                </span>
+              </span>
+            </div>
+          ))}
+          <div
+            className={styles.skeletonCover}
+            data-visible={coverVisible || undefined}
+            style={{ ['--cover-duration' as string]: `${REVEAL_DURATION_S}s` }}
+          />
+        </div>
+        <div className={styles.emptyLayer}>
+          <motion.div
+            className={styles.emptyMessage}
+            initial={reduceMotion ? false : MESSAGE_HIDDEN}
+            animate={contentVisible ? MESSAGE_VISIBLE : MESSAGE_HIDDEN}
+            transition={motionTransition(undefined, REVEAL_DURATION_S)}
+          >
+            <div className={styles.emptyText}>
+              <p className={styles.emptyTitle}>{emptyTitle}</p>
+              <p className={styles.emptySub}>{emptySub}</p>
+            </div>
+            {onDeposit && <PinkCta onClick={onDeposit}>Deposit</PinkCta>}
+          </motion.div>
+        </div>
+    </>
+  );
+
+  return (
+    <div className={`${styles.list}${items.length === 0 ? ` ${styles.listEmpty}` : ''}`}>
+      {empty}
+      <AnimatePresence initial={false}>
+        {items.map((item) => (
+          <motion.div
+            key={item.id}
+            layout={reduceMotion ? false : 'position'}
+            className={styles.row}
+            initial={reduceMotion ? false : { opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={motionTransition(undefined, 0.45)}
+          >
+            <RowAvatar item={item} />
+            {/* Text columns grouped so the PAIR centers against the avatar;
+                within it, title and amount stay top-aligned to each other. */}
+            <div className={styles.content}>
+              <div className={styles.lines}>
+                <span className={styles.lineTitle}>{item.title}</span>
+                <span className={styles.lineMeta}>{item.detail}</span>
+                <span className={styles.lineMeta}>{relativeTime(item.timestamp, now)}</span>
+              </div>
+              <div className={styles.right}>
+                <span className={styles.amount}>{item.amount}</span>
+                <span className={styles.currency}>USD</span>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}

@@ -4,7 +4,7 @@ info:
   title: Grid API
   description: >
     API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://docs.lightspark.com/.
-  version: "2026-06-25"
+  version: "2025-10-13"
   contact:
     name: Lightspark Support
     email: support@lightspark.com
@@ -23,6 +23,10 @@ tags:
       Endpoints for verifying a customer's email and phone via one-time codes.
       Required only for customers whose payment provider mandates contact
       verification (e.g. EU customers); other providers return 409.
+  - name: Strong Customer Authentication
+    description: >-
+      Endpoints for authorizing money-movement operations that require Strong
+      Customer Authentication. Relevant only for customers in a region where SCA is required (e.g. EU); customers outside SCA-regulated regions never see an SCA challenge and these endpoints return 409.
   - name: KYC/KYB Verifications
     description: >-
       Endpoints for Know Your Customer (KYC) and Know Your Business (KYB)
@@ -187,6 +191,10 @@ paths:
     $ref: paths/quotes/quotes.yaml
   /quotes/{quoteId}/execute:
     $ref: paths/quotes/quotes_{quoteId}_execute.yaml
+  /quotes/{quoteId}/authorize:
+    $ref: paths/quotes/quotes_{quoteId}_authorize.yaml
+  /quotes/{quoteId}/authorize/resend:
+    $ref: paths/quotes/quotes_{quoteId}_authorize_resend.yaml
   /transactions:
     $ref: paths/transactions/transactions.yaml
   /transactions/{transactionId}:
@@ -296,6 +304,8 @@ paths:
     $ref: paths/cards/cards.yaml
   /cards/{id}:
     $ref: paths/cards/cards_{id}.yaml
+  /cards/{id}/reveal:
+    $ref: paths/cards/cards_{id}_reveal.yaml
   /sandbox/cards/{id}/simulate/authorization:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization.yaml
   /sandbox/cards/{id}/simulate/clearing:
@@ -329,6 +339,8 @@ webhooks:
     $ref: webhooks/card-state-change.yaml
   card-funding-source-change:
     $ref: webhooks/card-funding-source-change.yaml
+  card-transaction:
+    $ref: webhooks/card-transaction.yaml
 security:
   - BasicAuth: []
   - AgentAuth: []

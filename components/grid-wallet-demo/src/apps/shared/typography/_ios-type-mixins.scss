@@ -12,6 +12,13 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* iOS system chrome (status bar, notifications, the passkey sheet) renders in the
+   system font no matter the active skin. Include this on the surface root so a skin's
+   --ios-font-family override (e.g. creator's Inter) can't bleed into the OS chrome. */
+@mixin ios-system-font {
+  --ios-font-family: var(--font-family-sf-pro);
+}
+
 @mixin ios-type-variation($weight, $opsz) {
   font-variation-settings: 'wght' $weight, 'wdth' 100, 'opsz' $opsz;
 }

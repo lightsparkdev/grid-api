@@ -5,6 +5,7 @@ enum:
   - ACTIVE
   - CLOSED
   - FROZEN
+  - FAILED
 description: >-
   Status of a Grid internal account. The status determines whether the account
   can send or receive payments.
@@ -22,4 +23,8 @@ description: >-
   - `FROZEN`: The account cannot send or receive payments. Grid may freeze an
   account in response to compliance or fraud signals; payments are blocked
   while the account remains frozen.
+
+  - `FAILED`: The account could not be provisioned. Grid was unable to create
+  the underlying account, so it cannot send or receive payments and requires
+  remediation.
 example: ACTIVE

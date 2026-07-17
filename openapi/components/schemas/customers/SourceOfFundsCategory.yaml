@@ -1,0 +1,11 @@
+type: string
+enum:
+  - OPERATING_REVENUE
+  - INVESTMENT_INCOME
+  - LOANS
+  - VENTURE_CAPITAL
+  - PERSONAL_SAVINGS
+  - DONATIONS
+  - OTHER
+description: A structured source-of-funds category for the business
+example: OPERATING_REVENUE

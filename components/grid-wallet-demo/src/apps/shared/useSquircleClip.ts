@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import { figmaSquircleRadii, figmaSquircleRadius, readCssVarPx } from './figmaSquircleRadius';
 
@@ -19,6 +19,11 @@ export interface UseSquircleClipOptions {
  * Cross-browser superellipse corners via `clip-path: path()` — the same trick
  * FrostPanel, AppShell, and FaceIdAuth use. Safari ignores `corner-shape`, so
  * `border-radius` falls back to a circle; clip-path is the sole shaper.
+ *
+ * Clip-path is owned by React (`style.clipPath`). The returned `ref` is a
+ * callback ref — attach it to the clipped node. When the node mounts later
+ * (e.g. inside a closed bottom sheet), measurement re-runs automatically.
+ * Use `elementRef.current` when you need imperative access to the node.
  */
 export function useSquircleClip<T extends HTMLElement = HTMLDivElement>({
   radiusVar = '--corner-radius-wallet-card-squircle',
@@ -26,7 +31,8 @@ export function useSquircleClip<T extends HTMLElement = HTMLDivElement>({
   cornerRadii,
   figmaRadii,
 }: UseSquircleClipOptions = {}) {
-  const ref = useRef<T>(null);
+  const elementRef = useRef<T | null>(null);
+  const [node, setNode] = useState<T | null>(null);
   /** The raw squircle path `d` + the measured size — so callers can stroke the
    *  exact same shape as the clip (e.g. a border), instead of an approximate
    *  CSS `corner-shape` that drifts from the path at the corners. */
@@ -42,11 +48,16 @@ export function useSquircleClip<T extends HTMLElement = HTMLDivElement>({
       ? String(resolvedCornerRadii)
       : resolvedCornerRadii?.join(',');
 
+  const ref = useCallback((el: T | null) => {
+    elementRef.current = el;
+    setNode(el);
+  }, []);
+
   useLayoutEffect(() => {
-    const el = ref.current;
+    const el = node;
     if (!el) return;
 
-    const apply = () => {
+    const measure = () => {
       const w = el.offsetWidth;
       const h = el.offsetHeight;
       if (w <= 0 || h <= 0) return;
@@ -60,9 +71,6 @@ export function useSquircleClip<T extends HTMLElement = HTMLDivElement>({
       }
 
       const d = squirclePath(w, h, radius, cornerSmoothing);
-      const path = `path('${d}')`;
-      el.style.clipPath = path;
-      el.style.setProperty('-webkit-clip-path', path);
       setShape((prev) =>
         prev.d === d && prev.width === w && prev.height === h
           ? prev
@@ -70,17 +78,24 @@ export function useSquircleClip<T extends HTMLElement = HTMLDivElement>({
       );
     };
 
-    apply();
-    const ro = new ResizeObserver(apply);
+    measure();
+    // Animated sheet children can measure 0×0 on the first layout pass.
+    const raf = requestAnimationFrame(measure);
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    window.addEventListener('resize', apply);
+    window.addEventListener('resize', measure);
     return () => {
+      cancelAnimationFrame(raf);
       ro.disconnect();
-      window.removeEventListener('resize', apply);
+      window.removeEventListener('resize', measure);
     };
-  }, [radiusVar, cornerSmoothing, cornerKey]);
+  }, [node, radiusVar, cornerSmoothing, cornerKey]);
 
-  const style: CSSProperties = { borderRadius: 0 };
+  const clipPath = shape.d ? (`path('${shape.d}')` as const) : undefined;
+  const style: CSSProperties = {
+    borderRadius: 0,
+    ...(clipPath ? { clipPath, WebkitClipPath: clipPath } : {}),
+  };
 
-  return { ref, style, path: shape.d, width: shape.width, height: shape.height };
+  return { ref, elementRef, style, path: shape.d, width: shape.width, height: shape.height };
 }

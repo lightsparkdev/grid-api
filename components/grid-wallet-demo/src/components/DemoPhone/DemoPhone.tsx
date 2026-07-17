@@ -5,13 +5,14 @@ import type { AuthMethod } from '@/data/flow';
 import type { PhoneProps } from '@/components/Phone';
 import { applePopup, googleTokenPopup, preloadOauthPopups } from '@/lib/auth';
 import type { GlassConfig } from '@/components/liquid-glass';
-import { AuroraSignInFlow } from '@/apps/aurora';
-import { PasskeySheet } from '@/apps/aurora/PasskeySheet';
-import { AuthSheet, type AuthSheetMethod } from '@/apps/aurora/AuthSheet';
+import { SignInFlow } from '@/apps/SignInFlow';
+import { PasskeySheet } from '@/apps/shared/PasskeySheet';
+import { AuthSheet as AuroraAuthSheet, type AuthSheetMethod } from '@/apps/aurora/AuthSheet';
 import { AppShell } from '@/apps/shared/AppShell';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
 import { getAppSkin, type AppSkin } from '@/apps/skins';
+import type { SkinAuthFlow } from '@/apps/types';
 
 interface DemoPhoneProps extends PhoneProps {
   glassConfig?: GlassConfig;
@@ -23,12 +24,16 @@ interface DemoPhoneProps extends PhoneProps {
 
 function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const authMethod = props.signInMethod ?? props.method;
-  const isAurora = skin.id === 'aurora';
-  const onAuthScreen = isAurora && props.phone.screen === 'auth';
+  const flowActive = Boolean(skin.AuthScreen && skin.WalletScreen);
+  // AuthSheet (branded OTP UI) is per-skin — fall back to Aurora's when a skin
+  // omits it. PasskeySheet is shared iOS system chrome (apps/shared/PasskeySheet).
+  const AuthSheet = skin.AuthSheet ?? AuroraAuthSheet;
+  const onAuthScreen = flowActive && props.phone.screen === 'auth';
 
   const passkeySheet = onAuthScreen ? (
     <PasskeySheet
       open={Boolean(props.passkey?.active)}
+      appName={skin.label}
       onConfirm={props.passkey?.onConfirm ?? (() => {})}
       onCancel={props.passkey?.onCancel ?? (() => {})}
     />
@@ -44,27 +49,31 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   const sheetMethod: AuthSheetMethod | null =
     authMethod === 'email_otp' ? 'email' : authMethod === 'sms' ? 'phone' : null;
   const entry = sheetMethod === 'phone' ? props.phoneEntry : props.email;
-  const sheetFlow = isAurora && sheetMethod !== null;
+  const sheetFlow = flowActive && sheetMethod !== null;
   const sheetSending = Boolean(
     sheetFlow &&
       props.phone.screen === 'creating' &&
       !entry?.active &&
       !props.otp?.active,
   );
-  const authSheet = isAurora ? (
-    <AuthSheet
-      method={sheetMethod ?? 'email'}
-      open={Boolean(entry?.active || sheetSending || props.otp?.active)}
-      sending={sheetSending}
-      codeActive={Boolean(props.otp?.active)}
-      onSubmit={entry?.onSubmit ?? (() => {})}
-      onSubmitCode={props.otp?.onSubmit}
-      // The X is BACK past the first step (code → entry re-prompt); the scrim
-      // still cancels the whole flow.
-      onBack={props.otp?.onBack}
-      onCancel={props.otp?.active ? props.otp?.onCancel : entry?.onCancel}
-    />
-  ) : null;
+  // ONE flow surface, two deliveries: an AuthSheet overlay (the default), or —
+  // for skins registered with `inlineAuthFlow` — the auth screen's `authFlow`
+  // prop, so a skin can render the OTP steps inside its own sign-in surface on
+  // the same render clock as `dismissed` (no overlay, no side-channel).
+  const flow: SkinAuthFlow = {
+    method: sheetMethod ?? 'email',
+    open: Boolean(entry?.active || sheetSending || props.otp?.active),
+    sending: sheetSending,
+    codeActive: Boolean(props.otp?.active),
+    onSubmit: entry?.onSubmit ?? (() => {}),
+    onSubmitCode: props.otp?.onSubmit,
+    // The X is BACK past the first step (code → entry re-prompt); the scrim
+    // still cancels the whole flow.
+    onBack: props.otp?.onBack,
+    onCancel: props.otp?.active ? props.otp?.onCancel : entry?.onCancel,
+  };
+  const authSheet =
+    flowActive && !skin.inlineAuthFlow ? <AuthSheet {...flow} /> : null;
 
   // Airbnb-model OAuth: OUR CTA opens the REAL provider popup synchronously
   // inside the tap gesture (any await first would trip popup blockers), and
@@ -82,9 +91,12 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
   // Aurora is the only built skin; its auth ⇄ wallet pair renders through ONE
   // stable component so the post-sign-in intro can hold the auth screen across
   // the flip — including the OTP 'creating' stretch, which the sheet bridges.
-  if (!isAurora) return null;
+  if (!flowActive) return null;
   return (
-    <AuroraSignInFlow
+    <SignInFlow
+      AuthScreen={skin.AuthScreen!}
+      WalletScreen={skin.WalletScreen!}
+      skinId={skin.id}
       screen={
         props.phone.screen === 'wallet' || props.phone.screen === 'card' ? 'wallet' : 'auth'
       }
@@ -92,7 +104,10 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       methods={props.methods ?? [props.method]}
       onSignIn={signIn}
       skipIntro={props.skipIntro}
+      authReveal={skin.authReveal}
+      authFlow={skin.inlineAuthFlow ? flow : undefined}
       entry={props.walletEntry}
+      walletOptions={skin.walletOptions}
       onQuoteCreate={props.onQuoteCreate}
       onLinkExternalAccount={props.onLinkExternalAccount}
       onTransferExecute={props.onTransferExecute}
@@ -102,7 +117,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     >
       {passkeySheet}
       {authSheet}
-    </AuroraSignInFlow>
+    </SignInFlow>
   );
 }
 
