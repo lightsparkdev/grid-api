@@ -230,8 +230,9 @@
   // selectors in style.css / head.raw. A :has() anchored at the root gets
   // re-evaluated on DOM mutations anywhere in the document, which froze
   // navigation for seconds on pages that build DOM incrementally (mermaid
-  // diagrams). head.raw sets these classes pre-paint on full loads; this
-  // keeps them in sync across SPA navigations.
+  // diagrams). This is the effective setter on both full loads and SPA
+  // navigations (head.raw carries a pre-paint copy, but the hosted renderer
+  // currently strips head.raw scripts).
   function updatePageClasses() {
     var root = document.documentElement;
     var path = location.pathname.replace(/\/+$/, '') || '/';

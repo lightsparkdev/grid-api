@@ -4099,11 +4099,15 @@ html.dark #flow-builder-container {
 /* Prevent outer page scroll when flow-builder is present.
 
    PERF: these page-scoped rules key off html.ls-page-flow-builder — a class
-   set from the pathname by head.raw (first paint) and sidebar-toggle.js (SPA
-   navigation) — NOT html:has(#flow-builder-container). A :has() anchored at
-   the root is re-evaluated on DOM mutations anywhere in the document; pages
-   that build DOM incrementally (e.g. mermaid diagrams) made each of those
-   re-evaluations fire thousands of times, freezing navigation for seconds. */
+   set from the pathname by sidebar-toggle.js (on load and on SPA navigation)
+   — NOT html:has(#flow-builder-container). A root-anchored :has() marks the
+   document root ":has-affected" in Blink, after which every forced style
+   recalc walks the whole document; pages that build DOM incrementally (e.g.
+   mermaid diagrams) then freeze navigation for seconds. (head.raw also
+   carries a pre-paint class setter, but the hosted renderer currently strips
+   head.raw scripts, so the JS is the effective mechanism; the sub-second
+   window before it runs on a full load of these two embed pages is not
+   noticeable.) */
 html.ls-page-flow-builder,
 html.ls-page-flow-builder body {
   overflow: hidden !important;
@@ -4832,8 +4836,7 @@ html.ls-nav-collapsed .ls-nav-rail::after {
    no docs sidebar — Mintlify tags them with .is-custom — so there's nothing to
    toggle. The JS won't inject the rail there either; this is the no-flash guard
    during SPA navigation. PERF: class-keyed, not html:has() — the class is set
-   only by sidebar-toggle.js, from the DOM, once the body exists (unlike the
-   path-based ls-page-* classes, head.raw can't set it pre-paint). That's
+   only by sidebar-toggle.js, from the DOM, once the body exists. That's
    sufficient: on a full load of a custom page the rail is never injected in
    the first place (hasVisibleSidebar() is false), so this rule only matters
    for SPA navigation, where the JS is already running. */
