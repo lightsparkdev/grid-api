@@ -61,7 +61,7 @@ rules:
   # Discriminators and Polymorphism (README: OpenAPI Best Practices)
   # ============================================================
 
-  # oneOf must include a discriminator (anywhere it appears — top-level
+  # oneOf must include a discriminator (anywhere it appears - top-level
   # schemas, properties, request/response bodies). oneOf implies a tagged
   # union; for nullable values use anyOf instead.
   oneOf-must-have-discriminator:
@@ -179,3 +179,14 @@ rules:
       function: pattern
       functionOptions:
         match: "^((\\/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+|\\/sandbox\\/cards\\/\\{id\\}\\/simulate\\/(balance_inquiry|credit_authorization|financial_authorization|financial_credit_authorization|authorization_advice|credit_authorization_advice|return_reversal))$"
+
+# Per-pointer exceptions (mirror .redocly.lint-ignore.yaml - both linters run
+# the same conventions, and spectral has no ignore-file mechanism).
+overrides:
+  # threeDSecurePassword: "threeDSecure" is the industry-standard casing for
+  # 3DS and matches the EU provider's wire field; the camelCase checker
+  # rejects the consecutive-capital hump. Deliberate exception.
+  - files:
+      - "**/openapi.yaml#/components/schemas/CardCreateRequest/properties/threeDSecurePassword"
+    rules:
+      field-names-camelCase: off
