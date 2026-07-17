@@ -863,7 +863,7 @@ div#mobile-nav div#navigation-items > div:first-child {
 
 /* Mobile nav - sidebar group list: adjust spacing */
 div#mobile-nav ul.sidebar-group,
-div#mobile-nav ul#sidebar-group,
+div#mobile-nav ul.sidebar-group,
 #mobile-nav .sidebar-group-header + ul {
   margin-top: -14px !important;
   padding-top: 0 !important;
@@ -882,7 +882,19 @@ html.dark #navigation-items {
   background-color: var(--ls-gray-975) !important;
 }
 
-#navigation-items > div.text-sm {
+/* New Mintlify markup (production): #navigation-items is now a scroll-area
+   wrapper and the px-7/py-6 padding lives on an inner viewport div. Move our
+   24px padding onto the viewport so it isn't doubled (24px + 28px). */
+#navigation-items[data-component-part="scroll-area"] {
+  padding: 0 !important;
+}
+
+#navigation-items[data-component-part="scroll-area"] [data-component-part="scroll-area-viewport"] {
+  padding: 24px !important;
+}
+
+#navigation-items > div.text-sm,
+#navigation-items [data-component-part="scroll-area-content"] > div.text-sm {
   display: flex !important;
   flex-direction: column !important;
   gap: 0 !important;
@@ -903,7 +915,7 @@ html.dark #navigation-items {
 #navigation-items > div > div:first-child,
 #navigation-items > div.text-sm > div:first-child,
 #navigation-items .text-sm > div:first-child,
-#navigation-items > .text-sm > div:first-of-type {
+#navigation-items .text-sm > div:first-of-type {
   padding-top: 0 !important;
   padding-bottom: 24px !important;
   margin-top: 0 !important;
@@ -936,6 +948,7 @@ html.dark #navigation-items [class*="mt-8"]:not(:first-child)::before {
 .sidebar-group-header,
 h5#sidebar-title,
 .sidebar-group-header h5,
+.sidebar-group-header .sidebar-title,
 #navigation-items h5 {
   font-size: 12px !important;
   font-weight: 400 !important;
@@ -951,6 +964,7 @@ html.dark #navigation-items [data-component-part="group-title"],
 html.dark .sidebar-group-header,
 html.dark h5#sidebar-title,
 html.dark .sidebar-group-header h5,
+html.dark .sidebar-group-header .sidebar-title,
 html.dark #navigation-items h5 {
   color: var(--ls-gray-700) !important;
 }
@@ -1094,10 +1108,10 @@ button.absolute.top-5.right-5 {
 #navigation-items [class*="mt-6"],
 #navigation-items [class*="mt-8"],
 #navigation-items [class*="lg:mt-"],
-#sidebar-group,
-ul#sidebar-group,
-#sidebar-group *,
-ul#sidebar-group *,
+.sidebar-group,
+ul.sidebar-group,
+.sidebar-group *,
+ul.sidebar-group *,
 #navigation-items li.space-y-px,
 #navigation-items li.space-y-px *,
 #navigation-items li[class*="space-y"],
@@ -1108,8 +1122,8 @@ ul#sidebar-group *,
 }
 
 /* Sidebar group container - full width, left aligned */
-#sidebar-group,
-ul#sidebar-group {
+#navigation-items .sidebar-group,
+#navigation-items ul.sidebar-group {
   width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1118,8 +1132,8 @@ ul#sidebar-group {
 }
 
 /* List items - full width, block display */
-#sidebar-group > li,
-ul#sidebar-group > li,
+.sidebar-group > li,
+ul.sidebar-group > li,
 #navigation-items li.space-y-px,
 #navigation-items li[class*="space-y"] {
   width: 100% !important;
@@ -1129,8 +1143,8 @@ ul#sidebar-group > li,
 }
 
 /* Expandable group buttons - full width, left aligned */
-#sidebar-group > li > button,
-ul#sidebar-group > li > button,
+.sidebar-group > li > button,
+ul.sidebar-group > li > button,
 #navigation-items li.space-y-px > button,
 #navigation-items li[class*="space-y"] > button {
   position: relative !important;
@@ -1150,20 +1164,20 @@ ul#sidebar-group > li > button,
   justify-content: flex-start !important;
 }
 
-html.dark #sidebar-group > li > button,
-html.dark ul#sidebar-group > li > button,
+html.dark .sidebar-group > li > button,
+html.dark ul.sidebar-group > li > button,
 html.dark #navigation-items li.space-y-px > button,
 html.dark #navigation-items li[class*="space-y"] > button {
   color: var(--ls-gray-600) !important;
 }
 
 /* Hide Mintlify's native chevron, including the new wrapped SVG variant. */
-#sidebar-group > li > button > div:has(> svg),
-ul#sidebar-group > li > button > div:has(> svg),
+.sidebar-group > li > button > div:has(> svg),
+ul.sidebar-group > li > button > div:has(> svg),
 #navigation-items li.space-y-px > button > div:has(> svg),
 #navigation-items li[class*="space-y"] > button > div:has(> svg),
-#sidebar-group > li > button svg,
-ul#sidebar-group > li > button svg,
+.sidebar-group > li > button svg,
+ul.sidebar-group > li > button svg,
 #navigation-items li.space-y-px > button svg,
 #navigation-items li[class*="space-y"] > button svg {
   display: none !important;
@@ -1171,8 +1185,8 @@ ul#sidebar-group > li > button svg,
 }
 
 /* Create new chevron using CSS pseudo-element (Central Icons style) */
-#sidebar-group > li > button::after,
-ul#sidebar-group > li > button::after,
+.sidebar-group > li > button::after,
+ul.sidebar-group > li > button::after,
 #navigation-items li.space-y-px > button::after,
 #navigation-items li[class*="space-y"] > button::after {
   content: "" !important;
@@ -1188,8 +1202,8 @@ ul#sidebar-group > li > button::after,
 }
 
 /* Dark mode chevron - match sidebar text color */
-html.dark #sidebar-group > li > button::after,
-html.dark ul#sidebar-group > li > button::after,
+html.dark .sidebar-group > li > button::after,
+html.dark ul.sidebar-group > li > button::after,
 html.dark #navigation-items li.space-y-px > button::after,
 html.dark #navigation-items li[class*="space-y"] > button::after {
   border-right-color: var(--ls-gray-600) !important;
@@ -1197,23 +1211,23 @@ html.dark #navigation-items li[class*="space-y"] > button::after {
 }
 
 /* Chevron rotation when expanded (points down) */
-#sidebar-group > li > button[aria-expanded="true"]::after,
-ul#sidebar-group > li > button[aria-expanded="true"]::after,
+.sidebar-group > li > button[aria-expanded="true"]::after,
+ul.sidebar-group > li > button[aria-expanded="true"]::after,
 #navigation-items li.space-y-px > button[aria-expanded="true"]::after,
 #navigation-items li[class*="space-y"] > button[aria-expanded="true"]::after {
   transform: translateY(-70%) rotate(45deg) !important;
 }
 
 /* Hover state for expandable groups - background only, no color change */
-#sidebar-group > li > button:hover,
-ul#sidebar-group > li > button:hover,
+.sidebar-group > li > button:hover,
+ul.sidebar-group > li > button:hover,
 #navigation-items li.space-y-px > button:hover,
 #navigation-items li[class*="space-y"] > button:hover {
   background-color: rgba(0, 0, 0, 0.03) !important;
 }
 
-html.dark #sidebar-group > li > button:hover,
-html.dark ul#sidebar-group > li > button:hover,
+html.dark .sidebar-group > li > button:hover,
+html.dark ul.sidebar-group > li > button:hover,
 html.dark #navigation-items li.space-y-px > button:hover,
 html.dark #navigation-items li[class*="space-y"] > button:hover {
   background-color: rgba(255, 255, 255, 0.05) !important;
@@ -1222,16 +1236,16 @@ html.dark #navigation-items li[class*="space-y"] > button:hover {
 /* Group buttons stay gray - only active page links get bold/dark styling */
 
 /* Nested items in API reference groups */
-#sidebar-group > li ul,
-ul#sidebar-group > li ul,
-#sidebar-group > li ul li,
-ul#sidebar-group > li ul li {
+#navigation-items .sidebar-group > li ul,
+#navigation-items ul.sidebar-group > li ul,
+#navigation-items .sidebar-group > li ul li,
+#navigation-items ul.sidebar-group > li ul li {
   width: 100% !important;
   display: block !important;
 }
 
-#sidebar-group > li ul a,
-ul#sidebar-group > li ul a,
+.sidebar-group > li ul a,
+ul.sidebar-group > li ul a,
 #navigation-items li.space-y-px ul a,
 #navigation-items li[class*="space-y"] ul a {
   font-size: 14px !important;
@@ -1245,8 +1259,8 @@ ul#sidebar-group > li ul a,
 }
 
 /* Vertical indentation line for nested items in expandable groups */
-#sidebar-group > li > ul,
-ul#sidebar-group > li > ul,
+.sidebar-group > li > ul,
+ul.sidebar-group > li > ul,
 #navigation-items li.space-y-px > ul,
 #navigation-items li[class*="space-y"] > ul {
   position: relative !important;
@@ -1256,8 +1270,8 @@ ul#sidebar-group > li > ul,
   border-left: 0.5px solid var(--ls-black-10) !important;
 }
 
-html.dark #sidebar-group > li > ul,
-html.dark ul#sidebar-group > li > ul,
+html.dark .sidebar-group > li > ul,
+html.dark ul.sidebar-group > li > ul,
 html.dark #navigation-items li.space-y-px > ul,
 html.dark #navigation-items li[class*="space-y"] > ul {
   border-left-color: var(--ls-white-06) !important;
@@ -1267,14 +1281,17 @@ html.dark #navigation-items li[class*="space-y"] > ul {
    API Reference Sidebar - Group Icons
    =========================================== */
 
-/* Base icon styles for all API groups */
-#sidebar-group > li[data-title] > button,
-ul#sidebar-group > li[data-title] > button {
+/* Base icon styles for all API groups.
+   The #navigation-items prefix keeps id-level specificity so padding-left
+   beats the generic `#navigation-items li[class*="space-y"] > button`
+   padding rule above. */
+#navigation-items .sidebar-group > li[data-title] > button,
+#navigation-items ul.sidebar-group > li[data-title] > button {
   padding-left: 40px !important;
 }
 
-#sidebar-group > li[data-title] > button::before,
-ul#sidebar-group > li[data-title] > button::before {
+.sidebar-group > li[data-title] > button::before,
+ul.sidebar-group > li[data-title] > button::before {
   content: "" !important;
   position: absolute !important;
   left: 8px !important;
@@ -1290,117 +1307,135 @@ ul#sidebar-group > li[data-title] > button::before {
 }
 
 /* Platform Configuration - settings gear */
-#sidebar-group > li[data-title="Platform Configuration"] > button::before,
-ul#sidebar-group > li[data-title="Platform Configuration"] > button::before {
+.sidebar-group > li[data-title="Platform Configuration"] > button::before,
+ul.sidebar-group > li[data-title="Platform Configuration"] > button::before {
   background-image: url('/images/icons/settings-gear2.svg') !important;
 }
 
 /* Customers - people */
-#sidebar-group > li[data-title="Customers"] > button::before,
-ul#sidebar-group > li[data-title="Customers"] > button::before {
+.sidebar-group > li[data-title="Customers"] > button::before,
+ul.sidebar-group > li[data-title="Customers"] > button::before {
   background-image: url('/images/icons/people.svg') !important;
 }
 
 /* Internal Accounts - wallet */
-#sidebar-group > li[data-title="Internal Accounts"] > button::before,
-ul#sidebar-group > li[data-title="Internal Accounts"] > button::before {
+.sidebar-group > li[data-title="Internal Accounts"] > button::before,
+ul.sidebar-group > li[data-title="Internal Accounts"] > button::before {
   background-image: url('/images/icons/wallet1.svg') !important;
 }
 
 /* External Accounts - bank */
-#sidebar-group > li[data-title="External Accounts"] > button::before,
-ul#sidebar-group > li[data-title="External Accounts"] > button::before {
+.sidebar-group > li[data-title="External Accounts"] > button::before,
+ul.sidebar-group > li[data-title="External Accounts"] > button::before {
   background-image: url('/images/icons/bank.svg') !important;
 }
 
 /* Same-Currency Transfers - horizontal expand arrows */
-#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before,
-ul#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before {
+.sidebar-group > li[data-title="Same-Currency Transfers"] > button::before,
+ul.sidebar-group > li[data-title="Same-Currency Transfers"] > button::before {
   background-image: url('/images/icons/arrow-expand-hor.svg') !important;
 }
 
 /* Cross-Currency Transfers - left-right arrows */
-#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before,
-ul#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before {
+.sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before,
+ul.sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before {
   background-image: url('/images/icons/arrow-left-right.svg') !important;
 }
 
 /* Transactions - receipt */
-#sidebar-group > li[data-title="Transactions"] > button::before,
-ul#sidebar-group > li[data-title="Transactions"] > button::before {
+.sidebar-group > li[data-title="Transactions"] > button::before,
+ul.sidebar-group > li[data-title="Transactions"] > button::before {
   background-image: url('/images/icons/receipt-check.svg') !important;
 }
 
 /* Webhooks - bell */
-#sidebar-group > li[data-title="Webhooks"] > button::before,
-ul#sidebar-group > li[data-title="Webhooks"] > button::before {
+.sidebar-group > li[data-title="Webhooks"] > button::before,
+ul.sidebar-group > li[data-title="Webhooks"] > button::before {
   background-image: url('/images/icons/bell.svg') !important;
 }
 
 /* Invitations - people add */
-#sidebar-group > li[data-title="Invitations"] > button::before,
-ul#sidebar-group > li[data-title="Invitations"] > button::before {
+.sidebar-group > li[data-title="Invitations"] > button::before,
+ul.sidebar-group > li[data-title="Invitations"] > button::before {
   background-image: url('/images/icons/people-add.svg') !important;
 }
 
 /* Sandbox - sandbox icon */
-#sidebar-group > li[data-title="Sandbox"] > button::before,
-ul#sidebar-group > li[data-title="Sandbox"] > button::before {
+.sidebar-group > li[data-title="Sandbox"] > button::before,
+ul.sidebar-group > li[data-title="Sandbox"] > button::before {
   background-image: url('/images/icons/sandbox.svg') !important;
 }
 
 /* Available UMA Providers - at symbol */
-#sidebar-group > li[data-title="Available UMA Providers"] > button::before,
-ul#sidebar-group > li[data-title="Available UMA Providers"] > button::before {
+.sidebar-group > li[data-title="Available UMA Providers"] > button::before,
+ul.sidebar-group > li[data-title="Available UMA Providers"] > button::before {
   background-image: url('/images/icons/at.svg') !important;
 }
 
 /* API Tokens - key */
-#sidebar-group > li[data-title="API Tokens"] > button::before,
-ul#sidebar-group > li[data-title="API Tokens"] > button::before {
+.sidebar-group > li[data-title="API Tokens"] > button::before,
+ul.sidebar-group > li[data-title="API Tokens"] > button::before {
   background-image: url('/images/icons/key2.svg') !important;
 }
 
 /* KYC/KYB Verifications - magnifying glass */
-#sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before,
-ul#sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before {
+.sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before,
+ul.sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before {
   background-image: url('/images/icons/magnifying-glass.svg') !important;
 }
 
 /* Documents - file text */
-#sidebar-group > li[data-title="Documents"] > button::before,
-ul#sidebar-group > li[data-title="Documents"] > button::before {
+.sidebar-group > li[data-title="Documents"] > button::before,
+ul.sidebar-group > li[data-title="Documents"] > button::before {
   background-image: url('/images/icons/file-text.svg') !important;
 }
 
 /* Exchange Rates - trending */
-#sidebar-group > li[data-title="Exchange Rates"] > button::before,
-ul#sidebar-group > li[data-title="Exchange Rates"] > button::before {
+.sidebar-group > li[data-title="Exchange Rates"] > button::before,
+ul.sidebar-group > li[data-title="Exchange Rates"] > button::before {
   background-image: url('/images/icons/trending.svg') !important;
 }
 
 /* Discoveries - checklist magnifying glass */
-#sidebar-group > li[data-title="Discoveries"] > button::before,
-ul#sidebar-group > li[data-title="Discoveries"] > button::before {
+.sidebar-group > li[data-title="Discoveries"] > button::before,
+ul.sidebar-group > li[data-title="Discoveries"] > button::before {
   background-image: url('/images/icons/IconSquareChecklistMagnifyingGlass.svg') !important;
 }
 
 /* Embedded Wallet Auth - lock */
-#sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before,
-ul#sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before {
+.sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before,
+ul.sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before {
   background-image: url('/images/icons/lock.svg') !important;
 }
 
 /* Agent Management */
-#sidebar-group > li[data-title="Agent Management"] > button::before,
-ul#sidebar-group > li[data-title="Agent Management"] > button::before {
+.sidebar-group > li[data-title="Agent Management"] > button::before,
+ul.sidebar-group > li[data-title="Agent Management"] > button::before {
   background-image: url('/images/icons/agent.svg') !important;
 }
 
 /* Agent Operations */
-#sidebar-group > li[data-title="Agent Operations"] > button::before,
-ul#sidebar-group > li[data-title="Agent Operations"] > button::before {
+.sidebar-group > li[data-title="Agent Operations"] > button::before,
+ul.sidebar-group > li[data-title="Agent Operations"] > button::before {
   background-image: url('/images/icons/prompt.svg') !important;
+}
+
+/* Contact Verification - email check */
+.sidebar-group > li[data-title="Contact Verification"] > button::before,
+ul.sidebar-group > li[data-title="Contact Verification"] > button::before {
+  background-image: url('/images/icons/IconEmail2Check.svg') !important;
+}
+
+/* Cards - credit card */
+.sidebar-group > li[data-title="Cards"] > button::before,
+ul.sidebar-group > li[data-title="Cards"] > button::before {
+  background-image: url('/images/icons/credit-card1.svg') !important;
+}
+
+/* Stablecoins - coins */
+.sidebar-group > li[data-title="Stablecoins"] > button::before,
+ul.sidebar-group > li[data-title="Stablecoins"] > button::before {
+  background-image: url('/images/icons/coins.svg') !important;
 }
 
 
