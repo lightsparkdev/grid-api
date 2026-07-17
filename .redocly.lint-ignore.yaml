@@ -14,3 +14,8 @@ openapi.yaml:
     - '#/paths/~1quotes/post/requestBody/content/application~1json/schema'
   no-ambiguous-paths:
     - '#/paths/~1customers~1external-accounts~1{externalAccountId}'
+  # threeDSecurePassword: "threeDSecure" is the industry-standard casing for
+  # 3DS and matches the EU provider's wire field; the camelCase checker
+  # rejects the consecutive-capital hump. Deliberate exception.
+  field-names-camelCase:
+    - '#/components/schemas/CardCreateRequest/properties/threeDSecurePassword'
