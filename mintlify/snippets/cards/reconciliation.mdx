@@ -1,4 +1,4 @@
-A card transaction is not a single event — it's a parent row plus a
+A card transaction is not a single event - it's a parent row plus a
 stream of child events from the card network. This page covers the
 event model, the status transitions, and how to handle the
 `EXCEPTION` path.
@@ -7,16 +7,16 @@ event model, the status transitions, and how to handle the
 
 For each card authorization, Grid produces:
 
-1. **One parent `CardTransaction`** — created at auth time, persists for
+1. **One parent `CardTransaction`** - created at auth time, persists for
    the life of the transaction.
-2. **Pulls** — debits against the funding source that fund approved
+2. **Pulls** - debits against the funding source that fund approved
    auths and any post-hoc settlements.
-3. **Clearings** — the network's confirmation that funds have moved.
-4. **Refunds** — merchant-initiated `RETURN` events.
+3. **Clearings** - the network's confirmation that funds have moved.
+4. **Refunds** - merchant-initiated `RETURN` events.
 
 Children are reconciled against the parent and rolled up into three
 aggregates: `pullSummary`, `settlementSummary`, and `refundSummary`.
-You don't see per-child rows on the list endpoint — they're summarized
+You don't see per-child rows on the list endpoint - they're summarized
 on the parent.
 
 ## Status transitions
@@ -44,6 +44,15 @@ whose type names the new status (`CARD_TRANSACTION.AUTHORIZED`,
 See [Webhooks](/cards/platform-tools/webhooks) for the full payload
 shape.
 
+**Refund linkage differs by card program.** US programs link merchant
+refunds to the original purchase: the purchase transitions to `REFUNDED`
+and its `refundedAmount`/`refundSummary` update. EU programs receive
+merchant refunds from the network WITHOUT a purchase reference, so a
+refund arrives as a **standalone CREDIT-direction card transaction** (its
+own `CARD_TRANSACTION.*` lifecycle) and the original purchase keeps its
+final status with `refundedAmount` unset. Reconcile EU refunds by
+merchant/amount/time rather than by parent linkage.
+
 ## The over-auth path
 
 The most common non-trivial flow is the over-auth (e.g. restaurant
@@ -61,12 +70,12 @@ The post-settlement parent carries `authorizedAmount: 1250`,
 
 An exception happens when the card network has already moved funds for
 a settlement but Grid can't pull the matching amount from the funding
-source — typically because the cardholder's balance no longer covers
+source - typically because the cardholder's balance no longer covers
 the post-hoc difference.
 
 Signal to watch: a `CARD_TRANSACTION.EXCEPTION` webhook. The payload
 includes the full parent record, so your dashboard's exception view is
-driven entirely by webhook deliveries — there's no list endpoint to
+driven entirely by webhook deliveries - there's no list endpoint to
 poll.
 
 Exceptions don't roll back automatically. The standard response is to
@@ -77,7 +86,7 @@ exception to resolution.
 ## Idempotency on webhooks
 
 Every `CARD_TRANSACTION.*` webhook carries a unique `id`. Track
-processed webhook IDs and treat duplicates as no-ops — Grid retries
+processed webhook IDs and treat duplicates as no-ops - Grid retries
 failed deliveries, and your reconciliation should be safe under
 at-least-once delivery.
 
