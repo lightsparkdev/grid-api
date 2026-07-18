@@ -1,17 +1,24 @@
 import { Command } from "commander";
 import { GridClient, PaginatedResponse } from "../client";
-import { outputResponse } from "../output";
+import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
+
+interface CurrencyAmount {
+  amount: number;
+  currency: { code: string; name?: string; symbol?: string; decimals?: number };
+}
 
 interface Transaction {
   id: string;
-  type: "INCOMING" | "OUTGOING";
+  type: "INCOMING" | "OUTGOING" | "CARD";
+  direction?: string;
   status: string;
-  amount: number;
-  currency: string;
-  senderAccountIdentifier?: string;
-  receiverAccountIdentifier?: string;
-  reference?: string;
+  customerId?: string;
+  platformCustomerId?: string;
+  source?: Record<string, unknown>;
+  destination?: Record<string, unknown>;
+  receivedAmount?: CurrencyAmount;
+  sentAmount?: CurrencyAmount;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -34,6 +41,7 @@ export function registerTransactionsCommand(
     .option("--platform-customer-id <id>", "Filter by platform customer ID")
     .option("--sender <id>", "Filter by sender account identifier")
     .option("--receiver <id>", "Filter by receiver account identifier")
+    .option("--account-identifier <id>", "Filter by an account identifier matching either sender or receiver")
     .option("--status <status>", "Filter by status")
     .option("--type <type>", "Filter by type (INCOMING or OUTGOING)")
     .option("--reference <ref>", "Filter by reference")
@@ -52,6 +60,7 @@ export function registerTransactionsCommand(
         platformCustomerId: options.platformCustomerId,
         senderAccountIdentifier: options.sender,
         receiverAccountIdentifier: options.receiver,
+        accountIdentifier: options.accountIdentifier,
         status: options.status,
         type: options.type,
         reference: options.reference,
@@ -84,13 +93,29 @@ export function registerTransactionsCommand(
   transactionsCmd
     .command("approve <transactionId>")
     .description("Approve an incoming payment transaction")
-    .action(async (transactionId: string) => {
+    .option(
+      "--receiver-customer-info <json>",
+      "Requested receiver customer info as a JSON object"
+    )
+    .action(async (transactionId: string, options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
       if (!client) return;
 
+      let body: Record<string, unknown> | undefined;
+      if (options.receiverCustomerInfo) {
+        try {
+          body = { receiverCustomerInfo: JSON.parse(options.receiverCustomerInfo) };
+        } catch {
+          output(formatError("Invalid JSON for --receiver-customer-info"));
+          process.exitCode = 1;
+          return;
+        }
+      }
+
       const response = await client.post<Transaction>(
-        `/transactions/${transactionId}/approve`
+        `/transactions/${transactionId}/approve`,
+        body
       );
       outputResponse(response);
     });
