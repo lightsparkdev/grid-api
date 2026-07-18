@@ -121,6 +121,7 @@ A single `status` field represents whether the transaction reached its destinati
 | Status | Description |
 |--------|-------------|
 | **PENDING** | Quote is pending confirmation |
+| **PENDING_AUTHORIZATION** | Awaiting Strong Customer Authentication. Only occurs for customers in regions where SCA is required (e.g., EU); authorize the transaction's `scaChallenge` to proceed. |
 | **EXPIRED** | Quote wasn't executed before the expiry window |
 | **PROCESSING** | Executing the quote after receiving funds (checking internal balances, or push/pull to/from external account) |
 | **COMPLETED** | Payout successfully reached the destination account |
@@ -135,6 +136,9 @@ A single `status` field represents whether the transaction reached its destinati
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING : Quote created
+    PENDING --> PENDING_AUTHORIZATION : SCA required (EU)
+    PENDING_AUTHORIZATION --> PROCESSING : Authorized
+    PENDING_AUTHORIZATION --> EXPIRED : Challenge expired
     PENDING --> PROCESSING : Quote confirmed, funds received
     PENDING --> EXPIRED : Quote expired before execution
     PROCESSING --> COMPLETED : Payout reached destination
@@ -190,6 +194,7 @@ Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhoo
 | Event | Description |
 |-------|-------------|
 | `OUTGOING_PAYMENT.PENDING` | Transaction created, quote pending confirmation |
+| `OUTGOING_PAYMENT.PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication (EU customers only) |
 | `OUTGOING_PAYMENT.PROCESSING` | Quote confirmed, payout in progress |
 | `OUTGOING_PAYMENT.COMPLETED` | Payout reached destination |
 | `OUTGOING_PAYMENT.FAILED` | Payout failed |
@@ -270,6 +275,11 @@ app.post('/webhooks/grid', async (req, res) => {
   const { data, type } = req.body;
 
   switch (type) {
+    case 'OUTGOING_PAYMENT.PENDING_AUTHORIZATION':
+      // EU customers only: prompt user to complete SCA challenge
+      await notifyCustomer(data.customerId, 'Authorization required to complete payment.');
+      break;
+
     case 'OUTGOING_PAYMENT.COMPLETED':
       await notifyCustomer(data.customerId, 'Payment delivered!');
       break;
