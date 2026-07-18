@@ -99,6 +99,7 @@
   /* --------------------------- defense 2: cure ---------------------------- */
 
   var poisoned = false;
+  var poisonKnown = false; // verdict is only trustworthy once the page has rendered
   var curing = false;
   var stash = []; // { owner, index, cssText } in deletion order (desc index per owner)
   var restoreTimer = 0;
@@ -121,6 +122,7 @@
     try {
       var runs = [probeCost(), probeCost(), probeCost()].sort(function (a, b) { return a - b; });
       poisoned = runs[1] > 4; // healthy ~0.1-1ms, poisoned ~9-20ms
+      poisonKnown = true;
     } catch (e) {
       poisoned = false;
     }
@@ -193,6 +195,12 @@
   }
 
   function onNavigate() {
+    // The scheduled detection waits for the page to settle, but a user can
+    // navigate before that (land on a poisoning page, click within ~2s).
+    // By navigation time the landing page has rendered, so a probe taken
+    // right now is trustworthy — spend ~100ms to check rather than risk a
+    // multi-second freeze.
+    if (!poisonKnown) detectPoison();
     if (!poisoned) return;
     if (curing) extendCure();
     else startCure();
