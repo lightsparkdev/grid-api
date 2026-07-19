@@ -18,6 +18,11 @@ export interface PaginatedResponse<T> {
   totalCount?: number;
 }
 
+export type QueryParams = Record<
+  string,
+  string | number | boolean | string[] | undefined
+>;
+
 export class GridClient {
   private config: GridConfig;
   private timeoutMs: number;
@@ -34,7 +39,7 @@ export class GridClient {
 
   private buildUrl(
     path: string,
-    params?: Record<string, string | number | boolean | undefined>
+    params?: QueryParams
   ): string {
     const baseUrl = this.config.baseUrl.endsWith("/")
       ? this.config.baseUrl
@@ -43,7 +48,11 @@ export class GridClient {
     const url = new URL(fullPath, baseUrl);
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
+        if (value === undefined) return;
+        // Array values become repeated query params (e.g. destinationCurrency).
+        if (Array.isArray(value)) {
+          value.forEach((v) => url.searchParams.append(key, String(v)));
+        } else {
           url.searchParams.append(key, String(value));
         }
       });
@@ -55,7 +64,7 @@ export class GridClient {
     method: string,
     path: string,
     options?: {
-      params?: Record<string, string | number | boolean | undefined>;
+      params?: QueryParams;
       body?: unknown;
       headers?: Record<string, string | undefined>;
     }
@@ -141,7 +150,7 @@ export class GridClient {
 
   async get<T>(
     path: string,
-    params?: Record<string, string | number | boolean | undefined>,
+    params?: QueryParams,
     headers?: Record<string, string | undefined>
   ): Promise<ApiResponse<T>> {
     return this.request<T>("GET", path, { params, headers });
