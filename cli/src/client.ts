@@ -57,6 +57,7 @@ export class GridClient {
     options?: {
       params?: Record<string, string | number | boolean | undefined>;
       body?: unknown;
+      headers?: Record<string, string | undefined>;
     }
   ): Promise<ApiResponse<T>> {
     const url = this.buildUrl(path, options?.params);
@@ -74,6 +75,12 @@ export class GridClient {
     if (options?.body) {
       headers["Content-Type"] = "application/json";
       fetchOptions.body = JSON.stringify(options.body);
+    }
+
+    if (options?.headers) {
+      for (const [key, value] of Object.entries(options.headers)) {
+        if (value !== undefined) headers[key] = value;
+      }
     }
 
     try {
@@ -134,20 +141,32 @@ export class GridClient {
 
   async get<T>(
     path: string,
-    params?: Record<string, string | number | boolean | undefined>
+    params?: Record<string, string | number | boolean | undefined>,
+    headers?: Record<string, string | undefined>
   ): Promise<ApiResponse<T>> {
-    return this.request<T>("GET", path, { params });
+    return this.request<T>("GET", path, { params, headers });
   }
 
-  async post<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
-    return this.request<T>("POST", path, { body });
+  async post<T>(
+    path: string,
+    body?: unknown,
+    headers?: Record<string, string | undefined>
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>("POST", path, { body, headers });
   }
 
-  async patch<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
-    return this.request<T>("PATCH", path, { body });
+  async patch<T>(
+    path: string,
+    body?: unknown,
+    headers?: Record<string, string | undefined>
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>("PATCH", path, { body, headers });
   }
 
-  async delete<T>(path: string): Promise<ApiResponse<T>> {
-    return this.request<T>("DELETE", path);
+  async delete<T>(
+    path: string,
+    headers?: Record<string, string | undefined>
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>("DELETE", path, { headers });
   }
 }
