@@ -39,6 +39,44 @@ describe("customers update", () => {
   });
 });
 
+describe("customers update signed retry", () => {
+  it("forwards --wallet-signature and --request-id as headers", async () => {
+    const { request } = await runCli([
+      "customers",
+      "update",
+      "cust_7",
+      "--type",
+      "INDIVIDUAL",
+      "--email",
+      "ada@example.com",
+      "--wallet-signature",
+      "stamp",
+      "--request-id",
+      "req-1",
+    ]);
+
+    expect(request?.method).toBe("PATCH");
+    expect(request?.path).toBe("/grid/v1/customers/cust_7");
+    expect(request?.headers["Grid-Wallet-Signature"]).toBe("stamp");
+    expect(request?.headers["Request-Id"]).toBe("req-1");
+  });
+
+  it("rejects --wallet-signature without --request-id", async () => {
+    const { calls } = await runCli([
+      "customers",
+      "update",
+      "cust_7",
+      "--type",
+      "INDIVIDUAL",
+      "--email",
+      "ada@example.com",
+      "--wallet-signature",
+      "stamp",
+    ]);
+    expect(calls).toBe(0);
+  });
+});
+
 describe("customers update validation", () => {
   it("rejects updating email and phoneNumber in the same call", async () => {
     const { calls } = await runCli([

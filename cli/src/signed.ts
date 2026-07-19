@@ -27,3 +27,17 @@ export function signedHeaders(options: {
     "Request-Id": options.requestId,
   };
 }
+
+/**
+ * The signed retry needs both headers together. Returns an error message when
+ * exactly one of --wallet-signature / --request-id was supplied.
+ */
+export function signedOptionsError(options: {
+  walletSignature?: string;
+  requestId?: string;
+}): string | undefined {
+  if (Boolean(options.walletSignature) !== Boolean(options.requestId)) {
+    return "--wallet-signature and --request-id must be provided together";
+  }
+  return undefined;
+}

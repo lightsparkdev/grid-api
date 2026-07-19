@@ -118,6 +118,11 @@ grid customers kyc-link \
 # Update customer (--type is the required discriminator)
 grid customers update <customerId> --type INDIVIDUAL --full-name "Jane Doe"
 
+# Changing --email or --phone-number for an Embedded Wallet customer is a
+# signed-retry operation: the first call returns a 202 challenge; re-run with
+# --wallet-signature <stamp> --request-id <id> to complete (see the signing
+# note under Auth). Update email and phone in separate calls.
+
 # Contact verification (only required in some regulatory jurisdictions)
 grid customers verify-email <customerId>
 grid customers confirm-email <customerId> --code 123456
