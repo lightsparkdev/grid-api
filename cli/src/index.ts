@@ -70,6 +70,18 @@ export async function buildProgram(): Promise<Command> {
   const { registerReceiverCommand } = await import("./commands/receiver");
   const { registerCardsCommand } = await import("./commands/cards");
   const { registerAuthCommand } = await import("./commands/auth");
+  const { registerExchangeRatesCommand } = await import(
+    "./commands/exchange-rates"
+  );
+  const { registerCryptoCommand } = await import("./commands/crypto");
+  const { registerDiscoveriesCommand } = await import("./commands/discoveries");
+  const { registerUmaProvidersCommand } = await import(
+    "./commands/uma-providers"
+  );
+  const { registerInternalAccountsCommand } = await import(
+    "./commands/internal-accounts"
+  );
+  const { registerTokensCommand } = await import("./commands/tokens");
 
   registerConfigureCommand(program);
   registerConfigCommand(program, getClient);
@@ -82,6 +94,12 @@ export async function buildProgram(): Promise<Command> {
   registerReceiverCommand(program, getClient);
   registerCardsCommand(program, getClient);
   registerAuthCommand(program, getClient);
+  registerExchangeRatesCommand(program, getClient);
+  registerCryptoCommand(program, getClient);
+  registerDiscoveriesCommand(program, getClient);
+  registerUmaProvidersCommand(program, getClient);
+  registerInternalAccountsCommand(program, getClient);
+  registerTokensCommand(program, getClient);
 
   const customersCmd = program.commands.find((c) => c.name() === "customers");
   const transactionsCmd = program.commands.find(

@@ -389,6 +389,44 @@ grid sandbox receive \
   --currency USD
 ```
 
+### Exchange Rates & Lookups
+
+```bash
+# Exchange rates (--destination-currency is repeatable)
+grid exchange-rates --source-currency USD --destination-currency EUR --destination-currency MXN
+
+# Estimate a crypto withdrawal fee
+grid crypto estimate-fee \
+  --internal-account-id <id> --currency USDC --crypto-network SOLANA \
+  --amount 5000 --destination-address <address>
+
+# Discover receiving institutions
+grid discoveries --country PH --currency PHP
+
+# List counterparty (UMA) providers
+grid uma-providers [--country-code US] [--currency-code USD]
+```
+
+### API Tokens
+
+```bash
+grid tokens list [--name <name>]
+grid tokens get <tokenId>
+# clientSecret is returned only once at creation — store it securely
+grid tokens create --name "CI token" --permissions VIEW,TRANSACT
+grid tokens revoke <tokenId>
+```
+
+### Internal Account Management
+
+```bash
+# Both are signed-retry operations — run once to get the 202 challenge, then
+# re-run with --wallet-signature <stamp> --request-id <id> (see the signing note
+# under Auth). The CLI does not compute the stamp, generate keys, or decrypt.
+grid internal-accounts update <id> --private-enabled true
+grid internal-accounts export <id> --client-public-key <hex>
+```
+
 ## Output Format
 
 All commands output JSON:
