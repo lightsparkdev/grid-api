@@ -19,10 +19,11 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 
 This returns:
 
-- `id`: Lookup ID (use as `lookupId` when creating a quote — required for UMA destinations)
-- Supported currencies
-- Min/max amounts per currency
-- Required payer data fields (`requiredPayerDataFields`)
+- `lookupId`: Lookup identifier (pass as `lookupId` when creating a quote — required for UMA destinations)
+- `receiverUmaAddress`: the UMA address that was looked up (UMA variant only)
+- `supportedCurrencies[]`: each item has a nested `currency` (Currency object with code/decimals/name/symbol),
+  an `estimatedExchangeRate`, and `min`/`max` receivable amounts (smallest currency units)
+- `requiredPayerDataFields[]`: payer fields the receiving institution requires before payment can complete
 
 2. **Check sender's balance**
 
@@ -58,6 +59,9 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/quotes" | jq .
 ```
 
+Optional top-level fields: `purposeOfPayment` (enum, e.g. `GOODS_OR_SERVICES` — required for some
+corridors like India) and `remittanceInformation` (free-form memo, max 80 chars, travels on the rail).
+
 The response includes:
 
 - `totalSendingAmount` and `sendingCurrency`
@@ -79,6 +83,11 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST \
   "$GRID_BASE_URL/quotes/Quote:xxx/execute" | jq .
 ```
+
+**SCA note (EU and other regulated regions):** execute may return the quote in
+`PENDING_AUTHORIZATION` with an `scaChallenge` instead of initiating the transfer. Release it with
+`POST /quotes/Quote:xxx/authorize` (body `{"code": "123456"}` in sandbox) — re-calling execute
+returns 409. See the SCA subsection in `SKILL.md` for the full flow. Non-SCA customers skip this.
 
 6. **Monitor the transaction**
 
@@ -188,8 +197,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     },
     "destination": {
       "destinationType": "ACCOUNT",
-      "accountId": "ExternalAccount:xxx",
-      "currency": "MXN"
+      "accountId": "ExternalAccount:xxx"
     },
     "lockedCurrencyAmount": 100000,
     "lockedCurrencySide": "RECEIVING"
@@ -261,8 +269,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     },
     "destination": {
       "destinationType": "ACCOUNT",
-      "accountId": "ExternalAccount:xxx",
-      "currency": "BTC"
+      "accountId": "ExternalAccount:xxx"
     },
     "lockedCurrencyAmount": 10000000,
     "lockedCurrencySide": "SENDING",
@@ -319,8 +326,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     },
     "destination": {
       "destinationType": "ACCOUNT",
-      "accountId": "ExternalAccount:xxx",
-      "currency": "USD"
+      "accountId": "ExternalAccount:xxx"
     },
     "lockedCurrencyAmount": 50000,
     "lockedCurrencySide": "RECEIVING"
@@ -334,12 +340,15 @@ Use this when your platform receives an incoming payment that needs approval.
 
 ### Steps
 
-1. **List pending incoming transactions**
+1. **List incoming transactions**
 
 ```bash
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  "$GRID_BASE_URL/transactions?type=INCOMING&status=PENDING_APPROVAL" | jq .
+  "$GRID_BASE_URL/transactions?type=INCOMING" | jq .
 ```
+
+Incoming-payment approval is driven by the approval webhook (~5s window), not by polling a
+status — there is no `PENDING_APPROVAL` transaction status to filter on.
 
 2. **Review transaction details**
 

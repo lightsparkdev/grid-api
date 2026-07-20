@@ -151,13 +151,30 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/customers/<customerId>" | jq .
 
-# Create customer
+# Create customer (INDIVIDUAL)
+# Optional individual fields: region, currencies, email, phoneNumber, nationality, address,
+# birthDate, and idType/identifier (US SSN/ITIN — write-only, never returned).
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "platformCustomerId": "<platform-id>",
     "customerType": "INDIVIDUAL",
     "fullName": "Name"
+  }' \
+  "$GRID_BASE_URL/customers" | jq .
+
+# Create customer (BUSINESS)
+# businessInfo REQUIRES legalName, taxId, and incorporatedOn (ISO date YYYY-MM-DD).
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{
+    "platformCustomerId": "<platform-id>",
+    "customerType": "BUSINESS",
+    "businessInfo": {
+      "legalName": "Acme Corporation, Inc.",
+      "taxId": "47-1234567",
+      "incorporatedOn": "2018-03-14"
+    }
   }' \
   "$GRID_BASE_URL/customers" | jq .
 
@@ -172,9 +189,12 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X DELETE \
   "$GRID_BASE_URL/customers/<customerId>" | jq .
 
-# Generate KYC link (GET with query params)
+# Generate KYC link (POST; Grid customerId in the path, redirectUri in the JSON body)
+# Returns kycUrl (hosted flow) plus an optional token (for embedding the provider SDK).
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  "$GRID_BASE_URL/customers/kyc-link?platformCustomerId=<platformCustomerId>&redirectUri=https://example.com/callback" | jq .
+  -X POST -H "Content-Type: application/json" \
+  -d '{"redirectUri": "https://example.com/callback"}' \
+  "$GRID_BASE_URL/customers/<customerId>/kyc-link" | jq .
 ```
 
 ### Account Management
@@ -295,7 +315,8 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   }' \
   "$GRID_BASE_URL/quotes" | jq .
 
-# Account-funded to external account: IMPORTANT - always include destination currency
+# Account-funded to external account: currency is intrinsic to the account, so it is NOT
+# sent in the destination. The only optional field on an ACCOUNT destination is paymentRail.
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
@@ -305,27 +326,27 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     },
     "destination": {
       "destinationType": "ACCOUNT",
-      "accountId": "<externalAccountId>",
-      "currency": "<currency>"
+      "accountId": "<externalAccountId>"
     },
     "lockedCurrencyAmount": 10000,
     "lockedCurrencySide": "SENDING"
   }' \
   "$GRID_BASE_URL/quotes" | jq .
 
-# Real-time/JIT funded: Returns paymentInstructions for funding
+# Real-time/JIT funded: Returns paymentInstructions for funding.
+# When the funding currency is a stablecoin (USDC/USDT), the source MUST include cryptoNetwork.
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "source": {
       "sourceType": "REALTIME_FUNDING",
       "customerId": "<customerId>",
-      "currency": "<sourceCurrency>"
+      "currency": "USDC",
+      "cryptoNetwork": "SOLANA"
     },
     "destination": {
       "destinationType": "ACCOUNT",
-      "accountId": "<accountId>",
-      "currency": "<destCurrency>"
+      "accountId": "<accountId>"
     },
     "lockedCurrencyAmount": 100000,
     "lockedCurrencySide": "RECEIVING"
@@ -346,6 +367,55 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/quotes/<quoteId>" | jq .
 ```
 
+**Optional top-level quote fields** (siblings of `source`/`destination`, NOT nested inside
+`senderCustomerInfo`):
+
+- `purposeOfPayment` — enum describing why the payment is being made
+  (`GOODS_OR_SERVICES`, `GIFT`, `SELF`, `SALARY_PAYMENT`, `FAMILY_SUPPORT`, `OTHER`, and more).
+  Required for some corridors (e.g. India).
+- `remittanceInformation` — free-form memo (max 80 chars) that travels with the payment on the
+  rail (ACH addenda, FedNow/RTP remittance field, wire OBI).
+
+**Destination `currency`**: specify it ONLY for `UMA_ADDRESS` destinations. For `ACCOUNT`
+destinations the currency is intrinsic to the account and must be omitted; the only optional
+field is `paymentRail`.
+
+### Strong Customer Authentication (SCA)
+
+Customers in SCA-regulated regions (e.g. the EU) must authorize transfers with a challenge
+before funds move. Non-SCA customers never see any of this. Two entry points trigger a
+challenge:
+
+- **Executing a pre-funded quote** — `POST /quotes/{quoteId}/execute` returns the quote in
+  `PENDING_AUTHORIZATION` with an `scaChallenge` instead of initiating the transfer. Release it
+  by authorizing the quote you already hold; **re-calling execute returns 409**.
+- **Creating a realtime-funding quote** — `POST /quotes` may return `202` with the quote in
+  `PENDING_AUTHORIZATION`, withholding `paymentInstructions` until the challenge is authorized.
+
+Authorize the challenge (sandbox SMS code is always `123456`):
+
+```bash
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{"code": "123456"}' \
+  "$GRID_BASE_URL/quotes/<quoteId>/authorize" | jq .
+```
+
+The updated quote is returned. If it is still `PENDING_AUTHORIZATION` it carries the next
+`scaChallenge` — authorize again until it advances (its `paymentInstructions` populate for
+realtime-funding quotes).
+
+Resend an expired SMS code (reuses the same challenge; `PASSKEY` challenges cannot be re-sent):
+
+```bash
+curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -X POST \
+  "$GRID_BASE_URL/quotes/<quoteId>/authorize/resend"
+```
+
+Optionally request a preferred challenge factor with `scaFactor` on quote-create or execute —
+values `SMS_OTP` (default) or `PASSKEY`.
+
 ### Same-Currency Transfers
 
 ```bash
@@ -360,12 +430,15 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   "$GRID_BASE_URL/transfer-in" | jq .
 
 # Transfer out (internal → external, same currency)
+# Optional: top-level "remittanceInformation" (memo, max 80 chars) and a "paymentRail"
+# inside the destination to pick a specific supported rail.
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
     "source": {"accountId": "<internalAccountId>"},
-    "destination": {"accountId": "<externalAccountId>"},
-    "amount": 10000
+    "destination": {"accountId": "<externalAccountId>", "paymentRail": "<rail>"},
+    "amount": 10000,
+    "remittanceInformation": "Invoice 1234"
   }' \
   "$GRID_BASE_URL/transfer-out" | jq .
 ```
@@ -502,7 +575,7 @@ Use this flow when the user asks for a "realtime quote" or "just in time" funded
 4. **Choose the right flow**: Use prefunded for immediate execution, JIT for crypto/instant rails
 5. **Pipe through jq**: Always append `| jq .` for readable output, or `| jq -r .field` to extract specific values
 6. **URL-encode special characters**: UMA addresses contain `$` — encode as `%24` in URL paths
-7. **Always include destination currency in quotes**: When specifying a destination account, you MUST include `currency` in the destination object even though the external account already has a currency
+7. **Destination currency is only for UMA**: Specify `currency` in the destination object ONLY for `UMA_ADDRESS` destinations. For `ACCOUNT` destinations the currency is intrinsic to the account and must be omitted — the only optional field there is `paymentRail`
 8. **Individual beneficiary requires fullName**: For `beneficiaryType: "INDIVIDUAL"`, `fullName` is required. `birthDate` (YYYY-MM-DD) and `nationality` (2-letter code) are optional but recommended
 9. **Use correct Nigerian field names**: Use `bankName` (NOT `bankCode`) and include `purposeOfPayment`
 10. **Don't forget country-specific required fields**: Brazil (BRL_ACCOUNT) requires `pixKey`, `pixKeyType`, and `taxId`; Europe (EUR_ACCOUNT) requires `iban`; all fiat accounts require `paymentRails`
