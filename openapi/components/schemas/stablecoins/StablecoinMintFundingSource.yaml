@@ -1,0 +1,14 @@
+oneOf:
+  - $ref: ./StablecoinWireFundingSource.yaml
+  - $ref: ./StablecoinAchDebitFundingSource.yaml
+  - $ref: ./StablecoinSameDayAchDebitFundingSource.yaml
+  - $ref: ./StablecoinGridInternalFundingSource.yaml
+  - $ref: ./StablecoinProviderBalanceFundingSource.yaml
+discriminator:
+  propertyName: type
+  mapping:
+    WIRE: ./StablecoinWireFundingSource.yaml
+    ACH_DEBIT: ./StablecoinAchDebitFundingSource.yaml
+    SAME_DAY_ACH_DEBIT: ./StablecoinSameDayAchDebitFundingSource.yaml
+    GRID_INTERNAL_ACCOUNT: ./StablecoinGridInternalFundingSource.yaml
+    PROVIDER_INTERNAL_BALANCE: ./StablecoinProviderBalanceFundingSource.yaml

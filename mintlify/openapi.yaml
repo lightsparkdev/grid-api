@@ -60,7 +60,7 @@ tags:
   - name: Cards
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage card funding sources, and list card transactions.
   - name: Stablecoins
-    description: Stablecoin issuance endpoints. Link provider accounts, register provider-created stablecoins, create mint/burn quotes, execute them, and track the resulting operations.
+    description: Stablecoin issuance endpoints. Link provider accounts, register provider-created stablecoins, create direct mint/burn issuer operations, and track operation status.
 paths:
   /config:
     get:
@@ -8544,6 +8544,424 @@ paths:
                 $ref: '#/components/schemas/Error403'
         '404':
           description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins:
+    post:
+      summary: Register an existing provider-created stablecoin
+      description: |
+        Register an existing provider-created stablecoin as a Grid `Stablecoin`. This endpoint links provider token metadata to Grid; it does not create the token with the provider. Grid derives the active provider account link from the authenticated platform, provider, and provider environment.
+      operationId: registerStablecoin
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Required idempotency key for retrying this request safely.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinRegisterRequest'
+      responses:
+        '201':
+          description: Stablecoin registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stablecoin'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Referenced stablecoin provider account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List stablecoins
+      description: Retrieve stablecoins registered to the authenticated platform.
+      operationId: listStablecoins
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: issuanceStatus
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinIssuanceStatus'
+        - name: gridOperationsStatus
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinGridOperationsStatus'
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinProvider'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Opaque cursor returned as `nextCursor` from the previous response.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins/{stablecoinId}:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stablecoin
+      description: Retrieve a single registered stablecoin by its Grid identifier.
+      operationId: getStablecoin
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stablecoin'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoins/{stablecoinId}/mints:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Create a stablecoin mint operation
+      description: |
+        Create a provider-backed mint operation for a registered stablecoin. Funding and destination accounts are normal Grid `ExternalAccount` objects; any provider-specific Brale address linkage is managed internally by Grid. Wire-funded mints return funding instructions and remain pending until the provider reports funds received.
+      operationId: createStablecoinMint
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Required idempotency key for retrying this mint request safely.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinMintRequest'
+      responses:
+        '201':
+          description: Mint operation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinOperation'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin or referenced account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Provider temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+  /stablecoins/{stablecoinId}/burns:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Create a stablecoin burn operation
+      description: |
+        Create a provider-backed burn/redemption operation for a registered stablecoin. Burn sources and fiat destinations are normal Grid account objects; provider-specific Brale address ids are resolved and stored internally. External Spark wallet sources return funding instructions and remain pending until the provider reports funds received.
+      operationId: createStablecoinBurn
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Required idempotency key for retrying this burn request safely.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StablecoinBurnRequest'
+      responses:
+        '201':
+          description: Burn operation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinOperation'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin or referenced account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '503':
+          description: Provider temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
+  /stablecoins/{stablecoinId}/operations:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List stablecoin issuer operations
+      description: List issuer mint and burn operations for a stablecoin, most recent first, with cursor pagination.
+      operationId: listStablecoinOperations
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: operationType
+          in: query
+          description: Filter operations by type. When omitted, both mints and burns are returned.
+          required: false
+          schema:
+            $ref: '#/components/schemas/StablecoinOperationType'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Opaque cursor returned as `nextCursor` from the previous response.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinOperationListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /stablecoin-operations/{stablecoinOperationId}:
+    parameters:
+      - name: stablecoinOperationId
+        in: path
+        description: System-generated stablecoin issuer operation identifier
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a stablecoin issuer operation
+      description: Retrieve a single stablecoin issuer operation by its Grid identifier.
+      operationId: getStablecoinOperation
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StablecoinOperation'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin operation not found
           content:
             application/json:
               schema:
@@ -22186,11 +22604,680 @@ components:
           description: Return amount in the smallest unit of the transaction's currency. Must be less than or equal to the net settled amount (settled minus previously-refunded).
           exclusiveMinimum: 0
           example: 1500
+    StablecoinIssuanceStatus:
+      type: string
+      enum:
+        - PENDING_REVIEW
+        - PROVISIONING
+        - PROVISIONED
+        - REJECTED
+        - FAILED
+      description: Provider issuance/linking status for the registered stablecoin.
+    StablecoinGridOperationsStatus:
+      type: string
+      enum:
+        - NOT_ENABLED
+        - PENDING_APPROVAL
+        - ENABLING
+        - ENABLED
+        - DISABLED
+      description: Whether the stablecoin has been enabled for normal Grid operations.
     StablecoinProvider:
       type: string
       enum:
         - BRALE
       description: Stablecoin provider backing the linked account, stablecoin, or operation.
+    StablecoinNetwork:
+      type: string
+      enum:
+        - SPARK
+      description: Public network family for the stablecoin token identifier. The concrete Spark network is inferred from the platform mode.
+    StablecoinProviderEnvironment:
+      type: string
+      enum:
+        - SANDBOX
+        - PRODUCTION
+      description: Provider environment derived from the authenticated Grid platform mode.
+    Stablecoin:
+      type: object
+      required:
+        - id
+        - name
+        - symbol
+        - baseCurrency
+        - network
+        - decimals
+        - issuanceStatus
+        - gridOperationsStatus
+        - networkTokenIdentifier
+        - provider
+        - stablecoinProviderAccountId
+        - providerEnvironment
+        - providerTokenIdentifier
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin identifier.
+          example: Stablecoin:019542f5-b3e7-1d02-0000-000000000002
+        name:
+          type: string
+          description: Stablecoin display name.
+          example: Acme Dollar
+        symbol:
+          type: string
+          description: Stablecoin symbol.
+          example: ACME
+        baseCurrency:
+          type: string
+          description: Fiat currency the stablecoin is denominated against.
+          example: USD
+        network:
+          $ref: '#/components/schemas/StablecoinNetwork'
+        decimals:
+          type: integer
+          description: Number of decimal places used by the stablecoin.
+          example: 6
+        issuanceStatus:
+          $ref: '#/components/schemas/StablecoinIssuanceStatus'
+        gridOperationsStatus:
+          $ref: '#/components/schemas/StablecoinGridOperationsStatus'
+        networkTokenIdentifier:
+          type: string
+          description: Token identifier in the namespace selected by `network`.
+          example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
+        currency:
+          type: string
+          description: Grid currency code after the stablecoin is enabled for Grid operations.
+          example: ACME
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link selected for this stablecoin.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        providerEnvironment:
+          $ref: '#/components/schemas/StablecoinProviderEnvironment'
+        providerTokenIdentifier:
+          type: string
+          description: Provider token identifier. For Brale this maps to `value_type`.
+          example: ACME
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T16:40:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-05-20T17:10:00Z'
+    StablecoinListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stablecoin'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results.
+        totalCount:
+          type: integer
+          description: Total number of stablecoins matching the criteria.
+    StablecoinRegisterRequest:
+      type: object
+      required:
+        - providerTokenIdentifier
+        - networkTokenIdentifier
+        - network
+      properties:
+        providerTokenIdentifier:
+          type: string
+          description: Provider identifier for the stablecoin. For Brale this maps to `value_type`.
+          example: ACME
+        networkTokenIdentifier:
+          type: string
+          description: Token identifier in the namespace selected by `network`.
+          example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
+        network:
+          $ref: '#/components/schemas/StablecoinNetwork'
+        stablecoinProviderAccountId:
+          type: string
+          description: Provider account link to register against. Optional when exactly one active link exists for the authenticated platform; required to resolve STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED when multiple links exist.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+    StablecoinMintFundingSourceBase:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - WIRE
+            - ACH_DEBIT
+            - SAME_DAY_ACH_DEBIT
+            - GRID_INTERNAL_ACCOUNT
+            - PROVIDER_INTERNAL_BALANCE
+          description: Funding source variant. Grid internal account and provider internal balance funding are reserved for follow-up support.
+          example: ACH_DEBIT
+    StablecoinWireFundingSource:
+      title: Wire
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - WIRE
+              description: Wire-funded mint. Funding instructions are returned on the resulting operation.
+              example: WIRE
+          description: Wire funding source. The issuer wires fiat to the provider using the returned funding instructions.
+    StablecoinAchDebitFundingSource:
+      title: ACH Debit
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - ACH_DEBIT
+              description: ACH debit funding.
+              example: ACH_DEBIT
+            externalAccountId:
+              type: string
+              description: Grid `ExternalAccount` debited to fund the mint.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
+          description: ACH debit funding source. The provider debits the referenced external account.
+    StablecoinSameDayAchDebitFundingSource:
+      title: Same-Day ACH Debit
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - SAME_DAY_ACH_DEBIT
+              description: Same-day ACH debit funding.
+              example: SAME_DAY_ACH_DEBIT
+            externalAccountId:
+              type: string
+              description: Grid `ExternalAccount` debited to fund the mint.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
+          description: Same-day ACH debit funding source. The provider debits the referenced external account.
+    StablecoinGridInternalFundingSource:
+      title: Grid Internal Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+            - accountId
+          properties:
+            type:
+              type: string
+              enum:
+                - GRID_INTERNAL_ACCOUNT
+              description: Grid internal account funding. Reserved for the follow-up Grid-funded mint flow.
+              example: GRID_INTERNAL_ACCOUNT
+            accountId:
+              type: string
+              description: Grid internal funding account id.
+              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000102
+          description: Grid internal account funding source, reserved for future Grid-funded mint flows.
+    StablecoinProviderBalanceFundingSource:
+      title: Provider Internal Balance
+      allOf:
+        - $ref: '#/components/schemas/StablecoinMintFundingSourceBase'
+        - type: object
+          required:
+            - type
+            - sourceTokenIdentifier
+            - cryptoNetwork
+          properties:
+            type:
+              type: string
+              enum:
+                - PROVIDER_INTERNAL_BALANCE
+              description: Provider internal balance funding. Reserved for the follow-up provider-balance mint flow.
+              example: PROVIDER_INTERNAL_BALANCE
+            sourceTokenIdentifier:
+              type: string
+              description: Provider token/value type spent from the provider internal balance.
+              example: USDC
+            cryptoNetwork:
+              type: string
+              description: Source crypto network for the provider internal balance funds.
+              example: SOLANA
+          description: Provider internal balance funding source, reserved for future provider-funded mint flows.
+    StablecoinMintFundingSource:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinWireFundingSource'
+        - $ref: '#/components/schemas/StablecoinAchDebitFundingSource'
+        - $ref: '#/components/schemas/StablecoinSameDayAchDebitFundingSource'
+        - $ref: '#/components/schemas/StablecoinGridInternalFundingSource'
+        - $ref: '#/components/schemas/StablecoinProviderBalanceFundingSource'
+      discriminator:
+        propertyName: type
+        mapping:
+          WIRE: '#/components/schemas/StablecoinWireFundingSource'
+          ACH_DEBIT: '#/components/schemas/StablecoinAchDebitFundingSource'
+          SAME_DAY_ACH_DEBIT: '#/components/schemas/StablecoinSameDayAchDebitFundingSource'
+          GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalFundingSource'
+          PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceFundingSource'
+    StablecoinMintDestination:
+      type: object
+      description: Account that receives the minted stablecoin. External and Grid-managed accounts are represented as a single account reference, matching the `accountId` pattern used elsewhere in the API; the id prefix (`ExternalAccount:` or `InternalAccount:`) determines which. In the initial Brale-backed flow this must reference an active Spark external account.
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: Grid account receiving the minted stablecoin. Accepts an `ExternalAccount:` id (initial Brale-backed flow) or an `InternalAccount:` id for Grid-managed destinations.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000201
+    StablecoinMintRequest:
+      type: object
+      required:
+        - amount
+        - fundingSource
+        - destination
+      properties:
+        amount:
+          type: string
+          pattern: ^[0-9]+$
+          description: Amount to mint in the stablecoin's smallest unit. The amount must convert exactly to a whole fiat cent for the token decimals.
+          example: '1000000'
+        fundingSource:
+          $ref: '#/components/schemas/StablecoinMintFundingSource'
+        destination:
+          $ref: '#/components/schemas/StablecoinMintDestination'
+        description:
+          type: string
+          maxLength: 1024
+          description: Optional platform-provided operation description.
+          example: Initial program funding mint
+    StablecoinOperationType:
+      type: string
+      enum:
+        - MINT
+        - BURN
+      description: Stablecoin issuer operation type.
+    StablecoinOperationStatus:
+      type: string
+      enum:
+        - CREATED
+        - PENDING_FUNDING
+        - PENDING_PROVIDER
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - EXPIRED
+      description: Stablecoin issuer operation lifecycle status.
+    StablecoinOperationSource:
+      type: object
+      description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints and external-account burns, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - WIRE
+            - ACH_DEBIT
+            - SAME_DAY_ACH_DEBIT
+            - EXTERNAL_ACCOUNT
+            - GRID_INTERNAL_ACCOUNT
+            - PROVIDER_INTERNAL_BALANCE
+          description: Source variant. Mint funding uses `WIRE`, `ACH_DEBIT`, or `SAME_DAY_ACH_DEBIT`; burns use `EXTERNAL_ACCOUNT`. `GRID_INTERNAL_ACCOUNT` and `PROVIDER_INTERNAL_BALANCE` are shared across mint and burn.
+          example: ACH_DEBIT
+        externalAccountId:
+          type: string
+          description: Grid `ExternalAccount` funding the operation, present for ACH debit mints and external-account burns.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
+        accountId:
+          type: string
+          description: Grid internal account id, present for Grid internal account sources.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000102
+        sourceTokenIdentifier:
+          type: string
+          description: Provider token/value type, present for provider internal balance sources.
+          example: USDC
+        cryptoNetwork:
+          type: string
+          description: Source crypto network, present for provider internal balance sources.
+          example: SOLANA
+    StablecoinFundingInstructions:
+      type: object
+      description: Provider funding instructions safe to show publicly. Present for wire-funded mint operations and external-source burn operations when available. The common fields below are always declared; the exact set of remaining fields is rail- and provider-specific (for example, wire instructions carry bank beneficiary/account/routing details while Spark and on-chain instructions carry a deposit address), so `additionalProperties` stays open to pass those through without a spec change per rail.
+      additionalProperties: true
+      properties:
+        rail:
+          type: string
+          description: Funding rail these instructions apply to (e.g. `SPARK`, `WIRE`).
+          example: SPARK
+        network:
+          type: string
+          description: Network the funds should be sent on, when applicable.
+          example: SPARK
+        address:
+          type: string
+          description: Deposit address the issuer sends funds to, for on-chain or Spark rails.
+          example: spark1...
+        valueType:
+          type: string
+          description: Provider token/value type the deposit address expects.
+          example: ACME
+      example:
+        rail: SPARK
+        network: SPARK
+        address: spark1...
+        valueType: ACME
+    StablecoinOperationDestination:
+      type: object
+      description: 'Destination of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged (flat) shape so the field is unambiguously deserializable regardless of operation type: `accountId` identifies the receiving account (its `ExternalAccount:` / `InternalAccount:` prefix disambiguates external vs Grid-managed), and `rail` is present for burn (fiat payout) destinations and absent for mint destinations.'
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: Grid account that received the funds. An `ExternalAccount:` id for external destinations or an `InternalAccount:` id for Grid-managed destinations.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
+        rail:
+          type: string
+          enum:
+            - WIRE
+            - ACH_CREDIT
+            - SAME_DAY_ACH_CREDIT
+            - RTP_CREDIT
+          description: Fiat payout rail, present for burn (fiat redemption) destinations.
+    StablecoinEstimatedDelivery:
+      type: object
+      description: Static rail timing estimate for fiat redemption delivery. This is guidance, not a guaranteed arrival time.
+      additionalProperties: true
+      properties:
+        rail:
+          type: string
+          description: Fiat payout rail the estimate applies to.
+          example: ACH_CREDIT
+        amount:
+          type: string
+          pattern: ^[0-9]+$
+          description: Estimated delivery amount in the smallest unit of `currency` (e.g. cents for USD).
+          example: '100'
+        currency:
+          type: string
+          description: ISO 4217 currency code of the fiat payout.
+          example: USD
+        timing:
+          type: string
+          description: Human-readable rail timing estimate.
+          example: 1-3 business days
+      example:
+        rail: ACH_CREDIT
+        amount: '100'
+        currency: USD
+        timing: 1-3 business days
+    StablecoinOperation:
+      type: object
+      required:
+        - id
+        - stablecoinId
+        - operationType
+        - status
+        - amount
+        - provider
+        - providerEnvironment
+        - stablecoinProviderAccountId
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated stablecoin issuer operation identifier.
+          example: StablecoinOperation:019542f5-b3e7-1d02-0000-000000000301
+        stablecoinId:
+          type: string
+          description: Stablecoin this operation belongs to.
+          example: Stablecoin:019542f5-b3e7-1d02-0000-000000000002
+        operationType:
+          $ref: '#/components/schemas/StablecoinOperationType'
+        status:
+          $ref: '#/components/schemas/StablecoinOperationStatus'
+        amount:
+          type: string
+          description: Operation amount in the stablecoin's smallest unit.
+          example: '1000000'
+        provider:
+          $ref: '#/components/schemas/StablecoinProvider'
+        providerEnvironment:
+          $ref: '#/components/schemas/StablecoinProviderEnvironment'
+        stablecoinProviderAccountId:
+          type: string
+          description: Stablecoin provider account link used for the operation.
+          example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+        source:
+          $ref: '#/components/schemas/StablecoinOperationSource'
+        fundingInstructions:
+          $ref: '#/components/schemas/StablecoinFundingInstructions'
+        destination:
+          $ref: '#/components/schemas/StablecoinOperationDestination'
+        estimatedDelivery:
+          $ref: '#/components/schemas/StablecoinEstimatedDelivery'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Expiry for operations awaiting external funding.
+          example: '2026-05-27T16:40:00Z'
+        providerStatus:
+          type: string
+          description: Sanitized provider status when available.
+          example: pending
+        failureReason:
+          type: string
+          description: Stable internal failure code for terminal failed operations.
+          example: PROVIDER_TRANSFER_FAILED
+        description:
+          type: string
+          description: Platform-provided operation description.
+          example: Initial program funding mint
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2026-05-20T16:40:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp.
+          example: '2026-05-20T17:10:00Z'
+    Error503:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 503
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
+          enum:
+            - SERVICE_UNAVAILABLE
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    StablecoinBurnSourceBase:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - EXTERNAL_ACCOUNT
+            - GRID_INTERNAL_ACCOUNT
+            - PROVIDER_INTERNAL_BALANCE
+          description: Burn source variant. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
+          example: EXTERNAL_ACCOUNT
+    StablecoinExternalAccountBurnSource:
+      title: External Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnSourceBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT
+              description: External account burn. References an active Spark external account and returns funding instructions.
+              example: EXTERNAL_ACCOUNT
+            externalAccountId:
+              type: string
+              description: Grid Spark `ExternalAccount` expected to fund the provider for the burn.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000203
+          description: External account burn source. The issuer funds the provider from a Spark external account.
+    StablecoinGridInternalBurnSource:
+      title: Grid Internal Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnSourceBase'
+        - type: object
+          required:
+            - type
+            - accountId
+          properties:
+            type:
+              type: string
+              enum:
+                - GRID_INTERNAL_ACCOUNT
+              description: Grid internal account burn. Reserved for the Grid-controlled ledger movement flow.
+              example: GRID_INTERNAL_ACCOUNT
+            accountId:
+              type: string
+              description: Grid internal source account id.
+              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000204
+          description: Grid internal account burn source, reserved for future Grid-controlled burn flows.
+    StablecoinProviderBalanceBurnSource:
+      title: Provider Internal Balance
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnSourceBase'
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - PROVIDER_INTERNAL_BALANCE
+              description: Provider internal balance burn. Spends stablecoin funds already held at the provider.
+              example: PROVIDER_INTERNAL_BALANCE
+          description: Provider internal balance burn source. No external funding is required; the provider spends existing balance.
+    StablecoinBurnSource:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinExternalAccountBurnSource'
+        - $ref: '#/components/schemas/StablecoinGridInternalBurnSource'
+        - $ref: '#/components/schemas/StablecoinProviderBalanceBurnSource'
+      discriminator:
+        propertyName: type
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnSource'
+          GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnSource'
+          PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceBurnSource'
+    StablecoinBurnDestination:
+      type: object
+      required:
+        - type
+        - externalAccountId
+        - rail
+      properties:
+        type:
+          type: string
+          enum:
+            - EXTERNAL_ACCOUNT
+          description: Burn destination variant. V1 supports fiat Grid `ExternalAccount` destinations.
+        externalAccountId:
+          type: string
+          description: Grid bank `ExternalAccount` receiving fiat redemption proceeds.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
+        rail:
+          type: string
+          enum:
+            - WIRE
+            - ACH_CREDIT
+            - SAME_DAY_ACH_CREDIT
+            - RTP_CREDIT
+          description: Fiat payout rail for the burn destination.
+    StablecoinBurnRequest:
+      type: object
+      required:
+        - amount
+        - source
+        - destination
+      properties:
+        amount:
+          type: string
+          pattern: ^[0-9]+$
+          description: Amount to burn in the stablecoin's smallest unit. The amount must convert exactly to a whole fiat cent for the token decimals.
+          example: '1000000'
+        source:
+          $ref: '#/components/schemas/StablecoinBurnSource'
+        destination:
+          $ref: '#/components/schemas/StablecoinBurnDestination'
+        description:
+          type: string
+          maxLength: 1024
+          description: Optional platform-provided operation description.
+          example: Redeem ACME
+    StablecoinOperationListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StablecoinOperation'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results.
+        totalCount:
+          type: integer
+          description: Total number of stablecoin operations matching the query.
     StablecoinProviderAccountStatus:
       type: string
       enum:
@@ -22198,12 +23285,6 @@ components:
         - INVALID
         - REVOKED
       description: Status of the linked stablecoin provider account credentials.
-    StablecoinProviderEnvironment:
-      type: string
-      enum:
-        - SANDBOX
-        - PRODUCTION
-      description: Provider environment derived from the authenticated Grid platform mode.
     StablecoinProviderAccount:
       type: object
       required:

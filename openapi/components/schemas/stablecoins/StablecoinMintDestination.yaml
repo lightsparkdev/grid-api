@@ -1,0 +1,18 @@
+type: object
+description: >-
+  Account that receives the minted stablecoin. External and Grid-managed
+  accounts are represented as a single account reference, matching the
+  `accountId` pattern used elsewhere in the API; the id prefix
+  (`ExternalAccount:` or `InternalAccount:`) determines which. In the
+  initial Brale-backed flow this must reference an active Spark external
+  account.
+required:
+  - accountId
+properties:
+  accountId:
+    type: string
+    description: >-
+      Grid account receiving the minted stablecoin. Accepts an
+      `ExternalAccount:` id (initial Brale-backed flow) or an
+      `InternalAccount:` id for Grid-managed destinations.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000201

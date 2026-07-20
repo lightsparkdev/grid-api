@@ -1,0 +1,62 @@
+parameters:
+  - name: stablecoinId
+    in: path
+    description: System-generated stablecoin identifier
+    required: true
+    schema:
+      type: string
+get:
+  summary: List stablecoin issuer operations
+  description: List issuer mint and burn operations for a stablecoin, most recent first, with cursor pagination.
+  operationId: listStablecoinOperations
+  tags:
+    - Stablecoins
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: operationType
+      in: query
+      description: Filter operations by type. When omitted, both mints and burns are returned.
+      required: false
+      schema:
+        $ref: ../../components/schemas/stablecoins/StablecoinOperationType.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Opaque cursor returned as `nextCursor` from the previous response.
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinOperationListResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Stablecoin not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

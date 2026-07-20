@@ -1,0 +1,14 @@
+title: Provider Internal Balance
+allOf:
+  - $ref: ./StablecoinBurnSourceBase.yaml
+  - type: object
+    required:
+      - type
+    properties:
+      type:
+        type: string
+        enum:
+          - PROVIDER_INTERNAL_BALANCE
+        description: Provider internal balance burn. Spends stablecoin funds already held at the provider.
+        example: PROVIDER_INTERNAL_BALANCE
+    description: Provider internal balance burn source. No external funding is required; the provider spends existing balance.

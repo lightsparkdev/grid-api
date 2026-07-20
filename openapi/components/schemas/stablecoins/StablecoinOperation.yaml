@@ -1,0 +1,72 @@
+type: object
+required:
+  - id
+  - stablecoinId
+  - operationType
+  - status
+  - amount
+  - provider
+  - providerEnvironment
+  - stablecoinProviderAccountId
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated stablecoin issuer operation identifier.
+    example: StablecoinOperation:019542f5-b3e7-1d02-0000-000000000301
+  stablecoinId:
+    type: string
+    description: Stablecoin this operation belongs to.
+    example: Stablecoin:019542f5-b3e7-1d02-0000-000000000002
+  operationType:
+    $ref: StablecoinOperationType.yaml
+  status:
+    $ref: StablecoinOperationStatus.yaml
+  amount:
+    type: string
+    description: Operation amount in the stablecoin's smallest unit.
+    example: '1000000'
+  provider:
+    $ref: StablecoinProvider.yaml
+  providerEnvironment:
+    $ref: StablecoinProviderEnvironment.yaml
+  stablecoinProviderAccountId:
+    type: string
+    description: Stablecoin provider account link used for the operation.
+    example: StablecoinProviderAccount:019542f5-b3e7-1d02-0000-000000000001
+  source:
+    $ref: StablecoinOperationSource.yaml
+  fundingInstructions:
+    $ref: StablecoinFundingInstructions.yaml
+  destination:
+    $ref: StablecoinOperationDestination.yaml
+  estimatedDelivery:
+    $ref: StablecoinEstimatedDelivery.yaml
+  expiresAt:
+    type: string
+    format: date-time
+    description: Expiry for operations awaiting external funding.
+    example: '2026-05-27T16:40:00Z'
+  providerStatus:
+    type: string
+    description: Sanitized provider status when available.
+    example: pending
+  failureReason:
+    type: string
+    description: Stable internal failure code for terminal failed operations.
+    example: PROVIDER_TRANSFER_FAILED
+  description:
+    type: string
+    description: Platform-provided operation description.
+    example: Initial program funding mint
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp.
+    example: '2026-05-20T16:40:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp.
+    example: '2026-05-20T17:10:00Z'

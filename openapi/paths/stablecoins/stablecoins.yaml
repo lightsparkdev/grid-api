@@ -1,0 +1,124 @@
+post:
+  summary: Register an existing provider-created stablecoin
+  description: |
+    Register an existing provider-created stablecoin as a Grid `Stablecoin`. This endpoint links provider token metadata to Grid; it does not create the token with the provider. Grid derives the active provider account link from the authenticated platform, provider, and provider environment.
+  operationId: registerStablecoin
+  tags:
+    - Stablecoins
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      description: Required idempotency key for retrying this request safely.
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stablecoins/StablecoinRegisterRequest.yaml
+  responses:
+    '201':
+      description: Stablecoin registered
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/Stablecoin.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Referenced stablecoin provider account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List stablecoins
+  description: Retrieve stablecoins registered to the authenticated platform.
+  operationId: listStablecoins
+  tags:
+    - Stablecoins
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: issuanceStatus
+      in: query
+      required: false
+      schema:
+        $ref: ../../components/schemas/stablecoins/StablecoinIssuanceStatus.yaml
+    - name: gridOperationsStatus
+      in: query
+      required: false
+      schema:
+        $ref: ../../components/schemas/stablecoins/StablecoinGridOperationsStatus.yaml
+    - name: provider
+      in: query
+      required: false
+      schema:
+        $ref: ../../components/schemas/stablecoins/StablecoinProvider.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Opaque cursor returned as `nextCursor` from the previous response.
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

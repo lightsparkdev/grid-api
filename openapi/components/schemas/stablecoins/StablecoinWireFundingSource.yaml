@@ -1,0 +1,14 @@
+title: Wire
+allOf:
+  - $ref: ./StablecoinMintFundingSourceBase.yaml
+  - type: object
+    required:
+      - type
+    properties:
+      type:
+        type: string
+        enum:
+          - WIRE
+        description: Wire-funded mint. Funding instructions are returned on the resulting operation.
+        example: WIRE
+    description: Wire funding source. The issuer wires fiat to the provider using the returned funding instructions.
