@@ -63,12 +63,15 @@ post:
                 mcc: '5942'
                 country: US
   responses:
-    '200':
-      description: Simulated authorization processed. Returns the resulting card transaction.
+    '202':
+      description: >-
+        Simulation accepted. The resulting card operation is delivered
+        asynchronously via the issuer's events webhook. Returns the issuer
+        transaction token that correlates the simulated event.
       content:
         application/json:
           schema:
-            $ref: ../../../components/schemas/cards/CardTransaction.yaml
+            $ref: ../../../components/schemas/cards/SandboxCardSimulationResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

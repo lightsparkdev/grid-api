@@ -1,14 +1,21 @@
 post:
-  summary: Simulate a card return
+  summary: Simulate a card financial authorization
   description: >
-    Simulate a merchant-initiated `RETURN` against an existing settled
-    card transaction in the sandbox environment. Creates a `CardRefund` on
-    the parent and either flips the parent to `REFUNDED` (full refund) or
-    keeps it `SETTLED` with a non-zero `refundedAmount` (partial refund).
+    Simulate a single-message financial authorization (an authorization that
+    clears in the same message, e.g. an ATM withdrawal or other
+    dual-message-exempt flow) against a card in the sandbox environment. Drives
+    the same internal paths the card issuer would call in production. The
+    resulting card operation is delivered asynchronously via the issuer's events
+    webhook.
+
+
+    As with `simulate/authorization`, the decisioning outcome is controlled by
+    the last three characters of `merchant.descriptor` — see the
+    `simulate/authorization` suffix table.
 
 
     Production returns `404` on this path.
-  operationId: sandboxSimulateCardReturn
+  operationId: sandboxSimulateCardFinancialAuthorization
   tags:
     - Sandbox
   security:
@@ -17,7 +24,7 @@ post:
     - name: id
       in: path
       required: true
-      description: The id of the card the return applies to.
+      description: The id of the card to simulate a financial authorization against.
       schema:
         type: string
       example: Card:019542f5-b3e7-1d02-0000-000000000010
@@ -26,13 +33,18 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../../components/schemas/cards/SandboxCardReturnRequest.yaml
+          $ref: ../../../components/schemas/cards/SandboxCardAuthorizationRequest.yaml
         examples:
-          fullRefund:
-            summary: Full refund of a $15.00 settled transaction
+          financialAuth:
+            summary: $80.00 single-message ATM withdrawal
             value:
-              cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
-              amount: 1500
+              amount: 8000
+              currency:
+                code: USD
+              merchant:
+                descriptor: ATM WITHDRAWAL 24TH ST
+                mcc: '6011'
+                country: US
   responses:
     '202':
       description: >-
@@ -62,7 +74,7 @@ post:
           schema:
             $ref: ../../../components/schemas/errors/Error403.yaml
     '404':
-      description: Card or card transaction not found
+      description: Card not found (also returned in production for this path)
       content:
         application/json:
           schema:

@@ -338,6 +338,20 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
   /sandbox/cards/{id}/simulate/return:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
+  /sandbox/cards/{id}/simulate/balance_inquiry:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_balance_inquiry.yaml
+  /sandbox/cards/{id}/simulate/credit_authorization:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_credit_authorization.yaml
+  /sandbox/cards/{id}/simulate/financial_authorization:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_financial_authorization.yaml
+  /sandbox/cards/{id}/simulate/financial_credit_authorization:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_financial_credit_authorization.yaml
+  /sandbox/cards/{id}/simulate/authorization_advice:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization_advice.yaml
+  /sandbox/cards/{id}/simulate/credit_authorization_advice:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_credit_authorization_advice.yaml
+  /sandbox/cards/{id}/simulate/return_reversal:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return_reversal.yaml
   /stablecoin-provider-accounts:
     $ref: paths/stablecoins/stablecoin-provider-accounts.yaml
   /stablecoin-provider-accounts/{stablecoinProviderAccountId}:

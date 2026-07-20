@@ -22,3 +22,11 @@ openapi.yaml:
     - '#/paths/~1quotes/post/requestBody/content/application~1json/schema'
   no-ambiguous-paths:
     - '#/paths/~1customers~1external-accounts~1{externalAccountId}'
+  paths-kebab-case:
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1balance_inquiry'
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1credit_authorization'
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1financial_authorization'
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1financial_credit_authorization'
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1authorization_advice'
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1credit_authorization_advice'
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1return_reversal'
