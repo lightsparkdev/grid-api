@@ -12113,6 +12113,8 @@ components:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/BusinessCustomerFields'
         - type: object
+          required:
+            - businessInfo
           properties:
             businessInfo:
               $ref: '#/components/schemas/BusinessInfo'

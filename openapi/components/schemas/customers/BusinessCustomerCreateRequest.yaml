@@ -3,6 +3,8 @@ allOf:
   - $ref: ./CustomerCreateRequest.yaml
   - $ref: ./BusinessCustomerFields.yaml
   - type: object
+    required:
+      - businessInfo
     properties:
       businessInfo:
         $ref: ./BusinessInfo.yaml
