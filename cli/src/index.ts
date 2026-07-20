@@ -68,6 +68,8 @@ export async function buildProgram(): Promise<Command> {
   const { registerTransfersCommand } = await import("./commands/transfers");
   const { registerSandboxCommand } = await import("./commands/sandbox");
   const { registerReceiverCommand } = await import("./commands/receiver");
+  const { registerCardsCommand } = await import("./commands/cards");
+  const { registerAuthCommand } = await import("./commands/auth");
 
   registerConfigureCommand(program);
   registerConfigCommand(program, getClient);
@@ -78,6 +80,8 @@ export async function buildProgram(): Promise<Command> {
   registerTransfersCommand(program, getClient);
   registerSandboxCommand(program, getClient);
   registerReceiverCommand(program, getClient);
+  registerCardsCommand(program, getClient);
+  registerAuthCommand(program, getClient);
 
   const customersCmd = program.commands.find((c) => c.name() === "customers");
   const transactionsCmd = program.commands.find(
