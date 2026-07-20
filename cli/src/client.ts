@@ -93,7 +93,11 @@ export class GridClient {
       }
 
       if (!response.ok) {
-        const errorData = data as { code?: string; message?: string };
+        const errorData = data as {
+          code?: string;
+          message?: string;
+          details?: unknown;
+        };
         return {
           success: false,
           error: {
@@ -101,7 +105,7 @@ export class GridClient {
             code: errorData?.code,
             message:
               errorData?.message || response.statusText || "Request failed",
-            details: data,
+            details: errorData?.details,
           },
         };
       }
