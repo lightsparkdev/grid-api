@@ -3,11 +3,13 @@ post:
   description: >
     Webhook that is called on every state transition of a card
     `CardTransaction`. Fires when an authorization is approved
-    (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it
-    (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`),
-    when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and
-    when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`).
-    The payload carries the full `CardTransaction` resource.
+    (`CARD_TRANSACTION.AUTHORIZED`), when an authorization is declined by
+    the issuer or program (`CARD_TRANSACTION.DECLINED`), as clearings
+    settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`,
+    `CARD_TRANSACTION.SETTLED`), when settled funds are returned
+    (`CARD_TRANSACTION.REFUNDED`), and when a pull or confirmation fails
+    (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full
+    `CardTransaction` resource.
 
 
     This endpoint should be implemented by clients of the Grid API.
@@ -84,6 +86,46 @@ post:
                 authorizedAt: '2026-05-09T10:00:00Z'
                 createdAt: '2026-05-09T10:00:00Z'
                 updatedAt: '2026-05-09T10:00:00Z'
+          declined:
+            summary: Authorization declined; no funds moved
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000044
+              type: CARD_TRANSACTION.DECLINED
+              timestamp: '2026-05-09T11:20:00Z'
+              data:
+                type: CARD
+                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000102
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_d03e4c6b
+                status: DECLINED
+                direction: DEBIT
+                merchant:
+                  descriptor: BLUE BOTTLE COFFEE SF
+                  mcc: '5814'
+                  country: US
+                authorizedAmount:
+                  amount: 8300
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                pullSummary:
+                  count: 0
+                  totalAmount: 0
+                  pendingCount: 0
+                refundSummary:
+                  count: 0
+                  totalAmount: 0
+                settlementSummary:
+                  count: 0
+                  totalAmount: 0
+                authorizedAt: '2026-05-09T11:20:00Z'
+                createdAt: '2026-05-09T11:20:00Z'
+                updatedAt: '2026-05-09T11:20:00Z'
           settled:
             summary: All clearings posted
             value:

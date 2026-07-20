@@ -19,6 +19,22 @@ properties:
     example: card-emp-aary-001
   form:
     $ref: ./CardForm.yaml
+  threeDSecurePassword:
+    type: string
+    writeOnly: true
+    minLength: 8
+    maxLength: 36
+    description: >-
+      Optional static 3-D Secure password to set on the card, for card
+      programs whose issuer challenges online purchases with a static
+      password factor (EU/Striga cards). 8-36 characters; Latin letters,
+      digits, and the issuer's allowed special characters. Grid forwards it
+      to the provider and never stores or returns it. When omitted, Grid
+      generates a strong password; the cardholder-facing view/change flow
+      is delivered through the secure card UI. Rejected for card programs
+      without a static-password challenge factor (US/Lithic cards).
+    example: Xk9!qR2#mVp7
+
   fundingSources:
     type: array
     description: >-

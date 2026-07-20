@@ -15,10 +15,8 @@ cards. Cards do not require new webhook endpoints or new API
 credentials — they reuse what's already configured for the rest of
 Grid. You'll only need to:
 
-- Subscribe to the new card-specific webhook types (`CARD.STATE_CHANGE`
-  and `CARD.FUNDING_SOURCE_CHANGE`). Card-transaction lifecycle events
-  ride on the generic transaction webhook stream that already covers
-  outgoing-payment activity.
+- Subscribe to the new card-specific webhook types (`CARD.STATE_CHANGE`,
+  `CARD.FUNDING_SOURCE_CHANGE`, and the `CARD_TRANSACTION.*` family).
 - Confirm with your Lightspark contact that cards are enabled for your
   platform — issuance requires an issuer-side onboarding.
 
@@ -88,11 +86,10 @@ When you're ready to go live:
 
 - Complete card-issuer onboarding through your Lightspark contact.
 - Confirm webhook security, monitoring, and alerting cover the
-  `CARD.*` event types plus card-destination transactions on the
-  generic transaction webhook stream.
-- Build the `EXCEPTION` dashboard view from card-destination
-  transaction webhooks (filter by `status: "EXCEPTION"`) and wire it
-  into on-call alerting.
+  `CARD.*` and `CARD_TRANSACTION.*` event types.
+- Build the `EXCEPTION` dashboard view from
+  `CARD_TRANSACTION.EXCEPTION` webhooks and wire it into on-call
+  alerting.
 
 <Check>
 Contact your Lightspark representative to enable Production card

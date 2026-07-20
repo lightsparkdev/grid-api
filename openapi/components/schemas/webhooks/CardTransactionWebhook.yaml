@@ -10,6 +10,7 @@ allOf:
         type: string
         enum:
           - CARD_TRANSACTION.AUTHORIZED
+          - CARD_TRANSACTION.DECLINED
           - CARD_TRANSACTION.PARTIALLY_SETTLED
           - CARD_TRANSACTION.SETTLED
           - CARD_TRANSACTION.REFUNDED

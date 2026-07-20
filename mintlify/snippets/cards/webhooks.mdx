@@ -1,12 +1,9 @@
-Cards add two webhook event types on top of Grid's existing webhook
+Cards add two card-lifecycle webhook event types plus the
+`CARD_TRANSACTION.*` family on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
 [Webhooks](/api-reference/webhooks) for the underlying mechanics.
-
-Card-transaction lifecycle events are not card-specific webhooks —
-they ride on the generic transaction webhook stream (a follow-up
-extends the Transaction model with a card destination type).
 
 ## Event types
 
@@ -14,8 +11,14 @@ extends the Transaction model with a card destination type).
 |------|----------|
 | `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
+| `CARD_TRANSACTION.AUTHORIZED` | An authorization is approved and the parent `CardTransaction` is created. |
+| `CARD_TRANSACTION.DECLINED` | An authorization is declined; the transaction is terminal and no funds moved. |
+| `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted but more are still expected. |
+| `CARD_TRANSACTION.SETTLED` | All clearings for the auth have posted. |
+| `CARD_TRANSACTION.REFUNDED` | A merchant `RETURN` refunded the net settled amount in part or whole. |
+| `CARD_TRANSACTION.EXCEPTION` | The transaction settled to the network but the funding-source pull failed. |
 
-All three carry the standard envelope:
+All of them carry the standard envelope:
 
 ```json
 {
@@ -80,15 +83,64 @@ array. The `data` payload is the full `Card` resource with the
 post-change `fundingSources`, so a consumer that only cares about the
 current set of bindings can replace state wholesale.
 
-## Card-transaction lifecycle
+## The CARD_TRANSACTION.* family
 
-Authorization, pull, clearing, refund, and `EXCEPTION` transitions are
-not delivered through a dedicated card webhook. They flow through
-the generic transaction webhook stream that already carries
-outgoing-payment lifecycle events; a follow-up PR adds the card
-destination type to that stream. See
-[Reconciliation](/cards/transactions/reconciliation) for the
-underlying event model.
+Fires on every state transition of a `CardTransaction` — the webhook
+type names the transaction's new status, so consumers can route purely
+on `type` without inspecting `data.status`. The `data` payload is the
+full post-transition `CardTransaction`, including its lifecycle status
+and reconciliation aggregates.
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000040",
+  "type": "CARD_TRANSACTION.SETTLED",
+  "timestamp": "2026-05-08T15:42:11Z",
+  "data": {
+    "type": "CARD",
+    "id": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100",
+    "cardId": "Card:019542f5-b3e7-1d02-0000-000000000010",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "18d3e5f7b4a9c2",
+    "status": "SETTLED",
+    "direction": "DEBIT",
+    "merchant": {
+      "descriptor": "BLUE BOTTLE COFFEE SF",
+      "mcc": "5814",
+      "country": "US"
+    },
+    "authorizedAmount": {
+      "amount": 1250,
+      "currency": { "code": "USD" }
+    },
+    "settledAmount": {
+      "amount": 1500,
+      "currency": { "code": "USD" }
+    },
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "pullSummary": {
+      "count": 2,
+      "totalAmount": 1500,
+      "pendingCount": 0
+    },
+    "refundSummary": {
+      "count": 0,
+      "totalAmount": 0
+    },
+    "settlementSummary": {
+      "count": 1,
+      "totalAmount": 1500
+    },
+    "authorizedAt": "2026-05-08T14:30:00Z",
+    "lastEventAt": "2026-05-08T15:42:11Z",
+    "createdAt": "2026-05-08T14:30:00Z",
+    "updatedAt": "2026-05-08T15:42:11Z"
+  }
+}
+```
+
+See [Reconciliation](/cards/transactions/reconciliation) for the
+underlying event model and `EXCEPTION` handling.
 
 ## Idempotency & retries
 
