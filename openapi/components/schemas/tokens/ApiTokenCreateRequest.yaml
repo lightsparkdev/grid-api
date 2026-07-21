@@ -9,6 +9,7 @@ properties:
     example: Sandbox read-only
   permissions:
     type: array
-    description: A list of permissions to grant to the token
+    description: A non-empty list of permissions to grant to the token
+    minItems: 1
     items:
       $ref: ./Permission.yaml
