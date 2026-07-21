@@ -4,16 +4,20 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { CONFIGURE_COL_PX } from '@/lib/layout';
 
 const MIN_APP = 320;
-// Never resize the API column below the configure column width; dragging only
-// widens it from there.
+// Never resize the API column below the (deferred) configure-column-derived
+// floor; dragging only widens it from there.
 const MIN_API = CONFIGURE_COL_PX;
-// The DEFAULT width + snap target: the docs sidebar plus the configure column —
-// the combined chrome flanking the embedded playground. Standalone (and until
+// The DEFAULT width + snap target. This app is a 2-column layout — phone +
+// API panel, no configure column — but the default-width behavior for the
+// embed path is unchanged from the demo app and deferred to Phase 2: the
+// docs sidebar plus the (now-notional) configure column width, the combined
+// chrome that used to flank the embedded playground. Standalone (and until
 // the docs parent reports in) this assumes the expanded sidebar: 280px
 // (--ls-sidebar-width) + 400 = 680 = $layout-laptop-api-content-max-width.
 // Embedded, the docs page posts `nav-sync` with the live sidebar width (48px
 // rail when collapsed, drag-resized values too) and the default follows.
-// Dragging can still grow the panel freely up to (middle − MIN_APP).
+// Dragging can still grow the panel freely up to (middle − MIN_APP), where
+// middle is now the full layout width since the configure column is gone.
 const DOCS_SIDEBAR_DEFAULT = 280;
 const SNAP_THRESHOLD = 28;
 
@@ -95,7 +99,7 @@ export function useColumnResize() {
     const fitToLayout = () => {
       const layout = layoutRef.current;
       if (!layout) return;
-      const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_COL_PX;
+      const totalMiddle = layout.getBoundingClientRect().width;
       setApiWidth((w) =>
         clampApiWidth(userResized.current && w !== null ? w : defaultApi, totalMiddle),
       );
@@ -119,7 +123,7 @@ export function useColumnResize() {
       const applyWidth = (clientX: number) => {
         const layout = layoutRef.current;
         if (!layout) return;
-        const totalMiddle = layout.getBoundingClientRect().width - CONFIGURE_COL_PX;
+        const totalMiddle = layout.getBoundingClientRect().width;
         const delta = clientX - startX;
         const raw = clampApiWidth(startApiWidth - delta, totalMiddle);
         const target = clampApiWidth(defaultApi, totalMiddle);
