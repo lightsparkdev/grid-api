@@ -68,7 +68,7 @@ const PROD_AUTH_METHODS: AuthMethod[] = ['passkey'];
 
 /**
  * Demo interaction logic — preserved for phase 2 UI wiring.
- * Returns the full surface area Sidebar / Phone / ApiPanel expect.
+ * Returns the full surface area Phone / ApiPanel expect.
  */
 export function useWalletDemoLogic() {
   const persona: Persona = 'fintech';

@@ -48,11 +48,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Boot attributes, set before first paint to avoid flashes — an
             effect is too late (the SSR HTML paints long before hydration):
             - data-embed / data-theme from the URL (embed) or stored pref
-            - data-layout (stacked ⇄ 3-col) from the viewport width
+            - data-layout (stacked ⇄ 2-col wide) from the viewport width
             - --api-col-default from the embed's ?nav param (the live docs
               sidebar width), so the wide layout's code column paints at its
-              real default — sidebar + configure column — instead of the
-              expanded-sidebar assumption and re-fitting after hydration. */}
+              real default — sidebar width plus the deferred (Phase 2)
+              configure-column offset — instead of the expanded-sidebar
+              assumption and re-fitting after hydration. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{
