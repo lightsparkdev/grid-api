@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
-import { primaryAuthMethod, USE_CASES, type UseCaseId } from '@/data/configure';
+import { primaryAuthMethod } from '@/data/configure';
 import {
   initialCompleted,
   initialWallet,
@@ -63,31 +63,16 @@ interface Session {
 const SESSION_MS = 15 * 60 * 1000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// Production demo: use case pinned to Fintech, sign-in pinned to passkey.
+const PROD_AUTH_METHODS: AuthMethod[] = ['passkey'];
+
 /**
  * Demo interaction logic — preserved for phase 2 UI wiring.
  * Returns the full surface area Sidebar / Phone / ApiPanel expect.
  */
 export function useWalletDemoLogic() {
-  const [persona, setPersona] = useState<Persona>('fintech');
-  const [useCase, setUseCaseState] = useState<UseCaseId>('fintech');
-  // Picking a use-case also switches the persona so the phone renders that
-  // skin's app. The picker only calls this for built use-cases. The wallet
-  // brain persists across the switch (it's hosted above the skin), so also
-  // drop any already-consumed flow command — a skin switch should never
-  // replay the last sidebar jump.
-  const setUseCase = useCallback((id: UseCaseId) => {
-    setUseCaseState(id);
-    setWalletEntry(undefined);
-    const next = USE_CASES.find((u) => u.id === id)?.persona;
-    if (next) setPersona(next);
-  }, []);
-  const [methods, setMethods] = useState<AuthMethod[]>([
-    'email_otp',
-    'sms',
-    'oauth',
-    'apple',
-    'passkey',
-  ]);
+  const persona: Persona = 'fintech';
+  const methods = PROD_AUTH_METHODS;
   const method = useMemo(() => primaryAuthMethod(methods), [methods]);
   const [wallet, setWallet] = useState<WalletState>(initialWallet);
   // Sticky sidebar checkmarks — "have you ever run this flow". Separate from
@@ -612,17 +597,6 @@ export function useWalletDemoLogic() {
     setRunning(false);
   }, []);
 
-  const toggleMethod = useCallback((m: AuthMethod) => {
-    // Always togglable — even signed in, so you can re-pick and sign in again.
-    // At least one method stays selected.
-    setMethods((prev) => {
-      if (prev.includes(m)) {
-        return prev.length === 1 ? prev : prev.filter((id) => id !== m);
-      }
-      return [...prev, m];
-    });
-  }, []);
-
   const base = phoneFromState(wallet);
   const phone = transient
     ? {
@@ -635,11 +609,7 @@ export function useWalletDemoLogic() {
 
   return {
     persona,
-    setPersona,
-    useCase,
-    setUseCase,
     methods,
-    toggleMethod,
     method,
     wallet,
     completed,
