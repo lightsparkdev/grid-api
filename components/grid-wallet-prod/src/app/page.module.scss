@@ -9,19 +9,6 @@
   overflow: hidden;
 }
 
-/* Wraps ConfigurePanel. Transparent on desktop/laptop (the panel stays the flex
-   child exactly as before); a toggle target for the mobile two-view layout. */
-.configCol {
-  display: contents;
-}
-
-/* Mobile-only controls — hidden everywhere except the mobile breakpoint. */
-.exploreBtn,
-.backPill,
-.exploreFade {
-  display: none;
-}
-
 .stackCol {
   flex: 1;
   min-width: 0;
@@ -98,8 +85,9 @@
   }
 }
 
-/* Mobile: two swappable views — Configure (the panel) and Playground (app over
-   API). Only one shows at a time and the page (window) scrolls. */
+/* Mobile: full-screen app over API. The phone fills the first screen with the
+   API header peeking at the bottom; scroll within to reveal the calls (the
+   same stacked behavior as the laptop layout). */
 @media (max-width: $breakpoint-layout-mobile) {
   .layout {
     display: block;
@@ -107,17 +95,6 @@
     overflow: hidden;
   }
 
-  .layout[data-mobile-view='playground'] .configCol {
-    display: none;
-  }
-
-  .layout[data-mobile-view='configure'] .stackCol {
-    display: none;
-  }
-
-  /* Playground: full-screen app over API. The phone fills the first screen with
-     the API header peeking at the bottom; scroll within to reveal the calls
-     (the same stacked behavior as the laptop layout). */
   .stackCol {
     display: flex;
     flex-direction: column;
@@ -138,170 +115,5 @@
     width: 100% !important;
     min-height: 0;
     overflow: visible;
-  }
-
-  /* Progressive blur tray behind the sticky CTA — content scrolls UP under the
-     button and frosts + fades into the panel bg, feathering out 40px above it.
-     pointer-events: none (inherited by the layers too) so the rows it overlaps
-     stay tappable. Same 3-layer ramp as the wallet scroll-edge, flipped to anchor
-     at the bottom; no corner clipping needed here (page-level, square). */
-  .exploreFade {
-    --explore-fade-bg: var(--surface-primary);
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    /* button bottom inset + button height (52px) + 40px feather above it */
-    height: calc(var(--spacing-xl) + 52px + 40px);
-    z-index: 99; /* just under the button (z 100) */
-    pointer-events: none;
-
-    :global([data-theme='dark']) & {
-      --explore-fade-bg: var(--color-gray-950);
-    }
-  }
-
-  /* Each layer ups the blur radius + is masked to a band, so the blur RAMPS from
-     full at the bottom to 0 up top (one uniform blur leaves a hard edge; the
-     crossfade removes it). The parent has no overflow/clip/isolation so the blur
-     samples the scrolling panel beneath. Knobs: blur px + mask stops. */
-  .fadeBlur {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.01); /* hairline fill kicks compositing on */
-    -webkit-backdrop-filter: blur(var(--fade-blur));
-    backdrop-filter: blur(var(--fade-blur));
-    mask-image: var(--fade-mask);
-    -webkit-mask-image: var(--fade-mask);
-
-    :global([data-theme='dark']) & {
-      background: rgba(0, 0, 0, 0.01);
-    }
-  }
-
-  .fadeBlurStrong {
-    --fade-blur: 3px;
-    --fade-mask: linear-gradient(to top, #000 0%, #000 16%, transparent 46%);
-  }
-
-  .fadeBlurMid {
-    --fade-blur: 2px;
-    --fade-mask: linear-gradient(to top, #000 0%, #000 34%, transparent 68%);
-  }
-
-  .fadeBlurSoft {
-    --fade-blur: 1px;
-    --fade-mask: linear-gradient(to top, #000 0%, #000 56%, transparent 100%);
-  }
-
-  /* bg-color tint over the blur — solid panel bg behind/below the button, melting
-     to transparent 40px above so the blurred content shows through up top. */
-  .fadeTint {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to top,
-      color-mix(in srgb, var(--explore-fade-bg) 45%, transparent) 0%,
-      color-mix(in srgb, var(--explore-fade-bg) 15%, transparent) 50%,
-      transparent 100%
-    );
-  }
-
-  /* Sticky primary CTA in Configure → Playground. */
-  .exploreBtn {
-    @include label;
-    position: fixed;
-    bottom: var(--spacing-xl);
-    left: var(--spacing-xl);
-    right: var(--spacing-xl);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-xs);
-    height: 52px;
-    background: var(--color-gray-950);
-    color: var(--color-gray-050);
-    border: none;
-    border-radius: var(--corner-radius-md);
-    font-feature-settings: 'salt' 1;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    /* --shadow-lg is the top of the scale; add a deeper layer for more lift. */
-    box-shadow: var(--shadow-lg), 0 12px 28px rgba(0, 0, 0, 0.16);
-    transition: transform 150ms ease, background-color 150ms ease;
-
-    :global([data-theme='dark']) & {
-      background: var(--color-gray-050);
-      color: var(--color-gray-950);
-    }
-
-    // Tap fill — lifts the dark button toward charcoal on press (and the light
-    // button toward gray in dark mode); resets on release.
-    &:active {
-      transform: scale(0.98);
-      background: color-mix(in srgb, var(--color-gray-950) 88%, white);
-
-      :global([data-theme='dark']) & {
-        background: color-mix(in srgb, var(--color-gray-050) 90%, black);
-      }
-    }
-
-    svg path {
-      vector-effect: non-scaling-stroke;
-    }
-  }
-
-  /* Floating back pill in Playground → Configure (hides on scroll down). */
-  .backPill {
-    @include label-sm;
-    position: fixed;
-    bottom: var(--spacing-xl);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-xs);
-    height: 44px;
-    padding: 0 var(--spacing-lg);
-    background: color-mix(in srgb, var(--surface-primary) 70%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: var(--text-primary);
-    border: var(--stroke-xs) solid var(--border-tertiary);
-    border-radius: var(--corner-radius-md);
-    box-shadow: var(--shadow-md);
-    font-feature-settings: 'salt' 1;
-    white-space: nowrap;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 200ms ease, background-color 200ms ease;
-
-    /* Keep the translateX(-50%) centering while pressing in; fill a touch more solid. */
-    &:active {
-      transform: translateX(-50%) scale(0.98);
-      background: color-mix(in srgb, var(--surface-primary) 90%, transparent);
-    }
-
-    svg path {
-      vector-effect: non-scaling-stroke;
-    }
-  }
-
-  .backPillHidden {
-    transform: translateX(-50%) translateY(calc(100% + var(--spacing-xl) + 20px));
-  }
-
-  /* Show the right control for the active view. */
-  .layout[data-mobile-view='configure'] .exploreBtn {
-    display: flex;
-  }
-
-  .layout[data-mobile-view='configure'] .exploreFade {
-    display: block;
-  }
-
-  .layout[data-mobile-view='playground'] .backPill {
-    display: flex;
   }
 }
