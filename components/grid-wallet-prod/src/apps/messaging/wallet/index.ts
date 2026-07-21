@@ -1,0 +1,1 @@
+export { MessagingWalletScreen } from './MessagingWalletScreen';

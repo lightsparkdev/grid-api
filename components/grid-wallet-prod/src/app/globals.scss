@@ -1,0 +1,205 @@
+/* Grid Wallet Demo — adopts the Lightspark Origin design system,
+   matching grid-visualizer / flow-builder exactly. */
+
+@use '@lightsparkdev/origin/src/tokens/variables';
+@use '@lightsparkdev/origin/src/tokens/fonts';
+@use './fonts/suisse-intl'; // overrides origin's Suisse Intl ascent/descent (81/19 → 85/15); must follow origin fonts
+@use '@lightsparkdev/origin/src/tokens/typography';
+@use '@lightsparkdev/origin/src/tokens/effects';
+@use '@lightsparkdev/origin/src/tokens/reset';
+@use './fonts/sf-pro';
+@use './fonts/sf-pro-rounded';
+@use './fonts/inter';
+@use './fonts/geist';
+@use './fonts/circular';
+@use '../apps/shared/typography/ios-type';
+
+/* Origin sets --font-family-sans/-mono to just "Suisse Intl" with NO fallback,
+   and its @font-face uses font-display: swap. So any frame the webfont isn't
+   painted (e.g. the repaint when the docs theme toggles) falls back to the
+   browser default — which is *serif*. Add a system sans/mono fallback so that
+   moment renders a near-identical system sans, never serif. */
+:root {
+  --font-family-sans: 'Suisse Intl', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono: "Suisse Int'l Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* App-wide corner curve, single source of truth. superellipse(1.24) = exp ~2.48,
+   the iOS-matched shape dialed in on the phone (smoothing 0.12 → superellipse(1 +
+   0.12*2)). Rounder/smoother than `squircle` (= superellipse(2), exp 4). Change it
+   here and every corner (components reference var(--corner-shape)) follows. */
+* {
+  corner-shape: var(--corner-shape);
+}
+
+:root {
+  --corner-shape: superellipse(1.24);
+  /* Figma radius × this scale ≈ matching superellipse roundness (Chromium
+     corner-shape + clip-path squircle on every browser). */
+  --corner-superellipse-scale: 1.2;
+  --app-shell-padding: 16px;
+  --app-screen-width: 402px;
+  --app-screen-height: 874px;
+  --app-shell-width: 434px;
+  --app-shell-height: 906px;
+  /* Figma phone-gga (2121:17475) — figma values; scaled in @supports below. */
+  --figma-corner-radius-phone-shell: 76px;
+  --figma-corner-radius-phone-screen: 60px;
+  --corner-radius-phone-shell: var(--figma-corner-radius-phone-shell);
+  --corner-radius-phone-screen: var(--figma-corner-radius-phone-screen);
+  /* Wallet home (Figma Bitcoin 2026). */
+  --figma-corner-radius-wallet-sheet: 40px;
+  --figma-corner-radius-wallet-card: 32px;
+  --figma-corner-radius-debit-card: 13px;
+  --corner-radius-wallet-sheet: var(--figma-corner-radius-wallet-sheet);
+  --corner-radius-wallet-card: var(--figma-corner-radius-wallet-card);
+  /* clip-path squircle — always scaled (all browsers). */
+  --corner-radius-wallet-card-squircle: calc(
+    var(--figma-corner-radius-wallet-card) * var(--corner-superellipse-scale)
+  );
+  --corner-radius-debit-card-squircle: calc(
+    var(--figma-corner-radius-debit-card) * var(--corner-superellipse-scale)
+  );
+}
+
+/* When corner-shape is supported, bump border-radius tokens to match superellipse. */
+@supports (corner-shape: squircle) {
+  :root {
+    --corner-radius-2xs: calc(2px * var(--corner-superellipse-scale));
+    --corner-radius-xs: calc(4px * var(--corner-superellipse-scale));
+    --corner-radius-sm: calc(6px * var(--corner-superellipse-scale));
+    --corner-radius-md: calc(8px * var(--corner-superellipse-scale));
+    --corner-radius-lg: calc(12px * var(--corner-superellipse-scale));
+    --corner-radius-xl: calc(16px * var(--corner-superellipse-scale));
+    --corner-radius-2xl: calc(24px * var(--corner-superellipse-scale));
+    --corner-radius-3xl: calc(32px * var(--corner-superellipse-scale));
+    --corner-radius-4xl: calc(40px * var(--corner-superellipse-scale));
+    --corner-radius-phone-shell: calc(
+      var(--figma-corner-radius-phone-shell) * var(--corner-superellipse-scale)
+    );
+    --corner-radius-phone-screen: calc(
+      var(--figma-corner-radius-phone-screen) * var(--corner-superellipse-scale)
+    );
+    --corner-radius-wallet-sheet: calc(
+      var(--figma-corner-radius-wallet-sheet) * var(--corner-superellipse-scale)
+    );
+    --corner-radius-wallet-card: calc(
+      var(--figma-corner-radius-wallet-card) * var(--corner-superellipse-scale)
+    );
+  }
+}
+
+body {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-book);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Origin ships border-primary/secondary only; flow-builder SCSS uses
+   border-tertiary throughout — alias it so dividers and step connectors render. */
+:root {
+  --border-tertiary: var(--border-primary);
+}
+
+/* Hover fills — match grid-visualizer / flow-builder. */
+:root {
+  --surface-hover: var(--color-alpha-black-04);
+  --phone-shell-shadow-opacity: 0.12;
+  /* Frosted overlay glass (sheets): milky tint + the white specular edge. Light:
+     a hair darker so the edge reads; the edge pops against it. */
+  --glass-sheet-tint: rgba(234, 234, 240, 0.64);
+  --glass-sheet-edge: rgba(255, 255, 255, 0.5);
+  /* Backdrop a glass button refracts when it sits ON the frosted sheet — a neutral
+     that matches the milky surface (not the blue auth hero), themed so the small
+     lens never tints cold against a dark sheet. */
+  --glass-symbol-backdrop: linear-gradient(180deg, #f5f5f7 0%, #e6e6eb 100%);
+  /* Flat (non-frosted) sheets: hairline outline only where the sheet would
+     otherwise melt into the scrim — invisible on light. */
+  --sheet-flat-edge: transparent;
+  /* Floating chooser/entry sheets (send-receive picker, auth email): frosted,
+     pure white/black at matched alpha — reads as the app surface with the
+     frost showing through. */
+  --float-sheet-tint: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme='dark'] {
+  --surface-hover: var(--color-alpha-white-06);
+  --phone-shell-shadow-opacity: 0.28;
+  --glass-sheet-tint: rgba(44, 44, 46, 0.62);
+  /* Subtler in dark — white-on-dark already pops. */
+  --glass-sheet-edge: rgba(255, 255, 255, 0.3);
+  --glass-symbol-backdrop: linear-gradient(180deg, #242426 0%, #1a1a1c 100%);
+  --sheet-flat-edge: rgba(255, 255, 255, 0.1);
+  --float-sheet-tint: rgba(0, 0, 0, 0.85);
+}
+
+/* iPhone mock palette — the wallet is a self-contained iOS app preview, so it
+   keeps its own iOS tokens (adapted from the keynote phone screens) rather than
+   Origin. These flip with Origin's [data-theme]. */
+/* iPhone palette — adapted 1:1 from the "bread" neobank app (sparkapp). */
+/* Dot-grid backdrop — single source of truth shared by the CSS fallback
+   backgrounds (DotGridCanvas / AppShell) AND the JS canvas / WebGL renderers
+   (DotGrid, StageGL). Keeping the colors in CSS — exactly like grid-visualizer,
+   whose dot grid is pure CSS — lets the canvas re-read them the instant
+   [data-theme] flips, so the whole backdrop changes in lockstep (no stagger).
+   `--dot-grid-dot` is the resting dot; `--dot-grid-dot-peak` is the ripple crest. */
+:root {
+  /* Light: surface-primary (#F8F8F7) — the stage sits a step ABOVE the
+     chrome-gray side panels (surface-secondary), matching the raised cards.
+     Dark overrides below mirror it: gray-950 stage over #111111 chrome. */
+  --dot-grid-bg: var(--surface-primary);
+  --dot-grid-dot: #deded9;
+  --dot-grid-dot-peak: #b8b8b3;
+}
+
+/* 3-col layout: the light stage steps down a hair so it separates from the
+   raised cards flanking it. Keyed to html's data-layout attribute (set
+   pre-paint by layout.tsx, kept live by page.tsx) so the color rides the
+   same clock as the arrangement flip. Light-only — the dark stage is
+   gray-950 in both arrangements. The JS canvas re-reads the token on resize
+   (StageGL's ResizeObserver), which every arrangement flip triggers. */
+html:not([data-theme='dark']):not([data-layout='stacked']) {
+  --dot-grid-bg: #f4f4f3;
+}
+
+:root {
+  --p-accent: #11a967;
+  --p-accent-press: #0e8f57;
+  /* light variant */
+  --p-bg: #f4f4f5;
+  --p-screen: #ffffff;
+  --p-surface: #f4f4f5;
+  --p-surface-2: #ececee;
+  --p-text: #0a0a0a;
+  --p-text-2: #707070;
+  --p-text-3: #b4b4b8;
+  --p-separator: rgba(0, 0, 0, 0.08);
+  --p-blue: #3b82f6;
+  --p-green: #22c55e;
+  --p-fill: #0a0a0a; /* primary button bg */
+  --p-fg: #ffffff; /* text on primary button */
+  --p-shadow: 0 24px 60px rgba(0, 0, 0, 0.16);
+  --p-card: linear-gradient(150deg, #1f6feb 0%, #1bb6c9 100%);
+}
+
+[data-theme='dark'] {
+  /* gray-950 (#1A1A1A) — a step darker than the chrome-gray side panels'
+     raised cards, mirroring the light stage sitting under the panel surface. */
+  --dot-grid-bg: var(--color-gray-950);
+  --dot-grid-dot: #2d2d2a;
+  --dot-grid-dot-peak: #474741;
+  --p-bg: #000000;
+  --p-screen: #000000;
+  --p-surface: #141414;
+  --p-surface-2: #1f1f1f;
+  --p-text: #ffffff;
+  --p-text-2: #8a8a8e;
+  --p-text-3: #5a5a5e;
+  --p-separator: rgba(255, 255, 255, 0.08);
+  --p-fill: #ffffff;
+  --p-fg: #0a0a0a;
+  --p-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}

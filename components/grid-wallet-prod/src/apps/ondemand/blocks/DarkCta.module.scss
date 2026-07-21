@@ -1,0 +1,24 @@
+/* Brand-pink hug-contents CTA (the empty-state button voice). */
+.pinkCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 24px;
+  border: 0;
+  background: var(--od-cta);
+  color: var(--od-cta-fg);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.16px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-cta-press);
+  }
+}

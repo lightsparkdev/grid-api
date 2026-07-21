@@ -1,0 +1,79 @@
+@use '../typography/ios-type-mixins' as ios;
+@use '../glass/glass-button-shadow' as shadow;
+
+/* Fills AppShell's overlay layer; the pill centers in the iOS banner slot just
+   below the status bar / Dynamic Island. Non-interactive — clicks fall through. */
+.layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* Center-aligned with the 40px header buttons: status-bar pad (62) + header
+     inset (8) puts the pill's top level with the gear button's (both 40 tall). */
+  padding-top: 70px;
+  pointer-events: none;
+}
+
+/* Shadow wrapper — the surface clips itself, so the drop shadow lives out here
+   and must share the pill rounding (the square-halo rule). */
+.pill {
+  border-radius: 1000px;
+  corner-shape: round;
+  will-change: transform;
+  @include shadow.glass-button-shadow;
+}
+
+/* Rounded clip shared by both surface variants. */
+.surface {
+  border-radius: 1000px;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+/* Flat (frosted) surface — a flat translucent fill + backdrop blur, no refraction
+   lens or specular edge. For flat skins (Glitch). */
+.flat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--app-bg) 80%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 0.5px solid color-mix(in srgb, var(--ios-label-primary) 8%, transparent);
+}
+
+/* Inverted (solid contrast) surface — near-black pill in light mode, white in
+   dark; the label flips with it. The Airbnb toast voice (Marketplace). */
+.inverted {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #222222;
+
+  .label {
+    color: #ffffff;
+  }
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+
+    .label {
+      color: #222222;
+    }
+  }
+}
+
+/* Subheadline/Emphasized 15/590 — same compact type as the medium content-area
+   chip; themed label matches the neutral surface it sits on. */
+.label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  white-space: nowrap;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}

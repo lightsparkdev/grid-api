@@ -1,0 +1,283 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Title + ghost close — one row. Frame: top/right 16; title indented +8 (left 24)
+   to match the body text. */
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 24px 0 32px;
+}
+
+.title {
+  margin: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* Icon-only dismiss — ghost btn; secondary → primary on hover. */
+.closeBtn {
+  flex-shrink: 0;
+  color: var(--ios-label-secondary);
+  transition: color 0.2s ease;
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    color: var(--ios-label-primary);
+  }
+
+  svg path {
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+/* Footnote / Regular — 13/18, tracking -0.08. Own row below the title. */
+.sub {
+  margin: 0;
+  /* Body text indented +8 (32 left/right) vs the 24 frame. */
+  padding: 8px 32px 24px;
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  text-wrap: balance;
+}
+
+.cardContainer,
+.codeContainer {
+  padding: 0 24px;
+}
+
+/* Positioning host for the halo SVG + clipped input card. */
+.cardShell {
+  position: relative;
+  height: 52px;
+}
+
+/* Squircle stroke — sits outside the clip-path; default border, focus tint. */
+.cardHalo,
+.codeCellHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--input-border);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    transition: stroke 0.15s ease;
+  }
+}
+
+.cardContainer:focus-within .cardHalo path {
+  stroke: var(--input-halo);
+}
+
+.codeContainer:focus-within .codeCellShell[data-active] .codeCellHalo path {
+  stroke: var(--input-halo);
+}
+
+/* Clipped squircle surface — no fill; stroke lives on the halo SVG above. */
+.card {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: 52px;
+  /* Squircle clip via useSquircleClip (Figma 10) — radius stays 0 so Safari
+     doesn't fall back to a circular corner-shape. */
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Callout / Regular — 16/21; placeholder is labels/tertiary. */
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  color: var(--ios-label-primary);
+  outline: none;
+  caret-color: var(--ios-tint);
+  @include ios.ios-text-callout;
+
+  &::placeholder {
+    color: var(--ios-label-tertiary);
+  }
+}
+
+/* Button block — top spacing lives in .step's padding (inside the clip). Sheet
+   frame: right/left 24, bottom 40. */
+.actions {
+  padding: 0 24px 40px;
+}
+
+/* ── Steps (entry → code) ─────────────────────────────────────────────────── */
+
+/* Single-cell grid stack: entering/exiting steps overlap for the cross
+   blur-fade while the host's height tweens to the arriving step. BOTTOM
+   aligned: the sheet is bottom-anchored on screen, so cell bottoms (the
+   content nearest the persistent CTA) hold still and only the top edge
+   moves with the height change. */
+.steps {
+  position: relative;
+  display: grid;
+  /* ONE row pinned to the host's (animated) height — otherwise the row sizes
+     to the TALLER of the overlapping steps mid-transition, the entering step
+     bottom-aligns to that oversized row's edge below the clip, and snaps up
+     when the leaver unmounts. */
+  grid-template-rows: 100%;
+  align-items: end;
+  /* Step cross-fades need a clip. Padding bleeds focus halos on older engines;
+     clip-margin does the same without inset when supported. */
+  overflow: hidden;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+@supports (overflow-clip-margin: 1px) {
+  .steps {
+    overflow: clip;
+    padding: 0;
+    overflow-clip-margin: 6px;
+  }
+}
+
+.step {
+  grid-area: 1 / 1;
+  min-width: 0;
+  padding-bottom: 24px;
+
+  --input-border: rgba(35, 35, 33, 0.2);
+  /* Focus ring — brand purple (Glitch `--app-tint`). */
+  --input-halo: var(--app-tint);
+
+  :global([data-theme='dark']) & {
+    --input-border: rgba(245, 245, 245, 0.15);
+  }
+}
+
+/* ── Verification code cells ──────────────────────────────────────────────── */
+
+/* Six display cells over one hidden input (it carries the real focus/typing). */
+.codeContainer {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  cursor: text;
+}
+
+.codeInput {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  opacity: 0;
+  /* Typing target only — the cells render the digits. */
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
+  outline: none;
+}
+
+/* Same surface treatment as the entry input card; the ACTIVE cell carries the
+   focus ring while the hidden input has focus. */
+.codeCellShell {
+  position: relative;
+  flex: 1;
+  height: 52px;
+}
+
+.codeCell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: transparent;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* The 3 — 3 group separator. */
+.codeDash {
+  flex-shrink: 0;
+  align-self: center;
+  width: 10px;
+  height: 1px;
+  border-radius: 0.5px;
+  background: var(--ios-label-tertiary);
+}
+
+/* The notification lens's aurora copy — fills its (bled) wrapper. */
+.auroraCopyField {
+  position: absolute;
+  inset: 0;
+}
+
+/* Inline "Resend" — a tinted text button flowing inside the body copy. */
+.resend {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--ios-tint);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* CTA content stack — Continue / spinner / checkmark overlap in one cell so
+   the cross blur-free scale-fades swap in place without the button reflowing. */
+.ctaSwap {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.ctaItem {
+  display: inline-flex;
+  grid-area: 1 / 1;
+  align-items: center;
+}
+
+/* Sending beat on Continue — the money sheet's CTA spinner. */
+.spinner {
+  display: inline-flex;
+  animation: auth-sheet-spin 0.9s linear infinite;
+}
+
+@keyframes auth-sheet-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

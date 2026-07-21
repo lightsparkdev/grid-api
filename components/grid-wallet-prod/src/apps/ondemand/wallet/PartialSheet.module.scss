@@ -1,0 +1,43 @@
+/* Uber partial-height bottom sheet (IMG_0678): flat card, SQUARE top corners,
+   centered title bar with a bottom hairline, no X. */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  background: var(--sheet-scrim);
+  opacity: 0;
+}
+
+.layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--od-sheet-bg);
+  color: var(--app-text-primary);
+  /* Home-indicator clearance below; the header owns the top spacing. */
+  padding: 0 0 40px;
+}
+
+/* Centered title bar — the only chrome; hairline below, content follows. */
+.header {
+  margin: 0;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--od-hairline);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700; /* bold — the money-flow header voice */
+  letter-spacing: -0.36px;
+  text-align: center;
+  color: var(--app-text-primary);
+}

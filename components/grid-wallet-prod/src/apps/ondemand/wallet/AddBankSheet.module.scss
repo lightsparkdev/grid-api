@@ -1,0 +1,488 @@
+/* "Add bank" — a full-screen slide-up over the flow (no stack recede, no
+   rounded sheet corners) hosting the country picker and the bank-details
+   form. */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: var(--od-push-scrim);
+  pointer-events: none;
+}
+
+.sheetLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  /* Top-edge shadow while riding up (matches the flow page's rise). */
+  filter: drop-shadow(0 -16px 48px rgba(0, 0, 0, 0.2));
+}
+
+.sheet {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Clear the status bar — this is a full screen now, not a pageSheet.
+     50 + the header's 24px top pad centers its controls at y86, matching the
+     flow page's header controls. */
+  padding-top: 50px;
+  background: var(--od-sheet-bg);
+  color: var(--app-text-primary);
+}
+
+/* ── Header: back (bank details only) left, X (country only) right ───────── */
+.headerBar {
+  position: relative;
+  /* Opaque + above the steps: fractional viewport scaling can leave a subpixel
+     seam between the bar and the sticky search — the bar paints over it. */
+  z-index: 3;
+  background: var(--od-sheet-bg);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  height: 68px;
+  /* 24px top gutter matching the sides (the auth-sheet header's spec). */
+  padding: 24px 24px 20px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--od-header-border);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  /* The hairline lands as soon as the content scrolls (not at title collapse). */
+  &[data-bordered]::after {
+    opacity: 1;
+  }
+}
+
+.headerSlot {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+}
+
+.headerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Collapsed bar title — 14px, centered (same voice as the deposit header).
+   Insets match the bar's 24/20 padding so it centers WITH the X, not in the
+   full bar box (which sat it high). */
+.barTitle {
+  position: absolute;
+  left: 48px;
+  right: 48px;
+  top: 24px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 700; /* bold — the app's bar-title voice */
+  letter-spacing: -0.14px;
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+
+/* ── Steps host (country ⇄ bank details push) ─────────────────────────────── */
+.steps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.step {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--od-sheet-bg);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-bottom: 24px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Sheet large title — smaller than the page's 32px, same voice. The gap to
+   the search lives HERE (title margin), so the sticky search has no top
+   padding and docks flush against the header when pinned. */
+.title {
+  flex-shrink: 0;
+  /* Negative top: claw back the 8px the header grew, so the large title sits
+     where it did before the bar's extra bottom padding. */
+  margin: -4px 0 16px;
+  padding: 0 24px;
+  font-size: 26px;
+  line-height: normal;
+  font-weight: 700; /* bold — the money-flow header voice */
+  letter-spacing: -0.52px;
+  color: var(--app-text-primary);
+}
+
+/* ── Select country ───────────────────────────────────────────────────────── */
+/* Pinned while the list scrolls under it (the Z picker's flat search). Once
+   scrolling starts it reads as header chrome, so the hairline sits under IT
+   (the header bar's own hairline stays off on this step). */
+.searchWrap {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* 20px below matches the row padding, so the first section label sits in
+     the same 28px of air (20+8) above and below. */
+  padding: 0 24px 20px;
+  background: var(--od-sheet-bg);
+
+  /* Bleed the fill a few px ABOVE the wrap: under fractional scaling the
+     docked search can round a hair short of the header, letting rows peek
+     through the seam. At rest this sits inside the title's bottom margin
+     (background only), so nothing visible is covered. */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -8px;
+    height: 8px;
+    background: var(--od-sheet-bg);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--od-header-border);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  &[data-bordered]::after {
+    opacity: 1;
+  }
+}
+
+/* Search — PlainInput's voice: r8 squircle rect, grey at rest, white with a
+   2px halo border while focused (the halo lives outside the clip). */
+.searchShell {
+  position: relative;
+  width: 100%;
+}
+
+.searchPill {
+  display: flex;
+  align-items: center;
+  /* h44 with a 20px glyph leaves 12px above/below — match left so the icon
+     sits in even air on three sides (the pill's 16px read too wide once the
+     corners squared up). The text gap runs tighter than the padding: glyph
+     and placeholder read as one unit. */
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px 0 12px;
+  background: var(--od-surface);
+  transition: background 0.18s ease;
+}
+.searchShell[data-focus] .searchPill {
+  background: var(--od-sheet-bg);
+}
+
+.searchHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--od-input-border-focus);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+}
+.searchShell[data-focus] .searchHalo path {
+  opacity: 1;
+}
+
+.searchIcon {
+  flex: none;
+  color: var(--app-text-secondary);
+}
+
+.searchInput {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: normal;
+  outline: none;
+
+  &::placeholder {
+    color: var(--app-text-secondary);
+  }
+}
+
+.sectionLabel {
+  /* Equal margins — the rows above/below pad 12px each side, so the visual
+     gap is symmetric (20px both ways). */
+  /* 8px margins land 28px of visual air on BOTH sides everywhere: rows pad
+     20px, and the search wrap pads 20px below to match. */
+  margin: 8px 0;
+  padding: 0 24px;
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+/* Country rows — 40px squircle flag tile, name + currency, dividers inset on
+   the left gutter and running to the right edge (the app's divider rule). */
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 24px;
+  border: 0;
+  background: transparent;
+  /* Buttons DON'T inherit font-family — without this the rows render in the
+     system font, not Circular (the weights then look off-ramp). */
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--od-hairline);
+  }
+
+  /* No divider closing a section (before a label) or ending the list. */
+  &:last-child::after,
+  &:has(+ .sectionLabel)::after {
+    display: none;
+  }
+
+  &:hover {
+    background: var(--od-row-hover);
+  }
+}
+
+.rowLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500; /* Circular Medium — real, now that the button inherits */
+  color: var(--app-text-primary);
+}
+
+.rowSub {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+/* ── Bank details (IMG_0621) ──────────────────────────────────────────────── */
+/* Left padding only — rows carry the right inset so the hairlines between
+   them run all the way to the right edge. */
+.fields {
+  margin-top: 12px;
+  padding: 0 0 0 24px;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px 20px 0;
+
+  & + & {
+    border-top: 1px solid var(--od-hairline);
+  }
+}
+
+.fieldLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-primary);
+}
+
+.fieldValue {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* Tiny grey pill — the Uber "View store" voice (IMG_0681). Decorative. */
+.fieldEdit {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 500;
+}
+
+/* Copy-value button on the funding rows — squircle rect, secondary fill. */
+.copyBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: var(--od-surface);
+  color: var(--app-text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Under the funding rows — the "who is this for" caption. */
+.fundingNote {
+  margin: 16px 24px 24px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}
+
+/* ── Pinned CTA (Continue's h50/r13 voice, brand pink) ────────────────────── */
+.ctaWrap {
+  flex-shrink: 0;
+  padding: 16px 24px 40px;
+  background: var(--od-sheet-bg);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--od-cta);
+  color: var(--od-cta-fg);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.17px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-cta-press);
+  }
+}
+
+.spinner {
+  display: inline-flex;
+
+  svg {
+    display: block;
+    animation: spin 0.9s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

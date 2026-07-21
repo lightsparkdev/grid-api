@@ -1,0 +1,1670 @@
+'use client';
+
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import clsx from 'clsx';
+import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
+import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
+import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
+// QR uses the radius-1 (tight-corner) variant so the code squares read crisp.
+import { IconQrCode } from '@central-icons-react/round-outlined-radius-1-stroke-1.5/IconQrCode';
+import { IconSquareBehindSquare6 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSquareBehindSquare6';
+import { IconCheckmark2Small } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark2Small';
+import { IconArrowOutOfBox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowOutOfBox';
+import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
+import { TextMorph } from 'torph/react';
+import { BottomSheet } from '@/apps/shared/BottomSheet';
+import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
+import NumericText from '@/components/NumericText';
+import { FrostPanel, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
+import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
+import { GlassCta } from '../blocks/GlassCta';
+import { SfSymbol } from '@/apps/shared/icons';
+import { useThemeMode } from '@/hooks/useThemeMode';
+import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
+import { randomNetworkAddress } from '@/lib/cryptoAddresses';
+import { currencyFor, type BankCountry } from '@/data/bankCountries';
+import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
+import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
+import {
+  formatUsdCents,
+  truncateAddress,
+  typedToCents,
+  SEND_DEMO_ADDRESS,
+  KEYPAD,
+  DEPOSIT_CHAINS,
+  SEND_NETWORKS,
+  DEFAULT_SEND_NETWORK,
+  accountLast4,
+  fieldLabel,
+  receiveFields,
+  type MoneySheet,
+  type Step,
+  type SavedBank,
+  type CryptoRecipient,
+  type SavedRecipient,
+  type SendNetwork,
+  type MoneySheetMode,
+  type ReceivedPayment,
+  type TransferActivity,
+} from '@/apps/shared/wallet';
+import { WalletListSection } from '@/apps/aurora/wallet/WalletListSection';
+import { Flag } from '@/apps/shared/Flag';
+import { IconPeople } from '../icons';
+import { avatarColor } from '../avatarPalette';
+import styles from './AddMoneySheet.module.scss';
+
+// Back-compat: these flow types/helpers used to be defined here; other modules
+// still import them from this path. The brain now owns them (apps/shared/wallet).
+export {
+  formatUsdCents,
+  truncateAddress,
+  typedToCents,
+  SEND_DEMO_ADDRESS,
+};
+export type {
+  Step,
+  SavedBank,
+  CryptoRecipient,
+  SavedRecipient,
+  SendNetwork,
+  MoneySheetMode,
+  ReceivedPayment,
+  TransferActivity,
+};
+
+// Add-money source visuals — Aurora owns the icon + copy per source id; the brain
+// supplies only the ordered ids + routing (the face is where icons live).
+const SOURCE_COPY: Record<string, { title: string; sub: string; speed: string }> = {
+  bank: { title: 'Bank account', sub: 'Local transfer in 65+ countries', speed: 'Instant' },
+  crypto: { title: 'Crypto wallet', sub: 'Spark, Solana, Base address', speed: 'Instant' },
+  cashapp: { title: 'Cash App', sub: 'Use your Cash App balance', speed: 'Instant' },
+  applepay: { title: 'Apple Pay', sub: 'Use Apple Wallet', speed: 'Instant' },
+};
+// SVG asset set (the polished add-money icons). Crypto shows this SVG only in `add`;
+// withdraw/send use the IconWallet1 glyph (see the source render).
+const SOURCE_SVG: Record<string, string> = {
+  bank: '/assets/add-money/IconBank.svg',
+  crypto: '/assets/add-money/IconWallet2.svg',
+  cashapp: '/assets/add-money/IconCash.svg',
+  applepay: '/assets/add-money/IconApple.svg',
+};
+
+/** Recipient avatar — the WhatsApp generic-contact tile (pastel fill + deeper
+ *  same-hue person glyph, color hashed from the name) with the country flag
+ *  badged in the bottom-right corner. Used by the send flow's recipient rows. */
+function RecipientAvatar({ name, code }: { name: string; code: string }) {
+  const color = avatarColor(name);
+  return (
+    <span
+      className={styles.recipientAvatar}
+      style={{ background: color.bg, color: color.fg }}
+      aria-hidden
+    >
+      <IconPeople size={30} />
+      <span className={styles.recipientFlag}>
+        <Flag code={code} size={16} />
+      </span>
+    </span>
+  );
+}
+
+/** One labeled account-form input (or a select for enum fields like pixKeyType). */
+function FormField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options?: string[];
+}) {
+  return (
+    <label className={styles.formField}>
+      <span className={styles.formLabel}>{label}</span>
+      {options ? (
+        <select className={styles.formInput} value={value} onChange={(e) => onChange(e.target.value)}>
+          {options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          className={styles.formInput}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+    </label>
+  );
+}
+
+/** Progressive top blur — the list scrolls UP under it, frosting toward the
+ *  pinned title + glass search pill. Pairs with the alpha-dissolve on the
+ *  scroll content. */
+function TopFade() {
+  return (
+    <div className={styles.topFade} aria-hidden>
+      <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
+      <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
+      <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />
+    </div>
+  );
+}
+
+/** One country row in the picker (flag tile + name + currency + chevron),
+ *  shared by the Popular / All / search-result lists. */
+function CountryPickRow({
+  country,
+  bordered,
+  onSelect,
+}: {
+  country: BankCountry;
+  bordered: boolean;
+  onSelect: (c: BankCountry) => void;
+}) {
+  return (
+    <button type="button" className={styles.sourceRow} onClick={() => onSelect(country)}>
+      <span className={clsx(styles.tile, styles.tileFlag)} aria-hidden>
+        <Flag code={country.code} size={48} />
+      </span>
+      <span className={clsx(styles.sourceContent, bordered && styles.sourceContentBordered)}>
+        <span className={styles.sourceLabels}>
+          <span className={styles.rowTitle}>{country.name}</span>
+          <span className={styles.rowSub}>
+            {currencyFor(country)}
+          </span>
+        </span>
+        <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+      </span>
+    </button>
+  );
+}
+
+/** A picker card whose BOTTOM corners go concentric with the phone screen
+ *  (bottom radius = screen corner − 16px inset) — the same hug WalletListCard's
+ *  concentricBottom uses — so the bottom-most country card nests into the
+ *  sheet's bottom corners instead of floating above them. Top keeps the
+ *  wallet-card radius, so it reads like the round 32 of the other picker cards. */
+function ConcentricBottomCard({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  const [cornerRadii, setCornerRadii] = useState<[number, number, number, number]>();
+  const clip = useSquircleClip<HTMLDivElement>({ cornerRadii });
+  useLayoutEffect(() => {
+    const el = clip.elementRef.current;
+    if (!el) return;
+    const measure = () => {
+      const topR = readCssVarPx(el, '--corner-radius-wallet-card-squircle');
+      if (!Number.isFinite(topR)) return;
+      const screenR = Number.parseFloat(
+        getComputedStyle(el).getPropertyValue('--screen-corner-radius').trim(),
+      );
+      const bottom = Number.isFinite(screenR) ? Math.max(0, screenR - 16) : topR;
+      setCornerRadii([topR, topR, bottom, bottom]);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [clip.elementRef]);
+  return (
+    <div ref={clip.ref} style={clip.style} className={className}>
+      {children}
+    </div>
+  );
+}
+
+const STEP_TRANSITION = motionTransition(easeOutSnappy, 0.28);
+// Small element swaps (CTA glyph, etc.) inside the persistent transfer layout.
+const SWAP_TRANSITION = motionTransition(easeOutSnappy, 0.35);
+const MORPH_MS = 280;
+
+// Keypad ⇄ details swap by REAL height (no transform-based layout animation):
+// the leaver collapses to 0 while the arriver expands from 0, so the cards above
+// grow through genuine per-frame layout — centered content SLIDES, nothing pops.
+const REGION_ENTER = {
+  height: 'auto' as const,
+  opacity: 1,
+  filter: 'blur(0px)',
+  transition: {
+    height: motionTransition(easeOutSnappy, 0.32),
+    opacity: motionTransition(easeOutSnappy, 0.26, { delay: 0.06 }),
+    filter: motionTransition(easeOutSnappy, 0.26, { delay: 0.06 }),
+  },
+};
+const REGION_EXIT = {
+  height: 0,
+  opacity: 0,
+  filter: 'blur(6px)',
+  transition: {
+    height: motionTransition(easeOutSnappy, 0.32),
+    opacity: motionTransition(easeOutSnappy, 0.2),
+    filter: motionTransition(easeOutSnappy, 0.2),
+  },
+};
+/** NumericText needs vertical blur room, but the iOS default (0.35em) inflates
+ *  the line box; the wallet doesn't clip, so a slim pad keeps layout tight. */
+const NUMERIC_PAD = { padding: '0.08em 0' };
+
+interface AddMoneySheetProps {
+  /** The money-sheet brain — hosted above the skin (survives skin switches);
+   *  this face only reads it and renders. */
+  m: MoneySheet;
+  open: boolean;
+  /** Direction of the flow — flips titles, source rows, card order, and copy. */
+  mode: MoneySheetMode;
+  /** Face ID running — Confirm shows a spinner and input locks. */
+  confirming: boolean;
+  /** Confirm tapped with the typed amount (cents). Parent runs Face ID.
+   *  `activity` carries the real destination for the Activity row + toast. */
+  onConfirm: (cents: number, activity: TransferActivity) => void;
+  /** Receive flow: Share/Copy fired a (simulated) inbound payment. */
+  onReceive?: (payment: ReceivedPayment) => void;
+}
+
+/**
+ * ChatsApp fork of Aurora's AddMoneySheet face (same brain, same layout) —
+ * the only change is the primary CTAs: the skin's green GlassCta instead of
+ * the shared blue GlassTextButton. Restyle freely from here.
+ *
+ * Figma 109:29870 / 2143:39402 / 2143:38851 — the three-step "Add money" sheet:
+ * source list → amount entry (custom keypad, typeable) → confirm + Face ID.
+ * Solid (non-frosted) near-full-height sheet; steps push right-to-left.
+ * `mode="withdraw"` reuses the whole flow in reverse: bank-only destinations,
+ * balance card on top, and an over-balance check on Continue.
+ * `mode="send"` (Figma 109:28547) adds a recipient step between source and
+ * amount — address paste card + contacts — and runs in USDC at 1:1.
+ */
+export function AddMoneySheet({
+  m,
+  open,
+  mode,
+  confirming,
+  onConfirm,
+  onReceive,
+}: AddMoneySheetProps) {
+  const reduceMotion = useReducedMotion();
+  const theme = useThemeMode();
+  const brightness = headerGlassBrightness(theme);
+  // The amount paragraph animates a shake on an invalid attempt; the ref + the
+  // animation stay in the view (DOM-coupled). The hook signals via shakeNonce.
+  const [amountScope, animateAmount] = useAnimate<HTMLParagraphElement>();
+
+  const {
+    titles,
+    sources,
+    activeSources,
+    details,
+    isSend,
+    step,
+    setStep,
+    back,
+    openKey,
+    go,
+    backFrom,
+    isEntryStep,
+    raw,
+    started,
+    cents,
+    balance,
+    press,
+    useMax,
+    tryContinue,
+    quoting,
+    shakeNonce,
+    feeCents,
+    payCents,
+    netCents,
+    fxRate,
+    fxFractionDigits,
+    fxLabel,
+    localCurrency,
+    cryptoCurrency,
+    isBtcDest,
+    stablecoinDest,
+    confirmDetails,
+    activityForConfirm,
+    banks,
+    selected,
+    selectedBank,
+    selectedCrypto,
+    setCryptoDest,
+    selectedBankId,
+    setSelectedBankId,
+    selectBank,
+    savedWallets,
+    selectWallet,
+    saving,
+    addBank,
+    addCryptoRecipient,
+    useCryptoWithdraw,
+    countryQuery,
+    setCountryQuery,
+    countryQ,
+    allCountries,
+    popularCountries,
+    filteredCountries,
+    pickedCountry,
+    pickCountry,
+    openAddBank,
+    formValues,
+    setFormValues,
+    formBeneficiary,
+    setFormBeneficiary,
+    updateField,
+    pasted,
+    setPasted,
+    pastedAddress,
+    setPastedAddress,
+    pickerOpen,
+    setPickerOpen,
+    pickedNetwork,
+    setPickedNetwork,
+    pickNetwork,
+    copiedChainId,
+    copyValue,
+    shareFunding,
+    shareFundingAndReceive,
+    dismiss,
+  } = m;
+
+  // Free-typing in the address field (demo: only Paste actually fills a
+  // usable address — typing never validates, matching the Super app).
+  const [typedAddress, setTypedAddress] = useState('');
+
+  // Shake the amount on an invalid attempt — the hook bumps shakeNonce.
+  useEffect(() => {
+    if (shakeNonce === 0 || reduceMotion || !amountScope.current) return;
+    animateAmount(amountScope.current, { x: [0, 8, -8, 8, 0] }, { duration: 0.28, ease: 'linear' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shakeNonce]);
+
+  // Swift's lineLimit(1).minimumScaleFactor(0.5): shrink the big amount to fit
+  // its row instead of bleeding off the card. scrollWidth ignores the transform,
+  // so the measurement is always the natural (unscaled) width. A ResizeObserver
+  // (not a keypress effect) drives it: NumericText animates each new digit's
+  // column width in, so the natural width only settles after the keypress.
+  const fitRef = useRef<HTMLSpanElement>(null);
+  const [fit, setFit] = useState(1);
+  useLayoutEffect(() => {
+    const el = fitRef.current;
+    const parent = el?.parentElement;
+    if (!el || !parent) return;
+    const measure = () => {
+      const natural = el.scrollWidth;
+      const avail = parent.clientWidth - 32; // breathing room off the card edges
+      setFit(natural > avail ? Math.max(0.5, avail / natural) : 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    ro.observe(parent);
+    return () => ro.disconnect();
+  }, [step]);
+
+  // Keypad ⇄ details swap: tween each region to its MEASURED height (offsetHeight
+  // + margin) instead of height:auto. Motion's auto enter measures short of the
+  // content's trailing padding/margin, then settles to the true height — a snap
+  // at the end of the transition. Measuring on mount (deferred one frame so
+  // framer reads a target update, not an adoption) is the auth sheet's fix.
+  const [keypadH, setKeypadH] = useState<number | null>(null);
+  const [detailsH, setDetailsH] = useState<number | null>(null);
+  const measureKeypad = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    requestAnimationFrame(() => {
+      if (!el.isConnected) return;
+      const mb = parseFloat(getComputedStyle(el).marginBottom) || 0;
+      setKeypadH(el.offsetHeight + mb);
+    });
+  }, []);
+  const measureDetails = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    requestAnimationFrame(() => {
+      if (!el.isConnected) return;
+      const mb = parseFloat(getComputedStyle(el).marginBottom) || 0;
+      setDetailsH(el.offsetHeight + mb);
+    });
+  }, []);
+  // The From/To lines above the amount — height-animated away on confirm
+  // (they re-appear inside the details list), so back-navigation needs the
+  // same measured-height enter as the keypad.
+  const [fromToH, setFromToH] = useState<number | null>(null);
+  const measureFromTo = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    requestAnimationFrame(() => {
+      if (!el.isConnected) return;
+      const mb = parseFloat(getComputedStyle(el).marginBottom) || 0;
+      setFromToH(el.offsetHeight + mb);
+    });
+  }, []);
+
+  // Amount-entry decimals for NumericText: hidden until the user types the dot
+  // ("1500" → "$1,500"); then typed digits solid + remaining placeholders dim
+  // ("1500." → "$1,500." + ghost "00"). Confirm renders the full cents solid —
+  // ghosts ink in via color; a missing ".00" slides in numericText-style.
+  const hasDot = raw.includes('.');
+  const fracTyped = raw.split('.')[1] ?? '';
+  const amountFraction =
+    step === 'confirm'
+      ? { hasDot: true, typed: String(cents % 100).padStart(2, '0'), ghost: '' }
+      : {
+          hasDot,
+          typed: fracTyped,
+          ghost: hasDot ? '0'.repeat(Math.max(0, 2 - fracTyped.length)) : '',
+        };
+
+  // From / To lines (the Z amount grammar, iOS ChatsApp voice): one-line
+  // label + 24px circular graphic per endpoint. The same strings feed the
+  // confirm details list, so the pair reads identically across the swap.
+  const bankText = selectedBank
+    ? `${selectedBank.bankName} •••• ${accountLast4(selectedBank.values)}`
+    : 'Bank account';
+  const cryptoText = truncateAddress(selectedCrypto?.address ?? SEND_DEMO_ADDRESS);
+  const bankLine = (
+    <span className={styles.transferValue}>
+      <span className={styles.transferGraphic} aria-hidden>
+        <Flag code={selectedBank ? selectedBank.country.code : 'mx'} size={24} />
+      </span>
+      {bankText}
+    </span>
+  );
+  const balanceLine = (
+    <span className={styles.transferValue}>
+      <span className={clsx(styles.transferGraphic, styles.transferGraphicFill)} aria-hidden>
+        <img src="/assets/add-money/IconDollar.svg" alt="" draggable={false} />
+      </span>
+      Cash balance
+    </span>
+  );
+  const cryptoLine = (
+    <span className={styles.transferValue}>
+      <span className={styles.transferGraphic} aria-hidden>
+        <img
+          src={selectedCrypto?.logo ?? DEFAULT_SEND_NETWORK.logo}
+          alt=""
+          draggable={false}
+        />
+      </span>
+      {cryptoText}
+    </span>
+  );
+  // Send-to-bank destination: the recipient, name-led.
+  const recipientLine = selectedBank ? (
+    <span className={styles.transferValue}>
+      <span className={styles.transferGraphic} aria-hidden>
+        <Flag code={selectedBank.country.code} size={24} />
+      </span>
+      {selectedBank.beneficiary}
+    </span>
+  ) : null;
+
+  // From = the money's source (bank when adding, balance otherwise); To = the
+  // destination (balance when adding, your bank / the recipient otherwise).
+  const fromLine = mode === 'add' ? bankLine : balanceLine;
+  const toLine =
+    mode === 'add'
+      ? balanceLine
+      : mode === 'withdraw'
+        ? selectedCrypto
+          ? cryptoLine
+          : bankLine
+        : selectedBank
+          ? recipientLine
+          : cryptoLine;
+  // The same endpoints as plain strings — the confirm list's To/From rows.
+  const fromText = mode === 'add' ? bankText : 'Cash balance';
+  const toText =
+    mode === 'add'
+      ? 'Cash balance'
+      : mode === 'withdraw'
+        ? selectedCrypto
+          ? cryptoText
+          : bankText
+        : selectedBank
+          ? selectedBank.beneficiary
+          : cryptoText;
+  const confirmRows: Array<[string, string]> = [
+    ['From', fromText],
+    ['To', toText],
+    ...confirmDetails,
+  ];
+  // Totals (the marketplace/ondemand review grammar): what leaves your side vs
+  // what lands. Outflows pay USD from the balance and land in the settled
+  // currency; add pays the local currency from the bank and lands USD.
+  const localAmount = (c: number) =>
+    ((c / 100) * fxRate).toLocaleString('en-US', {
+      minimumFractionDigits: fxFractionDigits,
+      maximumFractionDigits: fxFractionDigits,
+    });
+  const confirmTotals: Array<[string, string]> =
+    mode === 'add'
+      ? [
+          ["You\u2019ll pay", `${localAmount(payCents)} ${fxLabel}`],
+          ["You\u2019ll get", formatUsdCents(netCents)],
+        ]
+      : [
+          ["You\u2019ll pay", formatUsdCents(payCents)],
+          [isSend ? "They\u2019ll get" : "You\u2019ll get", `${localAmount(netCents)} ${fxLabel}`],
+        ];
+
+  // iOS push: forward = in from the right / out to the left; back = reverse.
+  // Variants + `custom` (not inline objects): an EXITING screen never re-renders,
+  // so an inline `exit` keeps the stale direction from the previous nav — the
+  // AnimatePresence `custom` prop is re-resolved for exiting children instead.
+  type NavDir = { back: boolean; reduceMotion: boolean };
+  const navDir: NavDir = { back, reduceMotion: !!reduceMotion };
+  // The funding-details step titles itself with the picked country's name (e.g.
+  // "Mexico"); every other step uses the mode's static step title.
+  const displayTitle =
+    step === 'fundingDetails' && pickedCountry
+      ? `Receive from ${pickedCountry.name}`
+      : titles[step];
+  // TRUE push: the incoming screen shares an edge with the outgoing one (full
+  // ±100% travel, simultaneous), and the leaver fades as it exits. The entering
+  // screen arrives at full opacity — it's a push, not a crossfade.
+  const stepVariants = {
+    enter: ({ back: b, reduceMotion: rm }: NavDir) =>
+      rm ? { x: 0, opacity: 1 } : { x: b ? '-100%' : '100%', opacity: 1 },
+    center: { x: 0, opacity: 1 },
+    exit: ({ back: b, reduceMotion: rm }: NavDir) =>
+      rm ? { opacity: 0 } : { x: b ? '100%' : '-100%', opacity: 0 },
+  };
+  // The title is ANCHORED to the content push: same travel (the full screen
+  // width, matching the steps' ±100%) and the same transition clock, so title
+  // and screen move as one surface. The strip's gradient mask dissolves the
+  // text before it reaches the X/back controls.
+  const SCREEN_W = 402; // --app-screen-width
+  const titleVariants = {
+    enter: ({ back: b, reduceMotion: rm }: NavDir) =>
+      rm ? { x: 0, opacity: 1 } : { x: b ? -SCREEN_W : SCREEN_W, opacity: 1 },
+    center: { x: 0, opacity: 1 },
+    exit: ({ back: b, reduceMotion: rm }: NavDir) =>
+      rm ? { opacity: 0 } : { x: b ? SCREEN_W : -SCREEN_W, opacity: 0 },
+  };
+
+  return (
+    <>
+    <BottomSheet
+      open={open}
+      onDismiss={dismiss}
+      // iOS sheet-over-sheet: recede behind the rising clipboard sheet.
+      receded={pickerOpen}
+      // Flat solid sheet per Figma (no frost, no glassy glint — glass stays on
+      // the toolbar buttons only). Top radius straight from Figma (38, no 1.2x);
+      // shell smoothing so the bottom corners nest concentrically in the screen
+      // squircle. The uniform hairline edge (themed: transparent on light, white
+      // 10% on dark) rides FrostPanel's squircle path so corners match exactly.
+      glass={{
+        radius: 38,
+        cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
+        tint: 'var(--msg-sheet-bg)',
+        edge: 'var(--sheet-flat-edge)',
+        edgeGlint: false,
+        edgeWidth: 0.5,
+        shadow: '0 15px 37.5px rgba(0, 0, 0, 0.18)',
+      }}
+    >
+      <div className={styles.flow}>
+        <div className={styles.toolbar}>
+          <div className={styles.toolbarRow}>
+            {isEntryStep ? (
+              <GlassSymbolButton
+                aria-label="Close"
+                size={40}
+                type="button"
+                glass={{ brightness }}
+                onClick={dismiss}
+              >
+                <SfSymbol name="xmark" size={14} />
+              </GlassSymbolButton>
+            ) : (
+              <GlassSymbolButton
+                aria-label="Back"
+                size={40}
+                type="button"
+                glass={{ brightness }}
+                onClick={() => go(backFrom[step] ?? 'source', true)}
+                disabled={confirming}
+              >
+                <SfSymbol name="chevron.left" size={15} />
+              </GlassSymbolButton>
+            )}
+            <h2 className={styles.title}>
+              {/* Slides at every screen boundary except amount ⇄ confirm, which
+                  share the persistent transfer layout and torph-morph in place.
+                  Default (sync) presence, NOT popLayout — the spans stack in the
+                  strip's single-cell grid, and popLayout skipped the leaver's
+                  exit whenever the arriving screen set state mid-mount (the
+                  recipient step's card measurements; see the steps host). */}
+              <AnimatePresence key={openKey} initial={false} custom={navDir}>
+                <motion.span
+                  // Keyed by TEXT (not step): adjacent steps sharing a title
+                  // ("Send to" source → recipient) keep one span — no slide for
+                  // an unchanged title. amount ⇄ confirm share 'transfer' and
+                  // morph between their differing titles instead.
+                  key={step === 'amount' || step === 'confirm' ? 'transfer' : displayTitle}
+                  custom={navDir}
+                  variants={titleVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={STEP_TRANSITION}
+                >
+                  {step === 'amount' || step === 'confirm' ? (
+                    <TextMorph
+                      as="span"
+                      duration={MORPH_MS}
+                      ease={cubicBezierCss(easeOutSwift)}
+                    >
+                      {titles[step]}
+                    </TextMorph>
+                  ) : (
+                    displayTitle
+                  )}
+                </motion.span>
+              </AnimatePresence>
+            </h2>
+            {/* Figma 109:28547 — glass QR scan button, recipient step only.
+                Blur-fades between steps, the wallet home header language. */}
+            <AnimatePresence initial={false}>
+              {step === 'recipient' && (
+                <motion.span
+                  key="qr"
+                  className={styles.toolbarTrailing}
+                  initial={reduceMotion ? false : { opacity: 0, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(10px)' }}
+                  transition={SWAP_TRANSITION}
+                >
+                  <GlassSymbolButton
+                    aria-label="Scan QR code"
+                    size={40}
+                    type="button"
+                    glass={{ brightness }}
+                  >
+                    <SfSymbol name="viewfinder" size={17} />
+                  </GlassSymbolButton>
+                </motion.span>
+              )}
+              {/* Glass + on the saved-banks step — the entry point to add one. */}
+              {step === 'banks' && (
+                <motion.span
+                  key="addbank"
+                  className={styles.toolbarTrailing}
+                  initial={reduceMotion ? false : { opacity: 0, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(10px)' }}
+                  transition={SWAP_TRANSITION}
+                >
+                  <GlassSymbolButton
+                    aria-label={isSend ? 'Add recipient' : 'Add bank account'}
+                    size={40}
+                    type="button"
+                    glass={{ brightness }}
+                    onClick={openAddBank}
+                  >
+                    <SfSymbol name="plus" size={15} />
+                  </GlassSymbolButton>
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <div className={styles.steps} key={openKey}>
+          {/* Default (sync) presence, NOT popLayout: the steps are absolutely
+              positioned (.step), so the exit needs no layout pop — and popLayout
+              skipped the outgoing screen whenever the incoming one mounted a
+              component that set state in a callback ref / layout effect during
+              the same commit (the recipient step's WalletListCard squircle +
+              corner measurements), leaving only the enter half of the push. */}
+          <AnimatePresence initial={false} custom={navDir}>
+            {/* Receive — deposit list: bank drill-in first, then crypto address
+                rows (copy works, QR is a no-op), grouped like the source list. */}
+            {step === 'deposit' && (
+              <motion.div
+                key="deposit"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.sourceWrap}>
+                  <div className={clsx(styles.card, styles.cardFlush)}>
+                    {/* Receive leads with the bank drill-in; add-from-crypto is
+                        crypto-only (bank is its own row in the add source list). */}
+                    {mode === 'receive' && (
+                      <button type="button" className={styles.sourceRow} onClick={openAddBank}>
+                        <span className={styles.tile} aria-hidden>
+                          <img
+                            className={styles.tileIcon}
+                            src="/assets/add-money/IconBank.svg"
+                            alt=""
+                            draggable={false}
+                          />
+                        </span>
+                        <span className={clsx(styles.sourceContent, styles.sourceContentBordered)}>
+                          <span className={styles.sourceLabels}>
+                            <span className={styles.rowTitle}>Bank account</span>
+                            <span className={styles.rowSub}>Local transfer in 65+ countries</span>
+                            <span className={styles.rowSub}>Instant</span>
+                          </span>
+                          <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                        </span>
+                      </button>
+                    )}
+                    {DEPOSIT_CHAINS.map((chain, i) => {
+                      const copied = copiedChainId === chain.id;
+                      return (
+                        <div key={chain.id} className={styles.depositCryptoRow}>
+                          <span className={styles.tile} aria-hidden>
+                            <img
+                              className={styles.depositLogo}
+                              src={chain.logo}
+                              alt=""
+                              draggable={false}
+                            />
+                          </span>
+                          <span
+                            className={clsx(
+                              styles.sourceContent,
+                              i < DEPOSIT_CHAINS.length - 1 && styles.sourceContentBordered,
+                            )}
+                          >
+                            <span className={styles.sourceLabels}>
+                              <span className={styles.rowTitle}>{chain.name}</span>
+                              <span className={styles.rowSub}>{truncateAddress(chain.address)}</span>
+                              <span className={styles.rowSub}>{chain.time}</span>
+                            </span>
+                            {/* Copy + QR button group (replaces the chevron). */}
+                            <span className={styles.depositActions}>
+                              <button
+                                type="button"
+                                className={styles.rowIconBtn}
+                                aria-label={copied ? 'Copied' : `Copy ${chain.name} address`}
+                                onClick={() => {
+                                  copyValue(chain.id, chain.address);
+                                  // Copying a deposit address simulates funds
+                                  // landing on that chain a beat later — a payment
+                                  // (Receive) or a top-up (Add from crypto). The
+                                  // parent frames it by the sheet's mode.
+                                  onReceive?.({
+                                    via: 'crypto',
+                                    network: chain.name,
+                                    logo: chain.logo,
+                                    address: randomNetworkAddress(chain.name),
+                                  });
+                                }}
+                              >
+                                {copied ? (
+                                  <IconCheckmark2Small size={20} />
+                                ) : (
+                                  <IconSquareBehindSquare6 size={20} />
+                                )}
+                              </button>
+                              {/* QR is a visual affordance only (no-op) for the demo. */}
+                              <button
+                                type="button"
+                                className={styles.rowIconBtn}
+                                aria-label={`Show ${chain.name} QR code`}
+                              >
+                                <IconQrCode size={20} />
+                              </button>
+                            </span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Receive — the picked country's inbound funding instructions. */}
+            {step === 'fundingDetails' && pickedCountry && (
+              <motion.div
+                key="fundingDetails"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.fundingScroll}>
+                  <div className={clsx(styles.card, styles.detailsCard)}>
+                    <div className={styles.detailRows}>
+                      {receiveFields(pickedCountry, formBeneficiary).map(([label, value], i, arr) => {
+                        const id = `fd-${label}`;
+                        const copied = copiedChainId === id;
+                        return (
+                          <div
+                            key={label}
+                            className={clsx(
+                              styles.detailRow,
+                              styles.fundingRow,
+                              i < arr.length - 1 && styles.detailRowBordered,
+                            )}
+                          >
+                            <span className={styles.detailLabel}>{label}</span>
+                            <span className={styles.fundingValueWrap}>
+                              <span className={styles.fundingValue}>{value}</span>
+                              <button
+                                type="button"
+                                className={styles.rowIconBtn}
+                                aria-label={copied ? 'Copied' : `Copy ${label}`}
+                                onClick={() => copyValue(id, value)}
+                              >
+                                {copied ? (
+                                  <IconCheckmark2Small size={20} />
+                                ) : (
+                                  <IconSquareBehindSquare6 size={20} />
+                                )}
+                              </button>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <p className={styles.fundingNote}>
+                    Share these details with anyone paying you
+                  </p>
+                </div>
+                <div className={styles.bottomCtaWrap}>
+                  <GlassCta onClick={shareFundingAndReceive}>
+                    <span className={styles.shareCta}>
+                      <IconArrowOutOfBox size={20} className={styles.shareCtaIcon} />
+                      Share
+                    </span>
+                  </GlassCta>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'source' && (
+              <motion.div
+                key="source"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.sourceWrap}>
+                  <div className={clsx(styles.card, styles.cardFlush)}>
+                    {sources.map((id, i) => {
+                      const active = activeSources.find((a) => a.id === id);
+                      const copy = SOURCE_COPY[id];
+                      // Crypto uses the glyph in withdraw/send; everything else (and
+                      // add-mode crypto) is the polished SVG.
+                      const Glyph = id === 'crypto' && mode !== 'add' ? IconWallet1 : null;
+                      return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={styles.sourceRow}
+                        disabled={!active}
+                        onClick={() => {
+                          if (!active) return;
+                          // Crypto path starts a fresh address; bank path drops any
+                          // crypto destination so the two never bleed together.
+                          if (id === 'crypto') {
+                            setSelectedBankId(null);
+                            setCryptoDest(null);
+                            setPasted(false);
+                            setPastedAddress('');
+                          } else {
+                            setCryptoDest(null);
+                          }
+                          go(active.next);
+                        }}
+                      >
+                        <span className={styles.tile} aria-hidden>
+                          {Glyph ? (
+                            <Glyph size={24} className={styles.tileGlyph} />
+                          ) : (
+                            <img className={styles.tileIcon} src={SOURCE_SVG[id]} alt="" draggable={false} />
+                          )}
+                        </span>
+                        <span
+                          className={clsx(
+                            styles.sourceContent,
+                            i < sources.length - 1 && styles.sourceContentBordered,
+                          )}
+                        >
+                          <span className={styles.sourceLabels}>
+                            <span className={styles.rowTitle}>{copy.title}</span>
+                            <span className={styles.rowSub}>{copy.sub}</span>
+                            <span className={styles.rowSub}>{copy.speed}</span>
+                          </span>
+                          <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                        </span>
+                      </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'banks' && (
+              <motion.div
+                key="banks"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.recipientWrap}>
+                  {banks.length === 0 ? (
+                    <div className={styles.banksEmptyOffset}>
+                      <WalletListSection
+                        title={isSend ? 'Recipients' : 'Bank accounts'}
+                        hideTitle
+                        emptyTitle={isSend ? 'No recipients yet' : 'No bank accounts yet'}
+                        emptySub={
+                          isSend
+                            ? 'Send to a bank account in 65+ countries or any crypto wallet'
+                            : 'Add a bank account in 65+ countries to get started'
+                        }
+                        cta={{
+                          label: isSend ? 'Add recipient' : 'Add bank',
+                          onClick: openAddBank,
+                        }}
+                        roundGraphic={isSend}
+                        concentricBottom
+                      />
+                    </div>
+                  ) : (
+                    <div className={clsx(styles.card, styles.cardFlush, styles.bankList)}>
+                      {banks.map((b, i) => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          className={styles.sourceRow}
+                          onClick={() => selectBank(b.id)}
+                        >
+                          {'address' in b ? (
+                            <span className={styles.recipientAvatar} aria-hidden>
+                              <img
+                                className={styles.tokenIconSm}
+                                src={b.logo}
+                                alt=""
+                                draggable={false}
+                              />
+                            </span>
+                          ) : isSend ? (
+                            <RecipientAvatar name={b.beneficiary} code={b.country.code} />
+                          ) : (
+                            <span className={clsx(styles.tile, styles.tileFlag)} aria-hidden>
+                              <Flag code={b.country.code} size={48} />
+                            </span>
+                          )}
+                          <span
+                            className={clsx(
+                              styles.sourceContent,
+                              i < banks.length - 1 && styles.sourceContentBordered,
+                            )}
+                          >
+                            <span className={styles.sourceLabels}>
+                              {'address' in b ? (
+                                <>
+                                  <span className={styles.rowTitle}>
+                                    {truncateAddress(b.address)}
+                                  </span>
+                                  <span className={styles.rowSub}>{b.network} wallet</span>
+                                </>
+                              ) : isSend ? (
+                                <>
+                                  <span className={styles.rowTitle}>{b.beneficiary}</span>
+                                  <span className={styles.rowSub}>
+                                    {b.bankName} •••• {accountLast4(b.values)}
+                                  </span>
+                                  <span className={styles.rowSub}>{currencyFor(b.country)}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className={styles.rowTitle}>
+                                    {b.bankName} (•••• {accountLast4(b.values)})
+                                  </span>
+                                  <span className={styles.rowSub}>{b.country.name}</span>
+                                  <span className={styles.rowSub}>{currencyFor(b.country)}</span>
+                                </>
+                              )}
+                            </span>
+                            <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'country' && (
+              <motion.div
+                key="country"
+                className={clsx(styles.step, styles.stepFlushTop)}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={clsx(styles.pickerScroll, styles.pickerScrollCountry)}>
+                  {countryQ ? (
+                    <>
+                      <p className={styles.sectionLabel}>Results</p>
+                      <div className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}>
+                        {filteredCountries.map((c, i, arr) => (
+                          <CountryPickRow
+                            key={c.code}
+                            country={c}
+                            bordered={i < arr.length - 1}
+                            onSelect={pickCountry}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className={styles.sectionLabel}>Popular</p>
+                      <div className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}>
+                        {popularCountries.map((c, i, arr) => (
+                          <CountryPickRow
+                            key={c.code}
+                            country={c}
+                            bordered={i < arr.length - 1}
+                            onSelect={pickCountry}
+                          />
+                        ))}
+                      </div>
+                      <p className={styles.sectionLabel}>All countries</p>
+                      <ConcentricBottomCard
+                        className={clsx(styles.card, styles.cardFlush, styles.pickerCard)}
+                      >
+                        {allCountries.map((c, i, arr) => (
+                          <CountryPickRow
+                            key={c.code}
+                            country={c}
+                            bordered={i < arr.length - 1}
+                            onSelect={pickCountry}
+                          />
+                        ))}
+                      </ConcentricBottomCard>
+                    </>
+                  )}
+                </div>
+                <TopFade />
+                {/* Pinned frosted-glass search pill — the list scrolls behind it
+                    and frosts through (FrostPanel: backdrop-filter + specular
+                    rim). Refraction over scrolling DOM isn't possible, so frost. */}
+                <div className={styles.searchPill}>
+                  <FrostPanel
+                    radius={22}
+                    cornerSmoothing={0}
+                    tint="var(--search-pill-tint)"
+                    tintBlur={4}
+                    // The geometry-aware specular IS the rim now (the buttons'
+                    // SYMBOL_GLASS highlight, minus refraction), so drop the flat
+                    // edge stroke that doubled it.
+                    edge="none"
+                    specular={{
+                      rotation: 45,
+                      glowStrength: 0.06,
+                      glowSpread: 0.5,
+                      glowExponent: 1.5,
+                      edgeStrength: 1,
+                      // Dark: 1px reads like the button's delicate glint. Light: a
+                      // white rim barely shows on the near-white pill, so thicken it.
+                      edgeWidth: theme === 'dark' ? 1 : 2,
+                      edgeExponent: 1.5,
+                      // Dark matches the button (1); light pushes the gain harder so
+                      // the edge reads against the bright fill.
+                      strength: theme === 'dark' ? 1 : 1.6,
+                    }}
+                  >
+                    <div className={styles.searchRow}>
+                      <IconMagnifyingGlass size={20} className={styles.searchIcon} aria-hidden />
+                      <input
+                        className={styles.searchInput}
+                        type="text"
+                        inputMode="search"
+                        placeholder="Search country or currency"
+                        value={countryQuery}
+                        onChange={(e) => setCountryQuery(e.target.value)}
+                        aria-label="Search countries"
+                      />
+                    </div>
+                  </FrostPanel>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'bankForm' && pickedCountry && (
+              <motion.div
+                key="bankForm"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={clsx(styles.pickerScroll, styles.pickerScrollForm)}>
+                  <div className={clsx(styles.card, styles.formCard)}>
+                    <div className={styles.formFields}>
+                      {/* Read-only country row — the picked country, styled as the
+                          first field row (no flag, no editing). */}
+                      <div className={styles.formField}>
+                        <span className={styles.formLabel}>Country</span>
+                        <span className={styles.formInput}>{pickedCountry.name}</span>
+                      </div>
+                      <FormField
+                        label="Account holder"
+                        value={formBeneficiary}
+                        onChange={setFormBeneficiary}
+                      />
+                      {BANK_ACCOUNT_SCHEMAS[pickedCountry.accountType].fields
+                        .filter((f) => f.key !== 'region')
+                        .map((f) => (
+                          <FormField
+                            key={f.key}
+                            label={fieldLabel(f.key)}
+                            value={formValues[f.key] ?? ''}
+                            onChange={(v) => updateField(f.key, v)}
+                            options={f.enum}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.bottomCtaWrap}>
+                  <GlassCta onClick={addBank}>
+                    {saving ? (
+                      <span className={styles.spinner} aria-label="Saving">
+                        <IconLoadingCircle size={20} />
+                      </span>
+                    ) : isSend ? (
+                      'Add recipient'
+                    ) : (
+                      'Add bank account'
+                    )}
+                  </GlassCta>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 'recipient' && (
+              <motion.div
+                key="recipient"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.recipientWrap}>
+                  {/* Enter address — the Super app's grammar in the ChatsApp
+                      voice: ONE field for both states (Paste fills it), a help
+                      line that flips to the detected-network lockup, and the
+                      CTA pinned to the sheet bottom. */}
+                  <div className={styles.addressEntry}>
+                    <input
+                      className={styles.addressInput}
+                      type="text"
+                      value={pasted ? truncateAddress(pastedAddress) : typedAddress}
+                      onChange={(e) => {
+                        if (!pasted) setTypedAddress(e.target.value);
+                      }}
+                      readOnly={pasted}
+                      placeholder="Enter any address"
+                      aria-label="Wallet address"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                    />
+                    {pasted && pickedNetwork ? (
+                      <p className={styles.addressHelp}>
+                        <span className={styles.addressNet}>
+                          <img
+                            className={styles.addressNetLogo}
+                            src={pickedNetwork.logo}
+                            alt=""
+                            draggable={false}
+                          />
+                          {pickedNetwork.name} wallet
+                        </span>
+                      </p>
+                    ) : (
+                      <p className={styles.addressHelp}>
+                        Spark, Solana, Base, Ethereum — anything
+                      </p>
+                    )}
+                  </div>
+
+                  {/* The session address book (withdraw only — send's list is
+                      its own entry screen): wallets saved by either flow, one
+                      tap → amount. The banks-list row voice. */}
+                  {!isSend && savedWallets.length > 0 && (
+                    <div className={styles.walletBook}>
+                      <p className={styles.sectionLabel}>Your wallets</p>
+                      <div className={clsx(styles.card, styles.cardFlush, styles.bankList)}>
+                        {savedWallets.map((w, i) => (
+                          <button
+                            key={w.id}
+                            type="button"
+                            className={styles.sourceRow}
+                            onClick={() => selectWallet(w.id)}
+                          >
+                            <span className={styles.recipientAvatar} aria-hidden>
+                              <img
+                                className={styles.tokenIconSm}
+                                src={w.logo}
+                                alt=""
+                                draggable={false}
+                              />
+                            </span>
+                            <span
+                              className={clsx(
+                                styles.sourceContent,
+                                i < savedWallets.length - 1 && styles.sourceContentBordered,
+                              )}
+                            >
+                              <span className={styles.sourceLabels}>
+                                <span className={styles.rowTitle}>
+                                  {truncateAddress(w.address)}
+                                </span>
+                                <span className={styles.rowSub}>{w.network} wallet</span>
+                              </span>
+                              <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* CTA pinned to the sheet bottom (the bank-form treatment):
+                    Paste opens the network picker, then morphs into the save. */}
+                <div className={styles.bottomCtaWrap}>
+                  <GlassCta
+                    onClick={() => {
+                      if (saving) return;
+                      // Paste fills a demo address; the prominent state then
+                      // saves it (send → recipient list) or carries it to the
+                      // amount step (withdraw → one-off wallet).
+                      if (pasted) {
+                        if (isSend) addCryptoRecipient();
+                        else useCryptoWithdraw();
+                      } else {
+                        setPickerOpen(true);
+                      }
+                    }}
+                  >
+                    {saving ? (
+                      <span className={styles.spinner} aria-label="Saving">
+                        <IconLoadingCircle size={20} />
+                      </span>
+                    ) : (
+                      <TextMorph
+                        as="span"
+                        duration={MORPH_MS}
+                        ease={cubicBezierCss(easeOutSwift)}
+                      >
+                        {pasted ? (isSend ? 'Add recipient' : 'Continue') : 'Paste'}
+                      </TextMorph>
+                    )}
+                  </GlassCta>
+                </div>
+              </motion.div>
+            )}
+
+            {(step === 'amount' || step === 'confirm') && (
+              <motion.div
+                key="transfer"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                {/* amount ⇄ confirm is ONE persistent layout (the Z grammar,
+                    flat iOS lines — no cards): the amount + conversion stay
+                    mounted; the From/To lines collapse away on confirm (they
+                    re-appear inside the details list) while the keypad swaps
+                    for the flat details list — all REAL height animation. */}
+                <div className={styles.amountLayout}>
+                  {/* The three swap regions (From/To lines, keypad, details
+                      card) stay MOUNTED and animate height from the same
+                      commit — mount/unmount put the exits a frame ahead of
+                      the enter, and with the fast-start ease that one frame
+                      freed ~35px: the centered amount visibly bounced. */}
+                  <motion.div
+                    className={clsx(styles.swapRegion, styles.swapRegionFromTo)}
+                    initial={false}
+                    animate={
+                      step === 'amount'
+                        ? { ...REGION_ENTER, height: fromToH ?? 'auto' }
+                        : REGION_EXIT
+                    }
+                    transition={reduceMotion ? { duration: 0 } : undefined}
+                    aria-hidden={step !== 'amount'}
+                  >
+                    <div ref={measureFromTo} className={styles.transferRows}>
+                      <div className={styles.transferRow}>
+                        <span className={styles.transferLabel}>From</span>
+                        {fromLine}
+                      </div>
+                      <div className={styles.transferRow}>
+                        <span className={styles.transferLabel}>To</span>
+                        {toLine}
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* The amount floats free, centered in the leftover space —
+                      it (and the conversion line) never unmounts across the
+                      amount ⇄ confirm swap. */}
+                  <div className={styles.amountFree}>
+                    <p ref={amountScope} className={styles.amountValue}>
+                      <span
+                        ref={fitRef}
+                        className={styles.amountFit}
+                        style={{ transform: `scale(${fit})` }}
+                      >
+                        <NumericText
+                          value={cents / 100}
+                          format={{ style: 'currency', currency: 'USD' }}
+                          fraction={amountFraction}
+                          ghostClassName={styles.amountGhost}
+                          style={NUMERIC_PAD}
+                        />
+                      </span>
+                    </p>
+                    <p className={styles.amountSub}>
+                      <NumericText
+                        value={(cents / 100) * fxRate}
+                        format={{
+                          minimumFractionDigits: fxFractionDigits,
+                          maximumFractionDigits: fxFractionDigits,
+                        }}
+                        style={NUMERIC_PAD}
+                      />
+                      {`\u00A0${fxLabel}`}
+                      {/* The rate arrow leaves through its real width so the
+                          centered sub line slides instead of snapping. The -3px
+                          margin cancels the sub line's flex gap: a zero-width
+                          child still contributes a gap, which would otherwise
+                          vanish in a snap when AnimatePresence unmounts it. */}
+                      <AnimatePresence initial={false}>
+                        {step === 'amount' && (
+                          <motion.span
+                            key="rate-arrow"
+                            className={styles.amountSubArrow}
+                            initial={
+                              reduceMotion
+                                ? false
+                                : { width: 0, opacity: 0, marginLeft: -3 }
+                            }
+                            animate={{ width: 11, opacity: 1, marginLeft: 0 }}
+                            exit={{ width: 0, opacity: 0, marginLeft: -3 }}
+                            transition={SWAP_TRANSITION}
+                          >
+                            <SfSymbol name="arrow.up.arrow.down" size={11} />
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </p>
+                    {/* "Use max" under the conversion on balance-sourced
+                        outflows; leaves through its REAL height (+ margin) so
+                        the centered amount column never snaps at unmount. The
+                        -4px end margin cancels the column's flex gap — a
+                        zero-height child still contributes a gap, which would
+                        otherwise vanish in a snap when AnimatePresence
+                        unmounts it. */}
+                    {mode !== 'add' && (
+                      <AnimatePresence initial={false}>
+                        {step === 'amount' && (
+                          <motion.span
+                            key="use-max"
+                            className={styles.useMax}
+                            initial={
+                              reduceMotion
+                                ? false
+                                : { opacity: 0, scale: 0.9, height: 0, marginTop: -4 }
+                            }
+                            animate={{ opacity: 1, scale: 1, height: 'auto', marginTop: 12 }}
+                            exit={{ opacity: 0, scale: 0.9, height: 0, marginTop: -4 }}
+                            transition={SWAP_TRANSITION}
+                          >
+                            <ContentAreaButton variant="secondary" size="small" onClick={useMax}>
+                              Use max
+                            </ContentAreaButton>
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    )}
+                  </div>
+
+                  {/* Keypad ⇄ details swap — REAL height animation, both
+                      PERSISTENT (see the note above): the leaver collapses
+                      while the arriver expands on the same commit, so the
+                      amount above slides through genuine layout. The hidden
+                      region is inert (no taps, no a11y). */}
+                  <motion.div
+                    className={styles.swapRegion}
+                    initial={false}
+                    animate={
+                      step === 'amount'
+                        ? { ...REGION_ENTER, height: keypadH ?? 'auto' }
+                        : REGION_EXIT
+                    }
+                    transition={reduceMotion ? { duration: 0 } : undefined}
+                    style={{ pointerEvents: step === 'amount' ? 'auto' : 'none' }}
+                    aria-hidden={step !== 'amount'}
+                  >
+                    <div ref={measureKeypad} className={styles.keypad} role="group" aria-label="Amount keypad">
+                      {KEYPAD.flat().map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className={styles.key}
+                          aria-label={key === 'del' ? 'Delete' : key}
+                          tabIndex={step === 'amount' ? undefined : -1}
+                          onClick={() => press(key)}
+                        >
+                          {key === 'del' ? <SfSymbol name="delete.left" size={24} /> : key}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                  <motion.div
+                    className={styles.swapRegion}
+                    initial={false}
+                    animate={
+                      step === 'confirm'
+                        ? { ...REGION_ENTER, height: detailsH ?? 'auto' }
+                        : REGION_EXIT
+                    }
+                    transition={reduceMotion ? { duration: 0 } : undefined}
+                    style={{ pointerEvents: step === 'confirm' ? 'auto' : 'none' }}
+                    aria-hidden={step !== 'confirm'}
+                  >
+                    {/* Details CARD — From/To lead, then the quote rows, then
+                        the You'll pay / They'll get totals (the marketplace/
+                        ondemand review grammar). */}
+                    <div ref={measureDetails} className={clsx(styles.card, styles.detailsCard)}>
+                      <div className={styles.detailRows}>
+                        {confirmRows.map(([label, value]) => (
+                          <div
+                            key={label}
+                            className={clsx(styles.detailRow, styles.detailRowBordered)}
+                          >
+                            <span className={styles.detailLabel}>{label}</span>
+                            <span className={styles.detailValue}>{value}</span>
+                          </div>
+                        ))}
+                        {confirmTotals.map(([label, value], i) => (
+                          <div
+                            key={label}
+                            className={clsx(
+                              styles.detailRow,
+                              i < confirmTotals.length - 1 && styles.detailRowBordered,
+                            )}
+                          >
+                            <span className={styles.detailLabel}>{label}</span>
+                            <span className={styles.detailTotalValue}>{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Persistent CTA — ONE button across both steps; the label
+                      morphs and the Face ID glyph fades in on confirm. It rides
+                      the real layout as the region above changes height. */}
+                  <div className={styles.ctaWrap}>
+                    <GlassCta
+                      onClick={() =>
+                        step === 'amount'
+                          ? tryContinue()
+                          : !confirming && onConfirm(cents, activityForConfirm())
+                      }
+                    >
+                      {confirming || quoting ? (
+                        <span className={styles.spinner} aria-label="Confirming">
+                          <IconLoadingCircle size={20} />
+                        </span>
+                      ) : (
+                        <span className={styles.ctaInner}>
+                          <AnimatePresence initial={false}>
+                            {step === 'confirm' && (
+                              <motion.span
+                                key="faceid"
+                                className={styles.ctaIcon}
+                                // Width + spacing animate too — otherwise the
+                                // unmount frees the icon's space in one frame
+                                // and the label snaps left on the last frame.
+                                initial={
+                                  reduceMotion
+                                    ? false
+                                    : { opacity: 0, scale: 0.6, width: 0, marginRight: 0 }
+                                }
+                                animate={{ opacity: 1, scale: 1, width: 18, marginRight: 6 }}
+                                exit={{ opacity: 0, scale: 0.6, width: 0, marginRight: 0 }}
+                                transition={SWAP_TRANSITION}
+                              >
+                                <SfSymbol name="faceid" size={18} />
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                          <TextMorph
+                            as="span"
+                            duration={MORPH_MS}
+                            ease={cubicBezierCss(easeOutSwift)}
+                          >
+                            {step === 'amount' ? 'Continue' : 'Confirm'}
+                          </TextMorph>
+                        </span>
+                      )}
+                    </GlassCta>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </BottomSheet>
+
+    {/* Secondary "Clipboard" sheet — an edge-to-edge flat sheet (the money
+        sheet's own treatment) presented iOS sheet-over-sheet: the money sheet
+        recedes behind it (`receded` above). Framed as a paste affordance: tap
+        an address to drop it into the recipient card. Each row reuses a Receive
+        chain (brand logo + address) and carries that network's accountType +
+        settlement currency into the calls. */}
+    <BottomSheet
+      open={pickerOpen}
+      onDismiss={() => setPickerOpen(false)}
+      glass={{
+        radius: 38,
+        cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
+        tint: 'var(--msg-sheet-bg)',
+        edge: 'var(--sheet-flat-edge)',
+        edgeGlint: false,
+        edgeWidth: 0.5,
+        shadow: '0 15px 37.5px rgba(0, 0, 0, 0.18)',
+      }}
+    >
+      <div className={styles.clipboardHeader}>
+        <h2 className={styles.clipboardHeading}>Paste address</h2>
+        <GlassSymbolButton
+          aria-label="Close"
+          size={40}
+          type="button"
+          glass={{ brightness }}
+          onClick={() => setPickerOpen(false)}
+        >
+          <SfSymbol name="xmark" size={14} />
+        </GlassSymbolButton>
+      </div>
+
+      <div className={styles.clipboardList}>
+        <div className={clsx(styles.card, styles.cardFlush)}>
+          {SEND_NETWORKS.map((net, i) => (
+            <button
+              key={net.id}
+              type="button"
+              className={styles.sourceRow}
+              onClick={() => pickNetwork(net)}
+            >
+              <span className={styles.recipientAvatar} aria-hidden>
+                <img className={styles.tokenIconSm} src={net.logo} alt="" draggable={false} />
+              </span>
+              <span
+                className={clsx(
+                  styles.sourceContent,
+                  i < SEND_NETWORKS.length - 1 && styles.sourceContentBordered,
+                )}
+              >
+                <span className={styles.sourceLabels}>
+                  <span className={styles.rowTitle}>{truncateAddress(net.address)}</span>
+                  <span className={styles.rowSub}>{net.name} wallet</span>
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </BottomSheet>
+    </>
+  );
+}
