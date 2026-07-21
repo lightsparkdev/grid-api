@@ -115,8 +115,14 @@ grid customers kyc-link \
   --customer-id <id> \
   --redirect-url https://example.com/kyc-complete
 
-# Update customer
-grid customers update <customerId> --full-name "Jane Doe"
+# Update customer (--type is the required discriminator)
+grid customers update <customerId> --type INDIVIDUAL --full-name "Jane Doe"
+
+# Contact verification (only required in some regulatory jurisdictions)
+grid customers verify-email <customerId>
+grid customers confirm-email <customerId> --code 123456
+grid customers verify-phone <customerId>
+grid customers confirm-phone <customerId> --code 123456
 
 # Delete customer (prompts for confirmation)
 grid customers delete <customerId>
