@@ -22,7 +22,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/transactions/OutgoingTransaction.yaml
+            $ref: ../../components/schemas/transactions/TransactionOneOf.yaml
     '400':
       description: Bad request
       content:

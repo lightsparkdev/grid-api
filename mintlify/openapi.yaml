@@ -4760,7 +4760,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OutgoingTransaction'
+                $ref: '#/components/schemas/TransactionOneOf'
         '400':
           description: Bad request
           content:
