@@ -1,0 +1,223 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Z auth — flat white/black, Geist, no glass. Logo + headline in the upper third,
+   the social cluster low, the username bar full-bleed at the bottom. */
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Clear the status bar; keep the cluster off the bottom edge. */
+  padding-top: 72px;
+  padding-bottom: 24px;
+  box-sizing: border-box;
+}
+
+/* Logo + headline centered in the empty space above the auth cluster. */
+.brandArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 0 24px;
+}
+.logo {
+  color: var(--app-text-primary);
+}
+.headline {
+  margin: 0;
+  @include ios.ios-text-title-1;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-1-opsz);
+  text-align: center;
+}
+
+/* No column gap: each child (circles row, or-row) carries its own animated
+   margin-bottom so it collapses to nothing on exit — flexbox reflows per frame
+   and the centered brand above glides up smoothly (no gap snap). */
+.cluster {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+/* position: relative so popLayout can lift an exiting circle out of flow within
+   this row (siblings then animate to their recentered positions). Row height +
+   margin are motion-owned (collapse when the whole row leaves); clip-margin lets
+   the circles' hover bloom paint past the clip box. */
+.circles {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  overflow: clip;
+  overflow-clip-margin: 6px;
+}
+.circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  corner-shape: round;
+  border: 1px solid var(--z-border);
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Scale is owned by motion (whileHover/whileTap); only the fill animates here. */
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.circle:hover:not(:disabled) {
+  background: var(--z-surface);
+  border-color: var(--app-text-tertiary);
+}
+.circle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 8px inset on each side shortens the rule lines so the divider optically aligns
+   with the rounded controls above/below. Inner gap (line↔or↔line) stays 12px.
+   Height + margin are motion-owned (collapse on exit). */
+.orRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.orLine {
+  flex: 1;
+  height: 1px;
+  background: var(--z-hairline);
+}
+.orText {
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+}
+
+.phoneBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  border: 0;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: var(--z-primary-bg);
+  color: var(--z-primary-fg);
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Hover/press fill — a wash over the solid pill (white on the dark light-mode
+   pill, black on the white dark-mode pill), deepening on press. */
+.phoneBtn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  corner-shape: round;
+  background: rgba(255, 255, 255, 0.14);
+  opacity: 0;
+  transition: opacity 0.18s ease, background 0.18s ease;
+  pointer-events: none;
+}
+.phoneBtn:hover:not(:disabled)::after {
+  opacity: 1;
+}
+.phoneBtn:active:not(:disabled)::after {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.24);
+}
+:global([data-theme='dark']) .phoneBtn::after {
+  background: rgba(0, 0, 0, 0.1);
+}
+:global([data-theme='dark']) .phoneBtn:active:not(:disabled)::after {
+  background: rgba(0, 0, 0, 0.18);
+}
+.phoneBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.phoneInner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.phoneLabel {
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+}
+
+.legal {
+  margin: 20px 0 0;
+  @include ios.ios-text-footnote;
+  color: var(--app-text-secondary);
+  text-align: center;
+  max-width: 320px;
+}
+.legalLink {
+  color: var(--app-text-primary);
+  font-weight: 600;
+}
+
+/* Signing-in beat — centered logo + caption over the flat background. */
+.creatingSlot {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--app-text-primary);
+}
+.creatingLogo {
+  color: var(--app-text-primary);
+}
+.creatingLabel {
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+}

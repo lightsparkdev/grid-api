@@ -1,0 +1,299 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Header row — the icon tile (30px top/left). */
+.header {
+  display: flex;
+  align-items: flex-start;
+  padding: 30px 24px 8px 30px;
+}
+
+/* Glass X — pinned 24px off the sheet's top-right corner. */
+.close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 1;
+}
+
+/* The activity-row graphic treatment (WalletListItem), sized up — 64px tile,
+   radius 16, centered 28px glyph at a true 2px stroke. The FILL lives on a
+   blurred under-layer (8px) so the tile's edges feather out, with the crisp
+   icon stacked on top. */
+.tile {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  color: #ffffff;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    corner-shape: var(--corner-shape);
+    /* Diagonal sweep through the aurora AS RENDERED (pixel-sampled from the
+       live WebGL field — its blending reads cooler than the raw stripe
+       tokens, so the tokens themselves don't match). */
+    background: linear-gradient(135deg, #98d9ed 0%, #32b9df 55%, #0698d0 100%);
+    filter: blur(6px);
+  }
+
+  :global([data-theme='dark']) &::before {
+    /* Dark field renders NAVY (sampled), not the teal of its raw tokens. */
+    background: linear-gradient(135deg, #024a82 0%, #00396a 55%, #00254a 100%);
+  }
+
+  svg {
+    position: relative;
+  }
+
+  svg path {
+    stroke-width: 2;
+    /* The glyph renders above its 24 viewBox (28px) — keep the stroke at a
+       true 2 screen px instead of scaling to ~2.33. */
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+/* Title3 / Emphasized — 20/25, semibold (590), tracking -0.45. */
+.heading {
+  margin: 0;
+  padding: 16px 32px 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* Footnote / Regular — 13/18, tracking -0.08. Own row below the title. */
+.sub {
+  margin: 0;
+  padding: 8px 32px 20px;
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  text-wrap: pretty;
+}
+
+.cardContainer {
+  padding: 0 24px;
+}
+
+.cardShell {
+  position: relative;
+  height: 44px;
+}
+
+/* Squircle stroke — sits outside the clip-path; default border, focus tint. */
+.cardHalo,
+.codeCellHalo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--input-border);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    transition: stroke 0.15s ease;
+  }
+}
+
+.cardContainer:focus-within .cardHalo path {
+  stroke: var(--input-ring);
+}
+
+.codeContainer:focus-within .codeCellShell[data-active] .codeCellHalo path {
+  stroke: var(--input-ring);
+}
+
+/* Clipped pill surface — no fill; stroke lives on the halo SVG above. */
+.card {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Callout / Regular — 16/21; placeholder is labels/tertiary. */
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 24px;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  outline: none;
+  caret-color: var(--ios-tint);
+  @include ios.ios-text-callout;
+
+  &::placeholder {
+    color: var(--ios-label-tertiary);
+  }
+}
+
+/* Button block — top spacing lives in .step's padding (inside the clip). */
+.actions {
+  padding: 0 24px 24px;
+}
+
+/* ── Steps (entry → code) ─────────────────────────────────────────────────── */
+
+/* Single-cell grid stack: entering/exiting steps overlap for the cross
+   blur-fade while the host's height tweens to the arriving step. BOTTOM
+   aligned: the sheet is bottom-anchored on screen, so cell bottoms (the
+   content nearest the persistent CTA) hold still and only the top edge
+   moves with the height change. */
+.steps {
+  position: relative;
+  display: grid;
+  /* ONE row pinned to the host's (animated) height — otherwise the row sizes
+     to the TALLER of the overlapping steps mid-transition, the entering step
+     bottom-aligns to that oversized row's edge below the clip, and snaps up
+     when the leaver unmounts. */
+  grid-template-rows: 100%;
+  align-items: end;
+  overflow: hidden;
+}
+
+.step {
+  grid-area: 1 / 1;
+  min-width: 0;
+  /* Room INSIDE the host's overflow clip for the field shadows/focus halos
+     (the CTA's top pad gives this back, so the rhythm is unchanged). */
+  padding-bottom: 12px;
+
+  --input-border: rgba(35, 35, 33, 0.2);
+  --input-ring: rgba(35, 35, 33, 0.3);
+  --input-halo: rgba(38, 38, 35, 0.1);
+
+  :global([data-theme='dark']) & {
+    --input-border: rgba(245, 245, 245, 0.15);
+    --input-ring: rgba(245, 245, 245, 0.3);
+    --input-halo: rgba(244, 244, 245, 0.1);
+  }
+}
+
+/* ── Verification code cells ──────────────────────────────────────────────── */
+
+/* Six display cells over one hidden input (it carries the real focus/typing). */
+.codeContainer {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  padding: 0 24px 8px;
+  cursor: text;
+}
+
+.codeInput {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  opacity: 0;
+  /* Typing target only — the cells render the digits. */
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
+  outline: none;
+}
+
+/* Bordered cells, no fill; stroke lives on the halo SVG. */
+.codeCellShell {
+  position: relative;
+  flex: 1;
+  height: 52px;
+}
+
+.codeCell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: transparent;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* The 3 — 3 group separator. */
+.codeDash {
+  flex-shrink: 0;
+  align-self: center;
+  width: 10px;
+  height: 1px;
+  border-radius: 0.5px;
+  background: var(--ios-label-tertiary);
+}
+
+/* The notification lens's aurora copy — fills its (bled) wrapper. */
+.auroraCopyField {
+  position: absolute;
+  inset: 0;
+}
+
+/* Inline "Resend" — a tinted text button flowing inside the body copy. */
+.resend {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--ios-tint);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* CTA content stack — Continue / spinner / checkmark overlap in one cell so
+   the cross blur-free scale-fades swap in place without the button reflowing. */
+.ctaSwap {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.ctaItem {
+  display: inline-flex;
+  grid-area: 1 / 1;
+  align-items: center;
+}
+
+/* Sending beat on Continue — the money sheet's CTA spinner. */
+.spinner {
+  display: inline-flex;
+  animation: auth-sheet-spin 0.9s linear infinite;
+}
+
+@keyframes auth-sheet-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

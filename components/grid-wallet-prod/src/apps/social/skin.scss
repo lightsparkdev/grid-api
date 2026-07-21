@@ -1,0 +1,94 @@
+/* Z (social) skin — X-style: Geist type, black/white, fully flat (NO glass).
+   Light defaults + a [data-theme='dark'] block. Brand accent = X blue. Colors
+   sampled from the auth + Money screenshots. */
+@mixin tokens {
+  &[data-app='social'] {
+    --ios-font-family: var(--font-family-geist);
+
+    /* Brand accent — links, carets, "Resend", secondary tint. */
+    --app-tint: #1d9bf0;
+    --ios-tint: var(--app-tint);
+
+    /* Surfaces + text (light). */
+    --app-bg: #ffffff;
+    --ios-label-primary: #0f1419;
+    --app-text-primary: #0f1419;
+    --app-text-secondary: #536471;
+    --app-text-tertiary: #8b98a5;
+
+    /* Z palette — consumed by the social faces (auth + Money home). */
+    --z-surface: #eff3f4; /* action chips + tiles */
+    --z-surface-press: #e1e8ed;
+    --z-hairline: #eff3f4; /* dividers / the "or" rule */
+    --z-border: #cfd9de; /* auth circle-button borders */
+    --z-green: #34c759; /* APY / positive (Figma accents/green) */
+    --z-skeleton: #e6e9eb; /* loading skeleton pills/circles */
+    --z-primary-bg: #0f1419; /* Continue with Phone */
+    --z-primary-fg: #ffffff;
+    --z-primary-press: #272c30;
+
+    /* Primary filled pill (ContentAreaButton filled) — inverted, X-style. */
+    --p-fill: #0f1419;
+    --p-fg: #ffffff;
+
+    /* Secondary chips (ContentAreaButton secondary) — light gray tile. */
+    --content-secondary-bg: var(--z-surface);
+    --content-secondary-fg: var(--app-text-primary);
+
+    /* Flat sheets — no glass anywhere in Z. */
+    --auth-sheet-bg: #ffffff;
+    --z-sheet-bg: #ffffff;
+    --app-sheet-glass-backdrop: transparent;
+
+    /* Stronger dim behind sheets than the shared 0.2 default. */
+    --sheet-scrim: rgba(0, 0, 0, 0.4);
+
+    /* Activity / list panel — flat on the page; hairline divider. */
+    --list-panel-bg: #ffffff;
+    --list-panel-border: 0.5px solid rgba(0, 0, 0, 0.1);
+
+    /* Decorative bottom tab bar (Figma 2543:21322). */
+    --app-tabbar-bg: #ffffff;
+    --app-tabbar-fg: #0f1419;
+    --app-tabbar-active: #0f1419;
+    --z-tab-border: #eff3f4;
+
+    :global([data-theme='dark']) & {
+      --app-bg: #000000;
+      --ios-label-primary: #e7e9ea;
+      --app-text-primary: #e7e9ea;
+      --app-text-secondary: #71767b;
+      --app-text-tertiary: #565a5e;
+
+      --z-surface: #16181c;
+      --z-surface-press: #1d1f23;
+      --z-hairline: #2f3336;
+      --z-border: #333639;
+      --z-green: #34c759;
+      --z-skeleton: #2b2e33;
+      --z-primary-bg: #ffffff;
+      --z-primary-fg: #000000;
+      --z-primary-press: #d7dbdc;
+
+      --p-fill: #ffffff;
+      --p-fg: #000000;
+
+      --content-secondary-bg: var(--z-surface);
+      --content-secondary-fg: var(--app-text-primary);
+
+      --auth-sheet-bg: #141414;
+      --z-sheet-bg: #141414;
+
+      /* Page is near-black; push the scrim further so the sheet still separates. */
+      --sheet-scrim: rgba(0, 0, 0, 0.6);
+
+      --list-panel-bg: #000000;
+      --list-panel-border: 0.5px solid rgba(255, 255, 255, 0.1);
+
+      --app-tabbar-bg: #070707;
+      --app-tabbar-fg: #e7e9ea;
+      --app-tabbar-active: #e7e9ea;
+      --z-tab-border: #313436;
+    }
+  }
+}

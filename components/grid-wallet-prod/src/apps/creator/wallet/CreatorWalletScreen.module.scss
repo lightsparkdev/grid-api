@@ -1,0 +1,528 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+@use '../../shared/glass/glass-button-shadow' as shadow;
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  /* Figma DS.screenBackground — off-white, a hair below the #fff cards. */
+  --wallet-bg: #f9f9f9;
+  /* Debit card height (232) minus visible peek (~56) when sheet is resting. */
+  --wallet-sheet-overlap: 176px;
+  /* Resting card slot: top pad (8) + card height (232). Used to pin the sheet to
+     its closed position when it goes absolute (open) so the slide doesn't jump. */
+  --card-slot-height: 248px;
+  /* Card-view header height (status-bar offset aside): 40px button + 2x4px padding.
+     Drives where the floating card's slot sits (see .cardForeground top). */
+  --wallet-header-height: 48px;
+
+  :global([data-theme='dark']) & {
+    /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
+    --wallet-bg: #111111;
+  }
+}
+
+/* Skin visuals for the PresentationStage card: the wallet bg + the 62px status-
+   bar clearance (screenBody underlaps it, see AppShell) that used to live on
+   .root. Kept here so the whole screen scales as one card behind a sheet, with
+   the dark backdrop (PresentationStage) showing through as it recedes. */
+.stageSkin {
+  background: var(--wallet-bg);
+  padding-top: 62px;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  height: var(--wallet-header-height);
+  padding: 8px 24px;
+  box-sizing: border-box;
+}
+
+/* Home: the title + gear drop to the fixed-background layer (below the scrolling
+   body) so the sheet scrolls up over them — same as the card + aurora. The
+   card-detail header keeps z-index 2 so it stays on top while a card is open. */
+.headerHome {
+  z-index: 0;
+}
+
+.headerInner {
+  position: absolute;
+  inset: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: auto;
+}
+
+/* Figma 90:13587 — Title3/Emphasized. */
+.title {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* ── Body (above the aurora; transparent so the aurora shows through) ──────── */
+
+.body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Default (issuance / card-open / tap): no page scroll. Underlap JUST the
+     header strip (not the status bar) so the card's top drop-shadow bleed paints
+     unclipped while the aurora (z 0) stays the topmost layer under the status bar
+     — the tone sampler reads it through the transparent body and flips the glyphs
+     white. The plain home opts into the status-bar underlap via .bodyHome. */
+  overflow: hidden;
+  margin-top: calc(-1 * var(--wallet-header-height));
+  padding-top: var(--wallet-header-height);
+}
+
+/* Plain wallet home: scrolls beneath the pinned purple .brandHeader (which owns
+   the status-bar bleed), so the body sits in normal flow with no underlap. */
+.bodyHome {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  margin-top: 0;
+  padding-top: 0;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.bodyOpen {
+  overflow: hidden;
+}
+
+/* Tap-to-pay lifts the body over the (still-present) header; raising it above the
+   header layer hides the header buttons as they fade rather than ghosting them. */
+.bodyTap {
+  z-index: 3;
+  /* No page scroll mid-tap (the body is transform-lifted instead). */
+  overflow: hidden;
+}
+
+/* Floating debit card — a single persistent element in an un-scaled foreground
+   layer (above the sheet at z 20, below the screen overlay at z 50) so it morphs
+   cleanly from the issuance sheet up into card-home without the stage's scale
+   compounding the transform. Top aligns with both the sheet's card slot (sheet
+   top 72 + 54 toolbar) and the card-home slot (62 status + 56 header + 8). */
+.cardForeground {
+  position: absolute;
+  top: calc(62px + var(--wallet-header-height) + 8px);
+  left: 16px;
+  right: 16px;
+  z-index: 30;
+  pointer-events: none;
+}
+
+/* Morph layer: issuance (centered, scaled down) ↔ card-home (top, full size).
+   Scales about its own center so the card grows in place as it lifts. */
+.cardMorph {
+  transform-origin: center center;
+}
+
+/* Card stack — positioning context for the card (and the sparkle layer inside). */
+.cardStack {
+  position: relative;
+}
+
+/* Bob wrapper — gentle screen-vertical hover. No rotation here, so the bob stays
+   vertical no matter how the inner card is isometrically tilted. */
+.cardFloat {
+  will-change: transform;
+}
+
+/* Isometric tilt — orthographic (deliberately NO perspective ancestor anywhere in
+   this chain), so rotateX/rotateZ project as a true parallel isometric view.
+   preserve-3d keeps the card's front/back faces in 3D so the rotateY flip
+   (intro→creating) culls correctly and shows the clean back mid-spin. */
+.cardIso {
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/* "Creating…" caption, pinned just below the floating card (top set inline from
+   the card's centered offset + scaled height). */
+.creatingUnderCard {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+/* Card-home body — transactions fill below the floating card's reserved slot. */
+.cardHomeBody {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+  /* Card slot (card 232 + 8 gap) — the foreground card overlays this space. */
+  padding-top: var(--card-slot-height);
+}
+
+/* Tap-to-pay reader status — the card lifts to sit under the status bar and the
+   glyph + label sit BELOW it, matching Aurora. Aurora flows the card in-document
+   then drops the status 50px below the card area; here the card is a foreground
+   layer, so reserve the card slot (+ the header height, hidden during tap) to land
+   at the card's bottom, then the same 50px gap below it. */
+.tapStatus {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  width: 100%;
+  padding-top: calc(var(--card-slot-height) + var(--wallet-header-height) + 50px);
+}
+
+/* Card view — flat full-page sheet, split into two slide layers around the floating
+   card (z 30) so the card's drop shadow shows on the bg but not on the content.
+   Background: behind the card (above the home base). */
+.cardSheetBg {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  background: var(--wallet-bg);
+  will-change: transform;
+}
+
+/* Content (header + CTA + list): ABOVE the card, so the tap-to-pay / list sit over
+   the card's drop shadow. Transparent — the bg layer paints the surface. */
+.cardSheet {
+  position: absolute;
+  inset: 0;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  padding-top: 62px;
+  overflow: hidden;
+  will-change: transform;
+}
+
+/* Flat card-detail header row (X + card-number/more) — 16px sides to match the home
+   bar + the other sheet toolbars; row drops to ~74 from the screen top (62 status +
+   12) like the brand header. Buttons are ghost (no fill). */
+.cardSheetHeader {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  /* 16px sides like the home brand bar; 12px top/bottom keeps the row 48px tall
+     (12 + 24 icon + 12) so it matches --wallet-header-height (the card slot offset). */
+  padding: 12px 16px;
+}
+
+/* Holds the card-home / tap content; lifts during tap-to-pay. */
+.cardSheetBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Face ID (Dynamic Island) overlay — above the screen, click-through. */
+.faceIdLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ── Creator (creator) overrides ───────────────────────────────────────────── */
+
+.root {
+  background: var(--app-bg);
+  --wallet-bg: var(--app-bg);
+  --wallet-sheet-overlap: 0px;
+
+  :global([data-theme='dark']) & {
+    --wallet-bg: var(--app-bg);
+  }
+}
+
+/* Pinned purple nav header (Figma 2454:19376) — bleeds up behind the status bar:
+   margin-top pulls into .root's 62px status clearance, padding-top drops the row
+   back below the glyphs. Purple + white content in both themes (sits on the tint). */
+.brandHeader {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: -62px;
+  padding: 74px 16px 12px;
+  background: var(--app-tint);
+  color: #fff;
+}
+
+.brandHeaderButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Lone svg in a row flex gets width-squished to half; pin it square. */
+  svg {
+    display: block;
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.brandHeaderTitle {
+  font-family: var(--font-family-inter);
+  font-size: 17px;
+  font-weight: 590;
+  letter-spacing: -0.43px;
+}
+
+/* Balance hero (Figma 2454:19341) — flat on the page bg: label + APY pill, big
+   amount, then the two secondary stat lines pinned to the bottom of the block. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 200px;
+  padding: 28px 24px 16px;
+}
+
+.heroTop {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.balanceRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.balanceLabel {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.08px;
+  color: var(--app-text-primary);
+}
+
+.apyPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ios-system-green) 20%, transparent);
+  color: var(--ios-system-green);
+  font-size: 11px;
+  font-weight: 590;
+  letter-spacing: 0.06px;
+}
+
+.balanceAmount {
+  font-family: var(--font-family-inter);
+  font-variation-settings: 'wght' 700;
+  font-size: 48px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--app-text-primary);
+}
+
+.heroStats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heroStat {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: var(--ios-label-secondary);
+}
+
+.heroStatAmount {
+  font-weight: 700;
+}
+
+/* Action block (Figma 2454:19411) — two rows: Deposit / Withdraw / Transfer
+   pills, then a full-width debit-card pill. */
+.actionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 0 8px;
+}
+
+.actionRow,
+.cardRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+}
+
+/* Shared hover/press wash + scale — themed iOS fill on the secondary pills,
+   white on the brand card pill; press feedback is the fill deepening. */
+.actionPill,
+.cardButton {
+  position: relative;
+  @include shadow.glass-button-press-scale(1.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  font-family: var(--ios-font-family);
+  font-size: 15px;
+  font-weight: 590;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    corner-shape: round;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+    pointer-events: none;
+  }
+
+  > svg,
+  > span {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Lone svgs in a flex button get width-squished; pin them. */
+  > svg {
+    display: block;
+    flex: none;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover:not(:disabled)::after,
+  &:active:not(:disabled)::after {
+    opacity: 1;
+  }
+
+  &:active:not(:disabled) {
+    filter: none;
+  }
+}
+
+/* Figma 2454:19413 — pl 12 / pr 16, 4px icon→label gap. */
+.actionPill {
+  gap: 4px;
+  padding: 8px 16px 8px 12px;
+  background: var(--creator-secondary-bg);
+  color: var(--creator-secondary-fg);
+
+  &::after {
+    background: var(--ios-fill-tertiary);
+  }
+
+  &:active:not(:disabled)::after {
+    background: var(--ios-fill-secondary);
+  }
+}
+
+/* Figma 2454:19429 — full-width brand pill, 8px icon→label gap. */
+.cardButton {
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--app-tint);
+  color: #fff;
+
+  &::after {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &:active:not(:disabled)::after {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Activity filter tabs (Figma 2454:19436) — underline style: gap 24, p16,
+   semibold; active text + a 3px gliding underline in the brand accent, inactive
+   in label-primary. */
+.activityTabs {
+  position: relative;
+  display: flex;
+  gap: 24px;
+  padding: 16px 24px 8px;
+}
+
+.activityTab {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--ios-font-family);
+  font-size: 15px;
+  font-weight: 590;
+  letter-spacing: -0.23px;
+  color: var(--app-text-primary);
+  cursor: pointer;
+}
+
+.activityTabActive {
+  color: var(--app-tabbar-active);
+}
+
+/* Single underline shared across tabs — positioned at the buttons' bottom edge
+   (tabs are 32px tall under the 16px top padding; 8px bottom padding remains).
+   `left`/`width` are driven by Framer from the measured active tab. */
+.activityIndicator {
+  position: absolute;
+  left: 0;
+  bottom: 8px;
+  height: 3px;
+  border-radius: 0;
+  background: var(--app-tabbar-active);
+}

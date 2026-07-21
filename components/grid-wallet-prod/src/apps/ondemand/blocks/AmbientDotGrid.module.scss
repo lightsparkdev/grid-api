@@ -1,0 +1,21 @@
+/* Ambient dot grid canvas — fills its positioned parent; the dot color rides
+   the CSS `color` so themes drive it (canvas reads it at draw time). */
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Page backdrop: grey dots in light mode (subtle), white in dark. */
+.page {
+  color: var(--od-grid-dot);
+}
+
+/* Inside the matte black card: always white (the card stays black in both
+   themes — it's a physical object). */
+.card {
+  color: #ffffff;
+}

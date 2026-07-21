@@ -1,0 +1,76 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Full-bleed header: equal side slots keep the title optically centered; the
+   hairline border spans the whole width (edge to edge). */
+.header {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 18px 14px;
+}
+/* Divider insets 32px from each edge (the original 24 + the header's +8 left/right
+   padding bump), so it tracks the padded header and lines up with the body copy. */
+.header::after {
+  content: '';
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 0;
+  height: 1px;
+  background: var(--z-hairline);
+}
+
+.side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 0 0 44px;
+}
+.sideRight {
+  justify-content: flex-end;
+}
+
+.title {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  text-align: center;
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  color: var(--app-text-primary);
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+  svg path {
+    stroke-width: 2;
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- .",
+  "installCommand": "npm install --ignore-scripts"
+}

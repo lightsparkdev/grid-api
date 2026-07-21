@@ -1,0 +1,56 @@
+@use './glass-button-shadow' as shadow;
+
+$group-height: 40px;
+$group-press-scale: ($group-height + shadow.$glass-button-bloom * 2) / $group-height;
+$group-hover-scale: ($group-height + shadow.$glass-button-hover-bloom * 2) / $group-height;
+
+.root {
+  position: relative;
+  flex-shrink: 0;
+  // Match the glass pill so the drop shadow is a capsule, not a square box.
+  border-radius: 1000px;
+  corner-shape: round;
+  @include shadow.glass-button-shadow;
+  @include shadow.glass-button-press-base;
+
+  &:hover {
+    transform: scale($group-hover-scale);
+  }
+
+  // Higher specificity than :hover, so the press scale wins while clicking.
+  &:has(.iconButton:active:not(:disabled)) {
+    transform: scale($group-press-scale);
+    filter: brightness(shadow.$glass-button-press-brightness);
+  }
+}
+
+.glass {
+  height: 40px;
+  border-radius: 1000px;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 4px 8px;
+  color: var(--ios-label-primary);
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  margin: 0;
+  border: 0;
+  padding: 0 8px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}

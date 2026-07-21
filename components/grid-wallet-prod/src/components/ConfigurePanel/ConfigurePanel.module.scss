@@ -1,0 +1,99 @@
+@use '../../styles/breakpoints' as *;
+
+.panel {
+  /* The laptop layout's compact sizing is the default at every breakpoint. */
+  width: $layout-laptop-config-width;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-primary);
+  border-right: var(--stroke-xs) solid var(--border-primary);
+  overflow: hidden;
+  /* The panel wears the chrome gray only side-by-side — glide the color
+     across the stacked ⇄ 3-col crossing instead of snapping. */
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
+
+  :global([data-theme='dark']) & {
+    background: var(--color-gray-950);
+  }
+
+  /* Side-by-side (keyed to the JS layout attribute so the color rides the
+     same clock as the arrangement flip), the configure column wears the
+     docs-chrome gray, matching the API panel. surface-secondary flips with
+     the theme, and this selector outweighs the dark override above. */
+  :global(html:not([data-layout='stacked'])) & {
+    background: var(--surface-secondary);
+  }
+}
+
+@media (max-width: $breakpoint-layout-mobile) {
+  .panel {
+    width: 100%;
+    height: 100dvh;
+    border-right: none;
+  }
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: $layout-laptop-content-padding;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+
+  // Mobile: tighter 24px padding (32px on top for breathing room under the navbar)
+  // + room for the fixed "Explore playground" button. Declared after the base
+  // padding so it wins at equal specificity.
+  @media (max-width: $breakpoint-layout-mobile) {
+    padding: var(--spacing-xl);
+    padding-top: var(--spacing-2xl);
+    padding-bottom: 96px;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+/* Reset control, right-aligned in the Explore flows divider. Matches the section
+   label exactly (type + tertiary color, no padding) so it never changes the
+   divider height. */
+.resetBtn {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3xs);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
+  cursor: pointer;
+  transition: color 150ms ease;
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      color: var(--text-primary);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

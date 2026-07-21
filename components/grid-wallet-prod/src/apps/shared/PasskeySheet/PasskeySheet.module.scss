@@ -1,0 +1,62 @@
+@use '../colors/ios-colors' as ios-colors;
+@use '../typography/ios-type-mixins' as ios;
+
+/* This is iOS system chrome — it must look identical on every skin. Re-assert the
+   canonical iOS colors so a skin's brand tint can't cascade in (e.g. Creator maps
+   --ios-tint to its purple, which would otherwise tint the Face ID glyph and the
+   "More Options" action). display:contents scopes the reset to the sheet subtree
+   without adding a layout box. The primary CTA is already a fixed iOS-blue glass
+   (TEXT_GLASS_PRIMARY_BACKDROP), so it needs no reset. */
+.sheet {
+  display: contents;
+  /* System chrome — canonical iOS colors (the Face ID glyph + "More Options" follow
+     --ios-tint, which skins re-map) and the system font, never the skin's brand. */
+  @include ios-colors.tokens;
+  @include ios.ios-system-font;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 0 36px;
+}
+
+.faceIcon {
+  color: var(--ios-tint);
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ios-label-primary);
+}
+
+.title {
+  margin: 0;
+  @include ios.ios-text-title-2;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+}
+
+.description {
+  margin: 0;
+  @include ios.ios-text-body;
+  text-wrap: pretty;
+  color: var(--ios-label-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 32px 32px 46px;
+}
