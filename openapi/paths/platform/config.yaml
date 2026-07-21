@@ -62,6 +62,18 @@ patch:
             sendFromEmailSenderName: Acme Notifications
             replyToEmailAddress: support@acme.com
             logoUrl: https://acme.com/logo.png
+          cardTokenization2faConfig:
+            displayName: Acme
+            logoUrl: https://acme.com/card-email-logo.png
+            email:
+              fromAddress: cards@acme.com
+              fromName: Acme Cards
+              replyToAddress: support@acme.com
+              subject: Your Acme card verification code
+              bodyText: Use this code to finish adding your Acme card to your digital wallet.
+            sms:
+              templateSid: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+              bodyText: Use this code to finish adding your Acme card to your digital wallet.
   responses:
     '200':
       description: Configuration updated successfully

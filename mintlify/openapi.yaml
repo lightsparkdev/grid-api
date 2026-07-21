@@ -127,6 +127,18 @@ paths:
                 sendFromEmailSenderName: Acme Notifications
                 replyToEmailAddress: support@acme.com
                 logoUrl: https://acme.com/logo.png
+              cardTokenization2faConfig:
+                displayName: Acme
+                logoUrl: https://acme.com/card-email-logo.png
+                email:
+                  fromAddress: cards@acme.com
+                  fromName: Acme Cards
+                  replyToAddress: support@acme.com
+                  subject: Your Acme card verification code
+                  bodyText: Use this code to finish adding your Acme card to your digital wallet.
+                sms:
+                  templateSid: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                  bodyText: Use this code to finish adding your Acme card to your digital wallet.
       responses:
         '200':
           description: Configuration updated successfully
@@ -10855,6 +10867,78 @@ components:
           maxLength: 512
           description: URL to a PNG logo for the OTP email. Resized to 340x124px.
           example: https://acme.com/logo.png
+    CardTokenization2FAEmailConfig:
+      type: object
+      description: Email branding and sender settings for card-tokenization authentication messages. Invalid or unverified sender identities can cause delivery to fail.
+      properties:
+        fromAddress:
+          type: string
+          format: email
+          maxLength: 255
+          description: Sender address for card-tokenization authentication emails.
+          example: cards@acme.com
+        fromName:
+          type: string
+          maxLength: 255
+          description: Sender display name.
+          example: Acme Cards
+        replyToAddress:
+          type: string
+          format: email
+          maxLength: 255
+          description: Reply-to address for card-tokenization authentication emails.
+          example: support@acme.com
+        subject:
+          type: string
+          maxLength: 255
+          description: Subject for the authentication email.
+          example: Your Acme card verification code
+        bodyText:
+          type: string
+          maxLength: 2000
+          description: |
+            Plain-text message content. Lightspark inserts the authentication code into
+            a controlled text and HTML template; arbitrary HTML and template variables
+            are not supported.
+          example: Use this code to finish adding your Acme card to your digital wallet.
+    CardTokenization2FASmsConfig:
+      type: object
+      description: SMS settings for card-tokenization authentication messages delivered through a Lightspark-managed Twilio sender.
+      properties:
+        templateSid:
+          type: string
+          maxLength: 64
+          description: |
+            Twilio Verify template SID to use for this platform. An invalid or unavailable
+            template can cause delivery to fail.
+          example: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        bodyText:
+          type: string
+          maxLength: 480
+          description: |
+            Plain-text fallback message used when Twilio Verify is unavailable for the
+            authentication code. Lightspark appends the code to this text.
+          example: Use this code to finish adding your Acme card to your digital wallet.
+    CardTokenization2FAConfig:
+      type: object
+      description: Per-platform branding for authentication codes sent when a cardholder adds a Grid-issued card to a digital wallet. Updates apply to subsequent delivery attempts. Invalid sender or provider configuration can cause delivery to fail.
+      properties:
+        displayName:
+          type: string
+          maxLength: 255
+          description: Platform name displayed in authentication messages.
+          example: Acme
+        logoUrl:
+          type: string
+          format: uri
+          pattern: ^https://
+          maxLength: 512
+          description: HTTPS URL of the logo displayed in email messages.
+          example: https://acme.com/card-email-logo.png
+        email:
+          $ref: '#/components/schemas/CardTokenization2FAEmailConfig'
+        sms:
+          $ref: '#/components/schemas/CardTokenization2FASmsConfig'
     PlatformConfig:
       type: object
       properties:
@@ -10896,6 +10980,11 @@ components:
             Embedded-wallet branding and OTP settings for this platform. Present
             only when the platform has configured embedded-wallet support;
             omitted otherwise.
+        cardTokenization2faConfig:
+          $ref: '#/components/schemas/CardTokenization2FAConfig'
+          description: |
+            Branding and sender configuration for card-tokenization authentication
+            messages. This configuration is independent of embedded-wallet support.
         createdAt:
           type: string
           format: date-time
@@ -10996,6 +11085,12 @@ components:
             Fields omitted from the nested object are left unchanged. Omit this
             field at the top level to leave the embedded-wallet configuration
             unchanged entirely.
+        cardTokenization2faConfig:
+          $ref: '#/components/schemas/CardTokenization2FAConfig'
+          description: |
+            Update card-tokenization authentication branding and delivery settings.
+            Fields omitted from the nested object are left unchanged. Changes apply
+            to subsequent delivery attempts.
     Error400:
       type: object
       required:

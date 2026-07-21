@@ -1,0 +1,19 @@
+type: object
+description: >-
+  SMS settings for card-tokenization authentication messages delivered through
+  a Lightspark-managed Twilio sender.
+properties:
+  templateSid:
+    type: string
+    maxLength: 64
+    description: |
+      Twilio Verify template SID to use for this platform. An invalid or unavailable
+      template can cause delivery to fail.
+    example: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  bodyText:
+    type: string
+    maxLength: 480
+    description: |
+      Plain-text fallback message used when Twilio Verify is unavailable for the
+      authentication code. Lightspark appends the code to this text.
+    example: Use this code to finish adding your Acme card to your digital wallet.

@@ -17,3 +17,9 @@ properties:
       Fields omitted from the nested object are left unchanged. Omit this
       field at the top level to leave the embedded-wallet configuration
       unchanged entirely.
+  cardTokenization2faConfig:
+    $ref: ./CardTokenization2FAConfig.yaml
+    description: |
+      Update card-tokenization authentication branding and delivery settings.
+      Fields omitted from the nested object are left unchanged. Changes apply
+      to subsequent delivery attempts.

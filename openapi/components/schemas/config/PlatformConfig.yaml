@@ -38,6 +38,11 @@ properties:
       Embedded-wallet branding and OTP settings for this platform. Present
       only when the platform has configured embedded-wallet support;
       omitted otherwise.
+  cardTokenization2faConfig:
+    $ref: ./CardTokenization2FAConfig.yaml
+    description: |
+      Branding and sender configuration for card-tokenization authentication
+      messages. This configuration is independent of embedded-wallet support.
   createdAt:
     type: string
     format: date-time
