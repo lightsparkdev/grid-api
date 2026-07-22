@@ -19837,39 +19837,6 @@ components:
           type: string
           description: Transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available. This is not a transfer to a customer's own wallet; for that, see the `onChainTransaction` on the transaction's source or destination.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
-    IncomingRateDetails:
-      description: 'Details about the rate and fees for an incoming transaction. Note: `gridApiFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
-      type: object
-      required:
-        - gridApiMultiplier
-        - gridApiFixedFee
-        - gridApiVariableFeeRate
-        - gridApiVariableFeeAmount
-      properties:
-        gridApiMultiplier:
-          type: number
-          format: double
-          description: The underlying multiplier from the mSATS to the receiving currency, including variable fees.
-          exclusiveMinimum: 0
-          example: 0.925
-        gridApiFixedFee:
-          type: integer
-          format: int64
-          description: The fixed fee charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents).
-          minimum: 0
-          example: 10
-        gridApiVariableFeeRate:
-          type: number
-          format: double
-          description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
-          minimum: 0
-          example: 0.003
-        gridApiVariableFeeAmount:
-          type: number
-          format: int64
-          description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
-          minimum: 0
-          example: 30
     IncomingTransactionFailureReason:
       type: string
       enum:
@@ -19909,9 +19876,6 @@ components:
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
               description: Included for all transactions except those with "CREATED" status
-            rateDetails:
-              $ref: '#/components/schemas/IncomingRateDetails'
-              description: Details about the rate and fees for the transaction.
             failureReason:
               $ref: '#/components/schemas/IncomingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
