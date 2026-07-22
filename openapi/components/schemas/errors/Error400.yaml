@@ -98,5 +98,19 @@ properties:
     description: Error message
   details:
     type: object
-    description: Additional error details
+    description: >-
+      Additional error details. Shape varies by `code`. For field-validation
+      errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`,
+      `POST /customers/edd`, `PATCH /customers/edd`), `details.field` and
+      `details.constraint` are populated so platforms can pre-validate their
+      onboarding form before re-submitting.
+    properties:
+      field:
+        type: string
+        description: >-
+          Dot-notation path to the offending field. Present on field-validation
+          errors from submit endpoints.
+        example: taxIdentification.identifier
+      constraint:
+        $ref: ./FieldConstraint.yaml
     additionalProperties: true

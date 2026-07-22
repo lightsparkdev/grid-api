@@ -23,3 +23,5 @@ properties:
     example: US
   address:
     $ref: ../common/Address.yaml
+  taxIdentification:
+    $ref: ./TaxIdentification.yaml
