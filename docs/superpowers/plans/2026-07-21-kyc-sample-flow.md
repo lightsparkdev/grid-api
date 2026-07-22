@@ -246,6 +246,7 @@ export default function CreateKycLink({ customerId, disabled, onComplete }: Prop
   const [loading, setLoading] = useState(false)
 
   const submit = async () => {
+    if (!customerId) return
     setLoading(true)
     setError(null)
     setResponse(null)
@@ -358,6 +359,7 @@ export default function CheckKycStatus({ customerId, disabled, onComplete }: Pro
   const [completed, setCompleted] = useState(false)
 
   const refresh = async () => {
+    if (!customerId) return
     setLoading(true)
     setError(null)
     try {
