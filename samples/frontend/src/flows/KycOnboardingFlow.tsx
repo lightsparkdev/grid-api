@@ -8,6 +8,7 @@ export default function KycOnboardingFlow() {
   const [activeStep, setActiveStep] = useState(0)
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [kycLinkGenerated, setKycLinkGenerated] = useState(false)
+  const [kycUrl, setKycUrl] = useState<string | null>(null)
   const [finalStatus, setFinalStatus] = useState<string | null>(null)
 
   const steps = [
@@ -31,8 +32,9 @@ export default function KycOnboardingFlow() {
         <CreateKycLink
           customerId={customerId}
           disabled={activeStep < 1}
-          onComplete={() => {
+          onComplete={(data) => {
             setKycLinkGenerated(true)
+            setKycUrl((data.kycUrl as string) ?? null)
             setActiveStep((s) => Math.max(s, 2))
           }}
         />
@@ -53,5 +55,22 @@ export default function KycOnboardingFlow() {
     },
   ]
 
-  return <StepWizard steps={steps} activeStep={activeStep} />
+  return (
+    <>
+      <StepWizard steps={steps} activeStep={activeStep} />
+      {kycUrl && (
+        <p className="mt-4 text-sm text-gray-400">
+          Hosted KYC link:{' '}
+          <a
+            href={kycUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline break-all"
+          >
+            {kycUrl}
+          </a>
+        </p>
+      )}
+    </>
+  )
 }

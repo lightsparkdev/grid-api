@@ -24,6 +24,7 @@ import java.util.Base64
 
 // SDK 1.7.1 predates the current POST /customers/{id}/kyc-link endpoint shape,
 // so the kyc-link route below calls the REST API directly.
+// NOTE: keep DEFAULT_GRID_API_BASE_URL in sync with the SDK's default base URL when bumping the SDK.
 private val DEFAULT_GRID_API_BASE_URL = "https://api.lightspark.com/grid/2025-10-13"
 private val kycHttpClient: HttpClient by lazy { HttpClient.newHttpClient() }
 

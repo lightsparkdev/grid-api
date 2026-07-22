@@ -363,14 +363,14 @@ class EndToEndTest {
         }
         assertEquals(HttpStatusCode.Created, linkResponse.status)
         val link = parseJson(linkResponse.bodyAsText())
-        assertNotNull(link.get("kycUrl")?.asText(), "Response should include kycUrl")
-        assertNotNull(link.get("expiresAt")?.asText(), "Response should include expiresAt")
+        assertNotNull(link.optText("kycUrl"), "Response should include kycUrl")
+        assertNotNull(link.optText("expiresAt"), "Response should include expiresAt")
 
         // Step 3: Retrieve the customer and check kycStatus is present
         val getResponse = client.get("/api/customers/$customerId")
         assertEquals(HttpStatusCode.OK, getResponse.status)
         val fetched = parseJson(getResponse.bodyAsText())
         assertEquals(customerId, fetched.get("id")?.asText())
-        assertNotNull(fetched.get("kycStatus")?.asText(), "Customer should include kycStatus")
+        assertNotNull(fetched.optText("kycStatus"), "Customer should include kycStatus")
     }
 }
