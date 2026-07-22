@@ -19903,7 +19903,7 @@ components:
             fees:
               type: integer
               format: int64
-              description: The total fees available from the receive quote in the smallest unit of the receiving currency (eg. cents).
+              description: The total fees available from the receive quote in the smallest unit of the sending currency (eg. cents).
               minimum: 0
               example: 10
             reconciliationInstructions:
