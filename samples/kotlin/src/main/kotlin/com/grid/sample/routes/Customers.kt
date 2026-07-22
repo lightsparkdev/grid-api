@@ -3,6 +3,7 @@ package com.grid.sample.routes
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.customers.CustomerCreateParams
 import com.lightspark.grid.models.customers.CustomerCreateParams.CreateCustomerRequest
+import com.lightspark.grid.models.customers.CustomerGetKycLinkParams
 import com.lightspark.grid.models.customers.IndividualCustomerFields
 import com.lightspark.grid.models.customers.externalaccounts.Address
 import com.grid.sample.GridClientBuilder
@@ -65,6 +66,72 @@ fun Route.customerRoutes() {
                 call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.Created)
             } catch (e: Exception) {
                 Log.gridError("customers.create", e)
+                call.respondText(
+                    """{"error": "${e.message}"}""",
+                    ContentType.Application.Json,
+                    HttpStatusCode.InternalServerError
+                )
+            }
+        }
+
+        get("/{customerId}") {
+            try {
+                val customerId = call.parameters["customerId"]
+                    ?: return@get call.respondText(
+                        """{"error": "customerId is required"}""",
+                        ContentType.Application.Json,
+                        HttpStatusCode.BadRequest
+                    )
+
+                Log.gridRequest("customers.retrieve", customerId)
+                val customer = GridClientBuilder.client.customers().retrieve(customerId)
+                val responseJson = JsonUtils.prettyPrint(customer)
+                Log.gridResponse("customers.retrieve", responseJson)
+
+                call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.OK)
+            } catch (e: Exception) {
+                Log.gridError("customers.retrieve", e)
+                call.respondText(
+                    """{"error": "${e.message}"}""",
+                    ContentType.Application.Json,
+                    HttpStatusCode.InternalServerError
+                )
+            }
+        }
+
+        post("/{customerId}/kyc-link") {
+            try {
+                val customerId = call.parameters["customerId"]
+                    ?: return@post call.respondText(
+                        """{"error": "customerId is required"}""",
+                        ContentType.Application.Json,
+                        HttpStatusCode.BadRequest
+                    )
+
+                val body = call.receiveText()
+                Log.incoming("POST", "/api/customers/$customerId/kyc-link", body)
+                val json = if (body.isBlank()) {
+                    JsonUtils.mapper.createObjectNode()
+                } else {
+                    JsonUtils.mapper.readTree(body)
+                }
+
+                val params = CustomerGetKycLinkParams.builder()
+                    // Fills the {customerId} path segment (SDK names it platformCustomerId).
+                    .platformCustomerId(customerId)
+                    .apply {
+                        json.optText("redirectUri")?.let { redirectUri(it) }
+                    }
+                    .build()
+
+                Log.gridRequest("customers.getKycLink", customerId)
+                val link = GridClientBuilder.client.customers().getKycLink(params)
+                val responseJson = JsonUtils.prettyPrint(link)
+                Log.gridResponse("customers.getKycLink", responseJson)
+
+                call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.Created)
+            } catch (e: Exception) {
+                Log.gridError("customers.getKycLink", e)
                 call.respondText(
                     """{"error": "${e.message}"}""",
                     ContentType.Application.Json,
