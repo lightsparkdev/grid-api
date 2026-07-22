@@ -1,0 +1,9 @@
+type: string
+enum:
+  - CROSS_CURRENCY_TRANSACTION
+description: |
+  The kind of activity this fee applies to.
+
+  - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid send
+    (source currency differs from destination currency).
+example: CROSS_CURRENCY_TRANSACTION
