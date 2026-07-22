@@ -353,12 +353,13 @@ class EndToEndTest {
         }
         assertEquals(HttpStatusCode.Created, customerResponse.status)
         val customerJson = parseJson(customerResponse.bodyAsText())
-        val customerId = customerJson.get("platformCustomerId").asText()
+        val customerId = customerJson.get("id").asText()
 
-        // Step 2: Generate a hosted KYC link
+        // Step 2: Generate a hosted KYC link. No redirectUri: the KYC provider
+        // requires a public https URL, which a local sample doesn't have.
         val linkResponse = client.post("/api/customers/$customerId/kyc-link") {
             contentType(ContentType.Application.Json)
-            setBody("""{"redirectUri": "http://localhost:5173/onboarding-complete"}""")
+            setBody("""{}""")
         }
         assertEquals(HttpStatusCode.Created, linkResponse.status)
         val link = parseJson(linkResponse.bodyAsText())
@@ -366,11 +367,10 @@ class EndToEndTest {
         assertNotNull(link.get("expiresAt")?.asText(), "Response should include expiresAt")
 
         // Step 3: Retrieve the customer and check kycStatus is present
-        val gridCustomerId = customerJson.get("id").asText()
-        val getResponse = client.get("/api/customers/$gridCustomerId")
+        val getResponse = client.get("/api/customers/$customerId")
         assertEquals(HttpStatusCode.OK, getResponse.status)
         val fetched = parseJson(getResponse.bodyAsText())
-        assertEquals(gridCustomerId, fetched.get("id")?.asText())
+        assertEquals(customerId, fetched.get("id")?.asText())
         assertNotNull(fetched.get("kycStatus")?.asText(), "Customer should include kycStatus")
     }
 }
