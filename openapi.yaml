@@ -4304,10 +4304,10 @@ paths:
                 $ref: '#/components/schemas/Error500'
   /transactions/{transactionId}/cancel:
     post:
-      summary: Cancel an outgoing transaction
+      summary: Cancel a bank transfer
       description: |
-        Request cancellation of an outgoing bank transfer (ACH or wire) before it has settled — for example, a payment initiated outside of the receiving bank's processing window.
-        Whether a transaction can still be cancelled is determined by the banking partner that is settling it: the request is forwarded to the partner's own cancellation facility, and a transaction that the partner has already processed (or that is otherwise past its cancellation window) cannot be cancelled. Cancellation is only supported for outgoing bank transfers; requests for any other transaction type are rejected.
+        Request cancellation of a pending bank transfer — an ACH transfer (push or pull) or a wire — before it has settled, for example a payment or collection initiated outside of the receiving bank's processing window.
+        Whether a transfer can still be cancelled is determined by the banking partner that is settling it: the request is forwarded to the partner's own cancellation facility, and a transfer that the partner has already processed (or that is otherwise past its cancellation window) cannot be cancelled. Cancellation applies to bank-rail transfers; requests for transaction types that cannot be cancelled are rejected.
       operationId: cancelTransaction
       tags:
         - Transactions
@@ -4332,7 +4332,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OutgoingTransaction'
+                $ref: '#/components/schemas/TransactionOneOf'
         '400':
           description: Bad request - Invalid parameters or the transaction cannot be cancelled
           content:
