@@ -21,6 +21,7 @@ export default function CreateKycLink({ customerId, disabled, onComplete }: Prop
   const [loading, setLoading] = useState(false)
 
   const submit = async () => {
+    if (!customerId) return
     setLoading(true)
     setError(null)
     setResponse(null)
