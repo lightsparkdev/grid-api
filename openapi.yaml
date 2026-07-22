@@ -10855,6 +10855,83 @@ components:
           maxLength: 512
           description: URL to a PNG logo for the OTP email. Resized to 340x124px.
           example: https://acme.com/logo.png
+    FeeEventType:
+      type: string
+      enum:
+        - CROSS_CURRENCY_TRANSACTION
+      description: |
+        The kind of activity this fee applies to.
+
+        - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid send
+          (source currency differs from destination currency).
+      example: CROSS_CURRENCY_TRANSACTION
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
+          example: USD
+        name:
+          type: string
+          description: Full name of the currency
+          example: United States Dollar
+        symbol:
+          type: string
+          description: Symbol of the currency
+          example: $
+        decimals:
+          type: integer
+          description: Number of decimal places for the currency
+          minimum: 0
+          example: 2
+    CurrencyAmount:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
+          example: 12550
+        currency:
+          $ref: '#/components/schemas/Currency'
+    FeeConfig:
+      type: object
+      description: 'A fee collected by your platform on top of Grid''s fees. Keyed uniquely by `(feeEventType, sourceCurrency)` within a platform. To deactivate a fee, send the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`.'
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier.
+          readOnly: true
+          example: GridPlatformTransactionFeeConfig:019542f5-b3e7-1d02-0000-000000000007
+        feeEventType:
+          $ref: '#/components/schemas/FeeEventType'
+        sourceCurrency:
+          type: string
+          description: Currency code of the sending side this fee applies to. Only `USD` is accepted today; other currencies return a `NOT_IMPLEMENTED` error.
+          example: USD
+        variableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%). Multiplied by the transaction's source-currency amount.
+          example: 30
+        fixedFee:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: Fixed fee charged per transaction, in the smallest unit of `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`.
+        isActive:
+          type: boolean
+          description: Whether this fee config is currently active. Reads return only active configs.
+          readOnly: true
+          example: true
+      required:
+        - feeEventType
+        - sourceCurrency
+        - variableFeeBps
+        - fixedFee
     PlatformConfig:
       type: object
       properties:
@@ -10896,6 +10973,14 @@ components:
             Embedded-wallet branding and OTP settings for this platform. Present
             only when the platform has configured embedded-wallet support;
             omitted otherwise.
+        feeConfigs:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeConfig'
+          description: |
+            Platform-collected fees that should be added on top of
+            Grid-collected fees. Contains every currently-active fee config
+            for the platform.
         createdAt:
           type: string
           format: date-time
@@ -10996,6 +11081,16 @@ components:
             Fields omitted from the nested object are left unchanged. Omit this
             field at the top level to leave the embedded-wallet configuration
             unchanged entirely.
+        feeConfigs:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeConfig'
+          description: |
+            Merge-by-key upsert of platform fee configs, keyed by
+            `(feeEventType, sourceCurrency)`. Sending zero rates
+            (`variableFeeBps: 0` and `fixedFee.amount: 0`) for an existing key
+            deactivates it. Only `sourceCurrency: USD` is accepted today.
+            Omit this field to leave fee configs unchanged.
     Error400:
       type: object
       required:
@@ -11128,26 +11223,6 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    Currency:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
-          example: USD
-        name:
-          type: string
-          description: Full name of the currency
-          example: United States Dollar
-        symbol:
-          type: string
-          description: Symbol of the currency
-          example: $
-        decimals:
-          type: integer
-          description: Number of decimal places for the currency
-          minimum: 0
-          example: 2
     PaymentRail:
       type: string
       enum:
@@ -13070,19 +13145,6 @@ components:
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
         - `FAILED`: The account could not be provisioned. Grid was unable to create the underlying account, so it cannot send or receive payments and requires remediation.
       example: ACTIVE
-    CurrencyAmount:
-      type: object
-      required:
-        - amount
-        - currency
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
-          example: 12550
-        currency:
-          $ref: '#/components/schemas/Currency'
     PaymentAccountType:
       type: string
       enum:
@@ -20018,6 +20080,12 @@ components:
               description: The fees associated with the quote in the smallest unit of the sending currency (eg. cents).
               minimum: 0
               example: 10
+            platformFees:
+              type: integer
+              format: int64
+              description: The portion of `fees` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `fees`.
+              minimum: 0
+              example: 5
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
               description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `onChainTransaction` instead.
@@ -20605,6 +20673,12 @@ components:
           description: 'The fees associated with the quote in the smallest unit of the sending currency (eg. cents). Note: this value may fluctuate between quotes — some underlying fee components are defined in the receiving currency, so their equivalent in the sending currency moves with the FX rate. The fees shown here are locked only for the lifetime of this quote.'
           minimum: 0
           example: 10
+        platformFeesIncluded:
+          type: integer
+          format: int64
+          description: The portion of `feesIncluded` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `feesIncluded`.
+          minimum: 0
+          example: 5
         paymentInstructions:
           type: array
           description: Payment instructions for executing the payment. This is not required when using an internal account source.

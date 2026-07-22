@@ -93,6 +93,16 @@ properties:
       The fees shown here are locked only for the lifetime of this quote.
     minimum: 0
     example: 10
+  platformFeesIncluded:
+    type: integer
+    format: int64
+    description: >-
+      The portion of `feesIncluded` collected by the platform
+      (platform-configured transaction fees), in the smallest unit of the
+      sending currency. 0 when the platform has no applicable fee configured.
+      Already included in `feesIncluded`.
+    minimum: 0
+    example: 5
   paymentInstructions:
     type: array
     description: Payment instructions for executing the payment. This is not required when using an internal account source.
