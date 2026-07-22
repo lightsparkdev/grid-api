@@ -19639,6 +19639,43 @@ components:
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
+    Refund:
+      type: object
+      required:
+        - reference
+        - initiatedAt
+        - status
+      properties:
+        reference:
+          type: string
+          description: The unique reference ID of the refund
+          example: UMA-Q12345-REFUND
+        initiatedAt:
+          type: string
+          format: date-time
+          description: When the refund was initiated
+          example: '2025-08-15T14:30:00Z'
+        settledAt:
+          type: string
+          format: date-time
+          description: When the refund was settled
+          example: '2025-08-15T14:35:00Z'
+        status:
+          type: string
+          enum:
+            - PENDING
+            - COMPLETED
+            - FAILED
+          description: Current status of the refund
+          example: COMPLETED
+        reason:
+          type: string
+          enum:
+            - TRANSACTION_FAILED
+            - USER_CANCELLATION
+            - TIMEOUT
+          description: Reason for the refund
+          example: TRANSACTION_FAILED
     CounterpartyInformation:
       type: object
       description: Additional information about the counterparty, if available and relevant to the transaction and platform.
@@ -19707,6 +19744,21 @@ components:
           type: string
           description: Optional memo or description for the payment
           example: 'Payment for invoice #1234'
+        sentAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: Amount sent in the sender's currency
+        exchangeRate:
+          type: number
+          description: Number of sending currency units per receiving currency unit.
+          exclusiveMinimum: 0
+          example: 1.08
+        quoteId:
+          type: string
+          description: The ID of the quote that was used to trigger this payment
+          example: Quote:019542f5-b3e7-1d02-0000-000000000006
+        refund:
+          $ref: '#/components/schemas/Refund'
+          description: The refund if transaction was refunded.
         counterpartyInformation:
           $ref: '#/components/schemas/CounterpartyInformation'
     TransactionSourceType:
@@ -19848,39 +19900,6 @@ components:
           type: string
           description: Transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available. This is not a transfer to a customer's own wallet; for that, see the `onChainTransaction` on the transaction's source or destination.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
-    IncomingRateDetails:
-      description: 'Details about the rate and fees for an incoming transaction. Note: `gridApiFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
-      type: object
-      required:
-        - gridApiMultiplier
-        - gridApiFixedFee
-        - gridApiVariableFeeRate
-        - gridApiVariableFeeAmount
-      properties:
-        gridApiMultiplier:
-          type: number
-          format: double
-          description: The underlying multiplier from the mSATS to the receiving currency, including variable fees.
-          exclusiveMinimum: 0
-          example: 0.925
-        gridApiFixedFee:
-          type: integer
-          format: int64
-          description: The fixed fee charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents).
-          minimum: 0
-          example: 10
-        gridApiVariableFeeRate:
-          type: number
-          format: double
-          description: The variable fee rate charged by the Grid product to execute the quote as a percentage of the receiving currency amount.
-          minimum: 0
-          example: 0.003
-        gridApiVariableFeeAmount:
-          type: number
-          format: int64
-          description: The variable fee amount charged by the Grid product to execute the quote in the smallest unit of the receiving currency (eg. cents). This is the receiving amount times gridApiVariableFeeRate.
-          minimum: 0
-          example: 30
     IncomingTransactionFailureReason:
       type: string
       enum:
@@ -19914,15 +19933,12 @@ components:
             fees:
               type: integer
               format: int64
-              description: The total fees available from the receive quote in the smallest unit of the receiving currency (eg. cents).
+              description: The total fees available from the receive quote in the smallest unit of the sending currency (eg. cents).
               minimum: 0
               example: 10
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
               description: Included for all transactions except those with "CREATED" status
-            rateDetails:
-              $ref: '#/components/schemas/IncomingRateDetails'
-              description: Details about the rate and fees for the transaction.
             failureReason:
               $ref: '#/components/schemas/IncomingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
@@ -19946,43 +19962,6 @@ components:
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | Payout successfully reached the destination |
         | `FAILED` | Something went wrong — accompanied by a `failureReason` |
-    Refund:
-      type: object
-      required:
-        - reference
-        - initiatedAt
-        - status
-      properties:
-        reference:
-          type: string
-          description: The unique reference ID of the refund
-          example: UMA-Q12345-REFUND
-        initiatedAt:
-          type: string
-          format: date-time
-          description: When the refund was initiated
-          example: '2025-08-15T14:30:00Z'
-        settledAt:
-          type: string
-          format: date-time
-          description: When the refund was settled
-          example: '2025-08-15T14:35:00Z'
-        status:
-          type: string
-          enum:
-            - PENDING
-            - COMPLETED
-            - FAILED
-          description: Current status of the refund
-          example: COMPLETED
-        reason:
-          type: string
-          enum:
-            - TRANSACTION_FAILED
-            - USER_CANCELLATION
-            - TIMEOUT
-          description: Reason for the refund
-          example: TRANSACTION_FAILED
     OutgoingRateDetails:
       description: 'Details about the rate and fees for an outgoing transaction or quote. Note: `counterpartyFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
       type: object
@@ -20070,11 +20049,6 @@ components:
             receivedAmount:
               $ref: '#/components/schemas/CurrencyAmount'
               description: Amount to be received by recipient in the recipient's currency
-            exchangeRate:
-              type: number
-              description: Number of sending currency units per receiving currency unit.
-              exclusiveMinimum: 0
-              example: 1.08
             fees:
               type: integer
               format: int64
@@ -20084,10 +20058,6 @@ components:
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
               description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `onChainTransaction` instead.
-            quoteId:
-              type: string
-              description: The ID of the quote that was used to trigger this payment
-              example: Quote:019542f5-b3e7-1d02-0000-000000000006
             paymentInstructions:
               type: array
               description: Payment instructions for executing the payment.
@@ -20109,9 +20079,6 @@ components:
                     assetType: BTC
                     address: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
                     invoice: lnbc15u1p3xnhl2pp5jptserfk3zk4qy42tlucycrfwxhydvlemu9pqr93tuzlv9cc7g3sdqsvfhkcap3xyhx7un8cqzpgxqzjcsp5f8c52y2stc300gl6s4xswtjpc37hrnnr3c9wvtgjfuvqmpm35evq9qyyssqy4lgd8tj637qcjp05rdpxxykjenthxftej7a2zzmwrmrl70fyj9hvj0rewhzj7jfyuwkwcg9g2jpwtk3wkjtwnkdks84hsnu8xps5vsq4gj5hs
-            refund:
-              $ref: '#/components/schemas/Refund'
-              description: The refund if transaction was refunded.
             rateDetails:
               $ref: '#/components/schemas/OutgoingRateDetails'
               description: Details about the rate and fees for the transaction.
