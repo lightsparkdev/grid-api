@@ -594,6 +594,150 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/edd:
+    get:
+      summary: Get a customer's enhanced-due-diligence (EDD) fields
+      description: Retrieve the EDD fields previously supplied for a customer. Returns `404` if no EDD data has been recorded for the customer yet.
+      operationId: getCustomerEdd
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          description: The Grid customer ID to retrieve EDD data for.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: EDD payload retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerEdd'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found or no EDD data recorded for this customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Create or replace a customer's enhanced-due-diligence (EDD) fields
+      description: Supply the EDD fields for a customer. Overwrites any previously recorded EDD data for that customer. Call this endpoint when `POST /verifications` returns `MISSING_FIELD` errors pointing at `edd.*` fields, then retry `POST /verifications` to complete the KYC check.
+      operationId: createCustomerEdd
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerEddCreateRequest'
+      responses:
+        '200':
+          description: EDD payload created or replaced successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerEdd'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Partially update a customer's enhanced-due-diligence (EDD) fields
+      description: Merge the provided EDD fields into any previously recorded EDD data for the customer. Fields omitted from the request body are left unchanged.
+      operationId: updateCustomerEdd
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: query
+          description: The Grid customer ID whose EDD data is being updated.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerEdd'
+      responses:
+        '200':
+          description: EDD payload updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerEdd'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found or no EDD data recorded to update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/{customerId}:
     parameters:
       - name: customerId
@@ -11188,6 +11332,35 @@ components:
             Update card-tokenization authentication branding and delivery settings.
             Fields omitted from the nested object are left unchanged. Changes apply
             to subsequent delivery attempts.
+    FieldConstraint:
+      type: object
+      description: Machine-readable validator hint. Platforms use it to pre-validate their own onboarding form before submitting, and to render form UI (e.g., surface a dropdown for `enum`, mask input by `pattern`).
+      properties:
+        format:
+          type: string
+          description: 'Named format the value must satisfy. Examples: `date`, `email`, `iso3166-1-alpha-2`, `bcp47-language-tag`.'
+          example: iso3166-1-alpha-2
+        pattern:
+          type: string
+          description: Regular expression the value must match (JavaScript-flavor).
+          example: ^\d{5}(-\d{4})?$
+        enum:
+          type: array
+          items:
+            type: string
+          description: Allowed values when the field is drawn from a fixed set.
+          example:
+            - SSN
+            - ITIN
+            - NON_US_TAX_ID
+        minLength:
+          type: integer
+          description: Minimum length in characters.
+          example: 1
+        maxLength:
+          type: integer
+          description: Maximum length in characters.
+          example: 500
     Error400:
       type: object
       required:
@@ -11289,7 +11462,14 @@ components:
           description: Error message
         details:
           type: object
-          description: Additional error details
+          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`, `POST /customers/edd`, `PATCH /customers/edd`), `details.field` and `details.constraint` are populated so platforms can pre-validate their onboarding form before re-submitting.
+          properties:
+            field:
+              type: string
+              description: Dot-notation path to the offending field. Present on field-validation errors from submit endpoints.
+              example: taxIdentification.identifier
+            constraint:
+              $ref: '#/components/schemas/FieldConstraint'
           additionalProperties: true
     Error501:
       type: object
@@ -11615,6 +11795,31 @@ components:
           type: string
           description: Country code (ISO 3166-1 alpha-2)
           example: US
+    IdentificationType:
+      type: string
+      enum:
+        - SSN
+        - ITIN
+        - EIN
+        - NON_US_TAX_ID
+      description: Type of tax identification
+      example: SSN
+    TaxIdentification:
+      type: object
+      required:
+        - idType
+        - identifier
+      properties:
+        idType:
+          $ref: '#/components/schemas/IdentificationType'
+        identifier:
+          type: string
+          description: The tax-identification number. For US persons this is the SSN (format `###-##-####`) or ITIN. For non-US persons this is the tax number issued by `countryOfIssuance`.
+          example: 123-45-6789
+        countryOfIssuance:
+          type: string
+          description: Country that issued the tax identifier (ISO 3166-1 alpha-2). Required when `idType` is `NON_US_TAX_ID`.
+          example: US
     IndividualCustomerFields:
       type: object
       required:
@@ -11641,6 +11846,8 @@ components:
           example: US
         address:
           $ref: '#/components/schemas/Address'
+        taxIdentification:
+          $ref: '#/components/schemas/TaxIdentification'
     IndividualCustomer:
       title: Individual Customer
       allOf:
@@ -11961,15 +12168,6 @@ components:
         - GENERAL_PARTNER
       description: Role of the beneficial owner within the business
       example: UBO
-    IdentificationType:
-      type: string
-      enum:
-        - SSN
-        - ITIN
-        - EIN
-        - NON_US_TAX_ID
-      description: Type of tax identification
-      example: SSN
     BeneficialOwnerPersonalInfo:
       type: object
       required:
@@ -12358,6 +12556,130 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    IndividualSourceOfFundsCategory:
+      type: string
+      enum:
+        - SALARY
+        - SELF_EMPLOYMENT_INCOME
+        - INVESTMENT_INCOME
+        - PENSION
+        - RENTAL_INCOME
+        - GIFT
+        - INHERITANCE
+        - LOAN
+        - SAVINGS
+        - SALE_OF_ASSETS
+        - OTHER
+      description: A structured source-of-funds category for an individual customer (FLOW of funds into this account). Distinct from `SourceOfFundsCategory`, which covers business customers.
+      example: SALARY
+    SourceOfWealthCategory:
+      type: string
+      enum:
+        - SALARY
+        - BUSINESS_INCOME
+        - INVESTMENTS
+        - INHERITANCE
+        - PROPERTY_SALE
+        - GIFT
+        - RETIREMENT
+        - SAVINGS
+        - OTHER
+      description: Origin of the customer's accumulated wealth (STOCK). Distinct from `SourceOfFundsCategory` which describes the FLOW of funds for this specific account.
+      example: SALARY
+    ExpectedMonthlyTransactionCount:
+      type: string
+      enum:
+        - COUNT_UNDER_10
+        - COUNT_10_TO_100
+        - COUNT_100_TO_500
+        - COUNT_500_TO_1000
+        - COUNT_OVER_1000
+      description: Expected number of transactions per month
+      example: COUNT_100_TO_500
+    ExpectedMonthlyTransactionVolume:
+      type: string
+      enum:
+        - VOLUME_UNDER_10K
+        - VOLUME_10K_TO_100K
+        - VOLUME_100K_TO_1M
+        - VOLUME_1M_TO_10M
+        - VOLUME_OVER_10M
+      description: Expected total transaction volume per month in USD equivalent
+      example: VOLUME_100K_TO_1M
+    AnnualIncomeRange:
+      type: string
+      enum:
+        - UNDER_50K
+        - RANGE_50K_100K
+        - RANGE_100K_250K
+        - RANGE_250K_1M
+        - OVER_1M
+      description: Bucketed annual income (USD equivalent). Used for enhanced due diligence on higher-risk profiles.
+      example: RANGE_100K_250K
+    NetWorthRange:
+      type: string
+      enum:
+        - UNDER_100K
+        - RANGE_100K_500K
+        - RANGE_500K_1M
+        - RANGE_1M_5M
+        - RANGE_5M_25M
+        - OVER_25M
+      description: Bucketed total net worth (USD equivalent). Used for enhanced due diligence on higher-risk profiles.
+      example: RANGE_500K_1M
+    PepStatus:
+      type: string
+      enum:
+        - NONE
+        - DOMESTIC
+        - FOREIGN
+        - HIO
+        - FAMILY_OR_ASSOCIATE
+      description: Political exposure declaration (Politically Exposed Person status). `HIO` = head of an international organization. `FAMILY_OR_ASSOCIATE` covers close family members and known close associates of a PEP.
+      example: NONE
+    CustomerEdd:
+      type: object
+      description: Enhanced-due-diligence (EDD) fields for an individual customer. All fields are optional; the specific set required for a given customer is driven by the KYC provider's per-jurisdiction / per-flow / per-volume-tier rules (surfaced through `MISSING_FIELD` errors on `POST /verifications`).
+      properties:
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndividualSourceOfFundsCategory'
+          description: Structured source-of-funds categories (FLOW of funds for this account).
+          example:
+            - SALARY
+        sourceOfFundsOtherDescription:
+          type: string
+          description: Free-form description of the customer's source of funds. Required when `sourceOfFundsCategories` includes `OTHER`; otherwise omitted.
+          example: Contest winnings
+        sourceOfWealthCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfWealthCategory'
+          description: Structured source-of-wealth categories (STOCK — origin of accumulated wealth).
+          example:
+            - SALARY
+            - INVESTMENTS
+        sourceOfWealthOtherDescription:
+          type: string
+          description: Free-form description of the customer's source of wealth. Required when `sourceOfWealthCategories` includes `OTHER`; otherwise omitted.
+          example: Royalty income from published works
+        purposeOfAccount:
+          $ref: '#/components/schemas/PurposeOfAccount'
+        purposeOfAccountOtherDescription:
+          type: string
+          description: Free-form description of the customer's intended purpose for the Grid account. Required when `purposeOfAccount` is `OTHER`; otherwise omitted.
+          example: Household budgeting between spouses
+        expectedMonthlyTransactionCount:
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionCount'
+        expectedMonthlyTransactionVolume:
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionVolume'
+        annualIncomeRange:
+          $ref: '#/components/schemas/AnnualIncomeRange'
+        netWorthRange:
+          $ref: '#/components/schemas/NetWorthRange'
+        pepStatus:
+          $ref: '#/components/schemas/PepStatus'
     Error404:
       type: object
       required:
@@ -12403,6 +12725,18 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    CustomerEddCreateRequest:
+      description: Request body for `POST /customers/edd`. Composes the full `CustomerEdd` field set and adds the required `customerId` link.
+      allOf:
+        - $ref: '#/components/schemas/CustomerEdd'
+        - type: object
+          required:
+            - customerId
+          properties:
+            customerId:
+              type: string
+              description: The Grid customer ID whose EDD data is being created or replaced.
+              example: Customer:019542f5-b3e7-1d02-0000-000000000001
     Error410:
       type: object
       required:

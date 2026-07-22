@@ -1,0 +1,10 @@
+type: string
+enum:
+  - UNDER_100K
+  - RANGE_100K_500K
+  - RANGE_500K_1M
+  - RANGE_1M_5M
+  - RANGE_5M_25M
+  - OVER_25M
+description: Bucketed total net worth (USD equivalent). Used for enhanced due diligence on higher-risk profiles.
+example: RANGE_500K_1M

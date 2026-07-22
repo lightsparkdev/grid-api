@@ -141,6 +141,8 @@ paths:
     $ref: paths/discoveries/discoveries.yaml
   /customers:
     $ref: paths/customers/customers.yaml
+  /customers/edd:
+    $ref: paths/customers/customers_edd.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
   /customers/{customerId}/kyc-link:
