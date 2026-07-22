@@ -1,0 +1,71 @@
+parameters:
+  - name: id
+    in: path
+    description: System-generated unique card identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Reveal card details
+  description: >-
+    Mint a signed, short-lived URL for the card processor's iframe that
+    displays the card's full PAN, CVV, and expiry to the cardholder. This is
+    the only way to obtain a reveal URL — the `Card` resource never carries
+    one.
+
+
+    Request the reveal right before rendering the iframe and render the
+    returned `panEmbedUrl` immediately; it expires at `expiresAt` (within
+    minutes). Never store, cache, or log the URL — it is a bearer secret for
+    the full card details. The card data renders inside the processor's
+    iframe and never crosses Grid's or your servers.
+
+
+    Every reveal is audit-logged with the requesting actor.
+  operationId: revealCard
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Reveal URL minted.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardRevealResponse.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. The session has no attributable actor to audit the reveal
+        against (for example, an impersonated dashboard session).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Not implemented in this environment. Cards are not enabled for
+        every Grid deployment; environments without a configured card
+        issuer return `501 NOT_IMPLEMENTED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

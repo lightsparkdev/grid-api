@@ -1,0 +1,35 @@
+type: object
+description: >-
+  The customer's login-security state after recording the event, so the
+  integrator can surface a lockout to the end user.
+required:
+  - eventType
+  - suspended
+  - failedAttempts
+properties:
+  eventType:
+    type: string
+    enum:
+      - RESET_PASSWORD_COMPLETED
+      - FAILED_LOGIN_ATTEMPT
+    description: The event that was recorded.
+    example: FAILED_LOGIN_ATTEMPT
+  suspended:
+    type: boolean
+    description: >-
+      Whether the customer's login is currently suspended (locked with no
+      automatic expiry). A suspended customer must go through a password reset
+      (`RESET_PASSWORD_COMPLETED`) to clear the lockout.
+  lockedUntil:
+    type:
+      - string
+      - 'null'
+    format: date-time
+    description: >-
+      When the customer may attempt to log in again, if temporarily locked.
+      Null when not locked, or when `suspended` is true (no automatic expiry).
+    example: '2025-10-03T12:15:00Z'
+  failedAttempts:
+    type: integer
+    description: The customer's current cumulative failed-login count.
+    example: 5

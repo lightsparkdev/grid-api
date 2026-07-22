@@ -1,0 +1,11 @@
+type: object
+title: TOTP Factor Enroll Request
+description: Start enrolling a time-based one-time-password (TOTP) authenticator factor.
+required:
+  - type
+properties:
+  type:
+    type: string
+    enum:
+      - TOTP
+    description: Discriminator selecting the TOTP factor. TOTP enrollment needs no other input at start.

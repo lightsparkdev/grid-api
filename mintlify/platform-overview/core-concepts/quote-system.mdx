@@ -95,14 +95,14 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
     "decimals": 8
   },
   "totalSendingAmount": 100000,
-  "totalReceivingAmount": 829167,
-  "exchangeRate": 0.00000833,
+  "totalReceivingAmount": 828835,
+  "exchangeRate": 120048.01920768,
   "feesIncluded": 500,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
 ```
 
-This quote says: Send \$1,000 USD, recipient receives 0.00829167 BTC, fees are \$5.00, expires in 5 minutes.
+This quote says: Send \$1,000 USD, recipient receives 0.00828835 BTC, fees are \$5.00, expires in 5 minutes.
 
 ### Locked Currency Side
 
@@ -289,7 +289,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
   },
   "totalSendingAmount": 100000,
   "totalReceivingAmount": 91540,
-  "exchangeRate": 0.92,
+  "exchangeRate": 1.08695652,
   "feesIncluded": 500,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
@@ -322,7 +322,7 @@ All fees are transparently displayed in the quote response:
     "gridApiMultiplier": 0.925,
     "gridApiFixedFee": 10,
     "gridApiVariableFeeRate": 0.003,
-    "gridApiVariableFeeAmount": 30
+    "gridApiVariableFeeAmount": 300
   }
 }
 ```
@@ -333,13 +333,13 @@ All fees are transparently displayed in the quote response:
 - **`gridApiMultiplier`**: Exchange rate from sending currency to mSATs including variable fees (0.925 = $1 USD = 0.925 mSATs)
 - **`gridApiFixedFee`**: Fixed fee charged by Grid API (10 cents USD)
 - **`gridApiVariableFeeRate`**: Variable fee rate as percentage (0.003 = 0.3%)
-- **`gridApiVariableFeeAmount`**: Variable fee amount (30 cents USD for $1,000 transaction)
+- **`gridApiVariableFeeAmount`**: Variable fee amount (300 cents USD for $1,000 transaction)
 
 Fees are deducted from the sending amount, so:
 - **Customer sends**: $1,000
 - **Fees**: $5.00
 - **Amount converted**: $995.00
-- **Recipient receives**: €915.40 (at 0.92 rate)
+- **Recipient receives**: €915.40 (1 USD ≈ 0.92 EUR, or exchangeRate: 1.08695652)
 
 <Note>
   Quoted fees may fluctuate between quotes. Some fee components (e.g.

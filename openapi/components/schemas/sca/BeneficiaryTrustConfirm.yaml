@@ -1,0 +1,12 @@
+type: object
+description: >-
+  The result of a confirm-trust / confirm-untrust call. `trusted` is `true`
+  after a successful trust and `false` after a successful untrust.
+required:
+  - trusted
+properties:
+  trusted:
+    type: boolean
+    description: >-
+      Whether the beneficiary is now trusted. `true` after a successful trust,
+      `false` after a successful untrust.

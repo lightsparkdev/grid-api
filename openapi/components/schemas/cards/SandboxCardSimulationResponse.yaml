@@ -1,0 +1,15 @@
+type: object
+required:
+  - issuerTransactionToken
+description: >-
+  Response body for the sandbox card-event simulators. The simulate call pokes
+  the card issuer's sandbox; the resulting card operation is delivered
+  asynchronously via the issuer's events webhook, never synchronously in this
+  response.
+properties:
+  issuerTransactionToken:
+    type: string
+    description: >-
+      The card issuer's transaction token for the simulated event. Correlates
+      the eventual webhook-delivered card operation back to this simulate call.
+    example: f3a1c2d4-5b6e-7890-abcd-ef0123456789

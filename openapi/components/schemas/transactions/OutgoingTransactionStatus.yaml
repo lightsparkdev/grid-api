@@ -1,6 +1,7 @@
 type: string
 enum:
   - PENDING
+  - PENDING_AUTHORIZATION
   - EXPIRED
   - PROCESSING
   - COMPLETED
@@ -11,6 +12,7 @@ description: |
   | Status | Description |
   |--------|-------------|
   | `PENDING` | Quote is pending confirmation |
+  | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
   | `EXPIRED` | Quote wasn't executed before expiry window |
   | `PROCESSING` | Executing the quote after receiving funds |
   | `COMPLETED` | Payout successfully reached the destination |

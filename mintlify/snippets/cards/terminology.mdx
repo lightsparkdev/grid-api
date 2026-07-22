@@ -55,9 +55,11 @@ balance no longer covers a post-hoc tip clearing. Exceptions are the
 high-urgency reconciliation alerts and are surfaced as
 `status: "EXCEPTION"` on the parent `CardTransaction`.
 
-## PAN embed URL
+## PAN reveal
 
-`panEmbedUrl` on the `Card` resource is the issuer's iframe URL that
-renders the full PAN, CVV, and expiry directly to the cardholder. Render
-it in an iframe in your client; the full credentials never cross
-{` `}Grid's servers.
+A short-lived credential minted by `POST /cards/{id}/reveal` whose
+`panEmbedUrl` is the issuer's iframe URL that renders the full PAN,
+CVV, and expiry directly to the cardholder. Render it in an iframe in
+your client; the full credentials never cross {` `}Grid's servers. The
+URL expires at the reveal's `expiresAt` — request a fresh reveal right
+before rendering the iframe rather than caching the URL.

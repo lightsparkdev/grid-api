@@ -215,7 +215,12 @@ html.dark {
    regular border-radius in unsupported browsers.
    =========================================== */
 
-* {
+/* `*` matches ELEMENTS only — pseudo-elements need naming explicitly, or
+   CSS-drawn chrome (tooltips, the footer collapse button's circle, tags)
+   stays plainly round while everything around it superellipses. */
+*,
+*::before,
+*::after {
   corner-shape: squircle;
 }
 
@@ -858,7 +863,7 @@ div#mobile-nav div#navigation-items > div:first-child {
 
 /* Mobile nav - sidebar group list: adjust spacing */
 div#mobile-nav ul.sidebar-group,
-div#mobile-nav ul#sidebar-group,
+div#mobile-nav ul.sidebar-group,
 #mobile-nav .sidebar-group-header + ul {
   margin-top: -14px !important;
   padding-top: 0 !important;
@@ -877,7 +882,19 @@ html.dark #navigation-items {
   background-color: var(--ls-gray-975) !important;
 }
 
-#navigation-items > div.text-sm {
+/* New Mintlify markup (production): #navigation-items is now a scroll-area
+   wrapper and the px-7/py-6 padding lives on an inner viewport div. Move our
+   24px padding onto the viewport so it isn't doubled (24px + 28px). */
+#navigation-items[data-component-part="scroll-area"] {
+  padding: 0 !important;
+}
+
+#navigation-items[data-component-part="scroll-area"] [data-component-part="scroll-area-viewport"] {
+  padding: 24px !important;
+}
+
+#navigation-items > div.text-sm,
+#navigation-items [data-component-part="scroll-area-content"] > div.text-sm {
   display: flex !important;
   flex-direction: column !important;
   gap: 0 !important;
@@ -898,7 +915,7 @@ html.dark #navigation-items {
 #navigation-items > div > div:first-child,
 #navigation-items > div.text-sm > div:first-child,
 #navigation-items .text-sm > div:first-child,
-#navigation-items > .text-sm > div:first-of-type {
+#navigation-items .text-sm > div:first-of-type {
   padding-top: 0 !important;
   padding-bottom: 24px !important;
   margin-top: 0 !important;
@@ -931,6 +948,7 @@ html.dark #navigation-items [class*="mt-8"]:not(:first-child)::before {
 .sidebar-group-header,
 h5#sidebar-title,
 .sidebar-group-header h5,
+.sidebar-group-header .sidebar-title,
 #navigation-items h5 {
   font-size: 12px !important;
   font-weight: 400 !important;
@@ -946,6 +964,7 @@ html.dark #navigation-items [data-component-part="group-title"],
 html.dark .sidebar-group-header,
 html.dark h5#sidebar-title,
 html.dark .sidebar-group-header h5,
+html.dark .sidebar-group-header .sidebar-title,
 html.dark #navigation-items h5 {
   color: var(--ls-gray-700) !important;
 }
@@ -1089,10 +1108,10 @@ button.absolute.top-5.right-5 {
 #navigation-items [class*="mt-6"],
 #navigation-items [class*="mt-8"],
 #navigation-items [class*="lg:mt-"],
-#sidebar-group,
-ul#sidebar-group,
-#sidebar-group *,
-ul#sidebar-group *,
+.sidebar-group,
+ul.sidebar-group,
+.sidebar-group *,
+ul.sidebar-group *,
 #navigation-items li.space-y-px,
 #navigation-items li.space-y-px *,
 #navigation-items li[class*="space-y"],
@@ -1103,8 +1122,8 @@ ul#sidebar-group *,
 }
 
 /* Sidebar group container - full width, left aligned */
-#sidebar-group,
-ul#sidebar-group {
+#navigation-items .sidebar-group,
+#navigation-items ul.sidebar-group {
   width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1113,8 +1132,8 @@ ul#sidebar-group {
 }
 
 /* List items - full width, block display */
-#sidebar-group > li,
-ul#sidebar-group > li,
+.sidebar-group > li,
+ul.sidebar-group > li,
 #navigation-items li.space-y-px,
 #navigation-items li[class*="space-y"] {
   width: 100% !important;
@@ -1124,8 +1143,8 @@ ul#sidebar-group > li,
 }
 
 /* Expandable group buttons - full width, left aligned */
-#sidebar-group > li > button,
-ul#sidebar-group > li > button,
+.sidebar-group > li > button,
+ul.sidebar-group > li > button,
 #navigation-items li.space-y-px > button,
 #navigation-items li[class*="space-y"] > button {
   position: relative !important;
@@ -1145,20 +1164,20 @@ ul#sidebar-group > li > button,
   justify-content: flex-start !important;
 }
 
-html.dark #sidebar-group > li > button,
-html.dark ul#sidebar-group > li > button,
+html.dark .sidebar-group > li > button,
+html.dark ul.sidebar-group > li > button,
 html.dark #navigation-items li.space-y-px > button,
 html.dark #navigation-items li[class*="space-y"] > button {
   color: var(--ls-gray-600) !important;
 }
 
 /* Hide Mintlify's native chevron, including the new wrapped SVG variant. */
-#sidebar-group > li > button > div:has(> svg),
-ul#sidebar-group > li > button > div:has(> svg),
+.sidebar-group > li > button > div:has(> svg),
+ul.sidebar-group > li > button > div:has(> svg),
 #navigation-items li.space-y-px > button > div:has(> svg),
 #navigation-items li[class*="space-y"] > button > div:has(> svg),
-#sidebar-group > li > button svg,
-ul#sidebar-group > li > button svg,
+.sidebar-group > li > button svg,
+ul.sidebar-group > li > button svg,
 #navigation-items li.space-y-px > button svg,
 #navigation-items li[class*="space-y"] > button svg {
   display: none !important;
@@ -1166,8 +1185,8 @@ ul#sidebar-group > li > button svg,
 }
 
 /* Create new chevron using CSS pseudo-element (Central Icons style) */
-#sidebar-group > li > button::after,
-ul#sidebar-group > li > button::after,
+.sidebar-group > li > button::after,
+ul.sidebar-group > li > button::after,
 #navigation-items li.space-y-px > button::after,
 #navigation-items li[class*="space-y"] > button::after {
   content: "" !important;
@@ -1183,8 +1202,8 @@ ul#sidebar-group > li > button::after,
 }
 
 /* Dark mode chevron - match sidebar text color */
-html.dark #sidebar-group > li > button::after,
-html.dark ul#sidebar-group > li > button::after,
+html.dark .sidebar-group > li > button::after,
+html.dark ul.sidebar-group > li > button::after,
 html.dark #navigation-items li.space-y-px > button::after,
 html.dark #navigation-items li[class*="space-y"] > button::after {
   border-right-color: var(--ls-gray-600) !important;
@@ -1192,23 +1211,23 @@ html.dark #navigation-items li[class*="space-y"] > button::after {
 }
 
 /* Chevron rotation when expanded (points down) */
-#sidebar-group > li > button[aria-expanded="true"]::after,
-ul#sidebar-group > li > button[aria-expanded="true"]::after,
+.sidebar-group > li > button[aria-expanded="true"]::after,
+ul.sidebar-group > li > button[aria-expanded="true"]::after,
 #navigation-items li.space-y-px > button[aria-expanded="true"]::after,
 #navigation-items li[class*="space-y"] > button[aria-expanded="true"]::after {
   transform: translateY(-70%) rotate(45deg) !important;
 }
 
 /* Hover state for expandable groups - background only, no color change */
-#sidebar-group > li > button:hover,
-ul#sidebar-group > li > button:hover,
+.sidebar-group > li > button:hover,
+ul.sidebar-group > li > button:hover,
 #navigation-items li.space-y-px > button:hover,
 #navigation-items li[class*="space-y"] > button:hover {
   background-color: rgba(0, 0, 0, 0.03) !important;
 }
 
-html.dark #sidebar-group > li > button:hover,
-html.dark ul#sidebar-group > li > button:hover,
+html.dark .sidebar-group > li > button:hover,
+html.dark ul.sidebar-group > li > button:hover,
 html.dark #navigation-items li.space-y-px > button:hover,
 html.dark #navigation-items li[class*="space-y"] > button:hover {
   background-color: rgba(255, 255, 255, 0.05) !important;
@@ -1217,16 +1236,16 @@ html.dark #navigation-items li[class*="space-y"] > button:hover {
 /* Group buttons stay gray - only active page links get bold/dark styling */
 
 /* Nested items in API reference groups */
-#sidebar-group > li ul,
-ul#sidebar-group > li ul,
-#sidebar-group > li ul li,
-ul#sidebar-group > li ul li {
+#navigation-items .sidebar-group > li ul,
+#navigation-items ul.sidebar-group > li ul,
+#navigation-items .sidebar-group > li ul li,
+#navigation-items ul.sidebar-group > li ul li {
   width: 100% !important;
   display: block !important;
 }
 
-#sidebar-group > li ul a,
-ul#sidebar-group > li ul a,
+.sidebar-group > li ul a,
+ul.sidebar-group > li ul a,
 #navigation-items li.space-y-px ul a,
 #navigation-items li[class*="space-y"] ul a {
   font-size: 14px !important;
@@ -1240,8 +1259,8 @@ ul#sidebar-group > li ul a,
 }
 
 /* Vertical indentation line for nested items in expandable groups */
-#sidebar-group > li > ul,
-ul#sidebar-group > li > ul,
+.sidebar-group > li > ul,
+ul.sidebar-group > li > ul,
 #navigation-items li.space-y-px > ul,
 #navigation-items li[class*="space-y"] > ul {
   position: relative !important;
@@ -1251,8 +1270,8 @@ ul#sidebar-group > li > ul,
   border-left: 0.5px solid var(--ls-black-10) !important;
 }
 
-html.dark #sidebar-group > li > ul,
-html.dark ul#sidebar-group > li > ul,
+html.dark .sidebar-group > li > ul,
+html.dark ul.sidebar-group > li > ul,
 html.dark #navigation-items li.space-y-px > ul,
 html.dark #navigation-items li[class*="space-y"] > ul {
   border-left-color: var(--ls-white-06) !important;
@@ -1262,14 +1281,17 @@ html.dark #navigation-items li[class*="space-y"] > ul {
    API Reference Sidebar - Group Icons
    =========================================== */
 
-/* Base icon styles for all API groups */
-#sidebar-group > li[data-title] > button,
-ul#sidebar-group > li[data-title] > button {
+/* Base icon styles for all API groups.
+   The #navigation-items prefix keeps id-level specificity so padding-left
+   beats the generic `#navigation-items li[class*="space-y"] > button`
+   padding rule above. */
+#navigation-items .sidebar-group > li[data-title] > button,
+#navigation-items ul.sidebar-group > li[data-title] > button {
   padding-left: 40px !important;
 }
 
-#sidebar-group > li[data-title] > button::before,
-ul#sidebar-group > li[data-title] > button::before {
+.sidebar-group > li[data-title] > button::before,
+ul.sidebar-group > li[data-title] > button::before {
   content: "" !important;
   position: absolute !important;
   left: 8px !important;
@@ -1285,117 +1307,135 @@ ul#sidebar-group > li[data-title] > button::before {
 }
 
 /* Platform Configuration - settings gear */
-#sidebar-group > li[data-title="Platform Configuration"] > button::before,
-ul#sidebar-group > li[data-title="Platform Configuration"] > button::before {
+.sidebar-group > li[data-title="Platform Configuration"] > button::before,
+ul.sidebar-group > li[data-title="Platform Configuration"] > button::before {
   background-image: url('/images/icons/settings-gear2.svg') !important;
 }
 
 /* Customers - people */
-#sidebar-group > li[data-title="Customers"] > button::before,
-ul#sidebar-group > li[data-title="Customers"] > button::before {
+.sidebar-group > li[data-title="Customers"] > button::before,
+ul.sidebar-group > li[data-title="Customers"] > button::before {
   background-image: url('/images/icons/people.svg') !important;
 }
 
 /* Internal Accounts - wallet */
-#sidebar-group > li[data-title="Internal Accounts"] > button::before,
-ul#sidebar-group > li[data-title="Internal Accounts"] > button::before {
+.sidebar-group > li[data-title="Internal Accounts"] > button::before,
+ul.sidebar-group > li[data-title="Internal Accounts"] > button::before {
   background-image: url('/images/icons/wallet1.svg') !important;
 }
 
 /* External Accounts - bank */
-#sidebar-group > li[data-title="External Accounts"] > button::before,
-ul#sidebar-group > li[data-title="External Accounts"] > button::before {
+.sidebar-group > li[data-title="External Accounts"] > button::before,
+ul.sidebar-group > li[data-title="External Accounts"] > button::before {
   background-image: url('/images/icons/bank.svg') !important;
 }
 
 /* Same-Currency Transfers - horizontal expand arrows */
-#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before,
-ul#sidebar-group > li[data-title="Same-Currency Transfers"] > button::before {
+.sidebar-group > li[data-title="Same-Currency Transfers"] > button::before,
+ul.sidebar-group > li[data-title="Same-Currency Transfers"] > button::before {
   background-image: url('/images/icons/arrow-expand-hor.svg') !important;
 }
 
 /* Cross-Currency Transfers - left-right arrows */
-#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before,
-ul#sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before {
+.sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before,
+ul.sidebar-group > li[data-title="Cross-Currency Transfers"] > button::before {
   background-image: url('/images/icons/arrow-left-right.svg') !important;
 }
 
 /* Transactions - receipt */
-#sidebar-group > li[data-title="Transactions"] > button::before,
-ul#sidebar-group > li[data-title="Transactions"] > button::before {
+.sidebar-group > li[data-title="Transactions"] > button::before,
+ul.sidebar-group > li[data-title="Transactions"] > button::before {
   background-image: url('/images/icons/receipt-check.svg') !important;
 }
 
 /* Webhooks - bell */
-#sidebar-group > li[data-title="Webhooks"] > button::before,
-ul#sidebar-group > li[data-title="Webhooks"] > button::before {
+.sidebar-group > li[data-title="Webhooks"] > button::before,
+ul.sidebar-group > li[data-title="Webhooks"] > button::before {
   background-image: url('/images/icons/bell.svg') !important;
 }
 
 /* Invitations - people add */
-#sidebar-group > li[data-title="Invitations"] > button::before,
-ul#sidebar-group > li[data-title="Invitations"] > button::before {
+.sidebar-group > li[data-title="Invitations"] > button::before,
+ul.sidebar-group > li[data-title="Invitations"] > button::before {
   background-image: url('/images/icons/people-add.svg') !important;
 }
 
 /* Sandbox - sandbox icon */
-#sidebar-group > li[data-title="Sandbox"] > button::before,
-ul#sidebar-group > li[data-title="Sandbox"] > button::before {
+.sidebar-group > li[data-title="Sandbox"] > button::before,
+ul.sidebar-group > li[data-title="Sandbox"] > button::before {
   background-image: url('/images/icons/sandbox.svg') !important;
 }
 
 /* Available UMA Providers - at symbol */
-#sidebar-group > li[data-title="Available UMA Providers"] > button::before,
-ul#sidebar-group > li[data-title="Available UMA Providers"] > button::before {
+.sidebar-group > li[data-title="Available UMA Providers"] > button::before,
+ul.sidebar-group > li[data-title="Available UMA Providers"] > button::before {
   background-image: url('/images/icons/at.svg') !important;
 }
 
 /* API Tokens - key */
-#sidebar-group > li[data-title="API Tokens"] > button::before,
-ul#sidebar-group > li[data-title="API Tokens"] > button::before {
+.sidebar-group > li[data-title="API Tokens"] > button::before,
+ul.sidebar-group > li[data-title="API Tokens"] > button::before {
   background-image: url('/images/icons/key2.svg') !important;
 }
 
 /* KYC/KYB Verifications - magnifying glass */
-#sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before,
-ul#sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before {
+.sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before,
+ul.sidebar-group > li[data-title="KYC/KYB Verifications"] > button::before {
   background-image: url('/images/icons/magnifying-glass.svg') !important;
 }
 
 /* Documents - file text */
-#sidebar-group > li[data-title="Documents"] > button::before,
-ul#sidebar-group > li[data-title="Documents"] > button::before {
+.sidebar-group > li[data-title="Documents"] > button::before,
+ul.sidebar-group > li[data-title="Documents"] > button::before {
   background-image: url('/images/icons/file-text.svg') !important;
 }
 
 /* Exchange Rates - trending */
-#sidebar-group > li[data-title="Exchange Rates"] > button::before,
-ul#sidebar-group > li[data-title="Exchange Rates"] > button::before {
+.sidebar-group > li[data-title="Exchange Rates"] > button::before,
+ul.sidebar-group > li[data-title="Exchange Rates"] > button::before {
   background-image: url('/images/icons/trending.svg') !important;
 }
 
 /* Discoveries - checklist magnifying glass */
-#sidebar-group > li[data-title="Discoveries"] > button::before,
-ul#sidebar-group > li[data-title="Discoveries"] > button::before {
+.sidebar-group > li[data-title="Discoveries"] > button::before,
+ul.sidebar-group > li[data-title="Discoveries"] > button::before {
   background-image: url('/images/icons/IconSquareChecklistMagnifyingGlass.svg') !important;
 }
 
 /* Embedded Wallet Auth - lock */
-#sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before,
-ul#sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before {
+.sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before,
+ul.sidebar-group > li[data-title="Embedded Wallet Auth"] > button::before {
   background-image: url('/images/icons/lock.svg') !important;
 }
 
 /* Agent Management */
-#sidebar-group > li[data-title="Agent Management"] > button::before,
-ul#sidebar-group > li[data-title="Agent Management"] > button::before {
+.sidebar-group > li[data-title="Agent Management"] > button::before,
+ul.sidebar-group > li[data-title="Agent Management"] > button::before {
   background-image: url('/images/icons/agent.svg') !important;
 }
 
 /* Agent Operations */
-#sidebar-group > li[data-title="Agent Operations"] > button::before,
-ul#sidebar-group > li[data-title="Agent Operations"] > button::before {
+.sidebar-group > li[data-title="Agent Operations"] > button::before,
+ul.sidebar-group > li[data-title="Agent Operations"] > button::before {
   background-image: url('/images/icons/prompt.svg') !important;
+}
+
+/* Contact Verification - email check */
+.sidebar-group > li[data-title="Contact Verification"] > button::before,
+ul.sidebar-group > li[data-title="Contact Verification"] > button::before {
+  background-image: url('/images/icons/IconEmail2Check.svg') !important;
+}
+
+/* Cards - credit card */
+.sidebar-group > li[data-title="Cards"] > button::before,
+ul.sidebar-group > li[data-title="Cards"] > button::before {
+  background-image: url('/images/icons/credit-card1.svg') !important;
+}
+
+/* Stablecoins - coins */
+.sidebar-group > li[data-title="Stablecoins"] > button::before,
+ul.sidebar-group > li[data-title="Stablecoins"] > button::before {
+  background-image: url('/images/icons/coins.svg') !important;
 }
 
 
@@ -4460,6 +4500,293 @@ html.dark.ls-nav-collapsed .ls-nav-rail:hover .ls-nav-rail-btn {
 html.ls-nav-collapsed .ls-nav-rail-btn::before {
   -webkit-mask-image: url("/images/icons/IconSidebarRightArrow.svg");
   mask-image: url("/images/icons/IconSidebarRightArrow.svg");
+}
+
+/* FOOTER collapse button, next to the theme switcher — the always-visible,
+   discoverable affordance (the edge rail only reveals on hover). Chrome
+   matches the switcher: same hairline border + hover step, same icon color,
+   28px (h-7) tall; a circle, since it's one button, not a two-state switch.
+
+   Split on purpose: the PIXELS are pseudo-elements of the server-rendered
+   switcher, so the button is visible in the page's first frame — while the
+   BEHAVIOR is an invisible hit-target button that sidebar-toggle.js mounts
+   over them a couple hundred ms later (Mintlify inlines custom JS after
+   paint; nothing of ours can be in the SSR HTML). Drawing on the injected
+   button instead would pop it in visibly late next to the already-painted
+   switcher. Hover rides :has(+ .ls-nav-collapse-btn:hover) back onto the
+   pseudos, so the pixels have exactly one owner. */
+
+/* THE ANCHOR, in two generations of Mintlify markup. The pinned local CLI
+   (4.2.284) renders a single two-icon toggle: button[aria-label="Toggle
+   dark mode"]. Mintlify's HOSTED renderer (prod + previews — evergreen, not
+   pinnable) has since replaced it with a three-option pill: div[role=
+   "group"][aria-label="Theme preference"] wrapping system/light/dark
+   buttons. Every rule below targets BOTH, or the button silently vanishes
+   on whichever side doesn't match (which is exactly how it shipped broken
+   the first time: built + tested against the old CLI markup only). */
+
+/* Reserve the slot: 28px circle + 8px gap. A permanent margin — the footer
+   never reflows; the pseudos below paint into it from the first frame. Also
+   declare our own positioning context instead of inheriting it from
+   Mintlify's `relative` utility class (both generations happen to have it,
+   but the pseudos' anchoring shouldn't hinge on their classnames). */
+#sidebar-content > div > button[aria-label="Toggle dark mode"],
+#sidebar-content > div > [role="group"][aria-label="Theme preference"] {
+  margin-right: 36px;
+  position: relative;
+}
+
+/* The circle, hung off the switcher's right edge (its border box ends where
+   the reserved margin starts). pointer-events: none so that before the hit
+   target mounts, a click on the drawn button can't reach the SWITCHER and
+   flip the theme. */
+#sidebar-content > div > button[aria-label="Toggle dark mode"]::after,
+#sidebar-content > div > [role="group"][aria-label="Theme preference"]::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 8px);
+  top: calc(50% - 14px);
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  border: 1px solid rgb(223 223 223 / 0.7); /* border-gray-200/70 */
+  pointer-events: none;
+  transition: border-color 150ms ease;
+}
+
+/* The glyph, centered in the circle ((28 − 18) / 2 = 5px in). Masked at
+   18px: the icon is drawn on a 24-grid with a 16-unit body, so this renders
+   a ~12px glyph at 1.125px effective stroke — the same visual size and
+   weight as the switcher's 12px sun/moon (16-grid, 1.5 stroke). */
+#sidebar-content > div > button[aria-label="Toggle dark mode"]::before,
+#sidebar-content > div > [role="group"][aria-label="Theme preference"]::before {
+  content: "";
+  position: absolute;
+  left: calc(100% + 13px);
+  top: calc(50% - 9px);
+  width: 18px;
+  height: 18px;
+  background-color: rgb(80 80 80); /* text-gray-600, same in both modes */
+  -webkit-mask: url("/images/icons/IconSidebarLeftArrow.svg") center / 18px
+    18px no-repeat;
+  mask: url("/images/icons/IconSidebarLeftArrow.svg") center / 18px 18px
+    no-repeat;
+  pointer-events: none;
+  transition: background-color 150ms ease;
+}
+
+html.dark #sidebar-content > div > button[aria-label="Toggle dark mode"]::after,
+html.dark
+  #sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]::after {
+  border-color: rgb(255 255 255 / 0.07); /* dark:border-white/[0.07] */
+}
+
+/* Hovering the hit target: border steps like the switcher's own hover; the
+   icon goes full-contrast like the edge rail button's. */
+#sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::after,
+#sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]:has(+ .ls-nav-collapse-btn:hover)::after {
+  border-color: rgb(223 223 223); /* hover:border-gray-200 */
+}
+
+#sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::before,
+#sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]:has(+ .ls-nav-collapse-btn:hover)::before {
+  background-color: var(--ls-gray-950);
+}
+
+html.dark
+  #sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::after,
+html.dark
+  #sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]:has(+ .ls-nav-collapse-btn:hover)::after {
+  border-color: rgb(255 255 255 / 0.1); /* dark:hover:border-white/10 */
+}
+
+html.dark
+  #sidebar-content
+  > div
+  > button[aria-label="Toggle dark mode"]:has(+ .ls-nav-collapse-btn:hover)::before,
+html.dark
+  #sidebar-content
+  > div
+  > [role="group"][aria-label="Theme preference"]:has(+ .ls-nav-collapse-btn:hover)::before {
+  background-color: var(--ls-gray-050);
+}
+
+/* The NEW switcher's sun + system glyphs are the same 16-grid / 1.5-stroke
+   family as the old toggle's, but its moon is a stock Lucide icon (24-grid,
+   heavier stroke, fuller crescent) that reads chunkier than everything
+   around it. Swap just that glyph back to the OLD component's crescent:
+   hide the Lucide svg and mask-draw the original path (extracted verbatim
+   into IconMoonCrescent.svg) in its place, riding the button's currentColor
+   so the rest/hover/active tints keep working. Old-markup pages are
+   untouched (no Theme preference group there). */
+
+/* Let the switcher glyphs SCALE their strokes: 16-grid / 1.5 authored at
+   12px render = 1.125px — the fine weight. The site-wide non-scaling-stroke
+   rule would pin the inline system/sun svgs at 1.5px absolute, visibly
+   heavier than the mask-drawn crescent (masks aren't DOM svgs, so the rule
+   can't reach them and they always scale). Overriding it here makes all
+   three glyphs render at the same thin weight. Covers the old markup's
+   toggle too, for dev/prod parity. */
+#sidebar-content [role="group"][aria-label="Theme preference"] svg,
+#sidebar-content [role="group"][aria-label="Theme preference"] svg *,
+#sidebar-content button[aria-label="Toggle dark mode"] svg,
+#sidebar-content button[aria-label="Toggle dark mode"] svg * {
+  vector-effect: none;
+}
+#sidebar-content
+  [role="group"][aria-label="Theme preference"]
+  button[aria-label="Switch to dark theme"]
+  svg {
+  display: none;
+}
+
+#sidebar-content
+  [role="group"][aria-label="Theme preference"]
+  button[aria-label="Switch to dark theme"]::before {
+  content: "";
+  width: 12px; /* lg:size-3, same as the sun */
+  height: 12px;
+  background-color: currentColor;
+  -webkit-mask: url("/images/icons/IconMoonCrescent.svg") center / 12px 12px
+    no-repeat;
+  mask: url("/images/icons/IconMoonCrescent.svg") center / 12px 12px no-repeat;
+}
+
+/* The hit target — invisible; the pseudos above are its rendering. Anchored
+   to the footer's 24px side padding, landing exactly on the drawn circle. */
+#sidebar-content > div:has(> button[aria-label="Toggle dark mode"]),
+#sidebar-content > div:has(> [role="group"][aria-label="Theme preference"]) {
+  position: relative;
+}
+
+.ls-nav-collapse-btn {
+  position: absolute;
+  right: 24px;
+  top: calc(50% - 14px);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 9999px; /* round focus ring */
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Tooltips — the playground's "coming soon" tag vocabulary (mono micro-type,
+   hairline edge, soft shadow) but INVERTED like a system tooltip: near-black
+   bubble with primary-light text in light mode, flipped in dark. One shared
+   bubble style; placement + copy per trigger below. Free real estate: the
+   footer hit target renders nothing itself and the rail button's icon is its
+   ::before, so both ::afters are available. */
+.ls-nav-collapse-btn::after,
+.ls-nav-rail-btn::after {
+  position: absolute;
+  padding: 4px 7px;
+  border: 0.5px solid rgb(255 255 255 / 0.14);
+  border-radius: 6px;
+  background: var(--ls-gray-950);
+  color: var(--ls-gray-050);
+  font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  /* Suisse Mono's bold is too heavy — stroke the glyphs to nudge the weight
+     up a hair (same trick as the playground's tag). */
+  -webkit-text-stroke: 0.3px currentColor;
+  white-space: nowrap;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  /* This is the EXIT transition (the rule that applies once :hover drops).
+     A plain ease, not the snappy curve — easeOutSnappy front-loads ~90% of
+     the change into the first few frames, which reads as vanishing
+     instantly. The entry (snappy + hover-intent delay) lives on the :hover
+     rules. */
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+html.dark .ls-nav-collapse-btn::after,
+html.dark .ls-nav-rail-btn::after {
+  border-color: var(--ls-black-10);
+  background: var(--ls-gray-050);
+  color: var(--ls-gray-950);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Copy is one word — the icon already depicts the sidebar, and the footer
+   bubble must fit centered inside #sidebar-content (overflow-x: hidden clips
+   anything past the sidebar's right edge; "Collapse sidebar" wouldn't fit). */
+
+/* Footer button: centered ABOVE (beside it, the bubble would sit on top of
+   the theme switcher), rising up into place — it sits above, so it enters
+   on the same axis. Hover-intent: in after a beat, soft fade on leave. */
+.ls-nav-collapse-btn::after {
+  content: "Collapse";
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+}
+
+.ls-nav-collapse-btn:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 180ms var(--ls-sidebar-ease) 350ms,
+    transform 180ms var(--ls-sidebar-ease) 350ms;
+}
+
+/* Rail button: out of the icon to the RIGHT, in both states — the copy
+   flips with the direction the click would take. */
+.ls-nav-rail-btn::after {
+  content: "Collapse";
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+}
+
+html.ls-nav-collapsed .ls-nav-rail-btn::after {
+  content: "Expand";
+}
+
+.ls-nav-rail:hover .ls-nav-rail-btn::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  transition: opacity 180ms var(--ls-sidebar-ease) 350ms,
+    transform 180ms var(--ls-sidebar-ease) 350ms;
+}
+
+/* Never mid-drag (the edge is a resize handle first). And on a toggle, hide
+   INSTANTLY (no fade) — the copy flips with the state, and a fading bubble
+   would visibly swap Collapse ↔ Expand mid-air. ls-nav-tip-muted then keeps
+   it hidden until the cursor leaves and genuinely re-enters the rail
+   (sidebar-toggle.js), so the tooltip never reappears under a cursor that
+   just sat through the click. */
+html.ls-nav-dragging .ls-nav-rail-btn::after,
+html.ls-nav-animating .ls-nav-rail-btn::after,
+html.ls-nav-tip-muted .ls-nav-rail-btn::after {
+  opacity: 0 !important;
+  transition: none !important;
 }
 
 /* Hover/drag edge highlight: a 2px line at the divider, drawn as an overlay so

@@ -60,6 +60,11 @@ allOf:
           Rail-level tracking identifier for the payment, such as an ACH trace
           number or a wire IMAD/OMAD, useful for reconciliation.
         example: '021000020123456'
+      onChainTransaction:
+        $ref: ./OnChainTransaction.yaml
+        description: >-
+          On-chain transaction that delivered the funding, when the funds arrived from an
+          external crypto wallet. Populated once the crypto transfer has settled.
     description: >-
       Transaction was funded using an external funding source. All originator
       fields are optional and populated on a best-effort basis depending on what

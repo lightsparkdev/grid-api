@@ -14,4 +14,9 @@ allOf:
         type: string
         description: Source account identifier
         example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+      onChainTransaction:
+        $ref: ./OnChainTransaction.yaml
+        description: >-
+          On-chain transaction that delivered funds from this source, when the source is an
+          external crypto wallet. Populated once the crypto transfer has settled.
     description: Source account details

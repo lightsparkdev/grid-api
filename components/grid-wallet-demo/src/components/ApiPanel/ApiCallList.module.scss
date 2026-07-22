@@ -13,7 +13,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 48px;
+  /* Sides match the Configure panel's content padding. */
+  padding: 48px $layout-laptop-content-padding;
   padding-top: calc(var(--spacing-md) + 12px);
 
   // Mobile: match the Configure panel's 24px side padding.
@@ -101,16 +102,19 @@
   corner-shape: var(--corner-shape);
   --badge-height: 20px;
   --row-padding: calc((48px - var(--badge-height)) / 2);
+  /* Single source for the card surface — the endpoint fade + tab indicator
+     must match it exactly, and the wide layout re-tints all three at once. */
+  --call-card-bg: var(--surface-base);
   display: flex;
   flex-direction: column;
   width: 100%;
-  background: var(--surface-base);
+  background: var(--call-card-bg);
   border: 0.5px solid var(--border-tertiary);
   border-radius: var(--corner-radius-md);
   overflow: clip;
 
   :global([data-theme='dark']) & {
-    background: var(--color-gray-925);
+    --call-card-bg: var(--color-gray-925);
   }
 
   &:hover,
@@ -189,11 +193,7 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity 150ms ease;
-  background: linear-gradient(to right, transparent, var(--surface-base) 52%);
-
-  :global([data-theme='dark']) & {
-    background: linear-gradient(to right, transparent, var(--color-gray-925) 52%);
-  }
+  background: linear-gradient(to right, transparent, var(--call-card-bg) 52%);
 }
 
 .endpointCopyBtn {
@@ -253,12 +253,8 @@
   box-sizing: border-box;
   border-left: var(--stroke-xs) solid var(--border-tertiary);
   border-right: var(--stroke-xs) solid var(--border-tertiary);
-  background: var(--surface-base);
+  background: var(--call-card-bg);
   pointer-events: none;
-
-  :global([data-theme='dark']) & {
-    background: var(--color-gray-925);
-  }
 }
 
 .tabGroupLeadingActive .tabIndicator {
@@ -368,6 +364,19 @@
 
   :global([data-theme='dark']) & {
     color: #85e89d;
+  }
+}
+
+/* Side-by-side the panel wears the docs-chrome gray, so the cards step down
+   with it: pure white (light) / gray-925 (dark) read too hot on the chrome —
+   one notch softer keeps the same card-to-panel delta as the stacked layout. */
+@media (min-width: $breakpoint-layout-wide) {
+  .callCard {
+    --call-card-bg: var(--surface-primary);
+
+    :global([data-theme='dark']) & {
+      --call-card-bg: var(--color-gray-950);
+    }
   }
 }
 

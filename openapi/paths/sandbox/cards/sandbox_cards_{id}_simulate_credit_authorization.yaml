@@ -1,0 +1,86 @@
+post:
+  summary: Simulate a card credit authorization
+  description: >
+    Simulate an inbound credit authorization (a merchant-initiated credit to
+    the card, e.g. a refund pushed as an authorization) in the sandbox
+    environment. Drives the same internal paths the card issuer would call in
+    production. The resulting card operation is delivered asynchronously via the
+    issuer's events webhook.
+
+
+    As with `simulate/authorization`, the decisioning outcome is controlled by
+    the last three characters of `merchant.descriptor` — see the
+    `simulate/authorization` suffix table.
+
+
+    Production returns `404` on this path.
+  operationId: sandboxSimulateCardCreditAuthorization
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The id of the card to simulate a credit authorization against.
+      schema:
+        type: string
+      example: Card:019542f5-b3e7-1d02-0000-000000000010
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../../components/schemas/cards/SandboxCardAuthorizationRequest.yaml
+        examples:
+          creditAuth:
+            summary: $25.00 credit authorization
+            value:
+              amount: 2500
+              currency:
+                code: USD
+              merchant:
+                descriptor: ACME MARKETPLACE
+                mcc: '5942'
+                country: US
+  responses:
+    '202':
+      description: >-
+        Simulation accepted. The resulting card operation is delivered
+        asynchronously via the issuer's events webhook. Returns the issuer
+        transaction token that correlates the simulated event.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/cards/SandboxCardSimulationResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found (also returned in production for this path)
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error500.yaml

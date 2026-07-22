@@ -1,0 +1,12 @@
+oneOf:
+  - $ref: ./TotpEnrollmentStart.yaml
+  - $ref: ./PasskeyEnrollmentStart.yaml
+discriminator:
+  propertyName: type
+  mapping:
+    TOTP: ./TotpEnrollmentStart.yaml
+    PASSKEY: ./PasskeyEnrollmentStart.yaml
+description: >-
+  The factor-specific material needed to complete enrollment, keyed by `type`:
+  a TOTP shared secret + provisioning URI, or the WebAuthn registration options
+  for a passkey.

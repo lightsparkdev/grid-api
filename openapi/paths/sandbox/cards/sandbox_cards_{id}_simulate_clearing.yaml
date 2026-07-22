@@ -49,12 +49,15 @@ post:
               cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
               amount: 0
   responses:
-    '200':
-      description: Simulated clearing processed. Returns the updated card transaction.
+    '202':
+      description: >-
+        Simulation accepted. The resulting card operation is delivered
+        asynchronously via the issuer's events webhook. Returns the issuer
+        transaction token that correlates the simulated event.
       content:
         application/json:
           schema:
-            $ref: ../../../components/schemas/cards/CardTransaction.yaml
+            $ref: ../../../components/schemas/cards/SandboxCardSimulationResponse.yaml
     '400':
       description: Bad request - Invalid parameters
       content:

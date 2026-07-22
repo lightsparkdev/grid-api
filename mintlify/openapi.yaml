@@ -3,7 +3,7 @@ info:
   title: Grid API
   description: |
     API for managing global payments on the open Money Grid. Built by Lightspark. See the full documentation at https://docs.lightspark.com/.
-  version: '2026-06-29'
+  version: '2025-10-13'
   contact:
     name: Lightspark Support
     email: support@lightspark.com
@@ -23,6 +23,8 @@ tags:
     description: Customer management endpoints for creating and updating customer information
   - name: Contact Verification
     description: Endpoints for verifying a customer's email and phone via one-time codes. Required only for customers whose payment provider mandates contact verification (e.g. EU customers); other providers return 409.
+  - name: Strong Customer Authentication
+    description: Endpoints for authorizing money-movement operations that require Strong Customer Authentication. Relevant only for customers in a region where SCA is required (e.g. EU); customers outside SCA-regulated regions never see an SCA challenge and these endpoints return 409.
   - name: KYC/KYB Verifications
     description: Endpoints for Know Your Customer (KYC) and Know Your Business (KYB) verification, including managing beneficial owners and triggering verification for customers.
   - name: Documents
@@ -1115,6 +1117,918 @@ paths:
                 $ref: '#/components/schemas/Error404'
         '409':
           description: The customer's payment provider does not require contact verification, or the phone is already verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/factors:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer whose factors are listed or enrolled.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    get:
+      summary: List enrolled SCA factors
+      description: |
+        List the Strong Customer Authentication factors the customer has enrolled.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: listScaFactors
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The customer's enrolled SCA factors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaFactorList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Start SCA factor enrollment
+      description: |
+        Begin enrolling an SCA factor for the customer. Enrollment covers the
+        explicit, opt-in factors a customer chooses to add — the request body's
+        `type` selects `TOTP` or `PASSKEY`. Returns the factor-specific material
+        needed to finish via `POST /sca/factors/confirm`.
+
+        `SMS_OTP` is implicit and is not enrolled through this endpoint. Every
+        customer in an SCA-regulated region has a verified phone number from
+        customer creation (via the Contact Verification flows —
+        `POST /customers/{customerId}/verify-phone` and `.../verify-phone/confirm`),
+        so SMS is always available as a factor with no extra setup and appears
+        among the customer's enrolled factors in `GET /sca/factors`.
+
+        A customer may have **only one passkey**. Starting a passkey enrollment when
+        one is already enrolled returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete it
+        via `DELETE /sca/factors/{credentialId}` first.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: startScaFactorEnrollment
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaFactorEnrollRequestOneOf'
+      responses:
+        '200':
+          description: Enrollment started; the factor-specific completion material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaFactorEnrollStartOneOf'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer (`CONFLICT`), or a passkey enrollment was requested while one is already enrolled (`PASSKEY_ALREADY_ENROLLED`) — only one passkey per customer is supported.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/factors/confirm:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer confirming a factor enrollment.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Confirm SCA factor enrollment
+      description: |
+        Finalize the factor enrollment started by `POST /sca/factors`. The request
+        body is discriminated by `type`: for `TOTP`, submit the shared `secret` from
+        the start call plus the first `code`; for `PASSKEY`, submit the WebAuthn
+        `credential` the device produced plus the `origin` it was produced against.
+        The threaded secret/credential binds the confirmation to its enrollment, so
+        no separate id is needed.
+
+        A TOTP confirmation returns one-time recovery codes (shown once); a passkey
+        confirmation returns the enrolled factor.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+
+        In sandbox, the TOTP code is always `123456`.
+      operationId: confirmScaFactorEnrollment
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaFactorConfirmRequestOneOf'
+      responses:
+        '200':
+          description: Factor enrolled; the factor-specific result is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaFactorConfirmResponseOneOf'
+        '400':
+          description: Invalid or incorrect confirmation proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/factors/{credentialId}:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer whose factor is being deleted.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: credentialId
+        in: path
+        description: The credential id of the enrolled factor to delete (from the factor's `credentialId`).
+        required: true
+        schema:
+          type: string
+    delete:
+      summary: Delete an enrolled SCA factor
+      description: |
+        Delete an enrolled SCA factor by its credential id. Today only `PASSKEY`
+        factors carry a `credentialId` and are deletable this way.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: deleteScaFactor
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Factor deleted; no content is returned.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or factor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/login/start:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer starting an SCA login.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Start an SCA login
+      description: |
+        Begin an SCA login for the customer with the chosen factor, opening the
+        end-user SCA session (an exemption gating read / account access beyond the
+        per-transaction window). Returns factor-specific material: `SMS_OTP`
+        dispatches a code and returns a `challengeId` + `expiresAt`; `TOTP` returns
+        only the factor (the customer reads the code from their app); `PASSKEY`
+        returns WebAuthn `passkeyOptions`. Complete with
+        `POST /sca/login/complete`.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: startScaLogin
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaLoginStartRequest'
+      responses:
+        '200':
+          description: SCA login started; factor-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaLoginStart'
+        '400':
+          description: Invalid or unknown factor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/login/complete:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer completing an SCA login.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Complete an SCA login
+      description: |
+        Finalize an SCA login by submitting the proof for the started factor
+        (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for
+        `PASSKEY`), echoing the `challengeId` for `SMS_OTP`. Returns the
+        reported session status.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+
+        In sandbox, the SMS/TOTP code is always `123456`.
+      operationId: completeScaLogin
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaLoginCompleteRequest'
+      responses:
+        '200':
+          description: SCA login completed; the session status is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaLoginComplete'
+        '400':
+          description: Invalid or expired proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked (or suspended) after too many failed attempts. `details.lockedUntil` says when they may retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/record-event:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer the security event is recorded for.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Record a security event
+      description: |
+        Record a client-side security-relevant event for the customer with Grid's risk engine (e.g. a sign-in, a sensitive view), to
+        feed adaptive-authentication signals.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: recordSecurityEvent
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordSecurityEventRequest'
+      responses:
+        '200':
+          description: Event recorded; the customer's resulting login-security state is returned (including any lockout).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordSecurityEventResponse'
+        '400':
+          description: Invalid event type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked (or suspended) after too many failed attempts. `details.lockedUntil` says when they may retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/factors/reset:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer resetting a factor.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Start a 2FA reset
+      description: |
+        Begin recovering a lost enrolled factor via a liveness-gated, poll-based
+        flow. Opens the liveness check and returns a `resetId` plus the
+        opaque liveness handles (`livenessAccessToken` / `verificationLink`) the end
+        user completes it with. Poll
+        `GET /sca/factors/reset/{resetId}` until liveness
+        passes, then call the complete endpoint.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: startTwoFactorReset
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorResetStartRequest'
+      responses:
+        '201':
+          description: Reset initiated; the reset handle and liveness material are returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorResetStart'
+        '400':
+          description: Invalid or unknown factor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many reset attempts. Reset initiation is rate-limited to 5 per 24 hours per customer; retry after the window indicated by `Retry-After`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/factors/reset/{resetId}:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer whose reset status is polled.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: resetId
+        in: path
+        description: The reset handle returned by the start call.
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get 2FA reset status
+      description: |
+        Poll the status of an in-progress 2FA reset until it reaches the liveness-passed value, after which the reset can be completed.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: getTwoFactorResetStatus
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The current reset status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorResetStatus'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or reset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sca/factors/reset/{resetId}/complete:
+    parameters:
+      - name: customerId
+        in: query
+        description: The unique identifier of the customer completing the reset.
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+      - name: resetId
+        in: path
+        description: The reset handle returned by the start call.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Complete a 2FA reset
+      description: |
+        Complete a 2FA reset once liveness has passed, clearing the lost factor so
+        the customer can re-enroll.
+
+        For an `SMS_OTP` reset, supply the new `mobile` number in the body — completing
+        the reset enrolls it as the customer's number. Other factors need no body.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: completeTwoFactorReset
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorResetCompleteRequest'
+      responses:
+        '204':
+          description: Reset completed; no content is returned.
+        '400':
+          description: Reset not ready (liveness not yet passed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or reset not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/trust:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (beneficiary) being trusted.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Start trusting a beneficiary
+      description: |
+        Begin trusting (whitelisting) an external account so future sends to it can
+        skip the per-transaction SCA ceremony. Returns the `scaChallenge` to satisfy
+        (when one is issued). Complete with
+        `POST /customers/external-accounts/{externalAccountId}/trust/confirm`.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: startBeneficiaryTrust
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Beneficiary trust started; the SCA challenge (if any) is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficiaryTrustStart'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/trust/confirm:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (beneficiary) being trusted.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Confirm trusting a beneficiary
+      description: |
+        Finalize trusting a beneficiary (identified by the `externalAccountId` in the
+        path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+        `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
+        one was issued. Returns `trusted: true`.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+
+        In sandbox, the SMS/TOTP code is always `123456`.
+      operationId: confirmBeneficiaryTrust
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BeneficiaryTrustConfirmRequest'
+      responses:
+        '200':
+          description: Beneficiary trusted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficiaryTrustConfirm'
+        '400':
+          description: Invalid or expired proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/untrust:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (beneficiary) being untrusted.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Start untrusting a beneficiary
+      description: |
+        Begin untrusting (removing the trusted mark from) an external account, so
+        future sends to it are dynamically linked and require the per-transaction SCA
+        ceremony again. Returns the `scaChallenge` to satisfy (when one is issued).
+        Complete with
+        `POST /customers/external-accounts/{externalAccountId}/untrust/confirm`.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+      operationId: startBeneficiaryUntrust
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Beneficiary untrust started; the SCA challenge (if any) is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficiaryTrustStart'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/untrust/confirm:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (beneficiary) being untrusted.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Confirm untrusting a beneficiary
+      description: |
+        Finalize untrusting a beneficiary (identified by the `externalAccountId` in
+        the path) by submitting the SCA proof (`code` for `SMS_OTP` / `TOTP`, or
+        `passkeyAssertion` + `origin` for `PASSKEY`), echoing the `challengeId` when
+        one was issued. Returns `trusted: false`.
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+
+        In sandbox, the SMS/TOTP code is always `123456`.
+      operationId: confirmBeneficiaryUntrust
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BeneficiaryTrustConfirmRequest'
+      responses:
+        '200':
+          description: Beneficiary untrusted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficiaryTrustConfirm'
+        '400':
+          description: Invalid or expired proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer.
           content:
             application/json:
               schema:
@@ -2424,7 +3338,8 @@ paths:
                   remittanceInformation: '12345'
       responses:
         '201':
-          description: Transfer-out request created successfully
+          description: |
+            Transfer-out request created successfully.
           content:
             application/json:
               schema:
@@ -2761,6 +3676,13 @@ paths:
                 exchangeRate: 0.92
                 feesIncluded: 10
                 transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        '202':
+          description: |
+            Quote created but awaiting Strong Customer Authentication. Returned only for customers whose provider requires SCA (e.g. EU) on a realtime-funding source: the quote has status `PENDING_AUTHORIZATION` and carries an `scaChallenge`, and `paymentInstructions` are **withheld** until the challenge is authorized via `POST /quotes/{quoteId}/authorize`. Once authorized, the quote's `paymentInstructions` are populated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
         '400':
           description: Bad request - Missing or invalid parameters
           content:
@@ -2843,11 +3765,20 @@ paths:
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteQuoteRequest'
       responses:
         '200':
           description: |
-            Quote confirmed successfully. The transfer has been initiated and
-            the quote status has been updated.
+            Quote processed. The outcome depends on whether SCA applies to the customer (currently EU customers):
+
+            - **No SCA required:** the transfer is initiated and the quote status advances (`PROCESSING` / `COMPLETED`).
+
+            - **SCA required:** the transfer is **not** initiated yet. The quote is returned with status `PENDING_AUTHORIZATION` and an `scaChallenge`; release the transfer by authorizing the quote you already hold — `POST /quotes/{quoteId}/authorize` (re-calling `execute` returns 409). A pre-funded send is a single challenge, so one authorization releases it. The challenge (and its SMS code / passkey assertion) only comes into existence once this call initiates the transfer, so the proof is always supplied on the follow-up authorize, never inline on this call. If an SMS code lapses, re-send it via `POST /quotes/{quoteId}/authorize/resend`.
           content:
             application/json:
               schema:
@@ -2876,6 +3807,148 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /quotes/{quoteId}/authorize:
+    parameters:
+      - name: quoteId
+        in: path
+        description: The unique identifier of the quote whose SCA challenge is being authorized.
+        required: true
+        schema:
+          type: string
+        example: Quote:019542f5-b3e7-1d02-0000-000000000006
+    post:
+      summary: Authorize a quote's SCA challenge
+      description: |
+        Satisfy the Strong Customer Authentication challenge carried by a quote in
+        `PENDING_AUTHORIZATION` status by submitting an `ScaAuthorization` proof.
+
+        This is used for realtime-funding quotes: the quote is returned with an
+        `scaChallenge` and **without** `paymentInstructions`; once authorized, the
+        quote advances and its `paymentInstructions` are populated so the customer
+        can fund the transfer.
+
+        As with all SCA, a quote may require more than one authorization: after
+        authorizing, if the quote is still `PENDING_AUTHORIZATION` it carries the
+        next `scaChallenge` — authorize that too, repeating until it advances (see
+        `ScaChallenge`).
+
+        This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+
+        In sandbox, the SMS code is always `123456`.
+      operationId: authorizeQuote
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaAuthorization'
+      responses:
+        '200':
+          description: Challenge authorized; the updated quote is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          description: Invalid or expired authorization proof
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer, or the quote has no pending challenge to authorize.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when authorization attempts for this challenge happen too frequently (for example, repeated bad codes brute-forcing the OTP). The challenge may be invalidated after too many failed attempts. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /quotes/{quoteId}/authorize/resend:
+    parameters:
+      - name: quoteId
+        in: path
+        description: The unique identifier of the quote whose SCA challenge code should be re-sent.
+        required: true
+        schema:
+          type: string
+        example: Quote:019542f5-b3e7-1d02-0000-000000000006
+    post:
+      summary: Resend a quote's SCA challenge code
+      description: |
+        Re-send the one-time code for a realtime-funding quote in
+        `PENDING_AUTHORIZATION` status whose `scaChallenge.factor` is `SMS_OTP`. The
+        existing challenge is reused — no new challenge is issued, and its
+        `scaChallenge.expiresAt` is **not** extended; once the challenge is past
+        `expiresAt` it can no longer be authorized.
+
+        Only meaningful for customers in a region where SCA is required (e.g. EU);
+        a 409 is returned otherwise. `PASSKEY` challenges cannot be re-sent and return 409.
+
+        In sandbox, the code is always `123456`.
+      operationId: resendQuoteScaCode
+      tags:
+        - Strong Customer Authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Code re-sent.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Quote not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: SCA is not required for this customer, the quote has no pending SMS challenge, or the challenge uses a factor whose code cannot be re-sent (e.g. passkey).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `RATE_LIMITED` when codes are re-sent too frequently, to avoid spamming the customer's phone. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -3687,7 +4760,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OutgoingTransaction'
+                $ref: '#/components/schemas/TransactionOneOf'
         '400':
           description: Bad request
           content:
@@ -7030,7 +8103,7 @@ paths:
           type: string
     get:
       summary: Get a card
-      description: Retrieve a card by its system-generated id.
+      description: Retrieve a card by its system-generated id. To display the card's full PAN, CVV, and expiry to the cardholder, request a reveal with `POST /cards/{id}/reveal` — the card resource itself never carries the reveal URL.
       operationId: getCardById
       tags:
         - Cards
@@ -7188,6 +8261,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+  /cards/{id}/reveal:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Reveal card details
+      description: |-
+        Mint a signed, short-lived URL for the card processor's iframe that displays the card's full PAN, CVV, and expiry to the cardholder. This is the only way to obtain a reveal URL — the `Card` resource never carries one.
+
+        Request the reveal right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
+
+        Every reveal is audit-logged with the requesting actor.
+      operationId: revealCard
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Reveal URL minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardRevealResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the reveal against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /sandbox/cards/{id}/simulate/authorization:
     post:
       summary: Simulate a card authorization
@@ -7240,12 +8371,12 @@ paths:
                     mcc: '5942'
                     country: US
       responses:
-        '200':
-          description: Simulated authorization processed. Returns the resulting card transaction.
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardTransaction'
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -7318,12 +8449,12 @@ paths:
                   cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 0
       responses:
-        '200':
-          description: Simulated clearing processed. Returns the updated card transaction.
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardTransaction'
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -7387,12 +8518,526 @@ paths:
                   cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 1500
       responses:
-        '200':
-          description: Simulated return processed. Returns the updated card transaction.
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CardTransaction'
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/balance_inquiry:
+    post:
+      summary: Simulate a card balance inquiry
+      description: |
+        Simulate a balance-inquiry authorization against a card in the sandbox environment. A balance inquiry is always a `0`-amount authorization, so the request carries no `amount` — only the `merchant`. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardBalanceInquiry
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate a balance inquiry against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardBalanceInquiryRequest'
+            examples:
+              balanceInquiry:
+                summary: Balance inquiry at a fuel pump
+                value:
+                  merchant:
+                    descriptor: SHELL OIL 12345678
+                    mcc: '5541'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/credit_authorization:
+    post:
+      summary: Simulate a card credit authorization
+      description: |
+        Simulate an inbound credit authorization (a merchant-initiated credit to the card, e.g. a refund pushed as an authorization) in the sandbox environment. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        As with `simulate/authorization`, the decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` suffix table.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardCreditAuthorization
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate a credit authorization against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              creditAuth:
+                summary: $25.00 credit authorization
+                value:
+                  amount: 2500
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: ACME MARKETPLACE
+                    mcc: '5942'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/financial_authorization:
+    post:
+      summary: Simulate a card financial authorization
+      description: |
+        Simulate a single-message financial authorization (an authorization that clears in the same message, e.g. an ATM withdrawal or other dual-message-exempt flow) against a card in the sandbox environment. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        As with `simulate/authorization`, the decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` suffix table.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardFinancialAuthorization
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate a financial authorization against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              financialAuth:
+                summary: $80.00 single-message ATM withdrawal
+                value:
+                  amount: 8000
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: ATM WITHDRAWAL 24TH ST
+                    mcc: '6011'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/financial_credit_authorization:
+    post:
+      summary: Simulate a card financial credit authorization
+      description: |
+        Simulate a single-message financial credit authorization (a credit to the card that clears in the same message, e.g. an ATM deposit or push credit) against a card in the sandbox environment. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        As with `simulate/authorization`, the decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` suffix table.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardFinancialCreditAuthorization
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card to simulate a financial credit authorization against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              financialCreditAuth:
+                summary: $40.00 single-message push credit
+                value:
+                  amount: 4000
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: ACME PAYOUTS
+                    mcc: '6012'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/authorization_advice:
+    post:
+      summary: Simulate a card authorization advice
+      description: |
+        Simulate an `AUTHORIZATION_ADVICE` that re-sizes an existing open authorization on a `CardTransaction` in the sandbox environment. The `amount` is the new *total* authorized amount the advice re-sizes to. The parent transaction must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardAuthorizationAdvice
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the advice applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationAdviceRequest'
+            examples:
+              resizeUp:
+                summary: Re-size an open auth up to a new total of $20.00
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 2000
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/credit_authorization_advice:
+    post:
+      summary: Simulate a card credit authorization advice
+      description: |
+        Simulate a network-initiated `CREDIT_AUTHORIZATION_ADVICE` against a card in the sandbox environment. Like `simulate/credit_authorization`, it is keyed by the card (PAN) and `merchant` rather than an existing transaction. Drives the same internal paths the card issuer would call in production. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        As with `simulate/authorization`, the decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` suffix table.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardCreditAuthorizationAdvice
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the advice applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardAuthorizationRequest'
+            examples:
+              creditAdvice:
+                summary: $25.00 credit authorization advice
+                value:
+                  amount: 2500
+                  currency:
+                    code: USD
+                  merchant:
+                    descriptor: ACME MARKETPLACE
+                    mcc: '5942'
+                    country: US
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found (also returned in production for this path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/return_reversal:
+    post:
+      summary: Simulate a card return reversal
+      description: |
+        Simulate a `RETURN_REVERSAL` against an existing `REFUNDED` card transaction in the sandbox environment — reversing a previously settled return. The parent transaction must be in `REFUNDED` state. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+
+        Note: authorization reversal / void has no dedicated card-issuer simulate path (the void simulator emits a distinct `VOID` event), so — like authorization expiry — it is not exposed here.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardReturnReversal
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the return reversal applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardTransactionRefRequest'
+            examples:
+              returnReversal:
+                summary: Reverse a settled return on a refunded transaction
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
         '400':
           description: Bad request - Invalid parameters
           content:
@@ -7772,6 +9417,38 @@ webhooks:
                     description: Payment for services
                     reconciliationInstructions:
                       reference: REF-123456789
+              incomingCompletedCryptoPayment:
+                summary: Completed payment funded from an external crypto wallet
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+                  type: INCOMING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000006
+                    status: COMPLETED
+                    type: INCOMING
+                    direction: CREDIT
+                    source:
+                      sourceType: REALTIME_FUNDING
+                      currency: USDC
+                      onChainTransaction:
+                        transactionHash: 7RJWhvQBQPEjJmki5fhBboGBWRJhmcFkMvrr4Fu3tMSJ5EdynMEiYSyiWAH9GpcbHpeUzeSQF9ZY6q4x8AhBskUf
+                        network: SOLANA
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    receivedAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: USDC deposit from self-custody wallet
       responses:
         '200':
           description: |
@@ -7899,6 +9576,47 @@ webhooks:
                       gridApiFixedFee: 10
                       gridApiVariableFeeRate: 0.003
                       gridApiVariableFeeAmount: 30
+              outgoingCompletedCryptoPayment:
+                summary: Completed crypto payout to an external wallet
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000008
+                  type: OUTGOING_PAYMENT.COMPLETED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000009
+                    status: COMPLETED
+                    type: OUTGOING
+                    direction: DEBIT
+                    source:
+                      sourceType: ACCOUNT
+                      accountId: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    destination:
+                      destinationType: ACCOUNT
+                      accountId: ExternalAccount:c34dcbd6-dced-4ec4-b756-3c3a9ea3d789
+                      onChainTransaction:
+                        transactionHash: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+                        network: SOLANA
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    sentAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    receivedAmount:
+                      amount: 100000
+                      currency:
+                        code: USDC
+                        name: USD Coin
+                        symbol: ''
+                        decimals: 6
+                    quoteId: Quote:019542f5-b3e7-1d02-0000-000000000010
+                    settledAt: '2025-08-15T14:30:00Z'
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: USDC withdrawal to self-custody wallet
+                    paymentInstructions: []
               failedPayment:
                 summary: Failed outgoing payment
                 value:
@@ -8566,7 +10284,6 @@ webhooks:
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
-                    panEmbedUrl: https://embed.lithic.com/iframe/...?t=...
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     currency: USD
@@ -8686,6 +10403,249 @@ webhooks:
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:30:00Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+  card-transaction:
+    post:
+      summary: Card transaction
+      description: |
+        Webhook that is called on every state transition of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
+
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+      operationId: cardTransactionWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardTransactionWebhook'
+            examples:
+              authorized:
+                summary: Authorization approved
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+                  type: CARD_TRANSACTION.AUTHORIZED
+                  timestamp: '2026-05-09T10:00:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    status: AUTHORIZED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 1
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 0
+                      totalAmount: 0
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-09T10:00:00Z'
+              settled:
+                summary: All clearings posted
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+                  type: CARD_TRANSACTION.SETTLED
+                  timestamp: '2026-05-09T15:42:11Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    status: SETTLED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 0
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 12550
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    lastEventAt: '2026-05-09T15:42:11Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-09T15:42:11Z'
+              refunded:
+                summary: Settled funds returned by the merchant
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000042
+                  type: CARD_TRANSACTION.REFUNDED
+                  timestamp: '2026-05-10T09:15:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_b81c2a4f
+                    status: REFUNDED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: BLUE BOTTLE COFFEE SF
+                      mcc: '5814'
+                      country: US
+                    authorizedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    refundedAmount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 12550
+                      pendingCount: 0
+                    refundSummary:
+                      count: 1
+                      totalAmount: 12550
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 12550
+                    authorizedAt: '2026-05-09T10:00:00Z'
+                    lastEventAt: '2026-05-10T09:15:00Z'
+                    createdAt: '2026-05-09T10:00:00Z'
+                    updatedAt: '2026-05-10T09:15:00Z'
+              exception:
+                summary: Settled to the network but the funding-source pull failed
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000043
+                  type: CARD_TRANSACTION.EXCEPTION
+                  timestamp: '2026-05-09T16:05:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_c92d3b5a
+                    status: EXCEPTION
+                    direction: DEBIT
+                    merchant:
+                      descriptor: UBER EATS
+                      mcc: '5812'
+                      country: US
+                    authorizedAmount:
+                      amount: 4200
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    settledAmount:
+                      amount: 4200
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 1
+                      totalAmount: 0
+                      pendingCount: 0
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 1
+                      totalAmount: 4200
+                    authorizedAt: '2026-05-09T15:30:00Z'
+                    lastEventAt: '2026-05-09T16:05:00Z'
+                    createdAt: '2026-05-09T15:30:00Z'
+                    updatedAt: '2026-05-09T16:05:00Z'
       responses:
         '200':
           description: |
@@ -9504,7 +11464,8 @@ components:
         - PENDING
         - APPROVED
         - REJECTED
-      description: The current KYC status of a customer
+        - HOLD
+      description: The current KYC status of a customer. `HOLD` means the customer is placed on hold and may be required to update or provide more information.
       example: APPROVED
     Address:
       type: object
@@ -9575,7 +11536,8 @@ components:
         - PENDING
         - APPROVED
         - REJECTED
-      description: The current KYB status of a business customer
+        - HOLD
+      description: The current KYB status of a business customer. `HOLD` means the customer is placed on hold and may be required to update or provide more information.
       example: APPROVED
     EntityType:
       type: string
@@ -9631,6 +11593,18 @@ components:
         - OTHER
       description: The intended purpose for using the Grid account
       example: CONTRACTOR_PAYOUTS
+    SourceOfFundsCategory:
+      type: string
+      enum:
+        - OPERATING_REVENUE
+        - INVESTMENT_INCOME
+        - LOANS
+        - VENTURE_CAPITAL
+        - PERSONAL_SAVINGS
+        - DONATIONS
+        - OTHER
+      description: A structured source-of-funds category for the business
+      example: OPERATING_REVENUE
     BusinessInfoUpdate:
       type: object
       description: Additional information for business entities
@@ -9702,6 +11676,37 @@ components:
           items:
             type: string
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFundsCategory'
+          description: Structured source-of-funds categories for the business
+          example:
+            - OPERATING_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
     BusinessCustomerFields:
@@ -9795,6 +11800,37 @@ components:
           items:
             type: string
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
+          example:
+            - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFundsCategory'
+          description: Structured source-of-funds categories for the business
+          example:
+            - OPERATING_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
     BeneficialOwnerRole:
@@ -10115,12 +12151,45 @@ components:
           description: List of countries where the business expects to send payments (ISO 3166-1 alpha-2)
           example:
             - US
+        naicsCode:
+          type: string
+          pattern: ^\d{2,6}$
+          description: NAICS code describing the nature of the business (2-6 digits)
+          example: '541511'
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfFundsCategory'
+          description: Structured source-of-funds categories for the business
+          example:
+            - OPERATING_REVENUE
+        sourceOfFundsOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the source of funds when OTHER is selected
+          example: Proceeds from a legal settlement
+        purposeOfAccountOtherDescription:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Description of the account purpose when OTHER is selected
+          example: Escrow for equipment leases
+        expectedCounterpartyCountries:
+          type: array
+          items:
+            type: string
+          description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
+          example:
+            - US
     BusinessCustomerCreateRequest:
       title: Business Customer Create Request
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/BusinessCustomerFields'
         - type: object
+          required:
+            - businessInfo
           properties:
             businessInfo:
               $ref: '#/components/schemas/BusinessInfo'
@@ -10154,12 +12223,14 @@ components:
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
+            | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - UMA_ADDRESS_EXISTS
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
+            - PASSKEY_ALREADY_ENROLLED
             - CONFLICT
         message:
           type: string
@@ -10396,6 +12467,653 @@ components:
           type: string
           description: The one-time verification code the customer received via email or SMS. In sandbox, the code is always `123456`.
           example: '123456'
+    ScaFactor:
+      type: string
+      enum:
+        - SMS_OTP
+        - TOTP
+        - PASSKEY
+      description: |
+        A Strong Customer Authentication factor.
+
+        | Factor | Description |
+        |--------|-------------|
+        | `SMS_OTP` | One-time code sent by SMS to the customer's verified phone. Requires no prior enrollment. |
+        | `TOTP` | Time-based one-time code from an authenticator app. Requires enrollment. Not valid for per-transaction challenges (cannot carry dynamic linking). |
+        | `PASSKEY` | WebAuthn passkey assertion. Requires enrollment. |
+    ScaFactorView:
+      type: object
+      description: An enrolled Strong Customer Authentication factor.
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The kind of enrolled factor.
+        credentialId:
+          type: string
+          description: The per-credential id, populated only for `PASSKEY` factors (the id passed to delete a passkey). Omitted for `TOTP` and `SMS_OTP`, which have no per-credential id.
+        name:
+          type: string
+          description: An optional human-readable label for this factor.
+    ScaFactorList:
+      type: object
+      description: The Strong Customer Authentication factors a customer has enrolled.
+      required:
+        - factors
+      properties:
+        factors:
+          type: array
+          description: The customer's enrolled SCA factors.
+          items:
+            $ref: '#/components/schemas/ScaFactorView'
+    TotpFactorEnrollRequest:
+      type: object
+      title: TOTP Factor Enroll Request
+      description: Start enrolling a time-based one-time-password (TOTP) authenticator factor.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - TOTP
+          description: Discriminator selecting the TOTP factor. TOTP enrollment needs no other input at start.
+    PasskeyFactorEnrollRequest:
+      type: object
+      title: Passkey Factor Enroll Request
+      description: Start enrolling a WebAuthn passkey factor.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator selecting the passkey factor. Passkey enrollment needs no other input at start.
+    ScaFactorEnrollRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/TotpFactorEnrollRequest'
+        - $ref: '#/components/schemas/PasskeyFactorEnrollRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          TOTP: '#/components/schemas/TotpFactorEnrollRequest'
+          PASSKEY: '#/components/schemas/PasskeyFactorEnrollRequest'
+      description: Which SCA factor to begin enrolling, selected by `type`. `SMS_OTP` is not enrollable (it uses the customer's verified phone), so only `TOTP` and `PASSKEY` are valid here.
+    TotpEnrollmentStart:
+      type: object
+      description: The shared secret a customer's authenticator app needs to enroll a TOTP factor. Returned by `POST /sca/factors` for a `TOTP` request; the customer scans `totpUri` (an `otpauth://` provisioning URI) and confirms with the first code their app produces.
+      required:
+        - type
+        - secret
+        - secretBase32Encoded
+        - totpUri
+      properties:
+        type:
+          type: string
+          enum:
+            - TOTP
+          description: Discriminator identifying this as the TOTP enrollment-start payload.
+        secret:
+          type: string
+          description: The raw TOTP shared secret.
+        secretBase32Encoded:
+          type: string
+          description: The Base32-encoded shared secret, suitable for manual entry into an authenticator app that does not scan QR codes.
+        totpUri:
+          type: string
+          description: The `otpauth://` provisioning URI (the QR-code payload) the customer's authenticator app scans to enroll the factor.
+          example: otpauth://totp/Grid:customer@example.com?secret=ABC123&issuer=Grid
+    PasskeyEnrollmentStart:
+      type: object
+      description: Opaque WebAuthn registration options relayed to the end user's device to enroll a passkey factor. Grid performs no crypto; pass `options` to the device's WebAuthn API to produce a credential, then submit that credential to the confirm endpoint unmodified.
+      required:
+        - type
+        - options
+        - allowedOrigins
+        - relyingPartyId
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator identifying this as the passkey enrollment-start payload.
+        options:
+          type: object
+          additionalProperties: true
+          description: Opaque WebAuthn `PublicKeyCredentialCreationOptions`. Pass to the device's WebAuthn registration API unmodified.
+        allowedOrigins:
+          type: array
+          description: The origins the WebAuthn registration ceremony may run against. The origin the credential is produced against must be one of these and must be echoed back on the confirm call.
+          items:
+            type: string
+          example:
+            - https://app.example.com
+        relyingPartyId:
+          type: string
+          description: The WebAuthn relying-party id the credential is bound to.
+          example: app.example.com
+    ScaFactorEnrollStartOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/TotpEnrollmentStart'
+        - $ref: '#/components/schemas/PasskeyEnrollmentStart'
+      discriminator:
+        propertyName: type
+        mapping:
+          TOTP: '#/components/schemas/TotpEnrollmentStart'
+          PASSKEY: '#/components/schemas/PasskeyEnrollmentStart'
+      description: 'The factor-specific material needed to complete enrollment, keyed by `type`: a TOTP shared secret + provisioning URI, or the WebAuthn registration options for a passkey.'
+    TotpEnrollmentConfirmRequest:
+      type: object
+      description: The shared secret returned by the TOTP enrollment start, plus the first code the customer's authenticator app produces, submitted to confirm and finalize the TOTP factor.
+      required:
+        - type
+        - secret
+        - code
+      properties:
+        type:
+          type: string
+          enum:
+            - TOTP
+          description: Discriminator selecting the TOTP confirm variant.
+        secret:
+          type: string
+          description: The shared secret returned as `secret` by the TOTP enrollment start, threaded back to bind the confirmation to that enrollment.
+        code:
+          type: string
+          description: The current time-based one-time code from the customer's authenticator app. In sandbox, the code is always `123456`.
+          example: '123456'
+    PasskeyEnrollmentConfirmRequest:
+      type: object
+      description: The WebAuthn credential a device produced for a passkey registration challenge, submitted to enroll the passkey factor.
+      required:
+        - type
+        - origin
+        - credential
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator selecting the passkey confirm variant.
+        origin:
+          type: string
+          description: The WebAuthn origin the `credential` was produced against (one of the enrollment start's `allowedOrigins`).
+          example: https://app.example.com
+        credential:
+          type: object
+          additionalProperties: true
+          description: Opaque WebAuthn credential the device produced from the enrollment start's `options`.
+    ScaFactorConfirmRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/TotpEnrollmentConfirmRequest'
+        - $ref: '#/components/schemas/PasskeyEnrollmentConfirmRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          TOTP: '#/components/schemas/TotpEnrollmentConfirmRequest'
+          PASSKEY: '#/components/schemas/PasskeyEnrollmentConfirmRequest'
+      description: 'The proof that finalizes enrollment, keyed by `type`: the TOTP shared secret + code, or the passkey `origin` + `credential`.'
+    TotpEnrollmentConfirmResponse:
+      type: object
+      description: The one-time recovery codes issued once a TOTP factor is enrolled. These are shown to the customer only once; store them somewhere safe to recover access if the authenticator device is lost.
+      required:
+        - type
+        - recoveryCodes
+      properties:
+        type:
+          type: string
+          enum:
+            - TOTP
+          description: Discriminator identifying this as the TOTP enrollment result.
+        recoveryCodes:
+          type: array
+          description: The one-time recovery codes for this TOTP factor.
+          items:
+            type: string
+          example:
+            - ABCD-EFGH-IJKL
+            - MNOP-QRST-UVWX
+    PasskeyEnrollmentConfirmResponse:
+      type: object
+      description: The enrolled passkey factor returned after a successful confirmation.
+      required:
+        - type
+        - factor
+      properties:
+        type:
+          type: string
+          enum:
+            - PASSKEY
+          description: Discriminator identifying this as the passkey enrollment result.
+        factor:
+          $ref: '#/components/schemas/ScaFactorView'
+    ScaFactorConfirmResponseOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/TotpEnrollmentConfirmResponse'
+        - $ref: '#/components/schemas/PasskeyEnrollmentConfirmResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          TOTP: '#/components/schemas/TotpEnrollmentConfirmResponse'
+          PASSKEY: '#/components/schemas/PasskeyEnrollmentConfirmResponse'
+      description: The enrollment result, keyed by `type`.
+    ScaLoginStartRequest:
+      type: object
+      description: Selects which enrolled factor to start an SCA login with. The factor must already be enrolled (or, for `SMS_OTP`, the phone verified).
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor to authenticate with.
+    ScaLoginStart:
+      type: object
+      description: 'The factor-specific material a customer needs to complete an SCA login. Each factor surfaces only the fields it issues: `SMS_OTP` carries `challengeId` and `expiresAt`; `TOTP` carries neither (the customer reads the code from their authenticator app); `PASSKEY` carries the opaque WebAuthn `passkeyOptions` with `allowedOrigins` and `relyingPartyId`.'
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor this login was started for.
+        challengeId:
+          type:
+            - string
+            - 'null'
+          description: The challenge handle for an `SMS_OTP` login, threaded back on the complete call. Present only for `SMS_OTP`.
+        expiresAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Absolute UTC timestamp after which the `SMS_OTP` code expires. Present only for `SMS_OTP`.
+          example: '2025-10-03T12:05:00Z'
+        passkeyOptions:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion request options. Present only for `PASSKEY`; pass to the device's WebAuthn API to produce the assertion submitted on the complete call.
+        allowedOrigins:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: The origins the WebAuthn ceremony may run against. Present only for `PASSKEY`.
+          example:
+            - https://app.example.com
+        relyingPartyId:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn relying-party id. Present only for `PASSKEY`.
+          example: app.example.com
+    ScaLoginCompleteRequest:
+      type: object
+      description: Completes an SCA login by submitting the proof for the started factor. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being completed and, for `SMS_OTP`, the `challengeId` returned by the login start.
+      required:
+        - factor
+      anyOf:
+        - required:
+            - code
+        - required:
+            - passkeyAssertion
+            - origin
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor being completed; must match the started login.
+        challengeId:
+          type:
+            - string
+            - 'null'
+          description: The challenge handle returned by the login start, required for `SMS_OTP` and omitted for other factors.
+        code:
+          type:
+            - string
+            - 'null'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `123456`.
+          example: '123456'
+        passkeyAssertion:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion produced by the device from the login start's `passkeyOptions`. Required when completing a `PASSKEY` login.
+        origin:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn origin the `passkeyAssertion` was produced against (one of the login start's `allowedOrigins`). Required alongside `passkeyAssertion`; omit it for the `code` path.
+          example: https://app.example.com
+    ScaLoginComplete:
+      type: object
+      description: The status of a completed SCA login session.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: The status of the login session, passed through verbatim (Grid does not normalize it). A successful login reports `SUCCESS`; other values indicate the login did not complete and should be surfaced to the caller.
+          example: SUCCESS
+    Error423:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 423
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | ACCOUNT_LOCKED | The customer's login is temporarily locked (or suspended) after too many failed attempts. Inspect `details.lockedUntil` for when the customer may retry, and `details.failedAttempts` for the current count. |
+          enum:
+            - ACCOUNT_LOCKED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Lockout detail. `lockedUntil` is the UTC timestamp the customer may retry after (absent when suspended indefinitely); `failedAttempts` is the current cumulative failed-login count; `suspended` is true when the account is locked with no automatic expiry.
+          properties:
+            suspended:
+              type: boolean
+            lockedUntil:
+              type:
+                - string
+                - 'null'
+              format: date-time
+            failedAttempts:
+              type: integer
+          additionalProperties: true
+    RecordSecurityEventRequest:
+      type: object
+      description: Records a client-side security event for the customer so Grid can maintain the customer's login-security state (SCA session revocation and failed-login lockout).
+      required:
+        - eventType
+      properties:
+        eventType:
+          type: string
+          enum:
+            - RESET_PASSWORD_COMPLETED
+            - FAILED_LOGIN_ATTEMPT
+          description: |
+            The security event to record:
+
+            | Value | Effect |
+            |-------|--------|
+            | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
+            | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
+          example: FAILED_LOGIN_ATTEMPT
+    RecordSecurityEventResponse:
+      type: object
+      description: The customer's login-security state after recording the event, so the integrator can surface a lockout to the end user.
+      required:
+        - eventType
+        - suspended
+        - failedAttempts
+      properties:
+        eventType:
+          type: string
+          enum:
+            - RESET_PASSWORD_COMPLETED
+            - FAILED_LOGIN_ATTEMPT
+          description: The event that was recorded.
+          example: FAILED_LOGIN_ATTEMPT
+        suspended:
+          type: boolean
+          description: Whether the customer's login is currently suspended (locked with no automatic expiry). A suspended customer must go through a password reset (`RESET_PASSWORD_COMPLETED`) to clear the lockout.
+        lockedUntil:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: When the customer may attempt to log in again, if temporarily locked. Null when not locked, or when `suspended` is true (no automatic expiry).
+          example: '2025-10-03T12:15:00Z'
+        failedAttempts:
+          type: integer
+          description: The customer's current cumulative failed-login count.
+          example: 5
+    TwoFactorResetStartRequest:
+      type: object
+      description: Selects which enrolled factor to reset via the liveness-gated recovery flow.
+      required:
+        - factor
+      properties:
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The enrolled factor to reset.
+    TwoFactorResetStart:
+      type: object
+      description: The reset handle plus the opaque liveness handles a caller relays to the end-user device to complete the liveness check. `resetId` threads the ceremony together (status and complete reference it). `livenessAccessToken` and `verificationLink` are omitted when they are not returned.
+      required:
+        - resetId
+      properties:
+        resetId:
+          type: string
+          description: Identifier for this reset; pass it to the status and complete endpoints.
+        livenessAccessToken:
+          type:
+            - string
+            - 'null'
+          description: Access token for the embedded liveness/verification SDK, bound to this reset. Omitted when one is not returned.
+        verificationLink:
+          type:
+            - string
+            - 'null'
+          description: Hosted identity-verification page URL for completing liveness. Omitted when one is not returned.
+        expiresAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Absolute UTC timestamp at the end of the reset window. Omitted when one is not returned.
+          example: '2025-10-03T12:30:00Z'
+    Error429:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 429
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+          enum:
+            - RATE_LIMITED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    TwoFactorResetStatus:
+      type: object
+      description: The status of an in-progress 2FA reset, polled until it reaches a terminal value.
+      required:
+        - status
+        - factor
+        - expiresAt
+      properties:
+        status:
+          type: string
+          enum:
+            - INITIATED
+            - PENDING_REVIEW
+            - LIVENESS_PASSED
+            - COMPLETED
+            - REJECTED
+            - EXPIRED
+          description: |-
+            The reset status.
+            | Value | Terminal | Meaning | |-------|----------|---------| | `INITIATED` | no | Reset started; liveness not yet submitted. Keep polling. | | `PENDING_REVIEW` | no | Liveness submitted; under review. Keep polling. | | `LIVENESS_PASSED` | no | Liveness passed; call the complete endpoint to finish the reset. | | `COMPLETED` | **yes** | Reset finished; the lost factor is cleared and re-enrollment can begin. | | `REJECTED` | **yes** | Liveness failed. Stop polling; start a new reset. | | `EXPIRED` | **yes** | The reset window closed before it completed. Stop polling; start a new reset. |
+            Stop polling on any terminal value.
+          example: INITIATED
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor being reset.
+        enrollmentStatus:
+          type:
+            - string
+            - 'null'
+          enum:
+            - PENDING
+            - COMPLETED
+            - null
+          description: The enrollment status of the replacement factor. `PENDING` until the customer finishes re-enrolling, then `COMPLETED`. Null for an `SMS_OTP` reset, where completing the reset enrolls the new number directly with no separate enrollment step.
+          example: PENDING
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the reset window closes. Poll no longer than this.
+          example: '2025-10-03T12:15:00Z'
+        completedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: When the reset completed; null until then.
+          example: null
+    TwoFactorResetCompleteRequest:
+      type: object
+      description: Optional body for completing a 2FA reset. Only needed when resetting the `SMS_OTP` factor to a new phone number; omit the body entirely otherwise.
+      properties:
+        mobile:
+          type: object
+          description: For an `SMS_OTP` reset, the new mobile number to enroll as the customer completes the reset. Required for an `SMS_OTP` reset; ignored for `TOTP` / `PASSKEY` resets.
+          required:
+            - countryCode
+            - number
+          properties:
+            countryCode:
+              type: string
+              description: The country dialing code, including the leading `+`.
+              example: '+1'
+            number:
+              type: string
+              description: The national subscriber number, without the country code.
+              example: '4155550123'
+    ScaChallenge:
+      type: object
+      description: |-
+        A Strong Customer Authentication challenge that must be satisfied before a money-movement operation can complete. This object is **only present when the customer is in a region where SCA is required** (the EU); for customers outside SCA-regulated regions it is omitted entirely and no action is needed.
+
+        When present on a quote, authorize it by submitting an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize`.
+
+        **A single operation may require more than one authorization, in sequence.** Treat `scaChallenge` as *the challenge to satisfy now*, not "the only one". After each authorize, re-inspect the returned quote/transaction: if it is still `PENDING_AUTHORIZATION`, it carries the **next** `scaChallenge` (a new `id`) — authorize that too, and repeat until it leaves `PENDING_AUTHORIZATION`. Do not assume one authorization releases the transfer. The number of authorizations is flow-dependent and **may decrease in future**: for example, a cross-currency send today authorizes the currency conversion and the payout as two separate challenges; a future update may collapse them into one. A client written to loop on status handles any count unchanged.
+      required:
+        - id
+        - expiresAt
+        - factor
+        - availableFactors
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this challenge. The server resolves the active challenge from the quote or transaction being authorized, so this field need not be supplied back; it is informational (e.g. for logging or correlation).
+          example: ScaChallenge:019542f5-b3e7-1d02-0000-000000000007
+        expiresAt:
+          type: string
+          format: date-time
+          description: Absolute UTC timestamp after which this challenge can no longer be authorized.
+          example: '2025-10-03T12:05:00Z'
+        factor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: The factor this challenge was issued for. Defaults to `SMS_OTP`.
+        availableFactors:
+          type: array
+          description: The factors the customer may use to satisfy this challenge.
+          items:
+            $ref: '#/components/schemas/ScaFactor'
+          example:
+            - SMS_OTP
+        purpose:
+          type:
+            - string
+            - 'null'
+          description: Optional, informational label for what this particular challenge in the sequence authorizes — useful for step UX (e.g. "Authorize the currency conversion" vs "Authorize the payout"). Known values include `CURRENCY_CONVERSION`, `PAYOUT`, and `TRANSFER`, but the set is **non-exhaustive and may grow** — treat unrecognized values as a generic authorization step and do not branch program logic on it. Omitted when steps are not distinguished (e.g. a single-authorization flow).
+          example: PAYOUT
+        passkeyAssertionOptions:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion request options (including the relying-party id, challenge, and allowed credentials), present only when `factor` is `PASSKEY`. Pass to the device's WebAuthn API to produce the assertion submitted back in `ScaAuthorization.passkeyAssertion`.
+        passkeyAllowedOrigins:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: The origins the WebAuthn ceremony may run against. Populated for enrollment and login passkey challenges; the origin the assertion is produced against must be one of these and echoed back as `ScaAuthorization.origin`. Per-transaction passkey challenges omit this (they carry `passkeyAssertionOptions` only) — see `ScaAuthorization.origin` for how to source the origin in that case.
+          example:
+            - https://app.example.com
+    BeneficiaryTrustStart:
+      type: object
+      description: The SCA challenge (if any) a caller authorizes to finish trusting (or untrusting) a beneficiary. The beneficiary is identified by its `externalAccountId`, so the confirm call needs no separate handle. `scaChallenge` is omitted when no challenge is issued; the caller then confirms without a `challengeId`.
+      properties:
+        scaChallenge:
+          $ref: '#/components/schemas/ScaChallenge'
+          description: The SCA challenge to satisfy on the confirm call. Omitted when no challenge is issued.
+    BeneficiaryTrustConfirmRequest:
+      type: object
+      description: Confirms trusting or untrusting a beneficiary by submitting the SCA proof. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`) and, when the start issued one, the `challengeId`. The beneficiary is identified by the `externalAccountId` in the path — no separate handle is needed.
+      anyOf:
+        - required:
+            - code
+        - required:
+            - passkeyAssertion
+            - origin
+      properties:
+        challengeId:
+          type:
+            - string
+            - 'null'
+          description: The challenge handle from the trust start's `scaChallenge`, when one was issued. Omit when the start returned no challenge.
+        code:
+          type:
+            - string
+            - 'null'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. Provide for `SMS_OTP` / `TOTP`. In sandbox, the code is always `123456`.
+          example: '123456'
+        passkeyAssertion:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion produced by the device from the challenge's assertion options. Required when satisfying a `PASSKEY` challenge.
+        origin:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn origin the `passkeyAssertion` was produced against. Required alongside `passkeyAssertion`; omit it for the `code` path.
+          example: https://app.example.com
+    BeneficiaryTrustConfirm:
+      type: object
+      description: The result of a confirm-trust / confirm-untrust call. `trusted` is `true` after a successful trust and `false` after a successful untrust.
+      required:
+        - trusted
+      properties:
+        trusted:
+          type: boolean
+          description: Whether the beneficiary is now trusted. `true` after a successful trust, `false` after a successful untrust.
     InternalAccountType:
       title: Internal Account Type
       type: string
@@ -10417,6 +13135,7 @@ components:
         - ACTIVE
         - CLOSED
         - FROZEN
+        - FAILED
       description: |-
         Status of a Grid internal account. The status determines whether the account can send or receive payments.
 
@@ -10424,6 +13143,7 @@ components:
         - `ACTIVE`: The account is ready to send and receive payments.
         - `CLOSED`: The account cannot send or receive payments. A customer can initiate the closing of an internal account, after which the account transitions to this status.
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
+        - `FAILED`: The account could not be provisioned. Grid was unable to create the underlying account, so it cannot send or receive payments and requires remediation.
       example: ACTIVE
     PaymentAccountType:
       type: string
@@ -10695,7 +13415,11 @@ components:
       type: object
       required:
         - accountType
-        - vpa
+      description: |-
+        Required fields depend on the selected paymentRails:
+        - NEFT: accountNumber, ifsc, rail
+        - RTGS: accountNumber, ifsc, rail
+        - UPI: vpa
       properties:
         accountType:
           type: string
@@ -10708,9 +13432,38 @@ components:
           minLength: 3
           maxLength: 255
           pattern: ^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$
+        accountNumber:
+          type: string
+          description: Indian bank account number (9–18 digits)
+          minLength: 9
+          maxLength: 18
+          example: '000111222333'
+          pattern: ^[0-9]{9,18}$
+        ifsc:
+          type: string
+          description: The Indian Financial System Code (IFSC) of the beneficiary's bank branch (NEFT/RTGS)
+          example: HDFC0001234
+          minLength: 11
+          maxLength: 11
+          pattern: ^[A-Z]{4}0[A-Z0-9]{6}$
+        rail:
+          type: string
+          description: The payment rail to route the payout over, for currencies that support more than one (e.g. NEFT or RTGS for INR).
+          example: NEFT
+          minLength: 1
+          maxLength: 32
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
       example:
         accountType: INR_ACCOUNT
         vpa: user@upi
+        accountNumber: '000111222333'
+        ifsc: HDFC0001234
+        rail: NEFT
+        bankName: Example Bank
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -10724,6 +13477,8 @@ components:
                 type: string
                 enum:
                   - UPI
+                  - NEFT
+                  - RTGS
     PaymentInrAccountInfo:
       title: INR Account
       allOf:
@@ -11353,10 +14108,7 @@ components:
           properties:
             assetType:
               type: string
-              description: Type of asset
-              enum:
-                - BTC
-                - USDB
+              description: Type of asset or configured Spark token currency code
             invoice:
               type: string
               description: Invoice for the payment
@@ -12383,15 +15135,14 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the beneficiary's bank
           minLength: 1
           maxLength: 255
-          example: Banco GYT Continental
       example:
         accountType: GTQ_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
-        bankName: Banco GYT Continental
+        bankName: Example Bank
     GtqAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GtqAccountInfoBase'
@@ -12499,13 +15250,12 @@ components:
           description: The name of the bank
           minLength: 1
           maxLength: 255
-          example: Bank of Nova Scotia
       example:
         accountType: JMD_ACCOUNT
         accountNumber: '1234567890'
         branchCode: '11111'
         bankAccountType: CHECKING
-        bankName: Bank of Nova Scotia
+        bankName: Example Bank
     JmdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/JmdAccountInfoBase'
@@ -16628,6 +19378,8 @@ components:
         - APPLICANT_CRIMINAL_RECORD
         - APPLICANT_REJECTED
         - MISSING_BENEFICIAL_OWNER
+        - MISSING_CONTROL_PERSON
+        - MISSING_GOOD_STANDING_DOCUMENT
       description: Type of verification error. The category-specific MISSING_*_DOCUMENT types indicate which document category is needed. Document quality types (POOR_QUALITY_DOCUMENT, SUSPECTED_FRAUD_DOCUMENT, etc.) indicate specific issues with uploaded documents. APPLICANT_* types indicate issues with the applicant themselves (sanctions, fraud, criminal records).
       example: MISSING_FIELD
     VerificationError:
@@ -16768,6 +19520,7 @@ components:
       enum:
         - CREATED
         - PENDING
+        - PENDING_AUTHORIZATION
         - PROCESSING
         - COMPLETED
         - REJECTED
@@ -16781,6 +19534,7 @@ components:
         |--------|-------------|
         | `CREATED` | Initial lookup has been created |
         | `PENDING` | Quote has been created |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
         | `PROCESSING` | Funding has been received and payment initiated |
         | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
@@ -16811,6 +19565,31 @@ components:
           type: string
           description: Currency code for the destination
           example: EUR
+    CryptoNetwork:
+      type: string
+      enum:
+        - BITCOIN
+        - ETHEREUM
+        - SOLANA
+        - BASE
+        - POLYGON
+        - TRON
+        - SPARK
+      description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
+      example: SOLANA
+    OnChainTransaction:
+      type: object
+      required:
+        - transactionHash
+        - network
+      properties:
+        transactionHash:
+          type: string
+          description: On-chain transaction hash of the crypto transfer for this leg of the transaction.
+          example: h82pJGF9p7kpzb6eU326EFZf2cDnimbTFVeJtx1qtBmUNJAEqN76R7PwPfHt3oWb8R6cKvhgyxQdDn53jFrK6wFx
+        network:
+          $ref: '#/components/schemas/CryptoNetwork'
+          description: Blockchain network the transaction settled on (mainnet vs test network is determined by your platform environment).
     AccountTransactionDestination:
       title: Account Destination
       allOf:
@@ -16828,6 +19607,9 @@ components:
               type: string
               description: Destination account identifier
               example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Destination account details
     UmaAddressTransactionDestination:
       title: UMA Address Destination
@@ -16962,6 +19744,9 @@ components:
               type: string
               description: Source account identifier
               example: InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered funds from this source, when the source is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Source account details
     UmaAddressTransactionSource:
       title: UMA Address Source
@@ -17034,6 +19819,9 @@ components:
               type: string
               description: Rail-level tracking identifier for the payment, such as an ACH trace number or a wire IMAD/OMAD, useful for reconciliation.
               example: '021000020123456'
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain transaction that delivered the funding, when the funds arrived from an external crypto wallet. Populated once the crypto transfer has settled.
           description: Transaction was funded using an external funding source. All originator fields are optional and populated on a best-effort basis depending on what the funding source provides.
     TransactionSourceOneOf:
       oneOf:
@@ -17049,6 +19837,7 @@ components:
     ReconciliationInstructions:
       type: object
       minProperties: 1
+      description: Instructions for reconciling a payment with this transaction. For the on-chain transaction to or from an external crypto wallet that is the transaction's own source or destination, use the `onChainTransaction` on the relevant source or destination instead.
       properties:
         reference:
           type: string
@@ -17056,7 +19845,7 @@ components:
           example: UMA-Q12345-REF
         transactionHash:
           type: string
-          description: Transaction hash for the crypto transfer that delivered funds to the transaction destination, when available.
+          description: Transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available. This is not a transfer to a customer's own wallet; for that, see the `onChainTransaction` on the transaction's source or destination.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingRateDetails:
       description: 'Details about the rate and fees for an incoming transaction. Note: `gridApiFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
@@ -17140,6 +19929,7 @@ components:
       type: string
       enum:
         - PENDING
+        - PENDING_AUTHORIZATION
         - EXPIRED
         - PROCESSING
         - COMPLETED
@@ -17150,6 +19940,7 @@ components:
         | Status | Description |
         |--------|-------------|
         | `PENDING` | Quote is pending confirmation |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
         | `EXPIRED` | Quote wasn't executed before expiry window |
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | Payout successfully reached the destination |
@@ -17297,7 +20088,7 @@ components:
               example: 5
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
-              description: Reconciliation details for this transaction, including crypto transaction hash when available.
+              description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `onChainTransaction` instead.
             quoteId:
               type: string
               description: The ID of the quote that was used to trigger this payment
@@ -17833,11 +20624,12 @@ components:
           type: string
           enum:
             - PENDING
+            - PENDING_AUTHORIZATION
             - PROCESSING
             - COMPLETED
             - FAILED
             - EXPIRED
-          description: Current status of the quote
+          description: 'Current status of the quote. `PENDING_AUTHORIZATION` occurs only for customers in a region where Strong Customer Authentication is required (e.g. EU): the quote carries an `scaChallenge` that must be authorized before execution, and for realtime-funding sources `paymentInstructions` are withheld until it is satisfied.'
           example: PENDING
         createdAt:
           type: string
@@ -17912,12 +20704,21 @@ components:
           type: string
           description: The ID of the transaction created from this quote.
           example: Transaction:019542f5-b3e7-1d02-0000-000000000005
+        remittanceInformation:
+          type: string
+          maxLength: 80
+          description: 'Free-form information about the payment that travels with it to the recipient, as provided on the quote request. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
+          example: '12345'
         counterpartyInformation:
           $ref: '#/components/schemas/CounterpartyInformation'
           description: Additional information about the counterparty, if available and required by the platform in their configuration.
         rateDetails:
           $ref: '#/components/schemas/OutgoingRateDetails'
           description: Details about the rate and fees for the transaction.
+        scaChallenge:
+          $ref: '#/components/schemas/ScaChallenge'
+          readOnly: true
+          description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
     QuoteLockSide:
       type: string
       enum:
@@ -17980,8 +20781,16 @@ components:
           type: string
           description: Optional description/memo for the transfer
           example: 'Invoice #1234 payment'
+        remittanceInformation:
+          type: string
+          maxLength: 80
+          description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
+          example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for a Strong Customer Authentication challenge issued at quote creation. Only relevant for a realtime-funding source in a region where SCA is required (e.g. EU); ignored otherwise. Valid values are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected. When the quote is returned in `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.
         senderCustomerInfo:
           type: object
           additionalProperties: true
@@ -17991,6 +20800,35 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
+    ExecuteQuoteRequest:
+      type: object
+      description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.
+      properties:
+        scaFactor:
+          $ref: '#/components/schemas/ScaFactor'
+          description: Optional preferred factor for the Strong Customer Authentication challenge this call issues. Only relevant for customers in a region where SCA is required (e.g. EU); ignored otherwise. Valid values for a per-transaction challenge are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected here. Omit to default to `SMS_OTP`.
+    ScaAuthorization:
+      type: object
+      description: Proof that satisfies an `ScaChallenge`. Provide exactly one of `code` (for `SMS_OTP` / `TOTP`) or `passkeyAssertion` (for `PASSKEY`). When supplying a `passkeyAssertion`, `origin` is **required** — the WebAuthn assertion is bound to the origin it was produced against, and a passkey confirmation is rejected without it.
+      properties:
+        code:
+          type:
+            - string
+            - 'null'
+          description: The one-time code the customer received by SMS, or read from their authenticator app. In sandbox, the code is always `123456`.
+          example: '123456'
+        passkeyAssertion:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Opaque WebAuthn assertion produced by the device from the challenge's `passkeyAssertionOptions`. Required when satisfying a `PASSKEY` challenge.
+        origin:
+          type:
+            - string
+            - 'null'
+          description: The WebAuthn origin the `passkeyAssertion` was produced against. **Required** alongside `passkeyAssertion`; omit it for the `code` path. When the challenge lists `passkeyAllowedOrigins` (enrollment / login challenges), it must be one of those. A per-transaction passkey challenge carries `passkeyAssertionOptions` but may omit `passkeyAllowedOrigins`; in that case supply the origin your app invoked the WebAuthn API from, which must match the relying party in `passkeyAssertionOptions`.
+          example: https://app.example.com
     TransactionListResponse:
       type: object
       required:
@@ -18963,33 +21801,6 @@ components:
               format: date-time
               description: Timestamp after which the session is no longer valid and the `encryptedSessionSigningKey` must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
-    Error429:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 429
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
-          enum:
-            - RATE_LIMITED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
       description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
@@ -19078,6 +21889,24 @@ components:
         - `ACTIVE`: The policy is granted and the key may stamp quote executions.
         - `REVOKED`: The delegated user has been deleted and the key can no longer sign.
       example: ACTIVE
+    DelegatedKeySpendingLimit:
+      title: Delegated Key Spending Limit
+      type: object
+      required:
+        - currencyCode
+        - maxPerTransaction
+      properties:
+        currencyCode:
+          type: string
+          pattern: ^[A-Z0-9]{3,16}$
+          description: Uppercase alphanumeric currency code the limit applies to — ISO 4217 for fiat (e.g. USD), or a Grid token code for stablecoins (e.g. USDB). Must match the card's currency; requests with any other currency are rejected.
+          example: USD
+        maxPerTransaction:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Largest amount a single card transaction may authorize, in the smallest unit of the currency (e.g., cents for USD).
+          example: 5000
     DelegatedKey:
       title: Delegated Key
       type: object
@@ -19119,6 +21948,12 @@ components:
           example: Settlement service key
         status:
           $ref: '#/components/schemas/DelegatedKeyStatus'
+        spendingLimits:
+          type: array
+          uniqueItems: true
+          description: Per-transaction spending limits the key was created with, at most one entry per currency. Absent when the key has no limits.
+          items:
+            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
         createdAt:
           type: string
           format: date-time
@@ -19162,6 +21997,12 @@ components:
           maxLength: 256
           description: Human-readable label for the delegated key.
           example: Card payments key
+        spendingLimits:
+          type: array
+          uniqueItems: true
+          description: Optional per-transaction spending limits for the key, at most one entry per currency — a request with duplicate currency entries is rejected. Grid enforces the limits when authorizing card transactions funded by the key's Embedded Wallet account; a currency with no entry is unlimited. Immutable — revoke the key and create a new one to change limits.
+          items:
+            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
     DelegatedKeySignedRequestChallenge:
       title: Delegated Key Signed Request Challenge
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
@@ -19766,11 +22607,6 @@ components:
           type: integer
           description: Card expiration year (four digits).
           example: 2029
-        panEmbedUrl:
-          type: string
-          format: uri
-          description: URL of the card processor's iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid's servers — render this URL in an iframe in your client to reveal card details.
-          example: https://embed.lithic.com/iframe/...?t=...
         fundingSources:
           type: array
           description: Internal account ids bound to this card as funding sources, in priority order — the first entry is tried first by Authorization Decisioning. Every card has at least one funding source.
@@ -19872,13 +22708,29 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+    CardRevealResponse:
+      type: object
+      required:
+        - panEmbedUrl
+        - expiresAt
+      properties:
+        panEmbedUrl:
+          type: string
+          format: uri
+          description: 'Signed URL of the card processor''s iframe that securely displays the PAN, CVV, and expiry to the cardholder. The full PAN and CVV never cross Grid''s servers — render this URL in an iframe in your client to reveal card details. The URL is a short-lived bearer secret: render it immediately and never store, cache, or log it.'
+          example: https://embed.lithic.com/iframe/...?t=...
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
+          example: '2026-05-08T14:16:00Z'
     SandboxCardAuthorizationRequest:
       type: object
       required:
         - amount
         - currency
         - merchant
-      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/authorization`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the endpoint documentation for the suffix table.
+      description: 'Sandbox-only request body shared by the card authorization-family simulate endpoints: `simulate/authorization`, `simulate/credit_authorization`, `simulate/financial_authorization`, `simulate/financial_credit_authorization`, and `simulate/credit_authorization_advice`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` documentation for the suffix table.'
       properties:
         amount:
           type: integer
@@ -19890,6 +22742,16 @@ components:
           $ref: '#/components/schemas/Currency'
         merchant:
           $ref: '#/components/schemas/CardMerchant'
+    SandboxCardSimulationResponse:
+      type: object
+      required:
+        - issuerTransactionToken
+      description: Response body for the sandbox card-event simulators. The simulate call pokes the card issuer's sandbox; the resulting card operation is delivered asynchronously via the issuer's events webhook, never synchronously in this response.
+      properties:
+        issuerTransactionToken:
+          type: string
+          description: The card issuer's transaction token for the simulated event. Correlates the eventual webhook-delivered card operation back to this simulate call.
+          example: f3a1c2d4-5b6e-7890-abcd-ef0123456789
     SandboxCardClearingRequest:
       type: object
       required:
@@ -19924,6 +22786,41 @@ components:
           description: Return amount in the smallest unit of the transaction's currency. Must be less than or equal to the net settled amount (settled minus previously-refunded).
           exclusiveMinimum: 0
           example: 1500
+    SandboxCardBalanceInquiryRequest:
+      type: object
+      required:
+        - merchant
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/balance_inquiry`. Drives a balance-inquiry authorization against the card. A balance inquiry is always a `0`-amount authorization, so it carries no `amount`.
+      properties:
+        merchant:
+          $ref: '#/components/schemas/CardMerchant'
+    SandboxCardAuthorizationAdviceRequest:
+      type: object
+      required:
+        - cardTransactionId
+        - amount
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/authorization_advice`. Drives an `AUTHORIZATION_ADVICE` that re-sizes an existing open authorization.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the `CardTransaction` the advice re-sizes. Must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state.
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: The new *total* authorized amount, in the smallest unit of the transaction's currency, that the advice re-sizes the authorization to.
+          exclusiveMinimum: 0
+          example: 2000
+    SandboxCardTransactionRefRequest:
+      type: object
+      required:
+        - cardTransactionId
+      description: Sandbox-only request body for simulate endpoints keyed only by an existing card transaction — currently `POST /sandbox/cards/{id}/simulate/return_reversal`.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the `CardTransaction` to act against.
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
     StablecoinProvider:
       type: string
       enum:
@@ -20057,6 +22954,11 @@ components:
         - AGENT_ACTION.PENDING_APPROVAL
         - CARD.STATE_CHANGE
         - CARD.FUNDING_SOURCE_CHANGE
+        - CARD_TRANSACTION.AUTHORIZED
+        - CARD_TRANSACTION.PARTIALLY_SETTLED
+        - CARD_TRANSACTION.SETTLED
+        - CARD_TRANSACTION.REFUNDED
+        - CARD_TRANSACTION.EXCEPTION
         - TEST
       description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
@@ -20159,6 +23061,7 @@ components:
               type: string
               enum:
                 - OUTGOING_PAYMENT.PENDING
+                - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
                 - OUTGOING_PAYMENT.PROCESSING
                 - OUTGOING_PAYMENT.COMPLETED
                 - OUTGOING_PAYMENT.FAILED
@@ -20277,6 +23180,23 @@ components:
               type: string
               enum:
                 - CARD.FUNDING_SOURCE_CHANGE
+    CardTransactionWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/CardTransaction'
+            type:
+              type: string
+              enum:
+                - CARD_TRANSACTION.AUTHORIZED
+                - CARD_TRANSACTION.PARTIALLY_SETTLED
+                - CARD_TRANSACTION.SETTLED
+                - CARD_TRANSACTION.REFUNDED
+                - CARD_TRANSACTION.EXCEPTION
   requestBodies:
     DocumentUploadRequestBody:
       required: true

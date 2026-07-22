@@ -1,0 +1,11 @@
+type: object
+title: Passkey Factor Enroll Request
+description: Start enrolling a WebAuthn passkey factor.
+required:
+  - type
+properties:
+  type:
+    type: string
+    enum:
+      - PASSKEY
+    description: Discriminator selecting the passkey factor. Passkey enrollment needs no other input at start.

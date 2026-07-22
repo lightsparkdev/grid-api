@@ -58,6 +58,15 @@ Sample webhook payload:
   }
 }
 ```
+
+<Note>
+When the transaction's source or destination is an external crypto wallet, that `source` /
+`destination` object also includes an `onChainTransaction` (`transactionHash` + `network`,
+e.g. `SOLANA`) once the crypto transfer settles — use it to match the transfer on a
+block explorer. The hash can land shortly after the terminal status, so a terminal webhook
+payload may not include it yet; retrieve the transaction (`GET /transactions/{id}`) to read
+it once settled.
+</Note>
 </Step>
 
 <Step title="Process events idempotently">

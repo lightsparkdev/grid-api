@@ -1,0 +1,59 @@
+type: object
+description: The status of an in-progress 2FA reset, polled until it reaches a terminal value.
+required:
+  - status
+  - factor
+  - expiresAt
+properties:
+  status:
+    type: string
+    enum:
+      - INITIATED
+      - PENDING_REVIEW
+      - LIVENESS_PASSED
+      - COMPLETED
+      - REJECTED
+      - EXPIRED
+    description: >-
+      The reset status.
+
+      | Value | Terminal | Meaning |
+      |-------|----------|---------|
+      | `INITIATED` | no | Reset started; liveness not yet submitted. Keep polling. |
+      | `PENDING_REVIEW` | no | Liveness submitted; under review. Keep polling. |
+      | `LIVENESS_PASSED` | no | Liveness passed; call the complete endpoint to finish the reset. |
+      | `COMPLETED` | **yes** | Reset finished; the lost factor is cleared and re-enrollment can begin. |
+      | `REJECTED` | **yes** | Liveness failed. Stop polling; start a new reset. |
+      | `EXPIRED` | **yes** | The reset window closed before it completed. Stop polling; start a new reset. |
+
+      Stop polling on any terminal value.
+    example: INITIATED
+  factor:
+    $ref: ./ScaFactor.yaml
+    description: The factor being reset.
+  enrollmentStatus:
+    type:
+      - string
+      - 'null'
+    enum:
+      - PENDING
+      - COMPLETED
+      - null
+    description: >-
+      The enrollment status of the replacement factor. `PENDING` until the
+      customer finishes re-enrolling, then `COMPLETED`. Null for an `SMS_OTP`
+      reset, where completing the reset enrolls the new number directly with no
+      separate enrollment step.
+    example: PENDING
+  expiresAt:
+    type: string
+    format: date-time
+    description: When the reset window closes. Poll no longer than this.
+    example: '2025-10-03T12:15:00Z'
+  completedAt:
+    type:
+      - string
+      - 'null'
+    format: date-time
+    description: When the reset completed; null until then.
+    example: null

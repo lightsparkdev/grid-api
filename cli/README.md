@@ -115,8 +115,14 @@ grid customers kyc-link \
   --customer-id <id> \
   --redirect-url https://example.com/kyc-complete
 
-# Update customer
-grid customers update <customerId> --full-name "Jane Doe"
+# Update customer (--type is the required discriminator)
+grid customers update <customerId> --type INDIVIDUAL --full-name "Jane Doe"
+
+# Contact verification (only required in some regulatory jurisdictions)
+grid customers verify-email <customerId>
+grid customers confirm-email <customerId> --code 123456
+grid customers verify-phone <customerId>
+grid customers confirm-phone <customerId> --code 123456
 
 # Delete customer (prompts for confirmation)
 grid customers delete <customerId>
@@ -143,14 +149,16 @@ grid accounts internal list --platform
 # List external accounts
 grid accounts external list [--customer-id <id>]
 
+# The --account-type value is the API discriminator (currency-suffixed *_ACCOUNT
+# or a wallet type). A beneficiary is required for every fiat account type.
+
 # Create US bank account
 grid accounts external create \
   --customer-id <id> \
   --currency USD \
-  --account-type US_ACCOUNT \
+  --account-type USD_ACCOUNT \
   --account-number "123456789" \
   --routing-number "021000021" \
-  --account-category CHECKING \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "John Doe"
 
@@ -158,7 +166,7 @@ grid accounts external create \
 grid accounts external create \
   --customer-id <id> \
   --currency MXN \
-  --account-type CLABE \
+  --account-type MXN_ACCOUNT \
   --clabe "012345678901234567" \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Carlos Garcia" \
@@ -169,7 +177,7 @@ grid accounts external create \
 grid accounts external create \
   --customer-id <id> \
   --currency INR \
-  --account-type UPI \
+  --account-type INR_ACCOUNT \
   --upi-id "name@okaxis" \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Rajesh Kumar" \
@@ -180,8 +188,9 @@ grid accounts external create \
 grid accounts external create \
   --customer-id <id> \
   --currency BRL \
-  --account-type PIX \
+  --account-type BRL_ACCOUNT \
   --pix-key "12345678901" \
+  --pix-key-type CPF \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Maria Silva" \
   --beneficiary-birth-date "1990-05-10" \
@@ -194,7 +203,6 @@ grid accounts external create \
   --account-type NGN_ACCOUNT \
   --account-number "1234567890" \
   --bank-name "First Bank" \
-  --purpose GOODS_OR_SERVICES \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Chidi Okonkwo" \
   --beneficiary-birth-date "1992-08-20" \
@@ -204,7 +212,7 @@ grid accounts external create \
 grid accounts external create \
   --customer-id <id> \
   --currency EUR \
-  --account-type IBAN \
+  --account-type EUR_ACCOUNT \
   --iban "DE89370400440532013000" \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Hans Mueller"
@@ -302,8 +310,10 @@ grid sandbox fund <internalAccountId> --amount 100000
 # Simulate sending funds to a JIT quote
 grid sandbox send --quote-id <quoteId> --currency USDC
 
-# Simulate receiving an UMA payment
+# Simulate receiving an UMA payment (--sender-uma is required; identify the
+# receiver with either --uma-address or --customer-id)
 grid sandbox receive \
+  --sender-uma '$sender@sandbox.domain.com' \
   --uma-address '$user@domain.com' \
   --amount 1000 \
   --currency USD
@@ -341,7 +351,7 @@ On error:
 grid accounts external create \
   --customer-id <customerId> \
   --currency MXN \
-  --account-type CLABE \
+  --account-type MXN_ACCOUNT \
   --clabe "012345678901234567" \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Carlos Garcia" \

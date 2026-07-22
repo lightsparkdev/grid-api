@@ -1,0 +1,77 @@
+post:
+  summary: Simulate a card authorization advice
+  description: >
+    Simulate an `AUTHORIZATION_ADVICE` that re-sizes an existing open
+    authorization on a `CardTransaction` in the sandbox environment. The
+    `amount` is the new *total* authorized amount the advice re-sizes to. The
+    parent transaction must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state. The
+    resulting card operation is delivered asynchronously via the issuer's events
+    webhook.
+
+
+    Production returns `404` on this path.
+  operationId: sandboxSimulateCardAuthorizationAdvice
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The id of the card the advice applies to.
+      schema:
+        type: string
+      example: Card:019542f5-b3e7-1d02-0000-000000000010
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../../components/schemas/cards/SandboxCardAuthorizationAdviceRequest.yaml
+        examples:
+          resizeUp:
+            summary: Re-size an open auth up to a new total of $20.00
+            value:
+              cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+              amount: 2000
+  responses:
+    '202':
+      description: >-
+        Simulation accepted. The resulting card operation is delivered
+        asynchronously via the issuer's events webhook. Returns the issuer
+        transaction token that correlates the simulated event.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/cards/SandboxCardSimulationResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or card transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error500.yaml

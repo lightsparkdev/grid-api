@@ -1,0 +1,9 @@
+oneOf:
+  - $ref: ./TotpEnrollmentConfirmResponse.yaml
+  - $ref: ./PasskeyEnrollmentConfirmResponse.yaml
+discriminator:
+  propertyName: type
+  mapping:
+    TOTP: ./TotpEnrollmentConfirmResponse.yaml
+    PASSKEY: ./PasskeyEnrollmentConfirmResponse.yaml
+description: The enrollment result, keyed by `type`.

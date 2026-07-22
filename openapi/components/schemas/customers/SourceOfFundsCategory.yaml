@@ -7,5 +7,5 @@ enum:
   - PERSONAL_SAVINGS
   - DONATIONS
   - OTHER
-description: The primary source of funds for the business
+description: A structured source-of-funds category for the business
 example: OPERATING_REVENUE

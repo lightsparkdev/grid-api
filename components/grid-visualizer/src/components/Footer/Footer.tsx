@@ -1,46 +1,59 @@
 'use client';
 
-import type { Theme } from '@/hooks/useTheme';
+import type { ThemePref } from '@/hooks/useTheme';
 import { IconSun } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSun';
 import { IconMoon } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMoon';
+import { IconStudioDisplay } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconStudioDisplay';
 import { IconGithub } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGithub';
+import { DocsSystemIcon, DocsSunIcon, DocsMoonIcon } from './DocsThemeIcons';
 import styles from './Footer.module.scss';
 import clsx from 'clsx';
 
 interface FooterProps {
-  theme: Theme;
-  setTheme: (t: Theme) => void;
+  pref: ThemePref;
+  setPref: (p: ThemePref) => void;
+  /** Embedded in the docs — the toggle mirrors the docs' sidebar switcher
+   *  pixel-for-pixel, including its exact glyphs. Standalone keeps the flow
+   *  builder's own central-icons set (24-grid, non-scaling 1.5 stroke). */
+  embed?: boolean;
 }
 
-export function Footer({ theme, setTheme }: FooterProps) {
+// Mirrors the docs' Mintlify switcher: system / light / dark, in that order,
+// with matching aria-labels — so the embedded footer and the docs sidebar
+// read as the same control.
+const OPTIONS = [
+  {
+    mode: 'system',
+    label: 'Switch to system theme',
+    Icon: IconStudioDisplay,
+    DocsIcon: DocsSystemIcon,
+  },
+  { mode: 'light', label: 'Switch to light theme', Icon: IconSun, DocsIcon: DocsSunIcon },
+  { mode: 'dark', label: 'Switch to dark theme', Icon: IconMoon, DocsIcon: DocsMoonIcon },
+] as const;
+
+export function Footer({ pref, setPref, embed = false }: FooterProps) {
   return (
     <>
       <span className={styles.coordsLabel}>(0, 0, 0)</span>
-      <button
-        className={styles.toggle}
-        type="button"
-        aria-label="Toggle theme"
-        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-      >
-        <span
-          data-mode="light"
-          className={clsx(
-            styles.toggleItem,
-            theme === 'light' && styles.toggleItemActive,
-          )}
-        >
-          <IconSun size={14} />
-        </span>
-        <span
-          data-mode="dark"
-          className={clsx(
-            styles.toggleItem,
-            theme === 'dark' && styles.toggleItemActive,
-          )}
-        >
-          <IconMoon size={14} />
-        </span>
-      </button>
+      <div className={styles.toggle} role="group" aria-label="Theme preference">
+        {OPTIONS.map(({ mode, label, Icon, DocsIcon }) => (
+          <button
+            key={mode}
+            type="button"
+            aria-label={label}
+            aria-pressed={pref === mode}
+            data-mode={mode}
+            className={clsx(
+              styles.toggleItem,
+              pref === mode && styles.toggleItemActive,
+            )}
+            onClick={() => setPref(mode)}
+          >
+            {embed ? <DocsIcon size={12} /> : <Icon size={14} />}
+          </button>
+        ))}
+      </div>
 
       <div className={styles.trailing}>
           <a href="https://docs.lightspark.com" className={styles.link} target="_blank" rel="noopener noreferrer">

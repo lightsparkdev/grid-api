@@ -55,8 +55,27 @@ properties:
     type: string
     description: Optional description/memo for the transfer
     example: 'Invoice #1234 payment'
+  remittanceInformation:
+    type: string
+    maxLength: 80
+    description: >-
+      Free-form information about the payment that travels with it to the
+      recipient. The field this populates depends on the payment rail: for ACH
+      it populates the Addenda record, for FedNow and RTP it populates the
+      remittanceInformation field, and for wires it populates the OBI
+      (Originator to Beneficiary Information) / beneficiary information.
+    example: '12345'
   purposeOfPayment:
     $ref: ./PurposeOfPayment.yaml
+  scaFactor:
+    $ref: ../sca/ScaFactor.yaml
+    description: >-
+      Optional preferred factor for a Strong Customer Authentication challenge
+      issued at quote creation. Only relevant for a realtime-funding source
+      in a region where SCA is required (e.g. EU); ignored otherwise. Valid values are
+      `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required
+      dynamic linking and is rejected. When the quote is returned in
+      `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.
   senderCustomerInfo:
     type: object
     additionalProperties: true
