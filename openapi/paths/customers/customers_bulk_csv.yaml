@@ -104,14 +104,7 @@ post:
     content:
       multipart/form-data:
         schema:
-          type: object
-          required:
-            - file
-          properties:
-            file:
-              type: string
-              format: binary
-              description: CSV file containing customer information
+          $ref: ../../components/schemas/customers/BulkCustomerImportRequest.yaml
   responses:
     '202':
       description: CSV upload accepted for processing

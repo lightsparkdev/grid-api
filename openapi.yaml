@@ -4455,14 +4455,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              required:
-                - file
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: CSV file containing customer information
+              $ref: '#/components/schemas/BulkCustomerImportRequest'
       responses:
         '202':
           description: CSV upload accepted for processing
@@ -20872,6 +20865,15 @@ components:
         response_body:
           type: string
           description: The raw body content returned by the webhook endpoint in response to the request
+    BulkCustomerImportRequest:
+      type: object
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: CSV file containing customer information
     BulkCustomerImportJobAccepted:
       type: object
       required:
