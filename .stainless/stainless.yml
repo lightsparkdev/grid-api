@@ -326,11 +326,13 @@ resources:
       incoming_rate_details: "#/components/schemas/IncomingRateDetails"
       reconciliation_instructions: "#/components/schemas/ReconciliationInstructions"
       transaction_list_response: "#/components/schemas/TransactionListResponse"
+      cancel_transaction_request: "#/components/schemas/CancelTransactionRequest"
     methods:
       list: get /transactions
       retrieve: get /transactions/{transactionId}
       approve: post /transactions/{transactionId}/approve
       reject: post /transactions/{transactionId}/reject
+      cancel: post /transactions/{transactionId}/cancel
 
   invitations:
     models:
