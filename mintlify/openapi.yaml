@@ -13108,6 +13108,7 @@ components:
         - LIGHTNING
         - SOLANA_WALLET
         - TRON_WALLET
+        - PLASMA_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
@@ -14113,6 +14114,32 @@ components:
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDT
+    PlasmaWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - PLASMA_WALLET
+        address:
+          type: string
+          description: Plasma wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentPlasmaWalletInfo:
+      title: Plasma Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/PlasmaWalletInfo'
         - type: object
           properties:
             assetType:
@@ -15575,6 +15602,7 @@ components:
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
+            - $ref: '#/components/schemas/PaymentPlasmaWalletInfo'
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
             - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
@@ -15602,6 +15630,7 @@ components:
               LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
               SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
+              PLASMA_WALLET: '#/components/schemas/PaymentPlasmaWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
               ETHEREUM_WALLET: '#/components/schemas/PaymentEthereumWalletInfo'
@@ -15786,6 +15815,7 @@ components:
         - BASE_WALLET
         - ETHEREUM_WALLET
         - LIGHTNING
+        - PLASMA_WALLET
         - POLYGON_WALLET
         - SOLANA_WALLET
         - SPARK_WALLET
@@ -17891,6 +17921,11 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
+    PlasmaWalletExternalAccountInfo:
+      title: Plasma Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PlasmaWalletInfo'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -18000,6 +18035,7 @@ components:
         - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -18049,6 +18085,7 @@ components:
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -18918,6 +18955,7 @@ components:
         - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -18966,6 +19004,7 @@ components:
           ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -19512,6 +19551,7 @@ components:
         - BASE
         - POLYGON
         - TRON
+        - PLASMA
         - SPARK
       description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
       example: SOLANA

@@ -57,6 +57,7 @@ properties:
     - $ref: ../common/PaymentLightningInvoiceInfo.yaml
     - $ref: ../common/PaymentSolanaWalletInfo.yaml
     - $ref: ../common/PaymentTronWalletInfo.yaml
+    - $ref: ../common/PaymentPlasmaWalletInfo.yaml
     - $ref: ../common/PaymentPolygonWalletInfo.yaml
     - $ref: ../common/PaymentBaseWalletInfo.yaml
     - $ref: ../common/PaymentEthereumWalletInfo.yaml
@@ -84,6 +85,7 @@ properties:
         LIGHTNING: ../common/PaymentLightningInvoiceInfo.yaml
         SOLANA_WALLET: ../common/PaymentSolanaWalletInfo.yaml
         TRON_WALLET: ../common/PaymentTronWalletInfo.yaml
+        PLASMA_WALLET: ../common/PaymentPlasmaWalletInfo.yaml
         POLYGON_WALLET: ../common/PaymentPolygonWalletInfo.yaml
         BASE_WALLET: ../common/PaymentBaseWalletInfo.yaml
         ETHEREUM_WALLET: ../common/PaymentEthereumWalletInfo.yaml
