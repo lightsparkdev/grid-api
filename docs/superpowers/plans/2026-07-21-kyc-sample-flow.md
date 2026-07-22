@@ -15,7 +15,8 @@
 - All work happens in the worktree `/Users/pengying/Src/grid-api/.worktrees/kyc-sample-flow` on branch `kyc-sample-flow` (Graphite-tracked, parent `main`). All paths below are relative to the worktree root.
 - Commits: stage files **individually by name** (never `git add -A`/`.`), commit with `gt modify --commit -m "<msg>"` (Graphite repo; keeps everything on this one branch). End every commit message with `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
 - Backend e2e tests hit the real Grid sandbox and require env vars `GRID_CLIENT_ID`, `GRID_CLIENT_SECRET`, `GRID_WEBHOOK_PUBKEY`. If they are not set in your shell, check the main clone's `samples/kotlin` run configuration or ask the user — do not fabricate values. If credentials are unavailable, `./gradlew build -x test` (compile only) is the fallback verification and the test run must be flagged as skipped in your report.
-- SDK naming gotcha: `CustomerGetKycLinkParams.Builder.platformCustomerId(...)` fills the `{customerId}` **path segment** of `POST /customers/{customerId}/kyc-link` despite its name. Pass the Grid customer ID (e.g. `Customer:0195...`) to it.
+- SDK gotcha (verified by capturing the SDK's raw HTTP request): SDK 1.7.1's `getKycLink` sends `GET /customers/kyc-link?platformCustomerId=...` — an obsolete endpoint shape the current API does not serve (it matches `GET /customers/{id}` with id="kyc-link" → 404 CUSTOMER_NOT_FOUND). Upgrading to SDK 1.8/1.9 fixes the path but breaks 4 other sample route files (84 compile errors) — out of scope. The kyc-link route therefore calls the REST endpoint directly with JDK `java.net.http.HttpClient` (no new dependency). `customers().retrieve(id)` builds the correct path and stays on the SDK.
+- Environment facts verified via curl against the dev sandbox: `email` is required on customer create (platform supports embedded wallets); `redirectUri` on kyc-link must be a public https URL (provider rejects http:// and localhost), so the sample omits it; this platform creates customers with `kycStatus: APPROVED` (regulated-platform behavior).
 - The frontend build (`npm run build`) runs `tsc -b` — it is the type-check gate. `node_modules` may be missing in the worktree; run `npm install` in `samples/frontend` first if so.
 
 ---
@@ -29,7 +30,7 @@
 **Interfaces:**
 - Consumes: existing helpers `GridClientBuilder.client`, `JsonUtils`, `Log`, `optText` (all already imported or importable in `Customers.kt`).
 - Produces (relied on by Tasks 2–3):
-  - `POST /api/customers/{customerId}/kyc-link` — body `{ "redirectUri"?: string }`; 201 with Grid's `CustomerGetKycLinkResponse` JSON (`kycUrl`, `expiresAt`, `provider`, `token?`); errors as `{"error": "..."}` with 500.
+  - `POST /api/customers/{customerId}/kyc-link` — body `{ "redirectUri"?: string }`; 201 with Grid's KYC link JSON (`kycUrl`, `expiresAt`, `provider`, `token?`); Grid API errors pass through with their original status (400/404/409); transport errors as `{"error": "..."}` with 500.
   - `GET /api/customers/{customerId}` — 200 with the full customer JSON incl. `kycStatus`; errors as `{"error": "..."}` with 500.
 
 - [ ] **Step 1: Write the failing test**
@@ -49,6 +50,7 @@ Append to `EndToEndTest.kt` (inside the `EndToEndTest` class, after the existing
                     "platformCustomerId": "test_kyc_${System.currentTimeMillis()}",
                     "customerType": "INDIVIDUAL",
                     "fullName": "Kyc Test User",
+                    "email": "kyctest.${System.currentTimeMillis()}@lightspark.com",
                     "nationality": "US",
                     "birthDate": "1990-01-01",
                     "address": {
@@ -64,10 +66,11 @@ Append to `EndToEndTest.kt` (inside the `EndToEndTest` class, after the existing
         assertEquals(HttpStatusCode.Created, customerResponse.status)
         val customerId = parseJson(customerResponse.bodyAsText()).get("id").asText()
 
-        // Step 2: Generate a hosted KYC link
+        // Step 2: Generate a hosted KYC link. No redirectUri: the KYC provider
+        // requires a public https URL, which a local sample doesn't have.
         val linkResponse = client.post("/api/customers/$customerId/kyc-link") {
             contentType(ContentType.Application.Json)
-            setBody("""{"redirectUri": "http://localhost:5173/onboarding-complete"}""")
+            setBody("""{}""")
         }
         assertEquals(HttpStatusCode.Created, linkResponse.status)
         val link = parseJson(linkResponse.bodyAsText())
@@ -93,10 +96,24 @@ Expected: FAIL — the kyc-link POST returns 404 (route not registered), so the 
 
 - [ ] **Step 3: Implement the routes**
 
-In `Customers.kt`, add one import (alphabetical position after the existing `customers` imports):
+In `Customers.kt`, add these imports (JDK HTTP client for the kyc-link call — see the SDK gotcha in Global Constraints; `com.grid.sample.Config` goes with the other `com.grid.sample` imports, `java.*` at the bottom):
 
 ```kotlin
-import com.lightspark.grid.models.customers.CustomerGetKycLinkParams
+import com.grid.sample.Config
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.util.Base64
+```
+
+And a file-level constant + client below the imports, above `fun Route.customerRoutes()`:
+
+```kotlin
+// SDK 1.7.1 predates the current POST /customers/{id}/kyc-link endpoint shape,
+// so the kyc-link route below calls the REST API directly.
+private val DEFAULT_GRID_API_BASE_URL = "https://api.lightspark.com/grid/2025-10-13"
+private val kycHttpClient: HttpClient by lazy { HttpClient.newHttpClient() }
 ```
 
 Then add the two handlers inside the existing `route("/api/customers") { ... }` block, after the existing `post { ... }` handler:
@@ -136,30 +153,31 @@ Then add the two handlers inside the existing `route("/api/customers") { ... }` 
                         HttpStatusCode.BadRequest
                     )
 
-                val body = call.receiveText()
+                val body = call.receiveText().ifBlank { "{}" }
                 Log.incoming("POST", "/api/customers/$customerId/kyc-link", body)
-                val json = if (body.isBlank()) {
-                    JsonUtils.mapper.createObjectNode()
-                } else {
-                    JsonUtils.mapper.readTree(body)
-                }
 
-                val params = CustomerGetKycLinkParams.builder()
-                    // Fills the {customerId} path segment (SDK names it platformCustomerId).
-                    .platformCustomerId(customerId)
-                    .apply {
-                        json.optText("redirectUri")?.let { redirectUri(it) }
-                    }
+                val baseUrl = Config.apiBaseUrl ?: DEFAULT_GRID_API_BASE_URL
+                val auth = Base64.getEncoder()
+                    .encodeToString("${Config.apiTokenId}:${Config.apiClientSecret}".toByteArray())
+                val request = HttpRequest.newBuilder()
+                    .uri(URI.create("$baseUrl/customers/$customerId/kyc-link"))
+                    .header("Authorization", "Basic $auth")
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build()
 
-                Log.gridRequest("customers.getKycLink", customerId)
-                val link = GridClientBuilder.client.customers().getKycLink(params)
-                val responseJson = JsonUtils.prettyPrint(link)
-                Log.gridResponse("customers.getKycLink", responseJson)
+                Log.gridRequest("customers.kycLink", body)
+                val response = kycHttpClient.send(request, HttpResponse.BodyHandlers.ofString())
+                Log.gridResponse("customers.kycLink", response.body())
 
-                call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.Created)
+                // Pass Grid's status through (201 on success; 400/404/409 errors verbatim).
+                call.respondText(
+                    response.body(),
+                    ContentType.Application.Json,
+                    HttpStatusCode.fromValue(response.statusCode())
+                )
             } catch (e: Exception) {
-                Log.gridError("customers.getKycLink", e)
+                Log.gridError("customers.kycLink", e)
                 call.respondText(
                     """{"error": "${e.message}"}""",
                     ContentType.Application.Json,
@@ -169,7 +187,7 @@ Then add the two handlers inside the existing `route("/api/customers") { ... }` 
         }
 ```
 
-Note: `customers().retrieve(customerId)` is the SDK's string-overload (`retrieve(String, RequestOptions = none)`); no params object needed.
+Note: `customers().retrieve(customerId)` is the SDK's string-overload (`retrieve(String, RequestOptions = none)`); no params object needed. The kyc-link handler deliberately does NOT use the SDK — see the SDK gotcha in Global Constraints.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -210,9 +228,9 @@ import JsonEditor from '../components/JsonEditor'
 import ResponsePanel from '../components/ResponsePanel'
 import { apiPost } from '../lib/api'
 
-const DEFAULT_BODY = JSON.stringify({
-  redirectUri: 'http://localhost:5173/onboarding-complete',
-}, null, 2)
+// redirectUri is optional and must be a public https URL (the KYC provider
+// rejects http:// and localhost), so the local sample omits it by default.
+const DEFAULT_BODY = '{}'
 
 interface Props {
   customerId: string | null
@@ -251,7 +269,8 @@ export default function CreateKycLink({ customerId, disabled, onComplete }: Prop
     <div>
       <p className="text-sm text-gray-400 mb-2">
         Generate a single-use hosted verification link for this customer. Each link expires —
-        re-run this step to mint a fresh one.
+        re-run this step to mint a fresh one. Optionally set <code className="text-gray-300">redirectUri</code>{' '}
+        to return the customer to your app afterwards (must be a public https URL).
       </p>
       <JsonEditor value={body} onChange={setBody} disabled={disabled || loading} />
       <button
@@ -590,4 +609,4 @@ Not automatable — walk once by hand:
 1. `cd samples/kotlin && ./gradlew run` (backend on :8080) and `cd samples/frontend && npm run dev` (frontend on :5173).
 2. Select **KYC Onboarding** in the sidebar; create the default customer.
 3. Generate the KYC link; click it — the hosted (sandbox SUMSUB) flow opens in a new tab.
-4. Refresh status in step 3 — badge shows `PENDING`; complete or abandon the hosted flow and observe badge/webhook updates (`CUSTOMER.KYC_*` in the WebhookStream panel).
+4. Refresh status in step 3 — on unregulated platforms the badge shows `PENDING` until the hosted flow completes; on regulated/dev platforms (like the checked-in dev credentials) customers are created `APPROVED`, so the badge is green immediately. `CUSTOMER.KYC_*` webhooks appear in the WebhookStream panel when status changes.
