@@ -1,0 +1,68 @@
+/* "Paste address" content — network rows under the PartialSheet's title bar
+   (the sheet owns the card + header + hairline). */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+}
+
+/* The divided-list row voice (country / receive-via): 20px vertical padding,
+   divider inset on the left gutter running full-bleed right, none on the
+   last row. Full-bleed hover. */
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 24px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 24px;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--od-hairline);
+  }
+
+  &:last-child::after {
+    display: none;
+  }
+
+  &:hover {
+    background: var(--od-row-hover);
+  }
+}
+
+.rowLines {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rowTitle {
+  font-size: 16px;
+  line-height: normal;
+  font-weight: 500;
+  color: var(--app-text-primary);
+}
+
+.rowSub {
+  font-size: 14px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+}

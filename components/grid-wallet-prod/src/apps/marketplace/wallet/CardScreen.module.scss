@@ -1,0 +1,491 @@
+/* The debit-card flow — full-screen rise over the wallet, all on the white
+   page: design-gallery carousel intro, creating beat under the card, then the
+   card home with the transactions list. */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 7; /* over the deposit page (5) — a full modal cover */
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  overflow: hidden;
+}
+
+/* ── Header (the page-header geometry) ───────────────────────────────────── */
+.header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 118px; /* 62 status bar + 56 bar */
+  padding: 62px 24px 8px;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease;
+
+  &[data-bordered] {
+    box-shadow: 0 1px 0 var(--mk-header-border);
+  }
+}
+
+/* More menu (1x3 dots) — top right, card home only. */
+.moreBtn {
+  position: absolute;
+  right: 24px;
+  top: 62px;
+  bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Centered bar title — card home only. */
+.headerTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 62px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.17px;
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Reappears only after the descending card clears the header zone; hiding
+     (below) is near-instant so it beats the lift into that zone. */
+  transition: opacity 0.25s ease 0.25s;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &[data-hidden] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* ── Content column ──────────────────────────────────────────────────────── */
+.column {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 24px 0;
+}
+
+/* The card slot: pinned near the top on the card home; on the pitch it takes
+   the leftover space above the copy and CENTERS the card in it. */
+.cardSlot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Card home: the card is scale()d to full width — the transform overflows
+     the layout box by ~18px top/bottom. Top: 12 column pad + 10 here − 18
+     overflow = the card's visual top lands 24px under the X (header is 118,
+     X bottom at 98, card top at 122). */
+  padding: 10px 0 28px;
+
+  &[data-centered] {
+    flex: 1;
+    min-height: 0;
+    padding: 12px 0 0;
+  }
+
+  /* Creating: recenter the group in the phone (see data-lift in the TSX). */
+  &[data-lift] {
+    padding-bottom: 118px;
+  }
+}
+
+/* ── Design carousel (intro) ─────────────────────────────────────────────── */
+/* Full-bleed rail breaking out of the column's 24px gutters; dots hang below
+   WITHOUT taking layout space so the card-home geometry is unchanged. */
+.railWrap {
+  position: relative;
+  flex: none;
+  width: calc(100% + 48px);
+  margin: 0 -24px;
+}
+
+/* Snap carousel: 296px cards centered via side padding; vertical padding
+   (reclaimed by negative margins) keeps the card shadow unclipped — sized for
+   the 22px-blur drop shadow at the card home's 1.2x scale. */
+.rail {
+  display: flex;
+  /* No flex gap — the items carry −1px margins each (−2px between neighbors);
+     the 0.88 neighbor shrink opens that back up to a ~16px VISIBLE gap. */
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 88px calc(50% - 148px); /* half the 296px card */
+  margin: -88px 0;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &[data-locked] {
+    pointer-events: none;
+    touch-action: none;
+  }
+}
+
+.railItem {
+  flex: none;
+  margin: 0 -1px;
+  scroll-snap-align: center;
+  transition: opacity 0.35s ease;
+
+  &[data-hidden] {
+    opacity: 0;
+  }
+}
+
+/* Below the rail: chevron controls ⇄ the creating beat. In flow — 64px strip
+   (24 gap + 40 controls) while centered, collapsing to 0 on the card home so
+   the slot centers card + controls as one group. */
+.belowRail {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: hidden;
+  /* Above the rail's padding overhang (88px shadow headroom reclaimed by a
+     negative margin). WebKit hands those overlap pixels to the scroll
+     container, which swallows the chevron clicks — Safari's "can't advance". */
+  position: relative;
+  z-index: 1;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+}
+
+/* Round chevron button — 40px circle on the secondary button fill. */
+.chevronBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  corner-shape: round; // a true circle — exempt from the app-wide squircle
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease, background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--mk-surface-press);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.35;
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* "Creating card" — spinner + label under the chosen card. The right pad
+   optically rebalances the spinner's weight on the left. */
+.creating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 8px;
+  font-size: 15px;
+  line-height: 40px; /* matches the chevrons' height — no vertical shift */
+  font-weight: 500;
+  letter-spacing: -0.15px;
+  color: var(--app-text-secondary);
+}
+
+.spin {
+  display: inline-flex;
+
+  svg {
+    display: block;
+    animation: creating-spin 0.9s linear infinite;
+  }
+}
+
+@keyframes creating-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Intro pitch — centered, ANCHORED to the CTA, on the standard 24px gutters. */
+.pitch {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 12px; /* + ctaWrap's 12px top = 24px description→CTA */
+  text-align: center;
+
+  /* Ready screen: a touch more air between the props and Continue. */
+  &[data-ready] {
+    padding-bottom: 20px;
+  }
+}
+
+.pitchTitle {
+  margin: 0;
+  font-size: 32px;
+  line-height: 36px;
+  font-weight: 500;
+  letter-spacing: -0.96px;
+  color: var(--app-text-primary);
+  text-wrap: balance;
+}
+
+.pitchSub {
+  margin: 0 auto;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+  text-wrap: pretty;
+}
+
+/* Ready-screen value props — icon + title/description rows (the Airbnb
+   listing-highlights anatomy). */
+.valueProps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 24px;
+  text-align: left;
+}
+
+.valueProp {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+/* 24px icon, optically centered against the title's 20px line. */
+.valuePropIcon {
+  display: inline-flex;
+  flex: none;
+  margin-top: -2px;
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+  }
+}
+
+.valuePropText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.valuePropTitle {
+  font-size: 14px;
+  line-height: 19px;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  color: var(--app-text-primary);
+}
+
+.valuePropDesc {
+  font-size: 14px;
+  line-height: 19px;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+  text-wrap: pretty;
+}
+
+/* Pinned intro CTA — brand-pink pill, agreement below. */
+.ctaWrap {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  padding: 12px 24px 28px;
+
+  /* CTA with nothing under it (the ready screen's Continue): the app-standard
+     40px bottom gutter (the amount/recipient CTAs). */
+  &[data-solo] {
+    padding-bottom: 40px;
+  }
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--mk-brand, #ff385c);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.17px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The Card Holder Agreement line (the Z/Aurora issuance fine print) — full
+   width, gutter to gutter (the ctaWrap's 24px). */
+.agreement {
+  margin: 24px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  text-align: center;
+  text-wrap: pretty;
+  color: var(--app-text-secondary);
+
+  span {
+    text-decoration: underline;
+  }
+}
+
+/* ── Card home (post-reveal) ─────────────────────────────────────────────── */
+/* The scroller breaks OUT of the column's 24px gutters (and 12px above) and
+   carries them as its own padding instead: a scroll container clips at its
+   edges, and with the gutters inside, the sticker drop-shadows AND the
+   tap-to-pay blur feather (8px) have room to bleed — clipping the blur at the
+   top edge drew a hard line under the card. */
+.homeBody {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  margin: -12px -24px 0;
+  padding: 12px 24px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Fixed-height zone so Tap to pay ⇄ reader status swap without reflow. */
+.tapZone {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+}
+
+.tapBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: #222222;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.51px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #000000;
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Rides up with the card during tap-to-pay; hosts the status overlay. */
+.homeLift {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Reader status — overlays the (blurred-out) home content. It rides the 56px
+   lift, but homeBody is a scroll container that clips at its top edge — the
+   pad holds the glyph inside the clip AFTER the lift (56 + 24 visible gap). */
+.tapStatus {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 80px;
+  pointer-events: none;
+}
+
+/* Section title — the home Activity voice. */
+.txTitle {
+  margin: 12px 0 0;
+  font-size: 24px;
+  line-height: normal;
+  font-weight: 500;
+  letter-spacing: -0.48px;
+  color: var(--app-text-primary);
+}

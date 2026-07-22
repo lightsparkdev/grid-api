@@ -1,0 +1,42 @@
+/* "Send or receive" chooser content — subhead + action pills under the
+   PartialSheet's title bar (the sheet owns the card + header + hairline). */
+
+.sub {
+  margin: 16px 40px 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 400;
+  text-align: center;
+  color: var(--app-text-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 24px 0;
+}
+
+/* The home action-pill voice: 50px secondary-fill squircle buttons. */
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  padding: 4px;
+  border: 0;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.51px;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+}

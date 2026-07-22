@@ -1,0 +1,25 @@
+/* App / brand semantic colors — default to iOS HIG; skins override --app-* only. */
+
+@mixin tokens {
+  --app-text-primary: var(--ios-label-primary);
+  --app-text-secondary: var(--ios-label-secondary);
+  --app-text-tertiary: var(--ios-label-tertiary);
+  --app-text-quaternary: var(--ios-label-quaternary);
+
+  --app-fill-primary: var(--ios-fill-primary);
+  --app-fill-secondary: var(--ios-fill-secondary);
+  --app-fill-tertiary: var(--ios-fill-tertiary);
+  --app-fill-quaternary: var(--ios-fill-quaternary);
+
+  --app-bg: var(--ios-bg-primary);
+  --app-bg-secondary: var(--ios-bg-secondary);
+  --app-bg-tertiary: var(--ios-bg-tertiary);
+  --app-bg-grouped: var(--ios-bg-grouped-primary);
+  --app-bg-grouped-secondary: var(--ios-bg-grouped-secondary);
+  --app-bg-grouped-tertiary: var(--ios-bg-grouped-tertiary);
+
+  --app-separator: var(--ios-separator);
+  --app-separator-opaque: var(--ios-separator-opaque);
+
+  --app-tint: var(--ios-tint);
+}

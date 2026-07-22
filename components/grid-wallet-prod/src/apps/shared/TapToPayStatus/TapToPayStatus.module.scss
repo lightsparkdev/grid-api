@@ -1,0 +1,47 @@
+@use '../typography/ios-type-mixins' as ios;
+
+/* Figma 2143:20979 — glyph over the label, gap 14, centered. */
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.glyph {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: calc(200px / 3); /* videos render at 1/3x of the 200px source. */
+  height: calc(200px / 3);
+}
+
+/* Looping reader clip — clipped right at the contactless ring (the source has a
+   ~6px margin, so ~2px in here), erasing the square background. Only the ring +
+   its interior remain, which blend with the wallet bg. */
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  clip-path: circle(47%);
+  -webkit-clip-path: circle(47%);
+}
+
+/* Done check sized to the clipped video's ring: the video ring is 94% of its
+   frame, this glyph's ring is 100% of its viewBox — so 94% keeps them identical
+   and the swap doesn't change size. */
+.checkGlyph {
+  width: 94%;
+  height: 94%;
+}
+
+/* Title3/Regular 20/25, -0.45 tracking (iOS 20pt), label-secondary, centered. */
+.label {
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 400;
+  color: var(--ios-label-secondary);
+  text-align: center;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+}

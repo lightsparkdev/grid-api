@@ -1,0 +1,29 @@
+/** Figma Button - Content Area — surface fills for pill variants. */
+$fill-button-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
+
+@mixin fill-quaternary-surface {
+  background: var(--ios-fill-quaternary);
+  border: 0;
+  box-shadow: $fill-button-shadow;
+}
+
+/** Wallet sheet (Figma style=Bordered) — elevated primary bg on grouped surface. */
+@mixin fill-bordered-surface {
+  background: var(--ios-bg-primary);
+  border: 0;
+  box-shadow: $fill-button-shadow;
+
+  :global([data-theme='dark']) & {
+    background: var(--ios-bg-secondary);
+  }
+}
+
+/** Stat / activity cards on the wallet sheet (Figma 90:13641).
+    Corners: `useSquircleClip` applies clip-path: path(squircle) — same as bottom
+    sheets / phone shell. border-radius must stay 0 so Safari's circular
+    corner-shape fallback does not intersect the squircle clip. */
+@mixin wallet-elevated-card {
+  @include fill-bordered-surface;
+  border-radius: 0;
+  overflow: hidden;
+}

@@ -1,0 +1,11 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Close button sits on the dark issuance aurora — white glyph reads on it. */
+.closeOnAurora {
+  --glass-symbol-glyph: #ffffff;
+}

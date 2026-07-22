@@ -1,0 +1,492 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* ── Full-screen pushed pages (iOS nav push — the auth flow's surfaces) ───── */
+
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+  overflow: hidden;
+}
+
+/* Nav bar row — plain back chevron left, optional glass ellipsis right. */
+.pageBar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  min-height: 40px;
+  margin: 70px 24px 0;
+}
+
+.barTrailing {
+  display: inline-flex;
+  margin-left: auto;
+}
+
+/* Plain iOS back chevron (the Mobbin OTP screen) — not glass. */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Centered Title3 / Emphasized. */
+.heading {
+  margin: 0;
+  padding: 20px 40px 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* Subheadline / Regular — centered under the title. */
+.sub {
+  margin: 0;
+  padding: 8px 32px 24px;
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-secondary);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+/* The destination (number/email) reads emphasized in label-primary (Mobbin). */
+.subStrong {
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--ios-label-primary);
+  white-space: nowrap;
+}
+
+.learnMore {
+  color: var(--ios-tint);
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+/* ── Entry page: grouped country + number field ───────────────────────────── */
+
+.groupContainer {
+  padding: 0 24px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  corner-shape: var(--corner-shape);
+  /* fills/quaternary — the same surface as the welcome screen's secondary
+     buttons (tertiary read too dark against the white page). */
+  background: var(--ios-fill-quaternary);
+  overflow: hidden;
+}
+
+.countryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.08s ease-out;
+
+  /* One fill step over the (now lighter) quaternary base. */
+  @media (hover: hover) {
+    &:hover {
+      background: var(--ios-fill-tertiary);
+    }
+  }
+}
+
+.countryName {
+  @include ios.ios-text-callout;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  color: var(--ios-tint);
+}
+
+.countryChevron {
+  color: var(--ios-label-tertiary);
+}
+
+.groupDivider {
+  height: 0.5px;
+  margin-left: 16px;
+  background: var(--ios-separator);
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 16px;
+  gap: 8px;
+}
+
+.dialCode {
+  @include ios.ios-text-callout;
+  color: var(--ios-label-primary);
+}
+
+.input {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  outline: none;
+  caret-color: var(--ios-tint);
+  @include ios.ios-text-callout;
+
+  &::placeholder {
+    color: var(--ios-label-tertiary);
+  }
+}
+
+/* Next — ANCHORED to the screen bottom (the page is a flex column; the
+   grouped field stays up top with the copy). */
+.actions {
+  margin-top: auto;
+  padding: 24px 24px 40px;
+}
+
+.ctaSwap {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.ctaItem {
+  display: inline-flex;
+  grid-area: 1 / 1;
+  align-items: center;
+}
+
+.spinner {
+  display: inline-flex;
+  animation: msg-auth-page-spin 0.9s linear infinite;
+}
+
+@keyframes msg-auth-page-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+/* ── Country page (IMG_0711 — grouped cards, name + dial code, no flags) ──── */
+
+.countryPage {
+  background: var(--ios-bg-grouped-primary);
+
+  /* Frost search pill tint — translucent neutral per theme so the blurred
+     list reads through (the money-flow picker's token, skin-local). */
+  --msg-search-pill-tint: color-mix(in srgb, #f6f6f8 70%, transparent);
+
+  :global([data-theme='dark']) & {
+    --msg-search-pill-tint: color-mix(in srgb, #1f1f20 70%, transparent);
+  }
+}
+
+/* The list scrolls the FULL page; pinned bar + search + blur overlay it. */
+.scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 178px 0 24px; /* rest position clears the pinned bar + pill */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Content alpha-fades toward the top as it scrolls under the chrome (the
+     money-flow picker's ramp — faint, not a hard dissolve). */
+  mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, 0.2) 110px, #000 172px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, 0.2) 110px, #000 172px);
+}
+
+/* Pinned nav bar (back + centered title) above the progressive blur. */
+.pinnedBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin-top: 70px;
+  padding: 0 24px;
+}
+
+.pinnedTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  @include ios.ios-text-body;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-body-opsz);
+  color: var(--ios-label-primary);
+  pointer-events: none;
+}
+
+/* Pinned frost search pill — the list scrolls behind it and frosts through. */
+.searchPill {
+  position: absolute;
+  top: 118px;
+  left: 16px;
+  right: 16px;
+  z-index: 3;
+  height: 44px;
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+}
+
+.searchIcon {
+  flex: none;
+  color: var(--ios-label-tertiary);
+
+  path {
+    stroke-width: 2;
+  }
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  outline: none;
+  caret-color: var(--ios-tint);
+  @include ios.ios-text-callout;
+
+  &::placeholder {
+    color: var(--ios-label-tertiary);
+  }
+}
+
+/* Progressive top blur (the money-flow picker's 3-layer recipe) — square
+   corners here (full-screen page, not a rounded sheet). */
+.topFade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 172px;
+  pointer-events: none;
+}
+
+.fadeBlur {
+  position: absolute;
+  inset: 0;
+  /* Hairline fill triggers backdrop-filter compositing without a visible tint. */
+  background: rgba(255, 255, 255, 0.01);
+  -webkit-backdrop-filter: blur(var(--fade-blur));
+  backdrop-filter: blur(var(--fade-blur));
+  mask-image: var(--fade-mask);
+  -webkit-mask-image: var(--fade-mask);
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.01);
+  }
+}
+
+.fadeBlurStrong {
+  --fade-blur: 1.2px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 45%, transparent 82%);
+}
+
+.fadeBlurMid {
+  --fade-blur: 0.65px;
+  --fade-mask: linear-gradient(to bottom, transparent 25%, #000 60%, transparent 95%);
+}
+
+.fadeBlurSoft {
+  --fade-blur: 0.4px;
+  --fade-mask: linear-gradient(to bottom, transparent 48%, #000 85%, transparent 100%);
+}
+
+/* iOS grouped-list section header. */
+.sectionLabel {
+  margin: 0;
+  padding: 16px 32px 8px;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-tertiary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* Grouped card of rows (IMG_0711's inset lists). */
+.countryCard {
+  margin: 0 16px 16px;
+  border-radius: 16px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-bg-grouped-secondary);
+  overflow: hidden;
+}
+
+.countryPickRow {
+  display: flex;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 0 16px;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.08s ease-out;
+
+  @media (hover: hover) {
+    &:hover {
+      background: var(--ios-fill-quaternary);
+    }
+  }
+
+  &:active {
+    background: var(--ios-fill-tertiary);
+    transition: none;
+  }
+}
+
+.countryPickContent {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  height: 50px;
+  padding-right: 16px;
+}
+
+.countryPickBordered {
+  box-shadow: inset 0 -0.5px 0 var(--ios-separator);
+}
+
+.countryPickName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  @include ios.ios-text-body;
+  color: var(--ios-label-primary);
+}
+
+.countryPickDial {
+  @include ios.ios-text-body;
+  color: var(--ios-label-secondary);
+}
+
+.countryPickCheck {
+  flex: none;
+  color: var(--ios-tint);
+}
+
+/* ── Code page (Mobbin: borderless dash slots, auto-submit) ───────────────── */
+
+.codeRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 24px 8px;
+  cursor: text;
+}
+
+.codeInput {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  opacity: 0;
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
+  outline: none;
+}
+
+/* One borderless slot: a dash at rest, the typed digit once filled. */
+.codeSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 34px;
+}
+
+.codeDash {
+  width: 16px;
+  height: 2.5px;
+  border-radius: 1.25px;
+  background: var(--ios-label-primary);
+}
+
+.codeDigit {
+  @include ios.ios-text-title-2;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* Wider breath between the two groups of three (Mobbin). */
+.codeGap {
+  width: 22px;
+}
+
+/* Centered green semibold link (Mobbin) — doubles as the demo's autofill. */
+.resendLink {
+  margin: 40px auto 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--ios-tint);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}

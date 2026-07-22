@@ -1,0 +1,27 @@
+/* Figma 90:13444 — wallet surface pulled up over the debit card. */
+.sheet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  /* Grow with content (page scroll) so the surface always backs the list. */
+  flex: 1 0 auto;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  background: var(--wallet-bg);
+  border-radius: var(--corner-radius-wallet-sheet) var(--corner-radius-wallet-sheet) 0 0;
+  corner-shape: var(--corner-shape);
+  /* Heavier on the dark base so the lift still reads against #111. */
+  --sheet-shadow-alpha: 0.1;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, var(--sheet-shadow-alpha));
+  transition: box-shadow 350ms cubic-bezier(0.19, 1, 0.22, 1);
+  margin-top: calc(-1 * var(--wallet-sheet-overlap, 176px));
+
+  :global([data-theme='dark']) & {
+    --sheet-shadow-alpha: 0.5;
+  }
+}
+
+.sheetDismissed {
+  box-shadow: none;
+}

@@ -1,0 +1,231 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+@use '../../styles/breakpoints' as *;
+
+$active-border-gradient: linear-gradient(
+  to top right,
+  color-mix(in srgb, var(--color-sky-500) 60%, transparent) 0%,
+  var(--color-sky-500) 17%,
+  var(--color-blue-500) 41%,
+  var(--color-green-600) 100%
+);
+
+$ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
+.group {
+  corner-shape: var(--corner-shape);
+  /* Single source for the tile surface — press states mix from it, and the
+     wide layout steps it down to sit on the chrome-gray panel. */
+  --tile-bg: var(--surface-base);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  background: var(--tile-bg);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  // Ring extends past cell bounds (and morphs across cells during layout animation).
+  overflow: visible;
+  // The tile surface steps down side-by-side — glide it across the crossing.
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
+
+  :global([data-theme='dark']) & {
+    --tile-bg: var(--color-gray-925);
+  }
+
+  @media (min-width: $breakpoint-layout-wide) {
+    --tile-bg: var(--surface-primary);
+
+    :global([data-theme='dark']) & {
+      --tile-bg: var(--color-gray-950);
+    }
+  }
+}
+
+.card {
+  all: unset;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape);
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: var(--spacing-md);
+  background: var(--tile-bg);
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
+  overflow: visible;
+  cursor: pointer;
+  transition: background 100ms ease;
+
+  &:nth-child(odd) {
+    border-right: var(--stroke-xs) solid var(--border-primary);
+  }
+
+  &:nth-child(even) {
+    border-right: none;
+  }
+
+  &:nth-last-child(-n + 2) {
+    border-bottom: none;
+  }
+
+  &:first-child {
+    border-top-left-radius: var(--corner-radius-md);
+  }
+
+  &:nth-child(2) {
+    border-top-right-radius: var(--corner-radius-md);
+  }
+
+  &:nth-last-child(2) {
+    border-bottom-left-radius: var(--corner-radius-md);
+  }
+
+  &:last-child {
+    border-bottom-right-radius: var(--corner-radius-md);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  // Hover only on devices with a real pointer — otherwise the fill sticks after a
+  // tap on touch (mobile emulates :hover until you tap elsewhere).
+  @media (hover: hover) {
+    &:not(:disabled):not(.cardSelected):hover {
+      background: color-mix(in srgb, var(--tile-bg) 98%, black);
+
+      :global([data-theme='dark']) & {
+        background: var(--color-alpha-white-04);
+      }
+    }
+  }
+
+  // Tap/press feedback — applies on touch too and resets on release (unlike
+  // :hover, which sticks after a tap). Same fill as the hover state.
+  &:not(:disabled):not(.cardSelected):active {
+    background: color-mix(in srgb, var(--tile-bg) 98%, black);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-04);
+    }
+  }
+}
+
+/* Cursor-following "Coming soon" tag (portaled to <body>). The anchor rides the
+   cursor with spring lag; the inner pill fades in over not-built tiles and falls
+   on click. pointer-events: none so it never blocks the tiles. */
+.comingSoonAnchor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.comingSoonTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 7px;
+  border: 0.5px solid var(--border-primary);
+  border-radius: 6px;
+  // Surface fill — white in light, black in dark — with muted secondary text.
+  background: var(--surface-base);
+  color: var(--text-secondary);
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  // Suisse Mono's bold is too heavy — stroke the glyphs in the text color to
+  // nudge the weight up a hair (currentColor keeps it theme-aware).
+  -webkit-text-stroke: 0.3px currentColor;
+  white-space: nowrap;
+  transform-origin: left center;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+
+  :global([data-theme='dark']) & {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.cardSelected {
+  // Elevate the selected cell so the ring paints over adjacent grid lines.
+  z-index: 2;
+}
+
+.activeRing {
+  position: absolute;
+  inset: calc(var(--stroke-xs) - var(--stroke-md));
+  z-index: 2;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-md);
+  padding: var(--stroke-md);
+  background: $active-border-gradient;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-width: 0;
+}
+
+.icon {
+  display: block;
+  // 22px glyph centered in a 24px slot — the stroke icons in the sibling grids
+  // carry built-in padding, so a full-bleed 24px app icon reads heavier.
+  width: 22px;
+  height: 22px;
+  margin: 1px;
+  flex-shrink: 0;
+  object-fit: contain;
+  transform-origin: center;
+  transition: transform 250ms $ease-out-swift;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04))
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06))
+    drop-shadow(0 8px 16px rgba(0, 0, 0, 0.04));
+
+  :global([data-theme='dark']) & {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+  }
+
+  @media (hover: hover) {
+    .card:not(:disabled):hover & {
+      transform: scale(1.05);
+    }
+  }
+
+  // Pop on press — visible on tap (touch, no hover baseline) and resets on release.
+  .card:not(:disabled):active & {
+    transform: scale(1.08);
+    transition-duration: 120ms;
+  }
+}
+
+.label {
+  @include label;
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,217 @@
+/* Ondemand Wallet home (Figma 2636:17730) — Uber-flat: no cards, no shadows,
+   grey action tiles, full-bleed activity rows. Inter type, default forms. */
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  /* Clear the status bar (screenBody underlaps it; see AppShell). */
+  padding-top: 62px;
+}
+
+/* ── Title strip — STATIC (no collapse animation): an opaque block covering
+   the status bar + the Figma title row (62 + py-8 + 41 + py-8 = 119), no
+   border. Content just scrolls under it. ────────────────────────────────── */
+.headerBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  height: 119px;
+  padding: 70px 16px 8px; /* 62 status bar + the row's py-8 */
+  box-sizing: border-box;
+  background: var(--app-bg);
+}
+.title {
+  margin: 0;
+  font-size: 34px;
+  line-height: 41px;
+  font-weight: 700;
+  color: var(--app-text-primary);
+}
+
+/* ── Body (scrolls under the pinned header) ─────────────────────────────── */
+/* Top padding = the title row's height (8 + 41 + 8); the root's own 62px
+   status-bar padding already carries the strip above it. */
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Bottom clears the 115px tab-bar overlay (content scrolls under its fade). */
+  padding: 57px 0 128px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Total balance (Figma 2636:17735 — p16, gap 4) ──────────────────────── */
+.balanceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+}
+.balanceRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.balanceLabel {
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 500;
+  letter-spacing: -0.31px;
+  color: var(--app-text-secondary);
+}
+.todayChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 8px;
+  background: var(--od-green-bg);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: -0.08px;
+  color: var(--od-green);
+  white-space: nowrap;
+}
+.balanceAmount {
+  font-size: 34px;
+  line-height: 41px;
+  font-weight: 700;
+  letter-spacing: -1.02px;
+  color: var(--app-text-primary);
+}
+
+/* ── Action tiles (Figma 2636:17742/17784 — rows px16 py8, gap 12) ──────── */
+.tileRowBig,
+.tileRowSmall {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 16px;
+}
+
+%tile {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  border: 0;
+  background: var(--od-surface);
+  color: var(--app-text-primary);
+  font-family: inherit;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--od-surface-press);
+  }
+}
+
+.tileBig {
+  @extend %tile;
+  height: 104px;
+  padding: 8px 16px;
+  justify-content: flex-end;
+}
+.tileSmall {
+  @extend %tile;
+  height: 96px;
+  padding: 8px;
+  justify-content: flex-end;
+}
+
+/* Decorative tile (no onClick — Save, Bills): no press affordance. */
+.tileInert {
+  cursor: default;
+
+  &:hover {
+    background: var(--od-surface);
+  }
+}
+
+/* The 3D graphic — big tiles park it right (16px inset via tile padding),
+   small tiles center it. */
+.tileArtSlot {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.tileBig .tileArtSlot {
+  justify-content: flex-end;
+}
+/* Tile pads 16px — the extra 8px lands the art 24px off the right edge. */
+.tileBig .tileArt {
+  margin-right: 8px;
+}
+/* Height rides an inline style per tile (48px default, optically tuned). */
+.tileArt {
+  display: block;
+  max-height: 100%;
+  user-select: none;
+}
+
+/* Flat glyph tiles (More) — the sharp 2px-stroke set, primary ink. */
+.tileGlyph {
+  display: inline-flex;
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+  }
+}
+
+.tileLabel {
+  flex: none;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  letter-spacing: -0.08px;
+  color: var(--app-text-primary);
+}
+.tileBig .tileLabel {
+  text-align: left;
+}
+.tileSmall .tileLabel {
+  text-align: center;
+}
+
+/* ── Activity (Figma 2636:17849 — title px16 no vertical pad, 20 bold;
+   16px section gap above, from the actions section's pb-16) ─────────────── */
+.activity {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0 0;
+}
+.activityTitle {
+  margin: 0;
+  padding: 0 16px;
+  font-size: 20px;
+  line-height: 25px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--app-text-primary);
+}
+/* Rows live in ActivityList. */

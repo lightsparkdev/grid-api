@@ -1,0 +1,1715 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+@use '../../shared/glass/glass-button-shadow' as shadow;
+
+/* ── Sheet flow shell ─────────────────────────────────────────────────────────
+   Figma 109:29870 — solid near-full-height sheet. Top stops ~72px down so the
+   receded card behind it (top ~62, STAGE_Y) peeks ~10px above the sheet's top
+   edge (the stacked-sheet effect). Steps slide inside .steps. */
+.flow {
+  --sheet-toolbar-h: 66px; // back/X row (40) + toolbar padding (16 + 10)
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--app-screen-height, 874px) - 72px);
+  min-height: 0;
+}
+
+/* Chooser flows (add/withdraw) are full-screen and slide up over the chooser,
+   with a normal-flow SheetHeader (not the overlay toolbar) — so the steps drop
+   their toolbar top-inset and the steps box stops rounding its top. */
+.flowFull {
+  height: var(--app-screen-height, 874px);
+  padding-top: 62px;
+
+  .step {
+    padding-top: 0;
+  }
+  .stepFlushTop {
+    padding-top: 0;
+  }
+  .steps {
+    border-radius: 0;
+  }
+  /* This offset tucked the empty list under the old overlay toolbar; the
+     normal-flow header doesn't need it (the card's own 16px top is the gap). */
+  .banksEmptyOffset {
+    margin-top: 0;
+  }
+
+  /* Country step: the search header was positioned under the old overlay toolbar
+     (top 70 / backdrop 122 / scroll inset 126). With the normal-flow nav above
+     the step, pull it right under the header. */
+  .searchPill {
+    top: 8px;
+  }
+  /* Search pill bottom (8 + 44) + 8px, with a hairline divider under it. */
+  .countryHeaderBg {
+    height: 60px;
+    border-bottom: 0.5px solid var(--z-hairline);
+  }
+  .pickerScrollCountry {
+    padding-top: 60px;
+  }
+}
+
+/* Header matching the Z wallet-home nav: plain 24px icon buttons (no fill/border),
+   a truly centered title, the help/settings-style right cluster. */
+.flowNav {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 48px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+/* Sliding, gradient-masked title strip (same interaction as the toolbar's .title):
+   inset to clear the icons, single-cell grid so the entering/exiting spans stack
+   and slide, mask dissolves the text before it reaches the controls. */
+.flowNavTitle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 56px;
+  right: 56px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  color: var(--app-text-primary);
+}
+.flowNavRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.flowNavBtn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Source chooser body — content-hugging (the chooser sheet hugs these rows).
+   Flat full-bleed list: no container bg/radius, no row dividers, no side gutter. */
+.chooserBody {
+  /* +8px each side (16 → 24); bottom 48px so the last cards clear the phone-shell
+     curve. */
+  padding: 24px 24px 48px;
+}
+
+/* Send "Add recipient" lives in the full-screen step (not the short sheet), so it
+   doesn't need the curve clearance — tighter 8px top/bottom, 20px sides. */
+.chooserBodyFull {
+  padding: 8px 20px;
+}
+
+/* Each source is its own flat card button — icon tile + title/sub on the left,
+   speed on the right (no chevron). */
+.choiceList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* Cash App + Apple Pay sit two-up under the full-width rows. */
+.choiceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.choiceCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  /* +12px right so the speed text sits in from the edge. */
+  padding: 12px 24px 12px 12px;
+  border: 0;
+  border-radius: 20px;
+  corner-shape: var(--corner-shape);
+  background: var(--z-surface);
+  color: var(--app-text-primary);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, opacity 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--z-surface-press);
+  }
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  :global([data-theme='dark']) & {
+    background: #232323;
+
+    &:hover:not(:disabled) {
+      background: #2c2c2c;
+    }
+  }
+}
+
+/* Grid (Cash App / Apple Pay) cards carry no speed — keep symmetric padding. */
+.choiceCardGrid {
+  padding-right: 12px;
+}
+
+/* No-op sources read normal at rest; they dim only while hovering the group
+   (the Aurora / Glitch interaction) to signal they're unavailable. */
+@media (hover: hover) {
+  .choiceList:hover .choiceCard:disabled {
+    opacity: 0.5;
+  }
+}
+.choiceTile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  corner-shape: var(--corner-shape);
+  /* Subtle fill, a touch darker than the card — 4% black / 4% white. */
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--app-text-primary);
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+.choiceLabels {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+.choiceTitle {
+  @include ios.ios-text-callout;
+  font-weight: 500;
+  font-variation-settings: 'wght' 500, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  color: var(--app-text-primary);
+}
+.choiceSpeed {
+  flex-shrink: 0;
+  @include ios.ios-text-callout;
+  font-weight: 500;
+  font-variation-settings: 'wght' 500, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  color: var(--app-text-secondary);
+}
+
+/* ── Toolbar (grabber + nav button + centered title) ─────────────────────── */
+/* Overlay (not a flex row) so the scrolling steps can pass UNDER the title +
+   buttons; steps compensate with a top inset of var(--sheet-toolbar-h). */
+.toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding-top: 16px;
+  padding-bottom: 10px;
+}
+
+.toolbarRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  min-height: 40px;
+}
+
+/* Body/Emphasized 17/22, truly centered regardless of the nav button. The
+   sliding title strip is gradient-masked at both ends so pushed text dissolves
+   before it can collide with the X/back controls. */
+.title {
+  position: absolute;
+  left: 56px;
+  right: 56px;
+  /* Single-cell grid: entering/exiting title spans STACK (centered) during the
+     push without AnimatePresence popLayout — same reasoning as .step. */
+  display: grid;
+  justify-items: center;
+  margin: 0;
+  overflow: hidden;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 24px,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+  @include ios.ios-text-headline;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+}
+
+/* ── Step host ────────────────────────────────────────────────────────────── */
+.steps {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  /* Round the top corners to the sheet's radius so the country step's solid
+     header (and any sliding content) is clipped to the sheet's corners during
+     the push transition — otherwise the fill pokes into the square corner. */
+  border-radius: 24px 24px 0 0;
+  corner-shape: var(--corner-shape);
+}
+
+/* Absolutely positioned so entering/exiting screens coexist during the push
+   without AnimatePresence popLayout (see the steps host in the component). */
+.step {
+  position: absolute;
+  inset: 0;
+  /* Clear the overlaid toolbar (it no longer reserves flex space). The country
+     step opts OUT (stepFlushTop) so its list scrolls up under the toolbar. */
+  padding-top: var(--sheet-toolbar-h);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Country picker: scroll fills behind the overlaid toolbar — its content
+   carries its own top inset instead (.pickerScrollCountry). */
+.stepFlushTop {
+  padding-top: 0;
+}
+
+/* ── Cards — 10px squircle (figma 10 × 1.2 scale), matching the wallet lists. ─ */
+.card {
+  position: relative;
+  width: 100%;
+  padding: 4px 0;
+  border-radius: 12px;
+  corner-shape: var(--corner-shape);
+  background: var(--add-card-bg);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.02);
+  --add-card-bg: var(--ios-bg-primary);
+
+  :global([data-theme='dark']) & {
+    --add-card-bg: var(--ios-bg-secondary);
+  }
+}
+
+/* ── Step 1: source list ──────────────────────────────────────────────────── */
+.sourceWrap {
+  /* Full-bleed: the flat list rows span the screen and carry their own 20px inset. */
+  padding: 4px 0 48px;
+}
+
+/* Flat full-bleed list — same treatment as the bank/country pickers: no card
+   surface, no dividers, rows hug their content with a 20px inset + 40px icon.
+   Used by the crypto deposit-address list and the send "Add recipient" chooser. */
+.flatList {
+  width: 100%;
+  margin: 0;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  /* Row dividers are a ::after on .sourceContentBordered — hide them here. */
+  .sourceContentBordered::after {
+    display: none;
+  }
+
+  /* Glyph icons (e.g. the bank drill-in) read at full label contrast inside the
+     circle — white in dark, black in light — overriding the carded list's muted
+     color-mix tone (which needs --add-card-bg, absent on the flat list). */
+  .sourceRow .tileGlyph {
+    color: var(--ios-label-primary);
+  }
+
+  /* Rows hug content + 12px top/bottom; 12px icon→label gap; 20px edge insets. */
+  .sourceRow,
+  .depositCryptoRow {
+    gap: 12px;
+    padding: 12px 0 12px 20px;
+  }
+  .sourceContent {
+    height: auto;
+    padding-right: 20px;
+  }
+
+  /* Brand logos render bare at 40px (like the bank list's crypto logos). */
+  .depositLogo {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Line glyphs (Bank / Crypto wallet) sit in a 40px subtle-fill circle so they
+     carry the same weight as the 40px logos/flags. */
+  .tile:has(.tileGlyph) {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--ios-fill-tertiary);
+  }
+
+  /* Labels match the bank/country lists (subheadline). */
+  .rowTitle {
+    @include ios.ios-text-subheadline;
+    font-weight: 590;
+    font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  }
+  .rowSub {
+    @include ios.ios-text-subheadline;
+  }
+}
+
+/* Paste-address sheet: a touch more top padding, and the rows inset to 32px so
+   they line up with the SheetHeader's divider (which sits at 32px). */
+.pasteWrap {
+  padding-top: 12px;
+
+  .sourceRow {
+    position: relative;
+    padding-left: 24px;
+  }
+  /* Row content sits above the inset highlight. */
+  .sourceRow > * {
+    position: relative;
+    z-index: 1;
+  }
+  /* Squircle hover/press highlight that leaves a 12px gutter around the row
+     content (the icon sits at 24px, so the fill starts at 12px; full height gives
+     the same 12px above/below the 40px icon), with the chooser cards' 20px radius. */
+  .sourceRow::before {
+    content: '';
+    position: absolute;
+    inset: 0 12px;
+    z-index: 0;
+    border-radius: 20px;
+    corner-shape: var(--corner-shape);
+    transition: background-color 0.08s ease-out;
+    pointer-events: none;
+  }
+  @media (hover: hover) {
+    .sourceRow:not(:disabled):hover {
+      background: none;
+    }
+    .sourceRow:not(:disabled):hover::before {
+      background: var(--ios-fill-tertiary);
+    }
+  }
+  .sourceRow:not(:disabled):active {
+    background: none;
+  }
+  .sourceRow:not(:disabled):active::before {
+    background: var(--ios-fill-secondary);
+    transition: none;
+  }
+  .sourceContent {
+    padding-right: 24px;
+  }
+}
+
+/* Interactive list card: rows run edge-to-edge so the hover/press fill reaches
+   the card edge, with overflow:hidden clipping them to the squircle corners.
+   (Aurora added a 4px first/last-row inset for its large corner radius; creator's
+   radius is small enough that the rows can sit flush.) */
+.cardFlush {
+  padding: 0;
+  overflow: hidden;
+
+  /* No-op sources read normal at rest; entering the list dims them to signal
+     they're unavailable, and leaving restores them. */
+  @media (hover: hover) {
+    &:hover .sourceRow:disabled {
+      opacity: 0.5;
+    }
+  }
+}
+
+.sourceRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 0 24px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.08s ease-out, opacity 0.2s ease-out;
+
+  /* Tertiary on hover, secondary on press — same pattern as the white
+     content-area buttons, one fill step stronger for the list rows. */
+  @media (hover: hover) {
+    &:not(:disabled):hover {
+      background: var(--ios-fill-tertiary);
+    }
+  }
+
+  &:not(:disabled):active {
+    background: var(--ios-fill-secondary);
+    transition: none;
+  }
+
+  /* No-op sources (Crypto / Cash App / Apple Pay in Add) are non-interactive;
+     the dim itself is revealed on list hover (see .cardFlush). */
+  &:disabled {
+    cursor: default;
+  }
+}
+
+/* Non-interactive variant (amount/confirm screens) — chooser-style spacing. */
+.sourceRowStatic {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px;
+
+  /* Same gray circle as the bank list + people avatars: every selected
+     source/destination icon (flag, $, crypto logo) shares the container, so the
+     initials avatar reads as part of the system rather than an exception. */
+  .tile {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--ios-fill-tertiary);
+  }
+
+  /* Top money-flow card only (the source row sits above the amount input):
+     full-width hairline under the row, matching the "Add money from" list. */
+  .amountCard & {
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+  }
+
+  :global([data-theme='dark']) .amountCard & {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* "Use max" chip slot — labels are flex: 1, so it rides the row's right edge. */
+.useMax {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* QR scan button slot — rides the toolbar row's right edge (Figma 109:28547). */
+.toolbarTrailing {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ── Send: recipient step (Figma 109:28547) ───────────────────────────────── */
+.recipientWrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Figma 109:27766 — address card container: px 16, 4px top matching the source
+   list's rhythm under the toolbar. NO bottom pad: the captionless contacts
+   card below brings its own 16px top inset (.cardWrap), landing the gap
+   between the two cards at exactly 16. */
+.addressWrap {
+  flex-shrink: 0;
+  /* Flat: content sits on the page bg at a 24px gutter (no card). */
+  padding: 4px 24px 0;
+}
+
+.addressCard {
+  padding: 0;
+  overflow: visible;
+}
+
+/* Height-animated empty ⇄ filled swap (same REGION_* idea as the keypad). */
+.addressRegion {
+  overflow: hidden;
+}
+
+.addressBody {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding-right: 8px;
+}
+
+.addressLabels {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 12px 8px;
+}
+
+/* Filled state trims the bottom pad a touch. */
+.addressLabelsFilled {
+  padding-bottom: 8px;
+}
+
+/* Subheadline 15/590 — tertiary as the empty prompt, primary once the pasted
+   address fills in (long address wraps). */
+.addressPlaceholder,
+.addressValue {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  word-break: break-word;
+}
+
+.addressPlaceholder {
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
+
+.addressValue {
+  color: var(--ios-label-primary);
+}
+
+.addressSub {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-secondary);
+}
+
+/* The token logo hugs the right edge, aligned with the 24px gutter. */
+.addressTile {
+  margin: 0;
+}
+
+/* Paste / Continue — full-width inverted-primary button below the prompt; pulled
+   out 8px of the wrap's 24px gutter so it sits 16px off the phone edges. */
+.addressBtnWrap {
+  margin: 0 -8px;
+  padding: 8px 8px 0;
+}
+
+/* Medium content-area button (same metrics as the list-section CTA). */
+.addressBtn {
+  padding: 7px 14px;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+/* Solana token chip (own rounded-square background baked into the asset). */
+.tokenIcon {
+  display: block;
+  width: 40px;
+  height: 40px;
+}
+
+.tokenIconSm {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+/* Money-flow list rows are navigational buttons (like the "Add money from"
+   chooser): the icon sits bare — no gray container — sized to the icon itself. */
+.tile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.tileIcon {
+  width: 24px;
+  height: 24px;
+
+  /* Monochrome (black-stroke) source icons follow the label color in dark. */
+  :global([data-theme='dark']) & {
+    filter: invert(1);
+  }
+}
+
+/* central-icons glyph rows (e.g. IconWallet1): currentColor follows the label,
+   and the baked per-path stroke-width is overridden to match the 2px-stroke
+   asset SVGs above (same convention as the issuance value props). */
+.tileGlyph {
+  color: var(--ios-label-primary);
+
+  path {
+    stroke-width: 2;
+  }
+}
+
+/* Bare-icon list buttons render monochrome glyphs in a secondary tone (flags /
+   brand logos keep their own color). */
+.sourceRow {
+  /* Opaque "secondary" tone — flatten the label onto the card surface so a
+     multi-path glyph (e.g. the bank) doesn't show its strokes overlapping where
+     a translucent --ios-label-secondary fill would double up. */
+  .tileGlyph {
+    color: color-mix(in srgb, var(--ios-label-primary) 50%, var(--add-card-bg));
+  }
+
+  .tileIcon {
+    opacity: 0.6;
+  }
+}
+
+.flagIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+/* People recipient avatar — first+last initials on a gray circle with the
+   country flag badged bottom-right. Initials need a container, so this is the
+   one money-flow row that keeps the gray circle (others go bare). */
+.recipientAvatar {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  corner-shape: round; // override the global squircle → a true circle
+  background: var(--ios-fill-tertiary);
+}
+
+/* Crypto recipients / send-networks reuse .recipientAvatar but show a brand
+   logo — those go bare (no gray circle) like the other money-flow icons. */
+.recipientAvatar:has(.tokenIconSm) {
+  width: auto;
+  height: auto;
+  background: none;
+}
+
+.recipientInitials {
+  @include ios.ios-type-rounded; // SF Pro Rounded, like iOS contact avatars
+  font-size: 18px;
+  font-weight: 590;
+  line-height: 1;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+}
+
+.recipientFlag {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round; // round badge + ring, not the global squircle
+  overflow: hidden;
+  /* Ring in the card bg separates the badge from the avatar fill. */
+  box-shadow: 0 0 0 2px var(--add-card-bg, var(--ios-bg-primary));
+}
+
+.sourceContent {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+  height: 80px;
+  padding-right: 24px;
+}
+
+/* Full-width hairline divider: the border lives on the inset .sourceContent, so
+   draw it with a pseudo-element that reaches back past the widest row inset
+   (24px pad + 56px tile + 24px gap) to the card's left edge — collapsed-tile
+   rows overshoot and are clipped by the card's overflow — and out to the right. */
+.sourceContentBordered {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: -104px;
+    right: 0;
+    bottom: 0;
+    height: 0.5px;
+    background: rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+  }
+
+  :global([data-theme='dark']) &::after {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.sourceLabels {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rowTitle {
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.rowSub {
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
+
+/* ── Bank picker: saved-banks list, country picker, account form ───────────── */
+/* Saved bank / recipient / contact list — flat and full-bleed, same treatment as
+   the country picker (.pickerCard): no container surface/rounding, no dividers,
+   rows hug their content with a 12px top/bottom inset and carry a bare 40px icon
+   (flag) instead of the gray circle the old card used. */
+/* The session address book under the address card (withdraw). */
+.walletBook {
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.bankList {
+  width: 100%;
+  margin: 0; // full-bleed: rows span the screen edges (content keeps its inset)
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  /* Row dividers are a ::after on .sourceContentBordered — hide them here. */
+  .sourceContentBordered::after {
+    display: none;
+  }
+
+  /* Row hugs its content + 12px top/bottom; 12px between the icon and the labels;
+     20px inset on both edges. */
+  .sourceRow {
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 20px;
+  }
+  .sourceContent {
+    height: auto;
+    padding-right: 20px;
+  }
+
+  /* Crypto logo matches the bank flag's 40px (was a 24px glyph in a gray circle). */
+  .tokenIconSm {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Labels match the country list (subheadline). */
+  .rowTitle {
+    @include ios.ios-text-subheadline;
+    font-weight: 590;
+    font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  }
+  .rowSub {
+    @include ios.ios-text-subheadline;
+  }
+}
+
+/* Empty saved-banks state: pull the shared list card's 16px top inset back to
+   the 4px the "Add money from" list uses, so the header→list gap matches. */
+.banksEmptyOffset {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: -12px;
+}
+
+/* Solid header backdrop — a flat fill behind the toolbar + search bar that the
+   list scrolls UP and disappears behind (this skin is flat: no blur/fade). The
+   sheet's rounded top corners are honored by .steps' clip (which rounds with the
+   sheet), so this stays square; the 8px past the search pill keeps scrolling rows
+   from bleeding into it. */
+.countryHeaderBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1; // above the scrolling list, below the search pill (z-2) + toolbar (z-3)
+  height: 122px; // toolbar + search pill (bottom = top 70 + 44) + 8px clearance
+  background: var(--app-bg);
+}
+
+/* Search bar — pinned ~14px under the back button; the list scrolls behind the
+   solid header backdrop above. */
+.searchPill {
+  position: absolute;
+  top: 70px;
+  left: 16px;
+  right: 16px;
+  z-index: 2; // above the header backdrop (z-1), below the toolbar (z-3)
+}
+
+/* Flat solid search field — a full pill (no glass, no shadow). */
+.searchPillFlat {
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--z-surface);
+  overflow: hidden;
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px 0 12px;
+}
+
+/* central-icons magnifying glass — currentColor stroke, forced to a true 2px
+   (only a stroke-1.5 variant ships). */
+.searchIcon {
+  flex-shrink: 0;
+  color: var(--ios-label-tertiary);
+
+  path {
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+/* Subheadline, medium (510) — a step lighter than the semibold (590) list rows. */
+.searchInput {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  outline: none;
+  caret-color: var(--ios-tint);
+  @include ios.ios-text-subheadline;
+  font-weight: 510;
+  font-variation-settings: 'wght' 510, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+
+  &::placeholder {
+    color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+  }
+}
+
+/* Scroll region that bleeds to the sheet bottom — the list/form scroll under
+   the pinned controls + the bottom progressive blur (no boxed inner scroll). */
+.pickerScroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Top padding lets the search/list rest clear of the top blur; the page then
+   scrolls UP under it. Form keeps bottom room for the anchored CTA. */
+.pickerScrollCountry {
+  padding-top: 126px; // "Popular" rests 16px under the pill (bottom 114 + label's 4px top)
+  padding-bottom: 56px; // last row clears the phone-shell's rounded bottom corner
+}
+
+.pickerScrollForm {
+  padding-bottom: 124px;
+}
+
+/* iOS grouped-list section header. */
+.sectionLabel:first-child {
+  padding-top: 20px;
+}
+
+.sectionLabel {
+  margin: 0;
+  padding: 12px 20px;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.pickerCard {
+  width: 100%;
+  margin: 0; // full-bleed: rows span the screen edges (content keeps its inset)
+  /* Flat: no container surface or rounding; no dividers. Each row carries its own
+     10px top/bottom padding (≈20px between items) — no flex gap. */
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  /* Row dividers are a ::after on .sourceContentBordered — hide them here. */
+  .sourceContentBordered::after {
+    display: none;
+  }
+
+  /* Row hugs its content + 12px top/bottom (instead of the source list's fixed
+     80px height + flex gap); 12px between the flag and the labels; 20px inset on
+     both edges. */
+  .sourceRow {
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 20px;
+  }
+  .sourceContent {
+    height: auto;
+    padding-right: 20px;
+  }
+
+  /* Country rows read at subheadline (15/20) — name emphasized, currency regular. */
+  .rowTitle {
+    @include ios.ios-text-subheadline;
+    font-weight: 590;
+    font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  }
+  .rowSub {
+    @include ios.ios-text-subheadline;
+  }
+}
+
+/* Full-bleed, flat: no card surface/radius — just edge-to-edge hairline dividers. */
+.formCard {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Outer frame: a divider at the very top and bottom of the field group (the
+   between-field dividers are ::before on each field, so these never overlap). */
+.formFields {
+  display: flex;
+  flex-direction: column;
+  border-top: 0.5px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    border-top-color: rgba(255, 255, 255, 0.12);
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* Two-column key/value row: label hugs the left, value fills + right-aligns. */
+.formField {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+
+  & + &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0.5px;
+    background: rgba(0, 0, 0, 0.12);
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+}
+
+.formLabel {
+  flex-shrink: 0;
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-secondary);
+}
+
+.formInput {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  @include ios.ios-text-subheadline;
+  // Subheadline / Emphasized — set the variation axis too, or the mixin's 'wght'
+  // (400) wins over plain font-weight on the variable font.
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--ios-label-primary);
+  outline: none;
+  appearance: none;
+}
+
+/* Blue primary CTA anchored to the sheet bottom, 32px all around. A sheet-bg
+   gradient backs it so a long form scrolls cleanly into the sheet color (no
+   bottom blur — the progressive blur lives at the top). */
+.bottomCtaWrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  /* 24px sides + 56px from the screen bottom (clears the phone-shell curve); the
+     32px top keeps the gradient fade above the button. The full-screen flows sit
+     on the base bg, so the fade resolves to --app-bg. */
+  padding: 32px 24px 56px;
+  background: linear-gradient(to top, var(--app-bg), var(--app-bg) 56%, transparent);
+}
+
+/* ── Step 2/3 layout ──────────────────────────────────────────────────────────
+   NO flex gap here: a gap next to the swap region would vanish in one frame
+   when the exiting region unmounts (the end-of-transition jump). All vertical
+   rhythm lives on persistent elements or INSIDE the height-animated region. */
+.amountLayout {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  /* 24px side gutter — the content is indented 8px past the base 16px for optical
+     balance (the keypad's -12px margin keeps the keys near the edge). Bottom gap
+     lives on .ctaWrap (48px, matching the auth sheets). */
+  padding: 6px 24px 0;
+}
+
+.cardStack {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 16px;
+}
+
+/* Drop the base card's 4px top/bottom on the amount + destination cards so the
+   source row's circle sits symmetrically (the 4px otherwise added to the top
+   only, where the amount input follows the row). */
+.cardStack > .card {
+  padding: 0;
+}
+
+/* Amount card fills the stack; content centers in the remaining space. */
+.amountCard {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Figma 2143:39414 — amount centered in the card, pb 24. */
+.amountInput {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding-bottom: 24px;
+  text-align: center;
+}
+
+/* SF Pro Rounded Bold 48/56. Flex centering (not text-align): a wider-than-
+   container child stays CENTERED with symmetric overflow, so the fit scale
+   shrinks it back into view around the middle. */
+.amountValue {
+  display: flex;
+  /* Stretch to the container width (a centered flex child shrink-wraps otherwise)
+     so the fit measurement has a real bound to compare the amount against. */
+  align-self: stretch;
+  justify-content: center;
+  margin: 0;
+  /* Geist (the skin font) — NOT SF Pro Rounded. Base off the wallet-balance token
+     but bumped to 64/72 for the Z amount entry. */
+  @include ios.ios-text-wallet-balance;
+  font-size: 64px;
+  line-height: 72px;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600, 'wdth' 100, 'opsz' var(--ios-type-wallet-balance-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* Fit-to-width wrapper — Swift's minimumScaleFactor: scales toward 0.5 as the
+   amount outgrows the card. */
+.amountFit {
+  display: inline-flex;
+  flex-shrink: 0;
+  transform-origin: center;
+  transition: transform 0.25s ease;
+  will-change: transform;
+}
+
+/* Cent placeholders, dimmed (NumericText ghost columns; Swift's
+   AnimatedCurrencyText suffix). The ink-in transition lives in the component. */
+.amountGhost {
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
+
+.amountSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: center;
+  margin: 0;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-secondary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* ── Enter-amount: From / To pills + free-floating amount ──────────────────── */
+.transferRows {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* From/To rows sit 20px from the sheet edge — 8px out of the layout's 24px
+     gutter, then +4px padding-left, so the labels hug left a touch more than the
+     amount/keypad/CTA. */
+  margin-left: -8px;
+  padding: 6px 0 0 4px;
+}
+
+.transferRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* No fixed width — the label hugs its text so the pills stagger (From sits wider
+   than To) rather than lining up in a column. */
+.transferRowLabel {
+  flex-shrink: 0;
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-secondary);
+}
+
+.transferPill,
+.transferPillStatic {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 8px 10px 8px 8px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--z-surface);
+  text-align: left;
+}
+
+.transferPill {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.pillIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.pillIconFill {
+  background: var(--ios-fill-tertiary);
+}
+
+.pillImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pillInitials {
+  @include ios.ios-type-rounded;
+  font-size: 12px;
+  font-weight: 590;
+  line-height: 1;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100;
+}
+
+/* The $ SVG has 2px of baked padding (the coin disc is 20 of a 24 viewBox). At a
+   20px img the disc would render ~16.7px — smaller than the flag. So keep the img
+   at the container's 20px (no flex-shrink games) and scale it up 24/20 = 1.2 so the
+   disc reads a true 20px; the container's overflow-hidden clips the spill. */
+.pillDollar {
+  width: 20px;
+  height: 20px;
+  transform: scale(1.2);
+
+  :global([data-theme='dark']) & {
+    filter: invert(1);
+  }
+}
+
+.pillName {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+.pillChevron {
+  flex-shrink: 0;
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
+
+/* The amount floats free between the From/To rows and the keypad. */
+.amountFree {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  text-align: center;
+}
+
+/* ── Confirm sheet (short, over the amount screen) ────────────────────────── */
+.confirmBody {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 24px 48px;
+}
+
+/* Text + rows + divider are indented 8px past the body's 24px gutter (→ 32px);
+   the CTA stays flush with the 24px gutter. */
+.confirmHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 8px;
+  padding: 4px 0 24px;
+}
+
+.confirmTitle {
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 700;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+}
+
+/* Value-over-label rows under a hairline divider (both indented 8px → 32px). */
+.confirmRows {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0 8px;
+  padding: 28px 0 28px;
+  border-top: 0.5px solid var(--z-hairline);
+}
+
+.confirmRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.confirmValue {
+  @include ios.ios-text-callout;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+}
+
+.confirmLabel {
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-secondary);
+}
+
+.confirmCtaWrap {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Face ID glyph on the Confirm CTA (sits left of the label). */
+.ctaFaceId {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+}
+
+/* ── Success screen ───────────────────────────────────────────────────────── */
+.successStep {
+  /* Body + Done split the height; the body is top-aligned. Unlike the amount
+     screen, the CTA isn't wrapped in .amountLayout, so it needs the 24px gutter. */
+  .ctaWrap {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+.successBody {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 24px 0;
+}
+
+.successCheck {
+  display: inline-flex;
+  /* Optically align the circle with the X above it (icon has slight side bearing). */
+  margin-left: -4px;
+  color: var(--ios-label-primary);
+}
+
+.successTitle {
+  margin: 0;
+  @include ios.ios-text-title-1;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-1-opsz);
+  color: var(--ios-label-primary);
+  text-wrap: balance;
+}
+
+/* White disc straddling the 16px gap between the cards (40px ⇒ 12px overlap each). */
+.chevronDisc {
+  z-index: 1;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: -12px auto;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--add-card-bg, var(--ios-bg-primary));
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.06);
+  color: var(--ios-label-secondary);
+  --add-card-bg: var(--ios-bg-primary);
+
+  :global([data-theme='dark']) & {
+    border-color: rgba(255, 255, 255, 0.1);
+    --add-card-bg: var(--ios-bg-secondary);
+  }
+}
+
+/* ── Keypad — mirrors the Swift NumericKeypad: 48px keys, 4px gaps, 4px screen
+   inset (the -12px margin unwinds the layout's 16px), title2 semibold, and a
+   0.96 scale press (instant down, 0.2s ease-out release — no fill). ────────── */
+/* Height-animated swap region (keypad ⇄ details): stays in flow, collapses to
+   0 / expands from 0 so the cards above grow through real layout. overflow
+   clips during the collapse; the horizontal bleed lives on the wrapper margin
+   so the keypad's 4px screen inset survives the clipping. */
+.swapRegion {
+  flex-shrink: 0;
+  margin: 0 -12px;
+  overflow: hidden;
+}
+
+/* Keys sit ~4px off the screen edge (the -12px unwinds the layout's 16px). */
+.keypad {
+  flex-shrink: 0;
+  margin: 0 -12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px 0 16px;
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 60px (was 48): +12 per row ⇒ the keypad is 48px taller overall. */
+  height: 60px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  @include ios.ios-text-title-2;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease-out;
+
+  &:active {
+    transform: scale(0.96);
+    transition: none;
+  }
+}
+
+/* ── CTAs ─────────────────────────────────────────────────────────────────── */
+.ctaWrap {
+  flex-shrink: 0;
+  /* No side inset — the layout's gutter already lines the CTA up with the content.
+     48px bottom gap to the screen edge, matching the auth + chooser sheets. */
+  padding: 0 0 48px;
+}
+
+/* ── Receive: deposit address list + funding details ─────────────────────── */
+
+/* Crypto rows reuse the source row's CHILDREN (.tile/.sourceContent) but NOT the
+   interactive .sourceRow itself — they're read-only (only the copy/QR buttons
+   act), so the row is a plain flex layout with no hover/press/cursor. */
+.depositCryptoRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  padding: 0 0 0 24px;
+
+  /* The copy/QR button group sits 16px off the row edge (vs the chevron's 24). */
+  .sourceContent {
+    padding-right: 16px;
+  }
+}
+
+/* Network brand mark in the tile — clipped to a circle. */
+.depositLogo {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+/* ── Secondary "Clipboard" sheet (Send / Withdraw → crypto picker) ─────────
+   A float sheet (auth/send-receive treatment): the "Clipboard" heading inline
+   with a glass X, then the tappable address rows (the saved-recipient row look —
+   circle avatar, truncated address, "<network> wallet"). */
+/* Scroll container for the funding-details screen (below the overlaid toolbar). */
+.fundingScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  /* Full-bleed (the flat field group spans the screen); deep bottom so the last
+     content clears the anchored Share CTA. */
+  padding: 4px 0 140px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Footer caption under the fields — centered, caption-1, tertiary. */
+.fundingNote {
+  margin: 16px 0 0;
+  padding: 0 24px;
+  @include ios.ios-text-caption-1;
+  color: var(--ios-label-tertiary);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+/* Share CTA — icon + label centered with a gap; icon stroke bumped to 2px. */
+.shareCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.shareCtaIcon {
+  flex-shrink: 0;
+
+  path {
+    stroke-width: 2;
+  }
+}
+
+.depositActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+/* Shared row icon button — deposit copy/QR + funding copy. */
+.rowIconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-label-secondary);
+  cursor: pointer;
+
+  /* Subtle press-scale, same as the content-area buttons (hover 1.02, click
+     1.04). The fill deepening is the press feedback, so cancel the mixin's
+     :active brightness. */
+  @include shadow.glass-button-press-scale(1.04);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.15s ease,
+    color 0.15s ease;
+
+  &:active:not(:disabled) {
+    filter: none;
+  }
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+@media (hover: hover) {
+  .rowIconBtn:hover {
+    background: var(--ios-fill-secondary);
+  }
+}
+
+.fundingValueWrap {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fundingValue {
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  text-align: right;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  word-break: break-word;
+  text-wrap: balance;
+  min-width: 0;
+}
+
+/* CTA contents — icon + morphing label inside the blue glass pill. Spacing
+   lives on the icon's animated margin (not gap), so it collapses with it. */
+.ctaInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctaIcon {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.spinner {
+  display: inline-flex;
+  animation: add-money-spin 0.9s linear infinite;
+}
+
+@keyframes add-money-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

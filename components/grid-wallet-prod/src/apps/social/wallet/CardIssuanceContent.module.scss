@@ -1,0 +1,165 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Bottom-anchored copy section, center-aligned. */
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Centered copy, 24px sides. 8px gap between title and subhead. */
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 24px 0;
+  text-align: center;
+}
+
+/* Ready title — the value-prop card carries its own top margin for the gap below. */
+.titleBlockTight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  padding: 16px 24px 4px;
+  text-align: center;
+}
+
+/* Title3/Emphasized 20/25. */
+.titlePrimary {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-title-3;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+  text-wrap: balance;
+}
+
+/* Subhead — Subheadline/Regular 15/20. */
+.titleSecondary {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-subheadline;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--ios-label-secondary);
+  text-wrap: balance;
+}
+
+/* Created-screen subhead — same Title3 type as the title, secondary tone, tight. */
+.titleSecondaryEmphasis {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-secondary);
+}
+
+/* Caption2/Regular — centered, under the CTA. */
+.agreement {
+  margin: 0;
+  width: 100%;
+  padding: 0 40px 48px;
+  text-align: center;
+  text-wrap: pretty;
+  @include ios.ios-text-caption-2;
+  color: var(--ios-label-tertiary);
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-caption-2-opsz);
+}
+
+.agreementStrong {
+  color: var(--ios-label-tertiary);
+  text-decoration: underline;
+}
+
+/* Value-prop list — plain rows, no card container, no dividers. */
+.valuePropList {
+  align-self: stretch;
+  margin: 12px 24px 0;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Value-prop rows — left-aligned single line (icon + one text style). */
+.valueProp {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 0;
+  text-align: left;
+}
+
+.valuePropIcon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--ios-label-primary);
+
+  /* Render at the 2px stroke weight (same convention as the rest of the Z app). */
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+/* Subheadline, weight 550. */
+.valuePropTitle {
+  margin: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  @include ios.ios-text-subheadline;
+  font-weight: 550;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 550, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+/* CTA — full-width pill, 24px sides, 48px from the screen bottom. */
+.ctaWrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 16px 24px 48px;
+}
+
+/* Intro: the disclaimer sits below the CTA and owns the 48px bottom, so the CTA
+   gets equal top/bottom padding of its own. */
+.ctaWrapAboveNote {
+  padding-block: 20px;
+}
+
+/* CTA content stack — the "Create card" label and the spinner overlap in one
+   grid cell so the pill's size never jumps during the swap. */
+.ctaSwap {
+  display: grid;
+  place-items: center;
+}
+
+.ctaItem {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  display: inline-flex;
+  flex-shrink: 0;
+  animation: z-card-issuance-spin 0.9s linear infinite;
+}
+
+@keyframes z-card-issuance-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
