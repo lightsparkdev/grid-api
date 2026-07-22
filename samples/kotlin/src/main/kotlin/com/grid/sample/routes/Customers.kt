@@ -3,9 +3,9 @@ package com.grid.sample.routes
 import com.fasterxml.jackson.databind.JsonNode
 import com.lightspark.grid.models.customers.CustomerCreateParams
 import com.lightspark.grid.models.customers.CustomerCreateParams.CreateCustomerRequest
-import com.lightspark.grid.models.customers.CustomerGetKycLinkParams
 import com.lightspark.grid.models.customers.IndividualCustomerFields
 import com.lightspark.grid.models.customers.externalaccounts.Address
+import com.grid.sample.Config
 import com.grid.sample.GridClientBuilder
 import com.grid.sample.JsonUtils
 import com.grid.sample.Log
@@ -15,7 +15,17 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.time.LocalDate
+import java.util.Base64
+
+// SDK 1.7.1 predates the current POST /customers/{id}/kyc-link endpoint shape,
+// so the kyc-link route below calls the REST API directly.
+private val DEFAULT_GRID_API_BASE_URL = "https://api.lightspark.com/grid/2025-10-13"
+private val kycHttpClient: HttpClient by lazy { HttpClient.newHttpClient() }
 
 fun Route.customerRoutes() {
     route("/api/customers") {
@@ -108,30 +118,31 @@ fun Route.customerRoutes() {
                         HttpStatusCode.BadRequest
                     )
 
-                val body = call.receiveText()
+                val body = call.receiveText().ifBlank { "{}" }
                 Log.incoming("POST", "/api/customers/$customerId/kyc-link", body)
-                val json = if (body.isBlank()) {
-                    JsonUtils.mapper.createObjectNode()
-                } else {
-                    JsonUtils.mapper.readTree(body)
-                }
 
-                val params = CustomerGetKycLinkParams.builder()
-                    // Fills the {customerId} path segment (SDK names it platformCustomerId).
-                    .platformCustomerId(customerId)
-                    .apply {
-                        json.optText("redirectUri")?.let { redirectUri(it) }
-                    }
+                val baseUrl = Config.apiBaseUrl ?: DEFAULT_GRID_API_BASE_URL
+                val auth = Base64.getEncoder()
+                    .encodeToString("${Config.apiTokenId}:${Config.apiClientSecret}".toByteArray())
+                val request = HttpRequest.newBuilder()
+                    .uri(URI.create("$baseUrl/customers/$customerId/kyc-link"))
+                    .header("Authorization", "Basic $auth")
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build()
 
-                Log.gridRequest("customers.getKycLink", customerId)
-                val link = GridClientBuilder.client.customers().getKycLink(params)
-                val responseJson = JsonUtils.prettyPrint(link)
-                Log.gridResponse("customers.getKycLink", responseJson)
+                Log.gridRequest("customers.kycLink", body)
+                val response = kycHttpClient.send(request, HttpResponse.BodyHandlers.ofString())
+                Log.gridResponse("customers.kycLink", response.body())
 
-                call.respondText(responseJson, ContentType.Application.Json, HttpStatusCode.Created)
+                // Pass Grid's status through (201 on success; 400/404/409 errors verbatim).
+                call.respondText(
+                    response.body(),
+                    ContentType.Application.Json,
+                    HttpStatusCode.fromValue(response.statusCode())
+                )
             } catch (e: Exception) {
-                Log.gridError("customers.getKycLink", e)
+                Log.gridError("customers.kycLink", e)
                 call.respondText(
                     """{"error": "${e.message}"}""",
                     ContentType.Application.Json,
