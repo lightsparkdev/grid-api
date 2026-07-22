@@ -323,7 +323,6 @@ resources:
       transaction_status: '#/components/schemas/TransactionStatus'
       base_transaction_source: "#/components/schemas/BaseTransactionSource"
       transaction_source_one_of: "#/components/schemas/TransactionSourceOneOf"
-      incoming_rate_details: "#/components/schemas/IncomingRateDetails"
       reconciliation_instructions: "#/components/schemas/ReconciliationInstructions"
       transaction_list_response: "#/components/schemas/TransactionListResponse"
     methods:
