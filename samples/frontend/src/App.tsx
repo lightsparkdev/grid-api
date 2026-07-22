@@ -2,10 +2,10 @@ import { useState } from 'react'
 import Sidebar, { FlowKey } from './components/Sidebar'
 import WebhookStream from './components/WebhookStream'
 import PayoutFlow from './flows/PayoutFlow'
+import KycOnboardingFlow from './flows/KycOnboardingFlow'
 import UsdcPayoutFlow from './flows/UsdcPayoutFlow'
 import ExchangeRatesFlow from './flows/ExchangeRatesFlow'
 import EmbeddedWalletFlow from './flows/EmbeddedWalletFlow'
-import KycOnboardingFlow from './flows/KycOnboardingFlow'
 
 const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
   payout: {
