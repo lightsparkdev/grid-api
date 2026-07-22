@@ -1,0 +1,70 @@
+post:
+  summary: Cancel an outgoing transaction
+  description: >
+    Request cancellation of an outgoing bank transfer (ACH or wire) before it
+    has settled — for example, a payment initiated outside of the receiving
+    bank's processing window.
+
+    Whether a transaction can still be cancelled is determined by the banking
+    partner that is settling it: the request is forwarded to the partner's own
+    cancellation facility, and a transaction that the partner has already
+    processed (or that is otherwise past its cancellation window) cannot be
+    cancelled. Cancellation is only supported for outgoing bank transfers;
+    requests for any other transaction type are rejected.
+  operationId: cancelTransaction
+  tags:
+    - Transactions
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: transactionId
+      in: path
+      description: Unique identifier of the transaction to cancel
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/transactions/CancelTransactionRequest.yaml
+  responses:
+    '200':
+      description: Cancellation requested successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/transactions/OutgoingTransaction.yaml
+    '400':
+      description: Bad request - Invalid parameters or the transaction cannot be cancelled
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - The transaction has already settled or is otherwise past the
+        point where it can be cancelled.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

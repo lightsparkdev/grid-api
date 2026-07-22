@@ -4302,6 +4302,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /transactions/{transactionId}/cancel:
+    post:
+      summary: Cancel an outgoing transaction
+      description: |
+        Request cancellation of an outgoing bank transfer (ACH or wire) before it has settled — for example, a payment initiated outside of the receiving bank's processing window.
+        Whether a transaction can still be cancelled is determined by the banking partner that is settling it: the request is forwarded to the partner's own cancellation facility, and a transaction that the partner has already processed (or that is otherwise past its cancellation window) cannot be cancelled. Cancellation is only supported for outgoing bank transfers; requests for any other transaction type are rejected.
+      operationId: cancelTransaction
+      tags:
+        - Transactions
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          description: Unique identifier of the transaction to cancel
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelTransactionRequest'
+      responses:
+        '200':
+          description: Cancellation requested successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutgoingTransaction'
+        '400':
+          description: Bad request - Invalid parameters or the transaction cannot be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - The transaction has already settled or is otherwise past the point where it can be cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /crypto/estimate-withdrawal-fee:
     post:
       summary: Estimate crypto withdrawal fee
@@ -12145,6 +12206,7 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL | Transaction is not pending platform approval |
+            | TRANSACTION_NOT_CANCELLABLE | Transaction has already settled or is otherwise past the point where it can be cancelled |
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
@@ -12152,6 +12214,7 @@ components:
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
+            - TRANSACTION_NOT_CANCELLABLE
             - UMA_ADDRESS_EXISTS
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
@@ -20797,6 +20860,13 @@ components:
           type: string
           description: Optional reason for rejecting the payment. This is just for debugging purposes or can be used for a platform's own purposes.
           example: RESTRICTED_JURISDICTION
+    CancelTransactionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Optional reason for cancelling the transaction. This is just for debugging purposes or can be used for a platform's own purposes.
+          example: REQUESTED_AFTER_HOURS
     EstimateCryptoWithdrawalFeeRequest:
       type: object
       required:
