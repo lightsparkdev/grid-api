@@ -13,14 +13,14 @@ const FLOWS: FlowEntry[] = [
     description: 'Look up FX rates and fees for a corridor',
   },
   {
-    key: 'payout',
-    label: 'Payout to Bank Account',
-    description: 'Send a real-time payment funded with USDC',
-  },
-  {
     key: 'kyc-onboarding',
     label: 'KYC Onboarding',
     description: "Verify a customer's identity with a hosted KYC link",
+  },
+  {
+    key: 'payout',
+    label: 'Payout to Bank Account',
+    description: 'Send a real-time payment funded with USDC',
   },
   {
     key: 'usdc-payout',
