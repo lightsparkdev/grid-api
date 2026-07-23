@@ -53,6 +53,11 @@ export interface ApiCall {
   /** Inbound webhook (Grid → your endpoint): `path` is your full URL, and the
    *  curl drops the Grid `Authorization` header (Grid signs it instead). */
   inbound?: boolean;
+  /** Real Grid response body (Phase 2). When set, the panel renders THIS
+   *  instead of the synthesized stub. */
+  resBody?: unknown;
+  /** Real HTTP status code (Phase 2), used to tint error responses. */
+  realStatus?: number;
 }
 
 const AUTH_LABEL: Record<AuthMethod, string> = {

@@ -43,8 +43,9 @@ import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import styles from './AuthSheet.module.scss';
 
 const CODE_LENGTH = 6;
-/** The demo's one-time code — what the notification autofills. */
-const DEMO_CODE = '123456';
+/** The demo's one-time code — what the notification autofills. Must match the
+ *  sandbox magic OTP (any other code fails the live HPKE-encrypted verify). */
+const DEMO_CODE = '000000';
 /** Code step settles, then the notification swoops in. */
 const NOTIFICATION_DELAY_MS = 1000;
 /** Autofill cadence: one digit per beat, submit shortly after the last. */

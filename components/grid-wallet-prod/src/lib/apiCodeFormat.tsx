@@ -374,6 +374,7 @@ export function stubResponseBody(entry: ApiCall): Record<string, unknown> {
 }
 
 export function formatResponseString(entry: ApiCall): string {
+  if (entry.resBody !== undefined) return JSON.stringify(entry.resBody, null, 2);
   return JSON.stringify(stubResponseBody(entry), null, 2);
 }
 

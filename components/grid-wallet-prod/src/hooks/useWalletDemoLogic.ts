@@ -18,8 +18,6 @@ import {
   oauthVerifyCall,
   otpRequestCall,
   otpVerifyCalls,
-  passkeyChallengeCall,
-  passkeyVerifyCall,
   receivePaymentCalls,
   tapCalls,
   transferExecuteCalls,
@@ -28,7 +26,9 @@ import {
   type ReceivePaymentInfo,
   type TransferDest,
 } from '@/data/apiCalls';
-import { oauthNonce, passkeyCeremony } from '@/lib/auth';
+import { oauthNonce } from '@/lib/auth';
+import { signIn as gridSignIn, ensureSession, clearSession, getAccount } from '@/lib/gridSession';
+import { envelopeToApiCall } from '@/lib/gridEntry';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { Entry } from '@/components/ApiPanel/types';
 import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
@@ -257,6 +257,20 @@ export function useWalletDemoLogic() {
     ]);
   }, []);
 
+  // Turns each real Grid {request,response} envelope into a panel entry within
+  // a named group, as the live sign-in flow fires its calls.
+  const logEnvelope = useCallback(
+    (groupLabel: string, groupId: string) => (env: import('@/lib/gridClient').GridEnvelope) => {
+      pushCalls([envelopeToApiCall(env)], groupLabel, groupId);
+    },
+    [pushCalls],
+  );
+
+  // Guards the live sign-in call (gridSignIn) against concurrent invocation: a
+  // second tap landing before `running` has re-rendered would otherwise fire a
+  // second WebAuthn ceremony on top of the first (double passkey prompts).
+  const signInInFlight = useRef(false);
+
   const startSession = useCallback(() => {
     session.current.expiresAt = Date.now() + SESSION_MS;
   }, []);
@@ -305,15 +319,25 @@ export function useWalletDemoLogic() {
         setTransient(null);
         await sleep(400);
       } else if (m === 'passkey') {
-        const gid = newGroupId();
-        // No "Save a passkey?" sheet — the entry-point tap starts the challenge
-        // directly, and the system passkey dialog IS the save ceremony. Firing
-        // create() in the tap's own chain also keeps its user activation.
-        pushCalls([passkeyChallengeCall()], 'Sign in', gid);
-        await passkeyCeremony();
-        await playFaceId();
-        // Assertion verified after the Face ID ceremony.
-        pushCalls([passkeyVerifyCall()], 'Sign in', gid);
+        // A sign-in is already live (e.g. a second tap landed before `running`
+        // re-rendered) — never start a second WebAuthn ceremony on top of it.
+        if (signInInFlight.current) return;
+        signInInFlight.current = true;
+        try {
+          const gid = newGroupId();
+          // Real Grid sign-in: first run bootstraps via EMAIL_OTP + registers a
+          // passkey; returning runs the passkey challenge/verify. Every call is
+          // logged truthfully.
+          await gridSignIn({
+            log: logEnvelope('Sign in', gid),
+            // The aurora OTP sheet collects the code; sandbox magic code is 000000.
+            promptOtp,
+            // Play the iOS Face ID animation around the WebAuthn assertion.
+            onFaceId: () => playFaceId(),
+          });
+        } finally {
+          signInInFlight.current = false;
+        }
       } else if (m === 'oauth' || m === 'apple') {
         if (popup) {
           // The popup is already open — the phone stays untouched until it
@@ -332,7 +356,19 @@ export function useWalletDemoLogic() {
       }
       startSession();
     },
-    [method, promptEmail, promptPhone, promptOtp, promptGoogle, promptApple, playFaceId, pushCalls, startSession],
+    [
+      method,
+      promptEmail,
+      promptPhone,
+      promptOtp,
+      promptGoogle,
+      promptApple,
+      playFaceId,
+      pushCalls,
+      startSession,
+      logEnvelope,
+      gridSignIn,
+    ],
   );
 
   const signInWithMethod = useCallback(
@@ -493,6 +529,7 @@ export function useWalletDemoLogic() {
       faceIdPrompt.current = null;
     }
     session.current = {};
+    clearSession();
     transferGroup.current = null;
     transferFundingCurrency.current = null;
     settleTimers.current.forEach((t) => clearTimeout(t));
@@ -566,6 +603,7 @@ export function useWalletDemoLogic() {
       faceIdPrompt.current = null;
     }
     session.current = {};
+    clearSession();
     transferGroup.current = null;
     transferFundingCurrency.current = null;
     settleTimers.current.forEach((t) => clearTimeout(t));
