@@ -1,0 +1,22 @@
+type: object
+description: >-
+  Per-platform branding for authentication codes sent when a cardholder adds a
+  Grid-issued card to a digital wallet. Updates apply to subsequent delivery
+  attempts. Invalid sender or provider configuration can cause delivery to fail.
+properties:
+  displayName:
+    type: string
+    maxLength: 255
+    description: Platform name displayed in authentication messages.
+    example: Acme
+  logoUrl:
+    type: string
+    format: uri
+    pattern: '^https://'
+    maxLength: 512
+    description: HTTPS URL of the logo displayed in email messages.
+    example: https://acme.com/card-email-logo.png
+  email:
+    $ref: ./CardTokenization2FAEmailConfig.yaml
+  sms:
+    $ref: ./CardTokenization2FASmsConfig.yaml
