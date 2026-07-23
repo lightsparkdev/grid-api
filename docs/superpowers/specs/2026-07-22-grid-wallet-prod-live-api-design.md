@@ -1,21 +1,25 @@
 # Grid Wallet Prod — Phase 2: real Grid API calls
 
 **Date:** 2026-07-22
-**Status:** Approved (env: sandbox → prod swap; browser-side signing; real passkey from day one)
+**Status:** Approved (env: dev cluster → prod swap; browser-side signing; real passkey from day one)
 
 ## Goal
 
 `components/grid-wallet-prod` stops faking its API panel: every wallet action drives real Grid API
 calls, and the panel renders the requests/responses that actually went over the wire. Development
-runs against the **public sandbox**; switching to production is an env-var change (API keys +
-customer ID), after which the first-run passkey registration runs again and real transaction
-history loads.
+runs against the **dev cluster** using the credentials from `samples/kotlin/.env` (already in the
+fork's `.env.local`); switching to production is an env-var change (API keys + customer ID), after
+which the first-run passkey registration runs again and real transaction history loads.
 
 ## Decisions (user-confirmed)
 
-- **Environment:** build against the public sandbox (`https://api.lightspark.com/grid/2025-10-13`).
-  The user later swaps `GRID_CLIENT_ID`/`GRID_CLIENT_SECRET`/`GRID_CUSTOMER_ID` to a production
-  account. No environment-specific code paths beyond the sandbox funding affordance (below).
+- **Environment:** build against the dev cluster (`https://api.dev.dev.sparkinfra.net/grid/rc`,
+  the `samples/kotlin/.env` credentials). The user later swaps
+  `GRID_CLIENT_ID`/`GRID_CLIENT_SECRET`/`GRID_CUSTOMER_ID` to a production account. No
+  environment-specific code paths beyond the sandbox funding affordance (below). Known dev
+  limitation: outbound on-chain settlement doesn't work (`COUNTERPARTY_POST_TX_FAILED` /
+  `Insufficient token balance`), so send/cash-out is built code-complete and demonstrably fails
+  with the real error in dev; it becomes live on the prod swap.
 - **Key custody:** browser-side. The TEK/session signing key is generated in the browser and never
   sent to the server — matching Grid's documented rule ("session key never leaves the client").
   Grid's isomorphic JS libs (`@turnkey/crypto`, `@turnkey/api-key-stamper`, `@noble/*` — the same
@@ -98,13 +102,14 @@ challenge → `/verify` with the assertion → session (+ HPKE-decrypt `encrypte
 ## Env contract (`.env.local`)
 
 ```
-GRID_CLIENT_ID / GRID_CLIENT_SECRET   # server-only
-GRID_API_BASE_URL                     # default https://api.lightspark.com/grid/2025-10-13
+GRID_CLIENT_ID / GRID_CLIENT_SECRET   # server-only (dev: from samples/kotlin/.env)
+GRID_API_BASE_URL                     # dev: https://api.dev.dev.sparkinfra.net/grid/rc
 GRID_CUSTOMER_ID                      # pre-created customer driving the demo
 ```
 
-Swapping all three to production values is the entire prod cutover; first tap re-runs passkey
-registration (real OTP email), activity loads the production account's history.
+Swapping these to production values (and unsetting/retargeting `GRID_API_BASE_URL`) is the entire
+prod cutover; first tap re-runs passkey registration (real OTP email), activity loads the
+production account's history.
 
 ## Error handling
 
@@ -128,15 +133,16 @@ screen silently. No retry loops beyond the single session-refresh retry.
 
 ## Verification
 
-- Sandbox: full happy path — first-run registration (OTP `000000`), returning passkey sign-in,
-  balance/activity live, fund, send to a sandbox bank, transaction reaches `COMPLETED`; panel
-  entries match a `mitmproxy`/route-handler log of actual traffic.
-- Env-swap rehearsal: point at dev (known-broken outbound) and confirm graceful failure surfaces;
-  confirm no code change is needed for the swap itself.
+- Dev cluster, full working surface: first-run registration (OTP `000000`), returning passkey
+  sign-in, live balance/activity, sandbox fund credits the wallet, panel entries match the route
+  handler's log of actual traffic.
+- Outbound (send/cash-out): external-account creation and quote/execute code paths exercised in
+  dev up to the known settlement wall — the panel must truthfully render dev's real error
+  (`INSUFFICIENT_FUNDS` token-balance) and the phone must recover gracefully. Full `COMPLETED`
+  verification happens after the prod swap.
 
 ## Open items
 
-- Confirm the user has/gets **public sandbox keys** (current `.env.local` holds dev-cluster keys).
 - Confirm `@turnkey/crypto`/`@turnkey/api-key-stamper` browser compatibility early (M1, first task)
   — fallback is a small WebCrypto+noble implementation mirroring `scripts/embedded-wallet-sign.js`.
 - Raise the dev-cluster on-chain settlement gap (`COUNTERPARTY_POST_TX_FAILED`, non-atomic debit)
