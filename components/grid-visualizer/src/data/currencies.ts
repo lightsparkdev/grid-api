@@ -275,4 +275,14 @@ export const currencies: FiatCurrency[] = [
     allRails: ['Bank Transfer', 'Mobile Money'],
     examplePerson: { fullName: 'Wei Zhang', nationality: 'CN' },
   },
+  {
+    code: 'GTQ',
+    name: 'Guatemalan Quetzal',
+    countryCode: 'gt',
+    accountType: 'GTQ_ACCOUNT',
+    accountLabel: 'Guatemalan Bank Account',
+    instantRails: [],
+    allRails: ['Bank Transfer'],
+    examplePerson: { fullName: 'Carlos López', nationality: 'GT' },
+  },
 ];

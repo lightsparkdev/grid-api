@@ -460,6 +460,15 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         ],
         "description": "The bank account type",
         "example": "CHECKING"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the beneficiary's bank",
+        "example": "Example Bank"
       }
     ]
   },
@@ -563,13 +572,51 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
     "fields": [
       {
         "key": "vpa",
-        "required": true,
+        "required": false,
         "kind": "text",
         "pattern": "^[a-zA-Z0-9.\\-_]+@[a-zA-Z0-9]+$",
         "minLength": 3,
         "maxLength": 255,
         "description": "The UPI Virtual Payment Address",
         "example": "user@upi"
+      },
+      {
+        "key": "accountNumber",
+        "required": false,
+        "kind": "text",
+        "pattern": "^[0-9]{9,18}$",
+        "minLength": 9,
+        "maxLength": 18,
+        "description": "Indian bank account number (9–18 digits)",
+        "example": "000111222333"
+      },
+      {
+        "key": "ifsc",
+        "required": false,
+        "kind": "text",
+        "pattern": "^[A-Z]{4}0[A-Z0-9]{6}$",
+        "minLength": 11,
+        "maxLength": 11,
+        "description": "The Indian Financial System Code (IFSC) of the beneficiary's bank branch (NEFT/RTGS)",
+        "example": "HDFC0001234"
+      },
+      {
+        "key": "rail",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 32,
+        "description": "The payment rail to route the payout over, for currencies that support more than one (e.g. NEFT or RTGS for INR).",
+        "example": "NEFT"
+      },
+      {
+        "key": "bankName",
+        "required": false,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
       }
     ]
   },
@@ -606,6 +653,15 @@ export const BANK_ACCOUNT_SCHEMAS: Record<string, BankAccountSchema> = {
         ],
         "description": "The bank account type",
         "example": "CHECKING"
+      },
+      {
+        "key": "bankName",
+        "required": true,
+        "kind": "text",
+        "minLength": 1,
+        "maxLength": 255,
+        "description": "The name of the bank",
+        "example": "Example Bank"
       }
     ]
   },
