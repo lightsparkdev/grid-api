@@ -165,6 +165,41 @@ post:
                 settledAt: '2025-08-15T14:30:00Z'
                 createdAt: '2025-08-15T14:25:18Z'
                 description: USDC deposit from self-custody wallet
+          incomingRefundedPayment:
+            summary: Refunded incoming payment notification
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000011
+              type: INCOMING_PAYMENT.REFUND_COMPLETED
+              timestamp: '2025-08-15T14:40:00Z'
+              data:
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000005
+                status: REFUNDED
+                type: INCOMING
+                direction: CREDIT
+                destination:
+                  destinationType: UMA_ADDRESS
+                  umaAddress: $recipient@uma.domain
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                senderUmaAddress: $sender@external.domain
+                receiverUmaAddress: $recipient@uma.domain
+                receivedAmount:
+                  amount: 50000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                createdAt: '2025-08-15T14:25:18Z'
+                description: Payment for services
+                reconciliationInstructions:
+                  reference: REF-123456789
+                refund:
+                  reference: REF-123456789-REFUND
+                  initiatedAt: '2025-08-15T14:35:00Z'
+                  settledAt: '2025-08-15T14:40:00Z'
+                  status: COMPLETED
+                  reason: TRANSACTION_FAILED
   responses:
     '200':
       description: >
