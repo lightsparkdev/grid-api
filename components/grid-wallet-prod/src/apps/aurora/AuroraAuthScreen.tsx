@@ -10,10 +10,6 @@ import { CreatingCaption } from './wallet/CardIssuanceContent';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import styles from './AuroraAuthScreen.module.scss';
 
-/** Three lines at 322px — keeps the superpowers hook, drops filler. */
-export const AURORA_AUTH_DESCRIPTION =
-  'Like a bank account with global superpowers. Fund in 65+ countries. Debit card, rewards, and BTC.';
-
 /* ── Sign-in intro beats (seconds from `dismissed`) — ONE continuous scene:
    the content (copy + buttons) lives in a SLEEVE whose own top edge IS the
    gradient mask (painted into its padding strip). The intro slides the whole
@@ -190,7 +186,7 @@ export function AuroraAuthScreen({
               className={styles.title}
               initial={false}
               animate={dismissed ? CONTENT_OUT : CONTENT_REST}
-              transition={contentOut(methods.length + 2)}
+              transition={contentOut(methods.length + 1)}
             >
               Aurora
             </motion.h1>
@@ -198,19 +194,11 @@ export function AuroraAuthScreen({
               className={styles.tagline}
               initial={false}
               animate={dismissed ? CONTENT_OUT : CONTENT_REST}
-              transition={contentOut(methods.length + 1)}
+              transition={contentOut(methods.length)}
             >
               Your money, everywhere
             </motion.p>
           </div>
-          <motion.p
-            className={styles.description}
-            initial={false}
-            animate={dismissed ? CONTENT_OUT : CONTENT_REST}
-            transition={contentOut(methods.length)}
-          >
-            {AURORA_AUTH_DESCRIPTION}
-          </motion.p>
         </div>
 
         <div className={styles.actions}>
