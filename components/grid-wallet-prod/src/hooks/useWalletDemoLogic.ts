@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { AuthMethod, Persona, ScreenId, ApiCall } from '@/data/flow';
+import type { AuthMethod, Persona, ScreenId, ApiCall, Tx } from '@/data/flow';
 import { primaryAuthMethod } from '@/data/configure';
 import {
   initialCompleted,
@@ -29,6 +29,7 @@ import {
 import { oauthNonce } from '@/lib/auth';
 import { signIn as gridSignIn, ensureSession, clearSession, getAccount } from '@/lib/gridSession';
 import { envelopeToApiCall } from '@/lib/gridEntry';
+import { fetchBalanceCents, fetchActivity } from '@/lib/gridReads';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { Entry } from '@/components/ApiPanel/types';
 import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
@@ -58,6 +59,8 @@ interface Session {
   email?: string;
   phone?: string;
   expiresAt?: number;
+  loadedBalanceCents?: number;
+  loadedActivity?: Tx[];
 }
 
 const SESSION_MS = 15 * 60 * 1000;
@@ -346,6 +349,13 @@ export function useWalletDemoLogic() {
             // Play the iOS Face ID animation around the WebAuthn assertion.
             onFaceId: () => playFaceId(),
           });
+          // Load the real book balance + activity into the same "Sign in" group.
+          const [balanceCents, activity] = await Promise.all([
+            fetchBalanceCents(logEnvelope('Sign in', gid)),
+            fetchActivity(logEnvelope('Sign in', gid)),
+          ]);
+          session.current.loadedBalanceCents = balanceCents;
+          session.current.loadedActivity = activity;
         } finally {
           signInInFlight.current = false;
         }
@@ -402,7 +412,12 @@ export function useWalletDemoLogic() {
         session.current = { method: m };
         setSignInMethod(m);
         await authenticate(true, popup);
-        setWallet((w) => ({ ...w, created: true, balanceCents: 0 }));
+        setWallet((w) => ({
+          ...w,
+          created: true,
+          balanceCents: session.current.loadedBalanceCents ?? 0,
+          activity: session.current.loadedActivity ?? [],
+        }));
         setCompleted((c) => ({ ...c, signIn: true }));
         setTransient(null);
       } catch (e: unknown) {
@@ -480,6 +495,15 @@ export function useWalletDemoLogic() {
       setCompleted((c) => ({ ...c, [mode]: true }));
     },
     [pushCalls],
+  );
+
+  // Re-pull the real book balance after a money movement (used by Tasks 7-8).
+  const refreshBalance = useCallback(
+    async (groupLabel: string, groupId: string) => {
+      const cents = await fetchBalanceCents(logEnvelope(groupLabel, groupId));
+      setWallet((w) => ({ ...w, balanceCents: cents }));
+    },
+    [logEnvelope],
   );
 
   const onCardIssued = useCallback(() => {
@@ -688,5 +712,6 @@ export function useWalletDemoLogic() {
     onCardIssued,
     onTapToPay,
     onReceivePayment,
+    refreshBalance,
   };
 }
