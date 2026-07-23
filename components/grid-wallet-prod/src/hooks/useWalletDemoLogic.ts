@@ -12,7 +12,6 @@ import {
   type WalletState,
 } from '@/data/actions';
 import {
-  addMoneySettlementCalls,
   cardCalls,
   externalAccountCreateCall,
   oauthVerifyCall,
@@ -30,6 +29,7 @@ import { oauthNonce } from '@/lib/auth';
 import { signIn as gridSignIn, ensureSession, clearSession, getAccount } from '@/lib/gridSession';
 import { envelopeToApiCall } from '@/lib/gridEntry';
 import { fetchBalanceCents, fetchActivity } from '@/lib/gridReads';
+import { sandboxFund } from '@/lib/gridFunding';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { Entry } from '@/components/ApiPanel/types';
 import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
@@ -461,19 +461,21 @@ export function useWalletDemoLogic() {
       const gid = transferGroup.current ?? newGroupId();
       transferGroup.current = null;
       if (mode === 'add') {
-        const fundingCurrency = transferFundingCurrency.current ?? 'USD';
         transferFundingCurrency.current = null;
-        const [webhookCall, ...settleCalls] = addMoneySettlementCalls(cents, fundingCurrency);
-        pushCalls([webhookCall], TRANSFER_LABEL[mode], gid);
-        if (settleCalls.length) {
-          const timer = setTimeout(() => {
-            settleTimers.current.delete(timer);
-            pushCalls(settleCalls, TRANSFER_LABEL[mode], gid);
-          }, SETTLE_DELAY_MS);
-          settleTimers.current.add(timer);
+        const acct = getAccount();
+        if (acct) {
+          void (async () => {
+            const res = await sandboxFund(acct.accountId, cents, logEnvelope(TRANSFER_LABEL[mode], gid));
+            if (res.ok) {
+              await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
+              setCompleted((c) => ({ ...c, add: true }));
+            } else if (res.status === 403) {
+              // Production keys: sandbox fund is forbidden. Keep the panel truthful;
+              // do NOT fake a balance bump. (Prod add-money is the real quote path — future work.)
+              setCompleted((c) => ({ ...c, add: true }));
+            }
+          })();
         }
-        setWallet((w) => ({ ...w, balanceCents: w.balanceCents + cents }));
-        setCompleted((c) => ({ ...c, add: true }));
         return;
       }
       // Calls land one at a time: execute now, the transaction settles a beat
