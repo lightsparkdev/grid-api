@@ -14261,6 +14261,29 @@ components:
               description: Type of asset
               enum:
                 - USDC
+    PaymentBitcoinDepositAddressInfo:
+      title: Bitcoin L1 Deposit Address
+      type: object
+      required:
+        - accountType
+        - address
+      properties:
+        accountType:
+          type: string
+          description: Type of payment account or wallet
+          enum:
+            - BITCOIN_L1
+          example: BITCOIN_L1
+        address:
+          type: string
+          description: On-chain Bitcoin (L1) deposit address to send funds to
+          example: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
+        network:
+          type: string
+          description: The blockchain network for the deposit address.
+          enum:
+            - BITCOIN
+          example: BITCOIN
     AedAccountInfoBase:
       type: object
       required:
@@ -15641,6 +15664,7 @@ components:
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
             - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
+            - $ref: '#/components/schemas/PaymentBitcoinDepositAddressInfo'
             - $ref: '#/components/schemas/PaymentEmbeddedWalletInfo'
           discriminator:
             propertyName: accountType
@@ -15668,6 +15692,7 @@ components:
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
               ETHEREUM_WALLET: '#/components/schemas/PaymentEthereumWalletInfo'
+              BITCOIN_L1: '#/components/schemas/PaymentBitcoinDepositAddressInfo'
               AED_ACCOUNT: '#/components/schemas/PaymentAedAccountInfo'
               KES_ACCOUNT: '#/components/schemas/PaymentKesAccountInfo'
               MWK_ACCOUNT: '#/components/schemas/PaymentMwkAccountInfo'
@@ -20484,6 +20509,10 @@ components:
               type: string
               description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
+            refundAddress:
+              type: string
+              description: Optional address the deposited funds are returned to if the crypto deposit cannot be routed to complete the payment. Applies to on-chain crypto funding sources.
+              example: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
       oneOf:
@@ -20529,6 +20558,10 @@ components:
               allOf:
                 - $ref: '#/components/schemas/PaymentRail'
                 - description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
+            refundAddress:
+              type: string
+              description: Optional address the funds are returned to if the payout cannot be completed. Applies to crypto off-ramp destinations.
+              example: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
           description: Destination account details
     UmaAddressDestination:
       title: UMA Address

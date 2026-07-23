@@ -1,0 +1,22 @@
+title: Bitcoin L1 Deposit Address
+type: object
+required:
+  - accountType
+  - address
+properties:
+  accountType:
+    type: string
+    description: Type of payment account or wallet
+    enum:
+      - BITCOIN_L1
+    example: BITCOIN_L1
+  address:
+    type: string
+    description: On-chain Bitcoin (L1) deposit address to send funds to
+    example: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
+  network:
+    type: string
+    description: The blockchain network for the deposit address.
+    enum:
+      - BITCOIN
+    example: BITCOIN

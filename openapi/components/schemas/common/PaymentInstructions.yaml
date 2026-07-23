@@ -60,6 +60,7 @@ properties:
     - $ref: ../common/PaymentPolygonWalletInfo.yaml
     - $ref: ../common/PaymentBaseWalletInfo.yaml
     - $ref: ../common/PaymentEthereumWalletInfo.yaml
+    - $ref: ../common/PaymentBitcoinDepositAddressInfo.yaml
     - $ref: ../common/PaymentEmbeddedWalletInfo.yaml
     discriminator:
       propertyName: accountType
@@ -87,6 +88,7 @@ properties:
         POLYGON_WALLET: ../common/PaymentPolygonWalletInfo.yaml
         BASE_WALLET: ../common/PaymentBaseWalletInfo.yaml
         ETHEREUM_WALLET: ../common/PaymentEthereumWalletInfo.yaml
+        BITCOIN_L1: ../common/PaymentBitcoinDepositAddressInfo.yaml
         AED_ACCOUNT: ../common/PaymentAedAccountInfo.yaml
         KES_ACCOUNT: ../common/PaymentKesAccountInfo.yaml
         MWK_ACCOUNT: ../common/PaymentMwkAccountInfo.yaml
