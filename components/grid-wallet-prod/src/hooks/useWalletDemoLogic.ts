@@ -162,6 +162,17 @@ export function useWalletDemoLogic() {
   }, []);
   /** OTP step → back to the entry step (authenticate's OTP loop re-prompts). */
   const backOtp = useCallback(() => {
+    // The live passkey bootstrap has no entry step to go back to — its OTP
+    // prompt comes straight from gridSession.emailOtpAuth, which has no 'back'
+    // retry loop (unlike the scripted email/sms methods below). Treat the
+    // sheet's top control as a plain cancel here: reject 'cancelled' (which
+    // signInWithMethod's catch already swallows silently) and do NOT arm the
+    // email sheet, or the user is left on a dead entry screen with no prompt
+    // in flight.
+    if ((session.current.method ?? method) === 'passkey') {
+      cancelOtp();
+      return;
+    }
     setOtpActive(false);
     // Re-arm the ACTIVE method's entry step IN THE SAME RENDER: the loop's
     // re-prompt arrives a beat later, and without this the sheet's `open`
@@ -172,7 +183,7 @@ export function useWalletDemoLogic() {
     const p = otpPrompt.current;
     otpPrompt.current = null;
     p?.reject(new Error('back'));
-  }, [method]);
+  }, [method, cancelOtp]);
 
   const confirmPasskey = useCallback(() => {
     // Leave the sheet up — it stays through the credential ceremony (the passcode /
