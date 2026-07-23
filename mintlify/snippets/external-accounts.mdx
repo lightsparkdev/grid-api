@@ -401,7 +401,11 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Tab>
 
 <Tab title="India">
-**UPI**
+**UPI, NEFT, or RTGS**
+
+India supports three payment rails: UPI (instant), NEFT (near-real-time), and RTGS (real-time for large transfers).
+
+**UPI:**
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
@@ -413,6 +417,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     "accountInfo": {
       "accountType": "INR_ACCOUNT",
       "vpa": "user@okbank",
+      "paymentRails": ["UPI"],
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Priya Sharma",
@@ -430,6 +435,42 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   }'
 ```
 
+**NEFT/RTGS (Bank Transfer):**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "currency": "INR",
+    "platformAccountId": "in_neft_001",
+    "accountInfo": {
+      "accountType": "INR_ACCOUNT",
+      "accountNumber": "000111222333",
+      "ifsc": "HDFC0001234",
+      "rail": "NEFT",
+      "bankName": "HDFC Bank",
+      "paymentRails": ["NEFT"],
+      "beneficiary": {
+        "beneficiaryType": "INDIVIDUAL",
+        "fullName": "Priya Sharma",
+        "birthDate": "1991-05-14",
+        "nationality": "IN",
+        "address": {
+          "line1": "123 MG Road",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "postalCode": "400001",
+          "country": "IN"
+        }
+      }
+    }
+  }'
+```
+
+<Note>
+  UPI requires `vpa` (Virtual Payment Address). NEFT/RTGS requires `accountNumber` (9-18 digits), `ifsc` (11-character bank branch code), and `rail` (NEFT or RTGS).
+</Note>
 </Tab>
 
 <Tab title="Nigeria">
