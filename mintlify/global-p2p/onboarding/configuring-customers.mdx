@@ -16,7 +16,7 @@ This guide provides comprehensive information about creating customers in the Gr
 
 <CustomerTypes />
 
-The only required field for all customers is `customerType` (`INDIVIDUAL` or `BUSINESS`). It's recommended to also pass a `platformCustomerId` to tie the customer to your internal identifier, but if you don't, one will be generated automatically.
+The required field for all customers is `customerType` (`INDIVIDUAL` or `BUSINESS`). For business customers, `businessInfo` is also required. It's recommended to also pass a `platformCustomerId` to tie the customer to your internal identifier, but if you don't, one will be generated automatically.
 
 If using sending and receiving to just-in-time UMA addresses, you'll also need to specify the bank account information
 
@@ -147,7 +147,7 @@ curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
 
 Unregulated institutions should initiate a hosted KYC/KYB flow in two steps: create the customer, then generate a hosted KYC link for that customer. While KYC is pending, allow account setup but block funding and money movement.
 
-1. Create the customer with `POST /customers`, supplying any information you already have. Only `customerType` is required.
+1. Create the customer with `POST /customers`, supplying any information you already have. For individual customers, only `customerType` is required. For business customers, `businessInfo` is also required.
 
 ```bash
 curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
