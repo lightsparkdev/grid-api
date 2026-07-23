@@ -174,10 +174,6 @@ export function useWalletDemoLogic() {
     p?.reject(new Error('back'));
   }, [method]);
 
-  const promptPasskey = useCallback((): Promise<void> => {
-    setPasskeyActive(true);
-    return new Promise((resolve, reject) => (passkeyPrompt.current = { resolve, reject }));
-  }, []);
   const confirmPasskey = useCallback(() => {
     // Leave the sheet up — it stays through the credential ceremony (the passcode /
     // system passkey dialog) and only dismisses once that resolves, in the passkey
@@ -310,16 +306,11 @@ export function useWalletDemoLogic() {
         await sleep(400);
       } else if (m === 'passkey') {
         const gid = newGroupId();
-        await promptPasskey();
-        // Confirming the passkey starts the challenge.
+        // No "Save a passkey?" sheet — the entry-point tap starts the challenge
+        // directly, and the system passkey dialog IS the save ceremony. Firing
+        // create() in the tap's own chain also keeps its user activation.
         pushCalls([passkeyChallengeCall()], 'Sign in', gid);
-        try {
-          await passkeyCeremony();
-        } finally {
-          // Dismiss the sheet once the passcode / passkey ceremony is done
-          // (whether it succeeded or was cancelled).
-          setPasskeyActive(false);
-        }
+        await passkeyCeremony();
         await playFaceId();
         // Assertion verified after the Face ID ceremony.
         pushCalls([passkeyVerifyCall()], 'Sign in', gid);
@@ -341,7 +332,7 @@ export function useWalletDemoLogic() {
       }
       startSession();
     },
-    [method, promptEmail, promptPhone, promptOtp, promptGoogle, promptApple, promptPasskey, playFaceId, pushCalls, startSession],
+    [method, promptEmail, promptPhone, promptOtp, promptGoogle, promptApple, playFaceId, pushCalls, startSession],
   );
 
   const signInWithMethod = useCallback(
