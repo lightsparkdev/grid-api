@@ -48,7 +48,7 @@ export interface WalletInsightCardsProps {
   earningsTodayCents?: number;
   /** A month of accrued yield (daily compounding) — the headline figure. */
   earningsMonthCents?: number;
-  /** APY shown on the earnings card, percent (e.g. 5 → "5.00% APY"). */
+  /** APY shown on the earnings card, percent (e.g. 3 → "3.00% APY"). */
   apyPercent?: number;
 }
 
