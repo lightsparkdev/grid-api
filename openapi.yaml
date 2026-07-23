@@ -9522,6 +9522,42 @@ webhooks:
                     settledAt: '2025-08-15T14:30:00Z'
                     createdAt: '2025-08-15T14:25:18Z'
                     description: USDC deposit from self-custody wallet
+              incomingRefundedPayment:
+                summary: Refunded incoming payment notification
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000011
+                  type: INCOMING_PAYMENT.REFUND_COMPLETED
+                  timestamp: '2025-08-15T14:40:00Z'
+                  data:
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000005
+                    status: FAILED
+                    type: INCOMING
+                    direction: CREDIT
+                    destination:
+                      destinationType: UMA_ADDRESS
+                      umaAddress: $recipient@uma.domain
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    senderUmaAddress: $sender@external.domain
+                    receiverUmaAddress: $recipient@uma.domain
+                    receivedAmount:
+                      amount: 50000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    createdAt: '2025-08-15T14:25:18Z'
+                    description: Payment for services
+                    reconciliationInstructions:
+                      reference: REF-123456789
+                    failureReason: OFFRAMP_FAILED
+                    refund:
+                      reference: REF-123456789-REFUND
+                      initiatedAt: '2025-08-15T14:35:00Z'
+                      settledAt: '2025-08-15T14:40:00Z'
+                      status: COMPLETED
+                      reason: TRANSACTION_FAILED
       responses:
         '200':
           description: |
@@ -19805,11 +19841,11 @@ components:
           $ref: '#/components/schemas/TransactionDestinationOneOf'
         customerId:
           type: string
-          description: System ID of the customer (sender for outgoing, recipient for incoming)
+          description: System ID of the customer this transaction belongs to
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         platformCustomerId:
           type: string
-          description: Platform-specific ID of the customer (sender for outgoing, recipient for incoming)
+          description: Platform-specific ID of the customer this transaction belongs to
           example: 18d3e5f7b4a9c2
         settledAt:
           type: string
@@ -22992,6 +23028,9 @@ components:
         - INCOMING_PAYMENT.PENDING
         - INCOMING_PAYMENT.COMPLETED
         - INCOMING_PAYMENT.FAILED
+        - INCOMING_PAYMENT.REFUND_PENDING
+        - INCOMING_PAYMENT.REFUND_COMPLETED
+        - INCOMING_PAYMENT.REFUND_FAILED
         - CUSTOMER.KYC_APPROVED
         - CUSTOMER.KYC_REJECTED
         - CUSTOMER.KYC_PENDING
@@ -23077,6 +23116,9 @@ components:
                 - INCOMING_PAYMENT.PENDING
                 - INCOMING_PAYMENT.COMPLETED
                 - INCOMING_PAYMENT.FAILED
+                - INCOMING_PAYMENT.REFUND_PENDING
+                - INCOMING_PAYMENT.REFUND_COMPLETED
+                - INCOMING_PAYMENT.REFUND_FAILED
     IncomingPaymentWebhookResponse:
       type: object
       properties:
