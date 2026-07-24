@@ -3575,12 +3575,13 @@ paths:
     post:
       summary: Create a transfer quote
       description: |
-        Generate a quote for a cross-currency transfer between any combination of accounts
-        and UMA addresses. This endpoint handles currency exchange and provides the necessary
-        instructions to execute the transfer.
+        Generate a quote for a transfer between accounts, Spark addresses, and UMA
+        addresses. This endpoint handles currency exchange where needed and provides
+        the necessary instructions to execute the transfer.
 
         **Transfer Types Supported:**
         - **Account to Account**: Transfer between internal/external accounts with currency exchange.
+        - **Embedded Wallet to Spark Address**: Send the source Spark token directly to any compatible Spark address.
         - **Account to UMA**: Transfer from an internal account to an UMA address.
         - **UMA to Account or UMA to UMA**: This transfer type will only be funded by payment instructions, not from an internal account.
 
@@ -3589,8 +3590,11 @@ paths:
         - **Currency Exchange**: Handles all cross-currency transfers with real-time exchange rates
         - **Payment Instructions**: For UMA or customer ID sources, provides banking details needed for execution
 
-        **Important:** If you are transferring funds in the same currency (no exchange required),
-        use the `/transfer-in` or `/transfer-out` endpoints instead.
+        **Important:** For most same-currency account transfers, use `/transfer-in`
+        or `/transfer-out`. Embedded Wallet transfers to another Embedded Wallet or
+        Spark address use this quote flow because the wallet owner must sign the
+        `payloadToSign` returned by the quote and then call
+        `POST /quotes/{quoteId}/execute`.
       operationId: createQuote
       tags:
         - Cross-Currency Transfers
@@ -3638,6 +3642,18 @@ paths:
                   lockedCurrencySide: SENDING
                   lockedCurrencyAmount: 1000
                   description: 'Payment for invoice #1234'
+              embeddedWalletToSparkAddress:
+                summary: Send USDB from an Embedded Wallet to a Spark address
+                value:
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  destination:
+                    destinationType: SPARK_ADDRESS
+                    sparkAddress: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 10000000
+                  description: Wallet transfer
               realTimeFundingToSparkWallet:
                 summary: Real-time funding to Spark Wallet as an on-ramp flow. Immediate execution.
                 value:
@@ -19736,6 +19752,7 @@ components:
       type: string
       enum:
         - ACCOUNT
+        - SPARK_ADDRESS
         - UMA_ADDRESS
       description: Type of transaction destination
       example: ACCOUNT
@@ -19796,6 +19813,27 @@ components:
               $ref: '#/components/schemas/OnChainTransaction'
               description: On-chain transaction that delivered funds to this destination, when the destination is an external crypto wallet. Populated once the crypto transfer has settled.
           description: Destination account details
+    SparkAddressTransactionDestination:
+      title: Spark Address Destination
+      allOf:
+        - $ref: '#/components/schemas/BaseTransactionDestination'
+        - type: object
+          required:
+            - destinationType
+            - sparkAddress
+          properties:
+            destinationType:
+              type: string
+              enum:
+                - SPARK_ADDRESS
+            sparkAddress:
+              type: string
+              description: Spark address that received the token transfer
+              example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+            onChainTransaction:
+              $ref: '#/components/schemas/OnChainTransaction'
+              description: On-chain Spark transaction that delivered funds to this destination. Populated after the transfer settles when transaction details are available.
+          description: Direct Spark address destination details
     UmaAddressTransactionDestination:
       title: UMA Address Destination
       allOf:
@@ -19817,11 +19855,13 @@ components:
     TransactionDestinationOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountTransactionDestination'
+        - $ref: '#/components/schemas/SparkAddressTransactionDestination'
         - $ref: '#/components/schemas/UmaAddressTransactionDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountTransactionDestination'
+          SPARK_ADDRESS: '#/components/schemas/SparkAddressTransactionDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressTransactionDestination'
     Refund:
       type: object
@@ -20688,6 +20728,7 @@ components:
       type: string
       enum:
         - ACCOUNT
+        - SPARK_ADDRESS
         - UMA_ADDRESS
       description: Type of payment destination
       example: ACCOUNT
@@ -20720,6 +20761,24 @@ components:
                 - $ref: '#/components/schemas/PaymentRail'
                 - description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           description: Destination account details
+    SparkAddressDestination:
+      title: Spark Address
+      allOf:
+        - $ref: '#/components/schemas/BaseDestination'
+        - type: object
+          required:
+            - destinationType
+            - sparkAddress
+          properties:
+            destinationType:
+              type: string
+              enum:
+                - SPARK_ADDRESS
+            sparkAddress:
+              type: string
+              description: Spark address that receives the source Embedded Wallet's token. The address must use the same Spark network as the source wallet. Supported only for same-currency transfers from an Embedded Wallet source.
+              example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+          description: Direct Spark address destination
     UmaAddressDestination:
       title: UMA Address
       allOf:
@@ -20745,11 +20804,13 @@ components:
     QuoteDestinationOneOf:
       oneOf:
         - $ref: '#/components/schemas/AccountDestination'
+        - $ref: '#/components/schemas/SparkAddressDestination'
         - $ref: '#/components/schemas/UmaAddressDestination'
       discriminator:
         propertyName: destinationType
         mapping:
           ACCOUNT: '#/components/schemas/AccountDestination'
+          SPARK_ADDRESS: '#/components/schemas/SparkAddressDestination'
           UMA_ADDRESS: '#/components/schemas/UmaAddressDestination'
     Quote:
       type: object
@@ -20913,6 +20974,7 @@ components:
           $ref: '#/components/schemas/QuoteSourceOneOf'
         destination:
           $ref: '#/components/schemas/QuoteDestinationOneOf'
+          description: Destination for the transfer. `SPARK_ADDRESS` is supported only for same-currency transfers from an `EMBEDDED_WALLET` internal account.
         lockedCurrencySide:
           $ref: '#/components/schemas/QuoteLockSide'
         lockedCurrencyAmount:

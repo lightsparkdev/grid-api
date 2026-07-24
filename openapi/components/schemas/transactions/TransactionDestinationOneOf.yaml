@@ -1,8 +1,10 @@
 oneOf:
   - $ref: ./AccountTransactionDestination.yaml
+  - $ref: ./SparkAddressTransactionDestination.yaml
   - $ref: ./UmaAddressTransactionDestination.yaml
 discriminator:
   propertyName: destinationType
   mapping:
     ACCOUNT: ./AccountTransactionDestination.yaml
+    SPARK_ADDRESS: ./SparkAddressTransactionDestination.yaml
     UMA_ADDRESS: ./UmaAddressTransactionDestination.yaml

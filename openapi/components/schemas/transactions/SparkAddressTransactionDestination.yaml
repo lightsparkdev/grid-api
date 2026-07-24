@@ -1,0 +1,22 @@
+title: Spark Address Destination
+allOf:
+  - $ref: ./BaseTransactionDestination.yaml
+  - type: object
+    required:
+      - destinationType
+      - sparkAddress
+    properties:
+      destinationType:
+        type: string
+        enum:
+          - SPARK_ADDRESS
+      sparkAddress:
+        type: string
+        description: Spark address that received the token transfer
+        example: spark1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu
+      onChainTransaction:
+        $ref: ./OnChainTransaction.yaml
+        description: >-
+          On-chain Spark transaction that delivered funds to this destination.
+          Populated after the transfer settles when transaction details are available.
+    description: Direct Spark address destination details

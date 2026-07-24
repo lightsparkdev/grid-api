@@ -18,6 +18,9 @@ properties:
     $ref: ./QuoteSourceOneOf.yaml
   destination:
     $ref: ./QuoteDestinationOneOf.yaml
+    description: >-
+      Destination for the transfer. `SPARK_ADDRESS` is supported only for
+      same-currency transfers from an `EMBEDDED_WALLET` internal account.
   lockedCurrencySide:
     $ref: ./QuoteLockSide.yaml
   lockedCurrencyAmount:

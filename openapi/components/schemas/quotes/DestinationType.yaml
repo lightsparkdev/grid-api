@@ -1,6 +1,7 @@
 type: string
 enum:
   - ACCOUNT
+  - SPARK_ADDRESS
   - UMA_ADDRESS
 description: Type of payment destination
 example: ACCOUNT
