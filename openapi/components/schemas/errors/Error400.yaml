@@ -101,7 +101,7 @@ properties:
     description: >-
       Additional error details. Shape varies by `code`. For field-validation
       errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`,
-      `POST /customers/edd`, `PATCH /customers/edd`), `details.field` and
+      `POST /customers/{id}/edd`, `PATCH /customers/{id}/edd`), `details.field` and
       `details.constraint` are populated so platforms can pre-validate their
       onboarding form before re-submitting.
     properties:
