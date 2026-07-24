@@ -22,8 +22,6 @@ properties:
     items:
       $ref: ./FeeConfig.yaml
     description: |
-      Merge-by-key upsert of platform fee configs, keyed by
-      `(feeEventType, sourceCurrency)`. Sending zero rates
-      (`variableFeeBps: 0` and `fixedFee.amount: 0`) for an existing key
-      deactivates it. Only `sourceCurrency: USD` is accepted today.
+      Merge-by-key upsert of platform fee configs, keyed by (feeType, sourceCurrency)`.
+      Setting variable and fixed fees to 0 for an existing fee config deactivates it.
       Omit this field to leave fee configs unchanged.
