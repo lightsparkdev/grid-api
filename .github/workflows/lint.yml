@@ -23,7 +23,7 @@ on:
 jobs:
   lint:
     name: Lint Code & Documentation
-    runs-on: ubuntu-latest
+    runs-on: arc-runner-2
     
     steps:
       - name: Checkout code
