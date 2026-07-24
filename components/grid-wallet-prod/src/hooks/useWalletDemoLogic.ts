@@ -27,11 +27,12 @@ import { oauthNonce } from '@/lib/auth';
 import { signIn as gridSignIn, ensureSession, clearSession, getAccount } from '@/lib/gridSession';
 import { envelopeToApiCall } from '@/lib/gridEntry';
 import { fetchBalanceCents, fetchActivity } from '@/lib/gridReads';
-import { sandboxFund } from '@/lib/gridFunding';
+import { resolvePlatformUsdAccountId, sandboxFundPlatform, onRampQuoteBodyFor } from '@/lib/gridFunding';
 import {
   ensureExternalAccount,
   createQuote,
   executeQuote,
+  executeQuoteUnsigned,
   pollTransaction,
   quoteBodyFor,
 } from '@/lib/gridTransfer';
@@ -523,30 +524,55 @@ export function useWalletDemoLogic() {
         const acct = getAccount();
         if (acct) {
           void (async () => {
-            // Any failure here (a non-200/403 fund response, or a thrown
-            // exception from either call — network error, bad JSON, etc.)
-            // must not become an unhandled rejection or leave `completed.add`
-            // set INCORRECTLY. The envelope is already logged inside
-            // sandboxFund/refreshBalance before either can throw; there's no
-            // dedicated busy/running state on this path to unstick (the sheet
-            // already closed synchronously in finishTransfer). It also must
-            // not leave the phone showing phantom money forever OR double-
-            // counted alongside a concurrent add: EVERY terminal outcome for
-            // THIS add — success (after the balance re-read lands or
-            // exhausts its retry) or failure (else / catch / 403) — calls
-            // `onAddSettled` exactly once, undoing this add's own optimistic
-            // bump by exactly its own cents. Amount-exact and proportional,
-            // not "wait for every in-flight add to clear."
+            // Any failure here (a non-200/403 fund response, a failed/errored
+            // quote or execute, or a thrown exception anywhere along the
+            // chain — network error, bad JSON, etc.) must not become an
+            // unhandled rejection or leave `completed.add` set INCORRECTLY.
+            // Every envelope is logged inside the helpers below before any of
+            // them can throw; there's no dedicated busy/running state on this
+            // path to unstick (the sheet already closed synchronously in
+            // finishTransfer). It also must not leave the phone showing
+            // phantom money forever OR double-counted alongside a concurrent
+            // add: EVERY terminal outcome for THIS add — success (after the
+            // balance re-read lands or exhausts its retry) or failure (else /
+            // catch / 403) — calls `onAddSettled` exactly once, undoing this
+            // add's own optimistic bump by exactly its own cents.
+            //
+            // `POST /sandbox/internal-accounts/{id}/fund` only mints BOOK
+            // balance — a direct fund of the customer's own wallet leaves it
+            // with no on-chain USDB, so any later outbound quote fails with
+            // INSUFFICIENT_FUNDS. The real on-ramp (fund the platform's USD
+            // account, then quote+execute platform -> customer wallet) is the
+            // only way "Add money" lands real, spendable balance.
             try {
-              const res = await sandboxFund(
-                acct.accountId,
+              const platformId = await resolvePlatformUsdAccountId(
+                logEnvelope(TRANSFER_LABEL[mode], gid),
+              );
+              const res = await sandboxFundPlatform(
+                platformId,
                 cents,
                 logEnvelope(TRANSFER_LABEL[mode], gid),
               );
               if (res.ok) {
-                // The fund succeeded server-side — the add DID happen, so
-                // `completed.add` reflects that regardless of whether the
-                // balance re-read below succeeds.
+                const idem = crypto.randomUUID();
+                const quote = await createQuote(
+                  onRampQuoteBodyFor(platformId, acct.accountId, cents),
+                  logEnvelope(TRANSFER_LABEL[mode], gid),
+                  idem,
+                );
+                const execEnv = await executeQuoteUnsigned(
+                  quote.quoteId,
+                  logEnvelope(TRANSFER_LABEL[mode], gid),
+                  idem,
+                );
+                if (execEnv.response.status === 200 && quote.transactionId) {
+                  // Polls to a terminal status (COMPLETED expected — the
+                  // platform-sourced on-ramp settles fast in sandbox).
+                  await pollTransaction(quote.transactionId, logEnvelope(TRANSFER_LABEL[mode], gid));
+                }
+                // The fund + on-ramp succeeded server-side — the add DID
+                // happen, so `completed.add` reflects that regardless of
+                // whether the balance re-read below succeeds.
                 setCompleted((c) => ({ ...c, add: true }));
                 try {
                   await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts

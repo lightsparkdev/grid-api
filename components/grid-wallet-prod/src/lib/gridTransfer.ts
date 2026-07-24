@@ -95,7 +95,10 @@ export async function createQuote(
 ): Promise<{ quoteId: string; transactionId: string | null; payloadToSign: string | null; env: GridEnvelope }> {
   const env = await gridFetch('POST', '/quotes', { body, headers: { 'Idempotency-Key': idempotencyKey } });
   log(env);
-  if (env.response.status !== 201) {
+  // The OpenAPI spec documents 201 (and 202 for SCA); live sandbox has been
+  // observed returning 200 for a platform-account-sourced (on-ramp) quote —
+  // accept both 2xx success shapes rather than assume the strict 201.
+  if (env.response.status !== 200 && env.response.status !== 201) {
     const b = env.response.body as { error?: { message?: string } };
     throw new Error(`create quote: ${env.response.status} ${b?.error?.message ?? ''}`);
   }
@@ -117,6 +120,24 @@ export async function executeQuote(
   });
   log(env);
   return env; // caller inspects status: 200 = PROCESSING; 4xx = truthful error rendered in the panel
+}
+
+/**
+ * Execute a quote with no wallet signature — valid when the quote's source is
+ * a PLATFORM account, not the customer's embedded wallet (e.g. the on-ramp
+ * funding leg of "Add money"), so there's nothing to stamp.
+ */
+export async function executeQuoteUnsigned(
+  quoteId: string,
+  log: LogFn,
+  idempotencyKey: string,
+): Promise<GridEnvelope> {
+  const env = await gridFetch('POST', `/quotes/${quoteId}/execute`, {
+    body: {},
+    headers: { 'Idempotency-Key': idempotencyKey },
+  });
+  log(env);
+  return env;
 }
 
 const TERMINAL = new Set(['COMPLETED', 'FAILED', 'REJECTED', 'REFUNDED', 'EXPIRED']);
