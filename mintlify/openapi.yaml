@@ -3687,6 +3687,7 @@ paths:
                 totalReceivingAmount: 9200
                 exchangeRate: 0.92
                 feesIncluded: 10
+                platformFeesIncluded: 0
                 transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
         '202':
           description: |
@@ -9365,6 +9366,7 @@ webhooks:
                       totalReceivingAmount: 4625000
                       exchangeRate: 92.5
                       feesIncluded: 250
+                      platformFeesIncluded: 0
                       transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
                     createdAt: '2025-10-03T15:00:00Z'
                     updatedAt: '2025-10-03T15:00:00Z'
