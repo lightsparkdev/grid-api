@@ -3687,6 +3687,7 @@ paths:
                 totalReceivingAmount: 9200
                 exchangeRate: 0.92
                 feesIncluded: 10
+                platformFeesIncluded: 0
                 transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000005
         '202':
           description: |
@@ -9365,6 +9366,7 @@ webhooks:
                       totalReceivingAmount: 4625000
                       exchangeRate: 92.5
                       feesIncluded: 250
+                      platformFeesIncluded: 0
                       transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000099
                     createdAt: '2025-10-03T15:00:00Z'
                     updatedAt: '2025-10-03T15:00:00Z'
@@ -11036,6 +11038,73 @@ components:
           $ref: '#/components/schemas/CardTokenization2FAEmailConfig'
         sms:
           $ref: '#/components/schemas/CardTokenization2FASmsConfig'
+    FeeType:
+      type: string
+      enum:
+        - CROSS_CURRENCY_TRANSACTION
+      description: |
+        The kind of activity this fee applies to.
+
+        - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
+          (source currency differs from destination currency).
+      example: CROSS_CURRENCY_TRANSACTION
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
+          example: USD
+        name:
+          type: string
+          description: Full name of the currency
+          example: United States Dollar
+        symbol:
+          type: string
+          description: Symbol of the currency
+          example: $
+        decimals:
+          type: integer
+          description: Number of decimal places for the currency
+          minimum: 0
+          example: 2
+    CurrencyAmount:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
+          example: 12550
+        currency:
+          $ref: '#/components/schemas/Currency'
+    FeeConfig:
+      type: object
+      description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
+      properties:
+        feeType:
+          $ref: '#/components/schemas/FeeType'
+        sourceCurrency:
+          type: string
+          description: Currency code of the sending side this fee applies to. Only `USD` is accepted today; other currencies return a `NOT_IMPLEMENTED` error.
+          example: USD
+        variableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
+          example: 30
+        fixedFee:
+          $ref: '#/components/schemas/CurrencyAmount'
+          description: Fixed fee charged per transaction, in the smallest unit of the source currency. The fixed fee currency must match the fee config's `sourceCurrency`.
+      required:
+        - feeType
+        - sourceCurrency
+        - variableFeeBps
+        - fixedFee
     PlatformConfig:
       type: object
       properties:
@@ -11082,6 +11151,14 @@ components:
           description: |
             Branding and sender configuration for card-tokenization authentication
             messages. This configuration is independent of embedded-wallet support.
+        feeConfigs:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeConfig'
+          description: |
+            Platform-collected fees that should be added on top of
+            Grid-collected fees. Contains every currently-active fee config
+            for the platform.
         createdAt:
           type: string
           format: date-time
@@ -11188,6 +11265,15 @@ components:
             Update card-tokenization authentication branding and delivery settings.
             Fields omitted from the nested object are left unchanged. Changes apply
             to subsequent delivery attempts.
+        feeConfigs:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeConfig'
+          description: |
+            Merge-by-key upsert of platform fee configs, keyed by
+            `(feeType, sourceCurrency)`. Setting variable and fixed fees to 0 for
+            an existing fee config deactivates it. Only `sourceCurrency: USD` is
+            accepted today. Omit this field to leave fee configs unchanged.
     Error400:
       type: object
       required:
@@ -11320,26 +11406,6 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    Currency:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
-          example: USD
-        name:
-          type: string
-          description: Full name of the currency
-          example: United States Dollar
-        symbol:
-          type: string
-          description: Symbol of the currency
-          example: $
-        decimals:
-          type: integer
-          description: Number of decimal places for the currency
-          minimum: 0
-          example: 2
     PaymentRail:
       type: string
       enum:
@@ -13264,19 +13330,6 @@ components:
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
         - `FAILED`: The account could not be provisioned. Grid was unable to create the underlying account, so it cannot send or receive payments and requires remediation.
       example: ACTIVE
-    CurrencyAmount:
-      type: object
-      required:
-        - amount
-        - currency
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
-          example: 12550
-        currency:
-          $ref: '#/components/schemas/Currency'
     PaymentAccountType:
       type: string
       enum:
@@ -20186,6 +20239,12 @@ components:
               description: The fees associated with the quote in the smallest unit of the sending currency (eg. cents).
               minimum: 0
               example: 10
+            platformFees:
+              type: integer
+              format: int64
+              description: The portion of `fees` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `fees`.
+              minimum: 0
+              example: 5
             reconciliationInstructions:
               $ref: '#/components/schemas/ReconciliationInstructions'
               description: Reconciliation details for this transaction. For the on-chain hash of a crypto payout to an external wallet, see the destination's `onChainTransaction` instead.
@@ -20766,6 +20825,12 @@ components:
           description: 'The fees associated with the quote in the smallest unit of the sending currency (eg. cents). Note: this value may fluctuate between quotes — some underlying fee components are defined in the receiving currency, so their equivalent in the sending currency moves with the FX rate. The fees shown here are locked only for the lifetime of this quote.'
           minimum: 0
           example: 10
+        platformFeesIncluded:
+          type: integer
+          format: int64
+          description: The portion of `feesIncluded` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `feesIncluded`. May be omitted from payloads produced before platform fees existed.
+          minimum: 0
+          example: 5
         paymentInstructions:
           type: array
           description: Payment instructions for executing the payment. This is not required when using an internal account source.
