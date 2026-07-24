@@ -15,7 +15,7 @@ extends the Transaction model with a card destination type).
 | `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
 
-All three carry the standard envelope:
+All card webhooks carry the standard envelope:
 
 ```json
 {
@@ -80,15 +80,22 @@ array. The `data` payload is the full `Card` resource with the
 post-change `fundingSources`, so a consumer that only cares about the
 current set of bindings can replace state wholesale.
 
-## Card-transaction lifecycle
+## CARD_TRANSACTION.*
 
-Authorization, pull, clearing, refund, and `EXCEPTION` transitions are
-not delivered through a dedicated card webhook. They flow through
-the generic transaction webhook stream that already carries
-outgoing-payment lifecycle events; a follow-up PR adds the card
-destination type to that stream. See
-[Reconciliation](/cards/transactions/reconciliation) for the
-underlying event model.
+Card-transaction lifecycle events fire on every state transition of a
+`CardTransaction`. The `data` payload is the full `CardTransaction`
+resource after the transition.
+
+| Type | Fires on |
+|------|----------|
+| `CARD_TRANSACTION.AUTHORIZED` | Authorization approved, hold placed on funding source. |
+| `CARD_TRANSACTION.PARTIALLY_SETTLED` | At least one clearing landed, but more are expected (split shipments, multi-leg trips). |
+| `CARD_TRANSACTION.SETTLED` | All clearings for the auth have posted. The transaction is closed. |
+| `CARD_TRANSACTION.REFUNDED` | Merchant-initiated `RETURN` received; settled funds returned in full or part. |
+| `CARD_TRANSACTION.EXCEPTION` | Transaction settled to the network but the pull from the funding source failed. |
+
+See [Reconciliation](/cards/transactions/reconciliation) for the
+underlying event model and the over-auth and exception paths.
 
 ## Idempotency & retries
 

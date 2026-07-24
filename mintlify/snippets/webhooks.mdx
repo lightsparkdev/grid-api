@@ -203,3 +203,5 @@ The Grid API will retry webhooks with the following policy based on the webhook 
 | `INVITATION.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
 | `CUSTOMER.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
 | `ACCOUNT.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
+| `CARD.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
+| `CARD_TRANSACTION.*` | Retry with exponential backoff up to 7 days with maximum interval of 30 mins | No retry on 409 (duplicate webhooks) |
