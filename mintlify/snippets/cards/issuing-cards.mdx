@@ -32,9 +32,10 @@ one currency.
 ## The lifecycle
 
 ```text
-PROCESSING    ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSED
-       │             │                              ▲
-       │             └──────────────────────────────┘
+PROCESSING    ──► PENDING_AUTH ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSED
+       │               │              │                              ▲
+       │               │              └──────────────────────────────┘
+       │               └──────────────────────────────────────────────┘
        │
        └─► CLOSED (stateReason: ISSUER_REJECTED)
 ```
@@ -42,7 +43,8 @@ PROCESSING    ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSE
 | State | When you see it |
 |-------|-----------------|
 | `PROCESSING` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
-| `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATE_CHANGE` webhook. |
+| `PENDING_AUTH` | Card is backed by an Embedded Wallet funding source and awaiting delegated key authorization via `POST /auth/delegated-keys`. Only appears for Embedded Wallet-funded cards. |
+| `ACTIVE` | Issuer provisioned the card (and delegated key authorization completed, if applicable). Reached via `CARD.STATE_CHANGE` webhook. |
 | `FROZEN` | You called `PATCH /cards/{id}` with `state: "FROZEN"`. |
 | `CLOSED` | You called `PATCH /cards/{id}` with `state: "CLOSED"` (or the issuer rejected provisioning). Terminal. |
 
