@@ -13987,6 +13987,12 @@ components:
           type: string
           enum:
             - PHP_ACCOUNT
+        rail:
+          type: string
+          description: The payment rail to route the payout over, for currencies that support more than one (e.g. NEFT or RTGS for INR).
+          example: NEFT
+          minLength: 1
+          maxLength: 32
         bankName:
           type: string
           description: Name of the beneficiary's bank
@@ -14002,6 +14008,7 @@ components:
           pattern: ^[0-9]{8,16}$
       example:
         accountType: PHP_ACCOUNT
+        rail: NEFT
         bankName: BDO Unibank
         accountNumber: '001234567890'
     PhpAccountInfo:
@@ -15267,7 +15274,7 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the beneficiary's bank
+          description: The name of the bank
           minLength: 1
           maxLength: 255
       example:
