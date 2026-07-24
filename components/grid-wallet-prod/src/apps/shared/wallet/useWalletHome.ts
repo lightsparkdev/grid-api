@@ -67,8 +67,19 @@ export interface UseWalletHomeOptions {
    * Balance + activity still update; the toast is suppressed. Default false.
    */
   transferSuccessScreen?: boolean;
-  /** Transfer confirmed (Face ID) — log execute + settle and move the balance. */
-  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
+  /**
+   * Transfer confirmed (Face ID) — log execute + settle and move the balance.
+   * For Add money, the third arg is a rollback channel: the host calls it
+   * back if the fund attempt itself fails (non-200, thrown, or the 403
+   * production-keys branch) so THIS add's own optimistic bump gets withdrawn
+   * directly — the only other decrement path (a real `balance` change
+   * landing) never arrives for a failed add. Ignored for withdraw/send.
+   */
+  onTransferExecute?: (
+    mode: WalletTransferMode,
+    cents: number,
+    onAddFailed?: () => void,
+  ) => void;
   /** A tap-to-pay charge landed on the phone. */
   onTapToPay?: (cents: number, merchant: string) => void;
   /** A payment was received (Receive flow) — log the inbound webhook + settle. */
@@ -399,12 +410,26 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     // Receive has no amount/confirm step, so it never reaches finishTransfer —
     // the guard also narrows `mode` to a transfer mode for the calls below.
     if (mode === 'receive') return;
-    onTransferExecute?.(mode, cents);
+    // Add money's rollback channel — see `UseWalletHomeOptions.onTransferExecute`.
+    // Only meaningful for 'add' (withdraw/send have no async failure gap to
+    // bridge); harmless to define unconditionally.
+    const rollbackAdd = () => {
+      pendingAdds.current = Math.max(0, pendingAdds.current - 1);
+      setDeltaCents((c) => c - cents);
+    };
+    onTransferExecute?.(mode, cents, mode === 'add' ? rollbackAdd : undefined);
     setSheetConfirming(false);
     // A skin with its own success screen keeps the sheet up (Done closes it) and
     // owns the confirmation — hold the balance move + Activity insert until the
     // sheet is dismissed so both play out on the visible home (balance ticks,
     // row grows in) instead of settling silently behind the success screen.
+    // NOTE: `rollbackAdd` above is registered NOW (immediately, same as the
+    // non-success-screen path) but the matching `pendingAdds`/`deltaCents`
+    // increment for THIS path doesn't happen until the settle effect below
+    // fires, `SETTLE_DELTA_DELAY_MS` later — a fund failure fast enough to
+    // roll back before that increment runs would net out wrong. Not fixed
+    // here: `transferSuccessScreen` is not reachable in this app (no active
+    // skin sets it), same caveat this file already documents elsewhere.
     if (transferSuccessScreen) {
       pendingSettle.current = { mode, cents, dest };
       return;
