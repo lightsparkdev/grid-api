@@ -1,18 +1,35 @@
 type: object
 description: >-
-  Machine-readable validator hint. Platforms use it to pre-validate their own
-  onboarding form before submitting, and to render form UI (e.g., surface a
-  dropdown for `enum`, mask input by `pattern`).
+  Machine-readable validator hint. Platforms use it to (a) pre-validate the
+  end-user's input on their onboarding form before submitting, and (b) drive
+  form UI directly — HTML5 `<input type>` selection and `autocomplete` /
+  `inputmode` / a11y attributes via `format`, dropdown menus via `enum`,
+  input masking via `pattern`, native length limits via `minLength` /
+  `maxLength`. Fields are additive; a single constraint may set several
+  (e.g. `format: email` + `maxLength: 254`). Grid emits only constraints
+  it enforces server-side.
 properties:
   format:
     type: string
     description: >-
-      Named format the value must satisfy. Examples: `date`, `email`, `iso3166-1-alpha-2`,
-      `bcp47-language-tag`.
-    example: iso3166-1-alpha-2
+      Named format the value must satisfy — primarily consumed by form UIs
+      to choose HTML5 `<input type>`, `inputmode`, and `autocomplete`
+      attributes. Prefer HTML5 input type names when the field maps to one
+      (`email`, `tel`, `url`, `date`, `datetime-local`, `time`, `number`,
+      `password`); use semantic slugs for domain-specific formats that
+      don't (`iso3166-1-alpha-2`, `bcp47-language-tag`, `us-ssn`,
+      `e.164`). Treat unknown values as opaque — fall back to string
+      validation with any accompanying `pattern` / `minLength` /
+      `maxLength` constraints.
+    example: email
   pattern:
     type: string
-    description: Regular expression the value must match (JavaScript-flavor).
+    description: >-
+      Regular expression the value must match (JavaScript-flavor). Length
+      constraints (`minLength` / `maxLength`) are exposed separately so
+      consumers can drive HTML5 `<input maxlength>` attributes or perform
+      plain length checks without evaluating a regex — encoding length
+      inside `pattern` (e.g. `^.{3,10}$`) is valid but harder to consume.
     example: ^\d{5}(-\d{4})?$
   enum:
     type: array
@@ -25,9 +42,15 @@ properties:
       - NON_US_TAX_ID
   minLength:
     type: integer
-    description: Minimum length in characters.
+    description: >-
+      Minimum length in characters. Exposed as a distinct field (rather
+      than folded into `pattern`) so form UIs can wire it to native
+      controls directly.
     example: 1
   maxLength:
     type: integer
-    description: Maximum length in characters.
+    description: >-
+      Maximum length in characters. Exposed as a distinct field (rather
+      than folded into `pattern`) so form UIs can wire it to
+      `<input maxlength>` directly.
     example: 500
