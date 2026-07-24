@@ -12,6 +12,7 @@ required:
   - totalReceivingAmount
   - exchangeRate
   - feesIncluded
+  - platformFeesIncluded
   - transactionId
 properties:
   id:

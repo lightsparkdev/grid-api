@@ -1,14 +1,9 @@
 type: object
 description: >-
-  A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency .
+  A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
 properties:
-  id:
-    type: string
-    description: System-generated unique identifier.
-    readOnly: true
-    example: GridPlatformTransactionFeeConfig:019542f5-b3e7-1d02-0000-000000000007
-  feeEventType:
-    $ref: ./FeeEventType.yaml
+  feeType:
+    $ref: ./FeeType.yaml
   sourceCurrency:
     type: string
     description: >-
@@ -25,17 +20,11 @@ properties:
   fixedFee:
     $ref: ../common/CurrencyAmount.yaml
     description: >-
-      Fixed fee charged per transaction, in the smallest unit of
-      `sourceCurrency`. `fixedFee.currency.code` must match `sourceCurrency`.
-  isActive:
-    type: boolean
-    description: >-
-      Whether this fee config is currently active. Reads return only active
-      configs.
-    readOnly: true
-    example: true
+      Fixed fee charged per transaction, in the smallest unit of the source
+      currency. The fixed fee currency must match the fee config's
+      `sourceCurrency`.
 required:
-  - feeEventType
+  - feeType
   - sourceCurrency
   - variableFeeBps
   - fixedFee
