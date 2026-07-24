@@ -20766,7 +20766,6 @@ components:
         - totalReceivingAmount
         - exchangeRate
         - feesIncluded
-        - platformFeesIncluded
         - transactionId
       properties:
         id:
@@ -20829,7 +20828,7 @@ components:
         platformFeesIncluded:
           type: integer
           format: int64
-          description: The portion of `feesIncluded` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `feesIncluded`.
+          description: The portion of `feesIncluded` collected by the platform (platform-configured transaction fees), in the smallest unit of the sending currency. 0 when the platform has no applicable fee configured. Already included in `feesIncluded`. May be omitted from payloads produced before platform fees existed.
           minimum: 0
           example: 5
         paymentInstructions:
