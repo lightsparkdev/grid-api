@@ -350,6 +350,32 @@ Fees are deducted from the sending amount, so:
   of that quote.
 </Note>
 
+### How the variable fee is applied
+
+The variable fee (`gridApiVariableFeeRate`) is always assessed as a fraction of the **sending** amount. How that plays out depends on which side of the quote you lock (see [Locked Currency Side](#locked-currency-side)).
+
+**Sending amount locked** (`lockedCurrencySide: "SENDING"`) — the fee is taken out of the amount you send, and the recipient receives the remainder:
+
+```text
+received = send − send × fee
+```
+
+Send $50 at a 10 bps (0.10%, `fee = 0.001`) rate: `received = 50 − 50 × 0.001 = 49.95`.
+
+**Receiving amount locked** (`lockedCurrencySide: "RECEIVING"`) — Grid solves for the send amount that nets the exact received amount *after* the same fee:
+
+```text
+send = received / (1 − fee)
+```
+
+Receive $50 at 10 bps: `send = 50 / 0.999 = 50.05005005…`.
+
+<Note>
+  Receiver-locked quotes divide by `(1 − fee)` rather than adding `received × fee` so that locking the receiving side is never cheaper than locking the sending side at the same rate. Solving `send × (1 − fee) = received` for `send` keeps the effective fee rate identical across both locked sides.
+</Note>
+
+For cross-currency quotes the exchange rate applies on top of this: the fee is taken on the sending currency, then the net amount is converted at the quoted rate. The same-currency examples above (for example USDC → USD at 1:1) show the fee in isolation.
+
 ## Best Practices
 
 <AccordionGroup>
