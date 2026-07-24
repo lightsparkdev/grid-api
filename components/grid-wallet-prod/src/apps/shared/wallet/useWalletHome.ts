@@ -69,16 +69,19 @@ export interface UseWalletHomeOptions {
   transferSuccessScreen?: boolean;
   /**
    * Transfer confirmed (Face ID) — log execute + settle and move the balance.
-   * For Add money, the third arg is a rollback channel: the host calls it
-   * back if the fund attempt itself fails (non-200, thrown, or the 403
-   * production-keys branch) so THIS add's own optimistic bump gets withdrawn
-   * directly — the only other decrement path (a real `balance` change
-   * landing) never arrives for a failed add. Ignored for withdraw/send.
+   * For Add money, the third arg is a settle channel: the host calls it back
+   * on EVERY terminal outcome for THIS add — success (once the real balance
+   * read lands, or exhausts its retry) or failure (non-200, thrown, or the
+   * 403 production-keys branch) — so this add's own optimistic bump is
+   * undone by exactly its own cents the instant its own flow concludes,
+   * whichever way it goes. Amount-exact and proportional: no waiting on an
+   * unrelated add's refresh, and no "wait for the in-flight counter to hit
+   * 0" step. Ignored for withdraw/send.
    */
   onTransferExecute?: (
     mode: WalletTransferMode,
     cents: number,
-    onAddFailed?: () => void,
+    onAddSettled?: () => void,
   ) => void;
   /** A tap-to-pay charge landed on the phone. */
   onTapToPay?: (cents: number, merchant: string) => void;
@@ -131,19 +134,24 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   //
   // Multiple adds can be in flight at once (one confirmed before an earlier
   // one's refresh lands), and each refresh fetches the CURRENT TOTAL, not a
-  // delta — so blanket-zeroing on every `balance` change would zero out a
-  // still-pending add's contribution the instant an unrelated (or an
-  // earlier) add's refresh resolves, producing a visible dip. `pendingAdds`
-  // counts adds bumped-but-not-yet-reconciled; only the change that brings
-  // it back to 0 gets to zero the delta. (A `balance` change from something
-  // OTHER than an add — e.g. a withdraw landing while an add is in flight —
-  // still decrements the counter without a matching add resolving; this is
-  // a known, narrower residual than the bug this replaces — see task report.)
+  // delta. Each add now settles ITSELF, amount-exact, via `settleAdd` (built
+  // in `finishTransfer` below and handed to the host as `onTransferExecute`'s
+  // third arg) — the host calls it back the instant that SPECIFIC add's flow
+  // concludes, success or failure, so `pendingAdds`/`deltaCents` are
+  // decremented by exactly that add's own cents, never a blanket zero. This
+  // fixes the prior "wait for the counter to hit 0" design, which
+  // double-counted a still-in-flight add's contribution for as long as any
+  // OTHER add (or an earlier one) was also pending — see task report.
   const pendingAdds = useRef(0);
+  // Now just a drift guard: under the per-add settle design above, this
+  // should never actually fire (every increment has a matching settle call).
+  // Kept as a backstop — if `pendingAdds` is back to 0 (no add believes
+  // itself in flight) but `deltaCents` is somehow still nonzero when
+  // `balance` moves, snap it rather than let a stray delta linger
+  // silently. Deliberately does NOT touch `deltaCents` while `pendingAdds`
+  // is nonzero — that's still-pending adds' own tracked contribution.
   useEffect(() => {
-    if (pendingAdds.current === 0) return;
-    pendingAdds.current -= 1;
-    if (pendingAdds.current === 0) setDeltaCents(0);
+    if (pendingAdds.current === 0 && deltaCents !== 0) setDeltaCents(0);
   }, [balance]);
   // Earnings = yield on the live balance, shown as today's accrual. Weekly bars
   // map the most recent card charges (up to WEEKLY_BAR_COUNT), normalized to the
@@ -410,26 +418,35 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     // Receive has no amount/confirm step, so it never reaches finishTransfer —
     // the guard also narrows `mode` to a transfer mode for the calls below.
     if (mode === 'receive') return;
-    // Add money's rollback channel — see `UseWalletHomeOptions.onTransferExecute`.
-    // Only meaningful for 'add' (withdraw/send have no async failure gap to
-    // bridge); harmless to define unconditionally.
-    const rollbackAdd = () => {
+    // Add money's settle channel — see `UseWalletHomeOptions.onTransferExecute`.
+    // Called back on EVERY terminal outcome for this specific add (success OR
+    // failure) with an amount-exact undo of THIS add's own optimistic bump.
+    // Only meaningful for 'add' (withdraw/send have no async gap to bridge);
+    // harmless to define unconditionally.
+    const settleAdd = () => {
       pendingAdds.current = Math.max(0, pendingAdds.current - 1);
       setDeltaCents((c) => c - cents);
     };
-    onTransferExecute?.(mode, cents, mode === 'add' ? rollbackAdd : undefined);
+    onTransferExecute?.(mode, cents, mode === 'add' ? settleAdd : undefined);
     setSheetConfirming(false);
     // A skin with its own success screen keeps the sheet up (Done closes it) and
     // owns the confirmation — hold the balance move + Activity insert until the
     // sheet is dismissed so both play out on the visible home (balance ticks,
     // row grows in) instead of settling silently behind the success screen.
-    // NOTE: `rollbackAdd` above is registered NOW (immediately, same as the
-    // non-success-screen path) but the matching `pendingAdds`/`deltaCents`
-    // increment for THIS path doesn't happen until the settle effect below
-    // fires, `SETTLE_DELTA_DELAY_MS` later — a fund failure fast enough to
-    // roll back before that increment runs would net out wrong. Not fixed
-    // here: `transferSuccessScreen` is not reachable in this app (no active
-    // skin sets it), same caveat this file already documents elsewhere.
+    // MUST FIX BEFORE ANY SKIN SETS `transferSuccessScreen`: `settleAdd` above
+    // is registered NOW (immediately, same as the non-success-screen path),
+    // but the matching `pendingAdds`/`deltaCents` INCREMENT for this path
+    // doesn't happen until the settle effect below fires, `SETTLE_DELTA_DELAY_MS`
+    // later. A fast terminal outcome (very plausible for a failure, and not
+    // impossible for a success against a quick sandbox) settling BEFORE that
+    // increment runs will net out wrong (settles a bump that hasn't been
+    // applied yet, then the delayed effect applies it with nothing left to
+    // undo it). Not reachable in this app today (no active skin sets
+    // `transferSuccessScreen`) — but this is a real, known-broken path, not a
+    // theoretical one; do not enable `transferSuccessScreen` on a live skin
+    // without fixing this ordering first (e.g. by moving the increment into
+    // `finishTransfer` itself, ahead of `onTransferExecute`, same as the
+    // non-success-screen path does).
     if (transferSuccessScreen) {
       pendingSettle.current = { mode, cents, dest };
       return;

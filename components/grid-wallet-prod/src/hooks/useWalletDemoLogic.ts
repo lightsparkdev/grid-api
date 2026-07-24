@@ -461,7 +461,7 @@ export function useWalletDemoLogic() {
   );
 
   const onTransferExecute = useCallback(
-    (mode: WalletTransferMode, cents: number, onAddFailed?: () => void) => {
+    (mode: WalletTransferMode, cents: number, onAddSettled?: () => void) => {
       const gid = transferGroup.current ?? newGroupId();
       transferGroup.current = null;
       if (mode === 'add') {
@@ -476,10 +476,13 @@ export function useWalletDemoLogic() {
             // sandboxFund/refreshBalance before either can throw; there's no
             // dedicated busy/running state on this path to unstick (the sheet
             // already closed synchronously in finishTransfer). It also must
-            // not leave the phone showing phantom money forever: every branch
-            // where the fund itself did NOT land (else / catch / 403) calls
-            // `onAddFailed` to roll back THIS add's own optimistic bump —
-            // no `balance` change is ever coming for it otherwise.
+            // not leave the phone showing phantom money forever OR double-
+            // counted alongside a concurrent add: EVERY terminal outcome for
+            // THIS add — success (after the balance re-read lands or
+            // exhausts its retry) or failure (else / catch / 403) — calls
+            // `onAddSettled` exactly once, undoing this add's own optimistic
+            // bump by exactly its own cents. Amount-exact and proportional,
+            // not "wait for every in-flight add to clear."
             try {
               const res = await sandboxFund(
                 acct.accountId,
@@ -489,10 +492,7 @@ export function useWalletDemoLogic() {
               if (res.ok) {
                 // The fund succeeded server-side — the add DID happen, so
                 // `completed.add` reflects that regardless of whether the
-                // balance re-read below succeeds. (Also reconciles the
-                // phone's optimistic delta — see useWalletHome's
-                // `pendingAdds` — but that's a display concern; the money
-                // has already moved either way, so no rollback here.)
+                // balance re-read below succeeds.
                 setCompleted((c) => ({ ...c, add: true }));
                 try {
                   await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
@@ -505,29 +505,40 @@ export function useWalletDemoLogic() {
                   try {
                     await refreshBalance(TRANSFER_LABEL[mode], gid);
                   } catch (e2) {
-                    // Both reads failed: the phone's optimistic delta stays
-                    // unreconciled until some LATER refresh (another flow,
-                    // or a fresh sign-in) catches it up. Truthful log, no
-                    // fabricated balance. The fund itself succeeded, so no
-                    // rollback — the money really is there.
+                    // Both reads failed: truthful log, no fabricated
+                    // balance. `onAddSettled` below still fires — the
+                    // optimistic bump must not outlive the flow either way —
+                    // so the display will under-count this add's real money
+                    // until some LATER balance change (another flow, or a
+                    // fresh sign-in) catches it up. That's the truthful
+                    // choice, not a bug: we don't know the exact new total,
+                    // so we stop pretending we do.
                     console.error('[grid-demo]', e2);
                   }
                 }
+                // Settle THIS add's bump now, in the SAME continuation as
+                // the refresh above (whether it landed or exhausted its
+                // retry) — same React batch as refreshBalance's setWallet,
+                // so `balance` and `deltaCents` move together with no
+                // intermediate frame where both count (the bug a concurrent
+                // second add's still-pending bump would otherwise hit).
+                onAddSettled?.();
               } else if (res.status === 403) {
                 // Production keys: sandbox fund is forbidden — no real money
                 // moved. Keep the sidebar checkmark (the flow WAS attempted)
-                // truthful, but roll back the phone's optimistic bump: this
-                // is the EXPECTED path once this demo runs on production
-                // keys, so it must not leave a permanent phantom balance.
+                // truthful, but settle (roll back) the phone's optimistic
+                // bump: this is the EXPECTED path once this demo runs on
+                // production keys, so it must not leave a permanent phantom
+                // balance.
                 setCompleted((c) => ({ ...c, add: true }));
-                onAddFailed?.();
+                onAddSettled?.();
               } else {
                 console.error('[grid-demo]', new Error(`sandbox fund failed: ${res.status}`));
-                onAddFailed?.();
+                onAddSettled?.();
               }
             } catch (e) {
               console.error('[grid-demo]', e);
-              onAddFailed?.();
+              onAddSettled?.();
             }
           })();
         }
