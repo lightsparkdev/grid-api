@@ -4,6 +4,6 @@ enum:
 description: |
   The kind of activity this fee applies to.
 
-  - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid
-    transaction (source currency differs from destination currency).
+  - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
+    (source currency differs from destination currency).
 example: CROSS_CURRENCY_TRANSACTION
