@@ -1,0 +1,104 @@
+<Note>
+**This applies only to customers in a region where Strong Customer Authentication
+is required, in practice customers in the EU (EUR / USDC).** For every other
+customer, none of this appears: money-movement calls complete as usual, no
+`scaChallenge` is returned, and the authorization endpoints are not used. If you
+don't serve EU customers you can skip this section.
+</Note>
+
+Under PSD2, EU e-money and e-money-token (EUR / USDC) money movement must be
+confirmed by the end user with Strong Customer Authentication (SCA). Grid wraps
+SCA so you satisfy it through the same resources you already use. There is no
+separate SCA product to integrate.
+
+### When you'll encounter it
+
+For an SCA-required customer, a money-movement call that would otherwise complete
+instead returns the transaction (or quote) in status **`PENDING_AUTHORIZATION`**
+with an **`scaChallenge`** object, and the transfer is **not** released until the
+challenge is satisfied. This affects debits such as:
+
+- Sending EUR / USDC (SEPA and intra-ledger transfers)
+- Cross-currency conversions from EUR / USDC (the swap leg)
+- On-chain and Lightning withdrawals
+
+Reads and non-EUR/USDC accounts are not gated this way.
+
+### Authentication factors
+
+The `scaChallenge.availableFactors` field tells you which factors the customer
+may use. `scaChallenge.factor` is the one in use (default `SMS_OTP`).
+
+| Factor | Enrollment | Per-transaction debit |
+|--------|-----------|-----------------------|
+| `SMS_OTP` | None; a code is sent to the customer's verified phone | ✅ Default |
+| `PASSKEY` | Required (WebAuthn credential) | ✅ |
+| `TOTP` | Required (authenticator app) | ❌ Not permitted (a TOTP code can't be dynamically linked to the amount and payee) |
+
+Request a specific factor per transaction with the optional top-level `scaFactor`
+field on `execute` / `transfer-out` (`SMS_OTP` default, or `PASSKEY`).
+
+### Satisfying a challenge
+
+Submit an `ScaAuthorization` proof to `POST /quotes/{quoteId}/authorize` for the
+quote that carries the challenge. Provide exactly one of `code` (for `SMS_OTP`)
+or `passkeyAssertion` + `origin` (for `PASSKEY`):
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/authorize \
+  -u "$GRID_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "code": "123456" }'
+```
+
+<Warning>
+**A pre-funded send is a single authorization today — but write your client to
+loop.** One `POST /quotes/{quoteId}/authorize` releases a pre-funded send; the
+currency-conversion leg of a cross-currency send is not separately gated. Even
+so, treat `scaChallenge` as the challenge to satisfy *now*, not necessarily the
+only one: after authorizing, re-inspect the returned quote, and if it is still
+`PENDING_AUTHORIZATION` it carries the **next** `scaChallenge` (a new `id`) —
+authorize that one too and repeat until it leaves `PENDING_AUTHORIZATION`. A
+client written to loop on status stays correct if a future flow adds steps.
+</Warning>
+
+Once the quote is in `PENDING_AUTHORIZATION`, authorize it:
+`POST /quotes/{quoteId}/authorize`. This is the single authorize path for both
+`execute` (pre-funded) and realtime-funding quotes. The challenge — and the SMS
+code or passkey assertion that satisfies it — only exists after the challenge is
+issued, so the proof is always supplied on this follow-up call, never on the
+originating request.
+
+<Note>
+For a **realtime-funding quote**, the `202` / `PENDING_AUTHORIZATION` response
+**withholds `paymentInstructions`** until the challenge is authorized. Authorize
+first, then read `paymentInstructions` from the returned (advanced) quote. If you
+read them off the initial pending response you'll show the customer nothing to
+fund.
+</Note>
+
+If an SMS code lapses before it's used, re-send it. The existing challenge is
+reused, and its `expiresAt` is not extended. Use the quote resend endpoint:
+`POST /quotes/{quoteId}/authorize/resend`.
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/authorize/resend \
+  -u "$GRID_API_TOKEN"
+```
+
+<Note>
+In **sandbox**, the SMS code is always `123456`.
+</Note>
+
+### Reducing prompts for repeat payees
+
+Trusting a beneficiary (a one-time SCA-gated whitelisting step) lets subsequent
+sends to that payee skip the per-transaction challenge. Use this for recurring
+payouts to known destinations rather than authorizing every send.
+
+### Calling a customer outside SCA-regulated regions
+
+The authorization endpoints return **`409`** for customers outside SCA-regulated
+regions (non-EU), and no `scaChallenge` is ever attached to their transactions.
+You don't need to branch on region. Handle `scaChallenge` when it's present and
+treat its absence as nothing to do.

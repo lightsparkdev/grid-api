@@ -112,6 +112,14 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 
 ```javascript
 function displayPaymentInstructions(quote) {
+  // EU customers only: an SCA-gated realtime-funding quote comes back
+  // PENDING_AUTHORIZATION with paymentInstructions withheld until its
+  // scaChallenge is authorized (see "Strong Customer Authentication" below).
+  // Authorize first, then display — don't read paymentInstructions while pending.
+  if (!quote.paymentInstructions?.length) {
+    return { pendingAuthorization: true, scaChallenge: quote.scaChallenge };
+  }
+
   const instructions = quote.paymentInstructions[0];
 
   return {
@@ -232,6 +240,16 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 <Info>
 `immediatelyExecute` can only be used with sources that are either internal accounts or external accounts with direct pull functionality (e.g., ACH pull).
 </Info>
+
+## Strong Customer Authentication (EU customers)
+
+Customers in SCA-regulated regions (in practice the EU: EUR / USDC) must confirm
+money movements with Strong Customer Authentication, and a conversion out of
+EUR / USDC is gated on its swap leg. When it applies, the transaction comes back
+`PENDING_AUTHORIZATION` with an `scaChallenge` that you authorize before the
+conversion is released; for every other customer nothing changes. See
+[Per-transaction authorization](/platform-overview/sca/per-transaction-authorization)
+for the full walkthrough.
 
 ## Best practices
 

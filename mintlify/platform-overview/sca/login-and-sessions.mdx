@@ -1,0 +1,103 @@
+---
+icon: "/images/icons/shield.svg"
+title: "Login & sessions"
+description: "The end-user SCA login and the session it grants"
+"og:image": "/images/og/og-get-started.png"
+---
+
+<Note>
+Applies only to customers in an SCA-required region (EU). Every endpoint here
+returns **`409`** for other customers.
+</Note>
+
+Per-transaction authorization gates individual debits. The **SCA login** is
+separate: it authenticates the end user to open a longer-lived session that
+covers reads and account access beyond the per-transaction window. Grid provides
+the login plumbing; your application decides when to drive it (for example, when
+a customer opens their account and the previous session has lapsed).
+
+<Note>
+**A customer's EUR / USDC accounts aren't provisioned until their first SCA
+login after KYC approval.** Provisioning is deferred from KYC-approval time to
+the first login that opens a valid SCA session, so a freshly KYC-approved
+customer's EUR / USDC accounts won't appear in `GET /customers/internal-accounts`
+until then. Expect those accounts to be unavailable, and drive the SCA login
+once KYC is approved, before relying on them.
+</Note>
+
+All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
+
+## Logging in
+
+<Steps>
+<Step title="Start the login">
+
+```bash
+POST /sca/login/start?customerId={customerId}
+
+{ "factor": "SMS_OTP" }
+```
+
+The response carries only what the chosen factor needs:
+
+- **`SMS_OTP`**: a code is dispatched; you get back `challengeId` and `expiresAt`.
+- **`TOTP`**: nothing extra; the customer reads the code from their app.
+- **`PASSKEY`**: WebAuthn `passkeyOptions` (with `allowedOrigins` and `relyingPartyId`) to pass to the device.
+
+The factor must already be enrolled (or, for `SMS_OTP`, the phone verified). See
+[factor enrollment](/platform-overview/sca/factor-enrollment).
+</Step>
+<Step title="Complete the login">
+Submit the proof for the factor you started with: `code` for `SMS_OTP` / `TOTP`
+(echoing `challengeId` for `SMS_OTP`), or `passkeyAssertion` + `origin` for
+`PASSKEY`.
+
+```bash
+POST /sca/login/complete?customerId={customerId}
+
+{ "factor": "SMS_OTP", "challengeId": "…", "code": "123456" }
+```
+
+```json
+{ "status": "SUCCESS" }
+```
+
+A `status` of `SUCCESS` means the session is open. Any other value means the
+login did not complete; the field is passed through verbatim, so treat only
+`SUCCESS` as success. An invalid or expired proof returns `400`. **In sandbox,
+the code is always `123456`.**
+</Step>
+</Steps>
+
+## Account-security signals
+
+Grid runs an adaptive-authentication risk engine that maintains each customer's
+login-security state. Because your application owns the customer's login, you
+report the security-relevant events it sees so the engine can act on them:
+
+```bash
+POST /sca/record-event?customerId={customerId}
+
+{ "eventType": "FAILED_LOGIN_ATTEMPT" }
+```
+
+Returns the customer's resulting login-security state so you can surface a
+lockout — `{ eventType, suspended, lockedUntil, failedAttempts }`. When the
+customer is locked out, this (and `POST /sca/login/complete`) returns `423` with
+`details.lockedUntil` (when they may retry) and `details.failedAttempts`.
+`eventType` must be one of:
+
+| `eventType` | Effect |
+|---|---|
+| `FAILED_LOGIN_ATTEMPT` | Increments the failed-login counter and escalates a lockout: **5 → 15 min, 6 → 30 min, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension.** |
+| `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
+
+Report `FAILED_LOGIN_ATTEMPT` on each failed sign-in and `RESET_PASSWORD_COMPLETED`
+once a password recovery finishes. Any other value returns `400`.
+
+<Note>
+The failed-login counter is cumulative and is **not** reset by a successful
+login; only `RESET_PASSWORD_COMPLETED` clears it. Record that event after a
+password recovery to zero the counter and lift a lockout, rather than relying on
+the customer simply logging in again.
+</Note>

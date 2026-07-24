@@ -1,0 +1,73 @@
+---
+icon: "/images/icons/lock.svg"
+title: "Per-transaction authorization"
+description: "Authorize an SCA-gated money movement"
+"og:image": "/images/og/og-get-started.png"
+---
+
+This is the flow you hit most often: an SCA-required customer initiates a money
+movement, it comes back `PENDING_AUTHORIZATION` with an `scaChallenge`, and you
+authorize it before the transfer is released. For where this sits in the wider
+SCA surface, see the [overview](/platform-overview/sca/overview).
+
+import StrongCustomerAuthentication from '/snippets/sca/strong-customer-authentication.mdx';
+
+<StrongCustomerAuthentication />
+
+## Walkthrough by flow
+
+The mechanics above are the same everywhere: inspect for an `scaChallenge`,
+submit an `ScaAuthorization`, and repeat until the resource leaves
+`PENDING_AUTHORIZATION`. What differs between flows is *which* call first returns
+the challenge and *which* resource you authorize. Here is each one end to end.
+
+<Tabs>
+<Tab title="Send a payment (execute a quote)">
+The common case — lock a quote, execute it, authorize the quote.
+
+<Steps>
+<Step title="Lock a quote">
+`POST /quotes` returns a quote as usual. A standard (prefunded) send carries no
+challenge at quote time.
+</Step>
+<Step title="Execute the quote">
+`POST /quotes/{quoteId}/execute` returns the **quote** in `PENDING_AUTHORIZATION`
+with an `scaChallenge`.
+</Step>
+<Step title="Authorize the quote">
+`POST /quotes/{quoteId}/authorize` with the proof. A pre-funded send is a single
+challenge — one authorization releases it (the currency-conversion leg of a
+cross-currency send is not separately gated).
+</Step>
+</Steps>
+</Tab>
+
+<Tab title="Realtime-funding quote">
+Here the challenge is issued at *quote* time and `paymentInstructions` are
+withheld until you clear it — you authorize before you fund.
+
+<Steps>
+<Step title="Request the quote">
+`POST /quotes` for a realtime-funded send returns `202` /
+`PENDING_AUTHORIZATION` with an `scaChallenge`. `paymentInstructions` are
+**omitted** from this response.
+</Step>
+<Step title="Authorize the quote">
+`POST /quotes/{quoteId}/authorize` with the proof — the challenge is carried by
+the quote, and a single authorization clears it.
+</Step>
+<Step title="Read the payment instructions">
+Read `paymentInstructions` from the returned (advanced) quote and fund the
+transfer. Reading them off the initial pending response would show the customer
+nothing to fund.
+</Step>
+</Steps>
+</Tab>
+
+<Tab title="Transfer-out">
+`transfer-out` has no associated quote, and per-transaction SCA is authorized
+only on the quote resource, so SCA-gated EU debits are **not** offered on this
+endpoint — use the quote + `execute` flow above for EU customers. For customers
+outside SCA-regulated regions, `transfer-out` proceeds as usual.
+</Tab>
+</Tabs>
