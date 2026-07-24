@@ -22,8 +22,7 @@ properties:
     minimum: 0
     maximum: 10000
     description: >-
-      Variable fee in basis points (1 bps = 0.01%). Multiplied by the
-      transaction's source-currency amount.
+      Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
     example: 30
   fixedFee:
     $ref: ../common/CurrencyAmount.yaml
