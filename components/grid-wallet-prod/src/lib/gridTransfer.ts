@@ -145,6 +145,19 @@ export function isTerminalStatus(status: string): boolean {
   return TERMINAL.has(status);
 }
 
+/**
+ * The one gate every "mark this flow complete" checkmark must pass: the
+ * execute call itself returned 200 AND the transaction the caller polled
+ * actually reached COMPLETED — not just any terminal status, and not a
+ * still-PROCESSING poll that gave up at the deadline. FAILED/REJECTED/
+ * REFUNDED/EXPIRED, a still-in-flight poll, or a missing transactionId
+ * (`transactionStatus` null) are all "don't check the box" outcomes; the
+ * caller still logs/refreshes truthfully, it just doesn't fabricate success.
+ */
+export function isCompletionStatus(executeStatus: number, transactionStatus: string | null): boolean {
+  return executeStatus === 200 && transactionStatus === 'COMPLETED';
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Poll GET /transactions/{id} until terminal or timeout. Sandbox off-ramp settles in 60–180s. */

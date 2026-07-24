@@ -35,6 +35,7 @@ import {
   executeQuoteUnsigned,
   pollTransaction,
   quoteBodyFor,
+  isCompletionStatus,
 } from '@/lib/gridTransfer';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { Entry } from '@/components/ApiPanel/types';
@@ -565,15 +566,37 @@ export function useWalletDemoLogic() {
                   logEnvelope(TRANSFER_LABEL[mode], gid),
                   idem,
                 );
+                let transactionStatus: string | null = null;
                 if (execEnv.response.status === 200 && quote.transactionId) {
                   // Polls to a terminal status (COMPLETED expected — the
                   // platform-sourced on-ramp settles fast in sandbox).
-                  await pollTransaction(quote.transactionId, logEnvelope(TRANSFER_LABEL[mode], gid));
+                  transactionStatus = await pollTransaction(
+                    quote.transactionId,
+                    logEnvelope(TRANSFER_LABEL[mode], gid),
+                  );
                 }
-                // The fund + on-ramp succeeded server-side — the add DID
-                // happen, so `completed.add` reflects that regardless of
-                // whether the balance re-read below succeeds.
-                setCompleted((c) => ({ ...c, add: true }));
+                if (isCompletionStatus(execEnv.response.status, transactionStatus)) {
+                  // The fund + on-ramp genuinely reached COMPLETED
+                  // server-side — the add DID happen, so `completed.add`
+                  // reflects that regardless of whether the balance
+                  // re-read below succeeds.
+                  setCompleted((c) => ({ ...c, add: true }));
+                } else {
+                  // Execute itself failed, or the transaction never
+                  // confirmed COMPLETED (FAILED/REJECTED/REFUNDED/EXPIRED,
+                  // still PROCESSING at the poll deadline, or no
+                  // transactionId to track). A real, truthful outcome —
+                  // every envelope is already logged in the panel, so
+                  // don't fabricate the checkmark. `onAddSettled` below
+                  // still rolls back the optimistic bump regardless, same
+                  // as every other failure path in this branch.
+                  console.error(
+                    '[grid-demo]',
+                    new Error(
+                      `on-ramp did not complete: execute ${execEnv.response.status}, transaction ${transactionStatus ?? 'untracked'}`,
+                    ),
+                  );
+                }
                 try {
                   await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
                 } catch (e) {
@@ -649,13 +672,30 @@ export function useWalletDemoLogic() {
               pq.idem,
             );
             if (execEnv.response.status === 200) {
+              let transactionStatus: string | null = null;
               if (pq.transactionId) {
                 // Polls to a terminal status (COMPLETED expected in sandbox,
                 // 60–180s) — a status-polling loop, not an auth retry.
-                await pollTransaction(pq.transactionId, logEnvelope(TRANSFER_LABEL[mode], gid));
+                transactionStatus = await pollTransaction(
+                  pq.transactionId,
+                  logEnvelope(TRANSFER_LABEL[mode], gid),
+                );
               }
               await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
-              setCompleted((c) => ({ ...c, [mode]: true }));
+              if (isCompletionStatus(execEnv.response.status, transactionStatus)) {
+                setCompleted((c) => ({ ...c, [mode]: true }));
+              } else {
+                // FAILED/REJECTED/REFUNDED/EXPIRED, still PROCESSING at the
+                // poll deadline, or no transactionId to track — a real,
+                // truthful outcome. The panel already logged every envelope;
+                // don't fabricate the checkmark. The sheet already closed
+                // optimistically before this callback ran, so the phone has
+                // no busy state to unstick — it's already recoverable.
+                console.error(
+                  '[grid-demo]',
+                  new Error(`transfer did not complete: transaction ${transactionStatus ?? 'untracked'}`),
+                );
+              }
             } else {
               // Real error (e.g. insufficient funds, an expired quote). The
               // panel already logged the truthful error via logEnvelope; the
