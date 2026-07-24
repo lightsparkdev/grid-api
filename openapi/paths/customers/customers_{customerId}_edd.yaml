@@ -1,3 +1,10 @@
+parameters:
+  - name: customerId
+    in: path
+    description: The Grid customer ID.
+    required: true
+    schema:
+      type: string
 get:
   summary: Get a customer's enhanced-due-diligence (EDD) fields
   description: >-
@@ -8,13 +15,6 @@ get:
     - KYC/KYB Verifications
   security:
     - BasicAuth: []
-  parameters:
-    - name: customerId
-      in: query
-      description: The Grid customer ID to retrieve EDD data for.
-      required: true
-      schema:
-        type: string
   responses:
     '200':
       description: EDD payload retrieved successfully
@@ -63,7 +63,7 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/customers/CustomerEddCreateRequest.yaml
+          $ref: ../../components/schemas/customers/CustomerEdd.yaml
   responses:
     '200':
       description: EDD payload created or replaced successfully
@@ -105,13 +105,6 @@ patch:
     - KYC/KYB Verifications
   security:
     - BasicAuth: []
-  parameters:
-    - name: customerId
-      in: query
-      description: The Grid customer ID whose EDD data is being updated.
-      required: true
-      schema:
-        type: string
   requestBody:
     required: true
     content:

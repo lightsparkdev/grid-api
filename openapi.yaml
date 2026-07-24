@@ -594,150 +594,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /customers/edd:
-    get:
-      summary: Get a customer's enhanced-due-diligence (EDD) fields
-      description: Retrieve the EDD fields previously supplied for a customer. Returns `404` if no EDD data has been recorded for the customer yet.
-      operationId: getCustomerEdd
-      tags:
-        - KYC/KYB Verifications
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: customerId
-          in: query
-          description: The Grid customer ID to retrieve EDD data for.
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: EDD payload retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomerEdd'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Customer not found or no EDD data recorded for this customer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-    post:
-      summary: Create or replace a customer's enhanced-due-diligence (EDD) fields
-      description: Supply the EDD fields for a customer. Overwrites any previously recorded EDD data for that customer. Call this endpoint when `POST /verifications` returns `MISSING_FIELD` errors pointing at `edd.*` fields, then retry `POST /verifications` to complete the KYC check.
-      operationId: createCustomerEdd
-      tags:
-        - KYC/KYB Verifications
-      security:
-        - BasicAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CustomerEddCreateRequest'
-      responses:
-        '200':
-          description: EDD payload created or replaced successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomerEdd'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Customer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-    patch:
-      summary: Partially update a customer's enhanced-due-diligence (EDD) fields
-      description: Merge the provided EDD fields into any previously recorded EDD data for the customer. Fields omitted from the request body are left unchanged.
-      operationId: updateCustomerEdd
-      tags:
-        - KYC/KYB Verifications
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: customerId
-          in: query
-          description: The Grid customer ID whose EDD data is being updated.
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CustomerEdd'
-      responses:
-        '200':
-          description: EDD payload updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomerEdd'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Customer not found or no EDD data recorded to update
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
   /customers/{customerId}:
     parameters:
       - name: customerId
@@ -964,6 +820,143 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error410'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/edd:
+    parameters:
+      - name: customerId
+        in: path
+        description: The Grid customer ID.
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a customer's enhanced-due-diligence (EDD) fields
+      description: Retrieve the EDD fields previously supplied for a customer. Returns `404` if no EDD data has been recorded for the customer yet.
+      operationId: getCustomerEdd
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: EDD payload retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerEdd'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found or no EDD data recorded for this customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Create or replace a customer's enhanced-due-diligence (EDD) fields
+      description: Supply the EDD fields for a customer. Overwrites any previously recorded EDD data for that customer. Call this endpoint when `POST /verifications` returns `MISSING_FIELD` errors pointing at `edd.*` fields, then retry `POST /verifications` to complete the KYC check.
+      operationId: createCustomerEdd
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerEdd'
+      responses:
+        '200':
+          description: EDD payload created or replaced successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerEdd'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    patch:
+      summary: Partially update a customer's enhanced-due-diligence (EDD) fields
+      description: Merge the provided EDD fields into any previously recorded EDD data for the customer. Fields omitted from the request body are left unchanged.
+      operationId: updateCustomerEdd
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerEdd'
+      responses:
+        '200':
+          description: EDD payload updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerEdd'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found or no EDD data recorded to update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -12548,6 +12541,186 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    Error404:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 404
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | TRANSACTION_NOT_FOUND | Transaction not found |
+            | INVITATION_NOT_FOUND | Invitation not found |
+            | USER_NOT_FOUND | Customer not found |
+            | QUOTE_NOT_FOUND | Quote not found |
+            | LOOKUP_REQUEST_NOT_FOUND | Lookup request not found |
+            | TOKEN_NOT_FOUND | Token not found |
+            | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
+            | REFERENCE_NOT_FOUND | Reference not found |
+            | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
+            | STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND | Stablecoin provider account link not found |
+          enum:
+            - TRANSACTION_NOT_FOUND
+            - INVITATION_NOT_FOUND
+            - USER_NOT_FOUND
+            - QUOTE_NOT_FOUND
+            - LOOKUP_REQUEST_NOT_FOUND
+            - TOKEN_NOT_FOUND
+            - BULK_UPLOAD_JOB_NOT_FOUND
+            - REFERENCE_NOT_FOUND
+            - UMA_NOT_FOUND
+            - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    Error410:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 410
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | CUSTOMER_DELETED | Customer has been permanently deleted |
+          enum:
+            - CUSTOMER_DELETED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+    CustomerUpdateRequest:
+      title: Customer Update Request
+      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential through the endpoint's signed-retry flow. When `phoneNumber` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer phone number and every tied `SMS_OTP` credential through the same signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
+      type: object
+      required:
+        - customerType
+      properties:
+        customerType:
+          $ref: '#/components/schemas/CustomerType'
+        currencies:
+          type: array
+          items:
+            type: string
+          description: Updated list of currency codes the customer will use (ISO 4217 for fiat, e.g. "USD", "EUR"; tickers for crypto, e.g. "BTC", "USDC"). Replaces the existing list. Some currency combinations may require separate customers — if so, the request will be rejected with details.
+          example:
+            - USD
+            - EUR
+            - USDC
+        email:
+          type: string
+          format: email
+          description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
+          example: john.doe@example.com
+        phoneNumber:
+          type: string
+          pattern: ^\+[1-9]\d{1,14}$
+          description: Phone number for the customer in strict E.164 format. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `SMS_OTP` credential across all tied Embedded Wallets. Send phone number and email updates as separate PATCH calls.
+          example: '+14155551234'
+        umaAddress:
+          type: string
+          description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
+          example: $john.doe@uma.domain.com
+    IndividualCustomerUpdateRequest:
+      title: Individual Customer Update Request
+      allOf:
+        - $ref: '#/components/schemas/CustomerUpdateRequest'
+        - $ref: '#/components/schemas/IndividualCustomerFields'
+    BusinessCustomerUpdateRequest:
+      title: Business Customer Update Request
+      allOf:
+        - $ref: '#/components/schemas/CustomerUpdateRequest'
+        - $ref: '#/components/schemas/BusinessCustomerFields'
+    CustomerUpdateRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/IndividualCustomerUpdateRequest'
+        - $ref: '#/components/schemas/BusinessCustomerUpdateRequest'
+      discriminator:
+        propertyName: customerType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
+          BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
+    SignedRequestChallenge:
+      title: Signed Request Challenge
+      type: object
+      required:
+        - payloadToSign
+        - requestId
+        - expiresAt
+      description: Common base for two-step signed-retry challenge responses on Embedded Wallet endpoints (credential registration or revocation, session refresh or revocation, wallet export, customer email updates, and similar). Holds the signing fields shared across every challenge shape; each variant composes this base via `allOf` and adds its own resource `id` (and `type`, when applicable) with variant-specific description and example.
+      properties:
+        payloadToSign:
+          type: string
+          description: Canonical payload for the retry authorization stamp. Build an API-key stamp over this exact value with the session API keypair, then send the full base64url-encoded stamp in `Grid-Wallet-Signature` on the retry that completes the original request.
+          example: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_EXAMPLE"}'
+        requestId:
+          type: string
+          description: Grid-issued `Request:<uuid>` identifier for this pending request. Echo this value exactly in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
+          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
+          example: '2026-04-08T15:35:00Z'
+    Error424:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 424
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | PAYREQ_REQUEST_FAILED | Payment request failed |
+            | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
+            | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
+            | LNURLP_REQUEST_FAILED | LNURLP request failed |
+            | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
+          enum:
+            - PAYREQ_REQUEST_FAILED
+            - COUNTERPARTY_PUBKEY_FETCH_ERROR
+            - NO_COMPATIBLE_UMA_VERSION
+            - LNURLP_REQUEST_FAILED
+            - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     IndividualSourceOfFundsCategory:
       type: string
       enum:
@@ -12684,198 +12857,6 @@ components:
           description: Last update timestamp
           readOnly: true
           example: '2026-07-24T17:32:28Z'
-    Error404:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 404
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | TRANSACTION_NOT_FOUND | Transaction not found |
-            | INVITATION_NOT_FOUND | Invitation not found |
-            | USER_NOT_FOUND | Customer not found |
-            | QUOTE_NOT_FOUND | Quote not found |
-            | LOOKUP_REQUEST_NOT_FOUND | Lookup request not found |
-            | TOKEN_NOT_FOUND | Token not found |
-            | BULK_UPLOAD_JOB_NOT_FOUND | Bulk upload job not found |
-            | REFERENCE_NOT_FOUND | Reference not found |
-            | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
-            | STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND | Stablecoin provider account link not found |
-          enum:
-            - TRANSACTION_NOT_FOUND
-            - INVITATION_NOT_FOUND
-            - USER_NOT_FOUND
-            - QUOTE_NOT_FOUND
-            - LOOKUP_REQUEST_NOT_FOUND
-            - TOKEN_NOT_FOUND
-            - BULK_UPLOAD_JOB_NOT_FOUND
-            - REFERENCE_NOT_FOUND
-            - UMA_NOT_FOUND
-            - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
-    CustomerEddCreateRequest:
-      description: Request body for `POST /customers/edd`. Composes the full `CustomerEdd` field set and adds the required `customerId` link.
-      allOf:
-        - $ref: '#/components/schemas/CustomerEdd'
-        - type: object
-          required:
-            - customerId
-          properties:
-            customerId:
-              type: string
-              description: The Grid customer ID whose EDD data is being created or replaced.
-              example: Customer:019542f5-b3e7-1d02-0000-000000000001
-    Error410:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 410
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | CUSTOMER_DELETED | Customer has been permanently deleted |
-          enum:
-            - CUSTOMER_DELETED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
-    CustomerUpdateRequest:
-      title: Customer Update Request
-      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential through the endpoint's signed-retry flow. When `phoneNumber` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer phone number and every tied `SMS_OTP` credential through the same signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
-      type: object
-      required:
-        - customerType
-      properties:
-        customerType:
-          $ref: '#/components/schemas/CustomerType'
-        currencies:
-          type: array
-          items:
-            type: string
-          description: Updated list of currency codes the customer will use (ISO 4217 for fiat, e.g. "USD", "EUR"; tickers for crypto, e.g. "BTC", "USDC"). Replaces the existing list. Some currency combinations may require separate customers — if so, the request will be rejected with details.
-          example:
-            - USD
-            - EUR
-            - USDC
-        email:
-          type: string
-          format: email
-          description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
-          example: john.doe@example.com
-        phoneNumber:
-          type: string
-          pattern: ^\+[1-9]\d{1,14}$
-          description: Phone number for the customer in strict E.164 format. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `SMS_OTP` credential across all tied Embedded Wallets. Send phone number and email updates as separate PATCH calls.
-          example: '+14155551234'
-        umaAddress:
-          type: string
-          description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
-          example: $john.doe@uma.domain.com
-    IndividualCustomerUpdateRequest:
-      title: Individual Customer Update Request
-      allOf:
-        - $ref: '#/components/schemas/CustomerUpdateRequest'
-        - $ref: '#/components/schemas/IndividualCustomerFields'
-    BusinessCustomerUpdateRequest:
-      title: Business Customer Update Request
-      allOf:
-        - $ref: '#/components/schemas/CustomerUpdateRequest'
-        - $ref: '#/components/schemas/BusinessCustomerFields'
-    CustomerUpdateRequestOneOf:
-      oneOf:
-        - $ref: '#/components/schemas/IndividualCustomerUpdateRequest'
-        - $ref: '#/components/schemas/BusinessCustomerUpdateRequest'
-      discriminator:
-        propertyName: customerType
-        mapping:
-          INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
-          BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
-    SignedRequestChallenge:
-      title: Signed Request Challenge
-      type: object
-      required:
-        - payloadToSign
-        - requestId
-        - expiresAt
-      description: Common base for two-step signed-retry challenge responses on Embedded Wallet endpoints (credential registration or revocation, session refresh or revocation, wallet export, customer email updates, and similar). Holds the signing fields shared across every challenge shape; each variant composes this base via `allOf` and adds its own resource `id` (and `type`, when applicable) with variant-specific description and example.
-      properties:
-        payloadToSign:
-          type: string
-          description: Canonical payload for the retry authorization stamp. Build an API-key stamp over this exact value with the session API keypair, then send the full base64url-encoded stamp in `Grid-Wallet-Signature` on the retry that completes the original request.
-          example: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_EXAMPLE"}'
-        requestId:
-          type: string
-          description: Grid-issued `Request:<uuid>` identifier for this pending request. Echo this value exactly in the `Request-Id` header on the signed retry so the server can correlate the retry with the issued challenge.
-          example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
-        expiresAt:
-          type: string
-          format: date-time
-          description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
-          example: '2026-04-08T15:35:00Z'
-    Error424:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 424
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | PAYREQ_REQUEST_FAILED | Payment request failed |
-            | COUNTERPARTY_PUBKEY_FETCH_ERROR | Error fetching counterparty public key |
-            | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
-            | LNURLP_REQUEST_FAILED | LNURLP request failed |
-            | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
-          enum:
-            - PAYREQ_REQUEST_FAILED
-            - COUNTERPARTY_PUBKEY_FETCH_ERROR
-            - NO_COMPATIBLE_UMA_VERSION
-            - LNURLP_REQUEST_FAILED
-            - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     KycLinkCreateRequest:
       type: object
       description: Request body for generating a hosted KYC link for an existing customer.

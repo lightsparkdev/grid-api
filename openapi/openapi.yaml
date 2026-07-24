@@ -141,10 +141,10 @@ paths:
     $ref: paths/discoveries/discoveries.yaml
   /customers:
     $ref: paths/customers/customers.yaml
-  /customers/edd:
-    $ref: paths/customers/customers_edd.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
+  /customers/{customerId}/edd:
+    $ref: paths/customers/customers_{customerId}_edd.yaml
   /customers/{customerId}/kyc-link:
     $ref: paths/customers/customers_{customerId}_kyc-link.yaml
   /customers/{customerId}/verify-email:
