@@ -48,6 +48,10 @@ const FAST_FORWARD_FUND_CENTS = 500_000;
 /** A transfer's transaction settles a beat after execute, so calls land 1-by-1. */
 const SETTLE_DELAY_MS = 650;
 
+/** After a successful sandbox fund, one retry delay before giving up on the
+ *  balance re-read (the money already landed either way — see onTransferExecute). */
+const REFRESH_RETRY_DELAY_MS = 600;
+
 interface Transient {
   screen: ScreenId;
   note?: string;
@@ -468,11 +472,10 @@ export function useWalletDemoLogic() {
             // Any failure here (a non-200/403 fund response, or a thrown
             // exception from either call — network error, bad JSON, etc.)
             // must not become an unhandled rejection or leave `completed.add`
-            // set. The envelope is already logged inside sandboxFund/
-            // refreshBalance before either can throw; there's no dedicated
-            // busy/running state on this path to unstick (the sheet already
-            // closed synchronously in finishTransfer), so this is just a
-            // safety net around the async fund + refresh.
+            // set INCORRECTLY. The envelope is already logged inside
+            // sandboxFund/refreshBalance before either can throw; there's no
+            // dedicated busy/running state on this path to unstick (the sheet
+            // already closed synchronously in finishTransfer).
             try {
               const res = await sandboxFund(
                 acct.accountId,
@@ -480,8 +483,31 @@ export function useWalletDemoLogic() {
                 logEnvelope(TRANSFER_LABEL[mode], gid),
               );
               if (res.ok) {
-                await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
+                // The fund succeeded server-side — the add DID happen, so
+                // `completed.add` reflects that regardless of whether the
+                // balance re-read below succeeds. (Also reconciles the
+                // phone's optimistic delta — see useWalletHome's
+                // `pendingAdds` — but that's a display concern; the money
+                // has already moved either way.)
                 setCompleted((c) => ({ ...c, add: true }));
+                try {
+                  await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
+                } catch (e) {
+                  // One retry after a short delay before giving up — a
+                  // transient read failure right after a real, successful
+                  // fund shouldn't leave the panel stuck on a stale balance
+                  // if a second try would have landed fine.
+                  await sleep(REFRESH_RETRY_DELAY_MS);
+                  try {
+                    await refreshBalance(TRANSFER_LABEL[mode], gid);
+                  } catch (e2) {
+                    // Both reads failed: the phone's optimistic delta stays
+                    // unreconciled until some LATER refresh (another flow,
+                    // or a fresh sign-in) catches it up. Truthful log, no
+                    // fabricated balance.
+                    console.error('[grid-demo]', e2);
+                  }
+                }
               } else if (res.status === 403) {
                 // Production keys: sandbox fund is forbidden. Keep the panel truthful;
                 // do NOT fake a balance bump. (Prod add-money is the real quote path — future work.)

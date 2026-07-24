@@ -110,14 +110,29 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const pendingCents = useRef(0);
   const pendingActivity = useRef<TransferActivity | null>(null);
   const availableCents = parseCents(balance) + deltaCents;
-  // `balance` is the host's source of truth (the real book balance). Any
-  // pending optimistic delta (an in-flight Add/Withdraw/Send/Receive/Tap
-  // bump, applied below on confirm) reconciles the instant `balance` itself
-  // moves to reflect it — the initial sign-in load, or a later real refresh
-  // (e.g. Add money's sandbox fund + GET /customers/internal-accounts landing
-  // a few hundred ms after the optimistic bump already moved the number).
+  // `balance` is the host's source of truth (the real book balance).
+  // `deltaCents` is ONLY the optimistic bridge for Add money's real (async)
+  // path: Face-ID-confirm bumps it instantly, well before the sandbox fund +
+  // GET /customers/internal-accounts round-trip lands and moves `balance`
+  // itself. Withdraw/Send/Tap/Receive do NOT use it when a host callback is
+  // wired (see below) — the host moves `balance` SYNCHRONOUSLY in the same
+  // commit as those, so bumping delta too would double-count for a frame.
+  //
+  // Multiple adds can be in flight at once (one confirmed before an earlier
+  // one's refresh lands), and each refresh fetches the CURRENT TOTAL, not a
+  // delta — so blanket-zeroing on every `balance` change would zero out a
+  // still-pending add's contribution the instant an unrelated (or an
+  // earlier) add's refresh resolves, producing a visible dip. `pendingAdds`
+  // counts adds bumped-but-not-yet-reconciled; only the change that brings
+  // it back to 0 gets to zero the delta. (A `balance` change from something
+  // OTHER than an add — e.g. a withdraw landing while an add is in flight —
+  // still decrements the counter without a matching add resolving; this is
+  // a known, narrower residual than the bug this replaces — see task report.)
+  const pendingAdds = useRef(0);
   useEffect(() => {
-    setDeltaCents(0);
+    if (pendingAdds.current === 0) return;
+    pendingAdds.current -= 1;
+    if (pendingAdds.current === 0) setDeltaCents(0);
   }, [balance]);
   // Earnings = yield on the live balance, shown as today's accrual. Weekly bars
   // map the most recent card charges (up to WEEKLY_BAR_COUNT), normalized to the
@@ -199,7 +214,9 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
       const tx = pendingTapTx.current; // the merchant picked at tap start
       setTapPhase('idle');
       // The card charge comes out of the cash balance, landing with the row.
-      setDeltaCents((c) => c - parseCents(tx.amount));
+      // Self-track only when no host callback is wired — a wired host moves
+      // `balance` synchronously via `onTapToPay` below, in this same commit.
+      if (!onTapToPay) setDeltaCents((c) => c - parseCents(tx.amount));
       setSpendBars((b) => [...b, parseCents(tx.amount)]);
       onTapToPay?.(parseCents(tx.amount), tx.title);
       window.clearTimeout(insertTimer.current);
@@ -392,7 +409,21 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
       pendingSettle.current = { mode, cents, dest };
       return;
     }
-    setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
+    if (mode === 'add') {
+      // Bridges the async gap until the host's real refresh moves `balance`
+      // (see `pendingAdds` above) — increment OUTSIDE the updater so a
+      // React-invoked-twice updater (dev double-invoke) can't double-count it.
+      pendingAdds.current += 1;
+      setDeltaCents((c) => c + cents);
+    } else if (!onTransferExecute) {
+      // No host wired to move `balance` synchronously — self-track locally
+      // (this is the only path for a standalone/unwired caller).
+      setDeltaCents((c) => c - cents);
+    }
+    // else: a host callback IS wired, and `onTransferExecute` above already
+    // moved the real `balance` synchronously, in this same commit — do not
+    // ALSO apply the delta here, or `availableCents` briefly double-counts
+    // the movement for one frame (old − 2×cents) before self-correcting.
     setSheetOpen(false);
     const sentTo =
       dest?.kind === 'crypto'
@@ -428,7 +459,15 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     const { mode, cents, dest } = pendingSettle.current;
     pendingSettle.current = null;
     settleDeltaTimer.current = window.setTimeout(() => {
-      setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
+      // Same add-vs-sync split as `finishTransfer` above (not currently
+      // reachable in this app — no active skin sets `transferSuccessScreen`
+      // — kept consistent for any skin that does).
+      if (mode === 'add') {
+        pendingAdds.current += 1;
+        setDeltaCents((c) => c + cents);
+      } else if (!onTransferExecute) {
+        setDeltaCents((c) => c - cents);
+      }
     }, SETTLE_DELTA_DELAY_MS);
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
@@ -460,7 +499,9 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
       window.setTimeout(() => {
         const cents = randomReceiveCents();
         const payer = p.via === 'crypto' ? truncateAddress(p.address) : p.payer;
-        setDeltaCents((c) => c + cents);
+        // Self-track only when no host callback is wired — a wired host moves
+        // `balance` synchronously via `onReceivePayment` below.
+        if (!onReceivePayment) setDeltaCents((c) => c + cents);
         showToast(
           asAdd ? `${toastUsd(cents)} added to balance` : `Received ${toastUsd(cents)} from ${payer}`,
         );
