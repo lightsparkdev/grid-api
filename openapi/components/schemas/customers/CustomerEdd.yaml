@@ -1,0 +1,52 @@
+type: object
+description: >-
+  Enhanced-due-diligence (EDD) fields for an individual customer. All fields
+  are optional; the specific set required for a given customer is driven by
+  the KYC provider's per-jurisdiction / per-flow / per-volume-tier rules
+  (surfaced through `MISSING_FIELD` errors on `POST /verifications`).
+properties:
+  sourceOfFundsCategories:
+    type: array
+    items:
+      $ref: ./IndividualSourceOfFundsCategory.yaml
+    description: Structured source-of-funds categories (FLOW of funds for this account).
+    example:
+      - SALARY
+  sourceOfFundsOtherDescription:
+    type: string
+    description: >-
+      Free-form description of the customer's source of funds. Required when
+      `sourceOfFundsCategories` includes `OTHER`; otherwise omitted.
+    example: Contest winnings
+  sourceOfWealthCategories:
+    type: array
+    items:
+      $ref: ./SourceOfWealthCategory.yaml
+    description: Structured source-of-wealth categories (STOCK — origin of accumulated wealth).
+    example:
+      - SALARY
+      - INVESTMENTS
+  sourceOfWealthOtherDescription:
+    type: string
+    description: >-
+      Free-form description of the customer's source of wealth. Required when
+      `sourceOfWealthCategories` includes `OTHER`; otherwise omitted.
+    example: Royalty income from published works
+  purposeOfAccount:
+    $ref: ./PurposeOfAccount.yaml
+  purposeOfAccountOtherDescription:
+    type: string
+    description: >-
+      Free-form description of the customer's intended purpose for the Grid
+      account. Required when `purposeOfAccount` is `OTHER`; otherwise omitted.
+    example: Household budgeting between spouses
+  expectedMonthlyTransactionCount:
+    $ref: ./ExpectedMonthlyTransactionCount.yaml
+  expectedMonthlyTransactionVolume:
+    $ref: ./ExpectedMonthlyTransactionVolume.yaml
+  annualIncomeRange:
+    $ref: ./AnnualIncomeRange.yaml
+  netWorthRange:
+    $ref: ./NetWorthRange.yaml
+  pepStatus:
+    $ref: ./PepStatus.yaml

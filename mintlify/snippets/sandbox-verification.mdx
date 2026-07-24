@@ -1,0 +1,71 @@
+In sandbox, you can trigger specific KYC/KYB verification outcomes using magic suffixes in customer and beneficial owner fields. These let you test different verification flows without waiting for real review.
+
+### Individual customer verification (KYC)
+
+The **last 3 characters** of the `fullName` on `POST /customers` (with `customerType: INDIVIDUAL`) determine the outcome when you call `POST /verifications`:
+
+| Suffix | Outcome | Behavior |
+|--------|---------|----------|
+| **001** | `verificationStatus: IN_PROGRESS`, `kycStatus: PENDING` | KYC verification remains pending (manual review) |
+| **002** | `verificationStatus: REJECTED`, `kycStatus: REJECTED` | KYC verification is rejected |
+| **003** | `verificationStatus: RESOLVE_ERRORS` with `MISSING_FIELD` errors on `edd.*` fields | EDD is required — call `POST /customers/edd` with `customerId` and the requested fields, then retry `POST /verifications` |
+| **Any other** | `verificationStatus: IN_PROGRESS`, `kycStatus: APPROVED` | KYC verification is approved |
+
+EDD flow example:
+
+```bash
+# Create a customer whose fullName ends in "003" to trigger the EDD path
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerType": "INDIVIDUAL",
+    "fullName": "Jane Doe 003",
+    "birthDate": "1990-01-15",
+    "nationality": "US",
+    "address": { "line1": "123 Main St", "city": "SF", "state": "CA", "postalCode": "94105", "country": "US" }
+  }'
+
+# First verification attempt: returns MISSING_FIELD errors on edd.* fields
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/verifications" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "customerId": "Customer:..." }'
+
+# Supply the EDD fields
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/edd" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "Customer:...",
+    "sourceOfWealthCategories": ["SALARY"],
+    "purposeOfAccount": "PERSONAL_SPEND",
+    "annualIncomeRange": "RANGE_100K_250K"
+  }'
+
+# Retry verification — now approves
+curl -X POST "https://api.lightspark.com/grid/2025-10-13/verifications" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "customerId": "Customer:..." }'
+```
+
+### Business customer verification (KYB)
+
+The **last 3 digits** of the `registrationNumber` in `businessInfo` determine the KYB status outcome when you call `POST /verifications`:
+
+| Suffix | `kybStatus` | Behavior |
+|--------|------------|----------|
+| **001** | `PENDING` | KYB verification remains pending |
+| **002** | `REJECTED` | KYB verification is rejected |
+| **Any other** | `APPROVED` | KYB verification is approved |
+
+### Beneficial owner KYC
+
+The **last 3 characters** of the `lastName` in `personalInfo` determine the individual KYC status outcome:
+
+| Suffix | `kycStatus` | Behavior |
+|--------|------------|----------|
+| **001** | `PENDING` | KYC verification remains pending |
+| **002** | `REJECTED` | KYC verification is rejected |
+| **Any other** | `APPROVED` | KYC verification is approved |

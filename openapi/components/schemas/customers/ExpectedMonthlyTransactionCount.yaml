@@ -1,0 +1,9 @@
+type: string
+enum:
+  - COUNT_UNDER_10
+  - COUNT_10_TO_100
+  - COUNT_100_TO_500
+  - COUNT_500_TO_1000
+  - COUNT_OVER_1000
+description: Expected number of transactions per month
+example: COUNT_100_TO_500

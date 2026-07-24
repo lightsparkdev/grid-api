@@ -1,0 +1,151 @@
+get:
+  summary: Get a customer's enhanced-due-diligence (EDD) fields
+  description: >-
+    Retrieve the EDD fields previously supplied for a customer. Returns `404`
+    if no EDD data has been recorded for the customer yet.
+  operationId: getCustomerEdd
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: query
+      description: The Grid customer ID to retrieve EDD data for.
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: EDD payload retrieved successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/CustomerEdd.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found or no EDD data recorded for this customer
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+post:
+  summary: Create or replace a customer's enhanced-due-diligence (EDD) fields
+  description: >-
+    Supply the EDD fields for a customer. Overwrites any previously recorded
+    EDD data for that customer. Call this endpoint when `POST /verifications`
+    returns `MISSING_FIELD` errors pointing at `edd.*` fields, then retry
+    `POST /verifications` to complete the KYC check.
+  operationId: createCustomerEdd
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/CustomerEddCreateRequest.yaml
+  responses:
+    '200':
+      description: EDD payload created or replaced successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/CustomerEdd.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+patch:
+  summary: Partially update a customer's enhanced-due-diligence (EDD) fields
+  description: >-
+    Merge the provided EDD fields into any previously recorded EDD data for
+    the customer. Fields omitted from the request body are left unchanged.
+  operationId: updateCustomerEdd
+  tags:
+    - KYC/KYB Verifications
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: query
+      description: The Grid customer ID whose EDD data is being updated.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/CustomerEdd.yaml
+  responses:
+    '200':
+      description: EDD payload updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/CustomerEdd.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found or no EDD data recorded to update
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
