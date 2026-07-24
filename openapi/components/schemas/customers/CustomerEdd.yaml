@@ -50,3 +50,15 @@ properties:
     $ref: ./NetWorthRange.yaml
   pepStatus:
     $ref: ./PepStatus.yaml
+  createdAt:
+    type: string
+    format: date-time
+    description: Creation timestamp
+    readOnly: true
+    example: '2026-07-24T17:32:28Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: Last update timestamp
+    readOnly: true
+    example: '2026-07-24T17:32:28Z'

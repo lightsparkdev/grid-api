@@ -23,5 +23,18 @@ properties:
     example: US
   address:
     $ref: ../common/Address.yaml
-  taxIdentification:
-    $ref: ./TaxIdentification.yaml
+  taxIdType:
+    $ref: ./IdentificationType.yaml
+  taxIdentifier:
+    type: string
+    description: >-
+      Tax-identification number. For US persons this is the SSN (format
+      `###-##-####`) or ITIN. For non-US persons this is the tax number
+      issued by `taxIdCountryOfIssuance`.
+    example: 123-45-6789
+  taxIdCountryOfIssuance:
+    type: string
+    description: >-
+      Country that issued the tax identifier (ISO 3166-1 alpha-2). Required
+      when `taxIdType` is `NON_US_TAX_ID`.
+    example: US

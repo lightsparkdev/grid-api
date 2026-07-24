@@ -11334,15 +11334,15 @@ components:
             to subsequent delivery attempts.
     FieldConstraint:
       type: object
-      description: 'Machine-readable validator hint. Platforms use it to (a) pre-validate the end-user''s input on their onboarding form before submitting, and (b) drive form UI directly — HTML5 `<input type>` selection and `autocomplete` / `inputmode` / a11y attributes via `format`, dropdown menus via `enum`, input masking via `pattern`, native length limits via `minLength` / `maxLength`. Fields are additive; a single constraint may set several (e.g. `format: email` + `maxLength: 254`). Grid emits only constraints it enforces server-side.'
+      description: Machine-readable validator hint accompanying a 400 `INVALID_INPUT` error. Consumers use it to drive form UI (input types, dropdowns, masking, length limits) and to pre-validate the field client-side before re-submitting. Fields are additive.
       properties:
         format:
           type: string
-          description: Named format the value must satisfy — primarily consumed by form UIs to choose HTML5 `<input type>`, `inputmode`, and `autocomplete` attributes. Prefer HTML5 input type names when the field maps to one (`email`, `tel`, `url`, `date`, `datetime-local`, `time`, `number`, `password`); use semantic slugs for domain-specific formats that don't (`iso3166-1-alpha-2`, `bcp47-language-tag`, `us-ssn`, `e.164`). Treat unknown values as opaque — fall back to string validation with any accompanying `pattern` / `minLength` / `maxLength` constraints.
+          description: Named format the value must satisfy — HTML5 input type names (`email`, `tel`, `url`, `date`, ...) or semantic slugs (`iso3166-1-alpha-2`, `bcp47-language-tag`, `us-ssn`, `e.164`).
           example: email
         pattern:
           type: string
-          description: Regular expression the value must match (JavaScript-flavor). Length constraints (`minLength` / `maxLength`) are exposed separately so consumers can drive HTML5 `<input maxlength>` attributes or perform plain length checks without evaluating a regex — encoding length inside `pattern` (e.g. `^.{3,10}$`) is valid but harder to consume.
+          description: Regular expression the value must match (JavaScript-flavor).
           example: ^\d{5}(-\d{4})?$
         enum:
           type: array
@@ -11355,11 +11355,11 @@ components:
             - NON_US_TAX_ID
         minLength:
           type: integer
-          description: Minimum length in characters. Exposed as a distinct field (rather than folded into `pattern`) so form UIs can wire it to native controls directly.
+          description: Minimum length in characters.
           example: 1
         maxLength:
           type: integer
-          description: Maximum length in characters. Exposed as a distinct field (rather than folded into `pattern`) so form UIs can wire it to `<input maxlength>` directly.
+          description: Maximum length in characters.
           example: 500
     Error400:
       type: object
@@ -11467,7 +11467,7 @@ components:
             field:
               type: string
               description: Dot-notation path to the offending field. Present on field-validation errors from submit endpoints.
-              example: taxIdentification.identifier
+              example: taxIdentifier
             constraint:
               $ref: '#/components/schemas/FieldConstraint'
           additionalProperties: true
@@ -11804,22 +11804,6 @@ components:
         - NON_US_TAX_ID
       description: Type of tax identification
       example: SSN
-    TaxIdentification:
-      type: object
-      required:
-        - idType
-        - identifier
-      properties:
-        idType:
-          $ref: '#/components/schemas/IdentificationType'
-        identifier:
-          type: string
-          description: The tax-identification number. For US persons this is the SSN (format `###-##-####`) or ITIN. For non-US persons this is the tax number issued by `countryOfIssuance`.
-          example: 123-45-6789
-        countryOfIssuance:
-          type: string
-          description: Country that issued the tax identifier (ISO 3166-1 alpha-2). Required when `idType` is `NON_US_TAX_ID`.
-          example: US
     IndividualCustomerFields:
       type: object
       required:
@@ -11846,8 +11830,16 @@ components:
           example: US
         address:
           $ref: '#/components/schemas/Address'
-        taxIdentification:
-          $ref: '#/components/schemas/TaxIdentification'
+        taxIdType:
+          $ref: '#/components/schemas/IdentificationType'
+        taxIdentifier:
+          type: string
+          description: Tax-identification number. For US persons this is the SSN (format `###-##-####`) or ITIN. For non-US persons this is the tax number issued by `taxIdCountryOfIssuance`.
+          example: 123-45-6789
+        taxIdCountryOfIssuance:
+          type: string
+          description: Country that issued the tax identifier (ISO 3166-1 alpha-2). Required when `taxIdType` is `NON_US_TAX_ID`.
+          example: US
     IndividualCustomer:
       title: Individual Customer
       allOf:
@@ -12680,6 +12672,18 @@ components:
           $ref: '#/components/schemas/NetWorthRange'
         pepStatus:
           $ref: '#/components/schemas/PepStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+          example: '2026-07-24T17:32:28Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+          example: '2026-07-24T17:32:28Z'
     Error404:
       type: object
       required:

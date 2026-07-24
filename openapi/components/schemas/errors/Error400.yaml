@@ -110,7 +110,7 @@ properties:
         description: >-
           Dot-notation path to the offending field. Present on field-validation
           errors from submit endpoints.
-        example: taxIdentification.identifier
+        example: taxIdentifier
       constraint:
         $ref: ./FieldConstraint.yaml
     additionalProperties: true
