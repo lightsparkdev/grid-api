@@ -108,6 +108,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       authFlow={skin.inlineAuthFlow ? flow : undefined}
       entry={props.walletEntry}
       walletOptions={skin.walletOptions}
+      balance={props.phone.balance}
       onQuoteCreate={props.onQuoteCreate}
       onLinkExternalAccount={props.onLinkExternalAccount}
       onTransferExecute={props.onTransferExecute}

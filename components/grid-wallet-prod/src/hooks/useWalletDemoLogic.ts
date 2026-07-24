@@ -465,14 +465,32 @@ export function useWalletDemoLogic() {
         const acct = getAccount();
         if (acct) {
           void (async () => {
-            const res = await sandboxFund(acct.accountId, cents, logEnvelope(TRANSFER_LABEL[mode], gid));
-            if (res.ok) {
-              await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
-              setCompleted((c) => ({ ...c, add: true }));
-            } else if (res.status === 403) {
-              // Production keys: sandbox fund is forbidden. Keep the panel truthful;
-              // do NOT fake a balance bump. (Prod add-money is the real quote path — future work.)
-              setCompleted((c) => ({ ...c, add: true }));
+            // Any failure here (a non-200/403 fund response, or a thrown
+            // exception from either call — network error, bad JSON, etc.)
+            // must not become an unhandled rejection or leave `completed.add`
+            // set. The envelope is already logged inside sandboxFund/
+            // refreshBalance before either can throw; there's no dedicated
+            // busy/running state on this path to unstick (the sheet already
+            // closed synchronously in finishTransfer), so this is just a
+            // safety net around the async fund + refresh.
+            try {
+              const res = await sandboxFund(
+                acct.accountId,
+                cents,
+                logEnvelope(TRANSFER_LABEL[mode], gid),
+              );
+              if (res.ok) {
+                await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
+                setCompleted((c) => ({ ...c, add: true }));
+              } else if (res.status === 403) {
+                // Production keys: sandbox fund is forbidden. Keep the panel truthful;
+                // do NOT fake a balance bump. (Prod add-money is the real quote path — future work.)
+                setCompleted((c) => ({ ...c, add: true }));
+              } else {
+                console.error('[grid-demo]', new Error(`sandbox fund failed: ${res.status}`));
+              }
+            } catch (e) {
+              console.error('[grid-demo]', e);
             }
           })();
         }

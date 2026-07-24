@@ -74,6 +74,9 @@ interface SignInFlowProps {
   entry?: WalletEntry;
   /** The active skin's wallet-brain options (from the registry). */
   walletOptions?: WalletBrainOptions;
+  /** Real book balance from the demo logic (e.g. "$225.00") — the wallet home's
+   *  source of truth; see `UseWalletHomeOptions.balance`. */
+  balance?: string;
   /** Wallet events bubbled up so the demo logs the matching Grid API calls. */
   onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
   onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
@@ -92,6 +95,7 @@ interface WalletHostProps {
   entrance: boolean;
   entry?: WalletEntry;
   walletOptions?: WalletBrainOptions;
+  balance?: string;
   onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
   onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
@@ -114,6 +118,7 @@ function WalletHost({
   entrance,
   entry,
   walletOptions,
+  balance,
   onQuoteCreate,
   onLinkExternalAccount,
   onTransferExecute,
@@ -122,6 +127,7 @@ function WalletHost({
   onReceivePayment,
 }: WalletHostProps) {
   const home = useWalletHome({
+    balance,
     entrance,
     entry,
     transferSuccessScreen: walletOptions?.transferSuccessScreen,
@@ -208,6 +214,7 @@ export function SignInFlow({
   authFlow,
   entry,
   walletOptions,
+  balance,
   onQuoteCreate,
   onLinkExternalAccount,
   onTransferExecute,
@@ -322,6 +329,7 @@ export function SignInFlow({
               entrance={!reduceMotion}
               entry={entry}
               walletOptions={walletOptions}
+              balance={balance}
               onQuoteCreate={onQuoteCreate}
               onLinkExternalAccount={onLinkExternalAccount}
               onTransferExecute={onTransferExecute}

@@ -110,6 +110,15 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const pendingCents = useRef(0);
   const pendingActivity = useRef<TransferActivity | null>(null);
   const availableCents = parseCents(balance) + deltaCents;
+  // `balance` is the host's source of truth (the real book balance). Any
+  // pending optimistic delta (an in-flight Add/Withdraw/Send/Receive/Tap
+  // bump, applied below on confirm) reconciles the instant `balance` itself
+  // moves to reflect it — the initial sign-in load, or a later real refresh
+  // (e.g. Add money's sandbox fund + GET /customers/internal-accounts landing
+  // a few hundred ms after the optimistic bump already moved the number).
+  useEffect(() => {
+    setDeltaCents(0);
+  }, [balance]);
   // Earnings = yield on the live balance, shown as today's accrual. Weekly bars
   // map the most recent card charges (up to WEEKLY_BAR_COUNT), normalized to the
   // busiest charge so heights vary by amount.
@@ -272,7 +281,12 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     window.clearTimeout(coldOpenTimer.current);
 
     if (entry.provision?.issued) setIssued(true);
-    if (typeof entry.provision?.fundCents === 'number') setDeltaCents(entry.provision.fundCents);
+    // Relative to the CURRENT base balance, not absolute — so the visible
+    // total lands on exactly `fundCents` whether `balance` is still "$0.00"
+    // (no real session) or already a real signed-in balance.
+    if (typeof entry.provision?.fundCents === 'number') {
+      setDeltaCents(entry.provision.fundCents - parseCents(balance));
+    }
 
     const openTarget = () => {
       switch (entry.open) {
