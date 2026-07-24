@@ -1,8 +1,6 @@
 type: object
 description: >-
-  A fee collected by your platform on top of Grid's fees. Keyed uniquely by
-  `(feeEventType, sourceCurrency)` within a platform. To deactivate a fee,
-  send the same key with `variableFeeBps: 0` and `fixedFee.amount: 0`.
+  A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency .
 properties:
   id:
     type: string
