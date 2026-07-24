@@ -467,7 +467,11 @@ export function AuthSheet({
       {/* Corner-pinned (16px) independent of the tile's header padding. */}
       <span className={styles.close}>
         <GlassSymbolButton
-          aria-label={step === 'code' ? 'Back' : 'Close'}
+          // "Back" only when the code step can genuinely return to the entry
+          // step (onBack provided). The live passkey bootstrap has no entry
+          // step to go back to — DemoPhone omits onBack for that flow, so the
+          // control both acts as and reads as a plain cancel there.
+          aria-label={step === 'code' && onBack ? 'Back' : 'Close'}
           size={40}
           type="button"
           glass={{ brightness: headerGlassBrightness(theme) }}

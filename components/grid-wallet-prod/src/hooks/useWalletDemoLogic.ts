@@ -14,11 +14,8 @@ import {
 import {
   cardCalls,
   oauthVerifyCall,
-  otpRequestCall,
-  otpVerifyCalls,
   receivePaymentCalls,
   tapCalls,
-  transferQuoteCall,
   type ExternalAccountInput,
   type ReceivePaymentInfo,
   type TransferDest,
@@ -322,40 +319,7 @@ export function useWalletDemoLogic() {
      */
     async (firstTime: boolean, popup?: Promise<string>) => {
       const m = session.current.method ?? method;
-      if (m === 'email_otp' || m === 'sms') {
-        // ONE loop for both OTP methods — only the entry prompt and the
-        // session field differ. The OTP step can come BACK to the entry step
-        // (the sheet's X): the prompt rejects with 'back' and the loop
-        // re-prompts the entry.
-        const field = m === 'sms' ? ('phone' as const) : ('email' as const);
-        const promptEntry = m === 'sms' ? promptPhone : promptEmail;
-        // Request + verify stream into ONE "Sign in" group as they actually fire.
-        const gid = newGroupId();
-        let needEntry = firstTime;
-        for (;;) {
-          if (needEntry || !session.current[field]) {
-            session.current[field] = await promptEntry();
-          }
-          // Submitting the phone/email fires the OTP request right away.
-          pushCalls([otpRequestCall(m, session.current[field])], 'Sign in', gid);
-          setTransient({ screen: 'creating', note: 'Sending you a code…' });
-          await sleep(600);
-          try {
-            await promptOtp();
-            break;
-          } catch (e) {
-            if ((e as Error)?.message !== 'back') throw e;
-            setTransient(null);
-            needEntry = true;
-          }
-        }
-        // Code accepted → verify fires; then let the sheet's dismiss VISIBLY
-        // finish (transient clears first so the auth screen is back underneath
-        // the departing sheet) before the wallet flip starts the intro.
-        pushCalls(otpVerifyCalls(m), 'Sign in', gid);
-        setTransient(null);
-        await sleep(400);
-      } else if (m === 'passkey') {
+      if (m === 'passkey') {
         // A sign-in is already live (e.g. a second tap landed before `running`
         // re-rendered) — never start a second WebAuthn ceremony on top of it.
         if (signInInFlight.current) return;
@@ -402,8 +366,6 @@ export function useWalletDemoLogic() {
     },
     [
       method,
-      promptEmail,
-      promptPhone,
       promptOtp,
       promptGoogle,
       promptApple,
@@ -464,10 +426,10 @@ export function useWalletDemoLogic() {
       const gid = newGroupId();
       transferGroup.current = gid;
       if (mode === 'add') {
-        // Add money's pay-in quote is still the scripted log (Task 7/8 only
-        // wired the real sandbox-fund + balance-refresh, not this call).
+        // No client-side quote call to log here — the real on-ramp envelopes
+        // (fund → quote → execute → poll) are logged in onTransferExecute,
+        // into this same group (transferGroup.current, set above).
         transferFundingCurrency.current = dest?.kind === 'bank' ? dest.currency : null;
-        pushCalls([transferQuoteCall(mode, cents, dest)], TRANSFER_LABEL[mode], gid);
         return;
       }
       // Outbound (withdraw/send): a REAL POST /quotes, source = the embedded

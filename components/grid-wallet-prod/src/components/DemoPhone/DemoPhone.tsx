@@ -68,8 +68,11 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     onSubmit: entry?.onSubmit ?? (() => {}),
     onSubmitCode: props.otp?.onSubmit,
     // The X is BACK past the first step (code → entry re-prompt); the scrim
-    // still cancels the whole flow.
-    onBack: props.otp?.onBack,
+    // still cancels the whole flow. Only the genuine email/phone entry flow
+    // (sheetMethod set) has an entry step to go back to — the live passkey
+    // bootstrap's OTP prompt has none, so its sheet gets no onBack and the
+    // control reads (and acts) as a plain cancel there.
+    onBack: sheetMethod ? props.otp?.onBack : undefined,
     onCancel: props.otp?.active ? props.otp?.onCancel : entry?.onCancel,
   };
   const authSheet =
