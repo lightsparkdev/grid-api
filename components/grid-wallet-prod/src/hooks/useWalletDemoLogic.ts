@@ -13,13 +13,11 @@ import {
 } from '@/data/actions';
 import {
   cardCalls,
-  externalAccountCreateCall,
   oauthVerifyCall,
   otpRequestCall,
   otpVerifyCalls,
   receivePaymentCalls,
   tapCalls,
-  transferExecuteCalls,
   transferQuoteCall,
   type ExternalAccountInput,
   type ReceivePaymentInfo,
@@ -30,6 +28,13 @@ import { signIn as gridSignIn, ensureSession, clearSession, getAccount } from '@
 import { envelopeToApiCall } from '@/lib/gridEntry';
 import { fetchBalanceCents, fetchActivity } from '@/lib/gridReads';
 import { sandboxFund } from '@/lib/gridFunding';
+import {
+  ensureExternalAccount,
+  createQuote,
+  executeQuote,
+  pollTransaction,
+  quoteBodyFor,
+} from '@/lib/gridTransfer';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
 import type { Entry } from '@/components/ApiPanel/types';
 import { SEED_API_PANEL, seedApiEntries } from '@/data/apiPanelSeed';
@@ -114,6 +119,18 @@ export function useWalletDemoLogic() {
   // stream into one API-panel group.
   const transferGroup = useRef<string | null>(null);
   const transferFundingCurrency = useRef<string | null>(null);
+  // The most recently linked ExternalAccount id (real, from ensureExternalAccount) —
+  // set once onLinkExternalAccount's real call resolves, consumed by the next
+  // outbound onQuoteCreate. Only meaningful for withdraw/send.
+  const pendingExternalAccountId = useRef<string | null>(null);
+  // The just-created real quote (withdraw/send) — stashed here between
+  // onQuoteCreate (create-quote beat) and onTransferExecute (Face ID confirm).
+  const pendingQuote = useRef<{
+    quoteId: string;
+    payloadToSign: string | null;
+    transactionId: string | null;
+    idem: string;
+  } | null>(null);
   // Pending "transaction settled" pushes (so execute and the GET land 1-by-1);
   // cleared on reset so a late push can't re-add a row to a wiped panel.
   const settleTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -444,20 +461,57 @@ export function useWalletDemoLogic() {
     (mode: WalletTransferMode, cents: number, dest?: TransferDest) => {
       const gid = newGroupId();
       transferGroup.current = gid;
-      transferFundingCurrency.current =
-        mode === 'add' && dest?.kind === 'bank' ? dest.currency : null;
-      pushCalls([transferQuoteCall(mode, cents, dest)], TRANSFER_LABEL[mode], gid);
+      if (mode === 'add') {
+        // Add money's pay-in quote is still the scripted log (Task 7/8 only
+        // wired the real sandbox-fund + balance-refresh, not this call).
+        transferFundingCurrency.current = dest?.kind === 'bank' ? dest.currency : null;
+        pushCalls([transferQuoteCall(mode, cents, dest)], TRANSFER_LABEL[mode], gid);
+        return;
+      }
+      // Outbound (withdraw/send): a REAL POST /quotes, source = the embedded
+      // wallet, destination = the ExternalAccount linked moments earlier.
+      transferFundingCurrency.current = null;
+      const acct = getAccount();
+      if (!acct) return;
+      void (async () => {
+        const destCurrency = dest?.currency ?? 'USD';
+        // The external account was created on link (onLinkExternalAccount);
+        // resolve its id from that ref. If the user picked a saved recipient
+        // from an earlier session without re-linking this session, this can
+        // be stale/null — see the task report's known-limitation note.
+        const externalAccountId = pendingExternalAccountId.current;
+        if (!externalAccountId) return;
+        const idem = crypto.randomUUID();
+        const quote = await createQuote(
+          quoteBodyFor(acct.accountId, externalAccountId, cents, destCurrency),
+          logEnvelope(TRANSFER_LABEL[mode], gid),
+          idem,
+        );
+        pendingQuote.current = {
+          quoteId: quote.quoteId,
+          payloadToSign: quote.payloadToSign,
+          transactionId: quote.transactionId,
+          idem,
+        };
+      })().catch((e) => console.error('[grid-demo] create quote', e));
     },
-    [pushCalls],
+    [pushCalls, logEnvelope],
   );
 
   // Linking a recipient (a bank account or a crypto address) — its own group,
-  // logged the moment "Add bank account" / "Add recipient" is confirmed.
+  // logged the moment "Add bank account" / "Add recipient" is confirmed. Real
+  // POST /customers/external-accounts (reused, not recreated, per destination
+  // for the rest of the session).
   const onLinkExternalAccount = useCallback(
     (input: ExternalAccountInput, label: string) => {
-      pushCalls([externalAccountCreateCall(input)], label);
+      const gid = newGroupId();
+      void ensureExternalAccount(input, logEnvelope(label, gid))
+        .then((id) => {
+          pendingExternalAccountId.current = id;
+        })
+        .catch((e) => console.error('[grid-demo] link external account', e));
     },
-    [pushCalls],
+    [logEnvelope],
   );
 
   const onTransferExecute = useCallback(
@@ -544,25 +598,60 @@ export function useWalletDemoLogic() {
         }
         return;
       }
-      // Calls land one at a time: execute now, the transaction settles a beat
-      // later (real interactions only — fast-forward batches its setup group).
+      // Outbound (withdraw | send): stamp the quote's payloadToSign, execute
+      // it for real, then poll the transaction to a terminal status. The
+      // sheet has already closed optimistically (finishTransfer, above this
+      // callback) — no balance changes here; `refreshBalance` below (once the
+      // transaction settles) is the sole source of truth for the new balance.
       transferFundingCurrency.current = null;
-      const [executeCall, ...settleCalls] = transferExecuteCalls(mode);
-      pushCalls([executeCall], TRANSFER_LABEL[mode], gid);
-      if (settleCalls.length) {
-        const timer = setTimeout(() => {
-          settleTimers.current.delete(timer);
-          pushCalls(settleCalls, TRANSFER_LABEL[mode], gid);
-        }, SETTLE_DELAY_MS);
-        settleTimers.current.add(timer);
+      const pq = pendingQuote.current;
+      pendingQuote.current = null;
+      const acct = getAccount();
+      if (acct && pq?.payloadToSign) {
+        void (async () => {
+          try {
+            const priv = await ensureSession({
+              log: logEnvelope(TRANSFER_LABEL[mode], gid),
+              promptOtp,
+              onFaceId: () => playFaceId(),
+            });
+            const execEnv = await executeQuote(
+              pq.quoteId,
+              pq.payloadToSign!,
+              priv,
+              logEnvelope(TRANSFER_LABEL[mode], gid),
+              pq.idem,
+            );
+            if (execEnv.response.status === 200) {
+              if (pq.transactionId) {
+                // Polls to a terminal status (COMPLETED expected in sandbox,
+                // 60–180s) — a status-polling loop, not an auth retry.
+                await pollTransaction(pq.transactionId, logEnvelope(TRANSFER_LABEL[mode], gid));
+              }
+              await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
+              setCompleted((c) => ({ ...c, [mode]: true }));
+            } else {
+              // Real error (e.g. insufficient funds, an expired quote). The
+              // panel already logged the truthful error via logEnvelope; the
+              // phone recovers with no balance change and no checkmark.
+              console.warn('[grid-demo] execute failed', execEnv.response.status);
+            }
+          } catch (e) {
+            console.error('[grid-demo] execute', e);
+          }
+        })();
+      } else {
+        console.warn('[grid-demo] no pending quote/payload for outbound transfer');
       }
-      setWallet((w) => ({
-        ...w,
-        balanceCents: Math.max(0, w.balanceCents - cents),
-      }));
-      setCompleted((c) => ({ ...c, [mode]: true }));
     },
-    [pushCalls],
+    // `refreshBalance` is referenced inside the async body above but
+    // deliberately omitted here: it's declared further down in this same
+    // component (below `onTransferExecute`), so naming it in this array would
+    // read it before its `const` initializer runs (TDZ) at render time. The
+    // closure inside the callback body only reads it once invoked, well after
+    // the component has finished rendering, so this is safe — same pattern
+    // already used by the 'add' branch above.
+    [logEnvelope],
   );
 
   // Re-pull the real book balance after a money movement (used by Tasks 7-8).
