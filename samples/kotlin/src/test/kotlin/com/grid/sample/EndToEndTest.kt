@@ -325,4 +325,52 @@ class EndToEndTest {
         }
         assertEquals(HttpStatusCode.OK, fundResponse.status, "Sandbox funding failed: ${fundResponse.bodyAsText()}")
     }
+
+    @Test
+    fun `generate KYC link and retrieve customer`() = testApplication {
+        configureApp()
+
+        // Step 1: Create customer
+        val customerResponse = client.post("/api/customers") {
+            contentType(ContentType.Application.Json)
+            setBody("""
+                {
+                    "platformCustomerId": "test_kyc_${System.currentTimeMillis()}",
+                    "customerType": "INDIVIDUAL",
+                    "fullName": "Kyc Test User",
+                    "email": "kyctest.${System.currentTimeMillis()}@lightspark.com",
+                    "nationality": "US",
+                    "birthDate": "1990-01-01",
+                    "address": {
+                        "country": "US",
+                        "line1": "123 Test St",
+                        "postalCode": "10001",
+                        "city": "New York",
+                        "state": "NY"
+                    }
+                }
+            """)
+        }
+        assertEquals(HttpStatusCode.Created, customerResponse.status)
+        val customerJson = parseJson(customerResponse.bodyAsText())
+        val customerId = customerJson.get("id").asText()
+
+        // Step 2: Generate a hosted KYC link. No redirectUri: the KYC provider
+        // requires a public https URL, which a local sample doesn't have.
+        val linkResponse = client.post("/api/customers/$customerId/kyc-link") {
+            contentType(ContentType.Application.Json)
+            setBody("""{}""")
+        }
+        assertEquals(HttpStatusCode.Created, linkResponse.status)
+        val link = parseJson(linkResponse.bodyAsText())
+        assertNotNull(link.optText("kycUrl"), "Response should include kycUrl")
+        assertNotNull(link.optText("expiresAt"), "Response should include expiresAt")
+
+        // Step 3: Retrieve the customer and check kycStatus is present
+        val getResponse = client.get("/api/customers/$customerId")
+        assertEquals(HttpStatusCode.OK, getResponse.status)
+        val fetched = parseJson(getResponse.bodyAsText())
+        assertEquals(customerId, fetched.get("id")?.asText())
+        assertNotNull(fetched.optText("kycStatus"), "Customer should include kycStatus")
+    }
 }
