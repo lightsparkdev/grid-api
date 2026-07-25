@@ -12,7 +12,7 @@ import type {
 } from './types';
 
 /** Yield rate shown on the Earnings card; today's accrual = balance × this ÷ 365. */
-export const EARNINGS_APY_PERCENT = 5;
+export const EARNINGS_APY_PERCENT = 3;
 /** Bars in the Weekly activity chart — one per recent card charge. */
 export const WEEKLY_BAR_COUNT = 14;
 
@@ -77,7 +77,7 @@ export function makeTransferRow(
       timestamp: ts,
     };
   }
-  const flag = dest ? `/assets/flags/${dest.countryCode}.svg` : '/assets/add-money/flag-mx.svg';
+  const flag = dest ? `/assets/flags/${dest.countryCode}.svg` : '/assets/flags/us.svg';
   const bankLabel = dest ? `${dest.bankName} (•••• ${dest.last4})` : 'Bank account';
   if (mode === 'send') {
     // Sent to a person → contact avatar (initials + flag); only a destination-less

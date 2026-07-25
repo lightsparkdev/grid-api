@@ -1098,3 +1098,33 @@
     animation: none;
   }
 }
+
+/* "or" divider between the two halves of Add money: wire to these details, or
+   add an account for us to pull from. A hairline with the label in the gap. */
+.orRule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 16px 4px;
+  color: var(--ios-label-secondary);
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--ios-separator-opaque, rgba(60, 60, 67, 0.18));
+  }
+}
+
+.orRuleLabel {
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  text-transform: lowercase;
+}
+
+/* The pull-path CTA sits with the "or" break, not pinned to the sheet bottom —
+   the two halves read as one choice. */
+.orCtaWrap {
+  padding: 12px 16px 0;
+}

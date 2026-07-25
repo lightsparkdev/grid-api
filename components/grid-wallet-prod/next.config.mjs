@@ -6,6 +6,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Self-contained server bundle (.next/standalone) — what the Docker runtime
+  // stage copies, so the image carries no node_modules of its own.
+  output: 'standalone',
   transpilePackages: ['@lightsparkdev/origin'],
   typescript: {
     // Origin is source-linked without its own node_modules,
@@ -33,11 +36,15 @@ const nextConfig = {
     ];
   },
   webpack: (config) => {
-    // Ensure dependencies imported by the local Origin package
-    // resolve from this project's node_modules
+    // Ensure dependencies imported by the local Origin package resolve from
+    // this project's node_modules. The relative 'node_modules' entry comes
+    // FIRST so webpack's default nested walk-up still wins (e.g. @turnkey/crypto's
+    // own node_modules/@noble/* pin, which differs from this project's top-level
+    // @noble/* version and exports different subpaths) — the absolute path is
+    // only a fallback for imports with no node_modules to walk up from.
     config.resolve.modules = [
-      path.resolve(__dirname, 'node_modules'),
       'node_modules',
+      path.resolve(__dirname, 'node_modules'),
     ];
 
     // Origin only exports its main barrel — narrow imports for tree-shaken components.

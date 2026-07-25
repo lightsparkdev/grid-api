@@ -11,9 +11,11 @@
     "export-sf-symbols": "node scripts/export-sf-symbols.mjs --sync-paths",
     "fetch:flags": "node scripts/fetch-flags.mjs",
     "gen:bank-fields": "node scripts/generate-bank-fields.mjs",
+    "ensure:business-customer": "node scripts/ensure-business-customer.mjs",
     "verify:bank-fields": "node scripts/generate-bank-fields.mjs && git diff --exit-code -- src/data/bankAccountFields.generated.ts",
     "verify:bank-data": "tsx scripts/verify-bank-data.ts",
-    "verify:bank": "npm run verify:bank-fields && npm run verify:bank-data"
+    "verify:bank": "npm run verify:bank-fields && npm run verify:bank-data",
+    "test": "vitest run"
   },
   "dependencies": {
     "@central-icons-react/round-filled-radius-0-stroke-2": "^1.1.267",
@@ -26,6 +28,8 @@
     "@lightsparkdev/origin": "^0.13.4",
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
+    "@turnkey/api-key-stamper": "^0.6.5",
+    "@turnkey/crypto": "^2.8.14",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@scure/base": "^2.2.0",
@@ -46,7 +50,8 @@
     "@types/three": "^0.169.0",
     "playwright": "^1.60.0",
     "tsx": "^4.22.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
   },
   "comments": {
     "overrides": "react-three-fiber v8 imports zustand's default export; the next.config resolve.modules flattening forces a single zustand, so pin it to v4 (which still has the default export). drei's Environment/Lightformer don't use zustand directly."

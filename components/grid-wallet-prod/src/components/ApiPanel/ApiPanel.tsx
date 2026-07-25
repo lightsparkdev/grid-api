@@ -14,6 +14,8 @@ import styles from './ApiPanel.module.scss';
 
 interface ApiPanelProps {
   entries: Entry[];
+  /** Runs an action card's button (the sandbox funding stand-in). */
+  onAction?: (action: NonNullable<Entry['action']>) => void;
 }
 
 // Graceful skeleton ⇄ live-calls swap — blur-fade so the first call doesn't pop.
@@ -33,7 +35,7 @@ const PILL_IN = { type: 'spring' as const, stiffness: 400, damping: 13, mass: 0.
 const PILL_PULSE = { duration: 0.4, ease: easeOutSnappy };
 const PILL_MORPH_MS = 280;
 
-export function ApiPanel({ entries }: ApiPanelProps) {
+export function ApiPanel({ entries, onAction }: ApiPanelProps) {
   const isEmpty = entries.length === 0;
   // New-call signifiers (stacked layout only): a count pill on the header + a dot
   // per unseen call. "Seen" = the calls have scrolled into view — an
@@ -167,7 +169,7 @@ export function ApiPanel({ entries }: ApiPanelProps) {
               animate={SWAP_REST}
               transition={SWAP_IN}
             >
-              <ApiCallList entries={entries} newKeys={newKeys} />
+              <ApiCallList onAction={onAction} entries={entries} newKeys={newKeys} />
             </motion.div>
           )}
         </AnimatePresence>

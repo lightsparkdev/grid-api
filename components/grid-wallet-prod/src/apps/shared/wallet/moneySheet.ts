@@ -23,7 +23,9 @@ export type Step =
   // Receive (deposit) flow: the address list is the entry; the bank row drills
   // into the shared country picker → the picked country's funding instructions.
   | 'deposit'
-  | 'fundingDetails';
+  | 'fundingDetails'
+  // Add-from-crypto: pick a network → enter an amount → the address to pay.
+  | 'depositAddress';
 
 /** A bank the user has "added" this session (persists until Reset). */
 export interface SavedBank {
@@ -91,6 +93,48 @@ export function accountLast4(values: Record<string, string>): string {
   return digits.slice(-4) || raw.slice(-4);
 }
 
+/**
+ * A Grid-stored external account → a saved-bank row. `id` IS the ExternalAccount
+ * id, so selecting one of these quotes against the real account instead of
+ * re-creating it (session-added rows use a local id and link on save).
+ *
+ * Grid doesn't store a bank NAME, so the row is labelled by rail rather than
+ * inventing one; the beneficiary and the identifier's last 4 are real.
+ */
+export function savedBankFromExternalAccount(account: {
+  id: string;
+  accountInfo?: {
+    accountType?: string;
+    accountNumber?: string;
+    routingNumber?: string;
+    iban?: string;
+    beneficiary?: { fullName?: string };
+  };
+}): SavedBank | null {
+  const info = account.accountInfo ?? {};
+  const accountType = info.accountType ?? '';
+  // Euro accounts carry an IBAN whose first two letters are the country.
+  const iban = info.iban ?? '';
+  const code =
+    accountType === 'USD_ACCOUNT'
+      ? 'us'
+      : iban.slice(0, 2).toLowerCase() || (accountType === 'EUR_ACCOUNT' ? 'de' : '');
+  const country = BANK_COUNTRIES.find((c) => c.code === code && c.accountType === accountType);
+  if (!country) return null;
+  const values: Record<string, string> = {};
+  if (info.accountNumber) values.accountNumber = info.accountNumber;
+  if (info.routingNumber) values.routingNumber = info.routingNumber;
+  if (info.iban) values.iban = info.iban;
+  if (!Object.keys(values).length) return null;
+  return {
+    id: account.id,
+    country,
+    bankName: accountType === 'EUR_ACCOUNT' ? 'EUR account' : 'USD account',
+    values,
+    beneficiary: info.beneficiary?.fullName ?? DEMO_BENEFICIARY,
+  };
+}
+
 /** Compact rate for "1 USD = X" — fewer decimals as the magnitude grows. */
 export function formatRate(rate: number): string {
   const max = rate >= 100 ? 0 : rate >= 1 ? 2 : 4;
@@ -121,8 +165,9 @@ export function fieldLabel(key: string): string {
   return FIELD_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
 }
 
-/** Demo FX — matches the Figma copy (1 MXN = 0.06 USD ⇒ 1 USD ≈ 17.9074 MXN). */
-export const USD_TO_MXN = 17.9074;
+/** Demo FX placeholder for the only non-USD rail left (SEPA/EUR): the rate shown
+ *  before a bank is picked. Real rates are runtime (GET /exchange-rates). */
+export const USD_TO_EUR = 0.9174;
 /** Fake quote-creation beat: Continue spins this long before the confirm step. */
 export const QUOTE_MS = 750;
 /** Validate+save beat: the add bank/recipient CTA spins this long before amount. */
@@ -155,10 +200,13 @@ export const MODES: Record<
       amount: 'Enter amount',
       confirm: 'Confirm add',
       deposit: 'Add from crypto',
+      // Both titled with the picked country / network (the brain builds them).
       fundingDetails: '',
+      depositAddress: '',
     },
-    // Bank → saved-banks list; Crypto → the deposit-address list (send crypto in
-    // to top up). Cash App / Apple Pay stay inactive (no demo path yet).
+    // Bank → saved banks → country picker → THAT COUNTRY's deposit instructions,
+    // which also offer "add an account" (enter your own details to pull from).
+    // Crypto → the deposit-address list. Cash App / Apple Pay stay inactive.
     activeSources: [
       { id: 'bank', next: 'banks' },
       { id: 'crypto', next: 'deposit' },
@@ -166,7 +214,7 @@ export const MODES: Record<
     sources: ['bank', 'crypto', 'cashapp', 'applepay'],
     details: [
       ['Fee', '$0.60'],
-      ['Conversion rate', '1 MXN = 0.06 USD'],
+      ['Conversion rate', '1 EUR = 1.09 USD'],
       ['Arrives', 'Instantly'],
     ],
   },
@@ -183,6 +231,7 @@ export const MODES: Record<
       confirm: 'Confirm withdrawal',
       deposit: '',
       fundingDetails: '',
+      depositAddress: '',
     },
     sources: ['bank', 'crypto'],
     activeSources: [
@@ -191,7 +240,7 @@ export const MODES: Record<
     ],
     details: [
       ['Fee', '$0.60'],
-      ['Conversion rate', '1 USD = 17.91 MXN'],
+      ['Conversion rate', '1 USD = 0.92 EUR'],
       ['Arrives in bank', 'Instantly'],
     ],
   },
@@ -208,6 +257,7 @@ export const MODES: Record<
       confirm: 'Confirm send',
       deposit: '',
       fundingDetails: '',
+      depositAddress: '',
     },
     sources: ['bank', 'crypto'],
     // The "Add recipient" chooser (the recipient list is the entry): Bank → add a
@@ -235,6 +285,7 @@ export const MODES: Record<
       confirm: '',
       deposit: 'Receive via',
       fundingDetails: 'Receive',
+      depositAddress: '',
     },
     sources: [],
     activeSources: [],
@@ -261,6 +312,16 @@ export const DEPOSIT_CHAINS: DepositChain[] = [
   { id: 'tron', name: 'Tron', address: 'TF3YB383dJFpxvezNwFVKMEQhSeJ5JTerq', logo: '/assets/networks/icon-network-tron.svg', time: 'Instant' },
   { id: 'btc', name: 'Bitcoin', address: 'bc1qsu2qrhp5vq5csy97qv3w8eku8wrh2l7dtenv7p', logo: '/assets/networks/icon-network-bitcoin.svg', time: '10 min' },
 ];
+
+/**
+ * Networks Add money accepts USDC on. Deliberately narrower than DEPOSIT_CHAINS
+ * (which still backs Receive and the outbound crypto picker): these are the three
+ * the platform funds from, and each has a real Grid-provisioned address.
+ */
+export const ADD_DEPOSIT_NETWORK_IDS = ['base', 'solana', 'ethereum'];
+export const ADD_DEPOSIT_CHAINS: DepositChain[] = ADD_DEPOSIT_NETWORK_IDS.map(
+  (id) => DEPOSIT_CHAINS.find((c) => c.id === id)!,
+);
 
 /** Static demo BTC price — an L1 Bitcoin send shows the amount in BTC and this
  *  rate on confirm (the real quote settles in BTC). */

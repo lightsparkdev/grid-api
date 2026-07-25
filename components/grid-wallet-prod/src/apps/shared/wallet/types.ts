@@ -82,6 +82,12 @@ export interface WalletListItemData {
   tileCircle?: boolean;
   /** Person counterparty — render the initials avatar (wins over icon/image). */
   avatar?: WalletItemAvatar;
+  /**
+   * Plain money movement with no merchant, logo or person behind it — the
+   * account's own history from `GET /transactions`. The skin renders a
+   * directional arrow in the tile ('in' = received/added, 'out' = sent).
+   */
+  flow?: 'in' | 'out';
   title: string;
   /** Merchant detail line, e.g. "Tap to Pay". */
   detail: string;
