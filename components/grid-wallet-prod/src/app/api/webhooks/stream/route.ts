@@ -18,7 +18,28 @@ const KEEPALIVE_MS = 15_000;
  * one back as `Last-Event-ID` when it reconnects, and anything that landed during
  * the gap is replayed — so a blip doesn't silently drop deliveries.
  */
+/**
+ * Refuse a subscription initiated by ANOTHER site. Browsers set Sec-Fetch-Site on
+ * EventSource requests, so a page on evil.example can't quietly attach to a panel
+ * running on your machine. It is deliberately narrow: only an explicit
+ * `cross-site` is rejected, so `curl -N` and the verification scripts (which send
+ * no such header) still work.
+ *
+ * This is NOT access control. The stream carries whatever Grid delivered —
+ * transaction ids, amounts, and `counterpartyInformation`, which per Grid's schema
+ * can include a counterparty's name, birth date and nationality — and anyone who
+ * can reach the host can read it. Behind a tunnel, that's anyone with the URL.
+ * Gating it properly (a session cookie, or not exposing it beyond localhost) is a
+ * pre-prod requirement, tracked alongside proxy customer-scoping.
+ */
+function crossSite(req: Request): boolean {
+  return req.headers.get('sec-fetch-site') === 'cross-site';
+}
+
 export async function GET(req: Request) {
+  if (crossSite(req)) {
+    return new Response('cross-site subscription refused', { status: 403 });
+  }
   const encoder = new TextEncoder();
   let unsubscribe: (() => void) | undefined;
   let keepalive: ReturnType<typeof setInterval> | undefined;
