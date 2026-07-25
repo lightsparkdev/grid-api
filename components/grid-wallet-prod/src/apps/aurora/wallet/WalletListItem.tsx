@@ -11,6 +11,8 @@ import { IconTag } from '@central-icons-react/round-outlined-radius-3-stroke-1.5
 import { IconSofa } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSofa';
 import { IconDeskLamp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconDeskLamp';
 import { IconBasket1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBasket1';
+import { IconArrowDown } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowDown';
+import { IconArrowUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUp';
 import { Flag } from '@/apps/shared/Flag';
 import type { WalletListItemData, WalletItemAvatar, MerchantCategory } from '@/apps/shared/wallet';
 import styles from './WalletListItem.module.scss';
@@ -34,6 +36,9 @@ const MERCHANT_ICONS: Record<MerchantCategory, typeof IconHotDrinkCup> = {
   grocery: IconBasket1,
 };
 
+// Money in/out with no merchant, brand or person to show — server history rows.
+const FLOW_ICONS = { in: IconArrowDown, out: IconArrowUp } as const;
+
 export interface WalletListItemProps extends Omit<WalletListItemData, 'id' | 'timestamp'> {
   /** Pre-formatted relative time label, e.g. "Just now". */
   time: string;
@@ -50,12 +55,13 @@ export function WalletListItem({
   imageSquare,
   tileCircle,
   avatar,
+  flow,
   title,
   detail,
   time,
   amount,
 }: WalletListItemProps) {
-  const MerchantIcon = category ? MERCHANT_ICONS[category] : null;
+  const MerchantIcon = category ? MERCHANT_ICONS[category] : flow ? FLOW_ICONS[flow] : null;
   return (
     <div className={styles.row}>
       <span

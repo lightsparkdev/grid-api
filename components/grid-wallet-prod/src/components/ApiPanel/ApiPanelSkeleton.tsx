@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import styles from './ApiPanelSkeleton.module.scss';
 
 interface CodeLine {
@@ -13,13 +12,14 @@ interface SkeletonEntry {
 }
 
 interface SkeletonGroup {
+  /** Empty = no divider, mirroring the real feed's unlabelled sign-in group. */
   label: string;
   entries: SkeletonEntry[];
 }
 
 const SKELETON_GROUPS: SkeletonGroup[] = [
   {
-    label: 'Sign in',
+    label: '',
     entries: [
       {
         titleWidth: '46%',
@@ -135,7 +135,6 @@ export function ApiPanelSkeleton() {
       <div className={styles.feed}>
         {SKELETON_GROUPS.map((group, groupIndex) => (
           <div key={groupIndex} className={styles.group}>
-            <SectionDivider label={group.label} showFlowIcon />
             <div className={styles.groupEntries}>
               {group.entries.map((entry, entryIndex) => (
                 <div key={entryIndex} className={styles.feedEntry}>

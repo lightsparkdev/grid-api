@@ -6,8 +6,15 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { AuthMethod } from '@/data/flow';
 import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import type { DepositInstructions } from '@/lib/gridReads';
+import { currencyFor } from '@/data/bankCountries';
 import { useMoneySheet, useWalletHome } from '@/apps/shared/wallet';
-import type { WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
+import type {
+  WalletEntry,
+  WalletTransferMode,
+  WalletListItemData,
+  SavedBank,
+} from '@/apps/shared/wallet';
 import type { SkinAuthFlow, SkinAuthScreen, SkinWalletScreen } from './types';
 import styles from './SignInFlow.module.scss';
 
@@ -77,6 +84,23 @@ interface SignInFlowProps {
   /** Real book balance from the demo logic (e.g. "$225.00") — the wallet home's
    *  source of truth; see `UseWalletHomeOptions.balance`. */
   balance?: string;
+  /** The account's real transaction history (GET /transactions), newest first. */
+  activity?: WalletListItemData[];
+  /** Real deposit details for the customer's fiat account (Add money → Bank). */
+  depositInstructions?: DepositInstructions | null;
+  /** The wallet account's total balance in cents (USDB `totalBalance`). */
+  totalCents?: number;
+  /** One-shot toast raised by an arrival webhook (nonce bumps per delivery). */
+  walletToast?: { nonce: number; text: string } | null;
+  /** Accounts Grid already holds, for the saved-banks list. */
+  storedBanks?: SavedBank[];
+  /** A stored account was picked — quote against that ExternalAccount id. */
+  onSelectStoredBank?: (externalAccountId: string | null) => void;
+  /** A country's deposit details came into (or left) view — the host offers the
+   *  sandbox funding stand-in in the request panel off the back of this. */
+  onDepositView?: (view: { label: string; currency: string; cents?: number } | null) => void;
+  /** Bumped by the panel's "Simulate funding" button. */
+  simulateDeposit?: { nonce: number; cents: number; last4: string } | null;
   /** Wallet events bubbled up so the demo logs the matching Grid API calls. */
   onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
   onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
@@ -84,8 +108,14 @@ interface SignInFlowProps {
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
+  /** Credential state + the add-a-passkey action (the wallet's security nudge). */
+  addPasskey?: { added: boolean; onAdd: () => void };
   /** Auth-side overlays (passkey / email sheets) — rendered with the auth screen. */
   children?: ReactNode;
+  /** The same overlays for the WALLET screen: a signed action whose session has
+   *  lapsed re-authenticates in place (an OTP sheet over the wallet), so the
+   *  prompt needs a surface on this side of the flip too. */
+  walletOverlays?: ReactNode;
 }
 
 interface WalletHostProps {
@@ -96,12 +126,21 @@ interface WalletHostProps {
   entry?: WalletEntry;
   walletOptions?: WalletBrainOptions;
   balance?: string;
+  activity?: WalletListItemData[];
+  depositInstructions?: DepositInstructions | null;
+  totalCents?: number;
+  walletToast?: { nonce: number; text: string } | null;
+  storedBanks?: SavedBank[];
+  onSelectStoredBank?: (externalAccountId: string | null) => void;
+  onDepositView?: (view: { label: string; currency: string; cents?: number } | null) => void;
+  simulateDeposit?: { nonce: number; cents: number; last4: string } | null;
   onQuoteCreate?: (mode: WalletTransferMode, cents: number, dest?: TransferDest) => void;
   onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
   onTapToPay?: (cents: number, merchant: string) => void;
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
+  addPasskey?: { added: boolean; onAdd: () => void };
 }
 
 /**
@@ -119,15 +158,25 @@ function WalletHost({
   entry,
   walletOptions,
   balance,
+  activity,
+  depositInstructions,
+  totalCents,
+  walletToast,
+  storedBanks,
+  onSelectStoredBank,
+  onDepositView,
+  simulateDeposit,
   onQuoteCreate,
   onLinkExternalAccount,
   onTransferExecute,
   onCardIssued,
   onTapToPay,
   onReceivePayment,
+  addPasskey,
 }: WalletHostProps) {
   const home = useWalletHome({
     balance,
+    serverActivity: activity,
     entrance,
     entry,
     transferSuccessScreen: walletOptions?.transferSuccessScreen,
@@ -145,10 +194,14 @@ function WalletHost({
   const mountSkin = useRef(skinId);
   const switchedIn = skinId !== mountSkin.current;
 
+
   const money = useMoneySheet({
     open: home.sheetOpen,
     mode: home.sheetMode,
     availableCents: home.availableCents,
+    depositInstructions,
+    storedBanks,
+    onSelectStoredBank,
     confirming: home.sheetConfirming,
     onDismiss: () => home.setSheetOpen(false),
     onConfirm: home.confirmTransfer,
@@ -170,6 +223,53 @@ function WalletHost({
     onReceive: home.handleReceivePayment,
   });
 
+  // Tell the host when a country's deposit details are on screen: in sandbox it
+  // offers the funding stand-in as a card in the request list (no real wire is
+  // coming), and the button there drives `simulateDeposit` below.
+  const onDetails = money.step === 'fundingDetails' && home.sheetMode === 'add';
+  const onCryptoAddress = money.step === 'depositAddress' && home.sheetMode === 'add';
+  const detailsCountry = money.pickedCountry;
+  const cryptoChain = money.depositChain;
+  const cryptoCents = money.cents;
+  useEffect(() => {
+    if (onDetails && detailsCountry) {
+      onDepositView?.({
+        label: detailsCountry.name,
+        currency: currencyFor(detailsCountry),
+      });
+      return;
+    }
+    if (onCryptoAddress && cryptoChain) {
+      // The payer told us the amount here, so the stand-in can match it exactly.
+      onDepositView?.({
+        label: cryptoChain.name,
+        currency: money.depositAsset,
+        cents: cryptoCents,
+      });
+      return;
+    }
+    onDepositView?.(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onDetails, detailsCountry, onCryptoAddress, cryptoChain, cryptoCents, onDepositView]);
+
+  // An arrival webhook landed: show it on the phone (the brain owns the toast).
+  const lastToast = useRef(0);
+  useEffect(() => {
+    if (!walletToast || walletToast.nonce === lastToast.current) return;
+    lastToast.current = walletToast.nonce;
+    home.showToast(walletToast.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletToast]);
+
+  // The panel's "Simulate funding" button: same money path a confirmed add takes.
+  const lastSimulated = useRef(0);
+  useEffect(() => {
+    if (!simulateDeposit || simulateDeposit.nonce === lastSimulated.current) return;
+    lastSimulated.current = simulateDeposit.nonce;
+    home.simulateBankDeposit(simulateDeposit.cents, simulateDeposit.last4);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simulateDeposit]);
+
   return (
     // Skin switch = same brain, new face: the outgoing view blur-fades out over
     // the incoming one, exactly where it was (same sheet step, same balance).
@@ -182,11 +282,13 @@ function WalletHost({
         exit={{ ...SKIN_EXIT, transition: SKIN_FADE }}
       >
         <WalletScreen
+          totalCents={totalCents}
           entrance={entrance}
           switchedIn={switchedIn}
           home={home}
           money={money}
           onCardIssued={onCardIssued}
+          addPasskey={addPasskey}
         />
       </motion.div>
     </AnimatePresence>
@@ -215,13 +317,23 @@ export function SignInFlow({
   entry,
   walletOptions,
   balance,
+  activity,
+  depositInstructions,
+  totalCents,
+  walletToast,
+  storedBanks,
+  onSelectStoredBank,
+  onDepositView,
+  simulateDeposit,
   onQuoteCreate,
   onLinkExternalAccount,
   onTransferExecute,
   onCardIssued,
   onTapToPay,
   onReceivePayment,
+  addPasskey,
   children,
+  walletOverlays,
 }: SignInFlowProps) {
   const reduceMotion = useReducedMotion();
   // Plain crossfade instead of the blur dissolve: reduced motion, or a skin
@@ -330,13 +442,23 @@ export function SignInFlow({
               entry={entry}
               walletOptions={walletOptions}
               balance={balance}
+              activity={activity}
+              depositInstructions={depositInstructions}
+              totalCents={totalCents}
+              walletToast={walletToast}
+              storedBanks={storedBanks}
+              onSelectStoredBank={onSelectStoredBank}
+              onDepositView={onDepositView}
+              simulateDeposit={simulateDeposit}
               onQuoteCreate={onQuoteCreate}
               onLinkExternalAccount={onLinkExternalAccount}
               onTransferExecute={onTransferExecute}
               onCardIssued={onCardIssued}
               onTapToPay={onTapToPay}
               onReceivePayment={onReceivePayment}
+              addPasskey={addPasskey}
             />
+            {walletOverlays}
           </motion.div>
         )}
       </AnimatePresence>

@@ -16,12 +16,22 @@ export interface AuthCallbacks {
   log: LogFn;
   /** Optional: play the Face ID animation around the WebAuthn assertion. */
   onFaceId?: () => Promise<void>;
+  /**
+   * Optional email-entry step shown BEFORE the OTP is sent. Receives the
+   * address the EMAIL_OTP credential is actually tied to (the credential's
+   * nickname) so the field can be prefilled truthfully — Grid mails the code to
+   * the address on file regardless of what's typed here, so the prefill is what
+   * makes the step honest.
+   */
+  promptEmail?: (emailOnFile: string | null) => Promise<string>;
 }
 
 export interface WalletAccount {
   customerId: string;
   accountId: string;
   emailOtpCredentialId: string;
+  /** Address the EMAIL_OTP credential is tied to (its `nickname`). */
+  email: string | null;
   passkeyCredentialId: string | null;
   balanceCents: number;
 }
@@ -47,12 +57,15 @@ export function clearSession(): void {
   session = null;
 }
 
-/** Pure: choose the EMAIL_OTP + first PASSKEY credential from the list. */
+/** Pure: choose the EMAIL_OTP + first PASSKEY credential from the list. The
+ *  EMAIL_OTP credential's `nickname` IS the email address it's tied to. */
 export function pickCredentials(
-  data: { id: string; type: string }[],
-): { emailOtpId: string | null; passkeyId: string | null } {
+  data: { id: string; type: string; nickname?: string }[],
+): { emailOtpId: string | null; emailOtpNickname: string | null; passkeyId: string | null } {
+  const emailOtp = data.find((c) => c.type === 'EMAIL_OTP');
   return {
-    emailOtpId: data.find((c) => c.type === 'EMAIL_OTP')?.id ?? null,
+    emailOtpId: emailOtp?.id ?? null,
+    emailOtpNickname: emailOtp?.nickname ?? null,
     passkeyId: data.find((c) => c.type === 'PASSKEY')?.id ?? null,
   };
 }
@@ -85,11 +98,12 @@ export async function loadWalletAccount(log: LogFn): Promise<WalletAccount> {
   const credEnv = await gridFetch('GET', `/auth/credentials?accountId=${accountId}`);
   log(credEnv);
   assertOk(credEnv, [200], 'list credentials');
-  const credBody = credEnv.response.body as { data: { id: string; type: string }[] };
-  const { emailOtpId, passkeyId } = pickCredentials(credBody.data);
+  const credBody = credEnv.response.body as {
+    data: { id: string; type: string; nickname?: string; credentialId?: string }[];
+  };
+  const { emailOtpId, emailOtpNickname } = pickCredentials(credBody.data);
   if (!emailOtpId) throw new Error('No EMAIL_OTP credential on the wallet');
 
-  // Trust the server list; fall back to localStorage only to disambiguate multiple passkeys.
   const stored = typeof window !== 'undefined'
     ? window.localStorage.getItem(PASSKEY_LS_PREFIX + accountId)
     : null;
@@ -98,22 +112,63 @@ export async function loadWalletAccount(log: LogFn): Promise<WalletAccount> {
     customerId: wallet.customerId ?? '',
     accountId,
     emailOtpCredentialId: emailOtpId,
-    passkeyCredentialId: passkeyId ?? stored,
+    email: emailOtpNickname,
+    passkeyCredentialId: thisDevicePasskey(stored, credBody.data),
     balanceCents,
   };
   return account;
 }
 
+/**
+ * Which passkey can THIS browser actually sign in with. Passkeys are
+ * device-bound: the account may list one registered on another device, and
+ * `navigator.credentials.get` here would never find it — so only a credential
+ * this device registered (localStorage) counts, and only while the account still
+ * lists it. Anything else means "new device": sign in with the email OTP and add
+ * a passkey from the wallet.
+ */
+export function thisDevicePasskey(
+  stored: string | null,
+  credentials: { type: string; credentialId?: string }[],
+): string | null {
+  if (!stored) return null;
+  const onAccount = credentials.some((c) => c.type === 'PASSKEY' && c.credentialId === stored);
+  return onAccount ? stored : null;
+}
+
+/**
+ * Entry step (when the skin has one) → challenge → code. The code step can go
+ * BACK to the entry step: promptOtp rejects with 'back', and the next pass
+ * issues a FRESH challenge, so a new code genuinely goes out. Each iteration's
+ * bundle belongs to that iteration's challenge — they can't be split apart.
+ */
+async function collectOtp(
+  acct: WalletAccount,
+  cb: AuthCallbacks,
+): Promise<{ bundle: string; code: string }> {
+  const id = acct.emailOtpCredentialId;
+  for (;;) {
+    // The code only goes out once the user commits to the address (prefilled
+    // with the one the credential is actually tied to).
+    if (cb.promptEmail) await cb.promptEmail(acct.email);
+    const chal = await gridFetch('POST', `/auth/credentials/${id}/challenge`, { body: {} });
+    cb.log(chal);
+    assertOk(chal, [200], 'email otp challenge');
+    const bundle = (chal.response.body as { otpEncryptionTargetBundle: string })
+      .otpEncryptionTargetBundle;
+    try {
+      return { bundle, code: await cb.promptOtp() };
+    } catch (e) {
+      // 'back' only has somewhere to go when there IS an entry step.
+      if ((e as Error)?.message !== 'back' || !cb.promptEmail) throw e;
+    }
+  }
+}
+
 /** EMAIL_OTP two-leg verify -> session (TEK priv IS the session key). */
 async function emailOtpAuth(acct: WalletAccount, cb: AuthCallbacks): Promise<Session> {
   const id = acct.emailOtpCredentialId;
-  // Challenge: sends OTP + returns otpEncryptionTargetBundle.
-  const chal = await gridFetch('POST', `/auth/credentials/${id}/challenge`, { body: {} });
-  cb.log(chal);
-  assertOk(chal, [200], 'email otp challenge');
-  const bundle = (chal.response.body as { otpEncryptionTargetBundle: string }).otpEncryptionTargetBundle;
-
-  const code = await cb.promptOtp();
+  const { bundle, code } = await collectOtp(acct, cb);
   const tek = genTek();
   const encryptedOtpBundle = encryptOtpBundle(bundle, tek.pubHex, code);
   const verifyBody = { type: 'EMAIL_OTP', encryptedOtpBundle };
@@ -137,9 +192,24 @@ async function emailOtpAuth(acct: WalletAccount, cb: AuthCallbacks): Promise<Ses
   return { privHex: tek.privHex, accountId: acct.accountId, expiresAt: Date.parse(sess.expiresAt), via: 'email_otp' };
 }
 
-/** Register a NEW passkey credential (signed retry authorized by the current session). */
-async function registerPasskey(acct: WalletAccount, sessionPrivHex: string, cb: AuthCallbacks): Promise<string> {
-  // 1. Self-issued WebAuthn registration challenge (no integrator backend here).
+interface NewCredential {
+  challenge: string;
+  attestation: {
+    credentialId: string;
+    clientDataJson: string;
+    attestationObject: string;
+    transports: string[];
+  };
+}
+
+/**
+ * The WebAuthn half of registration — ONE device ceremony (Touch ID / Face ID),
+ * no network. Split out and called FIRST so it runs inside the tap that started
+ * it: browsers require `credentials.create` to happen under a live user
+ * activation, and an intervening re-auth round-trip would spend it.
+ */
+async function createPasskeyCredential(): Promise<NewCredential> {
+  // Self-issued WebAuthn registration challenge (no integrator backend here).
   const regChallenge = crypto.getRandomValues(new Uint8Array(32));
   const regChallengeB64 = bytesToBase64url(regChallenge);
   const cred = (await navigator.credentials.create({
@@ -163,21 +233,35 @@ async function registerPasskey(acct: WalletAccount, sessionPrivHex: string, cb: 
     attestationObject: bytesToBase64url(new Uint8Array(att.attestationObject)),
     transports: att.getTransports?.() ?? [],
   };
+  return { challenge: regChallengeB64, attestation };
+}
+
+/**
+ * The network half: POST the new credential, then repeat it signed by the
+ * session key that authorizes the change (the email-OTP one on a first run).
+ */
+async function registerPasskey(
+  acct: WalletAccount,
+  created: NewCredential,
+  sessionPrivHex: string,
+  cb: AuthCallbacks,
+): Promise<string> {
+  const { challenge, attestation } = created;
   const createBody = {
     type: 'PASSKEY',
     accountId: acct.accountId,
     nickname: 'This device',
-    challenge: regChallengeB64,
+    challenge,
     attestation,
   };
 
-  // 2. POST /auth/credentials -> 202 payloadToSign + requestId.
+  // POST /auth/credentials -> 202 payloadToSign + requestId.
   const leg1 = await gridFetch('POST', '/auth/credentials', { body: createBody });
   cb.log(leg1);
   assertOk(leg1, [202], 'passkey create (leg 1)');
   const { payloadToSign, requestId } = leg1.response.body as { payloadToSign: string; requestId: string };
 
-  // 3. Stamp with the CURRENT (email-otp) session key, retry -> 201 AuthMethod.
+  // Stamp with the CURRENT session key, retry -> 201 AuthMethod.
   const { stamp } = await import('./gridCrypto');
   const sig = await stamp(sessionPrivHex, payloadToSign);
   const leg2 = await gridFetch('POST', '/auth/credentials', {
@@ -192,7 +276,10 @@ async function registerPasskey(acct: WalletAccount, sessionPrivHex: string, cb: 
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(PASSKEY_LS_PREFIX + acct.accountId, credentialId);
   }
-  return authMethod.id; // AuthMethod id (used for the activation challenge/verify)
+  // The account now HAS a passkey — reflected in place so hasPasskey() and the
+  // next signIn() take the passkey path without a reload.
+  acct.passkeyCredentialId = credentialId;
+  return authMethod.id;
 }
 
 /** Passkey authenticate: /challenge (clientPublicKey) -> get() -> /verify -> session. */
@@ -238,33 +325,90 @@ async function passkeyAuth(acct: WalletAccount, credentialAuthMethodId: string, 
   return { privHex, accountId: acct.accountId, expiresAt: Date.parse(sess.expiresAt), via: 'passkey' };
 }
 
+/** Resolve the AuthMethod id of the account's passkey (needed for challenge/verify). */
+async function findPasskeyAuthMethodId(acct: WalletAccount, cb: AuthCallbacks): Promise<string> {
+  // GET /auth/credentials returned AuthMethod ids AND passkey credentialIds;
+  // re-list to resolve the AuthMethod id for the stored/discovered passkey.
+  const credEnv = await gridFetch('GET', `/auth/credentials?accountId=${acct.accountId}`);
+  cb.log(credEnv);
+  const list = (credEnv.response.body as { data: { id: string; type: string; credentialId?: string }[] }).data;
+  const passkey =
+    list.find(
+      (c) => c.type === 'PASSKEY' && (c.credentialId === acct.passkeyCredentialId || !acct.passkeyCredentialId),
+    ) ?? list.find((c) => c.type === 'PASSKEY');
+  if (!passkey) throw new Error('Passkey credential vanished; clear localStorage and retry');
+  return passkey.id;
+}
+
+/**
+ * Sign in with whatever the account already has. Global Accounts are born with
+ * only an EMAIL_OTP credential, so the FIRST sign-in is always email OTP — that
+ * session is what later authorizes adding a passkey (see addPasskey). Once a
+ * passkey exists, it takes over as the sign-in path.
+ */
 export async function signIn(cb: AuthCallbacks): Promise<Session> {
   const acct = await loadWalletAccount(cb.log);
   if (acct.passkeyCredentialId) {
-    // Returning: authenticate the existing passkey. We need its AuthMethod id.
-    // GET /auth/credentials returned AuthMethod ids AND passkey credentialIds;
-    // re-list to resolve the AuthMethod id for the stored/ discovered passkey.
-    const credEnv = await gridFetch('GET', `/auth/credentials?accountId=${acct.accountId}`);
-    cb.log(credEnv);
-    const list = (credEnv.response.body as { data: { id: string; type: string; credentialId?: string }[] }).data;
-    const passkey = list.find(
-      (c) => c.type === 'PASSKEY' && (c.credentialId === acct.passkeyCredentialId || !acct.passkeyCredentialId),
-    ) ?? list.find((c) => c.type === 'PASSKEY');
-    if (!passkey) throw new Error('Passkey credential vanished; clear localStorage and retry');
-    session = await passkeyAuth(acct, passkey.id, cb);
+    session = await passkeyAuth(acct, await findPasskeyAuthMethodId(acct, cb), cb);
     return session;
   }
-  // First run: EMAIL_OTP session -> register passkey -> passkey session.
-  const otpSession = await emailOtpAuth(acct, cb);
-  const passkeyAuthMethodId = await registerPasskey(acct, otpSession.privHex, cb);
-  session = await passkeyAuth(acct, passkeyAuthMethodId, cb);
+  session = await emailOtpAuth(acct, cb);
   return session;
+}
+
+/**
+ * Add a passkey to the account, later, as its own action — the docs' bootstrap
+ * order: "you can add passkeys or OAuth credentials later, but adding
+ * credentials is itself a signed action". The signature comes from the session
+ * you're ALREADY in (the email-OTP one on a first run), so this is exactly one
+ * device ceremony: register the credential and stop. It is not authenticated
+ * here — no challenge/verify, no second prompt — the passkey gets exercised at
+ * the next sign-in, and the current session stays as it is.
+ *
+ * Returns the new credential's AuthMethod id.
+ */
+export async function addPasskey(cb: AuthCallbacks): Promise<string> {
+  // The device ceremony goes FIRST, while the user activation from the tap is
+  // still live — a re-auth round-trip in front of it would invalidate it.
+  const created = await createPasskeyCredential();
+  // A live session is the authorization; only re-auth when it has lapsed.
+  const live = getSession();
+  const privHex = live ? live.privHex : (await signIn(cb)).privHex;
+  const acct = account ?? (await loadWalletAccount(cb.log));
+  return registerPasskey(acct, created, privHex, cb);
+}
+
+/** Has this account got a passkey yet? Drives the wallet's "add a passkey" nudge. */
+export function hasPasskey(): boolean {
+  return Boolean(account?.passkeyCredentialId);
+}
+
+/**
+ * Did THIS browser register a passkey (for any account)? Answered from
+ * localStorage alone, with no network call, so the sign-in screen can label its
+ * button for the credential `signIn` will actually use before anything is
+ * fetched. Optimistic by design: if the credential has since been revoked
+ * server-side, `loadWalletAccount` discovers that mid-flow and the email OTP
+ * takes over (see thisDevicePasskey).
+ */
+export function deviceHasPasskey(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key?.startsWith(PASSKEY_LS_PREFIX) && window.localStorage.getItem(key)) return true;
+    }
+  } catch {
+    // Storage blocked (private mode / embed) — treat as a fresh device.
+  }
+  return false;
 }
 
 export async function ensureSession(cb: AuthCallbacks): Promise<string> {
   const live = getSession();
   if (live) return live.privHex;
-  // Silent single re-auth via the returning (passkey) path.
+  // Silent single re-auth on whatever credential the account has (passkey once
+  // one has been added; the email OTP prompt before that).
   const s = await signIn(cb);
   return s.privHex;
 }

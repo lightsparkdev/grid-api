@@ -16,6 +16,7 @@ export const GRID_ALLOWLIST: { method: string; pattern: RegExp }[] = [
   { method: 'POST', pattern: new RegExp('^/quotes$') },
   { method: 'POST', pattern: new RegExp(`^/quotes/${ID}/execute$`) },
   { method: 'POST', pattern: new RegExp(`^/sandbox/internal-accounts/${ID}/fund$`) },
+  { method: 'POST', pattern: new RegExp('^/sandbox/send$') },
 ];
 
 /** `pathname` is the Grid path WITHOUT query string (e.g. "/quotes"). */

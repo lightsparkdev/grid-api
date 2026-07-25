@@ -320,7 +320,6 @@
 
 .codeBlockContent {
   padding: var(--spacing-md);
-  overflow-x: auto;
 }
 
 .codePre {
@@ -330,9 +329,22 @@
   font-weight: var(--font-weight-regular);
   line-height: var(--font-leading-18);
   color: var(--text-primary);
-  white-space: pre;
+  /* Wrap instead of scrolling sideways: the panel is narrow and the interesting
+     lines (stamps, payloads) are the long ones. `pre-wrap` keeps the curl's own
+     indentation; `anywhere` breaks base64/JSON blobs that have nowhere to break. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   tab-size: 2;
   font-feature-settings: 'salt' 1;
+}
+
+/* One block per source line (the highlighters emit no trailing newline — this
+   display supplies the break), so wrapped remainders sit under a hanging indent
+   and read as continuations rather than new lines. */
+.codeLine {
+  display: block;
+  padding-left: 2ch;
+  text-indent: -2ch;
 }
 
 .syntaxDefault {
@@ -394,3 +406,47 @@
   }
 }
 
+
+/* ── Action card ──────────────────────────────────────────────────────────────
+   Not traffic: a demo affordance that CAUSES traffic (the sandbox funding
+   stand-in). Dashed edge so it reads as scaffolding next to the real calls. */
+.actionCard {
+  border-style: dashed;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-md);
+}
+
+.actionNote {
+  margin: 0 var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: var(--font-leading-18);
+}
+
+.actionBtn {
+  margin: 0 var(--spacing-md);
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--rounded-md, 8px);
+  background: var(--color-blue-60, #0b7bff);
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 150ms ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    background: var(--color-alpha-black-08, rgba(0, 0, 0, 0.08));
+    color: var(--text-tertiary);
+    cursor: default;
+  }
+}

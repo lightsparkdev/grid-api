@@ -66,6 +66,31 @@ export interface QuoteBody {
   lockedCurrencyAmount: number;
 }
 
+/**
+ * INBOUND quote body for funding from the customer's own external account: their
+ * bank is the SOURCE, the embedded wallet the destination.
+ *
+ * Two things the API enforces here, both verified against the sandbox:
+ * - `lockedCurrencyAmount` is in the SENDING currency's minor units — USD cents,
+ *   not the wallet's USDB micro-units (contrast `quoteBodyFor` below).
+ * - The quote must NOT be executed. `POST /quotes/{id}/execute` returns
+ *   INVALID_INPUT: "funds must be pushed to Lightspark from the source account
+ *   (e.g. via wire transfer) rather than pulled via this endpoint". It stays
+ *   PENDING until the payment lands — in sandbox, via `sandboxSendForQuote`.
+ */
+export function pullQuoteBodyFor(
+  externalAccountId: string,
+  walletAccountId: string,
+  cents: number,
+): QuoteBody {
+  return {
+    source: { sourceType: 'ACCOUNT', accountId: externalAccountId, customerId: CUSTOMER },
+    destination: { destinationType: 'ACCOUNT', accountId: walletAccountId, currency: 'USDB' },
+    lockedCurrencySide: 'SENDING',
+    lockedCurrencyAmount: cents,
+  };
+}
+
 /** Outbound (embedded-wallet source) quote body. USDB source, external destination. */
 export function quoteBodyFor(
   accountId: string,

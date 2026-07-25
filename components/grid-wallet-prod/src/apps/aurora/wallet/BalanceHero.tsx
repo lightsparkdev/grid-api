@@ -5,8 +5,11 @@ import NumericText from '@/components/NumericText';
 import styles from './BalanceHero.module.scss';
 
 interface BalanceHeroProps {
-  /** Formatted USD, e.g. "$5,000.00". */
+  /** Formatted USD, e.g. "$5,000.00" — the AVAILABLE (spendable) balance. */
   balance: string;
+  /** The account's total balance, formatted; omitted when it matches available
+   *  (USDB reports both: `balance` vs `totalBalance` on the wallet account). */
+  total?: string;
 }
 
 function parseAmount(value: string): { dollars: number; cents: number } {
@@ -27,7 +30,7 @@ const NUMERIC_PAD = { padding: '0.08em 0' };
  * iOS-numericText port — split into whole + cents instances so the cents keep
  * the dimmer treatment.
  */
-export function BalanceHero({ balance }: BalanceHeroProps) {
+export function BalanceHero({ balance, total }: BalanceHeroProps) {
   const target = parseAmount(balance);
   const [shown, setShown] = useState({ dollars: 0, cents: 0 });
 
@@ -37,8 +40,8 @@ export function BalanceHero({ balance }: BalanceHeroProps) {
   }, [target.dollars, target.cents]);
 
   return (
-    <section className={styles.hero} aria-label={`Total balance ${balance}`}>
-      <p className={styles.label}>Total balance</p>
+    <section className={styles.hero} aria-label={`Available balance ${balance}`}>
+      <p className={styles.label}>Available balance</p>
       <p className={styles.amount}>
         <NumericText
           className={styles.whole}
@@ -56,6 +59,10 @@ export function BalanceHero({ balance }: BalanceHeroProps) {
           style={NUMERIC_PAD}
         />
       </p>
+      {/* The headline is what a transfer can actually move; the account's total
+          sits underneath, and is only worth a line when the two differ (USDB
+          reports a book total above spendable while funds are still settling). */}
+      {total && <p className={styles.total}>{total} total balance</p>}
     </section>
   );
 }

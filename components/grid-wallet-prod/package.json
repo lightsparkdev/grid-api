@@ -11,6 +11,7 @@
     "export-sf-symbols": "node scripts/export-sf-symbols.mjs --sync-paths",
     "fetch:flags": "node scripts/fetch-flags.mjs",
     "gen:bank-fields": "node scripts/generate-bank-fields.mjs",
+    "ensure:business-customer": "node scripts/ensure-business-customer.mjs",
     "verify:bank-fields": "node scripts/generate-bank-fields.mjs && git diff --exit-code -- src/data/bankAccountFields.generated.ts",
     "verify:bank-data": "tsx scripts/verify-bank-data.ts",
     "verify:bank": "npm run verify:bank-fields && npm run verify:bank-data",

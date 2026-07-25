@@ -6,6 +6,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Self-contained server bundle (.next/standalone) — what the Docker runtime
+  // stage copies, so the image carries no node_modules of its own.
+  output: 'standalone',
   transpilePackages: ['@lightsparkdev/origin'],
   typescript: {
     // Origin is source-linked without its own node_modules,

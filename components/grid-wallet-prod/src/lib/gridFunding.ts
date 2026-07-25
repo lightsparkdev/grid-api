@@ -71,3 +71,22 @@ export function onRampQuoteBodyFor(
     lockedCurrencyAmount: cents,
   };
 }
+
+/**
+ * SANDBOX ONLY: stand in for the customer pushing funds to a quote that sources
+ * from their external account (which can't be executed — see pullQuoteBodyFor).
+ * This is Grid's own affordance for it, named in the execute error, and it
+ * settles the quote's transaction the same way a real wire would.
+ */
+export async function sandboxSendForQuote(
+  quoteId: string,
+  currencyCode: string,
+  cents: number,
+  log: LogFn,
+): Promise<{ ok: boolean; status: number }> {
+  const env = await gridFetch('POST', '/sandbox/send', {
+    body: { quoteId, currencyCode, currencyAmount: cents },
+  });
+  log(env);
+  return { ok: env.response.status === 200, status: env.response.status };
+}

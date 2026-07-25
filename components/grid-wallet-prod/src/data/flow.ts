@@ -23,20 +23,17 @@ export type ScreenId =
   | 'card-reveal'
   | 'tap';
 
-export interface Tx {
-  kind: 'bank' | 'card' | 'coffee' | 'send';
-  name: string;
-  sub: string;
-  amount: string;
-  positive?: boolean;
-}
+/** Activity rows are the wallet brain's own row shape, so the real
+ *  `GET /transactions` rows pass through demo state to the skin that renders
+ *  them unchanged (type-only import from a leaf module: no cycle). */
+import type { WalletListItemData } from '@/apps/shared/wallet/types';
 
 export interface PhoneState {
   screen: ScreenId;
   balance: string;
   hasCard: boolean;
   cardActivated: boolean;
-  activity: Tx[];
+  activity: WalletListItemData[];
   note?: string;
 }
 
