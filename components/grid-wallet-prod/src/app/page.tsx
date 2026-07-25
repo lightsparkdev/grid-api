@@ -53,8 +53,18 @@ export default function Page() {
             cancelOtp={logic.cancelOtp}
             backOtp={logic.backOtp}
             emailActive={logic.emailActive}
+            emailPrefill={logic.emailPrefill}
             submitEmail={logic.submitEmail}
             cancelEmail={logic.cancelEmail}
+            passkeyAdded={logic.passkeyAdded}
+            onAddPasskey={logic.onAddPasskey}
+            depositInstructions={logic.depositInstructions}
+            totalCents={logic.totalCents}
+            walletToast={logic.walletToast}
+            storedBanks={logic.storedBanks}
+            onSelectStoredBank={logic.onSelectStoredBank}
+            onDepositView={logic.onDepositView}
+            simulateDeposit={logic.simulateDeposit}
             phoneActive={logic.phoneActive}
             submitPhone={logic.submitPhone}
             cancelPhone={logic.cancelPhone}
@@ -83,7 +93,7 @@ export default function Page() {
           // param) styles the column so the first paint is already correct.
           style={{ width: apiWidth ?? undefined }}
         >
-          <ApiPanel entries={logic.entries} />
+          <ApiPanel entries={logic.entries} onAction={logic.onPanelAction} />
         </div>
       </div>
     </main>

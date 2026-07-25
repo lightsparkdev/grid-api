@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
@@ -24,6 +24,7 @@ import { randomNetworkAddress } from '@/lib/cryptoAddresses';
 import { currencyFor, type BankCountry } from '@/data/bankCountries';
 import { BANK_ACCOUNT_SCHEMAS } from '@/data/bankAccountFields.generated';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { IS_SANDBOX } from '@/lib/gridEnv';
 import { readCssVarPx } from '@/apps/shared/figmaSquircleRadius';
 import {
   formatUsdCents,
@@ -32,12 +33,12 @@ import {
   initials,
   SEND_DEMO_ADDRESS,
   KEYPAD,
+  ADD_DEPOSIT_CHAINS,
   DEPOSIT_CHAINS,
   SEND_NETWORKS,
   DEFAULT_SEND_NETWORK,
   accountLast4,
   fieldLabel,
-  receiveFields,
   type MoneySheet,
   type Step,
   type SavedBank,
@@ -74,7 +75,7 @@ export type {
 // Add-money source visuals — Aurora owns the icon + copy per source id; the brain
 // supplies only the ordered ids + routing (the face is where icons live).
 const SOURCE_COPY: Record<string, { title: string; sub: string; speed: string }> = {
-  bank: { title: 'Bank account', sub: 'Local transfer in 65+ countries', speed: 'Instant' },
+  bank: { title: 'Bank account', sub: 'ACH in the US, SEPA across the euro area', speed: 'Instant' },
   crypto: { title: 'Crypto wallet', sub: 'Spark, Solana, Base address', speed: 'Instant' },
   cashapp: { title: 'Cash App', sub: 'Use your Cash App balance', speed: 'Instant' },
   applepay: { title: 'Apple Pay', sub: 'Use Apple Wallet', speed: 'Instant' },
@@ -363,6 +364,15 @@ export function AddMoneySheet({
     copyValue,
     shareFunding,
     shareFundingAndReceive,
+    fundingSections,
+    fundingNote,
+    addAccountFromDetails,
+    displayTitle,
+    depositChain,
+    pickDepositChain,
+    depositAddress,
+    depositAsset,
+    isDepositDetails,
     dismiss,
   } = m;
 
@@ -444,7 +454,7 @@ export function AddMoneySheet({
         {selectedBank ? (
           <Flag code={selectedBank.country.code} size={20} />
         ) : (
-          <img className={styles.flagIcon} src="/assets/add-money/flag-mx.svg" alt="" draggable={false} />
+          <img className={styles.flagIcon} src="/assets/flags/us.svg" alt="" draggable={false} />
         )}
       </span>
       <span className={styles.sourceLabels}>
@@ -457,6 +467,19 @@ export function AddMoneySheet({
       </span>
     </div>
   );
+  // Add-from-crypto: the money is arriving over a network, so the source card is
+  // that chain (its brand mark + the asset), not a bank.
+  const depositChainRow = depositChain ? (
+    <div className={styles.sourceRowStatic}>
+      <span className={styles.tile} aria-hidden>
+        <img className={styles.depositLogo} src={depositChain.logo} alt="" draggable={false} />
+      </span>
+      <span className={styles.sourceLabels}>
+        <span className={styles.rowTitle}>{depositChain.name}</span>
+        <span className={styles.rowSub}>{depositAsset} transfer</span>
+      </span>
+    </div>
+  ) : null;
   const balanceRow = (
     <div className={styles.sourceRowStatic}>
       <span className={styles.tile} aria-hidden>
@@ -546,12 +569,6 @@ export function AddMoneySheet({
   // AnimatePresence `custom` prop is re-resolved for exiting children instead.
   type NavDir = { back: boolean; reduceMotion: boolean };
   const navDir: NavDir = { back, reduceMotion: !!reduceMotion };
-  // The funding-details step titles itself with the picked country's name (e.g.
-  // "Mexico"); every other step uses the mode's static step title.
-  const displayTitle =
-    step === 'fundingDetails' && pickedCountry
-      ? `Receive from ${pickedCountry.name}`
-      : titles[step];
   // TRUE push: the incoming screen shares an edge with the outgoing one (full
   // ±100% travel, simultaneous), and the leaver fades as it exits. The entering
   // screen arrives at full opacity — it's a push, not a crossfade.
@@ -740,14 +757,48 @@ export function AddMoneySheet({
                         <span className={clsx(styles.sourceContent, styles.sourceContentBordered)}>
                           <span className={styles.sourceLabels}>
                             <span className={styles.rowTitle}>Bank account</span>
-                            <span className={styles.rowSub}>Local transfer in 65+ countries</span>
+                            <span className={styles.rowSub}>ACH in the US, SEPA across the euro area</span>
                             <span className={styles.rowSub}>Instant</span>
                           </span>
                           <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
                         </span>
                       </button>
                     )}
-                    {DEPOSIT_CHAINS.map((chain, i) => {
+                    {/* Add money: pick a network first — the address comes after
+                        the amount (mode === 'receive' keeps the copyable list). */}
+                    {mode === 'add' &&
+                      ADD_DEPOSIT_CHAINS.map((chain, i) => (
+                        <button
+                          key={chain.id}
+                          type="button"
+                          className={styles.sourceRow}
+                          onClick={() => pickDepositChain(chain)}
+                        >
+                          <span className={styles.tile} aria-hidden>
+                            <img
+                              className={styles.depositLogo}
+                              src={chain.logo}
+                              alt=""
+                              draggable={false}
+                            />
+                          </span>
+                          <span
+                            className={clsx(
+                              styles.sourceContent,
+                              i < ADD_DEPOSIT_CHAINS.length - 1 && styles.sourceContentBordered,
+                            )}
+                          >
+                            <span className={styles.sourceLabels}>
+                              <span className={styles.rowTitle}>{chain.name}</span>
+                              <span className={styles.rowSub}>USDC</span>
+                              <span className={styles.rowSub}>{chain.time}</span>
+                            </span>
+                            <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
+                          </span>
+                        </button>
+                      ))}
+                    {mode !== 'add' &&
+                      DEPOSIT_CHAINS.map((chain, i) => {
                       const copied = copiedChainId === chain.id;
                       return (
                         <div key={chain.id} className={styles.depositCryptoRow}>
@@ -814,10 +865,11 @@ export function AddMoneySheet({
               </motion.div>
             )}
 
-            {/* Receive — the picked country's inbound funding instructions. */}
-            {step === 'fundingDetails' && pickedCountry && (
+            {/* Add-from-crypto: the address to pay, after the network + amount.
+                Real Grid-provisioned address for that chain. */}
+            {step === 'depositAddress' && depositChain && (
               <motion.div
-                key="fundingDetails"
+                key="depositAddress"
                 className={styles.step}
                 custom={navDir}
                 variants={stepVariants}
@@ -829,8 +881,86 @@ export function AddMoneySheet({
                 <div className={styles.fundingScroll}>
                   <div className={clsx(styles.card, styles.detailsCard)}>
                     <div className={styles.detailRows}>
-                      {receiveFields(pickedCountry, formBeneficiary).map(([label, value], i, arr) => {
-                        const id = `fd-${label}`;
+                      <div className={clsx(styles.detailRow, styles.fundingRow, styles.detailRowBordered)}>
+                        <span className={styles.detailLabel}>Send</span>
+                        <span className={styles.fundingValueWrap}>
+                          <span className={styles.fundingValue}>
+                            {formatUsdCents(cents)} {depositAsset}
+                          </span>
+                        </span>
+                      </div>
+                      <div className={clsx(styles.detailRow, styles.fundingRow, styles.detailRowBordered)}>
+                        <span className={styles.detailLabel}>Network</span>
+                        <span className={styles.fundingValueWrap}>
+                          <span className={styles.fundingValue}>{depositChain.name}</span>
+                        </span>
+                      </div>
+                      <div className={clsx(styles.detailRow, styles.fundingRow)}>
+                        <span className={styles.detailLabel}>Address</span>
+                        <span className={styles.fundingValueWrap}>
+                          <span className={styles.fundingValue}>{depositAddress}</span>
+                          <button
+                            type="button"
+                            className={styles.rowIconBtn}
+                            aria-label={
+                              copiedChainId === 'deposit-address' ? 'Copied' : 'Copy address'
+                            }
+                            onClick={() => copyValue('deposit-address', depositAddress)}
+                          >
+                            {copiedChainId === 'deposit-address' ? (
+                              <IconCheckmark2Small size={20} />
+                            ) : (
+                              <IconSquareBehindSquare6 size={20} />
+                            )}
+                          </button>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className={styles.fundingNote}>
+                    Send exactly this amount of {depositAsset} on {depositChain.name}. It lands in
+                    your balance once the network confirms.
+                  </p>
+                  {IS_SANDBOX && (
+                    <p className={styles.fundingNote}>
+                      Sandbox: use “Simulate funding” in the API panel to stand in for the transfer.
+                    </p>
+                  )}
+                </div>
+                <div className={styles.bottomCtaWrap}>
+                  {/* The deposit is out of the app's hands from here; this is
+                      just the way back to the wallet. */}
+                  <GlassTextButton variant="secondary" onClick={dismiss}>
+                    Done
+                  </GlassTextButton>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Deposit details: Add money shows the customer's OWN account (real
+                values from Grid), Receive shows the picked country's inbound
+                instructions. The brain decides which rows these are. */}
+            {step === 'fundingDetails' && fundingSections.length > 0 && (
+              <motion.div
+                key="fundingDetails"
+                className={styles.step}
+                custom={navDir}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={STEP_TRANSITION}
+              >
+                <div className={styles.fundingScroll}>
+                  {fundingSections.map((section) => (
+                  <Fragment key={section.label}>
+                  {fundingSections.length > 1 && (
+                    <p className={styles.sectionLabel}>{section.label}</p>
+                  )}
+                  <div className={clsx(styles.card, styles.detailsCard)}>
+                    <div className={styles.detailRows}>
+                      {section.rows.map(([label, value], i, arr) => {
+                        const id = `fd-${section.label}-${label}`;
                         const copied = copiedChainId === id;
                         return (
                           <div
@@ -862,17 +992,46 @@ export function AddMoneySheet({
                       })}
                     </div>
                   </div>
-                  <p className={styles.fundingNote}>
-                    Share these details with anyone paying you
-                  </p>
+                  {section.note && <p className={styles.fundingNote}>{section.note}</p>}
+                  </Fragment>
+                  ))}
+                  {!isDepositDetails && <p className={styles.fundingNote}>{fundingNote}</p>}
+                  {isDepositDetails && IS_SANDBOX && (
+                    <p className={styles.fundingNote}>
+                      Sandbox: use “Simulate funding” in the API panel to stand in
+                      for the transfer.
+                    </p>
+                  )}
+                  {/* …or let us pull instead: the other half of the flow, right
+                      under the break rather than pinned to the sheet bottom. */}
+                  {isDepositDetails && (
+                    <>
+                      <div className={styles.orRule}>
+                        <span className={styles.orRuleLabel}>or</span>
+                      </div>
+                      <div className={styles.orCtaWrap}>
+                        <GlassTextButton variant="primary" onClick={addAccountFromDetails}>
+                          Add an account
+                        </GlassTextButton>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className={styles.bottomCtaWrap}>
-                  <GlassTextButton variant="primary" onClick={shareFundingAndReceive}>
-                    <span className={styles.shareCta}>
-                      <IconArrowOutOfBox size={20} className={styles.shareCtaIcon} />
-                      Share
-                    </span>
-                  </GlassTextButton>
+                  {isDepositDetails ? (
+                    // Nothing to confirm on a push — the money arrives on the
+                    // bank's clock — so the pinned action is the way home.
+                    <GlassTextButton variant="secondary" onClick={dismiss}>
+                      Done
+                    </GlassTextButton>
+                  ) : (
+                    <GlassTextButton variant="primary" onClick={shareFundingAndReceive}>
+                      <span className={styles.shareCta}>
+                        <IconArrowOutOfBox size={20} className={styles.shareCtaIcon} />
+                        Share
+                      </span>
+                    </GlassTextButton>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -965,8 +1124,8 @@ export function AddMoneySheet({
                         emptyTitle={isSend ? 'No recipients yet' : 'No bank accounts yet'}
                         emptySub={
                           isSend
-                            ? 'Send to a bank account in 65+ countries or any crypto wallet'
-                            : 'Add a bank account in 65+ countries to get started'
+                            ? 'Send to a US or euro-area bank account, or any crypto wallet'
+                            : 'Add a US or euro-area bank account to get started'
                         }
                         cta={{
                           label: isSend ? 'Add recipient' : 'Add bank',
@@ -1361,7 +1520,7 @@ export function AddMoneySheet({
                 <div className={styles.amountLayout}>
                   <div className={styles.cardStack}>
                     <div className={clsx(styles.card, styles.amountCard)}>
-                      {mode === 'add' ? bankRow : balanceRow}
+                      {mode === 'add' ? (depositChainRow ?? bankRow) : balanceRow}
                       <div className={styles.amountInput}>
                         <p ref={amountScope} className={styles.amountValue}>
                           <span

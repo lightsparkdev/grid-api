@@ -43,8 +43,9 @@ import { SquircleFocusHalo } from '@/apps/shared/SquircleFocusHalo';
 import styles from './AuthSheet.module.scss';
 
 const CODE_LENGTH = 6;
-/** The demo's one-time code — what the notification autofills. */
-const DEMO_CODE = '123456';
+/** The demo's one-time code — what the notification autofills. Must match the
+ *  sandbox magic OTP (any other code fails the live HPKE-encrypted verify). */
+const DEMO_CODE = '000000';
 /** Code step settles, then the notification swoops in. */
 const NOTIFICATION_DELAY_MS = 1000;
 /** Autofill cadence: one digit per beat, submit shortly after the last. */
@@ -179,6 +180,9 @@ const METHODS: Record<AuthSheetMethod, MethodConfig> = {
 interface AuthSheetProps {
   /** Which entry the first step collects (email address vs phone number). */
   method?: AuthSheetMethod;
+  /** The real address on file (live flow) — overrides the method's placeholder
+   *  prefill, so the step shows where the code is actually going. */
+  prefill?: string | null;
   open: boolean;
   /** Entry submitted, code prompt not live yet — Continue shows a spinner. */
   sending?: boolean;
@@ -198,6 +202,7 @@ interface AuthSheetProps {
  */
 export function AuthSheet({
   method = 'email',
+  prefill,
   open,
   sending = false,
   codeActive = false,
@@ -253,15 +258,17 @@ export function AuthSheet({
     });
   };
 
-  // Prefilled per method so Continue is live on open — one tap through the
-  // demo. The value follows the method when it changes (the sheet stays
-  // mounted across method switches, so the email prefill must not leak into
-  // the phone step).
-  const [value, setValue] = useState(cfg.prefill);
-  const [prevMethod, setPrevMethod] = useState(method);
-  if (method !== prevMethod) {
-    setPrevMethod(method);
-    setValue(cfg.prefill);
+  // Prefilled so Continue is live on open — one tap through the demo. The live
+  // flow supplies the address the credential is actually tied to; otherwise the
+  // method's own placeholder stands in. The value follows either when it changes
+  // (the sheet stays mounted across method switches, so the email prefill must
+  // not leak into the phone step).
+  const initialValue = prefill || cfg.prefill;
+  const [value, setValue] = useState(initialValue);
+  const [prevPrefill, setPrevPrefill] = useState(initialValue);
+  if (initialValue !== prevPrefill) {
+    setPrevPrefill(initialValue);
+    setValue(initialValue);
   }
   const valid = cfg.validate(value);
   // Continue is always active (the amount-entry pattern): invalid input
@@ -466,7 +473,11 @@ export function AuthSheet({
       {/* Corner-pinned (16px) independent of the tile's header padding. */}
       <span className={styles.close}>
         <GlassSymbolButton
-          aria-label={step === 'code' ? 'Back' : 'Close'}
+          // "Back" only when the code step can genuinely return to the entry
+          // step (onBack provided). The live passkey bootstrap has no entry
+          // step to go back to — DemoPhone omits onBack for that flow, so the
+          // control both acts as and reads as a plain cancel there.
+          aria-label={step === 'code' && onBack ? 'Back' : 'Close'}
           size={40}
           type="button"
           glass={{ brightness: headerGlassBrightness(theme) }}

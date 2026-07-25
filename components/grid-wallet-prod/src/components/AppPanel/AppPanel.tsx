@@ -8,7 +8,9 @@ import { DEFAULT_OVERLAY_GLASS } from '@/apps/shared/glass';
 import type { ActionId, WalletState } from '@/data/actions';
 import type { AuthMethod, Persona, PhoneState } from '@/data/flow';
 import type { WalletEntry, WalletTransferMode } from '@/apps/aurora/wallet';
+import type { SavedBank } from '@/apps/shared/wallet';
 import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
+import type { DepositInstructions } from '@/lib/gridReads';
 import styles from './AppPanel.module.scss';
 
 export interface DemoLogicPhoneSlice {
@@ -31,8 +33,18 @@ export interface DemoLogicPhoneSlice {
   cancelOtp: () => void;
   backOtp: () => void;
   emailActive: boolean;
+  emailPrefill: string | null;
   submitEmail: (email: string) => void;
   cancelEmail: () => void;
+  passkeyAdded: boolean;
+  onAddPasskey: () => void;
+  depositInstructions: DepositInstructions | null;
+  totalCents: number;
+  walletToast: { nonce: number; text: string } | null;
+  storedBanks: SavedBank[];
+  onSelectStoredBank: (externalAccountId: string | null) => void;
+  onDepositView: (view: { label: string; currency: string; cents?: number } | null) => void;
+  simulateDeposit: { nonce: number; cents: number; last4: string } | null;
   phoneActive: boolean;
   submitPhone: (number: string) => void;
   cancelPhone: () => void;
@@ -80,9 +92,21 @@ function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
     },
     email: {
       active: p.emailActive,
+      prefill: p.emailPrefill,
       onSubmit: p.submitEmail,
       onCancel: p.cancelEmail,
     },
+    addPasskey: {
+      added: p.passkeyAdded,
+      onAdd: p.onAddPasskey,
+    },
+    depositInstructions: p.depositInstructions,
+    totalCents: p.totalCents,
+    walletToast: p.walletToast,
+    storedBanks: p.storedBanks,
+    onSelectStoredBank: p.onSelectStoredBank,
+    onDepositView: p.onDepositView,
+    simulateDeposit: p.simulateDeposit,
     phoneEntry: {
       active: p.phoneActive,
       onSubmit: p.submitPhone,

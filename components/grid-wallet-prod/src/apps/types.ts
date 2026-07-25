@@ -15,6 +15,9 @@ export interface SkinAuthFlow {
   sending: boolean;
   /** The verification-code prompt is up. */
   codeActive: boolean;
+  /** Prefill for the entry step — the real address/number on file when the flow
+   *  is live (the sheet falls back to its own demo placeholder). */
+  prefill?: string | null;
   onSubmit: (value: string) => void;
   onSubmitCode?: (code: string) => void;
   /** Code step → back to the entry step (re-prompts the entry). */
@@ -52,6 +55,12 @@ export interface SkinWalletScreenProps {
   switchedIn?: boolean;
   /** A virtual card finished issuing on the phone — log the issue call. */
   onCardIssued?: () => void;
+  /** The wallet account's total balance in cents (USDB `totalBalance`), shown
+   *  under the available headline when the two differ. */
+  totalCents?: number;
+  /** Credential state + the action that registers a passkey. Absent (or
+   *  `added: true`) means the wallet shows no passkey nudge. */
+  addPasskey?: { added: boolean; onAdd: () => void };
 }
 
 export type SkinAuthScreen = ComponentType<SkinAuthScreenProps>;

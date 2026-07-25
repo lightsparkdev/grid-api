@@ -65,13 +65,23 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
     open: Boolean(entry?.active || sheetSending || props.otp?.active),
     sending: sheetSending,
     codeActive: Boolean(props.otp?.active),
+    // The real address the EMAIL_OTP credential is tied to (email flow only —
+    // the phone entry has no live equivalent).
+    prefill: sheetMethod === 'email' ? props.email?.prefill : undefined,
     onSubmit: entry?.onSubmit ?? (() => {}),
     onSubmitCode: props.otp?.onSubmit,
     // The X is BACK past the first step (code → entry re-prompt); the scrim
-    // still cancels the whole flow.
-    onBack: props.otp?.onBack,
+    // still cancels the whole flow. Only the genuine email/phone entry flow
+    // (sheetMethod set) has an entry step to go back to — the live passkey
+    // bootstrap's OTP prompt has none, so its sheet gets no onBack and the
+    // control reads (and acts) as a plain cancel there.
+    onBack: sheetMethod ? props.otp?.onBack : undefined,
     onCancel: props.otp?.active ? props.otp?.onCancel : entry?.onCancel,
   };
+  // ONE sheet, rendered on whichever side of the auth ⇄ wallet flip is showing
+  // (same mapping as the `screen` prop below): sign-in prompts on the auth
+  // screen, a lapsed-session re-auth prompts over the wallet.
+  const walletShown = props.phone.screen === 'wallet' || props.phone.screen === 'card';
   const authSheet =
     flowActive && !skin.inlineAuthFlow ? <AuthSheet {...flow} /> : null;
 
@@ -108,15 +118,27 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       authFlow={skin.inlineAuthFlow ? flow : undefined}
       entry={props.walletEntry}
       walletOptions={skin.walletOptions}
+      balance={props.phone.balance}
+      // The account's real history, loaded during sign-in (GET /transactions).
+      activity={props.phone.activity}
+      depositInstructions={props.depositInstructions}
+      totalCents={props.totalCents}
+      walletToast={props.walletToast}
+      storedBanks={props.storedBanks}
+      onSelectStoredBank={props.onSelectStoredBank}
+      onDepositView={props.onDepositView}
+      simulateDeposit={props.simulateDeposit}
       onQuoteCreate={props.onQuoteCreate}
       onLinkExternalAccount={props.onLinkExternalAccount}
       onTransferExecute={props.onTransferExecute}
       onCardIssued={props.onCardIssued}
       onTapToPay={props.onTapToPay}
       onReceivePayment={props.onReceivePayment}
+      addPasskey={props.addPasskey}
+      walletOverlays={walletShown ? authSheet : null}
     >
       {passkeySheet}
-      {authSheet}
+      {walletShown ? null : authSheet}
     </SignInFlow>
   );
 }

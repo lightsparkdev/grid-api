@@ -23,6 +23,7 @@ import { WalletCardDetailHeader } from './WalletCardDetailHeader';
 import { WalletListSection } from './WalletListSection';
 import { BalanceHero } from './BalanceHero';
 import { WalletActions } from './WalletActions';
+import { PasskeyNudge } from './PasskeyNudge';
 import { WalletInsightCards } from './WalletInsightCards';
 import { WalletSheet } from './WalletSheet';
 import styles from './AuroraWalletScreen.module.scss';
@@ -57,7 +58,7 @@ const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
  *  view layer — the wallet + money-sheet brains arrive as props (hosted above
  *  the skin so their state survives skin switches). */
 export function AuroraWalletScreen(props: SkinWalletScreenProps) {
-  const { entrance = false, home, money, onCardIssued } = props;
+  const { entrance = false, home, money, onCardIssued, addPasskey, totalCents = 0 } = props;
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
@@ -277,7 +278,14 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
         >
           <WalletSheet dismissed={isOpen}>
             <motion.div {...enter(1)}>
-              <BalanceHero balance={formatUsdCents(availableCents)} />
+              <BalanceHero
+                balance={formatUsdCents(availableCents)}
+                total={
+                  totalCents > 0 && totalCents !== availableCents
+                    ? formatUsdCents(totalCents)
+                    : undefined
+                }
+              />
             </motion.div>
             <motion.div {...enter(2)}>
               <WalletActions
@@ -286,7 +294,14 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
                 onSend={() => setSendReceiveOpen(true)}
               />
             </motion.div>
-            <motion.div {...enter(3)}>
+            {/* Security nudge: sits between the actions and the insight cards
+                while the account still has only its EMAIL_OTP credential. */}
+            {addPasskey && !addPasskey.added && (
+              <motion.div {...enter(3)}>
+                <PasskeyNudge onAdd={addPasskey.onAdd} />
+              </motion.div>
+            )}
+            <motion.div {...enter(addPasskey && !addPasskey.added ? 4 : 3)}>
               <WalletInsightCards
                 weeklyBars={weeklyBars}
                 weeklySpentCents={weeklySpentCents}

@@ -57,6 +57,13 @@ const COLD_ENTRY_SETTLE_MS = 700;
 export interface UseWalletHomeOptions {
   /** Formatted balance from demo state, e.g. "$0.00". */
   balance?: string;
+  /**
+   * Real transaction history from the host (`GET /transactions`), newest first.
+   * Held as an INPUT, never copied into state: the host owns it, so a re-read
+   * flows straight through, and rows added by this session's own flows still
+   * merge on top by timestamp.
+   */
+  serverActivity?: WalletListItemData[];
   /** Whether the sign-in entrance reveal is playing — gates the cold-jump beat. */
   entrance?: boolean;
   /** Jump command from the sidebar — provision + open a flow out of order. */
@@ -67,8 +74,26 @@ export interface UseWalletHomeOptions {
    * Balance + activity still update; the toast is suppressed. Default false.
    */
   transferSuccessScreen?: boolean;
-  /** Transfer confirmed (Face ID) — log execute + settle and move the balance. */
-  onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
+  /**
+   * Transfer confirmed (Face ID) — log execute + settle and move the balance.
+   * For Add money, the third arg is a settle channel: the host calls it back
+   * on EVERY terminal outcome for THIS add — success (once the real balance
+   * read lands, or exhausts its retry) or failure (non-200, thrown, or the
+   * 403 production-keys branch) — so this add's own optimistic bump is
+   * undone by exactly its own cents the instant its own flow concludes,
+   * whichever way it goes. Amount-exact and proportional: no waiting on an
+   * unrelated add's refresh, and no "wait for the in-flight counter to hit
+   * 0" step. Ignored for withdraw/send.
+   */
+  onTransferExecute?: (
+    mode: WalletTransferMode,
+    cents: number,
+    onAddSettled?: () => void,
+    /** `simulated: true` = the sandbox stand-in, not a user-confirmed transfer.
+     *  The host routes them differently (a real add pulls from the account the
+     *  user linked; the stand-in runs the platform on-ramp). */
+    opts?: { simulated?: boolean },
+  ) => void;
   /** A tap-to-pay charge landed on the phone. */
   onTapToPay?: (cents: number, merchant: string) => void;
   /** A payment was received (Receive flow) — log the inbound webhook + settle. */
@@ -84,6 +109,7 @@ export interface UseWalletHomeOptions {
 export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const {
     balance = '$0.00',
+    serverActivity,
     entrance = false,
     entry,
     transferSuccessScreen = false,
@@ -110,6 +136,29 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const pendingCents = useRef(0);
   const pendingActivity = useRef<TransferActivity | null>(null);
   const availableCents = parseCents(balance) + deltaCents;
+  // `balance` is the host's source of truth (the real book balance).
+  // `deltaCents` is ONLY the optimistic bridge for Add money's real (async)
+  // path: Face-ID-confirm bumps it instantly, well before the sandbox fund +
+  // GET /customers/internal-accounts round-trip lands and moves `balance`
+  // itself. Withdraw/Send/Tap/Receive do NOT use it when a host callback is
+  // wired (see below) — the host moves `balance` SYNCHRONOUSLY in the same
+  // commit as those, so bumping delta too would double-count for a frame.
+  //
+  // Adds no longer bump `deltaCents` at all (the money is announced by Grid's
+  // arrival webhook, and `balance` re-read from the API), so nothing is in
+  // flight to reconcile — this counter stays 0 and only the drift guard below
+  // still reads it.
+  const pendingAdds = useRef(0);
+  // Now just a drift guard: under the per-add settle design above, this
+  // should never actually fire (every increment has a matching settle call).
+  // Kept as a backstop — if `pendingAdds` is back to 0 (no add believes
+  // itself in flight) but `deltaCents` is somehow still nonzero when
+  // `balance` moves, snap it rather than let a stray delta linger
+  // silently. Deliberately does NOT touch `deltaCents` while `pendingAdds`
+  // is nonzero — that's still-pending adds' own tracked contribution.
+  useEffect(() => {
+    if (pendingAdds.current === 0 && deltaCents !== 0) setDeltaCents(0);
+  }, [balance]);
   // Earnings = yield on the live balance, shown as today's accrual. Weekly bars
   // map the most recent card charges (up to WEEKLY_BAR_COUNT), normalized to the
   // busiest charge so heights vary by amount.
@@ -148,12 +197,17 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const [toast, setToast] = useState<ToastData | null>(null);
   const showToast = (text: string) => setToast({ id: Date.now(), text });
 
-  // Home Activity = money movements + card transactions, newest first. Derived
-  // (not double-inserted) so each WalletListCard instance keeps its own
-  // fresh-row bookkeeping — the grow-in insert still runs per list.
+  // Home Activity = this session's money movements + card transactions + the
+  // account's real history, newest first. Derived (not double-inserted) so each
+  // WalletListCard instance keeps its own fresh-row bookkeeping — the grow-in
+  // insert still runs per list. Server rows carry Grid transaction ids and this
+  // session's carry local ones, so the id-keyed reveal can't collide.
   const homeActivity = useMemo(
-    () => [...activity, ...transactions].sort((a, b) => b.timestamp - a.timestamp),
-    [activity, transactions],
+    () =>
+      [...activity, ...transactions, ...(serverActivity ?? [])].sort(
+        (a, b) => b.timestamp - a.timestamp,
+      ),
+    [activity, transactions, serverActivity],
   );
 
   const isOpen = cardView !== 'closed';
@@ -190,7 +244,9 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
       const tx = pendingTapTx.current; // the merchant picked at tap start
       setTapPhase('idle');
       // The card charge comes out of the cash balance, landing with the row.
-      setDeltaCents((c) => c - parseCents(tx.amount));
+      // Self-track only when no host callback is wired — a wired host moves
+      // `balance` synchronously via `onTapToPay` below, in this same commit.
+      if (!onTapToPay) setDeltaCents((c) => c - parseCents(tx.amount));
       setSpendBars((b) => [...b, parseCents(tx.amount)]);
       onTapToPay?.(parseCents(tx.amount), tx.title);
       window.clearTimeout(insertTimer.current);
@@ -272,7 +328,12 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     window.clearTimeout(coldOpenTimer.current);
 
     if (entry.provision?.issued) setIssued(true);
-    if (typeof entry.provision?.fundCents === 'number') setDeltaCents(entry.provision.fundCents);
+    // Relative to the CURRENT base balance, not absolute — so the visible
+    // total lands on exactly `fundCents` whether `balance` is still "$0.00"
+    // (no real session) or already a real signed-in balance.
+    if (typeof entry.provision?.fundCents === 'number') {
+      setDeltaCents(entry.provision.fundCents - parseCents(balance));
+    }
 
     const openTarget = () => {
       switch (entry.open) {
@@ -361,37 +422,72 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   // (signed), and drop the Activity row in once the wallet has settled (visible
   // insert).
   const sheetInsertTimer = useRef(0);
-  const finishTransfer = () => {
+  const finishTransfer = (
+    { closeSheet = true, simulated = false }: { closeSheet?: boolean; simulated?: boolean } = {},
+  ) => {
     const cents = pendingCents.current;
     const mode = sheetMode;
     const dest = pendingActivity.current;
     // Receive has no amount/confirm step, so it never reaches finishTransfer —
     // the guard also narrows `mode` to a transfer mode for the calls below.
     if (mode === 'receive') return;
-    onTransferExecute?.(mode, cents);
+    // No settle channel any more: an add makes NO optimistic bump (the webhook
+    // announces the arrival and the host re-reads the balance), so there is
+    // nothing for the host to undo. Passing one that subtracts `cents` would
+    // drop the displayed balance by the amount being added.
+    onTransferExecute?.(mode, cents, undefined, { simulated });
     setSheetConfirming(false);
     // A skin with its own success screen keeps the sheet up (Done closes it) and
     // owns the confirmation — hold the balance move + Activity insert until the
     // sheet is dismissed so both play out on the visible home (balance ticks,
     // row grows in) instead of settling silently behind the success screen.
+    // MUST FIX BEFORE ANY SKIN SETS `transferSuccessScreen`: `settleAdd` above
+    // is registered NOW (immediately, same as the non-success-screen path),
+    // but the matching `pendingAdds`/`deltaCents` INCREMENT for this path
+    // doesn't happen until the settle effect below fires, `SETTLE_DELTA_DELAY_MS`
+    // later. A fast terminal outcome (very plausible for a failure, and not
+    // impossible for a success against a quick sandbox) settling BEFORE that
+    // increment runs will net out wrong (settles a bump that hasn't been
+    // applied yet, then the delayed effect applies it with nothing left to
+    // undo it). Not reachable in this app today (no active skin sets
+    // `transferSuccessScreen`) — but this is a real, known-broken path, not a
+    // theoretical one; do not enable `transferSuccessScreen` on a live skin
+    // without fixing this ordering first (e.g. by moving the increment into
+    // `finishTransfer` itself, ahead of `onTransferExecute`, same as the
+    // non-success-screen path does).
     if (transferSuccessScreen) {
       pendingSettle.current = { mode, cents, dest };
       return;
     }
-    setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
-    setSheetOpen(false);
+    if (mode === 'add') {
+      // Deliberately NO optimistic bump, toast or Activity row here: money
+      // arriving is announced by Grid's INCOMING_PAYMENT.COMPLETED webhook (the
+      // host refreshes the balance and toasts off the back of it). Claiming it
+      // at tap time was a lie for a pull, which Grid can't even execute — the
+      // payer still has to push.
+      if (closeSheet) setSheetOpen(false);
+      return;
+    } else if (!onTransferExecute) {
+      // No host wired to move `balance` synchronously — self-track locally
+      // (this is the only path for a standalone/unwired caller).
+      setDeltaCents((c) => c - cents);
+    }
+    // else: a host callback IS wired, and `onTransferExecute` above already
+    // moved the real `balance` synchronously, in this same commit — do not
+    // ALSO apply the delta here, or `availableCents` briefly double-counts
+    // the movement for one frame (old − 2×cents) before self-correcting.
+    if (closeSheet) setSheetOpen(false);
     const sentTo =
       dest?.kind === 'crypto'
         ? truncateAddress(dest.address)
         : dest?.kind === 'bank'
           ? dest.recipientName || dest.bankName
           : 'recipient';
+    // 'add' returned above — arrivals are announced by the webhook, not here.
     showToast(
-      mode === 'add'
-        ? `${toastUsd(cents)} added to balance`
-        : mode === 'withdraw'
-          ? `${toastUsd(cents)} withdrawn from balance`
-          : `${toastUsd(cents)} sent to ${sentTo}`,
+      mode === 'withdraw'
+        ? `${toastUsd(cents)} withdrawn from balance`
+        : `${toastUsd(cents)} sent to ${sentTo}`,
     );
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
@@ -414,7 +510,15 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     const { mode, cents, dest } = pendingSettle.current;
     pendingSettle.current = null;
     settleDeltaTimer.current = window.setTimeout(() => {
-      setDeltaCents((c) => c + (mode === 'add' ? cents : -cents));
+      // Same add-vs-sync split as `finishTransfer` above (not currently
+      // reachable in this app — no active skin sets `transferSuccessScreen`
+      // — kept consistent for any skin that does).
+      if (mode === 'add') {
+        pendingAdds.current += 1;
+        setDeltaCents((c) => c + cents);
+      } else if (!onTransferExecute) {
+        setDeltaCents((c) => c - cents);
+      }
     }, SETTLE_DELTA_DELAY_MS);
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
@@ -429,6 +533,28 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     pendingCents.current = cents;
     pendingActivity.current = activityDest;
     setSheetConfirming(true);
+  };
+
+  /**
+   * SANDBOX ONLY (see lib/gridEnv): stand in for the inbound wire the user would
+   * really send to the deposit details on screen, so Add money still completes.
+   * Runs the host's real on-ramp — same money path, balance move, settle
+   * reconciliation and Activity row as a confirmed add; only the trigger is
+   * simulated. Never call this against production keys.
+   */
+  const simulateBankDeposit = (cents: number, accountLast4: string) => {
+    pendingCents.current = cents;
+    pendingActivity.current = {
+      kind: 'bank',
+      bankName: 'Bank transfer',
+      last4: accountLast4,
+      countryCode: 'us',
+      recipientName: '',
+    };
+    // Leaves the sheet OPEN: the instructions screen is a fork (wire to these
+    // details, or add an account to pull from), so yanking it away mid-decision
+    // would be worse than letting the balance move behind it.
+    finishTransfer({ closeSheet: false, simulated: true });
   };
 
   // Receive (Share/Copy in the deposit list): the demo "bullshit mode" payment.
@@ -446,7 +572,9 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
       window.setTimeout(() => {
         const cents = randomReceiveCents();
         const payer = p.via === 'crypto' ? truncateAddress(p.address) : p.payer;
-        setDeltaCents((c) => c + cents);
+        // Self-track only when no host callback is wired — a wired host moves
+        // `balance` synchronously via `onReceivePayment` below.
+        if (!onReceivePayment) setDeltaCents((c) => c + cents);
         showToast(
           asAdd ? `${toastUsd(cents)} added to balance` : `Received ${toastUsd(cents)} from ${payer}`,
         );
@@ -482,6 +610,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     toast,
     setToast,
     showToast,
+    simulateBankDeposit,
     // Derived money / activity
     availableCents,
     earningsTodayCents,

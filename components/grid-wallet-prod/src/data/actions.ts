@@ -1,14 +1,15 @@
 /* Action-driven playground model. The user freely triggers actions on the
    Global Account; each produces a short on-phone sequence + Grid API calls. */
 
-import type { PhoneState, Tx } from './flow';
+import type { WalletListItemData } from '@/apps/shared/wallet/types';
+import type { PhoneState } from './flow';
 
 export interface WalletState {
   created: boolean;
   balanceCents: number;
   hasCard: boolean;
   cardActivated: boolean;
-  activity: Tx[];
+  activity: WalletListItemData[];
 }
 
 export const initialWallet: WalletState = {

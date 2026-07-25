@@ -29,6 +29,7 @@ export { useMoneySheet, type MoneySheet, type UseMoneySheetOptions } from './use
 export {
   MODES,
   KEYPAD,
+  ADD_DEPOSIT_CHAINS,
   DEPOSIT_CHAINS,
   SEND_NETWORKS,
   DEFAULT_SEND_NETWORK,
@@ -41,6 +42,7 @@ export {
   fieldLabel,
   receiveFields,
   type Step,
+  savedBankFromExternalAccount,
   type SavedBank,
   type CryptoRecipient,
   type SavedRecipient,

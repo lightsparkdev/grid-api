@@ -10,6 +10,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { ExternalAccountInput, TransferDest } from '@/data/apiCalls';
+import type { DepositSection, DepositWallet } from '@/lib/gridReads';
 import { currencyFor, recipientNamesFor, type BankCountry } from '@/data/bankCountries';
 import { useUsdRates } from '@/hooks/useUsdRates';
 import { formatUsdCents, typedToCents } from './format';
@@ -24,7 +25,7 @@ import {
   QUOTE_MS,
   RECEIVE_RAIL,
   SAVE_MS,
-  USD_TO_MXN,
+  USD_TO_EUR,
   accountLast4,
   firstNameLastInitial,
   formatRate,
@@ -33,6 +34,7 @@ import {
   type CryptoRecipient,
   type SavedBank,
   type SavedRecipient,
+  type DepositChain,
   type SendNetwork,
   type Step,
 } from './moneySheet';
@@ -46,6 +48,22 @@ export interface UseMoneySheetOptions {
   /** Face ID running — Confirm shows a spinner and input locks. */
   confirming: boolean;
   onDismiss: () => void;
+  /**
+   * Real deposit details for the customer's fiat account (from the host's
+   * `GET /customers/internal-accounts`) — what Add money → Bank transfer shows.
+   * Absent/null means the account has none, and the screen says so.
+   */
+  depositInstructions?: { sections: DepositSection[]; wallets?: DepositWallet[] } | null;
+  /**
+   * Accounts Grid already holds for this customer (`GET /customers/external-accounts`),
+   * shown in the saved list above anything added this session. Held as an INPUT,
+   * never copied into state, so a re-read flows straight through. Their `id` is
+   * the real ExternalAccount id.
+   */
+  storedBanks?: SavedBank[];
+  /** A stored account was selected — the host quotes against THIS id rather than
+   *  creating a new external account. Null when the pick is a session-added one. */
+  onSelectStoredBank?: (externalAccountId: string | null) => void;
   /** Confirm tapped with the typed amount (cents). `activity` carries the real
    *  destination for the Activity row + toast. */
   onConfirm: (cents: number, activity: TransferActivity) => void;
@@ -61,11 +79,14 @@ export function useMoneySheet({
   open,
   mode,
   availableCents,
+  depositInstructions,
+  storedBanks,
   confirming,
   onDismiss,
   onConfirm,
   onQuote,
   onLinkExternalAccount,
+  onSelectStoredBank,
   onReceive,
 }: UseMoneySheetOptions) {
   const { titles, sources, activeSources, details } = MODES[mode];
@@ -88,6 +109,9 @@ export function useMoneySheet({
   const [pickedNetwork, setPickedNetwork] = useState<SendNetwork | null>(null);
   // Withdraw-to-crypto destination — a one-off wallet (not a saved list).
   const [cryptoDest, setCryptoDest] = useState<CryptoRecipient | null>(null);
+  // Add-from-crypto: the network picked from the deposit list (drives the amount
+  // step's target and the address screen).
+  const [depositChain, setDepositChain] = useState<DepositChain | null>(null);
   const quoteTimer = useRef(0);
   const saveTimer = useRef(0);
   // Invalid-amount signal: bumps on a rejected keypress (past the cap) or an
@@ -106,7 +130,13 @@ export function useMoneySheet({
       list.some((x) => x.address === w.address) ? list : [...list, w],
     );
   // The active list for the current mode: send = recipients; add/withdraw = banks.
-  const banks: SavedRecipient[] = isSend ? savedRecipients : savedBanks;
+  // Stored accounts (from Grid) lead, then anything added this session — deduped
+  // by id so a re-read after an add doesn't double a row.
+  const stored = storedBanks ?? [];
+  const sessionBanks = savedBanks.filter((b) => !stored.some((x) => x.id === b.id));
+  const banks: SavedRecipient[] = isSend
+    ? savedRecipients
+    : [...sessionBanks, ...stored];
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
   const [pickedCountry, setPickedCountry] = useState<BankCountry | null>(null);
   const [countryQuery, setCountryQuery] = useState('');
@@ -121,17 +151,26 @@ export function useMoneySheet({
   const selectedBank = selected && !('address' in selected) ? selected : null;
   // Send picks crypto from the saved list; withdraw uses a one-off cryptoDest.
   const selectedCrypto = cryptoDest ?? (selected && 'address' in selected ? selected : null);
-  const localCurrency = selectedBank ? currencyFor(selectedBank.country) : 'MXN';
-  const cryptoCurrency = selectedCrypto?.currency ?? 'USDC';
+  // The real Grid-provisioned address for the picked deposit network (falls back
+  // to the illustrative one if the account has no wallet on that chain).
+  const depositWallet = depositChain
+    ? (depositInstructions?.wallets ?? []).find((w) => w.network === depositChain.id)
+    : undefined;
+  const depositAddress = depositWallet?.address ?? depositChain?.address ?? '';
+  const depositAsset = depositWallet?.asset ?? 'USDC';
+  const localCurrency = selectedBank ? currencyFor(selectedBank.country) : 'EUR';
+  const cryptoCurrency = selectedCrypto?.currency ?? (depositChain ? depositAsset : 'USDC');
   const isBtcDest = cryptoCurrency === 'BTC';
-  const stablecoinDest = !selectedBank && (selectedCrypto != null || mode === 'send');
+  // A crypto deposit is stablecoin-denominated too (1:1, no FX to show).
+  const stablecoinDest =
+    !selectedBank && (selectedCrypto != null || mode === 'send' || depositChain != null);
   const fxRate = selectedBank
     ? rateFor(currencyFor(selectedBank.country), selectedBank.country.usdToLocal)
     : stablecoinDest
       ? isBtcDest
         ? 1 / BTC_USD
         : 1
-      : USD_TO_MXN;
+      : USD_TO_EUR;
   // BTC shows fractional precision; stablecoins (and fiat) use 2 decimals.
   const fxFractionDigits = stablecoinDest && isBtcDest ? 6 : 2;
   const fxLabel = stablecoinDest ? cryptoCurrency : localCurrency;
@@ -156,6 +195,7 @@ export function useMoneySheet({
     if (open) {
       setOpenKey((k) => k + 1);
       setStep(mode === 'receive' ? 'deposit' : isSend ? 'banks' : 'source');
+      setDepositChain(null);
       setBack(false);
       setRaw('');
       setStarted(false);
@@ -187,6 +227,18 @@ export function useMoneySheet({
   const go = (next: Step, isBack = false) => {
     setBack(isBack);
     setStep(next);
+  };
+
+  /** Add-from-crypto: a network row → enter how much is coming, then the address. */
+  const pickDepositChain = (chain: DepositChain) => {
+    setDepositChain(chain);
+    // Mirror of selectBank: a network pick drops any bank/wallet selection.
+    setSelectedBankId(null);
+    setCryptoDest(null);
+    setRaw('');
+    setStarted(false);
+    setMaxed(false);
+    go('amount');
   };
 
   // Pick a crypto network in the secondary sheet — fills the address card.
@@ -238,10 +290,12 @@ export function useMoneySheet({
   const openAddBank = () => {
     setPickedCountry(null);
     setCountryQuery('');
+    setDepositChain(null);
     go(isSend ? 'source' : 'country');
   };
   const pickCountry = (country: BankCountry) => {
     setPickedCountry(country);
+    setDepositChain(null);
     const values = sampleValuesFor(country);
     // The spec's generic example is "Example Bank" — prefill the country's real
     // demo bank instead (the same pool-cycled name the saved row will get).
@@ -262,8 +316,14 @@ export function useMoneySheet({
     } else {
       setFormBeneficiary(DEMO_BENEFICIARY);
     }
-    go(mode === 'receive' ? 'fundingDetails' : 'bankForm');
+    // Add + Receive both show the country's inbound instructions first; the add
+    // flow offers "add an account" from there. Withdraw/send go straight to the
+    // form (they're collecting a destination, not showing one).
+    go(mode === 'receive' || mode === 'add' ? 'fundingDetails' : 'bankForm');
   };
+
+  /** "Add an account" on the instructions screen → the details form. */
+  const addAccountFromDetails = () => go('bankForm');
   const updateField = (key: string, value: string) =>
     setFormValues((v) => ({ ...v, [key]: value }));
   const addBank = () => {
@@ -299,6 +359,7 @@ export function useMoneySheet({
         isSend ? 'Add recipient' : 'Add bank account',
       );
       setSelectedBankId(bank.id);
+      setDepositChain(null);
       setSaving(false);
       go('amount');
     }, SAVE_MS);
@@ -340,9 +401,15 @@ export function useMoneySheet({
   };
   const selectBank = (id: string) => {
     setSelectedBankId(id);
-    // A bank pick drops any lingering one-off crypto destination so the two
-    // never bleed together on the amount/confirm screens.
+    // Tell the host when the pick is an account Grid already holds, so the quote
+    // points at that ExternalAccount instead of one created this session.
+    onSelectStoredBank?.(stored.some((b) => b.id === id) ? id : null);
+    // A bank pick drops any lingering crypto destination — a one-off wallet AND
+    // a picked deposit network — so the two never bleed together on the
+    // amount/confirm screens (picking a bank after visiting Add-from-crypto
+    // otherwise priced the transfer in USDC and pushed to the address screen).
     setCryptoDest(null);
+    setDepositChain(null);
     go('amount');
   };
 
@@ -405,7 +472,7 @@ export function useMoneySheet({
         }
       : {
           kind: 'bank',
-          countryCode: selectedBank?.country.code ?? 'mx',
+          countryCode: selectedBank?.country.code ?? 'us',
           bankName: selectedBank?.bankName ?? 'Bank account',
           last4: selectedBank ? accountLast4(selectedBank.values) : '0000',
           recipientName: selectedBank?.beneficiary ?? '',
@@ -429,8 +496,13 @@ export function useMoneySheet({
           }
         : {
             confirm: 'amount',
-            amount: selectedCrypto ? 'recipient' : 'banks',
-            bankForm: 'country',
+            amount: depositChain ? 'deposit' : selectedCrypto ? 'recipient' : 'banks',
+            // Add money puts the country's instructions between the picker and
+            // the form (country → instructions → form), so back retraces that;
+            // withdraw goes picker → form with nothing in between.
+            bankForm: mode === 'add' ? 'fundingDetails' : 'country',
+            fundingDetails: 'country',
+            depositAddress: 'amount',
             country: 'banks',
             recipient: 'source',
             banks: 'source',
@@ -538,6 +610,16 @@ export function useMoneySheet({
   // fee too: what leaves the balance (payCents) is what's capped.
   const tryContinue = () => {
     if (confirming || quoting) return;
+    // Add-from-crypto asks for the amount only so the address screen can state
+    // what's expected — no quote, nothing to confirm: the payer sends on-chain.
+    if (depositChain) {
+      if (cents > 0) {
+        go('depositAddress');
+        return;
+      }
+      triggerShake();
+      return;
+    }
     if (cents > 0 && (mode === 'add' || payCents <= availableCents)) {
       const dest: TransferDest | undefined = selectedCrypto
         ? { kind: 'crypto', currency: selectedCrypto.currency }
@@ -591,13 +673,47 @@ export function useMoneySheet({
           ghost: hasDot ? '0'.repeat(Math.max(0, 2 - fracTyped.length)) : '',
         };
 
-  // The funding-details step titles itself with the picked country's name.
+  // The funding-details step serves two flows: Add money shows the customer's
+  // OWN deposit details (real, from Grid), Receive shows the picked country's
+  // inbound instructions. Same screen, different source.
+  const isDepositDetails = step === 'fundingDetails' && mode === 'add';
+  // One country, one currency: show the section that matches what a bank in the
+  // picked country would actually send (USD for the US, EUR across the euro area).
+  const pickedCurrency = pickedCountry ? currencyFor(pickedCountry) : null;
+  const fundingSections: DepositSection[] = isDepositDetails
+    ? (depositInstructions?.sections ?? []).filter((x) => x.label === pickedCurrency)
+    : pickedCountry
+      ? [
+          {
+            label: currencyFor(pickedCountry),
+            rows: receiveFields(pickedCountry, formBeneficiary),
+            note: 'Share these details with anyone paying you',
+          },
+        ]
+      : [];
+  const fundingNote = isDepositDetails
+    ? 'Transfer from your bank using these details — it lands in your balance.'
+    : 'Share these details with anyone paying you';
+
   const displayTitle =
-    step === 'fundingDetails' && pickedCountry
-      ? `Receive from ${pickedCountry.name}`
+    step === 'depositAddress' && depositChain
+      ? `Add from ${depositChain.name}`
+      : step === 'fundingDetails' && pickedCountry
+      ? isDepositDetails
+        ? `Add from ${pickedCountry.name}`
+        : `Receive from ${pickedCountry.name}`
       : titles[step];
 
   return {
+    // funding-details screen (Add money's deposit details / Receive's per-country)
+    fundingSections,
+    fundingNote,
+    isDepositDetails,
+    // add-from-crypto
+    depositChain,
+    pickDepositChain,
+    depositAddress,
+    depositAsset,
     // flow config (per mode)
     titles,
     sources,
@@ -665,6 +781,7 @@ export function useMoneySheet({
     pickedCountry,
     pickCountry,
     openAddBank,
+    addAccountFromDetails,
     // bank form
     formValues,
     setFormValues,

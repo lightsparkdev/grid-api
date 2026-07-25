@@ -18,7 +18,6 @@ import { formatAbsoluteTime, formatRelativeTime } from '@/lib/formatRelativeTime
 import { groupApiEntries } from '@/lib/groupApiEntries';
 import { useNowTick } from '@/hooks/useNowTick';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
-import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import type { Entry, EntryGroup } from './types';
 import styles from './ApiCallList.module.scss';
 
@@ -29,6 +28,9 @@ const syntaxClasses = {
   command: styles.syntaxCommand,
   flag: styles.syntaxFlag,
   string: styles.syntaxString,
+  // Each source line is its own block so a long one (signature headers, request
+  // bodies) wraps with a hanging indent instead of scrolling sideways.
+  line: styles.codeLine,
 };
 
 function methodBadgeVariant(method: ApiCall['method']): 'blue' | 'green' {
@@ -275,6 +277,8 @@ interface ApiCallListProps {
   entries: Entry[];
   /** Keys of calls not yet seen — each gets a "new" dot (stacked layout only). */
   newKeys: Set<string>;
+  /** Runs an action card's button (sandbox funding). */
+  onAction?: (action: NonNullable<Entry['action']>) => void;
 }
 
 // New entries/groups animate their real HEIGHT (0 → auto), so the cards below are
@@ -292,7 +296,52 @@ const EXPAND_EXIT = { height: 0, opacity: 0 };
 // The "new call" bullet is torph-morphed in/out before the title.
 const TITLE_MORPH_MS = 300;
 
-function FeedEntry({ entry, now, isNew }: { entry: Entry; now: number; isNew: boolean }) {
+/**
+ * An ACTION card — the panel standing in for something the sandbox can't do for
+ * real. Deliberately looks unlike a request card (no method, path or curl): it
+ * isn't traffic, it's a button that CAUSES traffic.
+ */
+function ActionBlock({
+  entry,
+  now,
+  onAction,
+}: {
+  entry: Entry;
+  now: number;
+  onAction?: (action: NonNullable<Entry['action']>) => void;
+}) {
+  return (
+    <div className={clsx(styles.callCard, styles.actionCard)}>
+      <div className={styles.entryHeader}>
+        <span className={styles.entryTitleRow}>
+          <span className={styles.entryTitle}>{stepTitle(entry)}</span>
+        </span>
+        <FeedTimestamp timestamp={entry.createdAt} now={now} />
+      </div>
+      {entry.note && <p className={styles.actionNote}>{entry.note}</p>}
+      <button
+        type="button"
+        className={styles.actionBtn}
+        disabled={entry.actionDone}
+        onClick={() => entry.action && onAction?.(entry.action)}
+      >
+        {entry.actionDone ? 'Funding simulated' : (entry.actionLabel ?? 'Run')}
+      </button>
+    </div>
+  );
+}
+
+function FeedEntry({
+  entry,
+  now,
+  isNew,
+  onAction,
+}: {
+  entry: Entry;
+  now: number;
+  isNew: boolean;
+  onAction?: (action: NonNullable<Entry['action']>) => void;
+}) {
   return (
     <motion.div
       className={styles.feedEntry}
@@ -302,7 +351,11 @@ function FeedEntry({ entry, now, isNew }: { entry: Entry; now: number; isNew: bo
       transition={FEED_IN}
     >
       <motion.div initial={RISE_HIDDEN} animate={RISE_REST} transition={FEED_IN}>
-        <ApiCallBlock entry={entry} now={now} isNew={isNew} />
+        {entry.action ? (
+          <ActionBlock entry={entry} now={now} onAction={onAction} />
+        ) : (
+          <ApiCallBlock entry={entry} now={now} isNew={isNew} />
+        )}
       </motion.div>
     </motion.div>
   );
@@ -312,10 +365,12 @@ function FeedGroup({
   group,
   now,
   newKeys,
+  onAction,
 }: {
   group: EntryGroup;
   now: number;
   newKeys: Set<string>;
+  onAction?: (action: NonNullable<Entry['action']>) => void;
 }) {
   return (
     <motion.article
@@ -331,16 +386,23 @@ function FeedGroup({
         animate={RISE_REST}
         transition={FEED_IN}
       >
-        <div className={styles.groupDivider}>
-          <SectionDivider label={group.groupLabel} showFlowIcon />
-        </div>
+        {/* No flow headings: the feed reads as one stream of calls. Groups still
+            exist (they batch a flow's calls for ordering + the enter animation),
+            they're just not labelled — restore by rendering a SectionDivider with
+            `group.groupLabel` here. */}
         <div className={styles.groupEntries}>
           {/* initial={false}: entries that arrive with a brand-new group don't
               double-animate — the group's own height-expand reveals them. Calls
               added to an existing group expand + rise in one at a time. */}
           <AnimatePresence initial={false}>
             {group.entries.map((entry) => (
-              <FeedEntry key={entry.key} entry={entry} now={now} isNew={newKeys.has(entry.key)} />
+              <FeedEntry
+                key={entry.key}
+                entry={entry}
+                now={now}
+                isNew={newKeys.has(entry.key)}
+                onAction={onAction}
+              />
             ))}
           </AnimatePresence>
         </div>
@@ -349,7 +411,7 @@ function FeedGroup({
   );
 }
 
-export function ApiCallList({ entries, newKeys }: ApiCallListProps) {
+export function ApiCallList({ entries, newKeys, onAction }: ApiCallListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   // Re-sample every second so the live seconds (5s…59s) count up smoothly and a
   // new call never renders the rest against a stale clock. Cheap: the per-call
@@ -380,7 +442,13 @@ export function ApiCallList({ entries, newKeys }: ApiCallListProps) {
             on the groups below — no snap). */}
         <AnimatePresence initial={false}>
           {groups.map((group) => (
-            <FeedGroup key={group.groupId} group={group} now={now} newKeys={newKeys} />
+            <FeedGroup
+              key={group.groupId}
+              group={group}
+              now={now}
+              newKeys={newKeys}
+              onAction={onAction}
+            />
           ))}
         </AnimatePresence>
       </div>

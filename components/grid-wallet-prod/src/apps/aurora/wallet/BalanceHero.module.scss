@@ -39,3 +39,10 @@
 .decimals {
   color: var(--ios-label-secondary);
 }
+
+/* The account's total under the available headline (balance vs totalBalance). */
+.total {
+  @include ios.ios-text-footnote;
+  margin: 2px 0 0;
+  color: var(--ios-label-secondary);
+}

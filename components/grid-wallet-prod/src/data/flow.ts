@@ -23,20 +23,17 @@ export type ScreenId =
   | 'card-reveal'
   | 'tap';
 
-export interface Tx {
-  kind: 'bank' | 'card' | 'coffee' | 'send';
-  name: string;
-  sub: string;
-  amount: string;
-  positive?: boolean;
-}
+/** Activity rows are the wallet brain's own row shape, so the real
+ *  `GET /transactions` rows pass through demo state to the skin that renders
+ *  them unchanged (type-only import from a leaf module: no cycle). */
+import type { WalletListItemData } from '@/apps/shared/wallet/types';
 
 export interface PhoneState {
   screen: ScreenId;
   balance: string;
   hasCard: boolean;
   cardActivated: boolean;
-  activity: Tx[];
+  activity: WalletListItemData[];
   note?: string;
 }
 
@@ -53,6 +50,11 @@ export interface ApiCall {
   /** Inbound webhook (Grid → your endpoint): `path` is your full URL, and the
    *  curl drops the Grid `Authorization` header (Grid signs it instead). */
   inbound?: boolean;
+  /** Real Grid response body (Phase 2). When set, the panel renders THIS
+   *  instead of the synthesized stub. */
+  resBody?: unknown;
+  /** Real HTTP status code (Phase 2), used to tint error responses. */
+  realStatus?: number;
 }
 
 const AUTH_LABEL: Record<AuthMethod, string> = {

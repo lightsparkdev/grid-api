@@ -1,0 +1,87 @@
+@use '../../shared/fill-button' as fill;
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Sits in the wallet sheet's stack — same 16px gutters as the insight-card row. */
+.wrap {
+  padding: 8px 16px;
+}
+
+/* Squircle corners come from useSquircleClip (clip-path), like the insight cards. */
+.card {
+  @include fill.wallet-elevated-card;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  color: var(--ios-label-primary);
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ios-fill-tertiary);
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+    pointer-events: none;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+
+  &:active::after {
+    opacity: 1;
+    background: var(--ios-fill-secondary);
+  }
+
+  &[aria-busy='true'] {
+    cursor: default;
+    opacity: 0.6;
+  }
+}
+
+/* The activity-row graphic treatment: 44px tertiary-fill square, 24px glyph. */
+.tile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-tertiary);
+  color: var(--ios-label-primary);
+}
+
+.labels {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.title {
+  @include ios.ios-text-subheadline;
+  color: var(--ios-label-primary);
+}
+
+.sub {
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+}
+
+.chevron {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--ios-label-tertiary, rgba(60, 60, 67, 0.3));
+}
