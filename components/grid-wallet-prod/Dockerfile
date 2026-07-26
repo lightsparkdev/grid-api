@@ -19,7 +19,14 @@ WORKDIR /app
 # postinstall would otherwise pull ~400MB of browsers into the build.
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 COPY package.json package-lock.json ./
-RUN npm ci
+# --ignore-scripts matches vercel.json's installCommand for this component.
+# Without it the build dies in the deps stage: the seven @central-icons-react
+# packages each run a postinstall license-check.js that hard-fails unless
+# CENTRAL_LICENSE_KEY is in the environment. Vercel has always skipped these
+# scripts, which is why the Vercel deployments work and this Dockerfile (added
+# unbuilt in #740) never did. None of this component's dependencies need a
+# postinstall to produce a working build.
+RUN npm ci --ignore-scripts
 
 # ── build ─────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
