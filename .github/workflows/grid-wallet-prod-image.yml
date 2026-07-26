@@ -1,0 +1,66 @@
+name: grid-wallet-prod image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'components/grid-wallet-prod/**'
+      - '.github/workflows/grid-wallet-prod-image.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: grid-wallet-prod-image
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # The tooling-prod cluster is Graviton (m8g), so the image must be
+    # linux/arm64. A native ARM runner avoids QEMU emulation, which makes a
+    # Next.js build painfully slow. NOTE: no other workflow in this repo uses
+    # an ARM label yet — if this job sits in `queued`, GitHub-hosted ARM
+    # runners are not enabled for the org and the fallback is
+    # docker/setup-qemu-action + docker/setup-buildx-action on ubuntu-latest.
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::405785876631:role/github-actions-grid-wallet-prod
+          aws-region: us-west-2
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        working-directory: components/grid-wallet-prod
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          TAG="sha-${GITHUB_SHA}"
+          IMAGE="${REGISTRY}/grid-wallet-prod:${TAG}"
+
+          # The ECR repo is IMMUTABLE-tagged, so re-pushing an existing tag is
+          # a hard failure. A re-run (manual retry, cancelled-then-resumed job)
+          # must be a no-op rather than a red build.
+          if aws ecr describe-images --repository-name grid-wallet-prod \
+               --image-ids imageTag="$TAG" --region us-west-2 >/dev/null 2>&1; then
+            echo "$IMAGE already present — nothing to do."
+            exit 0
+          fi
+
+          # NEXT_PUBLIC_* is inlined by Next at BUILD time, so the sandbox flag
+          # is a build arg, not a runtime var. It is written literally here and
+          # has NO default in the Dockerfile: a production image would be a
+          # separate workflow and a separate ECR repo, so this flag cannot leak
+          # by inheritance.
+          docker build \
+            --platform linux/arm64 \
+            --build-arg NEXT_PUBLIC_GRID_SANDBOX=true \
+            -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "Pushed $IMAGE"
