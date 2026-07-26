@@ -47,11 +47,26 @@ jobs:
           # The ECR repo is IMMUTABLE-tagged, so re-pushing an existing tag is
           # a hard failure. A re-run (manual retry, cancelled-then-resumed job)
           # must be a no-op rather than a red build.
-          if aws ecr describe-images --repository-name grid-wallet-prod \
-               --image-ids imageTag="$TAG" --region us-west-2 >/dev/null 2>&1; then
+          #
+          # Distinguish "tag absent" from "the call failed". A bare
+          # `if aws ... >/dev/null 2>&1` is exempt from set -e and treats an
+          # IAM/network error identically to a missing image, so a transient
+          # failure would fall through to a build and then die on the immutable
+          # push. Only ImageNotFoundException means "go build".
+          set +e
+          describe_err=$(aws ecr describe-images --repository-name grid-wallet-prod \
+                           --image-ids imageTag="$TAG" --region us-west-2 2>&1 >/dev/null)
+          describe_rc=$?
+          set -e
+          if [ "$describe_rc" -eq 0 ]; then
             echo "$IMAGE already present — nothing to do."
             exit 0
+          elif ! grep -q 'ImageNotFoundException' <<<"$describe_err"; then
+            echo "::error::describe-images failed for a reason other than a missing tag:"
+            echo "$describe_err"
+            exit 1
           fi
+          echo "$TAG not present — building."
 
           # NEXT_PUBLIC_* is inlined by Next at BUILD time, so the sandbox flag
           # is a build arg, not a runtime var. It is written literally here and
