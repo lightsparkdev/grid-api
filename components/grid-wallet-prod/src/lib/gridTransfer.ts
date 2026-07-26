@@ -15,7 +15,8 @@ export interface RawQuote {
   paymentInstructions?: { accountOrWalletInfo?: { accountType?: string; payloadToSign?: string } }[];
 }
 
-const CUSTOMER = '{customerId}';
+/** Substituted with the real id by the proxy (allowlist.substituteCustomerId). */
+export const CUSTOMER = '{customerId}';
 const externalAccountCache = new Map<string, string>(); // destSignature -> ExternalAccount id
 
 /** Stable signature for a destination so we create it at most once per session. */

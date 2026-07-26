@@ -1,6 +1,6 @@
 /** Pure helpers for the Grid proxy — no Next runtime, unit-tested directly. */
 
-const ID = '[^/?]+'; // a path segment (e.g. AuthMethod:..., Quote:..., InternalAccount:...)
+const ID = '[^/?]+'; // a path segment (e.g. AuthMethod:..., Quote:..., Transaction:...)
 
 export const GRID_ALLOWLIST: { method: string; pattern: RegExp }[] = [
   { method: 'GET', pattern: new RegExp('^/auth/credentials$') },
@@ -8,14 +8,12 @@ export const GRID_ALLOWLIST: { method: string; pattern: RegExp }[] = [
   { method: 'POST', pattern: new RegExp(`^/auth/credentials/${ID}/challenge$`) },
   { method: 'POST', pattern: new RegExp(`^/auth/credentials/${ID}/verify$`) },
   { method: 'GET', pattern: new RegExp('^/customers/internal-accounts$') },
-  { method: 'GET', pattern: new RegExp('^/platform/internal-accounts$') },
   { method: 'GET', pattern: new RegExp('^/customers/external-accounts$') },
   { method: 'POST', pattern: new RegExp('^/customers/external-accounts$') },
   { method: 'GET', pattern: new RegExp('^/transactions$') },
   { method: 'GET', pattern: new RegExp(`^/transactions/${ID}$`) },
   { method: 'POST', pattern: new RegExp('^/quotes$') },
   { method: 'POST', pattern: new RegExp(`^/quotes/${ID}/execute$`) },
-  { method: 'POST', pattern: new RegExp(`^/sandbox/internal-accounts/${ID}/fund$`) },
   { method: 'POST', pattern: new RegExp('^/sandbox/send$') },
 ];
 

@@ -45,7 +45,15 @@ export type ReceivedPayment =
 /** What a just-confirmed transfer is going to — lets the Activity row + toast
  *  reflect the real bank/recipient instead of a placeholder. */
 export type TransferActivity =
-  | { kind: 'bank'; countryCode: string; bankName: string; last4: string; recipientName: string }
+  | {
+      kind: 'bank';
+      countryCode: string;
+      bankName: string;
+      /** Display label for the account — "•••• 1234" for a number, the handle
+       *  itself for UPI/PIX (see moneySheet.accountLabel). */
+      accountLabel: string;
+      recipientName: string;
+    }
   | { kind: 'crypto'; address: string; network: string; logo: string };
 
 /** Merchant category for a tap-to-pay / transaction row. Each skin's WalletListItem

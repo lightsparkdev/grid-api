@@ -78,7 +78,7 @@ export function makeTransferRow(
     };
   }
   const flag = dest ? `/assets/flags/${dest.countryCode}.svg` : '/assets/flags/us.svg';
-  const bankLabel = dest ? `${dest.bankName} (•••• ${dest.last4})` : 'Bank account';
+  const bankLabel = dest ? `${dest.bankName} (${dest.accountLabel})` : 'Bank account';
   if (mode === 'send') {
     // Sent to a person → contact avatar (initials + flag); only a destination-less
     // edge case falls back to the flag tile.

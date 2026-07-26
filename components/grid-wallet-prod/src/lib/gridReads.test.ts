@@ -4,6 +4,8 @@ import {
   transactionToRow,
   fetchActivity,
   fetchDepositInstructions,
+  fetchExternalAccounts,
+  externalAccountKey,
   fundingInstructionRows,
   type RawTransaction,
 } from './gridReads';
@@ -194,5 +196,136 @@ describe('fetchActivity', () => {
   it('returns nothing when the read fails, rather than throwing at the caller', async () => {
     mockedFetch.mockResolvedValue(envelope(403, { error: { code: 'PROXY_NOT_ALLOWED' } }));
     expect(await fetchActivity(() => {})).toEqual([]);
+  });
+});
+
+describe('fetchExternalAccounts', () => {
+  beforeEach(() => mockedFetch.mockReset());
+
+  const usd = (id: string, accountNumber: string, routingNumber = '021000021') => ({
+    id,
+    status: 'ACTIVE',
+    currency: 'USD',
+    accountInfo: { accountType: 'USD_ACCOUNT', accountNumber, routingNumber },
+  });
+  const reply = (data: unknown[]) =>
+    mockedFetch.mockResolvedValue({
+      request: { method: 'GET' as const, path: '/customers/external-accounts', headers: {} },
+      response: { status: 200, body: { data } },
+    });
+
+  // The same bank account registered twice is one account, and the row should
+  // point at the most recent registration.
+  it('collapses accounts that share routing + account number, keeping the newest', async () => {
+    reply([
+      usd('ExternalAccount:old', '1234567890'),
+      usd('ExternalAccount:other', '9999999999'),
+      usd('ExternalAccount:new', '1234567890'),
+    ]);
+    const rows = await fetchExternalAccounts(() => {});
+    expect(rows.map((r) => r.id)).toEqual(['ExternalAccount:new', 'ExternalAccount:other']);
+  });
+
+  it('treats formatting differences as the same account', () => {
+    expect(externalAccountKey(usd('a', '1234 5678 90', '021-000-021'))).toBe(
+      externalAccountKey(usd('b', '1234567890', '021000021')),
+    );
+  });
+
+  it('keeps accounts that differ only by routing number', async () => {
+    reply([usd('ExternalAccount:a', '1234567890', '111111111'), usd('ExternalAccount:b', '1234567890', '222222222')]);
+    expect((await fetchExternalAccounts(() => {})).length).toBe(2);
+  });
+
+  it('collapses IBANs case- and space-insensitively', () => {
+    const iban = (id: string, value: string) => ({
+      id,
+      accountInfo: { accountType: 'EUR_ACCOUNT', iban: value },
+    });
+    expect(externalAccountKey(iban('a', 'DE89 3704 0044 0532 0130 00'))).toBe(
+      externalAccountKey(iban('b', 'de89370400440532013000')),
+    );
+  });
+
+  it('drops unsupported corridors and inactive accounts', async () => {
+    reply([
+      usd('ExternalAccount:ok', '1111111111'),
+      { id: 'ExternalAccount:mxn', status: 'ACTIVE', accountInfo: { accountType: 'MXN_ACCOUNT', clabeNumber: '012180001234567895' } },
+      { ...usd('ExternalAccount:closed', '2222222222'), status: 'CLOSED' },
+    ]);
+    expect((await fetchExternalAccounts(() => {})).map((r) => r.id)).toEqual(['ExternalAccount:ok']);
+  });
+});
+
+describe('wallet-relative direction', () => {
+  const WALLET = 'InternalAccount:wallet';
+  const FIAT = 'InternalAccount:fiat';
+
+  // Grid records an inbound PULL as a DEBIT (it debits the external source), so
+  // direction alone labelled arriving money "Money sent".
+  const pull: RawTransaction = {
+    id: 'Transaction:pull',
+    type: 'OUTGOING',
+    direction: 'DEBIT',
+    status: 'COMPLETED',
+    createdAt: '2026-07-25T15:44:28Z',
+    sentAmount: usdb(100_000_000),
+    receivedAmount: { amount: 100_000_000, currency: { code: 'USDB', decimals: 6 } },
+    source: { accountId: 'ExternalAccount:bank' },
+    destination: { accountId: WALLET },
+  };
+
+  it('reads a pull into the wallet as money added', () => {
+    const row = transactionToRow(pull, WALLET);
+    expect(row.title).toBe('Money added');
+    expect(row.flow).toBe('in');
+    expect(row.amount).toBe('+$100.00');
+  });
+
+  it('still reads it by direction when the wallet is unknown', () => {
+    expect(transactionToRow(pull).title).toBe('Money sent');
+  });
+
+  it('reads a transfer out of the wallet as money sent', () => {
+    const out: RawTransaction = {
+      ...pull,
+      id: 'Transaction:out',
+      source: { accountId: WALLET },
+      destination: { accountId: 'ExternalAccount:bank' },
+      sentAmount: usdb(5_000_000),
+      receivedAmount: mxn(8389),
+    };
+    const row = transactionToRow(out, WALLET);
+    expect(row.flow).toBe('out');
+    expect(row.amount).toBe('$5.00');
+    expect(row.detail).toBe('Sent as MXN');
+  });
+
+  // Funding arrives in two legs; listing both would show the same money twice.
+  it('lists only the legs that touch the wallet', async () => {
+    mockedFetch.mockReset();
+    mockedFetch.mockResolvedValue({
+      request: { method: 'GET' as const, path: '/transactions', headers: {} },
+      response: {
+        status: 200,
+        body: {
+          data: [
+            pull,
+            {
+              id: 'Transaction:wire',
+              type: 'INCOMING',
+              direction: 'CREDIT',
+              status: 'COMPLETED',
+              createdAt: '2026-07-25T15:38:06Z',
+              receivedAmount: { amount: 250, currency: { code: 'USD', decimals: 2 } },
+              source: { sourceType: 'UMA_ADDRESS' },
+              destination: { accountId: FIAT },
+            },
+          ],
+        },
+      },
+    });
+    const rows = await fetchActivity(() => {}, WALLET);
+    expect(rows.map((r) => r.id)).toEqual(['Transaction:pull']);
   });
 });

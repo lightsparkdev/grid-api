@@ -94,3 +94,74 @@
 :global(html:not([data-layout='stacked'])) .headerStacked {
   display: none;
 }
+
+/* ── Kind filter ──────────────────────────────────────────────────────────────
+   Sits under the header, above the feed: which kinds of traffic to show. Chips
+   rather than form rows — this is a view control, not input. */
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0 $layout-laptop-content-padding var(--spacing-md);
+
+  @media (max-width: $breakpoint-layout-mobile) {
+    padding-left: var(--spacing-xl);
+    padding-right: var(--spacing-xl);
+  }
+}
+
+.filterChip {
+  all: unset;
+  corner-shape: var(--corner-shape);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 5px 10px 5px 6px;
+  border: 0.5px solid var(--border-tertiary);
+  border-radius: var(--corner-radius-sm);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+
+  &:hover {
+    background: var(--color-alpha-black-04);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-06);
+    }
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-secondary);
+  }
+
+  /* Unchecked reads as muted, so what's hidden is obvious at a glance. */
+  &[aria-pressed='false'] {
+    .filterLabel,
+    .filterCount {
+      color: var(--text-tertiary);
+    }
+  }
+}
+
+.filterCheck {
+  flex-shrink: 0;
+}
+
+.filterLabel {
+  @include label-sm;
+  color: var(--text-primary);
+}
+
+.filterCount {
+  @include label-sm;
+  color: var(--text-tertiary);
+  font-feature-settings: 'tnum' 1;
+}
+
+.filteredEmpty {
+  @include body;
+  margin: 0;
+  padding: var(--spacing-lg) $layout-laptop-content-padding;
+  color: var(--text-secondary);
+}

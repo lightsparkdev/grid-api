@@ -135,6 +135,17 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const [activity, setActivity] = useState<WalletListItemData[]>([]);
   const pendingCents = useRef(0);
   const pendingActivity = useRef<TransferActivity | null>(null);
+  // The outbound row awaiting a real outcome (see settleTransfer).
+  const pendingRow = useRef<{
+    id: string;
+    mode: WalletTransferMode;
+    cents: number;
+    sentTo: string;
+  } | null>(null);
+  // A failure can land BEFORE the row exists: the quote is created when the amount
+  // is committed, while the row appears on Face ID confirm. Remember it so the
+  // confirm reports the failure instead of opening a pending row nothing settles.
+  const failedBeforeConfirm = useRef(false);
   const availableCents = parseCents(balance) + deltaCents;
   // `balance` is the host's source of truth (the real book balance).
   // `deltaCents` is ONLY the optimistic bridge for Add money's real (async)
@@ -173,6 +184,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const weeklySpentCents = spendBars.reduce((sum, cents) => sum + cents, 0);
 
   const openSheet = (mode: MoneySheetMode) => {
+    failedBeforeConfirm.current = false;
     setSheetMode(mode);
     setSheetOpen(true);
   };
@@ -202,13 +214,16 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   // WalletListCard instance keeps its own fresh-row bookkeeping — the grow-in
   // insert still runs per list. Server rows carry Grid transaction ids and this
   // session's carry local ones, so the id-keyed reveal can't collide.
-  const homeActivity = useMemo(
-    () =>
-      [...activity, ...transactions, ...(serverActivity ?? [])].sort(
-        (a, b) => b.timestamp - a.timestamp,
-      ),
-    [activity, transactions, serverActivity],
-  );
+  const homeActivity = useMemo(() => {
+    // Deduped by id: a local row and a server row for the same transaction would
+    // otherwise both render (the local one is dropped on settle, but a refresh
+    // can land first).
+    const byId = new Map<string, WalletListItemData>();
+    for (const row of [...activity, ...transactions, ...(serverActivity ?? [])]) {
+      if (!byId.has(row.id)) byId.set(row.id, row);
+    }
+    return Array.from(byId.values()).sort((a, b) => b.timestamp - a.timestamp);
+  }, [activity, transactions, serverActivity]);
 
   const isOpen = cardView !== 'closed';
   const isIssuance = cardView === 'intro' || cardView === 'creating' || cardView === 'ready';
@@ -484,15 +499,71 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
           ? dest.recipientName || dest.bankName
           : 'recipient';
     // 'add' returned above — arrivals are announced by the webhook, not here.
+    //
+    // An outbound transfer is SUBMITTED at this point, not done: the quote still
+    // has to execute and the transaction still has to reach a terminal status
+    // (~60s in sandbox), and either can fail. So the row goes in as PENDING and
+    // the toast says submitted; `settleTransfer` below resolves it from the real
+    // outcome. Claiming "withdrawn from balance" here left a row behind for
+    // transfers whose quote failed.
+    // The quote already failed (before this confirm) — say so and add no row.
+    if (failedBeforeConfirm.current) {
+      failedBeforeConfirm.current = false;
+      showToast(
+        mode === 'withdraw'
+          ? 'Withdrawal failed — your balance is unchanged'
+          : 'Payment failed — your balance is unchanged',
+      );
+      return;
+    }
+    const pendingId = `pending-${mode}-${Date.now()}`;
+    pendingRow.current = { id: pendingId, mode, cents, sentTo };
     showToast(
       mode === 'withdraw'
-        ? `${toastUsd(cents)} withdrawn from balance`
-        : `${toastUsd(cents)} sent to ${sentTo}`,
+        ? `${toastUsd(cents)} withdrawal submitted`
+        : `${toastUsd(cents)} payment submitted`,
     );
     window.clearTimeout(sheetInsertTimer.current);
     sheetInsertTimer.current = window.setTimeout(() => {
-      setActivity((prev) => [makeTransferRow(mode, cents, dest), ...prev]);
+      const row = makeTransferRow(mode, cents, dest);
+      setActivity((prev) => [{ ...row, id: pendingId, detail: `${row.detail} · Pending` }, ...prev]);
     }, SHEET_INSERT_DELAY_MS);
+  };
+
+  /**
+   * The real outcome of the outbound transfer that is currently pending — driven
+   * by the host's execute + transaction poll, and by Grid's OUTGOING_PAYMENT
+   * webhook. Settles the pending row instead of leaving the optimistic one:
+   * success drops the "Pending" suffix, failure REMOVES the row (nothing left the
+   * balance) and says so. Idempotent — whichever signal arrives first wins.
+   */
+  const settleTransfer = (ok: boolean) => {
+    const pending = pendingRow.current;
+    if (!pending) {
+      // Nothing pending yet: a quote failed between committing the amount and the
+      // confirm. Hold it so the confirm reports the failure (see finishTransfer).
+      if (!ok) failedBeforeConfirm.current = true;
+      return;
+    }
+    pendingRow.current = null;
+    if (ok) {
+      // Drop the local row: the host refreshed the ledger before reporting
+      // success, so Grid's own row for this transaction is already in
+      // `serverActivity`. Keeping both would show the transfer twice.
+      setActivity((prev) => prev.filter((r) => r.id !== pending.id));
+      showToast(
+        pending.mode === 'withdraw'
+          ? `${toastUsd(pending.cents)} withdrawn from balance`
+          : `${toastUsd(pending.cents)} sent to ${pending.sentTo}`,
+      );
+      return;
+    }
+    setActivity((prev) => prev.filter((r) => r.id !== pending.id));
+    showToast(
+      pending.mode === 'withdraw'
+        ? 'Withdrawal failed — your balance is unchanged'
+        : 'Payment failed — your balance is unchanged',
+    );
   };
   useEffect(() => () => window.clearTimeout(sheetInsertTimer.current), []);
 
@@ -547,7 +618,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     pendingActivity.current = {
       kind: 'bank',
       bankName: 'Bank transfer',
-      last4: accountLast4,
+      accountLabel: accountLast4 ? `•••• ${accountLast4}` : 'account',
       countryCode: 'us',
       recipientName: '',
     };
@@ -611,6 +682,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     setToast,
     showToast,
     simulateBankDeposit,
+    settleTransfer,
     // Derived money / activity
     availableCents,
     earningsTodayCents,

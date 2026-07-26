@@ -287,6 +287,13 @@
   color: var(--text-primary);
 }
 
+/* Not a tab — the single label an inbound webhook card shows in place of the
+   Request/Response pair. Same type and metrics, no pointer affordance. */
+.tabStatic {
+  cursor: default;
+  pointer-events: none;
+}
+
 .copyBtn {
   all: unset;
   corner-shape: var(--corner-shape);

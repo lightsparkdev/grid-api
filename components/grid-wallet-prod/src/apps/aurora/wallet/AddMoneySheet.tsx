@@ -37,7 +37,7 @@ import {
   DEPOSIT_CHAINS,
   SEND_NETWORKS,
   DEFAULT_SEND_NETWORK,
-  accountLast4,
+  accountLabel,
   fieldLabel,
   type MoneySheet,
   type Step,
@@ -467,7 +467,7 @@ export function AddMoneySheet({
       <span className={styles.sourceLabels}>
         <span className={styles.rowTitle}>
           {selectedBank
-            ? `${selectedBank.bankName} (•••• ${accountLast4(selectedBank.values)})`
+            ? `${selectedBank.bankName} (${accountLabel(selectedBank.values)})`
             : 'Bank account'}
         </span>
         <span className={styles.rowSub}>{localCurrency} bank account</span>
@@ -551,7 +551,7 @@ export function AddMoneySheet({
       <span className={styles.sourceLabels}>
         <span className={styles.rowTitle}>{selectedBank.beneficiary}</span>
         <span className={styles.rowSub}>
-          {selectedBank.bankName} •••• {accountLast4(selectedBank.values)}
+          {selectedBank.bankName} {accountLabel(selectedBank.values)}
         </span>
       </span>
     </div>
@@ -1191,14 +1191,14 @@ export function AddMoneySheet({
                                 <>
                                   <span className={styles.rowTitle}>{b.beneficiary}</span>
                                   <span className={styles.rowSub}>
-                                    {b.bankName} •••• {accountLast4(b.values)}
+                                    {b.bankName} {accountLabel(b.values)}
                                   </span>
                                   <span className={styles.rowSub}>{currencyFor(b.country)}</span>
                                 </>
                               ) : (
                                 <>
                                   <span className={styles.rowTitle}>
-                                    {b.bankName} (•••• {accountLast4(b.values)})
+                                    {b.bankName} ({accountLabel(b.values)})
                                   </span>
                                   <span className={styles.rowSub}>{b.country.name}</span>
                                   <span className={styles.rowSub}>{currencyFor(b.country)}</span>

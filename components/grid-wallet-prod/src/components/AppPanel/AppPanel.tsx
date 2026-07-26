@@ -41,6 +41,7 @@ export interface DemoLogicPhoneSlice {
   depositInstructions: DepositInstructions | null;
   totalCents: number;
   walletToast: { nonce: number; text: string } | null;
+  transferOutcome: { nonce: number; ok: boolean } | null;
   storedBanks: SavedBank[];
   onSelectStoredBank: (externalAccountId: string | null) => void;
   onDepositView: (view: { label: string; currency: string; cents?: number } | null) => void;
@@ -103,6 +104,7 @@ function toPhoneProps(p: DemoLogicPhoneSlice): PhoneProps {
     depositInstructions: p.depositInstructions,
     totalCents: p.totalCents,
     walletToast: p.walletToast,
+    transferOutcome: p.transferOutcome,
     storedBanks: p.storedBanks,
     onSelectStoredBank: p.onSelectStoredBank,
     onDepositView: p.onDepositView,

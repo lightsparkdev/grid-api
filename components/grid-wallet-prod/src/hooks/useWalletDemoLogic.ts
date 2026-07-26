@@ -34,15 +34,16 @@ import {
   fetchActivity,
   fetchDepositInstructions,
   fetchExternalAccounts,
+  fetchFiatBalance,
   transactionToRow,
   type DepositInstructions,
   type RawTransaction,
 } from '@/lib/gridReads';
 import {
-  resolvePlatformUsdAccountId,
-  sandboxFundPlatform,
-  onRampQuoteBodyFor,
+  realtimeFundingQuoteBodyFor,
+  SANDBOX_FUNDING_CURRENCY,
   sandboxSendForQuote,
+  sweepQuoteBodyFor,
 } from '@/lib/gridFunding';
 import {
   ensureExternalAccount,
@@ -150,6 +151,14 @@ export function useWalletDemoLogic() {
   // Toast the wallet should show, bumped by an arrival webhook (the brain owns
   // the toast surface, so it rides a nonce down like the other one-shots).
   const [walletToast, setWalletToast] = useState<{ nonce: number; text: string } | null>(null);
+  // Terminal outcome of the outbound transfer the phone is showing as pending —
+  // from the execute + transaction poll, or from an OUTGOING_PAYMENT webhook.
+  const [transferOutcome, setTransferOutcome] = useState<{ nonce: number; ok: boolean } | null>(
+    null,
+  );
+  const reportTransfer = useCallback((ok: boolean) => {
+    setTransferOutcome((prev) => ({ nonce: (prev?.nonce ?? 0) + 1, ok }));
+  }, []);
   // Accounts Grid already holds for this customer — the saved-banks list starts
   // from these rather than from an empty session.
   const [storedBanks, setStoredBanks] = useState<SavedBank[]>([]);
@@ -388,9 +397,13 @@ export function useWalletDemoLogic() {
         ...prev,
         {
           method: 'POST',
-          path: '/sandbox/internal-accounts/{id}/fund',
+          path: '/sandbox/send',
           title: 'Simulate an inbound transfer',
-          note: `No real ${view.currency} transfer is going to arrive in sandbox. Run the platform on-ramp that stands in for one — the calls it makes appear below.`,
+          note:
+            `No real ${view.currency} transfer is going to arrive in sandbox. Stand in for one with a real-time funding quote, settled the way a pushed wire would be — the calls appear below.` +
+            (view.currency === SANDBOX_FUNDING_CURRENCY
+              ? ''
+              : ` This platform only has ${SANDBOX_FUNDING_CURRENCY} real-time funding enabled, so the stand-in arrives as ${SANDBOX_FUNDING_CURRENCY}.`),
           simulateCents: view.cents,
           status: '200',
           action: 'simulate-funding' as EntryAction,
@@ -432,8 +445,11 @@ export function useWalletDemoLogic() {
             if (pull.transactionId) {
               status = await pollTransaction(pull.transactionId, logEnvelope(TRANSFER_LABEL.add, gid));
             }
-            await refreshBalance(TRANSFER_LABEL.add, gid);
+            await refreshLedger(TRANSFER_LABEL.add, gid);
             if (isCompletionStatus(200, status)) setCompleted((c) => ({ ...c, add: true }));
+            // If the funds landed as USD in the fiat account rather than as USDB,
+            // convert them straight away — the phone's balance IS the wallet.
+            await sweepUsdToWallet(gid);
           } catch (e) {
             console.error('[grid-demo] simulate push', e);
           }
@@ -468,16 +484,31 @@ export function useWalletDemoLogic() {
         const data = event.data as RawTransaction | undefined;
         const completed = event.type?.endsWith('.COMPLETED') && data?.status === 'COMPLETED';
         const credit = data?.direction ? data.direction === 'CREDIT' : data?.type === 'INCOMING';
+        // Outbound: Grid's OUTGOING_PAYMENT.* is the authoritative word on a
+        // transfer the phone is showing as pending. settleTransfer is idempotent,
+        // so whichever arrives first — this or the poll — wins.
+        if (event.type?.startsWith('OUTGOING_PAYMENT.') && data) {
+          if (data.status === 'COMPLETED') reportTransfer(true);
+          else if (['FAILED', 'REJECTED', 'REFUNDED', 'EXPIRED'].includes(data.status)) {
+            reportTransfer(false);
+          }
+        }
+        // USD landing in the fiat account is money that hasn't reached the wallet
+        // yet: convert it. The sweep re-reads the real balance, so a duplicate or
+        // out-of-order delivery can't move the same dollars twice.
+        if (completed && credit && data?.receivedAmount?.currency.code === 'USD') {
+          void sweepUsdToWallet(newGroupId());
+        }
         if (completed && data && credit) {
-          const row = transactionToRow(data);
+          const row = transactionToRow(data, getAccount()?.accountId);
           setWallet((w) => ({
             ...w,
             activity: [row, ...w.activity.filter((r) => r.id !== row.id)],
           }));
           setWalletToast((t) => ({ nonce: (t?.nonce ?? 0) + 1, text: `${row.amount} added to balance` }));
           setCompleted((c) => ({ ...c, add: true }));
-          void refreshBalance(TRANSFER_LABEL.add, newGroupId()).catch((e) =>
-            console.error('[grid-demo] webhook balance refresh', e),
+          void refreshLedger(TRANSFER_LABEL.add, newGroupId()).catch((e) =>
+            console.error('[grid-demo] webhook ledger refresh', e),
           );
         }
         pushCalls(
@@ -560,7 +591,7 @@ export function useWalletDemoLogic() {
           // details (what Add money → Bank transfer shows) into the same group.
           const [walletBalance, activity, deposit, externalAccounts] = await Promise.all([
             fetchBalance(logEnvelope(SIGN_IN_GROUP, gid)),
-            fetchActivity(logEnvelope(SIGN_IN_GROUP, gid)),
+            fetchActivity(logEnvelope(SIGN_IN_GROUP, gid), s.accountId),
             fetchDepositInstructions(logEnvelope(SIGN_IN_GROUP, gid)),
             fetchExternalAccounts(logEnvelope(SIGN_IN_GROUP, gid)),
           ]);
@@ -695,7 +726,12 @@ export function useWalletDemoLogic() {
           transactionId: quote.transactionId,
           idem,
         };
-      })().catch((e) => console.error('[grid-demo] create quote', e));
+      })().catch((e) => {
+        // The quote never came back, so there is nothing to execute: clear the
+        // pending row rather than let it read as a completed transfer.
+        reportTransfer(false);
+        console.error('[grid-demo] create quote', e);
+      });
     },
     [pushCalls, logEnvelope],
   );
@@ -704,6 +740,54 @@ export function useWalletDemoLogic() {
   // logged the moment "Add bank account" / "Add recipient" is confirmed. Real
   // POST /customers/external-accounts (reused, not recreated, per destination
   // for the rest of the session).
+  /**
+   * Money that arrives by bank transfer lands as USD in the customer's fiat
+   * account, not in the USDB wallet the phone shows. Convert it the moment it
+   * lands: quote the customer's own USD account into their wallet and execute it
+   * (no wallet signature — the wallet is the destination, not the source).
+   *
+   * Reads the real balance rather than trusting an amount from elsewhere, so it is
+   * safe to call speculatively: nothing there means nothing to do. Guarded against
+   * overlapping runs so two triggers (the arrival webhook and the simulated
+   * funding) can't quote the same dollars twice.
+   */
+  const sweepInFlight = useRef(false);
+  const sweepUsdToWallet = useCallback(
+    async (groupId: string) => {
+      if (sweepInFlight.current) return;
+      const acct = getAccount();
+      if (!acct) return;
+      sweepInFlight.current = true;
+      const log = logEnvelope(TRANSFER_LABEL.add, groupId);
+      try {
+        const fiat = await fetchFiatBalance(log);
+        if (!fiat || fiat.cents <= 0) return;
+        const idem = crypto.randomUUID();
+        const quote = await createQuote(
+          sweepQuoteBodyFor(fiat.accountId, acct.accountId, fiat.cents),
+          log,
+          idem,
+        );
+        const execEnv = await executeQuoteUnsigned(quote.quoteId, log, idem);
+        if (execEnv.response.status !== 200) {
+          throw new Error(`sweep execute failed: ${execEnv.response.status}`);
+        }
+        const status = quote.transactionId ? await pollTransaction(quote.transactionId, log) : null;
+        await refreshLedger(TRANSFER_LABEL.add, groupId);
+        if (isCompletionStatus(200, status)) setCompleted((c) => ({ ...c, add: true }));
+      } catch (e) {
+        // Truthful failure: the USD stays in the fiat account and the panel has
+        // every envelope. Nothing is faked on the phone.
+        console.error('[grid-demo] usd → usdb sweep', e);
+      } finally {
+        sweepInFlight.current = false;
+      }
+    },
+    // refreshBalance is declared below (same TDZ pattern as the transfer paths).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [logEnvelope],
+  );
+
   /** A stored account was picked in the sheet: quote against ITS id (no create). */
   const onSelectStoredBank = useCallback((externalAccountId: string | null) => {
     if (externalAccountId) pendingExternalAccountId.current = externalAccountId;
@@ -798,66 +882,50 @@ export function useWalletDemoLogic() {
             // catch / 403) — calls `onAddSettled` exactly once, undoing this
             // add's own optimistic bump by exactly its own cents.
             //
-            // `POST /sandbox/internal-accounts/{id}/fund` only mints BOOK
-            // balance — a direct fund of the customer's own wallet leaves it
-            // with no on-chain USDB, so any later outbound quote fails with
-            // INSUFFICIENT_FUNDS. The real on-ramp (fund the platform's USD
-            // account, then quote+execute platform -> customer wallet) is the
-            // only way "Add money" lands real, spendable balance.
+            // The stand-in for a real inbound transfer is a REAL-TIME FUNDING
+            // quote settled with `POST /sandbox/send` — the same settlement a
+            // pushed wire gets. Two earlier approaches were wrong:
+            //   - `POST /sandbox/internal-accounts/{id}/fund` on the customer's
+            //     own wallet mints BOOK balance only, so later outbound quotes
+            //     fail with INSUFFICIENT_FUNDS.
+            //   - funding the PLATFORM's USD account and on-ramping from it does
+            //     land spendable balance, but the transaction belongs to the
+            //     platform, so it never shows up in the customer's
+            //     `GET /transactions` — the arrival was missing from the phone's
+            //     activity list even though the balance moved.
             try {
-              const platformId = await resolvePlatformUsdAccountId(
+              const idem = crypto.randomUUID();
+              const quote = await createQuote(
+                realtimeFundingQuoteBodyFor(acct.accountId, cents),
                 logEnvelope(TRANSFER_LABEL[mode], gid),
+                idem,
               );
-              const res = await sandboxFundPlatform(
-                platformId,
+              const res = await sandboxSendForQuote(
+                quote.quoteId,
+                SANDBOX_FUNDING_CURRENCY,
                 cents,
                 logEnvelope(TRANSFER_LABEL[mode], gid),
               );
               if (res.ok) {
-                const idem = crypto.randomUUID();
-                const quote = await createQuote(
-                  onRampQuoteBodyFor(platformId, acct.accountId, cents),
-                  logEnvelope(TRANSFER_LABEL[mode], gid),
-                  idem,
-                );
-                const execEnv = await executeQuoteUnsigned(
-                  quote.quoteId,
-                  logEnvelope(TRANSFER_LABEL[mode], gid),
-                  idem,
-                );
-                let transactionStatus: string | null = null;
-                if (execEnv.response.status === 200 && quote.transactionId) {
-                  // Polls to a terminal status (COMPLETED expected — the
-                  // platform-sourced on-ramp settles fast in sandbox).
-                  transactionStatus = await pollTransaction(
-                    quote.transactionId,
-                    logEnvelope(TRANSFER_LABEL[mode], gid),
-                  );
-                }
-                if (isCompletionStatus(execEnv.response.status, transactionStatus)) {
-                  // The fund + on-ramp genuinely reached COMPLETED
-                  // server-side — the add DID happen, so `completed.add`
-                  // reflects that regardless of whether the balance
-                  // re-read below succeeds.
+                // Settled server-side; poll the transaction to a terminal status
+                // rather than assuming the 200 means the money landed.
+                const transactionStatus = quote.transactionId
+                  ? await pollTransaction(quote.transactionId, logEnvelope(TRANSFER_LABEL[mode], gid))
+                  : null;
+                if (isCompletionStatus(200, transactionStatus)) {
                   setCompleted((c) => ({ ...c, add: true }));
                 } else {
-                  // Execute itself failed, or the transaction never
-                  // confirmed COMPLETED (FAILED/REJECTED/REFUNDED/EXPIRED,
-                  // still PROCESSING at the poll deadline, or no
-                  // transactionId to track). A real, truthful outcome —
-                  // every envelope is already logged in the panel, so
-                  // don't fabricate the checkmark. `onAddSettled` below
-                  // still rolls back the optimistic bump regardless, same
-                  // as every other failure path in this branch.
+                  // Real, truthful outcome: the send was accepted but the
+                  // transaction never confirmed COMPLETED (or there was no
+                  // transactionId to track). Every envelope is in the panel, so
+                  // don't fabricate the checkmark.
                   console.error(
                     '[grid-demo]',
-                    new Error(
-                      `on-ramp did not complete: execute ${execEnv.response.status}, transaction ${transactionStatus ?? 'untracked'}`,
-                    ),
+                    new Error(`funding did not complete: transaction ${transactionStatus ?? 'untracked'}`),
                   );
                 }
                 try {
-                  await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
+                  await refreshLedger(TRANSFER_LABEL[mode], gid); // real balance + history
                 } catch (e) {
                   // One retry after a short delay before giving up — a
                   // transient read failure right after a real, successful
@@ -865,25 +933,22 @@ export function useWalletDemoLogic() {
                   // if a second try would have landed fine.
                   await sleep(REFRESH_RETRY_DELAY_MS);
                   try {
-                    await refreshBalance(TRANSFER_LABEL[mode], gid);
+                    await refreshLedger(TRANSFER_LABEL[mode], gid);
                   } catch (e2) {
-                    // Both reads failed: truthful log, no fabricated
-                    // balance. `onAddSettled` below still fires — the
-                    // optimistic bump must not outlive the flow either way —
-                    // so the display will under-count this add's real money
-                    // until some LATER balance change (another flow, or a
-                    // fresh sign-in) catches it up. That's the truthful
-                    // choice, not a bug: we don't know the exact new total,
-                    // so we stop pretending we do.
+                    // Both reads failed: truthful log, no fabricated balance.
+                    // `onAddSettled` below still fires — the optimistic bump must
+                    // not outlive the flow either way — so the display will
+                    // under-count this add's real money until some LATER balance
+                    // change (another flow, or a fresh sign-in) catches it up.
                     console.error('[grid-demo]', e2);
                   }
                 }
-                // Settle THIS add's bump now, in the SAME continuation as
-                // the refresh above (whether it landed or exhausted its
-                // retry) — same React batch as refreshBalance's setWallet,
-                // so `balance` and `deltaCents` move together with no
-                // intermediate frame where both count (the bug a concurrent
-                // second add's still-pending bump would otherwise hit).
+                // Settle THIS add's bump now, in the SAME continuation as the
+                // refresh above (whether it landed or exhausted its retry) — same
+                // React batch as refreshLedger's setWallet, so `balance` and
+                // `deltaCents` move together with no intermediate frame where both
+                // count (the bug a concurrent second add's still-pending bump
+                // would otherwise hit).
                 onAddSettled?.();
               } else if (res.status === 403) {
                 // Production keys: sandbox fund is forbidden — no real money
@@ -895,7 +960,7 @@ export function useWalletDemoLogic() {
                 setCompleted((c) => ({ ...c, add: true }));
                 onAddSettled?.();
               } else {
-                console.error('[grid-demo]', new Error(`sandbox fund failed: ${res.status}`));
+                console.error('[grid-demo]', new Error(`sandbox send failed: ${res.status}`));
                 onAddSettled?.();
               }
             } catch (e) {
@@ -942,16 +1007,20 @@ export function useWalletDemoLogic() {
                   logEnvelope(TRANSFER_LABEL[mode], gid),
                 );
               }
-              await refreshBalance(TRANSFER_LABEL[mode], gid); // real GET /customers/internal-accounts
+              // Outbound: refresh BEFORE reporting success, so the server's own row
+              // is present when the phone drops its local pending one.
+              await refreshLedger(TRANSFER_LABEL[mode], gid);
               if (isCompletionStatus(execEnv.response.status, transactionStatus)) {
                 setCompleted((c) => ({ ...c, [mode]: true }));
+                reportTransfer(true);
               } else {
                 // FAILED/REJECTED/REFUNDED/EXPIRED, still PROCESSING at the
                 // poll deadline, or no transactionId to track — a real,
                 // truthful outcome. The panel already logged every envelope;
-                // don't fabricate the checkmark. The sheet already closed
-                // optimistically before this callback ran, so the phone has
-                // no busy state to unstick — it's already recoverable.
+                // don't fabricate the checkmark, and tell the phone so the
+                // pending row comes back OFF rather than standing as a transfer
+                // that never happened.
+                reportTransfer(false);
                 console.error(
                   '[grid-demo]',
                   new Error(`transfer did not complete: transaction ${transactionStatus ?? 'untracked'}`),
@@ -960,14 +1029,19 @@ export function useWalletDemoLogic() {
             } else {
               // Real error (e.g. insufficient funds, an expired quote). The
               // panel already logged the truthful error via logEnvelope; the
-              // phone recovers with no balance change and no checkmark.
+              // phone drops the pending row and keeps the balance as it was.
+              reportTransfer(false);
               console.warn('[grid-demo] execute failed', execEnv.response.status);
             }
           } catch (e) {
+            reportTransfer(false);
             console.error('[grid-demo] execute', e);
           }
         })();
       } else {
+        // Nothing to execute — most often the quote itself failed, which is
+        // exactly the case that used to leave a "Withdrawn from balance" row.
+        reportTransfer(false);
         console.warn('[grid-demo] no pending quote/payload for outbound transfer');
       }
     },
@@ -987,6 +1061,27 @@ export function useWalletDemoLogic() {
       const b = await fetchBalance(logEnvelope(groupLabel, groupId));
       setWallet((w) => ({ ...w, balanceCents: b.spendableCents }));
       setTotalCents(b.totalCents);
+    },
+    [logEnvelope],
+  );
+
+  /**
+   * Money moved: re-read the balance AND the history. The Activity row for a
+   * completed transfer comes from `GET /transactions` — the real ledger — so it
+   * appears whether or not a webhook reached this machine. Without this, a
+   * simulated ACH pull moved the balance while the list stayed as it was at
+   * sign-in (webhooks are the only other row source, and they need a tunnel).
+   */
+  const refreshLedger = useCallback(
+    async (groupLabel: string, groupId: string) => {
+      const log = logEnvelope(groupLabel, groupId);
+      const walletAccountId = getAccount()?.accountId;
+      const [balance, activity] = await Promise.all([
+        fetchBalance(log),
+        fetchActivity(log, walletAccountId),
+      ]);
+      setWallet((w) => ({ ...w, balanceCents: balance.spendableCents, activity }));
+      setTotalCents(balance.totalCents);
     },
     [logEnvelope],
   );
@@ -1210,6 +1305,7 @@ export function useWalletDemoLogic() {
     depositInstructions,
     totalCents,
     walletToast,
+    transferOutcome,
     storedBanks,
     onSelectStoredBank,
     onDepositView,

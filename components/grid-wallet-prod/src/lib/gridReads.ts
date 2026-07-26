@@ -21,6 +21,8 @@ export interface RawTransaction {
   createdAt?: string;
   sentAmount?: RawCurrencyAmount;
   receivedAmount?: RawCurrencyAmount;
+  source?: { accountId?: string; sourceType?: string };
+  destination?: { accountId?: string; destinationType?: string };
   // Grid's CounterpartyInformation is a free-form key/value bag
   // (openapi/components/schemas/transactions/CounterpartyInformation.yaml);
   // FULL_NAME is the field the API actually populates for a person's name.
@@ -164,6 +166,31 @@ export interface WalletBalance {
   totalCents: number;
 }
 
+/**
+ * The customer's fiat account and what is sitting in it. Money pushed to the
+ * deposit instructions lands here as USD, NOT in the USDB wallet the phone shows,
+ * so the demo sweeps it across (see sweepUsdToWallet in the demo hook).
+ */
+export async function fetchFiatBalance(
+  log: LogFn,
+): Promise<{ accountId: string; cents: number } | null> {
+  const env = await gridFetch(
+    'GET',
+    `/customers/internal-accounts?customerId=${CUSTOMER}&type=INTERNAL_FIAT`,
+  );
+  log(env);
+  if (env.response.status !== 200) return null;
+  const body = env.response.body as {
+    data: { id: string; balance: { amount: number; currency: { decimals: number } } }[];
+  };
+  const account = body.data[0];
+  if (!account) return null;
+  return {
+    accountId: account.id,
+    cents: amountToCents(account.balance.amount, account.balance.currency.decimals),
+  };
+}
+
 export async function fetchBalance(log: LogFn): Promise<WalletBalance> {
   const env = await gridFetch(
     'GET',
@@ -209,11 +236,26 @@ function statusLabel(status: string): string | null {
   return status.charAt(0) + status.slice(1).toLowerCase();
 }
 
-/** Pure: one Grid transaction -> an Activity row (the shape every skin renders). */
-export function transactionToRow(t: RawTransaction): WalletListItemData {
-  const credit = t.direction ? t.direction === 'CREDIT' : t.type === 'INCOMING';
-  // Inbound: what landed. Outbound: what left the wallet (the destination leg
-  // can be another currency entirely — a USDB → MXN cash-out).
+/**
+ * Pure: one Grid transaction -> an Activity row (the shape every skin renders).
+ *
+ * `walletAccountId` decides the direction when given, and it has to: Grid records
+ * an inbound PULL as a `DEBIT` (it debits the external source account), so keying
+ * off `direction` alone labelled money arriving in the wallet as "Money sent".
+ * What matters for a wallet row is which side of the transfer the WALLET is on.
+ */
+export function transactionToRow(t: RawTransaction, walletAccountId?: string): WalletListItemData {
+  const intoWallet = !!walletAccountId && t.destination?.accountId === walletAccountId;
+  const outOfWallet = !!walletAccountId && t.source?.accountId === walletAccountId;
+  const credit = intoWallet
+    ? true
+    : outOfWallet
+      ? false
+      : t.direction
+        ? t.direction === 'CREDIT'
+        : t.type === 'INCOMING';
+  // Inbound: what landed in the wallet. Outbound: what left it (the destination
+  // leg can be another currency entirely — a USDB → MXN cash-out).
   const money = credit ? t.receivedAmount : t.sentAmount;
   const cents = money ? amountToCents(money.amount, money.currency.decimals) : 0;
   const settledAs = credit ? undefined : t.receivedAmount?.currency.code;
@@ -234,14 +276,29 @@ export function transactionToRow(t: RawTransaction): WalletListItemData {
   };
 }
 
-export async function fetchActivity(log: LogFn): Promise<WalletListItemData[]> {
+/**
+ * The wallet's history. When the wallet account id is known, only transactions
+ * that TOUCH it are listed: funding arrives in two legs (a credit into the fiat
+ * account, then the conversion into the wallet) and listing both would show the
+ * same money twice. The leg that credits the wallet is the one the balance moved
+ * on, so that's the row.
+ */
+export async function fetchActivity(
+  log: LogFn,
+  walletAccountId?: string,
+): Promise<WalletListItemData[]> {
   const env = await gridFetch('GET', `/transactions?customerId=${CUSTOMER}&limit=20`);
   log(env);
   if (env.response.status !== 200) return [];
   const body = env.response.body as { data: RawTransaction[] };
+  const touchesWallet = (t: RawTransaction) =>
+    !walletAccountId ||
+    t.destination?.accountId === walletAccountId ||
+    t.source?.accountId === walletAccountId;
   return (body.data ?? [])
     .filter(isDisplayableTransaction)
-    .map(transactionToRow)
+    .filter(touchesWallet)
+    .map((t) => transactionToRow(t, walletAccountId))
     .sort((a, b) => b.timestamp - a.timestamp);
 }
 
@@ -266,12 +323,28 @@ export interface RawExternalAccount {
  * may have older accounts on rails the app no longer offers, and a row that
  * can't be quoted is worse than no row. Newest first.
  */
+/**
+ * Identity of a payout account: the numbers a payment is actually addressed to.
+ * Two records with the same routing + account number (or the same IBAN) are the
+ * same bank account however many times they were registered, so the list shows
+ * one row for them.
+ */
+export function externalAccountKey(account: RawExternalAccount): string {
+  const info = account.accountInfo ?? {};
+  const digits = (v?: string) => (v ?? '').replace(/[\s-]/g, '').toLowerCase();
+  const identity = info.iban
+    ? `iban:${digits(info.iban)}`
+    : `acct:${digits(info.routingNumber)}/${digits(info.accountNumber)}`;
+  return `${info.accountType ?? ''}|${identity}`;
+}
+
 export async function fetchExternalAccounts(log: LogFn): Promise<RawExternalAccount[]> {
   const env = await gridFetch('GET', `/customers/external-accounts?customerId=${CUSTOMER}`);
   log(env);
   if (env.response.status !== 200) return [];
   const body = env.response.body as { data: RawExternalAccount[] };
   const supported = new Set(['USD_ACCOUNT', 'EUR_ACCOUNT']);
+  const seen = new Set<string>();
   return (body.data ?? [])
     .filter(
       (a) =>
@@ -279,5 +352,11 @@ export async function fetchExternalAccounts(log: LogFn): Promise<RawExternalAcco
         a.accountInfo?.accountType &&
         supported.has(a.accountInfo.accountType),
     )
-    .reverse();
+    .reverse() // newest first, so a duplicate keeps the most recent registration
+    .filter((a) => {
+      const key = externalAccountKey(a);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
