@@ -1,40 +1,42 @@
-type: object
-required:
-  - customerType
-properties:
-  customerType:
-    type: string
-    enum:
-      - INDIVIDUAL
-  kycStatus:
-    $ref: ./KycStatus.yaml
-  fullName:
-    type: string
-    description: Individual's full name
-    example: John Michael Doe
-  birthDate:
-    type: string
-    format: date
-    description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-    example: '1990-01-15'
-  nationality:
-    type: string
-    description: Country code (ISO 3166-1 alpha-2)
-    example: US
-  address:
-    $ref: ../common/Address.yaml
-  taxIdType:
-    $ref: ./IdentificationType.yaml
-  taxIdentifier:
-    type: string
-    description: >-
-      Tax-identification number. For US persons this is the SSN (format
-      `###-##-####`) or ITIN. For non-US persons this is the tax number
-      issued by `taxIdCountryOfIssuance`.
-    example: 123-45-6789
-  taxIdCountryOfIssuance:
-    type: string
-    description: >-
-      Country that issued the tax identifier (ISO 3166-1 alpha-2). Required
-      when `taxIdType` is `NON_US_TAX_ID`.
-    example: US
+allOf:
+  - type: object
+    required:
+      - customerType
+    properties:
+      customerType:
+        type: string
+        enum:
+          - INDIVIDUAL
+      kycStatus:
+        $ref: ./KycStatus.yaml
+      fullName:
+        type: string
+        description: Individual's full name
+        example: John Michael Doe
+      birthDate:
+        type: string
+        format: date
+        description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+        example: '1990-01-15'
+      nationality:
+        type: string
+        description: Country code (ISO 3166-1 alpha-2)
+        example: US
+      address:
+        $ref: ../common/Address.yaml
+      taxIdType:
+        $ref: ./IdentificationType.yaml
+      taxIdentifier:
+        type: string
+        description: >-
+          Tax-identification number. For US persons this is the SSN (format
+          `###-##-####`) or ITIN. For non-US persons this is the tax number
+          issued by `taxIdCountryOfIssuance`.
+        example: 123-45-6789
+      taxIdCountryOfIssuance:
+        type: string
+        description: >-
+          Country that issued the tax identifier (ISO 3166-1 alpha-2). Required
+          when `taxIdType` is `NON_US_TAX_ID`.
+        example: US
+  - $ref: ./CustomerEdd.yaml
