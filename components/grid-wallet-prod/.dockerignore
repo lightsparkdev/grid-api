@@ -1,0 +1,20 @@
+# Build context hygiene — anything here is either rebuilt in the image, secret,
+# or irrelevant to the server bundle.
+node_modules
+.next
+.git
+.cursor
+.playwright-mcp
+
+# Secrets never belong in an image layer; pass them at `docker run` with
+# --env-file / -e instead.
+.env
+.env.local
+.env*.local
+
+# Local scratch + verification artefacts.
+scripts/.tmp-*
+*.png
+tsconfig.tsbuildinfo
+npm-debug.log*
+.DS_Store

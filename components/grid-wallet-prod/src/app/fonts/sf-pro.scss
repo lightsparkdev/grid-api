@@ -1,0 +1,14 @@
+/* SF Pro variable font — iOS phone mock screens.
+   Axes: wght 1–1000, wdth 30–150, opsz 17–28 (auto via font-optical-sizing). */
+
+@font-face {
+  font-family: 'SF Pro';
+  src: url('/fonts/SF-Pro.woff2') format('woff2');
+  font-weight: 1 1000;
+  font-stretch: 30% 150%;
+  font-display: swap;
+}
+
+:root {
+  --font-family-sf-pro: 'SF Pro', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}

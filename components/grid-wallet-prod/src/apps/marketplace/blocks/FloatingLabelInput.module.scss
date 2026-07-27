@@ -1,0 +1,84 @@
+/* Floating-label input (Figma 2375:11747) — h62, r12, border #8c8c8c → #222 on
+   focus; label 17 Book #6a6a6a glides up + shrinks when floated. */
+
+.shell {
+  position: relative;
+  width: 100%;
+}
+
+.clip {
+  position: relative;
+  height: 62px;
+  background: var(--mk-sheet-bg);
+}
+
+/* Resting: vertically centered at 17px. Floated: glides up and scales to ~12px
+   in one transform transition (origin left keeps it pinned to the padding). */
+.label {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-secondary);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transform-origin: left center;
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.18s ease;
+}
+.clip[data-float] .label {
+  transform: translateY(calc(-50% - 15px)) scale(0.706);
+}
+.shell[data-focus] .label {
+  color: var(--app-text-primary);
+}
+
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 22px 13px 6px;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: normal;
+  font-weight: 400;
+  color: var(--app-text-primary);
+  caret-color: var(--app-text-primary);
+}
+
+/* Border as an SVG halo stroke (clip-path eats box borders): 1px #8c8c8c at
+   rest, 2px primary while focused. */
+.halo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--mk-input-border);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    transition:
+      stroke 0.18s ease,
+      stroke-width 0.18s ease;
+  }
+}
+.shell[data-focus] .halo path {
+  stroke: var(--mk-input-border-focus);
+  stroke-width: 2;
+}

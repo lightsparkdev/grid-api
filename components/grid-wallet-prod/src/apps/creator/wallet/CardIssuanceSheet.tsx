@@ -1,0 +1,191 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import clsx from 'clsx';
+import { AnimatePresence, motion } from 'motion/react';
+import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconCrossMedium';
+import { BottomSheet } from '@/apps/shared/BottomSheet';
+import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
+import type { CardView } from '@/apps/shared/wallet';
+import { SheetIconButton } from '../blocks/SheetIconButton';
+import { CREATOR_STACKED_SHEET_DURATION } from '../config';
+import { IntroContent, ReadyContent } from './CardIssuanceContent';
+import { SpeedRays } from './SpeedLines';
+import styles from './CardIssuanceSheet.module.scss';
+
+interface CardIssuanceSheetProps {
+  open: boolean;
+  /** Drives which copy shows (intro/creating/ready). Only meaningful while open. */
+  cardView: CardView;
+  onClose: () => void;
+  onCreate: () => void;
+  onContinue: () => void;
+}
+
+/** Glitch card-issuance as a tall stacked sheet (Figma 2528:21062). The card
+ *  itself is a sibling foreground element in CreatorWalletScreen (so it can morph
+ *  on into card-home); this sheet owns the chrome — X, the reserved card slot, and
+ *  the reused intro/creating/ready copy + CTA. */
+export function CardIssuanceSheet({
+  open,
+  cardView,
+  onClose,
+  onCreate,
+  onContinue,
+}: CardIssuanceSheetProps) {
+  // Once the card is created the burst warps out to a clean white screen; keep it
+  // white through the Continue → card-home handoff.
+  const onWhite = cardView === 'ready' || cardView === 'home';
+
+  // Bring the speed lines in only AFTER the sheet + card have settled, so the heavy
+  // one-time sprite build runs on calm frames and never competes with the open. Then
+  // it fades in. (Card reveal lands ~0.85s in; mount a hair after that.)
+  const [raysReady, setRaysReady] = useState(false);
+  useEffect(() => {
+    if (!open) {
+      setRaysReady(false);
+      return;
+    }
+    const t = window.setTimeout(() => setRaysReady(true), 950);
+    return () => window.clearTimeout(t);
+  }, [open]);
+
+  // Speed-line choreography by phase. The "speed in" is the canvas twinkle going
+  // faster (NOT a container scale), and the recenter is a burst-ORIGIN shift inside a
+  // full-bleed canvas (NOT a layer translate — that would clip the top). The wrapper
+  // only fades:
+  //  - intro: steady glow at the intro origin.
+  //  - creating: quick-OUT (fade away) while the card runs its anticipate flip/centre
+  //    (~1.0s); the origin eases down (invisible) meanwhile; then fade back in (rays
+  //    twinkling fast) and HOLD. The fade-OUT is driven by the ready transition below.
+  //  - ready/home: gone — fades out as the white screen comes in.
+  const QUICK_OUT = [0, 0, 0.2, 1] as const;
+  // Drop the burst ORIGIN by how far the card itself moves from intro to creating
+  // (CREATING_DY 200 − ISSUE_DY 158 = 42) so it stays centred on the CARD — not the
+  // lower card+caption group.
+  const SPEED_SHIFT = 42;
+  // Creating sequence: out (0–0.25s) → hold invisible through the card's anticipate
+  // (+800ms beat) → fade in 1.8–2.3s → hold (until the ready transition fades it out).
+  const SPEED_DURATION = 2.3;
+  let burstAnimate: Record<string, number | number[]>;
+  let burstTransition: Record<string, unknown>;
+  if (cardView === 'intro') {
+    burstAnimate = { opacity: raysReady ? 0.5 : 0 };
+    burstTransition = { duration: 0.5, ease: QUICK_OUT };
+  } else if (cardView === 'creating') {
+    burstAnimate = { opacity: [0.5, 0, 0, 0.6] };
+    burstTransition = { duration: SPEED_DURATION, times: [0, 0.11, 0.78, 1], ease: QUICK_OUT };
+  } else {
+    burstAnimate = { opacity: 0 };
+    burstTransition = { duration: 0.5, ease: QUICK_OUT };
+  }
+
+  return (
+    <BottomSheet
+      open={open}
+      onDismiss={onClose}
+      duration={CREATOR_STACKED_SHEET_DURATION}
+      // Solid brand-purple sheet (Figma "Stream Manager" onboarding look) — the
+      // floating card hovers over it. 24px top corners; shell smoothing so the
+      // bottom corners nest in the screen squircle.
+      glass={{
+        radius: 24,
+        cornerSmoothing: PHONE_SHELL_GLASS.cornerSmoothing,
+        tint: 'var(--app-tint)',
+        edge: 'transparent',
+        edgeGlint: false,
+        edgeWidth: 0.5,
+        shadow: '0 15px 37.5px rgba(0, 0, 0, 0.18)',
+      }}
+    >
+      <div className={clsx(styles.flow, onWhite ? styles.flowReady : styles.flowBurst)}>
+        {/* Brand light→dark gradient backdrop. */}
+        <div className={styles.bg} aria-hidden />
+        {/* White screen fades in as the card finishes (created state). */}
+        <AnimatePresence>
+          {onWhite && (
+            <motion.div
+              key="ready-bg"
+              className={styles.readyBg}
+              aria-hidden
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            />
+          )}
+        </AnimatePresence>
+        {/* Procedural chroma-aberrated radial speed lines (canvas): a randomized ray
+            field with blur + R/G/B aberration baked into per-ray sprites, blitted with
+            a per-frame twinkle + slow rotate/breathe "hum". One composited layer; this
+            wrapper owns the mix-blend over the gradient + the fade in/out. */}
+        <motion.div
+          className={clsx(
+            styles.speedLines,
+            // Alpha-mask the rays behind the bottom copy (intro) so the real
+            // gradient shows through.
+            cardView === 'intro' && styles.speedLinesMasked,
+          )}
+          aria-hidden
+          // Phased: glow on intro, fade-out → fade-in on create (the rays themselves
+          // speed up via `speeding`, and the origin shifts down via `originShift`),
+          // gone on the white ready screen.
+          initial={{ opacity: 0 }}
+          animate={burstAnimate}
+          transition={burstTransition}
+        >
+          {raysReady && (
+            <SpeedRays
+              active={cardView === 'intro' || cardView === 'creating'}
+              speeding={cardView === 'creating'}
+              originShift={cardView === 'creating' ? SPEED_SHIFT : 0}
+            />
+          )}
+        </motion.div>
+
+        <div className={styles.toolbar}>
+          <SheetIconButton aria-label="Close" size={40} type="button" ghost onClick={onClose}>
+            <IconCrossMedium size={24} />
+          </SheetIconButton>
+        </div>
+
+        {/* Copy + CTA anchored at the bottom; the floating card (foreground layer)
+            sits centered in the open space above. The "Creating…" caption rides
+            the foreground layer too (just under the card), not this content.
+            Each block carries its own gradient mask (sized to its height) and
+            fades out on Create — so the mask leaves with the copy while the card
+            centers + creates, then returns with the ready copy. */}
+        <div className={styles.content}>
+          <AnimatePresence>
+            {cardView === 'intro' && (
+              <motion.div
+                key="intro"
+                className={styles.contentBlock}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                // Hold a 300ms beat before the copy clears (matches the card's
+                // delayed move-to-centre on Create).
+                exit={{ opacity: 0, transition: { duration: 0.25, delay: 0.3 } }}
+                transition={{ duration: 0.25 }}
+              >
+                <IntroContent onCreate={onCreate} />
+              </motion.div>
+            )}
+            {cardView === 'ready' && (
+              <motion.div
+                key="ready"
+                className={styles.contentBlock}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                <ReadyContent onContinue={onContinue} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </BottomSheet>
+  );
+}

@@ -1,0 +1,74 @@
+/* Creator (creator) skin — Twitch-style: Inter, purple, dark-leaning home.
+   Overrides --app-* (brand) + the shared ContentAreaButton tokens; also sets
+   --ios-label-primary per theme. Light defaults + a [data-theme='dark'] block. */
+@mixin tokens {
+  &[data-app='creator'] {
+    --ios-font-family: var(--font-family-inter);
+    --app-tint: #9147ff;
+    --app-tabbar-active: #772ce8;
+    /* iOS accent — links, carets, secondary buttons, "Resend" — follows the brand. */
+    --ios-tint: var(--app-tint);
+
+    /* Auth CTAs (the quaternary ContentAreaButton): solid purple, fully round
+       (Twitch-style) — keeps the default 1000px pill, so no radius override. */
+    --content-btn-bg: #a05fff;
+    --content-btn-fg: #efeff1;
+    --content-btn-weight: 600;
+    /* Solid fill -> brighten on hover/press (white wash) instead of the gray. */
+    --content-btn-hover: rgba(255, 255, 255, 0.12);
+    --content-btn-active: rgba(255, 255, 255, 0.2);
+
+    /* Primary flat pills (ContentAreaButton filled) — brand purple, white label. */
+    --p-fill: #9147ff;
+    --p-fg: #ffffff;
+
+    /* Brand wash — the balance-hero card + the card-issuance background (in place
+       of Aurora's WebGL field). */
+    --app-wash: linear-gradient(170deg, #a770ff 0%, #9147ff 56%, #8434f0 100%);
+
+    /* The shared (system) passkey sheet's close-button lens: transparent fill so the
+       purple sheet shows straight through (the specular/edge rim comes from the glass
+       config, not the backdrop). */
+    --app-sheet-glass-backdrop: transparent;
+
+    /* Sheets are edge-to-edge here (inset 0), so the content gets compensatory
+       breathing room off the screen edges. */
+    --sheet-content-pad: 8px;
+
+    /* Home / sheets — light. (The v1 placeholder home reads these.) */
+    --ios-label-primary: #0e0e10;
+    --app-text-primary: #0e0e10;
+    --app-text-secondary: #53535f;
+    --app-tabbar-fg: #0e0e10;
+    --app-bg: #f7f7f8;
+
+    /* Home action pills (Deposit / Withdraw / Pay) — secondary fill + label.
+       Dark mirrors Figma #33333a/#fff; light is a soft gray on the off-white bg. */
+    --creator-secondary-bg: #e8e8eb;
+    --creator-secondary-fg: #0e0e10;
+
+    /* Activity list panel — light white / dark elevated + hairline bottom edge. */
+    --list-panel-bg: #ffffff;
+    --list-panel-border: 0.5px solid rgba(0, 0, 0, 0.1);
+
+    /* Auth / passkey / send-receive overlays — flat solid sheet (no frost). */
+    --auth-sheet-bg: #ffffff;
+
+    :global([data-theme='dark']) & {
+      --ios-tint: var(--app-tint);
+      --ios-label-primary: #efeff1;
+      --app-text-primary: #efeff1;
+      --app-text-secondary: #adadb8;
+      --app-bg: #0e0e10;
+      --app-tabbar-bg: #0e0e10;
+      --app-tabbar-fg: #ffffff;
+      --app-tabbar-active: #bf94ff;
+      --creator-secondary-bg: #33333a;
+      --creator-secondary-fg: #ffffff;
+      /* Elevated surface on the dark page — mirrors insight cards / ios-bg-secondary. */
+      --list-panel-bg: #1c1c1e;
+      --list-panel-border: 0.5px solid rgba(255, 255, 255, 0.1);
+      --auth-sheet-bg: #1c1c1e;
+    }
+  }
+}

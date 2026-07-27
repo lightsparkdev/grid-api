@@ -1,0 +1,247 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+  /* Clear the status bar (screenBody underlaps it; see AppShell). */
+  padding-top: 62px;
+}
+
+/* ── Nav bar ──────────────────────────────────────────────────────────────── */
+.nav {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 48px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+.navTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  @include ios.ios-text-headline;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
+  color: var(--app-text-primary);
+  pointer-events: none;
+}
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.navBtn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ── Body (scrolls under the pinned nav + tab bar) ────────────────────────── */
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Balance hero (Figma 2543:21291) — p24, gap10 ─────────────────────────── */
+.balanceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px 24px;
+}
+.balanceLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+/* Subheadline/Emphasized 15/20, labels/tertiary. */
+.balanceLabel {
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--app-text-tertiary);
+}
+.muted {
+  color: var(--app-text-tertiary);
+  flex: none;
+
+  /* central-icons bake a 2px stroke on a 24 viewBox; rendered at 16px it scales
+     down, so 2.5 viewBox units ≈ a true 1.67px stroke at this size. */
+  path {
+    stroke-width: 2.5 !important;
+  }
+}
+/* Figma: SF Pro Bold 52 / line 1 / -1.56px. Geist here, same metrics. */
+.balanceAmount {
+  font-family: var(--ios-font-family);
+  font-size: 52px;
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  font-variation-settings: 'wght' 650;
+  color: var(--app-text-primary);
+}
+
+/* ── Action chips (Figma 2543:21256) — Deposit / Withdraw / Send ──────────── */
+.actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px;
+}
+/* Figma 2543:21247 — flex-1, col, gap2, px24 py12, footnote/emphasized label. */
+.actionChip {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 12px 24px;
+  border: 0;
+  background: var(--z-surface);
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--z-surface-press);
+  }
+
+  svg {
+    display: block;
+    flex: none;
+  }
+  svg path {
+    stroke-width: 2;
+  }
+}
+.actionLabel {
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  text-align: center;
+}
+
+/* ── Rewards + Z Card tiles (Figma 2543:21257) — h136, px20 py16, gap16 ───── */
+.tiles {
+  display: flex;
+  gap: 16px;
+  padding: 16px 16px 0;
+}
+.rewardsTile,
+.cardTile {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 136px;
+  border: 0;
+  padding: 16px 20px;
+  background: var(--z-surface);
+  color: var(--app-text-primary);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--z-surface-press);
+  }
+}
+.rewardsTile {
+  flex-direction: column;
+  justify-content: space-between;
+}
+/* Subheadline/Emphasized 15/20. */
+.tileHeading,
+.cardHeading {
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--app-text-primary);
+}
+.rewardsFooter {
+  display: flex;
+  flex-direction: column;
+}
+/* Caption1/Emphasized 12/16, accents/green. */
+.apy {
+  @include ios.ios-text-caption-1;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
+  color: var(--z-green);
+}
+/* Title2/Emphasized 22/28 bold. */
+.rewardsAmount {
+  @include ios.ios-text-title-2;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+  color: var(--app-text-primary);
+}
+
+.cardTile {
+  position: relative;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cardHeading {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Activity (the section owns its own header padding) — grows to fill the
+   remaining space so the empty state can center in it. ─────────────────────── */
+.activityWrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 0 16px;
+}
+
+/* Face ID (Dynamic Island) overlay — above the screen, click-through. */
+.faceIdLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}

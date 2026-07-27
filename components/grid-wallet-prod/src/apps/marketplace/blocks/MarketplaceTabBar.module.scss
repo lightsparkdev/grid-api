@@ -1,0 +1,54 @@
+/* Decorative tab bar (Figma 2610:11833) — h90 pinned bottom, top hairline,
+   28px icons + 10px labels, Wallet active in brand coral. */
+
+.bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 90px;
+  padding-top: 5px;
+  box-sizing: border-box;
+  background: var(--mk-tabbar-bg);
+  border-top: 1px solid var(--mk-tabbar-border);
+}
+
+.item {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* Buttons don't inherit font-family — without this the labels fall back to
+     the UA font instead of Circular. */
+  font-family: inherit;
+  color: var(--mk-tabbar-fg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+.label {
+  font-size: 10px;
+  line-height: normal;
+  font-weight: 400;
+  text-align: center;
+  color: var(--mk-tabbar-fg);
+}
+
+.itemActive {
+  color: var(--mk-tabbar-active);
+
+  .label {
+    font-weight: 500;
+    color: var(--mk-tabbar-active);
+  }
+}
