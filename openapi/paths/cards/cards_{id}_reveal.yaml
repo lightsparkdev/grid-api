@@ -21,6 +21,10 @@ post:
     iframe and never crosses Grid's or your servers.
 
 
+    Requires a token with the `MANAGE` permission; `VIEW` alone is not
+    sufficient to mint a reveal URL.
+
+
     Every reveal is audit-logged with the requesting actor.
   operationId: revealCard
   tags:
@@ -42,8 +46,9 @@ post:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
       description: >-
-        Forbidden. The session has no attributable actor to audit the reveal
-        against (for example, an impersonated dashboard session).
+        Forbidden. The token lacks the `MANAGE` permission, or the session has
+        no attributable actor to audit the reveal against (for example, an
+        impersonated dashboard session).
       content:
         application/json:
           schema:
