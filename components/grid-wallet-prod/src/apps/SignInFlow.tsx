@@ -92,6 +92,8 @@ interface SignInFlowProps {
   totalCents?: number;
   /** One-shot toast raised by an arrival webhook (nonce bumps per delivery). */
   walletToast?: { nonce: number; text: string } | null;
+  /** Terminal outcome of the pending outbound transfer (poll or webhook). */
+  transferOutcome?: { nonce: number; ok: boolean } | null;
   /** Accounts Grid already holds, for the saved-banks list. */
   storedBanks?: SavedBank[];
   /** A stored account was picked — quote against that ExternalAccount id. */
@@ -130,6 +132,7 @@ interface WalletHostProps {
   depositInstructions?: DepositInstructions | null;
   totalCents?: number;
   walletToast?: { nonce: number; text: string } | null;
+  transferOutcome?: { nonce: number; ok: boolean } | null;
   storedBanks?: SavedBank[];
   onSelectStoredBank?: (externalAccountId: string | null) => void;
   onDepositView?: (view: { label: string; currency: string; cents?: number } | null) => void;
@@ -162,6 +165,7 @@ function WalletHost({
   depositInstructions,
   totalCents,
   walletToast,
+  transferOutcome,
   storedBanks,
   onSelectStoredBank,
   onDepositView,
@@ -252,6 +256,15 @@ function WalletHost({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onDetails, detailsCountry, onCryptoAddress, cryptoChain, cryptoCents, onDepositView]);
 
+  // The pending outbound transfer reached a terminal status: settle its row.
+  const lastOutcome = useRef(0);
+  useEffect(() => {
+    if (!transferOutcome || transferOutcome.nonce === lastOutcome.current) return;
+    lastOutcome.current = transferOutcome.nonce;
+    home.settleTransfer(transferOutcome.ok);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transferOutcome]);
+
   // An arrival webhook landed: show it on the phone (the brain owns the toast).
   const lastToast = useRef(0);
   useEffect(() => {
@@ -321,6 +334,7 @@ export function SignInFlow({
   depositInstructions,
   totalCents,
   walletToast,
+  transferOutcome,
   storedBanks,
   onSelectStoredBank,
   onDepositView,
@@ -446,6 +460,7 @@ export function SignInFlow({
               depositInstructions={depositInstructions}
               totalCents={totalCents}
               walletToast={walletToast}
+              transferOutcome={transferOutcome}
               storedBanks={storedBanks}
               onSelectStoredBank={onSelectStoredBank}
               onDepositView={onDepositView}

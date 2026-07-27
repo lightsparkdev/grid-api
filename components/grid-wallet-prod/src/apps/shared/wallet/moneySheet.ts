@@ -94,6 +94,20 @@ export function accountLast4(values: Record<string, string>): string {
 }
 
 /**
+ * How to name an account in a row. A masked tail only means something for a
+ * NUMBER — UPI (`name@upi`), PIX keys and phone-based rails are handles, and
+ * masking them produced labels like "•••• @upi". Handles are shown whole (they
+ * aren't secret; the payer types them by hand), numbers keep the mask.
+ */
+export function accountLabel(values: Record<string, string>): string {
+  const HANDLE_FIELDS = ['vpa', 'pixKey', 'phoneNumber'];
+  const handle = HANDLE_FIELDS.map((k) => values[k]).find((v) => v && /[^0-9\s-]/.test(v));
+  if (handle) return handle;
+  const digits = Object.values(values).join('').replace(/\D/g, '');
+  return digits ? `•••• ${digits.slice(-4)}` : 'account';
+}
+
+/**
  * A Grid-stored external account → a saved-bank row. `id` IS the ExternalAccount
  * id, so selecting one of these quotes against the real account instead of
  * re-creating it (session-added rows use a local id and link on save).

@@ -8,13 +8,13 @@ describe('proxy allow-list', () => {
     expect(isAllowed('POST', '/auth/credentials/AuthMethod:abc/challenge')).toBe(true);
     expect(isAllowed('POST', '/auth/credentials/AuthMethod:abc/verify')).toBe(true);
     expect(isAllowed('GET', '/customers/internal-accounts')).toBe(true);
-    expect(isAllowed('GET', '/platform/internal-accounts')).toBe(true);
     expect(isAllowed('POST', '/customers/external-accounts')).toBe(true);
     expect(isAllowed('GET', '/transactions')).toBe(true);
     expect(isAllowed('GET', '/transactions/Transaction:abc')).toBe(true);
     expect(isAllowed('POST', '/quotes')).toBe(true);
     expect(isAllowed('POST', '/quotes/Quote:abc/execute')).toBe(true);
-    expect(isAllowed('POST', '/sandbox/internal-accounts/InternalAccount:abc/fund')).toBe(true);
+    expect(isAllowed('GET', '/customers/external-accounts')).toBe(true);
+    expect(isAllowed('POST', '/sandbox/send')).toBe(true);
   });
   it('rejects everything else (incl. cards + wrong method)', () => {
     expect(isAllowed('POST', '/cards')).toBe(false);
@@ -22,6 +22,11 @@ describe('proxy allow-list', () => {
     expect(isAllowed('POST', '/transactions/Transaction:abc')).toBe(false); // GET only
     expect(isAllowed('GET', '/quotes')).toBe(false); // POST only
     expect(isAllowed('POST', '/customers')).toBe(false);
+    // Dropped with the platform on-ramp: the demo funds via a real-time funding
+    // quote + /sandbox/send, so the proxy no longer needs to reach either of these
+    // with the platform's own credentials.
+    expect(isAllowed('GET', '/platform/internal-accounts')).toBe(false);
+    expect(isAllowed('POST', '/sandbox/internal-accounts/InternalAccount:abc/fund')).toBe(false);
   });
   it('redacts Authorization only', () => {
     const r = redactHeaders({ Authorization: 'Basic secret', 'Request-Id': 'Request:1' });

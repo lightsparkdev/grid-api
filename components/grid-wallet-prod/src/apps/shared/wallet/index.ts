@@ -35,6 +35,7 @@ export {
   DEFAULT_SEND_NETWORK,
   BANK_COUNTRIES,
   DEMO_BENEFICIARY,
+  accountLabel,
   accountLast4,
   sampleValuesFor,
   firstNameLastInitial,

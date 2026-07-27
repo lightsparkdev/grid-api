@@ -233,11 +233,12 @@ function ApiCallBlock({ entry, now, isNew }: { entry: Entry; now: number; isNew:
 
   const curl = useMemo(() => formatCurlString(entry), [entry]);
   const response = useMemo(() => formatResponseString(entry), [entry]);
-  const copyText = tab === 'request' ? curl : response;
+  const copyText = tab === 'response' && !entry.inbound ? response : curl;
 
+  const showResponse = tab === 'response' && !entry.inbound;
   const highlighted = useMemo(
-    () => (tab === 'request' ? highlightCurl(curl, syntaxClasses) : highlightJson(response, syntaxClasses)),
-    [tab, curl, response],
+    () => (showResponse ? highlightJson(response, syntaxClasses) : highlightCurl(curl, syntaxClasses)),
+    [showResponse, curl, response],
   );
 
   return (
@@ -260,7 +261,22 @@ function ApiCallBlock({ entry, now, isNew }: { entry: Entry; now: number; isNew:
       <EndpointBlock method={entry.method} path={entry.path} />
       <div className={styles.codeBlock}>
         <div className={styles.codeBlockToolbar}>
-          <CodeTabs tab={tab} onTabChange={setTab} />
+          {/* An inbound webhook has no response worth a tab: the interesting side
+              is what Grid DELIVERED, and our end of it is just the 200 ack. So
+              the payload is labelled instead of offered as a Request/Response
+              choice. */}
+          {entry.inbound ? (
+            // Inside .tabGroup, not loose in the toolbar: the group is what
+            // supplies the row height (--toolbar-tab-height) that .tab centers
+            // against. On its own the label collapsed to the toolbar's top edge
+            // and stretched full width, so it read as centered horizontally and
+            // misaligned with the copy button.
+            <div className={styles.tabGroup}>
+              <span className={clsx(styles.tab, styles.tabActive, styles.tabStatic)}>Payload</span>
+            </div>
+          ) : (
+            <CodeTabs tab={tab} onTabChange={setTab} />
+          )}
           <CopyButton text={copyText} />
         </div>
         <div className={styles.codeBlockContent}>

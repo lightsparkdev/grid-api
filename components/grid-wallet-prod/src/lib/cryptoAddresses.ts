@@ -87,3 +87,73 @@ export function randomNetworkAddress(network: string): string {
       return randomSolanaAddress(); // Solana
   }
 }
+
+/* ── Detection ─────────────────────────────────────────────────────────────────
+   Which chains a PASTED address could belong to. Decodes with the same
+   primitives used above rather than matching on shape alone, so a mistyped or
+   truncated address is rejected instead of accepted and then failing at Grid.
+
+   An EVM address is genuinely ambiguous — the same 20 bytes are valid on
+   Ethereum and Base — so this returns a LIST and the caller asks which chain. */
+
+function isEvmAddress(value: string): boolean {
+  return /^0x[0-9a-fA-F]{40}$/.test(value);
+}
+
+function isSolanaAddress(value: string): boolean {
+  try {
+    return base58.decode(value).length === 32;
+  } catch {
+    return false;
+  }
+}
+
+function isTronAddress(value: string): boolean {
+  try {
+    const bytes = tronBase58Check.decode(value);
+    return bytes.length === 21 && bytes[0] === 0x41;
+  } catch {
+    return false;
+  }
+}
+
+function isSparkAddress(value: string): boolean {
+  try {
+    const { prefix } = bech32m.decode(value as `${string}1${string}`, 200);
+    // Mainnet is `spark`; the sandbox/regtest prefix is `sparkrt`.
+    return prefix === 'spark' || prefix === 'sparkrt';
+  } catch {
+    return false;
+  }
+}
+
+function isBtcAddress(value: string): boolean {
+  try {
+    const { prefix } = bech32.decode(value as `${string}1${string}`, 200);
+    if (prefix === 'bc') return true;
+  } catch {
+    /* not bech32 — try legacy below */
+  }
+  try {
+    const bytes = tronBase58Check.decode(value); // same base58check construction
+    return bytes.length === 21 && (bytes[0] === 0x00 || bytes[0] === 0x05);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Network ids (matching the wallet's chain list) a pasted address is valid for.
+ * Empty means it isn't an address this wallet can pay. More than one means the
+ * encoding can't tell the chains apart — ask the user.
+ */
+export function detectAddressNetworks(address: string): string[] {
+  const value = address.trim();
+  if (!value) return [];
+  if (isEvmAddress(value)) return ['ethereum', 'base'];
+  if (isTronAddress(value)) return ['tron'];
+  if (isSparkAddress(value)) return ['spark'];
+  if (isBtcAddress(value)) return ['btc'];
+  if (isSolanaAddress(value)) return ['solana'];
+  return [];
+}

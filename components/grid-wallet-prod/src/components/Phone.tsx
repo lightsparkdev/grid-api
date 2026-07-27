@@ -47,6 +47,8 @@ export interface PhoneProps {
   totalCents?: number;
   /** One-shot toast raised by an arrival webhook (nonce bumps per delivery). */
   walletToast?: { nonce: number; text: string } | null;
+  /** Terminal outcome of the pending outbound transfer (poll or webhook). */
+  transferOutcome?: { nonce: number; ok: boolean } | null;
   /** Accounts Grid already holds, seeding the saved-banks list. */
   storedBanks?: SavedBank[];
   /** A stored account was picked — quote against that ExternalAccount id. */

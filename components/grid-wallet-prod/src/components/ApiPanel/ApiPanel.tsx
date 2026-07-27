@@ -5,12 +5,39 @@ import clsx from 'clsx';
 import { AnimatePresence, motion, useAnimationControls } from 'motion/react';
 import { IconCode } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCode';
 import { TextMorph } from 'torph/react';
+import { Checkbox } from '@lightsparkdev/origin/checkbox';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { cubicBezierCss, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import { ApiCallList } from './ApiCallList';
 import { ApiPanelEmpty } from './ApiPanelEmpty';
 import type { Entry } from './types';
 import styles from './ApiPanel.module.scss';
+
+/** A filter chip: the Origin check indicator plus a label and a live count. */
+function FilterToggle({
+  label,
+  count,
+  checked,
+  onChange,
+}: {
+  label: string;
+  count: number;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={styles.filterChip}
+      aria-pressed={checked}
+      onClick={() => onChange(!checked)}
+    >
+      <Checkbox.Indicator checked={checked} className={styles.filterCheck} />
+      <span className={styles.filterLabel}>{label}</span>
+      <span className={styles.filterCount}>{count}</span>
+    </button>
+  );
+}
 
 interface ApiPanelProps {
   entries: Entry[];
@@ -37,6 +64,21 @@ const PILL_MORPH_MS = 280;
 
 export function ApiPanel({ entries, onAction }: ApiPanelProps) {
   const isEmpty = entries.length === 0;
+  // Two kinds of traffic share the feed: calls the app made (outbound, via the
+  // proxy) and webhooks Grid delivered. Filter by kind. Action cards are controls
+  // rather than traffic, so they are never filtered out.
+  const [showRequests, setShowRequests] = useState(true);
+  const [showWebhooks, setShowWebhooks] = useState(true);
+  const requestCount = entries.filter((e) => !e.inbound && !e.action).length;
+  const webhookCount = entries.filter((e) => e.inbound).length;
+  const visibleEntries = useMemo(
+    () =>
+      entries.filter((e) =>
+        e.action ? true : e.inbound ? showWebhooks : showRequests,
+      ),
+    [entries, showRequests, showWebhooks],
+  );
+  const filteredToNothing = !isEmpty && visibleEntries.length === 0;
   // New-call signifiers (stacked layout only): a count pill on the header + a dot
   // per unseen call. "Seen" = the calls have scrolled into view — an
   // IntersectionObserver on the body marks everything present (and anything that
@@ -149,6 +191,22 @@ export function ApiPanel({ entries, onAction }: ApiPanelProps) {
           </AnimatePresence>
         }
       />
+      {!isEmpty && (
+        <div className={styles.filterRow}>
+          <FilterToggle
+            label="Requests"
+            count={requestCount}
+            checked={showRequests}
+            onChange={setShowRequests}
+          />
+          <FilterToggle
+            label="Webhooks"
+            count={webhookCount}
+            checked={showWebhooks}
+            onChange={setShowWebhooks}
+          />
+        </div>
+      )}
       <div ref={bodyRef} className={clsx(styles.body, isEmpty && styles.bodyEmpty)}>
         <AnimatePresence mode="wait" initial={false}>
           {isEmpty ? (
@@ -169,7 +227,15 @@ export function ApiPanel({ entries, onAction }: ApiPanelProps) {
               animate={SWAP_REST}
               transition={SWAP_IN}
             >
-              <ApiCallList onAction={onAction} entries={entries} newKeys={newKeys} />
+              {filteredToNothing ? (
+                <p className={styles.filteredEmpty}>
+                  {webhookCount === 0 && !showRequests
+                    ? 'No webhooks delivered yet — Grid pushes them to /api/webhooks.'
+                    : 'Nothing matches the filter above.'}
+                </p>
+              ) : (
+                <ApiCallList onAction={onAction} entries={visibleEntries} newKeys={newKeys} />
+              )}
             </motion.div>
           )}
         </AnimatePresence>

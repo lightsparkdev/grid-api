@@ -124,6 +124,7 @@ function DemoScreen(props: PhoneProps, skin: AppSkin) {
       depositInstructions={props.depositInstructions}
       totalCents={props.totalCents}
       walletToast={props.walletToast}
+      transferOutcome={props.transferOutcome}
       storedBanks={props.storedBanks}
       onSelectStoredBank={props.onSelectStoredBank}
       onDepositView={props.onDepositView}

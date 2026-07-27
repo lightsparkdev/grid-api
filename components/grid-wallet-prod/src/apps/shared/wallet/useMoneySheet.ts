@@ -31,6 +31,7 @@ import {
   RECEIVE_RAIL,
   SAVE_MS,
   USD_TO_EUR,
+  accountLabel,
   accountLast4,
   firstNameLastInitial,
   formatRate,
@@ -490,7 +491,7 @@ export function useMoneySheet({
           kind: 'bank',
           countryCode: selectedBank?.country.code ?? 'us',
           bankName: selectedBank?.bankName ?? 'Bank account',
-          last4: selectedBank ? accountLast4(selectedBank.values) : '0000',
+          accountLabel: selectedBank ? accountLabel(selectedBank.values) : 'account',
           recipientName: selectedBank?.beneficiary ?? '',
         };
 

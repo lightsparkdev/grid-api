@@ -61,6 +61,7 @@ export default function Page() {
             depositInstructions={logic.depositInstructions}
             totalCents={logic.totalCents}
             walletToast={logic.walletToast}
+            transferOutcome={logic.transferOutcome}
             storedBanks={logic.storedBanks}
             onSelectStoredBank={logic.onSelectStoredBank}
             onDepositView={logic.onDepositView}

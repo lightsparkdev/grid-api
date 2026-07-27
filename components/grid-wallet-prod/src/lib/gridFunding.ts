@@ -2,71 +2,41 @@
 
 import { gridFetch } from './gridClient';
 import type { LogFn } from './gridSession';
-import type { QuoteBody } from './gridTransfer';
+import { CUSTOMER, type QuoteBody } from './gridTransfer';
 
 /**
- * Sandbox fund body for the PLATFORM's USD internal account. USD's smallest
- * unit is cents, so the app's "cents" map straight through — unlike the
- * embedded wallet's own USDB balance (6 decimals, see gridUnits.ts), there is
- * no conversion here.
+ * The only currency this platform has real-time funding enabled for in sandbox
+ * (verified: an EUR quote comes back INVALID_INPUT, "Sending currency 'EUR' is
+ * not configured for your platform"). The euro deposit section is placeholder
+ * details anyway (see placeholderDeposit.ts), so the stand-in deposits USD and
+ * the action card says so rather than implying euros arrived.
  */
-export function platformFundAmountForCents(cents: number): { amount: number } {
-  return { amount: cents };
-}
-
-// Resolved once per session (module-level — the platform account doesn't
-// change between "Add money" runs).
-let platformUsdAccountId: string | null = null;
+export const SANDBOX_FUNDING_CURRENCY = 'USD';
 
 /**
- * Resolve (and cache) the platform's USD internal account id — the real
- * money source for "Add money"'s on-ramp leg. `POST /sandbox/.../fund` only
- * mints BOOK balance on the customer's own wallet (no on-chain USDB), so
- * outbound quotes from it fail with INSUFFICIENT_FUNDS; funding the platform
- * account and on-ramping from it into the customer's wallet is the only way
- * to land real, spendable balance in sandbox.
+ * Real-time funding quote: money arriving from OUTSIDE Grid straight into the
+ * customer's embedded wallet. This is what the deposit instructions on the phone
+ * describe, and `POST /sandbox/send` settles it (see sandboxSendForQuote) the way
+ * a real inbound transfer would.
+ *
+ * `lockedCurrencyAmount` is in the SENDING currency's minor units (USD cents).
+ * Executing is not involved — an inbound quote is settled by the sender, not by us.
+ *
+ * Why not fund the platform's own USD account and on-ramp from it: that DOES land
+ * spendable balance, but the resulting transaction belongs to the PLATFORM, so it
+ * never appears in `GET /transactions?customerId=...` and the arrival was missing
+ * from the phone's activity list. A real-time-funding quote is the customer's own
+ * transaction — verified against the sandbox: COMPLETED, and listed with the
+ * wallet as its destination.
  */
-export async function resolvePlatformUsdAccountId(log: LogFn): Promise<string> {
-  if (platformUsdAccountId) return platformUsdAccountId;
-  const env = await gridFetch('GET', '/platform/internal-accounts?currency=USD');
-  log(env);
-  if (env.response.status !== 200) {
-    throw new Error(`list platform internal accounts: ${env.response.status}`);
-  }
-  const body = env.response.body as { data: { id: string }[] };
-  const acct = body.data[0];
-  if (!acct) throw new Error('No platform USD internal account found');
-  platformUsdAccountId = acct.id;
-  return acct.id;
-}
-
-/** Sandbox-fund the platform's USD account (the on-ramp's source leg). */
-export async function sandboxFundPlatform(
-  platformAccountId: string,
+export function realtimeFundingQuoteBodyFor(
+  walletAccountId: string,
   cents: number,
-  log: LogFn,
-): Promise<{ ok: boolean; status: number }> {
-  const env = await gridFetch('POST', `/sandbox/internal-accounts/${platformAccountId}/fund`, {
-    body: platformFundAmountForCents(cents),
-  });
-  log(env);
-  return { ok: env.response.status === 200, status: env.response.status };
-}
-
-/**
- * Platform -> customer-wallet on-ramp quote: USD in (2 decimals, same cents
- * as the fund above), USDB out to the customer's embedded wallet. Executing
- * this quote (see gridTransfer.executeQuoteUnsigned) needs no wallet
- * signature — the source is the platform account, not the customer's.
- */
-export function onRampQuoteBodyFor(
-  platformAccountId: string,
-  customerAccountId: string,
-  cents: number,
+  currency: string = SANDBOX_FUNDING_CURRENCY,
 ): QuoteBody {
   return {
-    source: { sourceType: 'ACCOUNT', accountId: platformAccountId },
-    destination: { destinationType: 'ACCOUNT', accountId: customerAccountId, currency: 'USDB' },
+    source: { sourceType: 'REALTIME_FUNDING', currency, customerId: CUSTOMER },
+    destination: { destinationType: 'ACCOUNT', accountId: walletAccountId, currency: 'USDB' },
     lockedCurrencySide: 'SENDING',
     lockedCurrencyAmount: cents,
   };
@@ -89,4 +59,26 @@ export async function sandboxSendForQuote(
   });
   log(env);
   return { ok: env.response.status === 200, status: env.response.status };
+}
+
+/**
+ * Convert USD sitting in the customer's own fiat account into USDB in their
+ * wallet. Money pushed to the deposit instructions arrives as USD there; this is
+ * the leg that gets it to the balance the phone shows.
+ *
+ * `lockedCurrencyAmount` is USD cents (the SENDING side), and executing needs no
+ * `Grid-Wallet-Signature`: the embedded wallet is the destination, not the source.
+ * Verified against the sandbox — 300 USD in, 3000000 USDB out, COMPLETED.
+ */
+export function sweepQuoteBodyFor(
+  fiatAccountId: string,
+  walletAccountId: string,
+  cents: number,
+): QuoteBody {
+  return {
+    source: { sourceType: 'ACCOUNT', accountId: fiatAccountId },
+    destination: { destinationType: 'ACCOUNT', accountId: walletAccountId, currency: 'USDB' },
+    lockedCurrencySide: 'SENDING',
+    lockedCurrencyAmount: cents,
+  };
 }
