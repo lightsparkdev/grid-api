@@ -165,7 +165,6 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     "currency": "MXN",
     "accountInfo": {
       "accountType": "MXN_ACCOUNT",
-      "paymentRails": ["SPEI"],
       "clabeNumber": "012345678901234567",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
@@ -296,7 +295,6 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     "currency": "USD",
     "accountInfo": {
       "accountType": "USD_ACCOUNT",
-      "paymentRails": ["ACH"],
       "routingNumber": "123456789",
       "accountNumber": "12345678901",
       "beneficiary": {
