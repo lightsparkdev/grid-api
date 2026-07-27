@@ -24,16 +24,22 @@ jobs:
     # runners are not enabled for the org and the fallback is
     # docker/setup-qemu-action + docker/setup-buildx-action on ubuntu-latest.
     runs-on: ubuntu-24.04-arm
+    # Actions are pinned to full commit SHAs, not major tags. This job holds
+    # id-token: write and assumes a role that can push to ECR, so an upstream
+    # tag move would silently change code running with cloud write access.
+    # NOTE: this repo has no Dependabot config, so these pins do not update
+    # themselves — re-resolve them when bumping, or add a dependabot.yml with
+    # a github-actions ecosystem entry so they stay current.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: arn:aws:iam::405785876631:role/github-actions-grid-wallet-prod
           aws-region: us-west-2
 
       - id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
 
       - name: Build and push
         working-directory: components/grid-wallet-prod
