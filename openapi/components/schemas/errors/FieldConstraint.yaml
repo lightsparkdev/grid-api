@@ -1,0 +1,35 @@
+type: object
+description: >-
+  Machine-readable validator hint accompanying a 400 `INVALID_INPUT`
+  error. Consumers use it to drive form UI (input types, dropdowns,
+  masking, length limits) and to pre-validate the field client-side
+  before re-submitting. Fields are additive.
+properties:
+  format:
+    type: string
+    description: >-
+      Named format the value must satisfy — HTML5 input type names
+      (`email`, `tel`, `url`, `date`, ...) or semantic slugs
+      (`iso3166-1-alpha-2`, `bcp47-language-tag`, `us-ssn`, `e.164`).
+    example: email
+  pattern:
+    type: string
+    description: Regular expression the value must match (JavaScript-flavor).
+    example: ^\d{5}(-\d{4})?$
+  enum:
+    type: array
+    items:
+      type: string
+    description: Allowed values when the field is drawn from a fixed set.
+    example:
+      - SSN
+      - ITIN
+      - NON_US_TAX_ID
+  minLength:
+    type: integer
+    description: Minimum length in characters.
+    example: 1
+  maxLength:
+    type: integer
+    description: Maximum length in characters.
+    example: 500

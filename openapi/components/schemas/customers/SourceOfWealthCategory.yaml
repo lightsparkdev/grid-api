@@ -1,0 +1,16 @@
+type: string
+enum:
+  - SALARY
+  - BUSINESS_INCOME
+  - INVESTMENTS
+  - INHERITANCE
+  - PROPERTY_SALE
+  - GIFT
+  - RETIREMENT
+  - SAVINGS
+  - OTHER
+description: >-
+  Origin of the customer's accumulated wealth (STOCK). Distinct from
+  `SourceOfFundsCategory` which describes the FLOW of funds for this specific
+  account.
+example: SALARY

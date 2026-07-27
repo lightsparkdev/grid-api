@@ -11274,6 +11274,35 @@ components:
             `(feeType, sourceCurrency)`. Setting variable and fixed fees to 0 for
             an existing fee config deactivates it. Only `sourceCurrency: USD` is
             accepted today. Omit this field to leave fee configs unchanged.
+    FieldConstraint:
+      type: object
+      description: Machine-readable validator hint accompanying a 400 `INVALID_INPUT` error. Consumers use it to drive form UI (input types, dropdowns, masking, length limits) and to pre-validate the field client-side before re-submitting. Fields are additive.
+      properties:
+        format:
+          type: string
+          description: Named format the value must satisfy — HTML5 input type names (`email`, `tel`, `url`, `date`, ...) or semantic slugs (`iso3166-1-alpha-2`, `bcp47-language-tag`, `us-ssn`, `e.164`).
+          example: email
+        pattern:
+          type: string
+          description: Regular expression the value must match (JavaScript-flavor).
+          example: ^\d{5}(-\d{4})?$
+        enum:
+          type: array
+          items:
+            type: string
+          description: Allowed values when the field is drawn from a fixed set.
+          example:
+            - SSN
+            - ITIN
+            - NON_US_TAX_ID
+        minLength:
+          type: integer
+          description: Minimum length in characters.
+          example: 1
+        maxLength:
+          type: integer
+          description: Maximum length in characters.
+          example: 500
     Error400:
       type: object
       required:
@@ -11375,7 +11404,14 @@ components:
           description: Error message
         details:
           type: object
-          description: Additional error details
+          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.field` and `details.constraint` are populated so platforms can pre-validate their onboarding form before re-submitting.
+          properties:
+            field:
+              type: string
+              description: Dot-notation path to the offending field. Present on field-validation errors from submit endpoints.
+              example: taxIdentifier
+            constraint:
+              $ref: '#/components/schemas/FieldConstraint'
           additionalProperties: true
     Error501:
       type: object
@@ -11681,32 +11717,195 @@ components:
           type: string
           description: Country code (ISO 3166-1 alpha-2)
           example: US
-    IndividualCustomerFields:
+    IdentificationType:
+      type: string
+      enum:
+        - SSN
+        - ITIN
+        - EIN
+        - NON_US_TAX_ID
+      description: Type of tax identification
+      example: SSN
+    IndividualSourceOfFundsCategory:
+      type: string
+      enum:
+        - SALARY
+        - SELF_EMPLOYMENT_INCOME
+        - INVESTMENT_INCOME
+        - PENSION
+        - RENTAL_INCOME
+        - GIFT
+        - INHERITANCE
+        - LOAN
+        - SAVINGS
+        - SALE_OF_ASSETS
+        - OTHER
+      description: A structured source-of-funds category for an individual customer (FLOW of funds into this account). Distinct from `SourceOfFundsCategory`, which covers business customers.
+      example: SALARY
+    SourceOfWealthCategory:
+      type: string
+      enum:
+        - SALARY
+        - BUSINESS_INCOME
+        - INVESTMENTS
+        - INHERITANCE
+        - PROPERTY_SALE
+        - GIFT
+        - RETIREMENT
+        - SAVINGS
+        - OTHER
+      description: Origin of the customer's accumulated wealth (STOCK). Distinct from `SourceOfFundsCategory` which describes the FLOW of funds for this specific account.
+      example: SALARY
+    PurposeOfAccount:
+      type: string
+      enum:
+        - CONTRACTOR_PAYOUTS
+        - CREATOR_PAYOUTS
+        - EMPLOYEE_PAYOUTS
+        - MARKETPLACE_SELLER_PAYOUTS
+        - SUPPLIER_PAYMENTS
+        - CROSS_BORDER_B2B
+        - AR_AUTOMATION
+        - AP_AUTOMATION
+        - EMBEDDED_PAYMENTS
+        - PLATFORM_FEE_COLLECTION
+        - P2P_TRANSFERS
+        - CHARITABLE_DONATIONS
+        - OTHER
+      description: The intended purpose for using the Grid account
+      example: CONTRACTOR_PAYOUTS
+    ExpectedMonthlyTransactionCount:
+      type: string
+      enum:
+        - COUNT_UNDER_10
+        - COUNT_10_TO_100
+        - COUNT_100_TO_500
+        - COUNT_500_TO_1000
+        - COUNT_OVER_1000
+      description: Expected number of transactions per month
+      example: COUNT_100_TO_500
+    ExpectedMonthlyTransactionVolume:
+      type: string
+      enum:
+        - VOLUME_UNDER_10K
+        - VOLUME_10K_TO_100K
+        - VOLUME_100K_TO_1M
+        - VOLUME_1M_TO_10M
+        - VOLUME_OVER_10M
+      description: Expected total transaction volume per month in USD equivalent
+      example: VOLUME_100K_TO_1M
+    AnnualIncomeRange:
+      type: string
+      enum:
+        - UNDER_50K
+        - RANGE_50K_100K
+        - RANGE_100K_250K
+        - RANGE_250K_1M
+        - OVER_1M
+      description: Bucketed annual income (USD equivalent). Used for enhanced due diligence on higher-risk profiles.
+      example: RANGE_100K_250K
+    NetWorthRange:
+      type: string
+      enum:
+        - UNDER_100K
+        - RANGE_100K_500K
+        - RANGE_500K_1M
+        - RANGE_1M_5M
+        - RANGE_5M_25M
+        - OVER_25M
+      description: Bucketed total net worth (USD equivalent). Used for enhanced due diligence on higher-risk profiles.
+      example: RANGE_500K_1M
+    PepStatus:
+      type: string
+      enum:
+        - NONE
+        - DOMESTIC
+        - FOREIGN
+        - HIO
+        - FAMILY_OR_ASSOCIATE
+      description: Political exposure declaration (Politically Exposed Person status). `HIO` = head of an international organization. `FAMILY_OR_ASSOCIATE` covers close family members and known close associates of a PEP.
+      example: NONE
+    CustomerEdd:
       type: object
-      required:
-        - customerType
+      description: Enhanced-due-diligence (EDD) fields available as optional patchable attributes on an individual customer. Referenced via `allOf` from `IndividualCustomerFields`, so these appear as top-level optional fields on the customer resource itself; there is no separate EDD resource. The specific set required for a given customer is driven by the KYC provider's per-jurisdiction / per-flow / per-volume-tier rules (surfaced through `MISSING_FIELD` errors on `POST /verifications`).
       properties:
-        customerType:
+        sourceOfFundsCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndividualSourceOfFundsCategory'
+          description: Structured source-of-funds categories (FLOW of funds for this account).
+          example:
+            - SALARY
+        sourceOfFundsOtherDescription:
           type: string
-          enum:
-            - INDIVIDUAL
-        kycStatus:
-          $ref: '#/components/schemas/KycStatus'
-        fullName:
+          description: Free-form description of the customer's source of funds. Required when `sourceOfFundsCategories` includes `OTHER`; otherwise omitted.
+          example: Contest winnings
+        sourceOfWealthCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceOfWealthCategory'
+          description: Structured source-of-wealth categories (STOCK — origin of accumulated wealth).
+          example:
+            - SALARY
+            - INVESTMENTS
+        sourceOfWealthOtherDescription:
           type: string
-          description: Individual's full name
-          example: John Michael Doe
-        birthDate:
+          description: Free-form description of the customer's source of wealth. Required when `sourceOfWealthCategories` includes `OTHER`; otherwise omitted.
+          example: Royalty income from published works
+        purposeOfAccount:
+          $ref: '#/components/schemas/PurposeOfAccount'
+        purposeOfAccountOtherDescription:
           type: string
-          format: date
-          description: Date of birth in ISO 8601 format (YYYY-MM-DD)
-          example: '1990-01-15'
-        nationality:
-          type: string
-          description: Country code (ISO 3166-1 alpha-2)
-          example: US
-        address:
-          $ref: '#/components/schemas/Address'
+          description: Free-form description of the customer's intended purpose for the Grid account. Required when `purposeOfAccount` is `OTHER`; otherwise omitted.
+          example: Household budgeting between spouses
+        expectedMonthlyTransactionCount:
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionCount'
+        expectedMonthlyTransactionVolume:
+          $ref: '#/components/schemas/ExpectedMonthlyTransactionVolume'
+        annualIncomeRange:
+          $ref: '#/components/schemas/AnnualIncomeRange'
+        netWorthRange:
+          $ref: '#/components/schemas/NetWorthRange'
+        pepStatus:
+          $ref: '#/components/schemas/PepStatus'
+    IndividualCustomerFields:
+      allOf:
+        - type: object
+          required:
+            - customerType
+          properties:
+            customerType:
+              type: string
+              enum:
+                - INDIVIDUAL
+            kycStatus:
+              $ref: '#/components/schemas/KycStatus'
+            fullName:
+              type: string
+              description: Individual's full name
+              example: John Michael Doe
+            birthDate:
+              type: string
+              format: date
+              description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+              example: '1990-01-15'
+            nationality:
+              type: string
+              description: Country code (ISO 3166-1 alpha-2)
+              example: US
+            address:
+              $ref: '#/components/schemas/Address'
+            taxIdType:
+              $ref: '#/components/schemas/IdentificationType'
+            taxIdentifier:
+              type: string
+              description: Tax-identification number. For US persons this is the SSN (format `###-##-####`) or ITIN. For non-US persons this is the tax number issued by `taxIdCountryOfIssuance`.
+              example: 123-45-6789
+            taxIdCountryOfIssuance:
+              type: string
+              description: Country that issued the tax identifier (ISO 3166-1 alpha-2). Required when `taxIdType` is `NON_US_TAX_ID`.
+              example: US
+        - $ref: '#/components/schemas/CustomerEdd'
     IndividualCustomer:
       title: Individual Customer
       allOf:
@@ -11758,24 +11957,6 @@ components:
         - ACCOMMODATION_AND_FOOD_SERVICES
         - OTHER_SERVICES
         - PUBLIC_ADMINISTRATION
-    PurposeOfAccount:
-      type: string
-      enum:
-        - CONTRACTOR_PAYOUTS
-        - CREATOR_PAYOUTS
-        - EMPLOYEE_PAYOUTS
-        - MARKETPLACE_SELLER_PAYOUTS
-        - SUPPLIER_PAYMENTS
-        - CROSS_BORDER_B2B
-        - AR_AUTOMATION
-        - AP_AUTOMATION
-        - EMBEDDED_PAYMENTS
-        - PLATFORM_FEE_COLLECTION
-        - P2P_TRANSFERS
-        - CHARITABLE_DONATIONS
-        - OTHER
-      description: The intended purpose for using the Grid account
-      example: CONTRACTOR_PAYOUTS
     SourceOfFundsCategory:
       type: string
       enum:
@@ -12027,15 +12208,6 @@ components:
         - GENERAL_PARTNER
       description: Role of the beneficial owner within the business
       example: UBO
-    IdentificationType:
-      type: string
-      enum:
-        - SSN
-        - ITIN
-        - EIN
-        - NON_US_TAX_ID
-      description: Type of tax identification
-      example: SSN
     BeneficialOwnerPersonalInfo:
       type: object
       required:

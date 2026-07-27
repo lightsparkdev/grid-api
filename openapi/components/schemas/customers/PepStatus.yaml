@@ -1,0 +1,12 @@
+type: string
+enum:
+  - NONE
+  - DOMESTIC
+  - FOREIGN
+  - HIO
+  - FAMILY_OR_ASSOCIATE
+description: >-
+  Political exposure declaration (Politically Exposed Person status).
+  `HIO` = head of an international organization. `FAMILY_OR_ASSOCIATE` covers
+  close family members and known close associates of a PEP.
+example: NONE
