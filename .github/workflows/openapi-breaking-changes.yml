@@ -108,7 +108,7 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: oasdiff-breaking-changes
-          message: ${{ steps.body.outputs.body }}
+          path: breaking.md
 
       - name: Clear PR comment (no breaking)
         if: steps.oasdiff.outputs.has_breaking == 'false'
