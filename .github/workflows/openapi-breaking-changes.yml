@@ -52,6 +52,20 @@ jobs:
             --format markdown \
             --fail-on ERR > breaking.md
           status=$?
+          # The markdown format prints every finding with a :warning: marker, so it
+          # cannot be filtered by severity; singleline prefixes each with its level.
+          oasdiff breaking \
+            base/openapi.yaml head/openapi.yaml \
+            --format singleline \
+            --fail-on ERR > breaking.txt
+          singleline_status=$?
+          set -e
+          # Both runs diff the same specs with the same --fail-on, so their exit codes
+          # must agree; anything above 1 is a crash rather than a finding.
+          if [ "$status" -gt 1 ] || [ "$singleline_status" -ne "$status" ]; then
+            echo "::error::oasdiff exited with $status (markdown) / $singleline_status (singleline)"
+            exit 1
+          fi
           echo "status=$status" >> "$GITHUB_OUTPUT"
           if [ "$status" -ne 0 ] && [ -s breaking.md ]; then
             echo "has_breaking=true" >> "$GITHUB_OUTPUT"
@@ -60,21 +74,77 @@ jobs:
           fi
 
       - name: Build comment body
-        id: body
         if: steps.oasdiff.outputs.has_breaking == 'true'
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          # GitHub rejects a comment body over 65536 characters, and one change to a
+          # shared schema yields a finding per inheriting subschema per endpoint.
+          MAX_ERRORS=100
+          MAX_WARNINGS=25
+          MAX_BODY=64000
+
+          errors=$(grep -c '^error ' breaking.txt || true)
+          warnings=$(grep -c '^warning ' breaking.txt || true)
+          # `error at head/openapi.yaml, in API GET /quotes added …` -> `- `GET /quotes` — added …`
+          fmt() { sed 's/^\(error\|warning\) at [^,]*, in API \([A-Z]* [^ ]*\) /- `\2` — /'; }
+
           {
-            echo 'body<<COMMENT_EOF'
             echo '## :warning: Breaking OpenAPI changes detected'
             echo ''
-            echo 'This PR introduces breaking changes to `openapi.yaml`:'
+            echo "\`oasdiff\` reports **$errors error / $warnings warning** changes to \`openapi.yaml\`."
+            echo 'This PR will need approval from an API reviewer before merge.'
             echo ''
-            cat breaking.md
+            echo "### Errors ($errors)"
+            echo ''
+            grep -m "$MAX_ERRORS" '^error ' breaking.txt | fmt
+            if [ "$errors" -gt "$MAX_ERRORS" ]; then
+              echo "- _…and $((errors - MAX_ERRORS)) more errors._"
+            fi
+            if [ "$warnings" -gt 0 ]; then
+              echo ''
+              echo "### Warnings ($warnings)"
+              echo ''
+              echo '<details><summary>Show sample</summary>'
+              echo ''
+              grep -m "$MAX_WARNINGS" '^warning ' breaking.txt | fmt
+              if [ "$warnings" -gt "$MAX_WARNINGS" ]; then
+                echo "- _…and $((warnings - MAX_WARNINGS)) more warnings._"
+              fi
+              echo ''
+              echo '</details>'
+            fi
             echo ''
             echo '---'
-            echo '_Detected by [oasdiff](https://github.com/oasdiff/oasdiff). This PR will need approval from an API reviewer before merge._'
-            echo 'COMMENT_EOF'
-          } >> "$GITHUB_OUTPUT"
+            echo "_Detected by [oasdiff](https://github.com/oasdiff/oasdiff). Full report: [job summary]($RUN_URL) or the \`oasdiff-report\` artifact._"
+          } > comment.md
+
+          if [ "$(wc -c < comment.md)" -gt "$MAX_BODY" ]; then
+            # Trim on line boundaries so a multi-byte character is never split.
+            LC_ALL=C awk -v max="$MAX_BODY" '{ n += length($0) + 1; if (n > max) exit } 1' \
+              comment.md > comment.trimmed
+            printf '\n_Comment truncated. Full report: [job summary](%s)._\n' "$RUN_URL" >> comment.trimmed
+            mv comment.trimmed comment.md
+          fi
+
+      - name: Publish full report to job summary
+        if: steps.oasdiff.outputs.has_breaking == 'true'
+        run: |
+          # The step summary is capped at 1 MiB.
+          {
+            echo '## oasdiff breaking changes'
+            echo ''
+            head -c 900000 breaking.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload full report
+        if: steps.oasdiff.outputs.has_breaking == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: oasdiff-report
+          path: |
+            breaking.md
+            breaking.txt
 
       - name: Ensure breaking-change label exists
         if: steps.oasdiff.outputs.has_breaking == 'true'
@@ -108,7 +178,7 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: oasdiff-breaking-changes
-          path: breaking.md
+          path: comment.md
 
       - name: Clear PR comment (no breaking)
         if: steps.oasdiff.outputs.has_breaking == 'false'
