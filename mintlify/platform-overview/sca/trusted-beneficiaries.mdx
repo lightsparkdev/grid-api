@@ -40,8 +40,10 @@ confirm directly without a `challengeId`.
 </Note>
 </Step>
 <Step title="Confirm the trust">
-Submit the SCA proof (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` +
-`origin` for `PASSKEY`), echoing `challengeId` when start issued one.
+Submit the proof for the factor Grid returned in `scaChallenge`: `code` for
+`SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`. Echo
+`challengeId` when start issued one. Do not assume a factor is available unless
+it appears in `scaChallenge.availableFactors`.
 
 ```bash
 POST /customers/external-accounts/{externalAccountId}/trust/confirm
@@ -75,9 +77,9 @@ caller then confirms without a `challengeId`).
 </Step>
 <Step title="Confirm the untrust">
 
-Submit the SCA proof (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` +
-`origin` for `PASSKEY`), echoing `challengeId` when start issued one. Returns
-`trusted: false`.
+Submit the proof for the factor Grid returned in `scaChallenge`: `code` for
+`SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`. Echo
+`challengeId` when start issued one. Returns `trusted: false`.
 
 ```bash
 POST /customers/external-accounts/{externalAccountId}/untrust/confirm

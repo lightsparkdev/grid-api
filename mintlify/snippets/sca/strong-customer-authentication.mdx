@@ -22,7 +22,8 @@ challenge is satisfied. This affects debits such as:
 - Cross-currency conversions from EUR / USDC (the swap leg)
 - On-chain and Lightning withdrawals
 
-Reads and non-EUR/USDC accounts are not gated this way.
+EUR / USDC reads are covered by an active SCA login session; non-EUR/USDC
+accounts do not require SCA.
 
 ### Authentication factors
 
@@ -33,10 +34,14 @@ may use. `scaChallenge.factor` is the one in use (default `SMS_OTP`).
 |--------|-----------|-----------------------|
 | `SMS_OTP` | None; a code is sent to the customer's verified phone | ✅ Default |
 | `PASSKEY` | Required (WebAuthn credential) | ✅ |
-| `TOTP` | Required (authenticator app) | ❌ Not permitted (a TOTP code can't be dynamically linked to the amount and payee) |
+| `TOTP` | Required (authenticator app) | Available only where the challenge is not dynamically linked |
+
+TOTP cannot satisfy a dynamically linked debit because its code cannot be bound
+to the amount and payee. For a non-dynamically-linked challenge, use TOTP only
+when it appears in `scaChallenge.availableFactors`; that field is authoritative.
 
 Request a specific factor per transaction with the optional top-level `scaFactor`
-field on `execute` / `transfer-out` (`SMS_OTP` default, or `PASSKEY`).
+field on `execute` (`SMS_OTP` default, or `PASSKEY`).
 
 ### Satisfying a challenge
 
@@ -52,14 +57,11 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/authori
 ```
 
 <Warning>
-**A pre-funded send is a single authorization today — but write your client to
-loop.** One `POST /quotes/{quoteId}/authorize` releases a pre-funded send; the
-currency-conversion leg of a cross-currency send is not separately gated. Even
-so, treat `scaChallenge` as the challenge to satisfy *now*, not necessarily the
-only one: after authorizing, re-inspect the returned quote, and if it is still
+**Write your client to loop on status, not on a fixed challenge count.** Treat
+`scaChallenge` as the challenge to satisfy *now*, not necessarily the only one:
+after authorizing, re-inspect the returned quote, and if it is still
 `PENDING_AUTHORIZATION` it carries the **next** `scaChallenge` (a new `id`) —
-authorize that one too and repeat until it leaves `PENDING_AUTHORIZATION`. A
-client written to loop on status stays correct if a future flow adds steps.
+authorize that one too and repeat until it leaves `PENDING_AUTHORIZATION`.
 </Warning>
 
 Once the quote is in `PENDING_AUTHORIZATION`, authorize it:

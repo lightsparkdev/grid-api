@@ -35,9 +35,10 @@ challenge at quote time.
 with an `scaChallenge`.
 </Step>
 <Step title="Authorize the quote">
-`POST /quotes/{quoteId}/authorize` with the proof. A pre-funded send is a single
-challenge — one authorization releases it (the currency-conversion leg of a
-cross-currency send is not separately gated).
+`POST /quotes/{quoteId}/authorize` with the proof. Re-inspect the returned quote:
+if it remains `PENDING_AUTHORIZATION`, authorize its next `scaChallenge`. Do not
+assume a fixed number of challenges for a cross-currency or other multi-step
+send.
 </Step>
 </Steps>
 </Tab>
@@ -54,7 +55,8 @@ withheld until you clear it — you authorize before you fund.
 </Step>
 <Step title="Authorize the quote">
 `POST /quotes/{quoteId}/authorize` with the proof — the challenge is carried by
-the quote, and a single authorization clears it.
+the quote. Re-inspect the returned quote and continue the authorization loop if
+it remains `PENDING_AUTHORIZATION`.
 </Step>
 <Step title="Read the payment instructions">
 Read `paymentInstructions` from the returned (advanced) quote and fund the
