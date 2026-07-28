@@ -1,0 +1,87 @@
+name: grid-wallet-prod image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'components/grid-wallet-prod/**'
+      - '.github/workflows/grid-wallet-prod-image.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: grid-wallet-prod-image
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # The tooling-prod cluster is Graviton (m8g), so the image must be
+    # linux/arm64. A native ARM runner avoids QEMU emulation, which makes a
+    # Next.js build painfully slow. NOTE: no other workflow in this repo uses
+    # an ARM label yet — if this job sits in `queued`, GitHub-hosted ARM
+    # runners are not enabled for the org and the fallback is
+    # docker/setup-qemu-action + docker/setup-buildx-action on ubuntu-latest.
+    runs-on: ubuntu-24.04-arm
+    # Actions are pinned to full commit SHAs, not major tags. This job holds
+    # id-token: write and assumes a role that can push to ECR, so an upstream
+    # tag move would silently change code running with cloud write access.
+    # NOTE: this repo has no Dependabot config, so these pins do not update
+    # themselves — re-resolve them when bumping, or add a dependabot.yml with
+    # a github-actions ecosystem entry so they stay current.
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: arn:aws:iam::405785876631:role/github-actions-grid-wallet-prod
+          aws-region: us-west-2
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
+
+      - name: Build and push
+        working-directory: components/grid-wallet-prod
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          TAG="sha-${GITHUB_SHA}"
+          IMAGE="${REGISTRY}/grid-wallet-prod:${TAG}"
+
+          # The ECR repo is IMMUTABLE-tagged, so re-pushing an existing tag is
+          # a hard failure. A re-run (manual retry, cancelled-then-resumed job)
+          # must be a no-op rather than a red build.
+          #
+          # Distinguish "tag absent" from "the call failed". A bare
+          # `if aws ... >/dev/null 2>&1` is exempt from set -e and treats an
+          # IAM/network error identically to a missing image, so a transient
+          # failure would fall through to a build and then die on the immutable
+          # push. Only ImageNotFoundException means "go build".
+          set +e
+          describe_err=$(aws ecr describe-images --repository-name grid-wallet-prod \
+                           --image-ids imageTag="$TAG" --region us-west-2 2>&1 >/dev/null)
+          describe_rc=$?
+          set -e
+          if [ "$describe_rc" -eq 0 ]; then
+            echo "$IMAGE already present — nothing to do."
+            exit 0
+          elif ! grep -q 'ImageNotFoundException' <<<"$describe_err"; then
+            echo "::error::describe-images failed for a reason other than a missing tag:"
+            echo "$describe_err"
+            exit 1
+          fi
+          echo "$TAG not present — building."
+
+          # NEXT_PUBLIC_* is inlined by Next at BUILD time, so the sandbox flag
+          # is a build arg, not a runtime var. It is written literally here and
+          # has NO default in the Dockerfile: a production image would be a
+          # separate workflow and a separate ECR repo, so this flag cannot leak
+          # by inheritance.
+          docker build \
+            --platform linux/arm64 \
+            --build-arg NEXT_PUBLIC_GRID_SANDBOX=true \
+            -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "Pushed $IMAGE"
