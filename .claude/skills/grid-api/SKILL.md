@@ -220,7 +220,6 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     "currency": "MXN",
     "accountInfo": {
       "accountType": "MXN_ACCOUNT",
-      "paymentRails": ["SPEI"],
       "clabeNumber": "<18-digit-number>",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
@@ -578,7 +577,7 @@ Use this flow when the user asks for a "realtime quote" or "just in time" funded
 7. **Destination currency is only for UMA**: Specify `currency` in the destination object ONLY for `UMA_ADDRESS` destinations. For `ACCOUNT` destinations the currency is intrinsic to the account and must be omitted — the only optional field there is `paymentRail`
 8. **Individual beneficiary requires fullName**: For `beneficiaryType: "INDIVIDUAL"`, `fullName` is required. `birthDate` (YYYY-MM-DD) and `nationality` (2-letter code) are optional but recommended
 9. **Use correct Nigerian field names**: Use `bankName` (NOT `bankCode`) and include `purposeOfPayment`
-10. **Don't forget country-specific required fields**: Brazil (BRL_ACCOUNT) requires `pixKey`, `pixKeyType`, and `taxId`; Europe (EUR_ACCOUNT) requires `iban`; all fiat accounts require `paymentRails`
+10. **Don't forget country-specific required fields**: Brazil (BRL_ACCOUNT) requires `pixKey`, `pixKeyType`, and `taxId`; Europe (EUR_ACCOUNT) requires `iban`; all fiat accounts require a `beneficiary`. Do not send `paymentRails` — Grid selects the rail and returns it on the created account.
 
 ## Error Handling
 

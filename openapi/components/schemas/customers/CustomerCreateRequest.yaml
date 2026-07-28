@@ -34,13 +34,18 @@ properties:
   email:
     type: string
     format: email
-    description: Email address for the customer.
+    description: >-
+      Email address for the customer. **Required in regions that verify the
+      email address before identity verification** (e.g. the EU); optional
+      otherwise.
     example: john.doe@example.com
   phoneNumber:
     type: string
     pattern: '^\+[1-9]\d{1,14}$'
     description: >-
-      Phone number for the customer in strict E.164 format.
+      Phone number for the customer in strict E.164 format. **Required in
+      regions that verify the phone number before identity verification**
+      (e.g. the EU); optional otherwise.
     example: '+14155551234'
   umaAddress:
     type: string

@@ -1,0 +1,9 @@
+type: string
+enum:
+  - UNDER_50K
+  - RANGE_50K_100K
+  - RANGE_100K_250K
+  - RANGE_250K_1M
+  - OVER_1M
+description: Bucketed annual income (USD equivalent). Used for enhanced due diligence on higher-risk profiles.
+example: RANGE_100K_250K

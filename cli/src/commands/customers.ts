@@ -419,4 +419,64 @@ export function registerCustomersCommand(
       );
       outputResponse(response);
     });
+
+  customersCmd
+    .command("verify-email <customerId>")
+    .description("Send an email verification code to a customer")
+    .action(async (customerId: string) => {
+      const opts = program.opts<GlobalOptions>();
+      const client = getClient(opts);
+      if (!client) return;
+
+      const response = await client.post<void>(
+        `/customers/${customerId}/verify-email`
+      );
+      outputResponse(response);
+    });
+
+  customersCmd
+    .command("confirm-email <customerId>")
+    .description("Confirm a customer's email verification code")
+    .requiredOption("--code <code>", "The verification code the customer received")
+    .action(async (customerId: string, options) => {
+      const opts = program.opts<GlobalOptions>();
+      const client = getClient(opts);
+      if (!client) return;
+
+      const response = await client.post<Customer>(
+        `/customers/${customerId}/verify-email/confirm`,
+        { code: options.code }
+      );
+      outputResponse(response);
+    });
+
+  customersCmd
+    .command("verify-phone <customerId>")
+    .description("Send a phone verification code to a customer")
+    .action(async (customerId: string) => {
+      const opts = program.opts<GlobalOptions>();
+      const client = getClient(opts);
+      if (!client) return;
+
+      const response = await client.post<void>(
+        `/customers/${customerId}/verify-phone`
+      );
+      outputResponse(response);
+    });
+
+  customersCmd
+    .command("confirm-phone <customerId>")
+    .description("Confirm a customer's phone verification code")
+    .requiredOption("--code <code>", "The verification code the customer received")
+    .action(async (customerId: string, options) => {
+      const opts = program.opts<GlobalOptions>();
+      const client = getClient(opts);
+      if (!client) return;
+
+      const response = await client.post<Customer>(
+        `/customers/${customerId}/verify-phone/confirm`,
+        { code: options.code }
+      );
+      outputResponse(response);
+    });
 }
