@@ -14632,6 +14632,7 @@ components:
               description: Type of asset
               enum:
                 - USDC
+                - USDT
     AedAccountInfoBase:
       type: object
       required:
