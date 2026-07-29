@@ -9,14 +9,14 @@ describe("error handling", () => {
         status: 400,
         code: "INVALID_REQUEST",
         message: "Bad request",
-        details: { field: "email" },
+        details: { errors: [{ field: "email" }] },
       },
     });
 
     const parsed = JSON.parse(stdout);
     expect(parsed.success).toBe(false);
     expect(parsed.error.code).toBe("INVALID_REQUEST");
-    expect(parsed.error.details).toEqual({ field: "email" });
+    expect(parsed.error.details).toEqual({ errors: [{ field: "email" }] });
     // The whole error envelope must not be nested under details.
     expect(parsed.error.details.code).toBeUndefined();
   });
