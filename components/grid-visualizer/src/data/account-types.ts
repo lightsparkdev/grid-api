@@ -260,6 +260,16 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: false,
   },
+  SWIFT_ACCOUNT: {
+    accountType: 'SWIFT_ACCOUNT',
+    fields: [
+      { name: 'swiftCode', example: 'DEUTDEFF' },
+      { name: 'bankName', example: 'Deutsche Bank' },
+      { name: 'country', example: 'NG', description: 'ISO 3166-1 alpha-2 code' },
+      { name: 'accountNumber', example: '1234567890', description: 'Or use iban for IBAN-only corridors' },
+    ],
+    beneficiaryRequired: true,
+  },
   AED_ACCOUNT: {
     accountType: 'AED_ACCOUNT',
     fields: [
