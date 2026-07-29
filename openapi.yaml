@@ -3891,11 +3891,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: SCA is not required for this customer, or the quote has no pending challenge to authorize.
+          description: SCA is not required for this customer, or the quote has no pending challenge to authorize. Also returned with `SCA_SESSION_REQUIRED` when the customer's SCA login session is missing or expired — re-authenticate the customer, then authorize again.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: Returned with `ACCOUNT_LOCKED` when the customer's login is temporarily locked after too many failed authorization attempts. The customer must wait for the lock to expire before authorizing again.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '429':
           description: Too many requests. Returned with `RATE_LIMITED` when authorization attempts for this challenge happen too frequently (for example, repeated bad codes brute-forcing the OTP). The challenge may be invalidated after too many failed attempts. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
           content:
@@ -12580,6 +12586,7 @@ components:
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
+            | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
@@ -12588,6 +12595,7 @@ components:
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
             - PASSKEY_ALREADY_ENROLLED
+            - SCA_SESSION_REQUIRED
             - CONFLICT
         message:
           type: string
