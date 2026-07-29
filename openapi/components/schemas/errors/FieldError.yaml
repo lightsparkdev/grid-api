@@ -1,0 +1,19 @@
+type: object
+required:
+  - field
+description: >-
+  One field-level validation failure. Field-validation errors on submit
+  endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`) emit an array of
+  these under `details.errors` so platforms can render form-field-level UX
+  for every failure in a single round-trip.
+properties:
+  field:
+    type: string
+    description: Dot-notation path to the offending field.
+    example: taxIdentifier
+  constraint:
+    $ref: ./FieldConstraint.yaml
+  message:
+    type: string
+    description: Human-readable explanation of what's wrong with this field.
+    example: Value is not one of the allowed enum members.
