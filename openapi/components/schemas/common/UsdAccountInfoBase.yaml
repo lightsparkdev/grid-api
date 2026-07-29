@@ -20,7 +20,47 @@ properties:
     minLength: 9
     maxLength: 9
     pattern: ^[0-9]{9}$
+  bankName:
+    type: string
+    description: The name of the financial institution holding the account
+    example: Chase Bank
+    minLength: 1
+    maxLength: 140
+  bankAccountType:
+    type: string
+    description: Whether the account is a checking or a savings account
+    enum:
+    - CHECKING
+    - SAVINGS
+    example: CHECKING
+  intermediaryBankName:
+    type: string
+    description: >-
+      The name of the intermediary financial institution, for accounts reachable
+      only through a correspondent bank. Used on the WIRE rail; ignored on ACH,
+      RTP and FEDNOW.
+    example: JPMorgan Chase Bank
+    minLength: 1
+    maxLength: 140
+  intermediaryRoutingNumber:
+    type: string
+    description: >-
+      The ABA routing number of the intermediary financial institution. Used on
+      the WIRE rail; ignored on ACH, RTP and FEDNOW.
+    example: '021000021'
+    minLength: 9
+    maxLength: 9
+    pattern: ^[0-9]{9}$
+  fiToFiInformation:
+    type: string
+    description: >-
+      Bank-to-bank instructions carried alongside the payment. Used on the WIRE
+      rail; ignored on ACH, RTP and FEDNOW.
+    example: /BNF/Invoice 4471
+    maxLength: 210
 example:
   accountType: USD_ACCOUNT
   accountNumber: '1234567890'
   routingNumber: '021000021'
+  bankName: Chase Bank
+  bankAccountType: CHECKING

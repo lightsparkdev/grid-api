@@ -26,3 +26,5 @@ properties:
       remittanceInformation field, and for wires it populates the OBI
       (Originator to Beneficiary Information) / beneficiary information.
     example: '12345'
+  purposeOfPayment:
+    $ref: ../quotes/PurposeOfPayment.yaml
