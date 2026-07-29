@@ -1,0 +1,39 @@
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+}
+
+/* Hosts the home + presented flow layers. No PresentationStage: this app has
+   no sheet-stack recede — flows slide up full-screen over the static home. */
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+}
+
+/* The home + tab bar — sits still beneath presented flows. */
+.underlay {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dim over the home while a flow page sits on top (below the page's z). */
+.pushScrim {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: var(--od-push-scrim);
+  pointer-events: none;
+}

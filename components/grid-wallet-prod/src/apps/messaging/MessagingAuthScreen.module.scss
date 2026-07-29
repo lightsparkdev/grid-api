@@ -1,0 +1,168 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--app-bg);
+  overflow: hidden;
+}
+
+/* The welcome screen — base of the nav stack (parallax-shifts left while a
+   flow page is pushed over it). */
+.underlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg);
+}
+
+/* Pushed full-screen page host (iOS nav push — slides in from the right). */
+.pushPage {
+  position: absolute;
+  inset: 0;
+}
+
+/* Dim over the level beneath a pushed page. */
+.pushScrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.4);
+  }
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  /* 62px status bar clearance up top; CTAs land on the app-standard 40px
+     bottom gutter. */
+  padding: 62px 24px 40px;
+}
+
+/* The doodle centers in the leftover space above the copy (IMG_0702 sits it
+   slightly above the vertical middle). */
+.hero {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ~30% down from the original 246px hero. */
+.doodle {
+  width: 172px;
+}
+
+.copy {
+  flex-shrink: 0;
+  padding: 0 8px 28px;
+  text-align: center;
+}
+
+/* IMG_0702's "Welcome to WhatsApp" — Title1 weight-up (28/34 bold). */
+.title {
+  margin: 0 0 16px;
+  @include ios.ios-text-title-1;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-1-opsz);
+  color: var(--app-text-primary);
+  text-wrap: balance;
+}
+
+/* Subheadline / Regular — secondary, green semibold links. */
+.legal {
+  margin: 0 auto;
+  max-width: 300px;
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+  text-wrap: pretty;
+}
+
+.legalLink {
+  color: var(--ios-tint);
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Each CTA collapses its real height on toggle — overflow hides the collapse;
+   the clip margin + negative inline margin give the press bloom room. */
+.action {
+  overflow: clip;
+  overflow-clip-margin: 8px;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.creatingSlot {
+  position: absolute;
+  inset: 0;
+  z-index: 5; // above the pushed pages (z 1–4) if a fade is still finishing
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ChatsApp glyph stacked over the spinner + caption (Aurora's caption is
+   white-on-aurora — this one reads on the paper-white page). */
+.creatingGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.creatingLogo {
+  display: inline-flex;
+  color: var(--msg-cta);
+
+  svg path {
+    stroke-width: 4;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.creatingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ios-label-secondary);
+}
+
+.creatingSpinner {
+  display: inline-flex;
+  flex-shrink: 0;
+  animation: msg-creating-spin 0.9s linear infinite;
+}
+
+.creatingText {
+  @include ios.ios-text-subheadline;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+@keyframes msg-creating-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .creatingSpinner {
+    animation: none;
+  }
+}

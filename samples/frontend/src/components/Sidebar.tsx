@@ -1,4 +1,4 @@
-export type FlowKey = 'payout' | 'usdc-payout' | 'exchange-rates' | 'embedded-wallet'
+export type FlowKey = 'payout' | 'usdc-payout' | 'exchange-rates' | 'embedded-wallet' | 'kyc-onboarding'
 
 interface FlowEntry {
   key: FlowKey
@@ -11,6 +11,11 @@ const FLOWS: FlowEntry[] = [
     key: 'exchange-rates',
     label: 'Exchange Rates',
     description: 'Look up FX rates and fees for a corridor',
+  },
+  {
+    key: 'kyc-onboarding',
+    label: 'KYC Onboarding',
+    description: "Verify a customer's identity with a hosted KYC link",
   },
   {
     key: 'payout',

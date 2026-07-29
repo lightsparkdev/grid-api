@@ -1,0 +1,46 @@
+/* The layered doodle stage — keeps the original artwork's 720:610 canvas so
+   the percent geometry in WelcomeDoodle.tsx maps 1:1. */
+.stage {
+  position: relative;
+  aspect-ratio: 720 / 610;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Beat hosts — both fill the stage and scale from its CENTER (the match cut). */
+.logoBeat,
+.partsBeat {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.logoBeat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The ChatsApp bubble glyph — outlined, brand green, 40px with a chunky
+   ~4px screen stroke (non-scaling-stroke pins it through the beat scales). */
+.logoGlyph {
+  display: inline-flex;
+  color: var(--msg-cta);
+
+  svg path {
+    stroke-width: 4;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.slot {
+  position: absolute;
+}
+
+.part {
+  display: block;
+  width: 100%;
+  height: auto;
+  will-change: transform;
+}

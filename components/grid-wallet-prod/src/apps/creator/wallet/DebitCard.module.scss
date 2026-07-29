@@ -1,0 +1,145 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2528:21062 — Glitch debit card. The three faces (edge, front, back) stack
+   absolutely in a 3D shell so the flip (rotateY) and the translateZ thickness
+   extrude both resolve in the same space. */
+.cardShell {
+  position: relative;
+  width: 100%;
+  height: 232px;
+  transform-style: preserve-3d;
+}
+
+/* Soft drop shadow — a blurred copy of the card's rounded shape, pushed back/down
+   behind the faces. It lives in the 3D shell so it tracks the card's tilt (it's
+   the card's own silhouette). border-radius (not clip-path) so the blur isn't
+   clipped to a hard edge. */
+.cardShadow {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
+  corner-shape: var(--corner-shape);
+  background: rgba(0, 0, 0, 0.22);
+  filter: blur(22px);
+  /* translateY only (NO translateZ): the 180° flip inverts Z, which would throw a
+     translateZ shadow IN FRONT of the card on the created screen. Coplanar + behind
+     in DOM order keeps it behind in both orientations. */
+  transform: translateY(16px);
+}
+
+/* A card face — absolute so edge/front/back align in the 3D shell. */
+.cardFace {
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 24px 24px;
+  /* clip-path via useSquircleClip — border-radius must stay 0 (see fill-button). */
+  border-radius: 0;
+  overflow: hidden;
+  /* Subtle top-lit gradient (brand purple, lighter toward the top edge, a touch
+     darker toward the bottom) so the tilted card catches light and reads 3D. */
+  background: linear-gradient(
+    158deg,
+    color-mix(in srgb, var(--app-tint) 90%, #000000) 0%,
+    var(--app-tint) 46%,
+    color-mix(in srgb, var(--app-tint) 84%, #ffffff) 100%
+  );
+  color: #ffffff;
+  text-align: left;
+  /* Each face hides once the flip turns it away (the other face takes over). */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Thickness slices — darker squircle layers pushed back 1px apart (translateZ set
+   inline per slice). Stacked, they fill the card's side so it reads as a solid 3D
+   edge following the rounded corners; hidden head-on. */
+.cardEdge {
+  background: color-mix(in srgb, var(--app-tint) 55%, #000);
+}
+
+/* Back face — an IDENTICAL card, pre-rotated 180° and overlaid. The issuance flip
+   is a single 180° roll, so the card lands on this face showing the same content
+   (no plain "back" to design). */
+.cardBack {
+  transform: rotateY(180deg);
+}
+
+/* Brand lockup — TV mark + wordmark, top-left (Figma 2528:21065). */
+.lockup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mark {
+  display: block;
+  flex: none;
+  width: auto;
+  height: 28px;
+}
+
+.wordmark {
+  font-family: var(--ios-font-family, inherit);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: normal;
+  letter-spacing: -0.5px;
+  color: #efeff1;
+  white-space: nowrap;
+}
+
+.bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.number,
+.debit {
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+  white-space: nowrap;
+}
+
+.number {
+  color: #ffffff;
+}
+
+.debit {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* DEBIT + Visa, stacked bottom-right (Figma 2528:21074). */
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.visa {
+  display: block;
+  width: 61.856px;
+  height: 20px;
+}
+
+/* One-time whiter shimmer sweep while the card is being created. Clipped by the
+   card's squircle (overflow hidden); rides above the content. */
+.shimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 65%
+  );
+}

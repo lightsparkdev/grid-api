@@ -1,0 +1,281 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2548:21380 — flat section: header (pt24 pb6 px24) + list (px24). */
+.section {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 28px 24px 6px;
+}
+.headerTitle {
+  margin: 0;
+  flex: 1 1 0;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--app-text-primary);
+}
+
+.list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 24px;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* ── Row (Figma 2548:21401) — gap12, py10, items-center ────────────────────── */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 0;
+}
+
+/* 40px stroked circle, icon centered. */
+.graphic {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  corner-shape: round;
+  border: 1.5px solid var(--z-border);
+  background: transparent;
+  color: var(--app-text-primary);
+  overflow: hidden;
+
+  svg path {
+    stroke-width: 2;
+  }
+}
+.graphicImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatarInitials {
+  @include ios.ios-type-rounded;
+  font-size: 15px;
+  font-weight: 590;
+  line-height: 1;
+  color: var(--app-text-primary);
+}
+
+/* Person avatars match the send flow's recipient rows: tertiary fill (no ring)
+   with the country flag badged bottom-right. */
+.graphicAvatar {
+  background: var(--ios-fill-tertiary);
+  overflow: visible; // the corner flag badge hangs past the circle
+}
+.avatarFlag {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  corner-shape: round; // round badge + ring, not the global squircle
+  overflow: hidden;
+  /* Ring in the page bg separates the badge from the avatar fill. */
+  box-shadow: 0 0 0 2px var(--app-bg);
+}
+
+/* Info — Callout 16/21: Title (emphasized) + Description (regular secondary). */
+.info {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+.title {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--app-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.desc {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Amount — right-aligned: value (emphasized, green when positive) + timestamp. */
+.amount {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.amountValue {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  color: var(--app-text-primary);
+}
+.amountPositive {
+  color: var(--z-green);
+}
+.timestamp {
+  margin: 0;
+  @include ios.ios-text-subheadline;
+  color: var(--app-text-secondary);
+}
+
+/* ── Skeleton + reveal (Aurora/Glitch pattern, flat for Z) ─────────────────── */
+/* Fills the remaining list space so the message centers in the whole empty area;
+   the skeleton sits at the top, the message is absolutely centered over it. */
+.emptyWrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 124px;
+  width: 100%;
+}
+
+.skeletonLayer {
+  position: relative;
+  width: 100%;
+}
+
+/* Skeleton elements — theme-aware subtle gray. */
+.graphicSkeleton {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--z-skeleton);
+}
+.amountSkeleton {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.pill {
+  display: block;
+  height: 13px;
+  margin: 2px 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--z-skeleton);
+}
+
+/* Gradient cover: above the skeleton, below the message — skeleton peeks at the
+   top, fades to the page bg where the message sits. */
+.gradientMask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--cover-duration, 550ms) cubic-bezier(0.19, 1, 0.22, 1);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--app-bg) 25%, transparent) 0%,
+    var(--app-bg) 92%
+  );
+}
+.gradientMaskVisible {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gradientMask {
+    transition: none;
+  }
+}
+
+/* Empty message + CTA, centered over the covered skeleton. */
+.messageLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding-top: 16px;
+  pointer-events: auto;
+}
+.emptyText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.emptyTitle {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  font-weight: 500;
+  font-variation-settings: 'wght' 500, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+  color: var(--app-text-primary);
+}
+/* Same size as the title (footnote 13/18), medium weight, secondary. */
+.emptySub {
+  margin: 0 auto;
+  max-width: 260px;
+  @include ios.ios-text-footnote;
+  font-weight: 500;
+  font-variation-settings: 'wght' 500, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+  color: var(--app-text-secondary);
+  text-wrap: balance;
+}
+
+/* "Add money" CTA — flat inverted pill (Z primary). */
+.addCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--p-fill);
+  color: var(--p-fg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.08);
+  }
+  &:active {
+    filter: brightness(0.94);
+  }
+}

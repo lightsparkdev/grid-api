@@ -201,6 +201,35 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   }'
 ```
 
+## Failed or refunded payments
+
+If an incoming payment cannot be completed after it is accepted, Grid initiates a refund automatically. The transaction moves to `FAILED`, and you'll receive `INCOMING_PAYMENT.REFUND_PENDING` followed by `INCOMING_PAYMENT.REFUND_COMPLETED` or `INCOMING_PAYMENT.REFUND_FAILED`. The transaction's `refund` object tracks the refund status and reference.
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000011",
+  "type": "INCOMING_PAYMENT.REFUND_COMPLETED",
+  "timestamp": "2023-08-15T14:40:00Z",
+  "data": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+    "status": "FAILED",
+    "type": "INCOMING",
+    "failureReason": "OFFRAMP_FAILED",
+    "refund": {
+      "reference": "REF-123456789-REFUND",
+      "initiatedAt": "2023-08-15T14:35:00Z",
+      "settledAt": "2023-08-15T14:40:00Z",
+      "status": "COMPLETED",
+      "reason": "TRANSACTION_FAILED"
+    }
+  }
+}
+```
+
+<Note>
+  For the `refund` object field reference, see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle#refund-object) guide.
+</Note>
+
 ## Test the inbound flow
 
 Use the <a href="/global-p2p/platform-tools/uma-test-wallet">UMA Test Wallet</a> to send a regtest payment to your customer's UMA address.

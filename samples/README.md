@@ -21,6 +21,8 @@ Each backend must implement the same API contract:
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/customers` | Create a customer |
+| GET  | `/api/customers/{id}` | Get a customer (incl. `kycStatus`) |
+| POST | `/api/customers/{id}/kyc-link` | Generate a hosted KYC link |
 | POST | `/api/customers/{id}/external-accounts` | Create an external account |
 | POST | `/api/quotes` | Create a quote |
 | POST | `/api/sandbox/send-funds` | Simulate sandbox funding |

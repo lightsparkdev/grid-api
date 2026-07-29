@@ -10,6 +10,7 @@ import {
 } from "../validation";
 import { confirm } from "../prompt";
 import { parseList } from "../parse";
+import { addSignedOptions, signedHeaders, signedOptionsError } from "../signed";
 
 interface Customer {
   id: string;
@@ -317,7 +318,7 @@ export function registerCustomersCommand(
     .option("--address-state <state>", "State/Province")
     .option("--address-postal <code>", "Postal code")
     .option("--address-country <country>", "Country code");
-  businessOptions(updateCmd).action(async (customerId: string, options) => {
+  addSignedOptions(businessOptions(updateCmd)).action(async (customerId: string, options) => {
     const opts = program.opts<GlobalOptions>();
     const client = getClient(opts);
     if (!client) return;
@@ -338,6 +339,8 @@ export function registerCustomersCommand(
           "Update --email and --phone-number in separate calls, not together",
       });
     }
+    const signedError = signedOptionsError(options);
+    if (signedError) validations.push({ valid: false, error: signedError });
     const validation = validateAll(validations);
     if (!validation.valid) {
       output(formatError(validation.error!));
@@ -362,7 +365,8 @@ export function registerCustomersCommand(
 
     const response = await client.patch<Customer>(
       `/customers/${customerId}`,
-      body
+      body,
+      signedHeaders(options)
     );
     outputResponse(response);
   });

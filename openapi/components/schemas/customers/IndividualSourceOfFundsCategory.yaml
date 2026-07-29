@@ -1,0 +1,18 @@
+type: string
+enum:
+  - SALARY
+  - SELF_EMPLOYMENT_INCOME
+  - INVESTMENT_INCOME
+  - PENSION
+  - RENTAL_INCOME
+  - GIFT
+  - INHERITANCE
+  - LOAN
+  - SAVINGS
+  - SALE_OF_ASSETS
+  - OTHER
+description: >-
+  A structured source-of-funds category for an individual customer (FLOW of
+  funds into this account). Distinct from `SourceOfFundsCategory`, which
+  covers business customers.
+example: SALARY

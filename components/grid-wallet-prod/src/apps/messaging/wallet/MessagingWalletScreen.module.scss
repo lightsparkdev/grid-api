@@ -1,0 +1,300 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+.root {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  /* Aurora's reused money sheet frosts to --wallet-bg — keep it the page bg
+     (the ChatsApp paper white). */
+  --wallet-bg: #feffff;
+  background: var(--wallet-bg);
+  overflow: hidden;
+
+  :global([data-theme='dark']) & {
+    /* WhatsApp dark — true black page (iOS system dark). */
+    --wallet-bg: #000000;
+  }
+}
+
+/* Home content scrolls under the frosted tab bar. Flex column so the activity
+   section can stretch to the bottom edge when the list is empty. */
+.scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 62px 0 107px; /* status bar; floating pill (21 + 62) + 24 air */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Content alpha-dissolves as it scrolls under the chrome (the country
+     picker's ramp — the blur layers alone read too subtle). Ramps live
+     INSIDE the chrome zones (status bar 62; pill top 83 from the bottom),
+     so resting content — headers at 70, list bottom at 107 — stays solid. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    rgba(0, 0, 0, 0.2) 44px,
+    #000 72px,
+    #000 calc(100% - 104px),
+    rgba(0, 0, 0, 0.2) calc(100% - 56px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    rgba(0, 0, 0, 0.2) 44px,
+    #000 72px,
+    #000 calc(100% - 104px),
+    rgba(0, 0, 0, 0.2) calc(100% - 56px),
+    transparent 100%
+  );
+}
+
+/* ── Progressive scroll-edge blur (the country picker's 3-layer recipe) ──────
+   Content scrolling under the status bar (top) and the floating tab bar
+   (bottom) melts progressively instead of hard-clipping. Blur-only — no fill,
+   no mask on the container (each layer masks itself); square corners (the
+   AppShell screen clip rounds the phone). */
+.edgeFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.edgeFadeTop {
+  top: 0;
+  height: 96px; // status bar (62) + falloff
+}
+
+.edgeFadeBottom {
+  bottom: 0;
+  height: 130px; // floating pill zone (21 + 62 + 24) + falloff
+}
+
+.fadeBlur {
+  position: absolute;
+  inset: 0;
+  /* Hairline fill triggers backdrop-filter compositing without a visible tint. */
+  background: rgba(255, 255, 255, 0.01);
+  -webkit-backdrop-filter: blur(var(--fade-blur));
+  backdrop-filter: blur(var(--fade-blur));
+  mask-image: var(--fade-mask);
+  -webkit-mask-image: var(--fade-mask);
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.01);
+  }
+}
+
+/* Top ramp: full blur at the very top → clear below the status bar. */
+.edgeFadeTop .fadeBlurStrong {
+  --fade-blur: 1.2px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 45%, transparent 82%);
+}
+
+.edgeFadeTop .fadeBlurMid {
+  --fade-blur: 0.65px;
+  --fade-mask: linear-gradient(to bottom, transparent 25%, #000 60%, transparent 95%);
+}
+
+.edgeFadeTop .fadeBlurSoft {
+  --fade-blur: 0.4px;
+  --fade-mask: linear-gradient(to bottom, transparent 48%, #000 85%, transparent 100%);
+}
+
+/* Bottom ramp: the same stack mirrored (full blur at the screen's bottom edge). */
+.edgeFadeBottom .fadeBlurStrong {
+  --fade-blur: 1.2px;
+  --fade-mask: linear-gradient(to top, #000 0%, #000 45%, transparent 82%);
+}
+
+.edgeFadeBottom .fadeBlurMid {
+  --fade-blur: 0.65px;
+  --fade-mask: linear-gradient(to top, transparent 25%, #000 60%, transparent 95%);
+}
+
+.edgeFadeBottom .fadeBlurSoft {
+  --fade-blur: 0.4px;
+  --fade-mask: linear-gradient(to top, transparent 48%, #000 85%, transparent 100%);
+}
+
+/* Figma 2640:19600 — px 24, py 8, chips at the edges. */
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+}
+
+/* Solid flat circle button (Figma 2640:19781/19803) — fills/secondary, true
+   circle, label-primary glyph. Constructed normally: no glass, no shadow. */
+.circleBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  /* True circles — override the global superellipse on *. */
+  corner-shape: round;
+  background: var(--ios-fill-secondary);
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s ease-out, transform 0.16s ease-out;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+
+  @media (hover: hover) {
+    &:hover:not([data-noop]) {
+      background: var(--ios-fill-primary);
+    }
+  }
+
+  &:active:not([data-noop]) {
+    transform: scale(0.94);
+    transition: transform 0.08s ease-out;
+  }
+
+  /* Decorative no-op: reads normal at rest, no hover/press feedback (the
+     group-hover dim on the parent reveals it). */
+  &[data-noop] {
+    cursor: default;
+  }
+}
+
+.actionCircle {
+  width: 56px;
+  height: 56px;
+  transition: background-color 0.2s ease-out, color 0.2s ease-out,
+    transform 0.16s ease-out;
+}
+
+/* Large Title/Emphasized — 34/41 bold, +0.4 (Figma 2640:19607). */
+.title {
+  margin: 0;
+  padding: 8px 24px;
+  @include ios.ios-text-large-title;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-large-title-opsz);
+  letter-spacing: 0.4px;
+  color: var(--ios-label-primary);
+}
+
+/* Figma 2640:19608 — pt 16, pb 20, px 24, gap 4. */
+.balance {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 24px 20px;
+}
+
+/* Callout/Emphasized — 16/21 semibold, the vibrant secondary gray. */
+.balanceLabel {
+  margin: 0;
+  @include ios.ios-text-callout;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-callout-opsz);
+  color: var(--ios-label-secondary);
+}
+
+/* Large Title/Emphasized — the balance figure. */
+.balanceValue {
+  margin: 0;
+  @include ios.ios-text-large-title;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-large-title-opsz);
+  letter-spacing: 0.4px;
+  color: var(--ios-label-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Figma 2640:19612 — px 8, py 12, gap 8, four equal columns. */
+.actionsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 8px;
+}
+
+/* No-op actions read normal at rest; entering the GRID dims them to signal
+   they're unavailable, and leaving restores them (the money sheet's
+   no-op-source pattern). Dimmed via COLOR (half-alpha fills/labels), not
+   element opacity: animating opacity promotes the column to its own
+   compositor layer, and the label's antialiasing flip reads as a brightness
+   blip on dark backgrounds. */
+.actionsGroup {
+  @media (hover: hover) {
+    &:hover .action[data-noop] {
+      .actionCircle {
+        background: color-mix(in srgb, var(--ios-fill-secondary) 50%, transparent);
+        color: color-mix(in srgb, var(--ios-label-primary) 50%, transparent);
+      }
+
+      .actionLabel {
+        color: color-mix(in srgb, var(--ios-label-secondary) 50%, transparent);
+      }
+    }
+  }
+}
+
+/* One action column — 56px glass circle + 13px label, gap 8. */
+.action {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 28px glyph in the 56px circle — compensate the baked stroke-2 (24 grid)
+   back to a true 2 screen px at the 28px render. */
+.actionIcon {
+  path {
+    stroke-width: calc(2 * 24 / 28);
+  }
+}
+
+/* Footnote/Regular — 13/18, secondary, centered. */
+.actionLabel {
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  text-align: center;
+  white-space: nowrap;
+  transition: color 0.2s ease-out;
+}
+
+/* Fills the rest of the scroll area so the empty state can center its message
+   in the space down to the phone's bottom edge. */
+.activitySection {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  padding-top: 8px;
+}
+
+/* Title3/Emphasized — 20/25 semibold (Figma 2640:19680). */
+.activityTitle {
+  margin: 0;
+  padding: 8px 24px;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}

@@ -1,0 +1,35 @@
+type: object
+description: >-
+  Email branding and sender settings for card-tokenization authentication messages.
+  Invalid or unverified sender identities can cause delivery to fail.
+properties:
+  fromAddress:
+    type: string
+    format: email
+    maxLength: 255
+    description: Sender address for card-tokenization authentication emails.
+    example: cards@acme.com
+  fromName:
+    type: string
+    maxLength: 255
+    description: Sender display name.
+    example: Acme Cards
+  replyToAddress:
+    type: string
+    format: email
+    maxLength: 255
+    description: Reply-to address for card-tokenization authentication emails.
+    example: support@acme.com
+  subject:
+    type: string
+    maxLength: 255
+    description: Subject for the authentication email.
+    example: Your Acme card verification code
+  bodyText:
+    type: string
+    maxLength: 2000
+    description: |
+      Plain-text message content. Lightspark inserts the authentication code into
+      a controlled text and HTML template; arbitrary HTML and template variables
+      are not supported.
+    example: Use this code to finish adding your Acme card to your digital wallet.

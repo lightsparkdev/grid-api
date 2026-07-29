@@ -1,0 +1,47 @@
+---
+description: Wallet demo skin architecture — share the brain, not the face
+globs: **/src/apps/**/*.{ts,tsx,scss}
+alwaysApply: false
+---
+
+# Wallet demo: share the brain, not the face
+
+`components/grid-wallet-demo` shares app logic once; each persona ("skin") owns its
+entire UI. Full guide: `src/apps/SKINS.md` — read it before building or restyling a skin.
+
+## The one rule
+
+A per-skin file is **presentational only**. It calls the shared "brain" —
+`useWalletHome()` and `useMoneySheet()` in `apps/shared/wallet` — reads shared data, and
+renders. Never re-implement balance math, FX/fees, API calls, card issuance, tap-to-pay,
+or bank/address data inside a skin.
+
+## Restyle by forking the face — never by adding props
+
+To give a skin its own look, **copy the face** into `apps/<skin>/wallet/` and edit freely.
+Do NOT add props / tokens / variants to a shared component to reskin it.
+
+## iOS system sheets are shared mechanics, not faces
+
+OS chrome (the passkey sheet, `apps/shared/PasskeySheet`) looks identical in every app, so
+it lives in `apps/shared/` with colors pinned to canonical iOS and the app name passed as
+`appName` (from the registry `label`). Don't fork it per skin. Branded auth UI like
+`AuthSheet` (OTP) is the opposite — it stays a per-skin face.
+
+## Don't edit these to change one skin
+
+`apps/shared/**`, `apps/aurora/**` (shipped — treat as untouchable), `data/`, `lib/`,
+`hooks/` are shared by every skin. Edit the skin's own folder instead.
+
+## Naming: code = category, brand = data
+
+- Name skin code by its stable category: folder `apps/creator/`, components
+  `CreatorWalletScreen`, `id: 'creator'`, token `[data-app='creator']`.
+- The brand name is a data value: `export const BRAND = '...'` in the skin's `config.ts`,
+  read by every face + the registry `label`. Re-branding is a one-line edit; never bake a
+  brand name into a filename or identifier. (Aurora keeps its `aurora` id historically.)
+
+## Verify before done
+
+- `npx tsc --noEmit` — ignore the 3 baseline errors (`cornerShape`×2, `superellipse`); add none.
+- After any shared change, confirm Aurora (Financial app) looks identical AND your skin works.

@@ -1,0 +1,62 @@
+@use '../../shared/glass/glass-button-shadow' as shadow;
+
+.root {
+  position: relative;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  /* True circles — override the global superellipse on *. */
+  corner-shape: round;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* Lighter than the shared glass shadow — these sit in a grid on the flat
+     home surface (the same shadow reads heavier on bigger tiles). */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  @include shadow.glass-button-press-scale(1.06);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Decorative no-op: reads normal at rest, gives no hover/press feedback
+     (the parent group's hover reveals the dim — see the wallet home grid). */
+  &[data-noop] {
+    cursor: default;
+
+    &:hover,
+    &:active {
+      transform: none;
+      filter: none;
+    }
+  }
+}
+
+.glass {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: var(--glass-symbol-glyph, var(--ios-label-primary));
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Brand-green chip — white glyph over the green refracted gradient. */
+.green .glyph {
+  color: #ffffff;
+}

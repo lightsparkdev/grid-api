@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Sidebar, { FlowKey } from './components/Sidebar'
 import WebhookStream from './components/WebhookStream'
 import PayoutFlow from './flows/PayoutFlow'
+import KycOnboardingFlow from './flows/KycOnboardingFlow'
 import UsdcPayoutFlow from './flows/UsdcPayoutFlow'
 import ExchangeRatesFlow from './flows/ExchangeRatesFlow'
 import EmbeddedWalletFlow from './flows/EmbeddedWalletFlow'
@@ -10,6 +11,10 @@ const FLOW_META: Record<FlowKey, { title: string; subtitle: string }> = {
   payout: {
     title: 'Payout to Bank Account',
     subtitle: 'Send a real time payment funded with USDC',
+  },
+  'kyc-onboarding': {
+    title: 'KYC Onboarding',
+    subtitle: "Verify a customer's identity with a hosted KYC link",
   },
   'usdc-payout': {
     title: 'Send USDC to a Wallet',
@@ -40,6 +45,7 @@ export default function App() {
         <main className="flex-1 p-6 min-h-[calc(100vh-73px)] max-w-5xl">
           <h2 className="text-lg font-semibold mb-4">{meta.title}</h2>
           {activeFlow === 'payout' && <PayoutFlow key="payout" />}
+          {activeFlow === 'kyc-onboarding' && <KycOnboardingFlow key="kyc-onboarding" />}
           {activeFlow === 'usdc-payout' && <UsdcPayoutFlow key="usdc-payout" />}
           {activeFlow === 'exchange-rates' && <ExchangeRatesFlow key="exchange-rates" />}
           {activeFlow === 'embedded-wallet' && <EmbeddedWalletFlow key="embedded-wallet" />}

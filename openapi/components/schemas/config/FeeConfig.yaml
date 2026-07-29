@@ -1,0 +1,30 @@
+type: object
+description: >-
+  A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
+properties:
+  feeType:
+    $ref: ./FeeType.yaml
+  sourceCurrency:
+    type: string
+    description: >-
+      Currency code of the sending side this fee applies to. Only `USD` is
+      accepted today; other currencies return a `NOT_IMPLEMENTED` error.
+    example: USD
+  variableFeeBps:
+    type: integer
+    minimum: 0
+    maximum: 10000
+    description: >-
+      Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
+    example: 30
+  fixedFee:
+    $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      Fixed fee charged per transaction, in the smallest unit of the source
+      currency. The fixed fee currency must match the fee config's
+      `sourceCurrency`.
+required:
+  - feeType
+  - sourceCurrency
+  - variableFeeBps
+  - fixedFee

@@ -12,7 +12,7 @@ import type {
 } from './types';
 
 /** Yield rate shown on the Earnings card; today's accrual = balance × this ÷ 365. */
-export const EARNINGS_APY_PERCENT = 5;
+export const EARNINGS_APY_PERCENT = 3;
 /** Bars in the Weekly activity chart — one per recent card charge. */
 export const WEEKLY_BAR_COUNT = 14;
 
