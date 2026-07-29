@@ -84,7 +84,7 @@ rules:
     message: "Use $ref for request body schema instead of inline definition. See openapi/README.md#avoid-inline-schemas-in-request-and-response-definitions"
     severity: error
     resolved: false
-    given: "$.paths[*][get,post,put,patch,delete].requestBody.content[application/json].schema"
+    given: "$.paths[*][get,post,put,patch,delete].requestBody.content.*.schema"
     then:
       field: "$ref"
       function: truthy
@@ -95,7 +95,7 @@ rules:
     message: "Use $ref for response schema instead of inline definition. See openapi/README.md#avoid-inline-schemas-in-request-and-response-definitions"
     severity: error
     resolved: false
-    given: "$.paths[*][get,post,put,patch,delete].responses[*].content[application/json].schema"
+    given: "$.paths[*][get,post,put,patch,delete].responses[*].content.*.schema"
     then:
       field: "$ref"
       function: truthy
