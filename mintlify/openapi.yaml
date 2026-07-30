@@ -20871,10 +20871,6 @@ components:
               type: string
               description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
-            refundAddress:
-              type: string
-              description: Optional address the deposited funds are returned to if the crypto deposit cannot be routed to complete the payment. Applies to on-chain crypto funding sources.
-              example: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
       oneOf:
