@@ -4394,7 +4394,7 @@ paths:
               $ref: '#/components/schemas/CancelTransactionRequest'
       responses:
         '200':
-          description: Cancellation requested successfully
+          description: The banking partner accepted the cancellation request. The transfer reaches its cancelled state once the partner confirms it, so the transaction returned here may still report its pre-cancellation status.
           content:
             application/json:
               schema:
@@ -4429,6 +4429,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented for this payment rail. Cancellation depends on the banking partner settling the transfer exposing a cancellation facility; rails without one — wires, and ACH at partners that do not support it — return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /crypto/estimate-withdrawal-fee:
     post:
       summary: Estimate crypto withdrawal fee
