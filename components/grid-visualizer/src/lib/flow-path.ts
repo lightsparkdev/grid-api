@@ -1,5 +1,6 @@
 import type { CurrencySelection } from './code-generator';
 import { currencies } from '@/data/currencies';
+import { getSettlementRail } from '@/data/settlement-rails';
 
 export type ActionColor = 'fiat' | 'btc' | 'stable';
 
@@ -62,17 +63,40 @@ function getEndpointSublabel(sel: CurrencySelection): string {
   return sel.isInternal ? 'Internal account' : 'External account';
 }
 
+/**
+ * Whether the flow bridges two Grid Switches (cross-currency across fiat
+ * regions) — the only case where the settlement rail is visible.
+ */
+export function needsTwoSwitches(
+  source: CurrencySelection,
+  destination: CurrencySelection,
+  sourceRegion?: string | null,
+  destRegion?: string | null,
+): boolean {
+  const srcFiat = source.type === 'fiat' ? source.code : (sourceRegion ?? null);
+  const dstFiat = destination.type === 'fiat' ? destination.code : (destRegion ?? null);
+  return (
+    source.code !== destination.code &&
+    srcFiat != null &&
+    dstFiat != null &&
+    srcFiat !== dstFiat
+  );
+}
+
 export function buildFlowPath(
   source: CurrencySelection,
   destination: CurrencySelection,
   sourceRegion?: string | null,
   destRegion?: string | null,
   sourceRail?: string | null,
+  settlementRail?: string | null,
 ): FlowPath {
   const nodes: FlowNode[] = [];
 
   const sendColor = colorForCurrency(source.code, source.type);
   const receiveColor = colorForCurrency(destination.code, destination.type);
+  const settle = getSettlementRail(settlementRail);
+  const settleColor = colorForCurrency(settle.asset, 'crypto');
 
   // Source endpoint
   nodes.push({
@@ -107,20 +131,17 @@ export function buildFlowPath(
   const dstFiat = destination.type === 'fiat' ? destination.code : dstRegionCode;
   const dstFiatCC = destination.type === 'fiat' ? destination.countryCode : dstRegionCC;
 
-  // Two switches needed when the fiat sides differ (cross-currency bridge via BTC/Lightning)
-  const needsTwoSwitches =
-    source.code !== destination.code &&
-    srcFiat != null &&
-    dstFiat != null &&
-    srcFiat !== dstFiat;
+  // Two switches needed when the fiat sides differ (cross-currency bridge
+  // over the selected settlement rail — BTC/Lightning by default)
+  const twoSwitches = needsTwoSwitches(source, destination, sourceRegion, destRegion);
 
-  if (needsTwoSwitches) {
+  if (twoSwitches) {
     // Source-side switch
-    const sourceConvertAction: ActionCard = source.code === 'BTC'
-      ? { text: 'Accept BTC deposit', color: 'btc' }
+    const sourceConvertAction: ActionCard = source.code === settle.asset
+      ? { text: `Accept ${settle.asset} deposit`, color: settleColor }
       : {
-          text: `Convert ${source.code} to BTC`,
-          color: 'btc',
+          text: `Convert ${source.code} to ${settle.asset}`,
+          color: settleColor,
           gradientFrom: sendColor,
         };
 
@@ -133,24 +154,24 @@ export function buildFlowPath(
       actionCards: [
         sourceConvertAction,
         {
-          text: 'Send BTC via Lightning',
-          color: 'btc',
+          text: `Send ${settle.asset} via ${settle.network}`,
+          color: settleColor,
         },
       ],
     });
 
     // Destination-side switch
-    const destConvertAction: ActionCard = destination.code === 'BTC'
-      ? { text: 'Deliver BTC to wallet', color: 'btc' }
+    const destConvertAction: ActionCard = destination.code === settle.asset
+      ? { text: `Deliver ${settle.asset} to wallet`, color: settleColor }
       : {
-          text: `Convert BTC to ${destination.code}`,
+          text: `Convert ${settle.asset} to ${destination.code}`,
           color: receiveColor,
-          gradientFrom: 'btc',
+          gradientFrom: settleColor,
         };
 
     const destDeliverAction: ActionCard | null =
-      destination.code === 'BTC'
-        ? null // BTC delivery is already covered above
+      destination.code === settle.asset
+        ? null // settlement-asset delivery is already covered above
         : {
             text: destination.isInternal
               ? `Credit ${destination.code} balance`
@@ -244,8 +265,8 @@ export function buildFlowPath(
         : (destination.network ?? destination.accountLabel);
       text = `Funds out via ${dstRail}`;
     } else if (curr.type === 'switch' && next.type === 'switch') {
-      // Switch → switch: Lightning bridge (always real-time)
-      text = 'Real-time via Lightning Network';
+      // Switch → switch: settlement bridge (always real-time)
+      text = `Real-time via ${settle.networkLabel}`;
     } else if (curr.type === 'endpoint' && curr.isInternal && next.type === 'switch') {
       text = `From Grid ${source.code} balance`;
     } else if (curr.type === 'switch' && next.type === 'endpoint' && next.isInternal) {

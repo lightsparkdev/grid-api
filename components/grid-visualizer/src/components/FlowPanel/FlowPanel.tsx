@@ -22,6 +22,7 @@ interface FlowPanelProps {
   sourceRegion?: string | null;
   destRegion?: string | null;
   sourceRail?: string | null;
+  settlementRail?: string | null;
   expanded: boolean;
   onToggle: () => void;
 }
@@ -193,7 +194,7 @@ function FlowNodeActionCard({
   );
 }
 
-const SWITCH_TOOLTIP = 'Grid Switch converts currencies and routes payments in real time using Bitcoin and local payment rails';
+const SWITCH_TOOLTIP = 'Grid Switch converts currencies and routes payments in real time using Bitcoin, stablecoins, and local payment rails';
 const EXTERNAL_TOOLTIP = 'External account — a bank account or crypto wallet outside of Grid';
 const INTERNAL_TOOLTIP = 'Grid internal account — holds a balance within Grid, enabling instant transfers';
 
@@ -266,10 +267,11 @@ export function FlowPanel({
   sourceRegion,
   destRegion,
   sourceRail,
+  settlementRail,
   expanded,
   onToggle,
 }: FlowPanelProps) {
-  const path = useMemo(() => buildFlowPath(send, receive, sourceRegion, destRegion, sourceRail), [send, receive, sourceRegion, destRegion, sourceRail]);
+  const path = useMemo(() => buildFlowPath(send, receive, sourceRegion, destRegion, sourceRail, settlementRail), [send, receive, sourceRegion, destRegion, sourceRail, settlementRail]);
   const pathKey = path.nodes.map((n) => n.id + n.label + n.isInternal + n.actionCards.map((a) => a.text).join(',')).join('|');
   const contentRef = useRef<HTMLDivElement>(null);
   const flowRef = useRef<HTMLDivElement>(null);
@@ -439,9 +441,12 @@ export function FlowPanel({
                   <svg className={styles.connectorOverlay}>
                     {connectors.map((c, i) => {
                       const connLabel = path.connectorLabels[i]?.text ?? 'Transfer';
+                      const isBridge = path.nodes[i]?.type === 'switch' && path.nodes[i + 1]?.type === 'switch';
                       const tipText = c.dashed
                         ? `${connLabel} — dashed line indicates external leg`
-                        : connLabel;
+                        : isBridge
+                          ? `${connLabel} — Grid picks the bridge rail automatically`
+                          : connLabel;
                       return (
                       <g
                         key={i}
