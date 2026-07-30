@@ -71,9 +71,9 @@ post:
               address:
                 line1: 123 Market Street
                 line2: Suite 400
-                city: San Francisco
-                state: CA
-                postalCode: '94105'
+                city: Seattle
+                state: WA
+                postalCode: '98101'
                 country: US
   responses:
     '201':

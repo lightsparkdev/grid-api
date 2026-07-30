@@ -426,9 +426,9 @@ paths:
                   address:
                     line1: 123 Market Street
                     line2: Suite 400
-                    city: San Francisco
-                    state: CA
-                    postalCode: '94105'
+                    city: Seattle
+                    state: WA
+                    postalCode: '98101'
                     country: US
       responses:
         '201':
@@ -688,9 +688,9 @@ paths:
                     - USDC
                   address:
                     line1: 456 Market St
-                    city: San Francisco
-                    state: CA
-                    postalCode: '94103'
+                    city: Seattle
+                    state: WA
+                    postalCode: '98101'
                     country: US
               businessUpdate:
                 summary: Update business customer example
@@ -705,9 +705,9 @@ paths:
                     taxId: EIN-123456789
                   address:
                     line1: 100 Technology Parkway
-                    city: Palo Alto
-                    state: CA
-                    postalCode: '94304'
+                    city: Bellevue
+                    state: WA
+                    postalCode: '98004'
                     country: US
               embeddedWalletEmailUpdate:
                 summary: Embedded Wallet email update request (both steps)
@@ -2361,7 +2361,9 @@ paths:
                 $ref: '#/components/schemas/Error500'
     delete:
       summary: Delete customer external account by ID
-      description: Delete a customer external account by its system-generated ID
+      description: |-
+        Delete a customer external account by its system-generated ID.
+        An account that is currently a trusted beneficiary for SCA cannot be deleted — untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete.
       operationId: deleteCustomerExternalAccountById
       tags:
         - External Accounts
@@ -2382,6 +2384,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Returned with `BENEFICIARY_TRUSTED` when the external account is currently a trusted beneficiary. Untrust it first, then delete.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -3891,11 +3899,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: SCA is not required for this customer, or the quote has no pending challenge to authorize.
+          description: SCA is not required for this customer, or the quote has no pending challenge to authorize. Also returned with `SCA_SESSION_REQUIRED` when the customer's SCA login session is missing or expired — re-authenticate the customer, then authorize again.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: Returned with `ACCOUNT_LOCKED` when the customer's login is temporarily locked after too many failed authorization attempts. The customer must wait for the lock to expire before authorizing again.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '429':
           description: Too many requests. Returned with `RATE_LIMITED` when authorization attempts for this challenge happen too frequently (for example, repeated bad codes brute-forcing the OTP). The challenge may be invalidated after too many failed attempts. Clients should back off and retry after the interval indicated by the `Retry-After` response header.
           content:
@@ -10050,9 +10064,9 @@ webhooks:
                     address:
                       line1: 123 Main Street
                       line2: Apt 4B
-                      city: San Francisco
-                      state: CA
-                      postalCode: '94105'
+                      city: Seattle
+                      state: WA
+                      postalCode: '98101'
                       country: US
                     createdAt: '2025-07-21T17:32:28Z'
                     updatedAt: '2025-07-21T17:32:28Z'
@@ -10097,9 +10111,9 @@ webhooks:
                     kybStatus: APPROVED
                     address:
                       line1: 456 Business Ave
-                      city: New York
-                      state: NY
-                      postalCode: '10001'
+                      city: Seattle
+                      state: WA
+                      postalCode: '98101'
                       country: US
                     businessInfo:
                       legalName: Acme Corporation
@@ -11303,6 +11317,22 @@ components:
           type: integer
           description: Maximum length in characters.
           example: 500
+    FieldError:
+      type: object
+      required:
+        - field
+      description: One field-level validation failure. Field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`) emit an array of these under `details.errors` so platforms can render form-field-level UX for every failure in a single round-trip.
+      properties:
+        field:
+          type: string
+          description: Dot-notation path to the offending field.
+          example: taxIdentifier
+        constraint:
+          $ref: '#/components/schemas/FieldConstraint'
+        message:
+          type: string
+          description: Human-readable explanation of what's wrong with this field.
+          example: Value is not one of the allowed enum members.
     Error400:
       type: object
       required:
@@ -11404,14 +11434,13 @@ components:
           description: Error message
         details:
           type: object
-          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.field` and `details.constraint` are populated so platforms can pre-validate their onboarding form before re-submitting.
+          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.errors[]` enumerates every invalid field so platforms can render form-field-level UX for the entire request in a single round-trip.
           properties:
-            field:
-              type: string
-              description: Dot-notation path to the offending field. Present on field-validation errors from submit endpoints.
-              example: taxIdentifier
-            constraint:
-              $ref: '#/components/schemas/FieldConstraint'
+            errors:
+              type: array
+              description: One entry per invalid field. Present on field-validation errors from submit endpoints.
+              items:
+                $ref: '#/components/schemas/FieldError'
           additionalProperties: true
     Error501:
       type: object
@@ -12580,6 +12609,8 @@ components:
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
+            | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
+            | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
@@ -12588,6 +12619,8 @@ components:
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
             - PASSKEY_ALREADY_ENROLLED
+            - SCA_SESSION_REQUIRED
+            - BENEFICIARY_TRUSTED
             - CONFLICT
         message:
           type: string
@@ -13527,6 +13560,7 @@ components:
         - LIGHTNING
         - SOLANA_WALLET
         - TRON_WALLET
+        - PLASMA_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
@@ -14540,6 +14574,32 @@ components:
               description: Type of asset
               enum:
                 - USDT
+    PlasmaWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - PLASMA_WALLET
+        address:
+          type: string
+          description: Plasma wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentPlasmaWalletInfo:
+      title: Plasma Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/PlasmaWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDT
     PolygonWalletInfo:
       type: object
       required:
@@ -14618,6 +14678,7 @@ components:
               description: Type of asset
               enum:
                 - USDC
+                - USDT
     PaymentBitcoinDepositAddressInfo:
       title: Bitcoin L1 Deposit Address
       allOf:
@@ -16017,6 +16078,7 @@ components:
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
+            - $ref: '#/components/schemas/PaymentPlasmaWalletInfo'
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
             - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
@@ -16045,6 +16107,7 @@ components:
               LIGHTNING: '#/components/schemas/PaymentLightningInvoiceInfo'
               SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
+              PLASMA_WALLET: '#/components/schemas/PaymentPlasmaWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
               ETHEREUM_WALLET: '#/components/schemas/PaymentEthereumWalletInfo'
@@ -16230,6 +16293,7 @@ components:
         - BASE_WALLET
         - ETHEREUM_WALLET
         - LIGHTNING
+        - PLASMA_WALLET
         - POLYGON_WALLET
         - SOLANA_WALLET
         - SPARK_WALLET
@@ -18335,6 +18399,11 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
+    PlasmaWalletExternalAccountInfo:
+      title: Plasma Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/PlasmaWalletInfo'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -18444,6 +18513,7 @@ components:
         - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -18493,6 +18563,7 @@ components:
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -19362,6 +19433,7 @@ components:
         - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -19410,6 +19482,7 @@ components:
           ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
+          PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -19956,6 +20029,7 @@ components:
         - BASE
         - POLYGON
         - TRON
+        - PLASMA
         - SPARK
       description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
       example: SOLANA
@@ -20398,7 +20472,15 @@ components:
         - LIGHTNING_PAYMENT_FAILED
         - FUNDING_AMOUNT_MISMATCH
         - COUNTERPARTY_POST_TX_FAILED
-      description: Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+        - SCA_NOT_COMPLETED
+        - EXECUTION_FAILED_POST_DEBIT
+        - SETTLEMENT_FAILED
+        - TIMEOUT
+        - MANUAL_REFUND
+      description: |-
+        Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+
+        `SCA_NOT_COMPLETED` means the customer did not satisfy the Strong Customer Authentication challenge before it expired, so the transaction was never authorized and no funds were moved. Only occurs for customers in a region where SCA is required (e.g. the EU). Create a new quote to try again, and have the customer authorize it while the challenge is live.
     RailSelectionMode:
       type: string
       enum:

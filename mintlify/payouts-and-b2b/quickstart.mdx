@@ -210,6 +210,7 @@ During the funding process, you'll receive transaction status update webhooks.
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000010",
     "status": "COMPLETED",
     "type": "INCOMING",
+    "direction": "CREDIT",
     "receivedAmount": {
       "amount": 100000,
       "currency": {
@@ -350,6 +351,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes" \
   "totalReceivingAmount": 861250,
   "exchangeRate": 17.25,
   "feesIncluded": 250,
+  "platformFeesIncluded": 0,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000015"
 }
 ```
@@ -403,6 +405,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b
   "totalReceivingAmount": 861250,
   "exchangeRate": 17.25,
   "feesIncluded": 250,
+  "platformFeesIncluded": 0,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000015"
 }
 ```
@@ -419,6 +422,7 @@ The quote status changes to `PROCESSING` and the transfer is initiated. You'll r
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
     "status": "COMPLETED",
     "type": "OUTGOING",
+    "direction": "DEBIT",
     "sentAmount": {
       "amount": 50000,
       "currency": {

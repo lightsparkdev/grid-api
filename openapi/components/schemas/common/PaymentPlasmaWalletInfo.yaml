@@ -1,12 +1,10 @@
-title: Ethereum Wallet
+title: Plasma Wallet
 allOf:
   - $ref: ./BasePaymentAccountInfo.yaml
-  - $ref: ./EthereumWalletInfo.yaml
+  - $ref: ./PlasmaWalletInfo.yaml
   - type: object
     properties:
       assetType:
         type: string
         description: Type of asset
-        enum:
-          - USDC
-          - USDT
+        enum: [USDT]

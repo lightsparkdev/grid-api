@@ -290,6 +290,7 @@ and exchange rate details before executing the quote, set `immediatelyExecute` t
   "totalReceivingAmount": 810,
   "exchangeRate": 8.1,
   "feesIncluded": 5,
+  "platformFeesIncluded": 0,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
 ```
@@ -314,6 +315,7 @@ When the Bitcoin transfer completes, you'll receive a webhook notification:
     "id": "Transaction:019542f5-b3e7-1d02-0000-000000000025",
     "status": "COMPLETED",
     "type": "OUTGOING",
+    "direction": "DEBIT",
     "sentAmount": {
       "amount": 100,
       "currency": {
