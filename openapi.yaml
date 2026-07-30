@@ -426,9 +426,9 @@ paths:
                   address:
                     line1: 123 Market Street
                     line2: Suite 400
-                    city: San Francisco
-                    state: CA
-                    postalCode: '94105'
+                    city: Seattle
+                    state: WA
+                    postalCode: '98101'
                     country: US
       responses:
         '201':
@@ -688,9 +688,9 @@ paths:
                     - USDC
                   address:
                     line1: 456 Market St
-                    city: San Francisco
-                    state: CA
-                    postalCode: '94103'
+                    city: Seattle
+                    state: WA
+                    postalCode: '98101'
                     country: US
               businessUpdate:
                 summary: Update business customer example
@@ -705,9 +705,9 @@ paths:
                     taxId: EIN-123456789
                   address:
                     line1: 100 Technology Parkway
-                    city: Palo Alto
-                    state: CA
-                    postalCode: '94304'
+                    city: Bellevue
+                    state: WA
+                    postalCode: '98004'
                     country: US
               embeddedWalletEmailUpdate:
                 summary: Embedded Wallet email update request (both steps)
@@ -10056,9 +10056,9 @@ webhooks:
                     address:
                       line1: 123 Main Street
                       line2: Apt 4B
-                      city: San Francisco
-                      state: CA
-                      postalCode: '94105'
+                      city: Seattle
+                      state: WA
+                      postalCode: '98101'
                       country: US
                     createdAt: '2025-07-21T17:32:28Z'
                     updatedAt: '2025-07-21T17:32:28Z'
@@ -10103,9 +10103,9 @@ webhooks:
                     kybStatus: APPROVED
                     address:
                       line1: 456 Business Ave
-                      city: New York
-                      state: NY
-                      postalCode: '10001'
+                      city: Seattle
+                      state: WA
+                      postalCode: '98101'
                       country: US
                     businessInfo:
                       legalName: Acme Corporation

@@ -41,6 +41,8 @@ export const cryptoAssets: CryptoAsset[] = [
     name: 'Tether',
     accountTypes: [
       { type: 'TRON_WALLET', label: 'Wallet', network: 'Tron' },
+      { type: 'ETHEREUM_WALLET', label: 'Wallet', network: 'Ethereum' },
+      { type: 'PLASMA_WALLET', label: 'Wallet', network: 'Plasma' },
     ],
     examplePerson: { fullName: 'Sam Chen', nationality: 'US' },
   },
