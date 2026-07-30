@@ -2363,7 +2363,7 @@ paths:
       summary: Delete customer external account by ID
       description: |-
         Delete a customer external account by its system-generated ID.
-        An account that is currently a trusted beneficiary cannot be deleted — untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete.
+        An account that is currently a trusted beneficiary for SCA cannot be deleted — untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete.
       operationId: deleteCustomerExternalAccountById
       tags:
         - External Accounts
