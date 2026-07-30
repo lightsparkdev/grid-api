@@ -5,7 +5,15 @@ enum:
   - LIGHTNING_PAYMENT_FAILED
   - FUNDING_AMOUNT_MISMATCH
   - COUNTERPARTY_POST_TX_FAILED
+  - SCA_NOT_COMPLETED
 description: >-
   Reason for failure of an outgoing transaction. This is used to provide more
   context on why a transaction failed. If the transaction is not in a failed
   state, this field is omitted.
+
+
+  `SCA_NOT_COMPLETED` means the customer did not satisfy the Strong Customer
+  Authentication challenge before it expired, so the transaction was never
+  authorized and no funds were moved. Only occurs for customers in a region
+  where SCA is required (e.g. the EU). Create a new quote to try again, and have
+  the customer authorize it while the challenge is live.
