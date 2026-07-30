@@ -6,6 +6,8 @@ import { usePanelCollapse } from '@/hooks/usePanelCollapse';
 import { Header } from '@/components/Header/Header';
 import { InputCard, CardChevron } from '@/components/InputCard/InputCard';
 import { FundingModelSection } from '@/components/FundingModelSection/FundingModelSection';
+import { SettlementSection } from '@/components/SettlementSection/SettlementSection';
+import { needsTwoSwitches } from '@/lib/flow-path';
 import { RegionPicker } from '@/components/RegionPicker/RegionPicker';
 import { PopularFlows } from '@/components/PopularFlows/PopularFlows';
 import { CurrencyPicker } from '@/components/CurrencyPicker/CurrencyPicker';
@@ -32,6 +34,7 @@ export default function Home() {
     setReceiveNetwork,
     setSourceFundingMode,
     setSourceRail,
+    setSettlementRail,
     swap,
     setSourceRegion,
     setDestRegion,
@@ -135,8 +138,7 @@ export default function Home() {
     });
   }, [mobileView, theme]);
 
-  const { flowExpanded, codeExpanded, toggleFlow, toggleCode } =
-    usePanelCollapse();
+  const { flowExpanded, codeExpanded, toggleFlow } = usePanelCollapse();
 
   return (
     <main className={styles.layout} data-mobile-view={mobileView}>
@@ -198,6 +200,14 @@ export default function Home() {
                   onModeChange={setSourceFundingMode}
                 />
               )}
+
+              {state.send && state.receive &&
+                needsTwoSwitches(state.send, state.receive, state.sourceRegion, state.destRegion) && (
+                <SettlementSection
+                  selectedAsset={state.settlementRail}
+                  onAssetChange={setSettlementRail}
+                />
+              )}
             </div>
 
             {isComplete && (
@@ -249,6 +259,7 @@ export default function Home() {
               sourceRegion={state.sourceRegion}
               destRegion={state.destRegion}
               sourceRail={state.sourceRail}
+              settlementRail={state.settlementRail}
               expanded={flowExpanded}
               onToggle={toggleFlow}
             />

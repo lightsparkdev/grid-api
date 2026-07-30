@@ -1,6 +1,7 @@
 import { useReducer, useCallback, useMemo } from 'react';
 import { currencies } from '@/data/currencies';
 import { cryptoAssets, type CryptoAccountType } from '@/data/crypto';
+import { DEFAULT_SETTLEMENT_RAIL } from '@/data/settlement-rails';
 import type { CurrencySelection } from '@/lib/code-generator';
 
 export type { CurrencySelection };
@@ -14,6 +15,7 @@ export interface FlowBuilderState {
   destRegion: string | null;   // fiat code — only used when destination is crypto
   sourceFundingMode: SourceFundingMode;
   sourceRail: string | null;   // selected fiat rail e.g. 'RTP' — null for crypto
+  settlementRail: string;      // asset Grid settles over between switches, e.g. 'BTC' | 'USDC' | 'USDB'
   audience: 'human' | 'agent';
   pickerTarget: 'send' | 'receive' | null;
 }
@@ -25,6 +27,7 @@ type Action =
   | { type: 'SET_RECEIVE_NETWORK'; payload: CryptoAccountType }
   | { type: 'SET_SOURCE_FUNDING_MODE'; payload: SourceFundingMode }
   | { type: 'SET_SOURCE_RAIL'; payload: string }
+  | { type: 'SET_SETTLEMENT_RAIL'; payload: string }
   | { type: 'SET_SOURCE_REGION'; payload: string }
   | { type: 'SET_DEST_REGION'; payload: string }
   | { type: 'SET_AUDIENCE'; payload: 'human' | 'agent' }
@@ -40,6 +43,7 @@ const initialState: FlowBuilderState = {
   destRegion: null,
   sourceFundingMode: 'external',
   sourceRail: null,
+  settlementRail: DEFAULT_SETTLEMENT_RAIL,
   audience: 'human',
   pickerTarget: null,
 };
@@ -115,6 +119,8 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
     }
     case 'SET_SOURCE_RAIL':
       return { ...state, sourceRail: action.payload };
+    case 'SET_SETTLEMENT_RAIL':
+      return { ...state, settlementRail: action.payload };
     case 'SET_SOURCE_REGION':
       return { ...state, sourceRegion: action.payload };
     case 'SET_DEST_REGION':
@@ -222,6 +228,11 @@ export function useFlowBuilder() {
     [],
   );
 
+  const setSettlementRail = useCallback(
+    (asset: string) => dispatch({ type: 'SET_SETTLEMENT_RAIL', payload: asset }),
+    [],
+  );
+
   const setSourceRegion = useCallback(
     (code: string) => dispatch({ type: 'SET_SOURCE_REGION', payload: code }),
     [],
@@ -260,6 +271,7 @@ export function useFlowBuilder() {
     setReceiveNetwork,
     setSourceFundingMode,
     setSourceRail,
+    setSettlementRail,
     setSourceRegion,
     setDestRegion,
     setAudience,
