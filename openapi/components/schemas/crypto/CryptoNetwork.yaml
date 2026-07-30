@@ -6,6 +6,7 @@ enum:
   - BASE
   - POLYGON
   - TRON
+  - PLASMA
   - SPARK
 description: >-
   The blockchain network an on-chain transaction settled on. Whether this is the

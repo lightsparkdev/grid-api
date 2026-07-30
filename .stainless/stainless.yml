@@ -198,6 +198,7 @@ resources:
           spark_wallet_info: '#/components/schemas/SparkWalletExternalAccountInfo'
           solana_wallet_info: '#/components/schemas/SolanaWalletExternalAccountInfo'
           tron_wallet_info: '#/components/schemas/TronWalletExternalAccountInfo'
+          plasma_wallet_info: '#/components/schemas/PlasmaWalletExternalAccountInfo'
           polygon_wallet_info: '#/components/schemas/PolygonWalletExternalAccountInfo'
           lightning_wallet_info: '#/components/schemas/LightningExternalAccountInfo'
           base_wallet_info: '#/components/schemas/BaseWalletExternalAccountInfo'
@@ -877,6 +878,7 @@ openapi:
           - "$.components.schemas.PaymentLightningInvoiceInfo.allOf[0]"
           - "$.components.schemas.PaymentSolanaWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentTronWalletInfo.allOf[0]"
+          - "$.components.schemas.PaymentPlasmaWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentPolygonWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentBaseWalletInfo.allOf[0]"
           - "$.components.schemas.PaymentEthereumWalletInfo.allOf[0]"
@@ -930,6 +932,7 @@ openapi:
           - "$.components.schemas.LightningExternalAccountInfo.allOf[0]"
           - "$.components.schemas.SolanaWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.TronWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.PlasmaWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.PolygonWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.BaseWalletExternalAccountInfo.allOf[0]"
         keys: [ "$ref" ]
