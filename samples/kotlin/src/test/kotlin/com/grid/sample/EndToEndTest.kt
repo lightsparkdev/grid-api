@@ -34,9 +34,9 @@ class EndToEndTest {
                     "address": {
                         "country": "US",
                         "line1": "123 Test St",
-                        "postalCode": "10001",
-                        "city": "New York",
-                        "state": "NY"
+                        "postalCode": "98101",
+                        "city": "Seattle",
+                        "state": "WA"
                     }
                 }
             """)
@@ -344,9 +344,9 @@ class EndToEndTest {
                     "address": {
                         "country": "US",
                         "line1": "123 Test St",
-                        "postalCode": "10001",
-                        "city": "New York",
-                        "state": "NY"
+                        "postalCode": "98101",
+                        "city": "Seattle",
+                        "state": "WA"
                     }
                 }
             """)
