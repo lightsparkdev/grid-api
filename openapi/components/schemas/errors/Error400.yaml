@@ -98,5 +98,17 @@ properties:
     description: Error message
   details:
     type: object
-    description: Additional error details
+    description: >-
+      Additional error details. Shape varies by `code`. For field-validation
+      errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`),
+      `details.errors[]` enumerates every invalid field so platforms can render
+      form-field-level UX for the entire request in a single round-trip.
+    properties:
+      errors:
+        type: array
+        description: >-
+          One entry per invalid field. Present on field-validation errors from
+          submit endpoints.
+        items:
+          $ref: ./FieldError.yaml
     additionalProperties: true

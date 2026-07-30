@@ -1,0 +1,93 @@
+@use '../../shared/glass/glass-button-shadow' as shadow;
+
+/* Floating glass pill tab bar (construction Figma 2640:20119): 62px tall,
+   360 wide (21px insets left/right/bottom on the 402 screen). The surface is
+   a FrostPanel — heavy backdrop blur + specular edge, no refraction. */
+
+.bar {
+  position: absolute;
+  left: 21px;
+  right: 21px;
+  bottom: 21px;
+  z-index: 5;
+  height: 62px;
+  border-radius: 999px;
+  /* True pill — override the global superellipse; box-shadow traces THIS
+     element's rounding so the halo hugs the silhouette. */
+  corner-shape: round;
+  @include shadow.glass-button-shadow;
+}
+
+.frost {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.items {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 62px;
+  padding: 0 8px;
+}
+
+/* The active-tab pill — a SEPARATE layer beneath the buttons (positioned from
+   the measured active content + 16px bleed each side; never affects layout).
+   The left/width transition is ready for a moving indicator. */
+.indicator {
+  position: absolute;
+  z-index: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--ios-fill-tertiary);
+  transition: left 0.25s ease, width 0.25s ease;
+}
+
+/* Tabs read label-primary (icon AND label) — the WhatsApp iOS-26 voice. They
+   layer ABOVE the indicator. */
+.item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* Buttons don't inherit font-family. */
+  font-family: inherit;
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Icon + label group — the indicator is measured off THIS box. */
+.itemInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 12px;
+}
+
+/* Figma: 10px medium labels. */
+.label {
+  font-size: 10px;
+  line-height: normal;
+  font-weight: 510;
+  font-variation-settings: 'wght' 510, 'wdth' 100;
+  text-align: center;
+  color: inherit;
+}
+

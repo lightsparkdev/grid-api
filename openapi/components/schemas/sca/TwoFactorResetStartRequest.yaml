@@ -1,0 +1,8 @@
+type: object
+description: Selects which enrolled factor to reset via the liveness-gated recovery flow.
+required:
+  - factor
+properties:
+  factor:
+    $ref: ./ScaFactor.yaml
+    description: The enrolled factor to reset.

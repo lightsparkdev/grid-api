@@ -1,0 +1,11 @@
+/* Single canvas that fills the burst layer. The blur, chromatic aberration and
+   additive blending are all baked into the rendering (see SpeedLines.tsx); the
+   parent (.speedLines) owns the layer opacity + mix-blend over the gradient. */
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}

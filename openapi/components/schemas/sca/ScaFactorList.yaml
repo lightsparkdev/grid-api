@@ -1,0 +1,10 @@
+type: object
+description: The Strong Customer Authentication factors a customer has enrolled.
+required:
+  - factors
+properties:
+  factors:
+    type: array
+    description: The customer's enrolled SCA factors.
+    items:
+      $ref: ./ScaFactorView.yaml

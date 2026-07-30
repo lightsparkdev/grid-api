@@ -1,0 +1,131 @@
+/* Issuance-intro chat → card match cut. Bubble geometry 1:1 from the
+   Bitcoin-2026 Figma (363:85386 sent / 363:85388 received). */
+
+.root {
+  position: relative;
+}
+
+/* The card wrapper — scale rides the match cut, center origin (both beats
+   share it so the cut reads as one motion). */
+.cardBeat {
+  transform-origin: center;
+}
+
+/* The conversation covers the card box; rows may bleed past its edges. */
+.chatLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+/* One chat row — vertically positioned from the layer's center (y animated),
+   side-anchored so the pop scales from the tail corner. */
+.row {
+  position: absolute;
+  top: 50%;
+  margin-top: -18px; /* half the 36px row */
+  white-space: nowrap;
+}
+
+.rowSent {
+  right: -16px;
+  transform-origin: bottom right;
+}
+
+.rowReceived {
+  left: -16px;
+  transform-origin: bottom left;
+}
+
+/* Figma: r12, pt8 pb6 pl10; right padding reserves the meta strip (72 sent —
+   time + checks; 52 received — time only). Shadow drop 0/1/0 8%. */
+.bubble {
+  position: relative;
+  max-width: 308px;
+  padding: 8px 72px 6px 10px;
+  border-radius: 12px;
+  corner-shape: round;
+  filter: drop-shadow(0 1px 0 var(--msg-bubble-shadow));
+}
+
+.sent {
+  background: var(--msg-bubble-sent);
+  color: var(--msg-bubble-sent); // the tail's currentColor
+}
+
+.received {
+  padding-right: 52px;
+  background: var(--msg-bubble-received);
+  color: var(--msg-bubble-received);
+}
+
+/* Tail: 16px box on the bottom corner, bleeding 6px past the bubble edge.
+   Received uses the exported path as-is (bottom left); sent mirrors it. */
+.tail {
+  position: absolute;
+  bottom: 0;
+  left: -6px;
+  width: 16px;
+  height: 16px;
+
+  svg {
+    display: block;
+  }
+}
+
+.tailSent {
+  left: auto;
+  right: -6px;
+  transform: scaleX(-1);
+}
+
+/* Body/Regular 17/22 −0.408, case-sensitive forms (the Figma text style). */
+.text {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--ios-font-family);
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: -0.408px;
+  font-feature-settings: 'case' 1;
+  color: var(--msg-bubble-text);
+}
+
+/* Time + delivery checks pinned inside the reserved right padding. */
+.meta {
+  position: absolute;
+  right: 10px;
+  bottom: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.time {
+  width: 34px;
+  font-family: var(--ios-font-family);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: right;
+  font-feature-settings: 'case' 1, 'lnum' 1, 'tnum' 1;
+}
+
+.sent .time {
+  color: var(--msg-bubble-sent-meta);
+}
+
+.received .time {
+  color: var(--msg-bubble-received-meta);
+}
+
+.check {
+  flex-shrink: 0;
+  color: var(--ios-tint);
+
+  path {
+    stroke-width: 2;
+  }
+}

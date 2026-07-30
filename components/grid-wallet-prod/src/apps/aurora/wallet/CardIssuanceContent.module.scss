@@ -1,0 +1,143 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 2219:48658 / 2219:48832 — bottom-anchored copy section. */
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* Figma 2219:48659 — pl 40 pr 32 pt 16. */
+.titleBlock {
+  width: 100%;
+  padding: 16px 32px 0 40px;
+}
+
+/* Figma 2219:48833 — same, with pb 4 before the value props. */
+.titleBlockTight {
+  width: 100%;
+  padding: 16px 32px 4px 40px;
+}
+
+/* Title3/Emphasized 20/25, -0.45. */
+.titlePrimary,
+.titleSecondary {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+}
+
+.titlePrimary {
+  color: var(--ios-label-primary);
+}
+
+.titleSecondary {
+  color: var(--ios-label-secondary);
+}
+
+/* Figma 2219:48829 — pl 40 pr 32 pt 16, Caption2/Regular 11/13, +0.06. */
+.agreement {
+  margin: 0;
+  width: 100%;
+  padding: 16px 32px 0 40px;
+  @include ios.ios-text-caption-2;
+  color: var(--ios-label-secondary);
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-caption-2-opsz);
+}
+
+/* Legal phrases read as label-primary (per design note). */
+.agreementStrong {
+  color: var(--ios-label-primary);
+}
+
+/* Figma 2219:48928 — pl 40 pr 32 pt 24, row, gap 12, items-center. */
+.valueProp {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 18px 32px 0 40px;
+}
+
+.valuePropIcon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--ios-label-primary);
+
+  /* Render the value-prop icons at the 2px stroke weight. central-icons bake
+     stroke-width onto each <path> (no strokeWidth prop, rest props land on the
+     <svg>), and the stroke-2 variant package needs a license key to install, so
+     override the attribute via CSS. Matches the stroke-2 variant — same paths. */
+  svg path {
+    stroke-width: 2;
+  }
+}
+
+.valuePropText {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Footnote/Emphasized 13/18, -0.08. */
+.valuePropTitle {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+/* Footnote/Regular 13/18, -0.08. */
+.valuePropSub {
+  margin: 0;
+  width: 100%;
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+}
+
+/* Figma 2219:48745 / 2219:48772 — p 32. */
+.ctaWrap {
+  width: 100%;
+  padding: 32px;
+}
+
+/* Figma 2219:48913 — "Creating your card..." status (Subheadline/Regular 15/20). */
+.creating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding-top: 16px;
+  /* On the full-bleed creating screen the caption + spinner sit on the aurora. */
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.creatingText {
+  @include ios.ios-text-subheadline;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+.spinner {
+  display: inline-flex;
+  flex-shrink: 0;
+  animation: card-issuance-spin 0.9s linear infinite;
+}
+
+@keyframes card-issuance-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

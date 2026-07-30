@@ -11,34 +11,33 @@ import {
   parseAmount,
 } from "../validation";
 
+interface Currency {
+  code: string;
+  name?: string;
+  symbol?: string;
+  decimals?: number;
+}
+
 interface Quote {
   id: string;
-  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "EXPIRED";
-  source: {
-    accountId?: string;
-    customerId?: string;
-    currency: string;
-  };
-  destination: {
-    accountId?: string;
-    umaAddress?: string;
-    currency: string;
-  };
-  lockedCurrencySide: "SENDING" | "RECEIVING";
-  lockedCurrencyAmount: number;
-  sendingAmount: number;
-  sendingCurrency: string;
-  receivingAmount: number;
-  receivingCurrency: string;
+  status:
+    | "PENDING"
+    | "PENDING_AUTHORIZATION"
+    | "PROCESSING"
+    | "COMPLETED"
+    | "FAILED"
+    | "EXPIRED";
+  source: Record<string, unknown>;
+  destination: Record<string, unknown>;
+  sendingCurrency: Currency;
+  receivingCurrency: Currency;
+  totalSendingAmount: number;
+  totalReceivingAmount: number;
+  feesIncluded: number;
   exchangeRate: number;
-  fees?: Array<{
-    type: string;
-    amount: number;
-    currency: string;
-  }>;
+  transactionId: string;
   expiresAt: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export function registerQuotesCommand(
@@ -79,6 +78,11 @@ export function registerQuotesCommand(
     .option("--sender-birth-date <date>", "Sender birth date YYYY-MM-DD (for UMA destinations)")
     .option("--sender-nationality <code>", "Sender nationality country code (for UMA destinations)")
     .option("--purpose-of-payment <purpose>", "Purpose of payment (GOODS_OR_SERVICES, GIFT, SELF, EDUCATION, etc.)")
+    .option("--remittance-information <text>", "Free-form remittance information (max 80 chars)")
+    .option("--payment-rail <rail>", "Payment rail for an ACCOUNT destination")
+    .option("--crypto-network <network>", "Crypto network for a stablecoin realtime-funding source")
+    .option("--fbo-customer <id>", "Customer ID when funding from an FBO account (ACCOUNT source)")
+    .option("--sca-factor <factor>", "Preferred SCA factor (SMS_OTP or PASSKEY)")
     .action(async (options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
@@ -88,6 +92,27 @@ export function registerQuotesCommand(
         validateAmount(options.amount, "amount"),
         validateLockSide(options.lockSide),
       ];
+      // A realtime-funding source requires a currency.
+      if (
+        (options.sourceCustomer || options.cryptoNetwork) &&
+        !options.sourceAccount &&
+        !options.sourceCurrency
+      ) {
+        validations.push({
+          valid: false,
+          error:
+            "--source-currency is required for a realtime-funding source (--source-customer or --crypto-network)",
+        });
+      }
+      // --crypto-network only applies to a realtime-funding source; it's ignored
+      // for an ACCOUNT source, so reject the combination rather than silently drop it.
+      if (options.cryptoNetwork && options.sourceAccount) {
+        validations.push({
+          valid: false,
+          error:
+            "--crypto-network only applies to a realtime-funding source, not --source-account",
+        });
+      }
       if (options.sourceCurrency) {
         validations.push(validateCurrency(options.sourceCurrency, "source-currency"));
       }
@@ -110,23 +135,29 @@ export function registerQuotesCommand(
       };
 
       if (options.sourceAccount) {
-        body.source = {
+        const source: Record<string, unknown> = {
           sourceType: "ACCOUNT",
           accountId: options.sourceAccount,
         };
-      } else if (options.sourceCustomer) {
-        body.source = {
+        if (options.fboCustomer) source.customerId = options.fboCustomer;
+        body.source = source;
+      } else if (options.sourceCustomer || options.sourceCurrency) {
+        const source: Record<string, unknown> = {
           sourceType: "REALTIME_FUNDING",
-          customerId: options.sourceCustomer,
           currency: options.sourceCurrency,
         };
+        if (options.sourceCustomer) source.customerId = options.sourceCustomer;
+        if (options.cryptoNetwork) source.cryptoNetwork = options.cryptoNetwork;
+        body.source = source;
       }
 
       if (options.destAccount) {
-        body.destination = {
+        const destination: Record<string, unknown> = {
           destinationType: "ACCOUNT",
           accountId: options.destAccount,
         };
+        if (options.paymentRail) destination.paymentRail = options.paymentRail;
+        body.destination = destination;
       } else if (options.destUma) {
         body.destination = {
           destinationType: "UMA_ADDRESS",
@@ -138,12 +169,16 @@ export function registerQuotesCommand(
       if (options.description) body.description = options.description;
       if (options.lookupId) body.lookupId = options.lookupId;
       if (options.immediate) body.immediatelyExecute = true;
+      if (options.remittanceInformation)
+        body.remittanceInformation = options.remittanceInformation;
+      if (options.purposeOfPayment)
+        body.purposeOfPayment = options.purposeOfPayment;
+      if (options.scaFactor) body.scaFactor = options.scaFactor;
 
       const senderInfo: Record<string, string> = {};
       if (options.senderName) senderInfo.FULL_NAME = options.senderName;
       if (options.senderBirthDate) senderInfo.BIRTH_DATE = options.senderBirthDate;
       if (options.senderNationality) senderInfo.NATIONALITY = options.senderNationality;
-      if (options.purposeOfPayment) senderInfo.PURPOSE_OF_PAYMENT = options.purposeOfPayment;
       if (Object.keys(senderInfo).length > 0) {
         body.senderCustomerInfo = senderInfo;
       }
@@ -155,12 +190,20 @@ export function registerQuotesCommand(
   quotesCmd
     .command("execute <quoteId>")
     .description("Execute a pending quote")
-    .action(async (quoteId: string) => {
+    .option("--sca-factor <factor>", "Preferred SCA factor (SMS_OTP or PASSKEY)")
+    .action(async (quoteId: string, options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
       if (!client) return;
 
-      const response = await client.post<Quote>(`/quotes/${quoteId}/execute`);
+      const body = options.scaFactor
+        ? { scaFactor: options.scaFactor }
+        : undefined;
+
+      const response = await client.post<Quote>(
+        `/quotes/${quoteId}/execute`,
+        body
+      );
       outputResponse(response);
     });
 }

@@ -1,0 +1,4 @@
+title: Plasma Wallet
+allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
+  - $ref: ../common/PlasmaWalletInfo.yaml

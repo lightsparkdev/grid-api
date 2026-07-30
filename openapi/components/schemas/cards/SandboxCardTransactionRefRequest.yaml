@@ -1,0 +1,12 @@
+type: object
+required:
+  - cardTransactionId
+description: >-
+  Sandbox-only request body for simulate endpoints keyed only by an existing
+  card transaction — currently `POST /sandbox/cards/{id}/simulate/return_reversal`.
+properties:
+  cardTransactionId:
+    type: string
+    description: >-
+      The id of the `CardTransaction` to act against.
+    example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100

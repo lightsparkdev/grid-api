@@ -1,0 +1,65 @@
+/* Creator auth — purple brand wash (same in light + dark), Inter via the skin
+   tokens. Header top-left, marquee hero centered, CTAs pinned bottom. */
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #9147ff;
+  color: #efeff1;
+  /* Marquee words: a deeper purple at low opacity reads as a subtle backdrop. */
+  --marquee-color: #5c16c6;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Clears the status bar (~62px) + a gap. */
+.header {
+  flex-shrink: 0;
+  padding: 72px 24px 0;
+  --brand-header-name-color: #fff;
+}
+
+.hero {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: visible;
+}
+
+.footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px 20px;
+}
+
+/* Creating beat — centered logo + caption over the purple wash. */
+.creatingSlot {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #efeff1;
+}
+
+.creatingLogo {
+  width: 56px;
+  height: auto;
+  user-select: none;
+}

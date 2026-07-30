@@ -1,0 +1,12 @@
+/* Figma 90:13450 — Actions */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.button {
+  flex: 1 1 0;
+  min-width: 0;
+}

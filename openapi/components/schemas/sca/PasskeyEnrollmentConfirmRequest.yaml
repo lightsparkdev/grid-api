@@ -1,0 +1,26 @@
+type: object
+description: >-
+  The WebAuthn credential a device produced for a passkey registration
+  challenge, submitted to enroll the passkey factor.
+required:
+  - type
+  - origin
+  - credential
+properties:
+  type:
+    type: string
+    enum:
+      - PASSKEY
+    description: Discriminator selecting the passkey confirm variant.
+  origin:
+    type: string
+    description: >-
+      The WebAuthn origin the `credential` was produced against (one of the
+      enrollment start's `allowedOrigins`).
+    example: https://app.example.com
+  credential:
+    type: object
+    additionalProperties: true
+    description: >-
+      Opaque WebAuthn credential the device produced from the enrollment start's
+      `options`.

@@ -64,11 +64,22 @@ post:
     '409':
       description: >-
         SCA is not required for this customer, or the quote has
-        no pending challenge to authorize.
+        no pending challenge to authorize. Also returned with
+        `SCA_SESSION_REQUIRED` when the customer's SCA login session is missing
+        or expired — re-authenticate the customer, then authorize again.
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '423':
+      description: >-
+        Returned with `ACCOUNT_LOCKED` when the customer's login is temporarily
+        locked after too many failed authorization attempts. The customer must
+        wait for the lock to expire before authorizing again.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error423.yaml
     '429':
       description: >-
         Too many requests. Returned with `RATE_LIMITED` when authorization

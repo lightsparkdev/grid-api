@@ -1,0 +1,55 @@
+type: object
+description: >-
+  The factor-specific material a customer needs to complete an SCA login. Each
+  factor surfaces only the fields it issues: `SMS_OTP` carries `challengeId` and
+  `expiresAt`; `TOTP` carries neither (the customer reads the code from their
+  authenticator app); `PASSKEY` carries the opaque WebAuthn `passkeyOptions`
+  with `allowedOrigins` and `relyingPartyId`.
+required:
+  - factor
+properties:
+  factor:
+    $ref: ./ScaFactor.yaml
+    description: The factor this login was started for.
+  challengeId:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The challenge handle for an `SMS_OTP` login, threaded back on the complete
+      call. Present only for `SMS_OTP`.
+  expiresAt:
+    type:
+      - string
+      - 'null'
+    format: date-time
+    description: >-
+      Absolute UTC timestamp after which the `SMS_OTP` code expires. Present
+      only for `SMS_OTP`.
+    example: '2025-10-03T12:05:00Z'
+  passkeyOptions:
+    type:
+      - object
+      - 'null'
+    additionalProperties: true
+    description: >-
+      Opaque WebAuthn assertion request options. Present only for `PASSKEY`;
+      pass to the device's WebAuthn API to produce the assertion submitted on
+      the complete call.
+  allowedOrigins:
+    type:
+      - array
+      - 'null'
+    items:
+      type: string
+    description: >-
+      The origins the WebAuthn ceremony may run against. Present only for
+      `PASSKEY`.
+    example:
+      - https://app.example.com
+  relyingPartyId:
+    type:
+      - string
+      - 'null'
+    description: The WebAuthn relying-party id. Present only for `PASSKEY`.
+    example: app.example.com

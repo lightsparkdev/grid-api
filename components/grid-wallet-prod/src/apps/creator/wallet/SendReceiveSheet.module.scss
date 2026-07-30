@@ -1,0 +1,84 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Mirrors the email/phone AuthSheet frame: title + ghost close row (no graphic),
+   a subtitle, then the action pills. Frame: top/right 24, title indented +8
+   (left 32), body indented to 32, bottom 40. */
+
+/* Title + ghost close — one row. */
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 24px 0 32px;
+}
+
+/* Title3 / Emphasized — 20/25, semibold (590), left-aligned. */
+.title {
+  margin: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* Icon-only dismiss — ghost btn; secondary → primary on hover. */
+.closeBtn {
+  flex-shrink: 0;
+  color: var(--ios-label-secondary);
+  transition: color 0.2s ease;
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    color: var(--ios-label-primary);
+  }
+
+  svg path {
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+/* Footnote / Regular — 13/18, secondary; own row below title, indented to 32. */
+.sub {
+  margin: 0;
+  padding: 8px 32px 24px;
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  text-wrap: pretty;
+}
+
+/* Two large pills, stacked (Figma 109:28526). */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 24px 40px;
+}
+
+/* Match the wallet-home secondary action buttons (Deposit / Withdraw / card):
+   feed the creator gray fill + label into ContentAreaButton's token-driven
+   secondary variant (ios-fill hover wash + press-scale come from its base). */
+.choiceBtn {
+  --content-secondary-bg: var(--creator-secondary-bg);
+  --content-secondary-fg: var(--creator-secondary-fg);
+}
+
+/* Receive is a no-op: it reads as a normal bordered button at rest, then dims
+   to signal "unavailable" while the button group is hovered (overrides the
+   ContentAreaButton default disabled opacity). */
+.receiveBtn {
+  transition: opacity 0.2s ease;
+}
+
+.actions .receiveBtn:disabled {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .actions:hover .receiveBtn:disabled {
+    opacity: 0.5;
+  }
+}

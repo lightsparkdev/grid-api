@@ -46,17 +46,17 @@ export function parseAmount(value: string): number {
   return amount;
 }
 
-const VALID_CURRENCIES = new Set([
-  "USD", "EUR", "GBP", "MXN", "BRL", "INR", "NGN", "PHP", "KES",
-  "BTC", "SAT", "USDC", "USDT",
-]);
+// The API is the source of truth for supported currencies (the set changes
+// often), so only guard against obviously malformed codes here. Codes must be
+// uppercase — the API rejects lowercase, so catch it client-side with a clear
+// error rather than sending it verbatim.
+const CURRENCY_CODE_PATTERN = /^[A-Z0-9]{2,10}$/;
 
 export function validateCurrency(value: string, fieldName: string): ValidationResult {
-  const upper = value.toUpperCase();
-  if (!VALID_CURRENCIES.has(upper)) {
+  if (!CURRENCY_CODE_PATTERN.test(value)) {
     return {
       valid: false,
-      error: `${fieldName} "${value}" is not a recognized currency. Valid: ${Array.from(VALID_CURRENCIES).join(", ")}`,
+      error: `${fieldName} "${value}" is not a valid currency code (expected uppercase, e.g. USD)`,
     };
   }
   return { valid: true };

@@ -38,6 +38,19 @@ properties:
       Embedded-wallet branding and OTP settings for this platform. Present
       only when the platform has configured embedded-wallet support;
       omitted otherwise.
+  cardTokenization2faConfig:
+    $ref: ./CardTokenization2FAConfig.yaml
+    description: |
+      Branding and sender configuration for card-tokenization authentication
+      messages. This configuration is independent of embedded-wallet support.
+  feeConfigs:
+    type: array
+    items:
+      $ref: ./FeeConfig.yaml
+    description: |
+      Platform-collected fees that should be added on top of
+      Grid-collected fees. Contains every currently-active fee config
+      for the platform.
   createdAt:
     type: string
     format: date-time

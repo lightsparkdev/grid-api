@@ -1,0 +1,217 @@
+name: grid-wallet-prod image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'components/grid-wallet-prod/**'
+      - '.github/workflows/grid-wallet-prod-image.yml'
+  # Manual runs exist so this workflow can be exercised deliberately rather than
+  # only ever executing for the first time against main. Safe for auth: a
+  # dispatch is only offered on a branch, and from main the OIDC sub is still
+  # repo:lightsparkdev/grid-api:ref:refs/heads/main — which is what BOTH the
+  # ECR push role's trust policy and the ArgoCD RBAC entry match on. Dispatching
+  # from any other branch changes the sub and fails to authenticate, by design.
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: grid-wallet-prod-image
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Encode the branch restriction here too, rather than leaning only on the
+    # ECR trust policy and ArgoCD RBAC to reject a non-main dispatch. Both are
+    # configured in other repos and could be relaxed independently of this
+    # file; this keeps the gate visible where the trigger is. `deploy` inherits
+    # it through `needs: build` — a skipped build skips the deploy.
+    if: github.ref == 'refs/heads/main'
+    # The tooling-prod cluster is Graviton (m8g), so the image must be
+    # linux/arm64. A native ARM runner avoids QEMU emulation, which makes a
+    # Next.js build painfully slow. NOTE: no other workflow in this repo uses
+    # an ARM label yet — if this job sits in `queued`, GitHub-hosted ARM
+    # runners are not enabled for the org and the fallback is
+    # docker/setup-qemu-action + docker/setup-buildx-action on ubuntu-latest.
+    runs-on: ubuntu-24.04-arm
+    # A Next build on native ARM takes ~2 min; anything approaching this is hung.
+    timeout-minutes: 30
+    # Emitted by its own step, NOT derived inside "Build and push": that step
+    # exits early when the tag is already present, so a tag computed there
+    # would be missing on exactly the re-run path where deploy still has work.
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    # Actions are pinned to full commit SHAs, not major tags. This job holds
+    # id-token: write and assumes a role that can push to ECR, so an upstream
+    # tag move would silently change code running with cloud write access.
+    # NOTE: this repo has no Dependabot config, so these pins do not update
+    # themselves — re-resolve them when bumping, or add a dependabot.yml with
+    # a github-actions ecosystem entry so they stay current.
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: arn:aws:iam::405785876631:role/github-actions-grid-wallet-prod
+          aws-region: us-west-2
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
+
+      - id: meta
+        run: echo "tag=sha-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        working-directory: components/grid-wallet-prod
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          IMAGE="${REGISTRY}/grid-wallet-prod:${TAG}"
+
+          # The ECR repo is IMMUTABLE-tagged, so re-pushing an existing tag is
+          # a hard failure. A re-run (manual retry, cancelled-then-resumed job)
+          # must be a no-op rather than a red build.
+          #
+          # Distinguish "tag absent" from "the call failed". A bare
+          # `if aws ... >/dev/null 2>&1` is exempt from set -e and treats an
+          # IAM/network error identically to a missing image, so a transient
+          # failure would fall through to a build and then die on the immutable
+          # push. Only ImageNotFoundException means "go build".
+          set +e
+          describe_err=$(aws ecr describe-images --repository-name grid-wallet-prod \
+                           --image-ids imageTag="$TAG" --region us-west-2 2>&1 >/dev/null)
+          describe_rc=$?
+          set -e
+          if [ "$describe_rc" -eq 0 ]; then
+            echo "$IMAGE already present — nothing to do."
+            exit 0
+          elif ! grep -q 'ImageNotFoundException' <<<"$describe_err"; then
+            echo "::error::describe-images failed for a reason other than a missing tag:"
+            echo "$describe_err"
+            exit 1
+          fi
+          echo "$TAG not present — building."
+
+          # NEXT_PUBLIC_* is inlined by Next at BUILD time, so the sandbox flag
+          # is a build arg, not a runtime var. It is written literally here and
+          # has NO default in the Dockerfile: a production image would be a
+          # separate workflow and a separate ECR repo, so this flag cannot leak
+          # by inheritance.
+          docker build \
+            --platform linux/arm64 \
+            --build-arg NEXT_PUBLIC_GRID_SANDBOX=true \
+            -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "Pushed $IMAGE"
+
+  deploy:
+    needs: build
+    # An ARC runner in tooling-prod, whose image bakes a checksum-pinned argocd
+    # CLI (same as golinks/docket) — no install step, and no Docker daemon
+    # needed here, which is why the build job cannot share this runner. The
+    # scale set is org-scoped (githubConfigUrl is the lightsparkdev org), so
+    # grid-api can target it even though no other job in this repo does yet.
+    runs-on: arc-runner-1
+    # No other job in this repo targets an ARC label, so scheduling here is
+    # unproven. Without a bound, a scale set that never provisions leaves this
+    # job queued until the platform limit rather than failing visibly. The two
+    # argocd calls each carry their own --timeout 300, so this only has to
+    # backstop the scheduling and auth phases.
+    timeout-minutes: 20
+    steps:
+      # Fail fast, with the version on record, if the image ever ships without it.
+      - name: Check ArgoCD CLI
+        run: argocd version --client
+
+      # GitHub OIDC → Dex token exchange, so no long-lived ArgoCD token lives in
+      # repo secrets. NOTE: golinks/docket reach the ID-token endpoint through
+      # actions/github-script because they authenticate with
+      # ACTIONS_RUNTIME_TOKEN, which is not exposed to `run` steps.
+      # ACTIONS_ID_TOKEN_REQUEST_{URL,TOKEN} are, so the action is unnecessary —
+      # one less pinned third-party dependency in a job that can write to the
+      # cluster. If this step ever fails to get a token, that indirection is the
+      # documented fallback.
+      - name: Authenticate to ArgoCD via OIDC
+        id: argocd-auth
+        run: |
+          set -euo pipefail
+          GH_TOKEN=$(curl -sSf "$ACTIONS_ID_TOKEN_REQUEST_URL" \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            -H "Accept: application/json; api-version=2.0" | jq -r .value)
+          # Check BEFORE masking: `jq -r` on a response without .value yields the
+          # string "null", and masking that would register "null" as a secret and
+          # redact it everywhere in the log, making the failure harder to read.
+          if [ -z "$GH_TOKEN" ] || [ "$GH_TOKEN" = "null" ]; then
+            echo "::error::no .value in the Actions ID-token response"
+            exit 1
+          fi
+          echo "::add-mask::$GH_TOKEN"
+
+          DEX_TOKEN=$(curl -sSf "https://argocd.tooling.sparkinfra.net/api/dex/token" \
+            --user argo-cd-cli: \
+            --data-urlencode "connector_id=github-actions" \
+            --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+            --data-urlencode "scope=openid email profile federated:id" \
+            --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
+            --data-urlencode "subject_token=$GH_TOKEN" \
+            --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:id_token" \
+            | jq -r .access_token)
+          if [ -z "$DEX_TOKEN" ] || [ "$DEX_TOKEN" = "null" ]; then
+            echo "::error::Dex returned no access_token"
+            exit 1
+          fi
+          echo "::add-mask::$DEX_TOKEN"
+          echo "token=$DEX_TOKEN" >> "$GITHUB_OUTPUT"
+
+      # The running tag lives in the Application's spec.source.helm.parameters,
+      # NOT in the ops repo's values.yaml — the house pattern for this cluster
+      # (golinks, docket, zeroconf, observatory). The parameter overrides
+      # values.yaml, so the chart's placeholder tag is never what runs.
+      - name: Point the app at the new image
+        env:
+          ARGOCD_SERVER: argocd.tooling.sparkinfra.net
+          ARGOCD_AUTH_TOKEN: ${{ steps.argocd-auth.outputs.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: argocd app set grid-wallet-prod --parameter "image.tag=$TAG" --grpc-web
+
+      # A whole-app sync rather than golinks' --resource-scoped one: this chart
+      # also carries a Service, and a chart-only change with no new image must
+      # still roll out. Safe without --prune, and the app's Secret is
+      # Terraform-owned and not templated by the chart, so a sync cannot fight
+      # it. The workflow-level concurrency group serializes deploys.
+      #
+      # `wait` is deliberately NOT --resource-scoped either: scoping the sync
+      # wide but the wait to the Deployment would let a failing Service sync
+      # through unnoticed, which is the exact gap widening the sync was meant
+      # to close.
+      - name: Sync and wait for rollout
+        env:
+          ARGOCD_SERVER: argocd.tooling.sparkinfra.net
+          ARGOCD_AUTH_TOKEN: ${{ steps.argocd-auth.outputs.token }}
+        run: |
+          set -euo pipefail
+          argocd app sync grid-wallet-prod --timeout 300 --grpc-web
+          argocd app wait grid-wallet-prod --health --timeout 300 --grpc-web
+
+      # `argocd app set --parameter` accepts an unknown key silently, so a typo
+      # in the parameter name would sync cleanly, leave the OLD image running,
+      # and still pass the health wait — a green build that deployed nothing.
+      # Assert a live image actually carries the tag this run pushed. This also
+      # catches the non-atomic case where `set` landed but the rollout did not.
+      - name: Verify the rolled-out image
+        env:
+          ARGOCD_SERVER: argocd.tooling.sparkinfra.net
+          ARGOCD_AUTH_TOKEN: ${{ steps.argocd-auth.outputs.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          set -euo pipefail
+          argocd app get grid-wallet-prod --grpc-web -o json \
+            | jq -e --arg tag "$TAG" \
+                '(.status.summary.images // []) | any(endswith(":" + $tag))' >/dev/null \
+            || { echo "::error::rollout finished but no live image carries tag $TAG"; exit 1; }
+          echo "Verified: a live image carries $TAG"

@@ -1,0 +1,10 @@
+type: object
+description: >-
+  Selects which enrolled factor to start an SCA login with. The factor must
+  already be enrolled (or, for `SMS_OTP`, the phone verified).
+required:
+  - factor
+properties:
+  factor:
+    $ref: ./ScaFactor.yaml
+    description: The factor to authenticate with.

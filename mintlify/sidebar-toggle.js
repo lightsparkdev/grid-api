@@ -226,8 +226,26 @@
     });
   }
 
+  // Page-scoped classes on <html> — the cheap replacement for html:has(...)
+  // selectors in style.css / head.raw. A :has() anchored at the root gets
+  // re-evaluated on DOM mutations anywhere in the document, which froze
+  // navigation for seconds on pages that build DOM incrementally (mermaid
+  // diagrams). This is the effective setter on both full loads and SPA
+  // navigations (head.raw carries a pre-paint copy, but the hosted renderer
+  // currently strips head.raw scripts).
+  function updatePageClasses() {
+    var root = document.documentElement;
+    var path = location.pathname.replace(/\/+$/, '') || '/';
+    root.classList.toggle('ls-page-flow-builder', path === '/flow-builder');
+    root.classList.toggle('ls-page-wallet-demo', path === '/global-accounts/demo');
+    // Custom-layout pages (frontmatter mode: "custom") — detected from the
+    // DOM so future custom pages are covered without listing paths here.
+    root.classList.toggle('ls-page-custom', !!document.querySelector('.is-custom'));
+  }
+
   function sync() {
     var root = document.documentElement;
+    updatePageClasses();
     // Navigation/first paint must never animate (only deliberate toggles do —
     // see the click handler). Clear the animate flag, and snap the rail button
     // for this navigation-driven state change so its icon doesn't ghost in/out
@@ -249,10 +267,11 @@
   }
 
   // SPA navigation: Mintlify swaps content without a full reload. On a path
-  // change, re-sync. Otherwise only re-add the rail if Mintlify wiped it — a
-  // cheap guard so we don't read layout every frame. Custom-layout pages are
-  // handled by sync() on navigation plus the CSS :has(.is-custom) rule, so the
-  // rail never lingers visibly even without per-frame polling here.
+  // change, re-sync. Otherwise only schedule the rAF-debounced ensure pass
+  // when something is actually out of sync: the rail/footer button got wiped,
+  // or the .is-custom marker (which mounts after the pathname flips) doesn't
+  // match the ls-page-custom class yet — a cheap guard so we don't read
+  // layout every frame.
   var lastPath = location.pathname;
   var ensureScheduled = false;
   function scheduleEnsure() {
@@ -260,6 +279,7 @@
     ensureScheduled = true;
     requestAnimationFrame(function () {
       ensureScheduled = false;
+      updatePageClasses();
       ensureRail();
       ensureFooterBtn();
     });
@@ -268,7 +288,13 @@
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       sync();
-    } else if (
+      return;
+    }
+    var customStale =
+      !!document.querySelector('.is-custom') !==
+      document.documentElement.classList.contains('ls-page-custom');
+    if (
+      customStale ||
       !rail ||
       !document.body.contains(rail) ||
       !footerBtn ||

@@ -20,15 +20,12 @@ allOf:
         format: int64
         description: >-
           The total fees available from the receive quote in the smallest unit
-          of the receiving currency (eg. cents).
+          of the sending currency (eg. cents).
         minimum: 0
         example: 10
       reconciliationInstructions:
         $ref: ../common/ReconciliationInstructions.yaml
         description: Included for all transactions except those with "CREATED" status
-      rateDetails:
-        $ref: ./IncomingRateDetails.yaml
-        description: Details about the rate and fees for the transaction.
       failureReason:
         $ref: ./IncomingTransactionFailureReason.yaml
         description: If the transaction failed, this field provides the reason for failure.

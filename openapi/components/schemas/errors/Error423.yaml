@@ -1,0 +1,40 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    type: integer
+    enum:
+      - 423
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | ACCOUNT_LOCKED | The customer's login is temporarily locked (or suspended) after too many failed attempts. Inspect `details.lockedUntil` for when the customer may retry, and `details.failedAttempts` for the current count. |
+    enum:
+      - ACCOUNT_LOCKED
+  message:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: >-
+      Lockout detail. `lockedUntil` is the UTC timestamp the customer may retry
+      after (absent when suspended indefinitely); `failedAttempts` is the current
+      cumulative failed-login count; `suspended` is true when the account is
+      locked with no automatic expiry.
+    properties:
+      suspended:
+        type: boolean
+      lockedUntil:
+        type:
+          - string
+          - 'null'
+        format: date-time
+      failedAttempts:
+        type: integer
+    additionalProperties: true

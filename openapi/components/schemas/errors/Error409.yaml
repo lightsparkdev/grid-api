@@ -15,15 +15,21 @@ properties:
       | Error Code | Description |
       |------------|-------------|
       | TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL | Transaction is not pending platform approval |
+      | TRANSACTION_NOT_CANCELLABLE | Transaction has already settled or is otherwise past the point where it can be cancelled |
       | UMA_ADDRESS_EXISTS | UMA address already exists |
       | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
       | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
+      | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
+      | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
       | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
     enum:
       - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
+      - TRANSACTION_NOT_CANCELLABLE
       - UMA_ADDRESS_EXISTS
       - EMAIL_OTP_EMAIL_ALREADY_EXISTS
       - EMAIL_OTP_CREDENTIAL_SET_CHANGED
+      - PASSKEY_ALREADY_ENROLLED
+      - SCA_SESSION_REQUIRED
       - CONFLICT
   message:
     type: string

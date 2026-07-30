@@ -1,0 +1,26 @@
+type: object
+description: >-
+  The shared secret returned by the TOTP enrollment start, plus the first code
+  the customer's authenticator app produces, submitted to confirm and finalize
+  the TOTP factor.
+required:
+  - type
+  - secret
+  - code
+properties:
+  type:
+    type: string
+    enum:
+      - TOTP
+    description: Discriminator selecting the TOTP confirm variant.
+  secret:
+    type: string
+    description: >-
+      The shared secret returned as `secret` by the TOTP enrollment start,
+      threaded back to bind the confirmation to that enrollment.
+  code:
+    type: string
+    description: >-
+      The current time-based one-time code from the customer's authenticator
+      app. In sandbox, the code is always `123456`.
+    example: '123456'

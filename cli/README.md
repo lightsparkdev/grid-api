@@ -115,8 +115,19 @@ grid customers kyc-link \
   --customer-id <id> \
   --redirect-url https://example.com/kyc-complete
 
-# Update customer
-grid customers update <customerId> --full-name "Jane Doe"
+# Update customer (--type is the required discriminator)
+grid customers update <customerId> --type INDIVIDUAL --full-name "Jane Doe"
+
+# Changing --email or --phone-number for an Embedded Wallet customer is a
+# signed-retry operation: the first call returns a 202 challenge; re-run with
+# --wallet-signature <stamp> --request-id <id> to complete (see the signing
+# note under Auth). Update email and phone in separate calls.
+
+# Contact verification (only required in some regulatory jurisdictions)
+grid customers verify-email <customerId>
+grid customers confirm-email <customerId> --code 123456
+grid customers verify-phone <customerId>
+grid customers confirm-phone <customerId> --code 123456
 
 # Delete customer (prompts for confirmation)
 grid customers delete <customerId>
@@ -143,14 +154,16 @@ grid accounts internal list --platform
 # List external accounts
 grid accounts external list [--customer-id <id>]
 
+# The --account-type value is the API discriminator (currency-suffixed *_ACCOUNT
+# or a wallet type). A beneficiary is required for every fiat account type.
+
 # Create US bank account
 grid accounts external create \
   --customer-id <id> \
   --currency USD \
-  --account-type US_ACCOUNT \
+  --account-type USD_ACCOUNT \
   --account-number "123456789" \
   --routing-number "021000021" \
-  --account-category CHECKING \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "John Doe"
 
@@ -158,7 +171,7 @@ grid accounts external create \
 grid accounts external create \
   --customer-id <id> \
   --currency MXN \
-  --account-type CLABE \
+  --account-type MXN_ACCOUNT \
   --clabe "012345678901234567" \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Carlos Garcia" \
@@ -169,7 +182,7 @@ grid accounts external create \
 grid accounts external create \
   --customer-id <id> \
   --currency INR \
-  --account-type UPI \
+  --account-type INR_ACCOUNT \
   --upi-id "name@okaxis" \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Rajesh Kumar" \
@@ -180,8 +193,9 @@ grid accounts external create \
 grid accounts external create \
   --customer-id <id> \
   --currency BRL \
-  --account-type PIX \
+  --account-type BRL_ACCOUNT \
   --pix-key "12345678901" \
+  --pix-key-type CPF \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Maria Silva" \
   --beneficiary-birth-date "1990-05-10" \
@@ -194,7 +208,6 @@ grid accounts external create \
   --account-type NGN_ACCOUNT \
   --account-number "1234567890" \
   --bank-name "First Bank" \
-  --purpose GOODS_OR_SERVICES \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Chidi Okonkwo" \
   --beneficiary-birth-date "1992-08-20" \
@@ -204,7 +217,7 @@ grid accounts external create \
 grid accounts external create \
   --customer-id <id> \
   --currency EUR \
-  --account-type IBAN \
+  --account-type EUR_ACCOUNT \
   --iban "DE89370400440532013000" \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Hans Mueller"
@@ -293,6 +306,76 @@ grid receiver lookup-uma '$user@domain.com'
 grid receiver lookup-account <accountId>
 ```
 
+### Cards
+
+```bash
+# List cards
+grid cards list [--cardholder-id <id>] [--state ACTIVE]
+
+# Get a card
+grid cards get <cardId>
+
+# Issue a virtual card
+grid cards create \
+  --cardholder-id <customerId> \
+  --funding-sources "InternalAccount:1,InternalAccount:2"
+
+# Freeze / unfreeze / close, or replace funding sources
+grid cards update <cardId> --state FROZEN
+grid cards update <cardId> --state ACTIVE
+grid cards update <cardId> --state CLOSED
+grid cards update <cardId> --funding-sources "InternalAccount:3"
+
+# Reveal card details — prints a short-lived panEmbedUrl to render in an iframe.
+# Do not store or log it.
+grid cards reveal <cardId>
+```
+
+`cards update` (and the signed `auth` operations below) use Grid's signed-retry
+flow: the first call returns a `202` challenge with a `payloadToSign`. Sign it
+with your embedded-wallet key (e.g. via `scripts/embedded-wallet-sign.js`) and
+re-run the command with `--wallet-signature <stamp> --request-id <id>` to
+complete. The CLI forwards those as the `Grid-Wallet-Signature` / `Request-Id`
+headers — it does not compute the stamp for you.
+
+### Auth
+
+```bash
+# Credentials
+grid auth credentials list --account-id <internalAccountId>
+grid auth credentials create --type OAUTH --account-id <id> --oidc-token <token>
+grid auth credentials challenge <credentialId>            # e.g. resend an OTP
+grid auth credentials verify <credentialId> --type EMAIL_OTP \
+  --encrypted-otp-bundle '<hpke-bundle>' \
+  --wallet-signature <stamp> --request-id <id>
+grid auth credentials revoke <credentialId> --wallet-signature <stamp> --request-id <id>
+
+# Delegated signing keys
+grid auth delegated-keys list --account-id <id>
+grid auth delegated-keys get <delegatedKeyId>
+grid auth delegated-keys create \
+  --card-id <cardId> --internal-account-id <id> --nickname "Card key" \
+  --spending-limit USD:5000 --spending-limit EUR:4000 \
+  --wallet-signature <stamp> --request-id <id>
+grid auth delegated-keys revoke <delegatedKeyId>          # no signature needed
+
+# Sessions
+grid auth sessions list --account-id <id>
+grid auth sessions refresh <sessionId> --client-public-key <hex> \
+  --wallet-signature <stamp> --request-id <id>
+grid auth sessions revoke <sessionId> --wallet-signature <stamp> --request-id <id>
+```
+
+Passkey (WebAuthn) create/verify accept the attestation/assertion as JSON
+(`--attestation` / `--assertion`) that you produce client-side; the CLI cannot
+run WebAuthn itself.
+
+Some operations need more than one signed retry — notably `auth delegated-keys
+create` has two successive signed legs (a single `--wallet-signature` retry
+stops at the second `202` and leaves the key `PENDING`). Run the command once
+per signed leg, supplying the next `--wallet-signature` / `--request-id` each
+time, until it returns the created key.
+
 ### Sandbox Testing
 
 ```bash
@@ -302,11 +385,51 @@ grid sandbox fund <internalAccountId> --amount 100000
 # Simulate sending funds to a JIT quote
 grid sandbox send --quote-id <quoteId> --currency USDC
 
-# Simulate receiving an UMA payment
+# Simulate receiving an UMA payment (--sender-uma is required; identify the
+# receiver with either --uma-address or --customer-id)
 grid sandbox receive \
+  --sender-uma '$sender@sandbox.domain.com' \
   --uma-address '$user@domain.com' \
   --amount 1000 \
   --currency USD
+```
+
+### Exchange Rates & Lookups
+
+```bash
+# Exchange rates (--destination-currency is repeatable)
+grid exchange-rates --source-currency USD --destination-currency EUR --destination-currency MXN
+
+# Estimate a crypto withdrawal fee
+grid crypto estimate-fee \
+  --internal-account-id <id> --currency USDC --crypto-network SOLANA \
+  --amount 5000 --destination-address <address>
+
+# Discover receiving institutions
+grid discoveries --country PH --currency PHP
+
+# List counterparty (UMA) providers
+grid uma-providers [--country-code US] [--currency-code USD]
+```
+
+### API Tokens
+
+```bash
+grid tokens list [--name <name>]
+grid tokens get <tokenId>
+# clientSecret is returned only once at creation — store it securely
+grid tokens create --name "CI token" --permissions VIEW,TRANSACT
+grid tokens revoke <tokenId>
+```
+
+### Internal Account Management
+
+```bash
+# Both are signed-retry operations — run once to get the 202 challenge, then
+# re-run with --wallet-signature <stamp> --request-id <id> (see the signing note
+# under Auth). The CLI does not compute the stamp, generate keys, or decrypt.
+grid internal-accounts update <id> --private-enabled true
+grid internal-accounts export <id> --client-public-key <hex>
 ```
 
 ## Output Format
@@ -341,7 +464,7 @@ On error:
 grid accounts external create \
   --customer-id <customerId> \
   --currency MXN \
-  --account-type CLABE \
+  --account-type MXN_ACCOUNT \
   --clabe "012345678901234567" \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "Carlos Garcia" \

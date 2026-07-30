@@ -1,0 +1,7 @@
+/* Geist — the Z (social) skin's typeface. Loaded via next/font (the `geist`
+   package); `GeistSans.variable` on <html> (see app/layout.tsx) defines
+   `--font-geist-sans`. This exposes a named token with a system fallback so the
+   skin can reference it the same way it does SF Pro / Inter. */
+:root {
+  --font-family-geist: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}

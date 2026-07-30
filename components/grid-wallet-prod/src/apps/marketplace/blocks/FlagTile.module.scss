@@ -1,0 +1,101 @@
+/* Shadow lives on the UNCLIPPED shell — but as a FILTER, not a box-shadow:
+   box-shadow paints from the element's border-radius BOX, which can only
+   approximate the squircle (the box corner peeked past the ring's clipped
+   corner as a ghost layer). drop-shadow follows the rendered alpha — the
+   ring's actual clip-path silhouette — at any size. */
+.shell {
+  position: relative;
+  flex: none;
+  display: block;
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.16));
+
+  :global([data-theme='dark']) & {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  }
+
+  /* Big stickers (activity/txn lists, 56px): the same shadow reads heavier on
+     the larger silhouette — dial the alpha down to match the 40px flags. */
+  &[data-large] {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.09));
+
+    :global([data-theme='dark']) & {
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.32));
+    }
+  }
+}
+
+/* The 2px concentric ring — card surface, clipped to the outer squircle.
+   Opaque, so it also hides the halo stroke's inner half (outside border). */
+.ring {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  box-sizing: border-box;
+  background: var(--mk-card-bg);
+  overflow: hidden;
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Icon sticker art — neutral surface fill, primary glyph. */
+.artNeutral {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--mk-surface);
+  color: var(--app-text-primary);
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Icon sticker art — brand-pink fill, white glyph. */
+.artBrand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--mk-brand);
+  color: #ffffff;
+
+  svg {
+    display: block;
+    flex: none;
+  }
+}
+
+/* Outside hairline — the wallet-card trick at a finer weight: the stroke sits
+   BELOW the opaque ring fill, which hides its inner half (~0.33px outside). */
+.halo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke: var(--mk-card-border);
+    stroke-width: 0.66;
+    vector-effect: non-scaling-stroke;
+  }
+}

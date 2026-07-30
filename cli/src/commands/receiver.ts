@@ -4,17 +4,16 @@ import { outputResponse } from "../output";
 import { GlobalOptions } from "../index";
 
 interface ReceiverLookup {
-  id: string;
-  umaAddress?: string;
+  lookupId: string;
+  receiverUmaAddress?: string;
   accountId?: string;
-  currencies: Array<{
-    code: string;
-    name: string;
-    symbol: string;
-    minAmount?: number;
-    maxAmount?: number;
+  supportedCurrencies: Array<{
+    currency: { code: string; name?: string; symbol?: string; decimals?: number };
+    estimatedExchangeRate?: number;
+    min?: number;
+    max?: number;
   }>;
-  requiredPayerData?: Array<{
+  requiredPayerDataFields?: Array<{
     name: string;
     mandatory: boolean;
   }>;
@@ -53,13 +52,21 @@ export function registerReceiverCommand(
   receiverCmd
     .command("lookup-account <accountId>")
     .description("Look up an external account to get payment capabilities")
-    .action(async (accountId: string) => {
+    .option("--customer-id <id>", "Sender customer ID")
+    .option("--sender-uma <address>", "Sender UMA address")
+    .action(async (accountId: string, options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
       if (!client) return;
 
+      const params: Record<string, string | undefined> = {
+        customerId: options.customerId,
+        senderUmaAddress: options.senderUma,
+      };
+
       const response = await client.get<ReceiverLookup>(
-        `/receiver/external-account/${encodeURIComponent(accountId)}`
+        `/receiver/external-account/${encodeURIComponent(accountId)}`,
+        params
       );
       outputResponse(response);
     });

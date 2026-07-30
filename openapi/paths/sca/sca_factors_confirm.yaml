@@ -1,0 +1,72 @@
+parameters:
+  - name: customerId
+    in: query
+    description: The unique identifier of the customer confirming a factor enrollment.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Confirm SCA factor enrollment
+  description: |
+    Finalize the factor enrollment started by `POST /sca/factors`. The request
+    body is discriminated by `type`: for `TOTP`, submit the shared `secret` from
+    the start call plus the first `code`; for `PASSKEY`, submit the WebAuthn
+    `credential` the device produced plus the `origin` it was produced against.
+    The threaded secret/credential binds the confirmation to its enrollment, so
+    no separate id is needed.
+
+    A TOTP confirmation returns one-time recovery codes (shown once); a passkey
+    confirmation returns the enrolled factor.
+
+    This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
+
+    In sandbox, the TOTP code is always `123456`.
+  operationId: confirmScaFactorEnrollment
+  tags:
+    - Strong Customer Authentication
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/sca/ScaFactorConfirmRequestOneOf.yaml
+  responses:
+    '200':
+      description: Factor enrolled; the factor-specific result is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/sca/ScaFactorConfirmResponseOneOf.yaml
+    '400':
+      description: Invalid or incorrect confirmation proof
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: SCA is not required for this customer.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

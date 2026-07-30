@@ -19,28 +19,6 @@ const packageJson = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf-8")
 );
 
-const program = new Command();
-
-program
-  .name("grid")
-  .description("CLI for Grid API - manage global payments")
-  .version(packageJson.version, "-V, --version", "Show the version and exit")
-  .option("-c, --config <path>", "Path to credentials file")
-  .option(
-    "-u, --base-url <url>",
-    "Base URL for API (default: https://api.lightspark.com/grid/2025-10-13)"
-  )
-  .option("-f, --format <format>", "Output format: json or table", "json")
-  .option("--no-color", "Disable colored output");
-
-configureHelp(program);
-
-program.hook("preAction", (thisCommand) => {
-    const opts = thisCommand.opts();
-    if (opts.format) setOutputFormat(opts.format as OutputFormat);
-    if (opts.color === false) setUseColors(false);
-  });
-
 function getClient(options: GlobalOptions): GridClient | null {
   try {
     const config = loadConfig({
@@ -56,9 +34,29 @@ function getClient(options: GlobalOptions): GridClient | null {
   }
 }
 
-export { program, getClient, GridClient, GridConfig };
+export async function buildProgram(): Promise<Command> {
+  const program = new Command();
 
-async function main() {
+  program
+    .name("grid")
+    .description("CLI for Grid API - manage global payments")
+    .version(packageJson.version, "-V, --version", "Show the version and exit")
+    .option("-c, --config <path>", "Path to credentials file")
+    .option(
+      "-u, --base-url <url>",
+      "Base URL for API (default: https://api.lightspark.com/grid/2025-10-13)"
+    )
+    .option("-f, --format <format>", "Output format: json or table", "json")
+    .option("--no-color", "Disable colored output");
+
+  configureHelp(program);
+
+  program.hook("preAction", (thisCommand) => {
+    const opts = thisCommand.opts();
+    if (opts.format) setOutputFormat(opts.format as OutputFormat);
+    if (opts.color === false) setUseColors(false);
+  });
+
   const { registerConfigureCommand } = await import("./commands/configure");
   const { registerConfigCommand } = await import("./commands/config");
   const { registerCustomersCommand } = await import("./commands/customers");
@@ -70,6 +68,20 @@ async function main() {
   const { registerTransfersCommand } = await import("./commands/transfers");
   const { registerSandboxCommand } = await import("./commands/sandbox");
   const { registerReceiverCommand } = await import("./commands/receiver");
+  const { registerCardsCommand } = await import("./commands/cards");
+  const { registerAuthCommand } = await import("./commands/auth");
+  const { registerExchangeRatesCommand } = await import(
+    "./commands/exchange-rates"
+  );
+  const { registerCryptoCommand } = await import("./commands/crypto");
+  const { registerDiscoveriesCommand } = await import("./commands/discoveries");
+  const { registerUmaProvidersCommand } = await import(
+    "./commands/uma-providers"
+  );
+  const { registerInternalAccountsCommand } = await import(
+    "./commands/internal-accounts"
+  );
+  const { registerTokensCommand } = await import("./commands/tokens");
 
   registerConfigureCommand(program);
   registerConfigCommand(program, getClient);
@@ -80,19 +92,38 @@ async function main() {
   registerTransfersCommand(program, getClient);
   registerSandboxCommand(program, getClient);
   registerReceiverCommand(program, getClient);
+  registerCardsCommand(program, getClient);
+  registerAuthCommand(program, getClient);
+  registerExchangeRatesCommand(program, getClient);
+  registerCryptoCommand(program, getClient);
+  registerDiscoveriesCommand(program, getClient);
+  registerUmaProvidersCommand(program, getClient);
+  registerInternalAccountsCommand(program, getClient);
+  registerTokensCommand(program, getClient);
 
-  const customersCmd = program.commands.find(c => c.name() === "customers");
-  const transactionsCmd = program.commands.find(c => c.name() === "transactions");
-  const accountsCmd = program.commands.find(c => c.name() === "accounts");
+  const customersCmd = program.commands.find((c) => c.name() === "customers");
+  const transactionsCmd = program.commands.find(
+    (c) => c.name() === "transactions"
+  );
+  const accountsCmd = program.commands.find((c) => c.name() === "accounts");
 
   if (customersCmd) customersCmd.alias("cust");
   if (transactionsCmd) transactionsCmd.alias("tx");
   if (accountsCmd) accountsCmd.alias("acct");
 
+  return program;
+}
+
+export { getClient, GridClient, GridConfig };
+
+async function main() {
+  const program = await buildProgram();
   await program.parseAsync(process.argv);
 }
 
-main().catch((err) => {
-  output(formatError(err.message));
-  process.exitCode = 1;
-});
+if (typeof require !== "undefined" && require.main === module) {
+  main().catch((err) => {
+    output(formatError(err.message));
+    process.exitCode = 1;
+  });
+}

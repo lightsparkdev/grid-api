@@ -1,0 +1,22 @@
+type: object
+description: >-
+  The one-time recovery codes issued once a TOTP factor is enrolled. These are
+  shown to the customer only once; store them somewhere safe to recover access
+  if the authenticator device is lost.
+required:
+  - type
+  - recoveryCodes
+properties:
+  type:
+    type: string
+    enum:
+      - TOTP
+    description: Discriminator identifying this as the TOTP enrollment result.
+  recoveryCodes:
+    type: array
+    description: The one-time recovery codes for this TOTP factor.
+    items:
+      type: string
+    example:
+      - ABCD-EFGH-IJKL
+      - MNOP-QRST-UVWX

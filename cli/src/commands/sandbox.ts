@@ -46,14 +46,28 @@ export function registerSandboxCommand(
   sandboxCmd
     .command("receive")
     .description("Simulate receiving an UMA payment in sandbox")
-    .requiredOption("--uma-address <address>", "Receiver UMA address")
+    .requiredOption("--sender-uma <address>", "Sender UMA address")
     .requiredOption("--amount <number>", "Amount in smallest unit")
-    .requiredOption("--currency <code>", "Currency code")
-    .option("--sender-uma <address>", "Sender UMA address")
+    .requiredOption("--currency <code>", "Receiving currency code")
+    .option("--uma-address <address>", "Receiver UMA address (or use --customer-id)")
+    .option("--customer-id <id>", "Receiver customer ID (or use --uma-address)")
     .action(async (options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
       if (!client) return;
+
+      if (!options.umaAddress && !options.customerId) {
+        output(formatError("Provide either --uma-address or --customer-id"));
+        process.exitCode = 1;
+        return;
+      }
+      if (options.umaAddress && options.customerId) {
+        output(
+          formatError("Provide only one of --uma-address or --customer-id")
+        );
+        process.exitCode = 1;
+        return;
+      }
 
       const validation = validateAll([
         validateAmount(options.amount, "amount"),
@@ -66,11 +80,12 @@ export function registerSandboxCommand(
       }
 
       const body: Record<string, unknown> = {
-        receiverUmaAddress: options.umaAddress,
-        amount: parseAmount(options.amount),
-        currency: options.currency,
+        senderUmaAddress: options.senderUma,
+        receivingCurrencyAmount: parseAmount(options.amount),
+        receivingCurrencyCode: options.currency,
       };
-      if (options.senderUma) body.senderUmaAddress = options.senderUma;
+      if (options.umaAddress) body.receiverUmaAddress = options.umaAddress;
+      if (options.customerId) body.customerId = options.customerId;
 
       const response = await client.post<unknown>("/sandbox/uma/receive", body);
       outputResponse(response);

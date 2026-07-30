@@ -181,6 +181,18 @@ When a payment fails or is cancelled, refunds are tracked in a dedicated object 
 }
 ```
 
+### Refund destination
+
+Where a refund lands depends on how the transaction was funded:
+
+- **Prefunded (internal account)** — the amount is credited back to the source internal account balance.
+- **Real-time (JIT) funding via an instant fiat rail** (RTP, PIX, SEPA Instant, etc.) — the refund is returned to the originating funding instrument.
+- **Real-time (JIT) funding via crypto** (for example USDC or BTC) — the refunded amount is credited to the customer's **internal account balance for that asset**. It is **not** returned to the wallet the funds were sent from.
+
+<Note>
+  Crypto deposits are not refunded to the source wallet because Grid cannot verify that the sending wallet belongs to your customer — the funds may have originated from an exchange or another third-party address. The credited internal balance is reusable: spend it with a new quote, or withdraw it to an external wallet with `POST /transfer-out`.
+</Note>
+
 ## Webhooks
 
 Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhook request body contains the full transaction resource.

@@ -1,0 +1,13 @@
+type: object
+description: >-
+  The SCA challenge (if any) a caller authorizes to finish trusting (or
+  untrusting) a beneficiary. The beneficiary is identified by its
+  `externalAccountId`, so the confirm call needs no separate handle.
+  `scaChallenge` is omitted when no challenge is issued; the caller then confirms
+  without a `challengeId`.
+properties:
+  scaChallenge:
+    $ref: ./ScaChallenge.yaml
+    description: >-
+      The SCA challenge to satisfy on the confirm call. Omitted when no challenge
+      is issued.

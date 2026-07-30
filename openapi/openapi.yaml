@@ -153,6 +153,32 @@ paths:
     $ref: paths/customers/customers_{customerId}_verify-phone.yaml
   /customers/{customerId}/verify-phone/confirm:
     $ref: paths/customers/customers_{customerId}_verify-phone_confirm.yaml
+  /sca/factors:
+    $ref: paths/sca/sca_factors.yaml
+  /sca/factors/confirm:
+    $ref: paths/sca/sca_factors_confirm.yaml
+  /sca/factors/{credentialId}:
+    $ref: paths/sca/sca_factors_{credentialId}.yaml
+  /sca/login/start:
+    $ref: paths/sca/sca_login_start.yaml
+  /sca/login/complete:
+    $ref: paths/sca/sca_login_complete.yaml
+  /sca/record-event:
+    $ref: paths/sca/sca_record-event.yaml
+  /sca/factors/reset:
+    $ref: paths/sca/sca_factors_reset.yaml
+  /sca/factors/reset/{resetId}:
+    $ref: paths/sca/sca_factors_reset_{resetId}.yaml
+  /sca/factors/reset/{resetId}/complete:
+    $ref: paths/sca/sca_factors_reset_{resetId}_complete.yaml
+  /customers/external-accounts/{externalAccountId}/trust:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_trust.yaml
+  /customers/external-accounts/{externalAccountId}/trust/confirm:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_trust_confirm.yaml
+  /customers/external-accounts/{externalAccountId}/untrust:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_untrust.yaml
+  /customers/external-accounts/{externalAccountId}/untrust/confirm:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_untrust_confirm.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:
@@ -205,6 +231,8 @@ paths:
     $ref: paths/transactions/transactions_{transactionId}_approve.yaml
   /transactions/{transactionId}/reject:
     $ref: paths/transactions/transactions_{transactionId}_reject.yaml
+  /transactions/{transactionId}/cancel:
+    $ref: paths/transactions/transactions_{transactionId}_cancel.yaml
   /crypto/estimate-withdrawal-fee:
     $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
   /sandbox/webhooks/test:
@@ -312,6 +340,20 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_clearing.yaml
   /sandbox/cards/{id}/simulate/return:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return.yaml
+  /sandbox/cards/{id}/simulate/balance_inquiry:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_balance_inquiry.yaml
+  /sandbox/cards/{id}/simulate/credit_authorization:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_credit_authorization.yaml
+  /sandbox/cards/{id}/simulate/financial_authorization:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_financial_authorization.yaml
+  /sandbox/cards/{id}/simulate/financial_credit_authorization:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_financial_credit_authorization.yaml
+  /sandbox/cards/{id}/simulate/authorization_advice:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization_advice.yaml
+  /sandbox/cards/{id}/simulate/credit_authorization_advice:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_credit_authorization_advice.yaml
+  /sandbox/cards/{id}/simulate/return_reversal:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return_reversal.yaml
   /stablecoin-provider-accounts:
     $ref: paths/stablecoins/stablecoin-provider-accounts.yaml
   /stablecoin-provider-accounts/{stablecoinProviderAccountId}:

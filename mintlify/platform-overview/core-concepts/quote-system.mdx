@@ -98,6 +98,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
   "totalReceivingAmount": 828835,
   "exchangeRate": 120048.01920768,
   "feesIncluded": 500,
+  "platformFeesIncluded": 0,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
 ```
@@ -222,7 +223,8 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000060",
   "totalSendingAmount": 100000,
   "totalReceivingAmount": 91540,
-  "feesIncluded": 500
+  "feesIncluded": 500,
+  "platformFeesIncluded": 0
 }
 ```
 
@@ -291,6 +293,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes \
   "totalReceivingAmount": 91540,
   "exchangeRate": 1.08695652,
   "feesIncluded": 500,
+  "platformFeesIncluded": 0,
   "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000025"
 }
 ```
@@ -315,6 +318,7 @@ All fees are transparently displayed in the quote response:
 {
   "id": "Quote:019542f5-b3e7-1d02-0000-000000000020",
   "feesIncluded": 500,
+  "platformFeesIncluded": 0,
   ... quote response ...
   "rateDetails": {
     "counterpartyMultiplier": 1.08,
@@ -349,6 +353,32 @@ Fees are deducted from the sending amount, so:
   fees in the latest quote response — they are locked only for the lifetime
   of that quote.
 </Note>
+
+### How the variable fee is applied
+
+The variable fee (`gridApiVariableFeeRate`) is always assessed as a fraction of the **sending** amount. How that plays out depends on which side of the quote you lock (see [Locked Currency Side](#locked-currency-side)).
+
+**Sending amount locked** (`lockedCurrencySide: "SENDING"`) — the fee is taken out of the amount you send, and the recipient receives the remainder:
+
+```text
+received = send − send × fee
+```
+
+Send $50 at a 10 bps (0.10%, `fee = 0.001`) rate: `received = 50 − 50 × 0.001 = 49.95`.
+
+**Receiving amount locked** (`lockedCurrencySide: "RECEIVING"`) — Grid solves for the send amount that nets the exact received amount *after* the same fee:
+
+```text
+send = received / (1 − fee)
+```
+
+Receive $50 at 10 bps: `send = 50 / 0.999 = 50.05005005…`.
+
+<Note>
+  Receiver-locked quotes divide by `(1 − fee)` rather than adding `received × fee` so that locking the receiving side is never cheaper than locking the sending side at the same rate. Solving `send × (1 − fee) = received` for `send` keeps the effective fee rate identical across both locked sides.
+</Note>
+
+For cross-currency quotes the exchange rate applies on top of this: the fee is taken on the sending currency, then the net amount is converted at the quoted rate. The same-currency examples above (for example USDC → USD at 1:1) show the fee in isolation.
 
 ## Best Practices
 

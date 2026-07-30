@@ -61,6 +61,8 @@ export function registerTransfersCommand(
     .requiredOption("--source <id>", "Source internal account ID (InternalAccount:...)")
     .requiredOption("--dest <id>", "Destination external account ID (ExternalAccount:...)")
     .option("--amount <number>", "Amount in smallest currency unit (optional for full balance)")
+    .option("--payment-rail <rail>", "Payment rail for the destination external account")
+    .option("--remittance-information <text>", "Free-form remittance information (max 80 chars)")
     .action(async (options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
@@ -75,14 +77,19 @@ export function registerTransfersCommand(
         }
       }
 
+      const destination: Record<string, unknown> = { accountId: options.dest };
+      if (options.paymentRail) destination.paymentRail = options.paymentRail;
+
       const body: Record<string, unknown> = {
         source: { accountId: options.source },
-        destination: { accountId: options.dest },
+        destination,
       };
 
       if (options.amount) {
         body.amount = parseAmount(options.amount);
       }
+      if (options.remittanceInformation)
+        body.remittanceInformation = options.remittanceInformation;
 
       const response = await client.post<Transaction>("/transfer-out", body);
       outputResponse(response);

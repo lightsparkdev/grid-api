@@ -1,0 +1,189 @@
+/* Full-screen issuance flow: X header, a placeholder graphic that fills the top,
+   and bottom-anchored copy on a solid bg (the graphic dissolves into it). */
+.issuance {
+  position: relative;
+  height: var(--app-screen-height, 874px);
+  padding-top: 62px; // status bar
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nav {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+
+/* Card-home title — absolutely centered (matches the wallet home nav). */
+.navTitle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 590;
+  letter-spacing: -0.43px;
+  color: var(--app-text-primary);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.navRight {
+  margin-left: auto;
+}
+
+.navBtn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  svg {
+    display: block;
+    flex: none; // without this the SVG flex-item collapses to ~0 (the "tiny X" bug)
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* The 3D card graphic — a full-screen overlay behind the nav and copy, so the
+   reveal card can enter from the true bottom of the screen and never clips
+   against a smaller canvas. The scene itself frames the fan/card into the area
+   between the nav and the copy. */
+.graphic {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Bottom copy — solid bg only under the intro/fan (its lower arc passes behind
+   this block). From the reveal onward it stays transparent: the card rises from
+   the true bottom edge, glides up past the copy zone, and the ready copy must
+   never paint a bg over it. The fade keeps the flips soft. */
+.content {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  margin-top: auto;
+  background: transparent;
+  transition: background-color 0.3s ease;
+}
+
+.contentSolid {
+  background: var(--app-bg);
+}
+
+/* Card home — the debit-card view living in the same sheet (the canvas never
+   unmounts, so the 3D card is a continuous element from issuance to here).
+   pointer-events pass through to the canvas except on the interactive rows. */
+.cardHome {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+/* Invisible measuring target for the hero card: full width minus 16px gutters,
+   real card aspect ratio (ISO 7810 ID-1). The scene morphs the live 3D card
+   onto this rect — move it in the layout and the card follows. */
+.cardHero {
+  flex-shrink: 0;
+  margin: 16px 16px 0;
+  aspect-ratio: 1.586;
+}
+
+.cardHomeBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  pointer-events: auto;
+}
+
+/* Rides up 56px with the card during tap-to-pay (system choreography). */
+.cardHomeLift {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.cardHomeContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Tap to pay — the flat brand pill, full width on the page's 16px gutters.
+   (The shared button is width:100%, which overflows next to margins — width
+   auto + stretch fills the row correctly instead.) */
+.tapButton {
+  flex-shrink: 0;
+  width: auto;
+  margin: 0 16px;
+  /* Glyph on the RIGHT of the label (row-reverse keeps the shared button's
+     icon-slot markup). +4px left padding optically balances the icon side. */
+  flex-direction: row-reverse;
+  gap: 0;
+  padding-left: 24px;
+}
+
+/* Center the 20px glyph in the shared button's 24px icon slot — otherwise it
+   sits top-left, reading as misaligned with a bloated gap. */
+.tapIcon {
+  display: block;
+  margin: auto;
+}
+
+/* The card's transactions (flat home-screen list style, card charges only).
+   Scrolls if the history outgrows the space; flex so the list section fills
+   the remaining height (the empty-state message centers in ALL of it). */
+.cardHomeList {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Reader status (Hold Near Reader / Done) — the iOS system interaction: fixed
+   position below the lifted card (not centered in leftover space), matching
+   the other skins' choreography. */
+.tapStatus {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 26px; /* + the 24px body gap = 50px below the card */
+}
+
+/* Invisible stand-in for the ready copy while the card reveal is in flight —
+   it's the measuring stick for the card's final perch (the scene centers the
+   card in the gap between the nav and this), so the choreography adapts if the
+   copy ever changes. */
+.contentSpacer {
+  visibility: hidden;
+  pointer-events: none;
+}

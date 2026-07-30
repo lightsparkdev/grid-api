@@ -165,7 +165,10 @@ rules:
   # Paths (README: Resources)
   # ============================================================
 
-  # Paths should use kebab-case (path params in {camelCase} are allowed)
+  # Paths should use kebab-case (path params in {camelCase} are allowed).
+  # The /sandbox/cards/{id}/simulate/* endpoints are exempted (second branch of
+  # the pattern): their snake_case segments mirror the card issuer's simulate
+  # routes verbatim, and the SDK must call those exact deployed URLs.
   paths-kebab-case:
     description: Path segments should use kebab-case
     message: "Path should use kebab-case (e.g., /external-accounts not /externalAccounts). See openapi/README.md#resources"
@@ -175,4 +178,4 @@ rules:
       field: "@key"
       function: pattern
       functionOptions:
-        match: "^(\\/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+$"
+        match: "^((\\/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+|\\/sandbox\\/cards\\/\\{id\\}\\/simulate\\/(balance_inquiry|credit_authorization|financial_authorization|financial_credit_authorization|authorization_advice|credit_authorization_advice|return_reversal))$"

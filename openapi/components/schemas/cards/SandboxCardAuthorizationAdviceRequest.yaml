@@ -1,0 +1,22 @@
+type: object
+required:
+  - cardTransactionId
+  - amount
+description: >-
+  Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/authorization_advice`.
+  Drives an `AUTHORIZATION_ADVICE` that re-sizes an existing open authorization.
+properties:
+  cardTransactionId:
+    type: string
+    description: >-
+      The id of the `CardTransaction` the advice re-sizes. Must be in
+      `AUTHORIZED` or `PARTIALLY_SETTLED` state.
+    example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+  amount:
+    type: integer
+    format: int64
+    description: >-
+      The new *total* authorized amount, in the smallest unit of the
+      transaction's currency, that the advice re-sizes the authorization to.
+    exclusiveMinimum: 0
+    example: 2000
