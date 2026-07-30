@@ -230,7 +230,12 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
 
 ### Strong Customer Authentication (EU Customers)
 
-For customers in regions where Strong Customer Authentication (SCA) is required (e.g., EU), quotes may enter a `PENDING_AUTHORIZATION` status with an `scaChallenge` object. The customer must authorize the challenge before the quote can be executed.
+For customers in regions where Strong Customer Authentication (SCA) is required (e.g., EU), quotes may enter a `PENDING_AUTHORIZATION` status with an `scaChallenge` object. The transfer is not released until the customer authorizes it.
+
+Where the challenge appears depends on how the quote is funded:
+
+- **Prefunded** — `POST /quotes/{quoteId}/execute` returns `PENDING_AUTHORIZATION` with the challenge instead of initiating the transfer. The challenge does not exist until `execute` is called, so the proof always goes on the follow-up authorize; re-calling `execute` returns `409`.
+- **Realtime (JIT) funded** — the challenge arrives earlier and `paymentInstructions` are withheld until it is satisfied.
 
 **Quote response with SCA challenge:**
 
@@ -260,8 +265,6 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/auth
 <Note>
   Multiple authorizations may be required in sequence (e.g., currency conversion + payout). After each authorization, check the quote status — if still `PENDING_AUTHORIZATION`, authorize the next challenge.
 </Note>
-
-For JIT-funded quotes, `paymentInstructions` are withheld until all SCA challenges are satisfied.
 
 ### Execution Timing
 
