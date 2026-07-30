@@ -136,14 +136,24 @@ export function buildFlowPath(
   const twoSwitches = needsTwoSwitches(source, destination, sourceRegion, destRegion);
 
   if (twoSwitches) {
-    // Source-side switch
-    const sourceConvertAction: ActionCard = source.code === settle.asset
-      ? { text: `Accept ${settle.asset} deposit`, color: settleColor }
+    // Source-side switch. When the source already holds the bridge asset there
+    // is no conversion: external wallets deposit into the switch, while internal
+    // balances need no receiving card at all (the endpoint card and connector
+    // already describe the debit from the Grid balance).
+    const sourceConvertAction: ActionCard | null = source.code === settle.asset
+      ? (source.isInternal
+          ? null
+          : { text: `Accept ${settle.asset} deposit`, color: settleColor })
       : {
           text: `Convert ${source.code} to ${settle.asset}`,
           color: settleColor,
           gradientFrom: sendColor,
         };
+
+    const sendAction: ActionCard = {
+      text: `Send ${settle.asset} via ${settle.network}`,
+      color: settleColor,
+    };
 
     nodes.push({
       id: 'switch1',
@@ -151,18 +161,21 @@ export function buildFlowPath(
       label: `${srcFiat} Grid Switch`,
       flag: srcFiatCC,
       isInternal: true,
-      actionCards: [
-        sourceConvertAction,
-        {
-          text: `Send ${settle.asset} via ${settle.network}`,
-          color: settleColor,
-        },
-      ],
+      actionCards: sourceConvertAction
+        ? [sourceConvertAction, sendAction]
+        : [sendAction],
     });
 
-    // Destination-side switch
+    // Destination-side switch. When the destination already holds the bridge
+    // asset, use internal-balance wording for internal accounts (matching how
+    // internal destinations render elsewhere) and wallet wording for external.
     const destConvertAction: ActionCard = destination.code === settle.asset
-      ? { text: `Deliver ${settle.asset} to wallet`, color: settleColor }
+      ? {
+          text: destination.isInternal
+            ? `Credit ${settle.asset} balance`
+            : `Deliver ${settle.asset} to wallet`,
+          color: settleColor,
+        }
       : {
           text: `Convert ${settle.asset} to ${destination.code}`,
           color: receiveColor,
