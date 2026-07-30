@@ -22,13 +22,18 @@ properties:
     pattern: ^[0-9]{9}$
   bankName:
     type: string
-    description: The name of the financial institution holding the account
+    description: >-
+      The name of the financial institution holding the account. Optional on
+      every rail, and recommended for wires, where it identifies the
+      beneficiary's institution on the payment message.
     example: Chase Bank
     minLength: 1
     maxLength: 140
   bankAccountType:
     type: string
-    description: Whether the account is a checking or a savings account
+    description: >-
+      Whether the account is a checking or a savings account. Optional on every
+      rail; when omitted, the account is treated as a checking account.
     enum:
     - CHECKING
     - SAVINGS
