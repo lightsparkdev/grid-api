@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { CurrencySelection } from '@/lib/code-generator';
 import { cryptoAssets, type CryptoAccountType } from '@/data/crypto';
-import { currencies } from '@/data/currencies';
+import { currencies, railDisplayName } from '@/data/currencies';
 import { IconPlusLarge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusLarge';
 import { IconChevronBottom } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronBottom';
 import { IconArrowsRepeat } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowsRepeat';
@@ -247,7 +247,7 @@ function RailDropdown({
       >
         <span className={styles.propertyLabel}>Rail</span>
         <span className={styles.propertyValue}>
-          <span>{selectedRail}</span>
+          <span>{railDisplayName(selectedRail)}</span>
           <span className={styles.propertyChevron}>
             <IconChevronRightSmall size={16} />
           </span>
@@ -285,7 +285,7 @@ function RailDropdown({
                     }}
                     type="button"
                   >
-                    <span>{rail}</span>
+                    <span>{railDisplayName(rail)}</span>
                   </button>
                 ))}
               </motion.div>
@@ -395,7 +395,7 @@ export function InputCard({
                 <div className={clsx(styles.propertyRow, styles.propertyRowStatic)}>
                   <span className={styles.propertyLabel}>Rail</span>
                   <span className={styles.propertyValue}>
-                    <span>{fiatRail}</span>
+                    <span>{railDisplayName(fiatRail)}</span>
                   </span>
                 </div>
               ) : null}

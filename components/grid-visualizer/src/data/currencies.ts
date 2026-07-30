@@ -14,6 +14,38 @@ export interface FiatCurrency {
   examplePerson: ExamplePerson;
 }
 
+// Rail values above are PaymentRail enum members, which is what the API expects.
+// These are the human-readable forms for UI text only — never send them to the API.
+const railDisplayNames: Record<string, string> = {
+  ACH: 'ACH',
+  ACH_COLOMBIA: 'ACH Colombia',
+  BANK_TRANSFER: 'Bank Transfer',
+  BRE_B: 'Bre-B',
+  CIPS: 'CIPS',
+  FAST: 'FAST',
+  FASTER_PAYMENTS: 'Faster Payments',
+  FEDNOW: 'FedNow',
+  INSTAPAY: 'InstaPay',
+  MOBILE_MONEY: 'Mobile Money',
+  NEFT: 'NEFT',
+  PAYNOW: 'PayNow',
+  PESONET: 'PESONet',
+  PIX: 'PIX',
+  RTGS: 'RTGS',
+  RTP: 'RTP',
+  SEPA: 'SEPA',
+  SEPA_INSTANT: 'SEPA Instant',
+  SPEI: 'SPEI',
+  SWIFT: 'SWIFT',
+  UNIONPAY: 'UnionPay',
+  UPI: 'UPI',
+  WIRE: 'Wire',
+};
+
+export function railDisplayName(rail: string): string {
+  return railDisplayNames[rail] ?? rail.replace(/_/g, ' ');
+}
+
 export const currencies: FiatCurrency[] = [
   {
     code: 'USD',

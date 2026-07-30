@@ -1,5 +1,5 @@
 import type { CurrencySelection } from './code-generator';
-import { currencies } from '@/data/currencies';
+import { currencies, railDisplayName } from '@/data/currencies';
 
 export type ActionColor = 'fiat' | 'btc' | 'stable';
 
@@ -232,15 +232,19 @@ export function buildFlowPath(
 
     if (curr.type === 'endpoint' && !curr.isInternal && next.type === 'switch') {
       const srcFiatData = source.type === 'fiat' ? currencies.find((c) => c.code === source.code) : null;
-      const srcRail = sourceRail
-        ?? (srcFiatData
-          ? (srcFiatData.instantRails[0] ?? srcFiatData.allRails[0] ?? source.accountLabel)
-          : (source.network ?? source.accountLabel));
+      const srcRailValue = sourceRail
+        ?? (srcFiatData ? (srcFiatData.instantRails[0] ?? srcFiatData.allRails[0]) : null);
+      const srcRail = srcRailValue
+        ? railDisplayName(srcRailValue)
+        : (source.network ?? source.accountLabel);
       text = `Funds in via ${srcRail}`;
     } else if (curr.type === 'switch' && next.type === 'endpoint' && !next.isInternal) {
       const dstFiatData = destination.type === 'fiat' ? currencies.find((c) => c.code === destination.code) : null;
-      const dstRail = dstFiatData
-        ? (dstFiatData.instantRails[0] ?? dstFiatData.allRails[0] ?? destination.accountLabel)
+      const dstRailValue = dstFiatData
+        ? (dstFiatData.instantRails[0] ?? dstFiatData.allRails[0])
+        : null;
+      const dstRail = dstRailValue
+        ? railDisplayName(dstRailValue)
         : (destination.network ?? destination.accountLabel);
       text = `Funds out via ${dstRail}`;
     } else if (curr.type === 'switch' && next.type === 'switch') {

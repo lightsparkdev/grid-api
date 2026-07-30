@@ -1,5 +1,5 @@
 import { accountTypeSpecs } from '@/data/account-types';
-import { currencies } from '@/data/currencies';
+import { currencies, railDisplayName } from '@/data/currencies';
 
 export interface ExamplePerson {
   fullName: string;
@@ -48,14 +48,6 @@ function buildAccountInfoBody(sel: CurrencySelection): Record<string, unknown> {
     info[field.name] = field.example;
   }
 
-  // Add paymentRails for fiat currencies
-  if (sel.type === 'fiat') {
-    const fiat = currencies.find((c) => c.code === sel.code);
-    if (fiat && fiat.allRails.length > 0) {
-      info.paymentRails = fiat.allRails;
-    }
-  }
-
   // Beneficiary goes inside accountInfo per API spec
   if (spec.beneficiaryRequired) {
     info.beneficiary = {
@@ -74,11 +66,11 @@ function getJitPaymentMethod(source: CurrencySelection, sourceRail: string | nul
     return 'crypto transfer';
   }
   if (sourceRail) {
-    return `${sourceRail} transfer`;
+    return `${railDisplayName(sourceRail)} transfer`;
   }
   const fiat = currencies.find((c) => c.code === source.code);
   if (fiat && fiat.instantRails.length > 0) {
-    return `${fiat.instantRails[0]} transfer`;
+    return `${railDisplayName(fiat.instantRails[0])} transfer`;
   }
   return 'bank transfer';
 }
