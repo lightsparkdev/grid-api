@@ -1,5 +1,5 @@
 import { accountTypeSpecs } from '@/data/account-types';
-import { currencies } from '@/data/currencies';
+import { currencies, railDisplayName } from '@/data/currencies';
 
 export interface ExamplePerson {
   fullName: string;
@@ -67,11 +67,11 @@ function getJitPaymentMethod(source: CurrencySelection, sourceRail: string | nul
     return 'crypto transfer';
   }
   if (sourceRail) {
-    return `${sourceRail} transfer`;
+    return `${railDisplayName(sourceRail)} transfer`;
   }
   const fiat = currencies.find((c) => c.code === source.code);
   if (fiat && fiat.instantRails.length > 0) {
-    return `${fiat.instantRails[0]} transfer`;
+    return `${railDisplayName(fiat.instantRails[0])} transfer`;
   }
   return 'bank transfer';
 }
@@ -88,6 +88,7 @@ export function generateSteps(
   destination: CurrencySelection,
   fundingModel: 'jit' | 'pre-funded',
   sourceRail?: string | null,
+  destRail?: string | null,
 ): ApiStep[] {
   const jitFunding = fundingModel === 'jit';
   const steps: ApiStep[] = [];
@@ -267,6 +268,14 @@ export function generateSteps(
         destinationType: 'ACCOUNT',
         accountId: 'ExternalAccount:<external_account_id>',
       };
+      // Singular `paymentRail` is a request field on the quote destination and
+      // is optional — omitted, Grid picks a default. The plural `paymentRails`
+      // is response-only (it reports what an account supports) and must never
+      // be sent. Internal destinations are excluded: funds credited to a Grid
+      // balance never traverse an external rail.
+      if (destination.type === 'fiat' && destRail) {
+        quoteDest.paymentRail = destRail;
+      }
     } else {
       quoteDest = {
         destinationType: 'ACCOUNT',
