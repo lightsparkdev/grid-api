@@ -386,4 +386,15 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: true,
   },
+  SWIFT_ACCOUNT: {
+    accountType: 'SWIFT_ACCOUNT',
+    fields: [
+      { name: 'country', example: 'NG', description: 'Bank country code (ISO 3166-1 alpha-2)' },
+      { name: 'swiftCode', example: 'GTBINGLA' },
+      { name: 'bankName', example: 'Guaranty Trust Bank' },
+      { name: 'accountNumber', example: '1234567890', description: 'For most corridors' },
+      { name: 'iban', example: 'GB29NWBK60161331926819', description: 'For IBAN-only corridors (e.g. BR, GB)' },
+    ],
+    beneficiaryRequired: true,
+  },
 };
