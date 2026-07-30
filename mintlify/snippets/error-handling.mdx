@@ -136,6 +136,7 @@ When a transaction fails, the `failureReason` field provides specific details:
   "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
   "status": "FAILED",
   "type": "OUTGOING",
+  "direction": "DEBIT",
   "failureReason": "QUOTE_EXECUTION_FAILED"
 }
 ```
@@ -153,6 +154,7 @@ When a transaction fails, the `failureReason` field provides specific details:
   "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
   "status": "FAILED",
   "type": "INCOMING",
+  "direction": "CREDIT",
   "failureReason": "PAYMENT_APPROVAL_TIMED_OUT"
 }
 ```
