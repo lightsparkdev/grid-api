@@ -59,9 +59,9 @@ post:
                 address:
                   line1: 123 Main Street
                   line2: Apt 4B
-                  city: San Francisco
-                  state: CA
-                  postalCode: '94105'
+                  city: Seattle
+                  state: WA
+                  postalCode: '98101'
                   country: US
                 createdAt: '2025-07-21T17:32:28Z'
                 updatedAt: '2025-07-21T17:32:28Z'
@@ -106,9 +106,9 @@ post:
                 kybStatus: APPROVED
                 address:
                   line1: 456 Business Ave
-                  city: New York
-                  state: NY
-                  postalCode: '10001'
+                  city: Seattle
+                  state: WA
+                  postalCode: '98101'
                   country: US
                 businessInfo:
                   legalName: Acme Corporation

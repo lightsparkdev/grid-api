@@ -125,9 +125,9 @@ patch:
                 - USDC
               address:
                 line1: 456 Market St
-                city: San Francisco
-                state: CA
-                postalCode: '94103'
+                city: Seattle
+                state: WA
+                postalCode: '98101'
                 country: US
           businessUpdate:
             summary: Update business customer example
@@ -142,9 +142,9 @@ patch:
                 taxId: EIN-123456789
               address:
                 line1: 100 Technology Parkway
-                city: Palo Alto
-                state: CA
-                postalCode: '94304'
+                city: Bellevue
+                state: WA
+                postalCode: '98004'
                 country: US
           embeddedWalletEmailUpdate:
             summary: Embedded Wallet email update request (both steps)
