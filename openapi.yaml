@@ -2361,7 +2361,9 @@ paths:
                 $ref: '#/components/schemas/Error500'
     delete:
       summary: Delete customer external account by ID
-      description: Delete a customer external account by its system-generated ID
+      description: |-
+        Delete a customer external account by its system-generated ID.
+        An account that is currently a trusted beneficiary for SCA cannot be deleted — untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete.
       operationId: deleteCustomerExternalAccountById
       tags:
         - External Accounts
@@ -2382,6 +2384,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Returned with `BENEFICIARY_TRUSTED` when the external account is currently a trusted beneficiary. Untrust it first, then delete.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -12602,6 +12610,7 @@ components:
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
+            | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
@@ -12611,6 +12620,7 @@ components:
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
+            - BENEFICIARY_TRUSTED
             - CONFLICT
         message:
           type: string

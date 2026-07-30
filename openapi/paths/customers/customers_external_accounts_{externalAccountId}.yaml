@@ -40,7 +40,13 @@ get:
             $ref: ../../components/schemas/errors/Error500.yaml
 delete:
   summary: Delete customer external account by ID
-  description: Delete a customer external account by its system-generated ID
+  description: >-
+    Delete a customer external account by its system-generated ID.
+
+    An account that is currently a trusted beneficiary for SCA cannot be deleted —
+    untrust it first via
+    `POST /customers/external-accounts/{externalAccountId}/untrust` (and its
+    `/confirm`), then delete.
   operationId: deleteCustomerExternalAccountById
   tags:
     - External Accounts
@@ -61,6 +67,14 @@ delete:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Returned with `BENEFICIARY_TRUSTED` when the external account is
+        currently a trusted beneficiary. Untrust it first, then delete.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:
