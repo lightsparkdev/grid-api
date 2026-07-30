@@ -7,5 +7,6 @@ allOf:
       assetType:
         type: string
         description: Type of asset
-        enum: 
+        enum:
           - USDC
+          - USDT
