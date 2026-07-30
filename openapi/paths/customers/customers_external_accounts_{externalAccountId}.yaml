@@ -43,7 +43,7 @@ delete:
   description: >-
     Delete a customer external account by its system-generated ID.
 
-    An account that is currently a trusted beneficiary cannot be deleted —
+    An account that is currently a trusted beneficiary for SCA cannot be deleted —
     untrust it first via
     `POST /customers/external-accounts/{externalAccountId}/untrust` (and its
     `/confirm`), then delete.
