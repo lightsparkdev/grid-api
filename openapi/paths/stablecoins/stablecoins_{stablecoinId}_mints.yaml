@@ -1,0 +1,73 @@
+parameters:
+  - name: stablecoinId
+    in: path
+    description: System-generated stablecoin identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Create a stablecoin mint operation
+  description: |
+    Create a provider-backed mint operation for a registered stablecoin. Funding and destination accounts are normal Grid `ExternalAccount` objects; any provider-specific Brale address linkage is managed internally by Grid. Wire-funded mints return funding instructions and remain pending until the provider reports funds received.
+  operationId: createStablecoinMint
+  tags:
+    - Stablecoins
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      description: Required idempotency key for retrying this mint request safely.
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stablecoins/StablecoinMintRequest.yaml
+  responses:
+    '201':
+      description: Mint operation created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinOperation.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Stablecoin or referenced account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      description: Provider temporarily unavailable
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml

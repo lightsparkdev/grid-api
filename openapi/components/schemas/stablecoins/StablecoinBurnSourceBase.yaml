@@ -1,0 +1,12 @@
+type: object
+required:
+  - type
+properties:
+  type:
+    type: string
+    enum:
+      - EXTERNAL_ACCOUNT
+      - GRID_INTERNAL_ACCOUNT
+      - PROVIDER_INTERNAL_BALANCE
+    description: Burn source variant. Grid internal account burns are reserved for the Grid-enabled ledger movement flow.
+    example: EXTERNAL_ACCOUNT

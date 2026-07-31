@@ -1,0 +1,19 @@
+title: ACH Debit
+allOf:
+  - $ref: ./StablecoinMintFundingSourceBase.yaml
+  - type: object
+    required:
+      - type
+      - externalAccountId
+    properties:
+      type:
+        type: string
+        enum:
+          - ACH_DEBIT
+        description: ACH debit funding.
+        example: ACH_DEBIT
+      externalAccountId:
+        type: string
+        description: Grid `ExternalAccount` debited to fund the mint.
+        example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
+    description: ACH debit funding source. The provider debits the referenced external account.

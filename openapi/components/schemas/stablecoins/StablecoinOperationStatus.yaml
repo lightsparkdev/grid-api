@@ -1,0 +1,10 @@
+type: string
+enum:
+  - CREATED
+  - PENDING_FUNDING
+  - PENDING_PROVIDER
+  - PROCESSING
+  - COMPLETED
+  - FAILED
+  - EXPIRED
+description: Stablecoin issuer operation lifecycle status.

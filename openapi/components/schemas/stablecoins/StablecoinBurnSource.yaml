@@ -1,0 +1,10 @@
+oneOf:
+  - $ref: ./StablecoinExternalAccountBurnSource.yaml
+  - $ref: ./StablecoinGridInternalBurnSource.yaml
+  - $ref: ./StablecoinProviderBalanceBurnSource.yaml
+discriminator:
+  propertyName: type
+  mapping:
+    EXTERNAL_ACCOUNT: ./StablecoinExternalAccountBurnSource.yaml
+    GRID_INTERNAL_ACCOUNT: ./StablecoinGridInternalBurnSource.yaml
+    PROVIDER_INTERNAL_BALANCE: ./StablecoinProviderBalanceBurnSource.yaml
