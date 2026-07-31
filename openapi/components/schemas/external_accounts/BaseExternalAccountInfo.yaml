@@ -4,5 +4,3 @@ required:
 properties:
   accountType:
     $ref: ./ExternalAccountType.yaml
-  ownershipType:
-    $ref: ./OwnershipType.yaml

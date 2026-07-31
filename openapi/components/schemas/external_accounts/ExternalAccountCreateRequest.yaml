@@ -18,6 +18,8 @@ allOf:
         type: string
         description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
         example: ext_acc_123456
+      ownershipType:
+        $ref: ./OwnershipType.yaml
       defaultUmaDepositAccount:
         type: boolean
         description: >-
