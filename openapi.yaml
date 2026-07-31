@@ -11062,39 +11062,6 @@ components:
         - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
           (source currency differs from destination currency).
       example: CROSS_CURRENCY_TRANSACTION
-    Currency:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
-          example: USD
-        name:
-          type: string
-          description: Full name of the currency
-          example: United States Dollar
-        symbol:
-          type: string
-          description: Symbol of the currency
-          example: $
-        decimals:
-          type: integer
-          description: Number of decimal places for the currency
-          minimum: 0
-          example: 2
-    CurrencyAmount:
-      type: object
-      required:
-        - amount
-        - currency
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
-          example: 12550
-        currency:
-          $ref: '#/components/schemas/Currency'
     FeeConfig:
       type: object
       description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
@@ -11112,8 +11079,11 @@ components:
           description: Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
           example: 30
         fixedFee:
-          $ref: '#/components/schemas/CurrencyAmount'
-          description: Fixed fee charged per transaction, in the smallest unit of the source currency. The fixed fee currency must match the fee config's `sourceCurrency`.
+          type: integer
+          format: int64
+          minimum: 0
+          description: Fixed fee charged per transaction, denominated in the smallest unit of the fee config's `sourceCurrency` (e.g., cents for USD).
+          example: 100
       required:
         - feeType
         - sourceCurrency
@@ -11471,6 +11441,26 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
+          example: USD
+        name:
+          type: string
+          description: Full name of the currency
+          example: United States Dollar
+        symbol:
+          type: string
+          description: Symbol of the currency
+          example: $
+        decimals:
+          type: integer
+          description: Number of decimal places for the currency
+          minimum: 0
+          example: 2
     PaymentRail:
       type: string
       enum:
@@ -13551,6 +13541,19 @@ components:
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
         - `FAILED`: The account could not be provisioned. Grid was unable to create the underlying account, so it cannot send or receive payments and requires remediation.
       example: ACTIVE
+    CurrencyAmount:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
+          example: 12550
+        currency:
+          $ref: '#/components/schemas/Currency'
     PaymentAccountType:
       type: string
       enum:
