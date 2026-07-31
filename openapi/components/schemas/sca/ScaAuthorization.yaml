@@ -35,3 +35,14 @@ properties:
       that case supply the origin your app invoked the WebAuthn API from, which
       must match the relying party in `passkeyAssertionOptions`.
     example: https://app.example.com
+  endUserIpAddress:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The IP address of the end user's device authorizing this operation,
+      forwarded to the SCA provider where it feeds risk assessment and any
+      transaction-risk exemption. Supply the customer's address, not your
+      server's. Optional: the provider records it for money-movement
+      authorizations, and ignores it for beneficiary trust changes.
+    example: 203.0.113.42
