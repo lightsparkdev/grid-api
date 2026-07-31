@@ -22,6 +22,7 @@ interface FlowPanelProps {
   sourceRegion?: string | null;
   destRegion?: string | null;
   sourceRail?: string | null;
+  destRail?: string | null;
   settlementRail?: string | null;
   expanded: boolean;
   onToggle: () => void;
@@ -267,11 +268,12 @@ export function FlowPanel({
   sourceRegion,
   destRegion,
   sourceRail,
+  destRail,
   settlementRail,
   expanded,
   onToggle,
 }: FlowPanelProps) {
-  const path = useMemo(() => buildFlowPath(send, receive, sourceRegion, destRegion, sourceRail, settlementRail), [send, receive, sourceRegion, destRegion, sourceRail, settlementRail]);
+  const path = useMemo(() => buildFlowPath(send, receive, sourceRegion, destRegion, sourceRail, destRail, settlementRail), [send, receive, sourceRegion, destRegion, sourceRail, destRail, settlementRail]);
   const pathKey = path.nodes.map((n) => n.id + n.label + n.isInternal + n.actionCards.map((a) => a.text).join(',')).join('|');
   const contentRef = useRef<HTMLDivElement>(null);
   const flowRef = useRef<HTMLDivElement>(null);
