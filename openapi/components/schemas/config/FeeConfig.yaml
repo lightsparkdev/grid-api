@@ -18,11 +18,13 @@ properties:
       Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
     example: 30
   fixedFee:
-    $ref: ../common/CurrencyAmount.yaml
+    type: integer
+    format: int64
+    minimum: 0
     description: >-
-      Fixed fee charged per transaction, in the smallest unit of the source
-      currency. The fixed fee currency must match the fee config's
-      `sourceCurrency`.
+      Fixed fee charged per transaction, denominated in the smallest unit of
+      the fee config's `sourceCurrency` (e.g., cents for USD).
+    example: 100
 required:
   - feeType
   - sourceCurrency
