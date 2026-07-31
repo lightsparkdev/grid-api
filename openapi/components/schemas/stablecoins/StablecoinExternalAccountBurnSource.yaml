@@ -1,0 +1,19 @@
+title: External Account
+allOf:
+  - $ref: ./StablecoinBurnSourceBase.yaml
+  - type: object
+    required:
+      - type
+      - externalAccountId
+    properties:
+      type:
+        type: string
+        enum:
+          - EXTERNAL_ACCOUNT
+        description: External account burn. References an active Spark external account and returns funding instructions.
+        example: EXTERNAL_ACCOUNT
+      externalAccountId:
+        type: string
+        description: Grid Spark `ExternalAccount` expected to fund the provider for the burn.
+        example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000203
+    description: External account burn source. The issuer funds the provider from a Spark external account.

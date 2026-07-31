@@ -14,6 +14,39 @@ export interface FiatCurrency {
   examplePerson: ExamplePerson;
 }
 
+// instantRails/allRails hold PaymentRail enum members because they are sent to
+// the API as-is. These are the human-readable forms for UI text only — never
+// send a display name to the API.
+const railDisplayNames: Record<string, string> = {
+  ACH: 'ACH',
+  ACH_COLOMBIA: 'ACH Colombia',
+  BANK_TRANSFER: 'Bank Transfer',
+  BRE_B: 'Bre-B',
+  CIPS: 'CIPS',
+  FAST: 'FAST',
+  FASTER_PAYMENTS: 'Faster Payments',
+  FEDNOW: 'FedNow',
+  INSTAPAY: 'InstaPay',
+  MOBILE_MONEY: 'Mobile Money',
+  NEFT: 'NEFT',
+  PAYNOW: 'PayNow',
+  PESONET: 'PESONet',
+  PIX: 'PIX',
+  RTGS: 'RTGS',
+  RTP: 'RTP',
+  SEPA: 'SEPA',
+  SEPA_INSTANT: 'SEPA Instant',
+  SPEI: 'SPEI',
+  SWIFT: 'SWIFT',
+  UNIONPAY: 'UnionPay',
+  UPI: 'UPI',
+  WIRE: 'Wire',
+};
+
+export function railDisplayName(rail: string): string {
+  return railDisplayNames[rail] ?? rail.replace(/_/g, ' ');
+}
+
 export const currencies: FiatCurrency[] = [
   {
     code: 'USD',
@@ -21,8 +54,8 @@ export const currencies: FiatCurrency[] = [
     countryCode: 'us',
     accountType: 'USD_ACCOUNT',
     accountLabel: 'US Bank Account',
-    instantRails: ['RTP', 'FedNow'],
-    allRails: ['ACH', 'Wire', 'RTP', 'FedNow'],
+    instantRails: ['RTP', 'FEDNOW'],
+    allRails: ['ACH', 'WIRE', 'RTP', 'FEDNOW'],
     examplePerson: { fullName: 'Jane Doe', nationality: 'US' },
   },
   {
@@ -31,8 +64,8 @@ export const currencies: FiatCurrency[] = [
     countryCode: 'eu',
     accountType: 'EUR_ACCOUNT',
     accountLabel: 'IBAN',
-    instantRails: ['SEPA Instant'],
-    allRails: ['SEPA', 'SEPA Instant'],
+    instantRails: ['SEPA_INSTANT'],
+    allRails: ['SEPA', 'SEPA_INSTANT'],
     examplePerson: { fullName: 'Anna Müller', nationality: 'DE' },
   },
   {
@@ -41,8 +74,8 @@ export const currencies: FiatCurrency[] = [
     countryCode: 'gb',
     accountType: 'GBP_ACCOUNT',
     accountLabel: 'UK Bank Account',
-    instantRails: ['Faster Payments'],
-    allRails: ['Faster Payments'],
+    instantRails: ['FASTER_PAYMENTS'],
+    allRails: ['FASTER_PAYMENTS'],
     examplePerson: { fullName: 'James Wilson', nationality: 'GB' },
   },
   {
@@ -81,8 +114,8 @@ export const currencies: FiatCurrency[] = [
     countryCode: 'dk',
     accountType: 'DKK_ACCOUNT',
     accountLabel: 'IBAN',
-    instantRails: ['SEPA Instant'],
-    allRails: ['SEPA', 'SEPA Instant'],
+    instantRails: ['SEPA_INSTANT'],
+    allRails: ['SEPA', 'SEPA_INSTANT'],
     examplePerson: { fullName: 'Lars Jensen', nationality: 'DK' },
   },
   {
@@ -92,7 +125,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'NGN_ACCOUNT',
     accountLabel: 'Nigerian Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Chioma Okafor', nationality: 'NG' },
   },
   {
@@ -102,7 +135,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'CAD_ACCOUNT',
     accountLabel: 'Canadian Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Sophie Tremblay', nationality: 'CA' },
   },
   {
@@ -112,7 +145,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'PHP_ACCOUNT',
     accountLabel: 'Philippine Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Maria Santos', nationality: 'PH' },
   },
   {
@@ -121,8 +154,8 @@ export const currencies: FiatCurrency[] = [
     countryCode: 'sg',
     accountType: 'SGD_ACCOUNT',
     accountLabel: 'Singapore Bank Account',
-    instantRails: ['PayNow', 'FAST'],
-    allRails: ['PayNow', 'FAST', 'Bank Transfer'],
+    instantRails: ['PAYNOW', 'FAST'],
+    allRails: ['PAYNOW', 'FAST', 'BANK_TRANSFER'],
     examplePerson: { fullName: 'Wei Lin Tan', nationality: 'SG' },
   },
   {
@@ -132,7 +165,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'HKD_ACCOUNT',
     accountLabel: 'Hong Kong Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Emily Chan', nationality: 'HK' },
   },
   {
@@ -142,7 +175,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'IDR_ACCOUNT',
     accountLabel: 'Indonesian Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Siti Rahayu', nationality: 'ID' },
   },
   {
@@ -152,7 +185,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'KES_ACCOUNT',
     accountLabel: 'M-Pesa',
     instantRails: [],
-    allRails: ['Mobile Money'],
+    allRails: ['MOBILE_MONEY'],
     examplePerson: { fullName: 'Wanjiku Kamau', nationality: 'KE' },
   },
   {
@@ -162,7 +195,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'MYR_ACCOUNT',
     accountLabel: 'Malaysian Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Nurul Aisyah', nationality: 'MY' },
   },
   {
@@ -172,7 +205,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'RWF_ACCOUNT',
     accountLabel: 'Mobile Money',
     instantRails: [],
-    allRails: ['Mobile Money'],
+    allRails: ['MOBILE_MONEY'],
     examplePerson: { fullName: 'Jean Uwimana', nationality: 'RW' },
   },
   {
@@ -182,7 +215,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'THB_ACCOUNT',
     accountLabel: 'Thai Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Somchai Prasert', nationality: 'TH' },
   },
   {
@@ -192,7 +225,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'TZS_ACCOUNT',
     accountLabel: 'Mobile Money',
     instantRails: [],
-    allRails: ['Mobile Money'],
+    allRails: ['MOBILE_MONEY'],
     examplePerson: { fullName: 'Halima Mwanga', nationality: 'TZ' },
   },
   {
@@ -202,7 +235,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'VND_ACCOUNT',
     accountLabel: 'Vietnamese Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Nguyen Thi Lan', nationality: 'VN' },
   },
   {
@@ -212,7 +245,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'ZAR_ACCOUNT',
     accountLabel: 'South African Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer'],
+    allRails: ['BANK_TRANSFER'],
     examplePerson: { fullName: 'Thabo Nkosi', nationality: 'ZA' },
   },
   {
@@ -222,7 +255,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'ZMW_ACCOUNT',
     accountLabel: 'Mobile Money',
     instantRails: [],
-    allRails: ['Mobile Money'],
+    allRails: ['MOBILE_MONEY'],
     examplePerson: { fullName: 'Mwila Tembo', nationality: 'ZM' },
   },
   {
@@ -232,7 +265,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'MWK_ACCOUNT',
     accountLabel: 'Mobile Money',
     instantRails: [],
-    allRails: ['Mobile Money'],
+    allRails: ['MOBILE_MONEY'],
     examplePerson: { fullName: 'Chimwemwe Banda', nationality: 'MW' },
   },
   {
@@ -242,7 +275,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'UGX_ACCOUNT',
     accountLabel: 'Mobile Money',
     instantRails: [],
-    allRails: ['Mobile Money'],
+    allRails: ['MOBILE_MONEY'],
     examplePerson: { fullName: 'Grace Namugga', nationality: 'UG' },
   },
   {
@@ -252,7 +285,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'XOF_ACCOUNT',
     accountLabel: 'Mobile Money',
     instantRails: [],
-    allRails: ['Mobile Money'],
+    allRails: ['MOBILE_MONEY'],
     examplePerson: { fullName: 'Amadou Diallo', nationality: 'SN' },
   },
   {
@@ -262,7 +295,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'SLV_ACCOUNT',
     accountLabel: 'El Salvador Bank/Mobile',
     instantRails: [],
-    allRails: ['Bank Transfer', 'Mobile Money'],
+    allRails: ['BANK_TRANSFER', 'MOBILE_MONEY'],
     examplePerson: { fullName: 'Carlos Morales', nationality: 'SV' },
   },
   {
@@ -272,7 +305,7 @@ export const currencies: FiatCurrency[] = [
     accountType: 'CNY_ACCOUNT',
     accountLabel: 'Chinese Bank Account',
     instantRails: [],
-    allRails: ['Bank Transfer', 'Mobile Money'],
+    allRails: ['BANK_TRANSFER', 'MOBILE_MONEY'],
     examplePerson: { fullName: 'Wei Zhang', nationality: 'CN' },
   },
 ];

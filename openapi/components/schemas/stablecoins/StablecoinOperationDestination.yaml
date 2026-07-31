@@ -1,0 +1,27 @@
+type: object
+description: >-
+  Destination of a stablecoin operation, as reported on a
+  `StablecoinOperation`. A single merged (flat) shape so the field is
+  unambiguously deserializable regardless of operation type: `accountId`
+  identifies the receiving account (its `ExternalAccount:` /
+  `InternalAccount:` prefix disambiguates external vs Grid-managed), and
+  `rail` is present for burn (fiat payout) destinations and absent for
+  mint destinations.
+required:
+  - accountId
+properties:
+  accountId:
+    type: string
+    description: >-
+      Grid account that received the funds. An `ExternalAccount:` id for
+      external destinations or an `InternalAccount:` id for Grid-managed
+      destinations.
+    example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
+  rail:
+    type: string
+    enum:
+      - WIRE
+      - ACH_CREDIT
+      - SAME_DAY_ACH_CREDIT
+      - RTP_CREDIT
+    description: Fiat payout rail, present for burn (fiat redemption) destinations.

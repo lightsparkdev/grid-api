@@ -34,6 +34,7 @@ export default function Home() {
     setReceiveNetwork,
     setSourceFundingMode,
     setSourceRail,
+    setDestRail,
     setSettlementRail,
     swap,
     setSourceRegion,
@@ -188,8 +189,10 @@ export default function Home() {
                 <InputCard
                   label="Destination"
                   selection={state.receive}
+                  rail={state.destRail}
                   onCardClick={() => openPicker('receive')}
                   onNetworkChange={setReceiveNetwork}
+                  onRailChange={setDestRail}
                 />
               </div>
 
@@ -259,6 +262,7 @@ export default function Home() {
               sourceRegion={state.sourceRegion}
               destRegion={state.destRegion}
               sourceRail={state.sourceRail}
+              destRail={state.destRail}
               settlementRail={state.settlementRail}
               expanded={flowExpanded}
               onToggle={toggleFlow}
@@ -268,6 +272,7 @@ export default function Home() {
               receive={state.receive!}
               fundingModel={fundingModel}
               sourceRail={state.sourceRail}
+              destRail={state.destRail}
               audience={state.audience}
               onAudienceChange={setAudience}
               expanded={codeExpanded}

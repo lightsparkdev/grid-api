@@ -1,0 +1,73 @@
+parameters:
+  - name: stablecoinId
+    in: path
+    description: System-generated stablecoin identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Create a stablecoin burn operation
+  description: |
+    Create a provider-backed burn/redemption operation for a registered stablecoin. Burn sources and fiat destinations are normal Grid account objects; provider-specific Brale address ids are resolved and stored internally. External Spark wallet sources return funding instructions and remain pending until the provider reports funds received.
+  operationId: createStablecoinBurn
+  tags:
+    - Stablecoins
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      description: Required idempotency key for retrying this burn request safely.
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/stablecoins/StablecoinBurnRequest.yaml
+  responses:
+    '201':
+      description: Burn operation created
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/StablecoinOperation.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Stablecoin or referenced account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      description: Provider temporarily unavailable
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml

@@ -1,0 +1,20 @@
+type: object
+required:
+  - amount
+  - fundingSource
+  - destination
+properties:
+  amount:
+    type: string
+    pattern: '^[0-9]+$'
+    description: Amount to mint in the stablecoin's smallest unit. The amount must convert exactly to a whole fiat cent for the token decimals.
+    example: '1000000'
+  fundingSource:
+    $ref: StablecoinMintFundingSource.yaml
+  destination:
+    $ref: StablecoinMintDestination.yaml
+  description:
+    type: string
+    maxLength: 1024
+    description: Optional platform-provided operation description.
+    example: Initial program funding mint

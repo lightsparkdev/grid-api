@@ -19,6 +19,7 @@ interface CodePanelProps {
   receive: CurrencySelection;
   fundingModel: 'jit' | 'pre-funded';
   sourceRail?: string | null;
+  destRail?: string | null;
   audience: 'human' | 'agent';
   onAudienceChange: (audience: 'human' | 'agent') => void;
   expanded: boolean;
@@ -271,16 +272,17 @@ export function CodePanel({
   receive,
   fundingModel,
   sourceRail,
+  destRail,
   audience,
   onAudienceChange,
   expanded,
 }: CodePanelProps) {
   const steps = useMemo(
-    () => generateSteps(send, receive, fundingModel, sourceRail),
-    [send, receive, fundingModel, sourceRail],
+    () => generateSteps(send, receive, fundingModel, sourceRail, destRail),
+    [send, receive, fundingModel, sourceRail, destRail],
   );
 
-  const stepsKey = `${send.code}-${send.accountType}-${send.isInternal}-${receive.code}-${receive.accountType}-${receive.isInternal}-${fundingModel}-${sourceRail}-${audience}`;
+  const stepsKey = `${send.code}-${send.accountType}-${send.isInternal}-${receive.code}-${receive.accountType}-${receive.isInternal}-${fundingModel}-${sourceRail}-${destRail}-${audience}`;
   const isHuman = audience === 'human';
 
   return (

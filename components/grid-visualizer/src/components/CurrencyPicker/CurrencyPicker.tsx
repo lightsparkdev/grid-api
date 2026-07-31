@@ -5,7 +5,7 @@ import { Command } from '@lightsparkdev/origin';
 import type { CommandItem, CommandGroup } from '@lightsparkdev/origin';
 import { IconMagnifyingGlass } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMagnifyingGlass';
 import { useCommandNav } from '@/hooks/useCommandNav';
-import { currencies } from '@/data/currencies';
+import { currencies, railDisplayName } from '@/data/currencies';
 import { cryptoAssets } from '@/data/crypto';
 import type { CurrencySelection } from '@/lib/code-generator';
 import styles from './CurrencyPicker.module.scss';
@@ -63,7 +63,7 @@ function lookupSelection(id: string): CurrencySelection | null {
 function getRailsText(sel: CurrencySelection | null): string {
   if (!sel) return '';
   const fiat = currencies.find((c) => c.code === sel.code);
-  if (fiat) return fiat.allRails.join(', ');
+  if (fiat) return fiat.allRails.map(railDisplayName).join(', ');
   const crypto = cryptoAssets.find((a) => a.symbol === sel.code);
   if (crypto) return crypto.accountTypes.map((t) => t.network).join(', ');
   return '';
@@ -76,7 +76,7 @@ function buildFiatItem(
   return {
     id: c.code,
     label: c.name,
-    keywords: [c.code, c.accountType, ...c.allRails],
+    keywords: [c.code, c.accountType, ...c.allRails, ...c.allRails.map(railDisplayName)],
     icon: (
       // eslint-disable-next-line @next/next/no-img-element
       <img

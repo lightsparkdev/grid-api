@@ -15,6 +15,7 @@ export interface FlowBuilderState {
   destRegion: string | null;   // fiat code — only used when destination is crypto
   sourceFundingMode: SourceFundingMode;
   sourceRail: string | null;   // selected fiat rail e.g. 'RTP' — null for crypto
+  destRail: string | null;     // selected fiat rail — sent as the quote's destination.paymentRail
   settlementRail: string;      // asset Grid settles over between switches, e.g. 'BTC' | 'USDC' | 'USDB'
   audience: 'human' | 'agent';
   pickerTarget: 'send' | 'receive' | null;
@@ -27,6 +28,7 @@ type Action =
   | { type: 'SET_RECEIVE_NETWORK'; payload: CryptoAccountType }
   | { type: 'SET_SOURCE_FUNDING_MODE'; payload: SourceFundingMode }
   | { type: 'SET_SOURCE_RAIL'; payload: string }
+  | { type: 'SET_DEST_RAIL'; payload: string }
   | { type: 'SET_SETTLEMENT_RAIL'; payload: string }
   | { type: 'SET_SOURCE_REGION'; payload: string }
   | { type: 'SET_DEST_REGION'; payload: string }
@@ -43,6 +45,7 @@ const initialState: FlowBuilderState = {
   destRegion: null,
   sourceFundingMode: 'external',
   sourceRail: null,
+  destRail: null,
   settlementRail: DEFAULT_SETTLEMENT_RAIL,
   audience: 'human',
   pickerTarget: null,
@@ -70,7 +73,8 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
       const destRegion = receive.type === 'crypto'
         ? (receive.code === 'BTC' ? (state.destRegion ?? null) : 'USD')
         : null;
-      return { ...state, receive, destRegion, pickerTarget: null };
+      const destRail = receive.type === 'fiat' ? getDefaultRail(receive.code) : null;
+      return { ...state, receive, destRegion, destRail, pickerTarget: null };
     }
     case 'SET_SEND_NETWORK': {
       if (!state.send) return state;
@@ -119,6 +123,8 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
     }
     case 'SET_SOURCE_RAIL':
       return { ...state, sourceRail: action.payload };
+    case 'SET_DEST_RAIL':
+      return { ...state, destRail: action.payload };
     case 'SET_SETTLEMENT_RAIL':
       return { ...state, settlementRail: action.payload };
     case 'SET_SOURCE_REGION':
@@ -133,16 +139,18 @@ function reducer(state: FlowBuilderState, action: Action): FlowBuilderState {
       return { ...state, pickerTarget: null };
     case 'SWAP': {
       const newSend = state.receive;
+      const newReceive = state.send;
       const sourceFundingMode: SourceFundingMode = newSend?.type === 'crypto'
         ? 'realtime'
         : 'external';
       return {
         ...state,
         send: newSend,
-        receive: state.send,
+        receive: newReceive,
         sourceRegion: state.destRegion,
         destRegion: state.sourceRegion,
         sourceRail: newSend?.type === 'fiat' ? getDefaultRail(newSend.code) : null,
+        destRail: newReceive?.type === 'fiat' ? getDefaultRail(newReceive.code) : null,
         sourceFundingMode,
       };
     }
@@ -228,6 +236,11 @@ export function useFlowBuilder() {
     [],
   );
 
+  const setDestRail = useCallback(
+    (rail: string) => dispatch({ type: 'SET_DEST_RAIL', payload: rail }),
+    [],
+  );
+
   const setSettlementRail = useCallback(
     (asset: string) => dispatch({ type: 'SET_SETTLEMENT_RAIL', payload: asset }),
     [],
@@ -271,6 +284,7 @@ export function useFlowBuilder() {
     setReceiveNetwork,
     setSourceFundingMode,
     setSourceRail,
+    setDestRail,
     setSettlementRail,
     setSourceRegion,
     setDestRegion,
