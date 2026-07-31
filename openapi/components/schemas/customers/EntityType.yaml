@@ -6,6 +6,10 @@ enum:
   - CORPORATION
   - S_CORPORATION
   - NON_PROFIT
+  - PUBLICLY_LISTED_COMPANY
+  - TRUST
+  - PRIVATE_FOUNDATION
+  - CHARITY
   - OTHER
 description: Legal entity type of the business
 example: LLC
