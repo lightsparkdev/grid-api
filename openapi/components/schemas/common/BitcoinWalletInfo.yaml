@@ -1,0 +1,13 @@
+type: object
+required:
+  - address
+  - accountType
+properties:
+  accountType:
+    type: string
+    enum:
+      - BITCOIN_L1
+  address:
+    type: string
+    description: Bitcoin (L1) on-chain address
+    example: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq

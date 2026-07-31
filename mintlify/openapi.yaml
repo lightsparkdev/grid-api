@@ -3660,6 +3660,21 @@ paths:
                   lockedCurrencyAmount: 10000
                   immediatelyExecute: true
                   description: Bitcoin reward payout!
+              cryptoFundingWithRefundAccount:
+                summary: On-chain crypto funding with an explicit refund destination.
+                value:
+                  source:
+                    sourceType: REALTIME_FUNDING
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000009
+                    currency: BTC
+                    cryptoNetwork: BITCOIN
+                    refundAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 100000
+                  description: On-chain deposit with a whitelisted refund destination.
       responses:
         '201':
           description: |
@@ -3705,7 +3720,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Quote'
         '400':
-          description: Bad request - Missing or invalid parameters
+          description: |
+            Bad request - Missing or invalid parameters. An on-chain crypto funding source with no `source.refundAccountId` and no internal account to fall back on is rejected with `REFUND_DESTINATION_REQUIRED`.
           content:
             application/json:
               schema:
@@ -11807,6 +11823,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+            | REFUND_DESTINATION_REQUIRED | The crypto funding source has no refund destination and the customer has no internal account for that asset; pass `source.refundAccountId` |
           enum:
             - INVALID_INPUT
             - MISSING_MANDATORY_USER_INFO
@@ -11847,6 +11864,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+            - REFUND_DESTINATION_REQUIRED
         message:
           type: string
           description: Error message
@@ -16758,6 +16776,7 @@ components:
         - ZMW_ACCOUNT
         - SWIFT_ACCOUNT
         - BASE_WALLET
+        - BITCOIN_L1
         - ETHEREUM_WALLET
         - LIGHTNING
         - PLASMA_WALLET
@@ -18828,6 +18847,25 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+    BitcoinWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - BITCOIN_L1
+        address:
+          type: string
+          description: Bitcoin (L1) on-chain address
+          example: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
+    BitcoinWalletExternalAccountInfo:
+      title: Bitcoin L1 Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/BitcoinWalletInfo'
     EthereumWalletExternalAccountInfo:
       title: Ethereum L1 Wallet
       allOf:
@@ -18977,6 +19015,7 @@ components:
         - $ref: '#/components/schemas/ZmwExternalAccountInfo'
         - $ref: '#/components/schemas/SwiftExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/BitcoinWalletExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
@@ -19026,6 +19065,7 @@ components:
           ZMW_ACCOUNT: '#/components/schemas/ZmwExternalAccountInfo'
           SWIFT_ACCOUNT: '#/components/schemas/SwiftExternalAccountInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          BITCOIN_L1: '#/components/schemas/BitcoinWalletExternalAccountInfo'
           ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
@@ -19897,6 +19937,7 @@ components:
         - $ref: '#/components/schemas/ZmwExternalAccountCreateInfo'
         - $ref: '#/components/schemas/SwiftExternalAccountCreateInfo'
         - $ref: '#/components/schemas/BaseWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/BitcoinWalletExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
@@ -19946,6 +19987,7 @@ components:
           ZMW_ACCOUNT: '#/components/schemas/ZmwExternalAccountCreateInfo'
           SWIFT_ACCOUNT: '#/components/schemas/SwiftExternalAccountCreateInfo'
           BASE_WALLET: '#/components/schemas/BaseWalletExternalAccountInfo'
+          BITCOIN_L1: '#/components/schemas/BitcoinWalletExternalAccountInfo'
           ETHEREUM_WALLET: '#/components/schemas/EthereumWalletExternalAccountInfo'
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
@@ -21440,6 +21482,13 @@ components:
               type: string
               description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
+            refundAccountId:
+              type: string
+              description: |-
+                External account the funds are returned to if an on-chain deposit cannot be routed to complete the payment. Must be an existing external account belonging to `customerId`, with a `status` of `ACTIVE` and both a `currency` and a network matching the funding source — a USDC deposit cannot be refunded to a USDT account on the same network. Only meaningful when `currency` is a crypto asset.
+
+                If omitted, funds are returned to the customer's internal account for that asset. When the customer has no internal account to fall back on, quote creation fails with `REFUND_DESTINATION_REQUIRED` rather than accepting a deposit that cannot be returned.
+              example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
       oneOf:

@@ -1,0 +1,4 @@
+title: Bitcoin L1 Wallet
+allOf:
+  - $ref: ./BaseExternalAccountInfo.yaml
+  - $ref: ../common/BitcoinWalletInfo.yaml

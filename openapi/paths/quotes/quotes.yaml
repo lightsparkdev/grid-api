@@ -79,6 +79,21 @@ post:
               lockedCurrencyAmount: 10000
               immediatelyExecute: true
               description: 'Bitcoin reward payout!'
+          cryptoFundingWithRefundAccount:
+            summary: On-chain crypto funding with an explicit refund destination.
+            value:
+              source:
+                sourceType: REALTIME_FUNDING
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000009
+                currency: BTC
+                cryptoNetwork: BITCOIN
+                refundAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+              destination:
+                destinationType: ACCOUNT
+                accountId: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+              lockedCurrencySide: SENDING
+              lockedCurrencyAmount: 100000
+              description: 'On-chain deposit with a whitelisted refund destination.'
   responses:
     '201':
       description: |
@@ -129,7 +144,10 @@ post:
           schema:
             $ref: ../../components/schemas/quotes/Quote.yaml
     '400':
-      description: Bad request - Missing or invalid parameters
+      description: >
+        Bad request - Missing or invalid parameters. An on-chain crypto funding source with
+        no `source.refundAccountId` and no internal account to fall back on is rejected with
+        `REFUND_DESTINATION_REQUIRED`.
       content:
         application/json:
           schema:

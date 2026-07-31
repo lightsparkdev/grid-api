@@ -53,6 +53,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+      | REFUND_DESTINATION_REQUIRED | The crypto funding source has no refund destination and the customer has no internal account for that asset; pass `source.refundAccountId` |
     enum:
       - INVALID_INPUT
       - MISSING_MANDATORY_USER_INFO
@@ -93,6 +94,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+      - REFUND_DESTINATION_REQUIRED
   message:
     type: string
     description: Error message

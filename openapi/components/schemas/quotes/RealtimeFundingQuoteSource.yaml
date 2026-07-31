@@ -31,6 +31,21 @@ allOf:
           on, so the correct deposit address can be generated. Example values:
           `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `SPARK`, `LIGHTNING`, `BITCOIN`.
         example: SOLANA
+      refundAccountId:
+        type: string
+        description: >-
+          External account the funds are returned to if an on-chain deposit cannot be routed
+          to complete the payment. Must be an existing external account belonging to
+          `customerId`, with a `status` of `ACTIVE` and both a `currency` and a network
+          matching the funding source — a USDC deposit cannot be refunded to a USDT account
+          on the same network. Only meaningful when `currency` is a crypto asset.
+
+
+          If omitted, funds are returned to the customer's internal account for that asset.
+          When the customer has no internal account to fall back on, quote creation fails
+          with `REFUND_DESTINATION_REQUIRED` rather than accepting a deposit that cannot be
+          returned.
+        example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
     description: >-
       Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.).
       This will require manual just-in-time funding using `paymentInstructions` in the response.
