@@ -1,0 +1,8 @@
+type: string
+enum:
+  - FIRST_PARTY
+  - THIRD_PARTY
+description: >-
+  Whether the external account belongs to the customer themselves (first party)
+  or to someone else (third party)
+example: FIRST_PARTY
