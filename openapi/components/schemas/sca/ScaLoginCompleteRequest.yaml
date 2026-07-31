@@ -3,9 +3,11 @@ description: >-
   Completes an SCA login by submitting the proof for the started factor. Carries
   the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`,
   or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being
-  completed and, for `SMS_OTP`, the `challengeId` returned by the login start.
+  completed, the `endUserIpAddress` the login is being performed from, and, for
+  `SMS_OTP`, the `challengeId` returned by the login start.
 required:
   - factor
+  - endUserIpAddress
 anyOf:
   - required:
       - code
@@ -16,6 +18,14 @@ properties:
   factor:
     $ref: ./ScaFactor.yaml
     description: The factor being completed; must match the started login.
+  endUserIpAddress:
+    type: string
+    description: >-
+      The IP address of the end user's device completing this login, recorded
+      against the login event by the SCA provider. Supply the customer's
+      address, not your server's — it feeds the provider's risk assessment and
+      any transaction-risk exemption.
+    example: 203.0.113.42
   challengeId:
     type:
       - string

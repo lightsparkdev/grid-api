@@ -6,8 +6,19 @@ properties:
   status:
     type: string
     description: >-
-      The status of the login session, passed through
-      verbatim (Grid does not normalize it). A successful login reports
-      `SUCCESS`; other values indicate the login did not
-      complete and should be surfaced to the caller.
+      The status of the login session. A successful login reports `SUCCESS`;
+      other values indicate the login did not complete and should be surfaced
+      to the caller.
     example: SUCCESS
+  sessionExpiresAt:
+    type:
+      - string
+      - 'null'
+    format: date-time
+    description: >-
+      Absolute UTC timestamp after which the customer's SCA session is no longer
+      valid and they must complete another SCA login. Money movement in
+      SCA-regulated currencies is refused once it passes, so prompt a re-login
+      ahead of it rather than waiting for a `SCA_SESSION_REQUIRED` failure.
+      Present when the login established a session.
+    example: '2026-01-29T12:00:00Z'

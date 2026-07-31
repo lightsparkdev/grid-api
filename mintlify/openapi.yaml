@@ -13142,9 +13142,10 @@ components:
           example: app.example.com
     ScaLoginCompleteRequest:
       type: object
-      description: Completes an SCA login by submitting the proof for the started factor. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being completed and, for `SMS_OTP`, the `challengeId` returned by the login start.
+      description: Completes an SCA login by submitting the proof for the started factor. Carries the same proof fields as an `ScaAuthorization` (`code` for `SMS_OTP` / `TOTP`, or `passkeyAssertion` + `origin` for `PASSKEY`), plus the `factor` being completed, the `endUserIpAddress` the login is being performed from, and, for `SMS_OTP`, the `challengeId` returned by the login start.
       required:
         - factor
+        - endUserIpAddress
       anyOf:
         - required:
             - code
@@ -13155,6 +13156,10 @@ components:
         factor:
           $ref: '#/components/schemas/ScaFactor'
           description: The factor being completed; must match the started login.
+        endUserIpAddress:
+          type: string
+          description: The IP address of the end user's device completing this login, recorded against the login event by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment and any transaction-risk exemption.
+          example: 203.0.113.42
         challengeId:
           type:
             - string
@@ -13186,8 +13191,15 @@ components:
       properties:
         status:
           type: string
-          description: The status of the login session, passed through verbatim (Grid does not normalize it). A successful login reports `SUCCESS`; other values indicate the login did not complete and should be surfaced to the caller.
+          description: The status of the login session. A successful login reports `SUCCESS`; other values indicate the login did not complete and should be surfaced to the caller.
           example: SUCCESS
+        sessionExpiresAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Absolute UTC timestamp after which the customer's SCA session is no longer valid and they must complete another SCA login. Money movement in SCA-regulated currencies is refused once it passes, so prompt a re-login ahead of it rather than waiting for a `SCA_SESSION_REQUIRED` failure. Present when the login established a session.
+          example: '2026-01-29T12:00:00Z'
     Error423:
       type: object
       required:
@@ -21255,6 +21267,12 @@ components:
             - 'null'
           description: The WebAuthn origin the `passkeyAssertion` was produced against. **Required** alongside `passkeyAssertion`; omit it for the `code` path. When the challenge lists `passkeyAllowedOrigins` (enrollment / login challenges), it must be one of those. A per-transaction passkey challenge carries `passkeyAssertionOptions` but may omit `passkeyAllowedOrigins`; in that case supply the origin your app invoked the WebAuthn API from, which must match the relying party in `passkeyAssertionOptions`.
           example: https://app.example.com
+        endUserIpAddress:
+          type:
+            - string
+            - 'null'
+          description: 'The IP address of the end user''s device authorizing this operation, forwarded to the SCA provider where it feeds risk assessment and any transaction-risk exemption. Supply the customer''s address, not your server''s. Optional: the provider records it for money-movement authorizations, and ignores it for beneficiary trust changes.'
+          example: 203.0.113.42
     TransactionListResponse:
       type: object
       required:
