@@ -13598,10 +13598,43 @@ components:
           minLength: 9
           maxLength: 9
           pattern: ^[0-9]{9}$
+        bankName:
+          type: string
+          description: The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message.
+          example: Chase Bank
+          minLength: 1
+          maxLength: 140
+        bankAccountType:
+          type: string
+          description: Whether the account is a checking or a savings account. Optional on every rail; when omitted, the account is treated as a checking account.
+          enum:
+            - CHECKING
+            - SAVINGS
+          example: CHECKING
+        intermediaryBankName:
+          type: string
+          description: The name of the intermediary financial institution, for accounts reachable only through a correspondent bank. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.
+          example: JPMorgan Chase Bank
+          minLength: 1
+          maxLength: 140
+        intermediaryRoutingNumber:
+          type: string
+          description: The ABA routing number of the intermediary financial institution. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.
+          example: '021000021'
+          minLength: 9
+          maxLength: 9
+          pattern: ^[0-9]{9}$
+        fiToFiInformation:
+          type: string
+          description: Bank-to-bank instructions carried alongside the payment. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.
+          example: /BNF/Invoice 4471
+          maxLength: 210
       example:
         accountType: USD_ACCOUNT
         accountNumber: '1234567890'
         routingNumber: '021000021'
+        bankName: Chase Bank
+        bankAccountType: CHECKING
     UsdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/UsdAccountInfoBase'
@@ -20774,6 +20807,24 @@ components:
           description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
+    PurposeOfPayment:
+      type: string
+      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
+      enum:
+        - GIFT
+        - SELF
+        - GOODS_OR_SERVICES
+        - EDUCATION
+        - HEALTH_OR_MEDICAL
+        - REAL_ESTATE_PURCHASE
+        - TAX_PAYMENT
+        - LOAN_PAYMENT
+        - UTILITY_BILL
+        - DONATION
+        - TRAVEL
+        - FAMILY_SUPPORT
+        - SALARY_PAYMENT
+        - OTHER
     TransferOutRequest:
       type: object
       required:
@@ -20796,6 +20847,8 @@ components:
           maxLength: 80
           description: 'Free-form information about the payment that travels with it to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information.'
           example: '12345'
+        purposeOfPayment:
+          $ref: '#/components/schemas/PurposeOfPayment'
     CurrencyPreference:
       type: object
       required:
@@ -21151,24 +21204,6 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
-    PurposeOfPayment:
-      type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
-      enum:
-        - GIFT
-        - SELF
-        - GOODS_OR_SERVICES
-        - EDUCATION
-        - HEALTH_OR_MEDICAL
-        - REAL_ESTATE_PURCHASE
-        - TAX_PAYMENT
-        - LOAN_PAYMENT
-        - UTILITY_BILL
-        - DONATION
-        - TRAVEL
-        - FAMILY_SUPPORT
-        - SALARY_PAYMENT
-        - OTHER
     QuoteRequest:
       type: object
       required:
