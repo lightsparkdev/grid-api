@@ -15,6 +15,7 @@ properties:
       | Error Code | Description |
       |------------|-------------|
       | INVALID_INPUT | Invalid input provided |
+      | END_USER_TERMS_VERSION_NOT_FOUND | The submitted End User Terms version is not supported |
       | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
       | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
       | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
@@ -55,6 +56,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
     enum:
       - INVALID_INPUT
+      - END_USER_TERMS_VERSION_NOT_FOUND
       - MISSING_MANDATORY_USER_INFO
       - INVITATION_ALREADY_CLAIMED
       - INVITATIONS_NOT_CONFIGURED

@@ -1,0 +1,14 @@
+type: object
+required:
+  - version
+  - url
+properties:
+  version:
+    type: string
+    description: Current version identifier of the Grid End User Terms.
+    example: '2026-07-31'
+  url:
+    type: string
+    format: uri
+    description: URL where Grid hosts this version of the End User Terms.
+    example: https://www.lightspark.com/legal/grid/enduserterms

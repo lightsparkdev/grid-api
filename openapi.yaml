@@ -826,6 +826,109 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/end-user-terms-consent:
+    get:
+      summary: Get a customer's End User Terms consent
+      description: Retrieve the End User Terms acceptance recorded for one customer.
+      operationId: getCustomerEndUserTermsConsent
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: Unique Grid identifier for the customer.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: End User Terms consent retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndUserTermsConsent'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or consent record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+    patch:
+      summary: Update a customer's End User Terms consent
+      description: Record or replace the End User Terms acceptance for one customer.
+      operationId: updateCustomerEndUserTermsConsent
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: Unique Grid identifier for the customer.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndUserTermsConsentRequest'
+      responses:
+        '200':
+          description: End User Terms consent updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndUserTermsConsent'
+        '400':
+          description: Invalid input or unsupported terms version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+  /customers/end-user-terms:
+    get:
+      summary: Get the current Grid End User Terms
+      description: Retrieve the current version and Grid-hosted URL of the End User Terms.
+      operationId: getEndUserTerms
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Current End User Terms retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndUserTerms'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
   /customers/{customerId}/kyc-link:
     parameters:
       - name: customerId
@@ -10470,6 +10573,7 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 9f84e0c2a72c4fa
                     customerType: INDIVIDUAL
+                    hasAcceptedEndUserTerms: false
                     region: US
                     currencies:
                       - USD
@@ -10499,6 +10603,7 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000002
                     platformCustomerId: 4b7c1e9d3f5a8e2
                     customerType: INDIVIDUAL
+                    hasAcceptedEndUserTerms: true
                     region: US
                     currencies:
                       - USD
@@ -10521,6 +10626,7 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000003
                     platformCustomerId: 7a2f9d4e1b8c3f5
                     customerType: BUSINESS
+                    hasAcceptedEndUserTerms: true
                     region: US
                     currencies:
                       - USD
@@ -10551,6 +10657,7 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000004
                     platformCustomerId: 3c8e5f2a9d1b7e4
                     customerType: BUSINESS
+                    hasAcceptedEndUserTerms: false
                     region: US
                     currencies:
                       - USD
@@ -11750,6 +11857,7 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | INVALID_INPUT | Invalid input provided |
+            | END_USER_TERMS_VERSION_NOT_FOUND | The submitted End User Terms version is not supported |
             | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
             | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
             | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
@@ -11790,6 +11898,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
           enum:
             - INVALID_INPUT
+            - END_USER_TERMS_VERSION_NOT_FOUND
             - MISSING_MANDATORY_USER_INFO
             - INVITATION_ALREADY_CLAIMED
             - INVITATIONS_NOT_CONFIGURED
@@ -12064,6 +12173,7 @@ components:
         - umaAddress
         - platformCustomerId
         - customerType
+        - hasAcceptedEndUserTerms
       properties:
         id:
           type: string
@@ -12076,6 +12186,11 @@ components:
           example: 9f84e0c2a72c4fa
         customerType:
           $ref: '#/components/schemas/CustomerType'
+        hasAcceptedEndUserTerms:
+          type: boolean
+          readOnly: true
+          description: Whether Grid has recorded the customer's acceptance of the End User Terms. For platforms where acceptance is required, a value of `false` means the customer cannot open an account until consent is recorded.
+          example: true
         region:
           type: string
           description: Country code (ISO 3166-1 alpha-2) representing the customer's regional identity and regulatory jurisdiction.
@@ -12830,6 +12945,36 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    EndUserTermsAcceptanceMethod:
+      type: string
+      description: Method the customer used to affirmatively accept the End User Terms.
+      enum:
+        - CHECKBOX
+        - CLICK_TO_ACCEPT
+      example: CHECKBOX
+    EndUserTermsConsentRequest:
+      type: object
+      required:
+        - acceptedAt
+        - ipAddress
+        - termsVersion
+        - acceptanceMethod
+      properties:
+        acceptedAt:
+          type: string
+          format: date-time
+          description: Date and time when the customer accepted the End User Terms.
+        ipAddress:
+          type: string
+          maxLength: 45
+          description: IP address of the device the customer used when accepting the terms.
+          example: 198.51.100.24
+        termsVersion:
+          type: string
+          description: Version identifier of the accepted Grid End User Terms.
+          example: '2026-07-31'
+        acceptanceMethod:
+          $ref: '#/components/schemas/EndUserTermsAcceptanceMethod'
     CustomerCreateRequest:
       type: object
       required:
@@ -12867,6 +13012,8 @@ components:
           type: string
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
+        endUserTermsConsent:
+          $ref: '#/components/schemas/EndUserTermsConsentRequest'
     IndividualCustomerCreateRequest:
       title: Individual Customer Create Request
       allOf:
@@ -13232,6 +13379,31 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    EndUserTermsConsent:
+      allOf:
+        - $ref: '#/components/schemas/EndUserTermsConsentRequest'
+        - type: object
+          required:
+            - customerId
+          properties:
+            customerId:
+              type: string
+              description: Unique Grid identifier for the customer.
+    EndUserTerms:
+      type: object
+      required:
+        - version
+        - url
+      properties:
+        version:
+          type: string
+          description: Current version identifier of the Grid End User Terms.
+          example: '2026-07-31'
+        url:
+          type: string
+          format: uri
+          description: URL where Grid hosts this version of the End User Terms.
+          example: https://www.lightspark.com/legal/grid/enduserterms
     KycLinkCreateRequest:
       type: object
       description: Request body for generating a hosted KYC link for an existing customer.

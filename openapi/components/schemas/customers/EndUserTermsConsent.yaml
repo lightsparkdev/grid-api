@@ -1,0 +1,9 @@
+allOf:
+  - $ref: ./EndUserTermsConsentRequest.yaml
+  - type: object
+    required:
+      - customerId
+    properties:
+      customerId:
+        type: string
+        description: Unique Grid identifier for the customer.

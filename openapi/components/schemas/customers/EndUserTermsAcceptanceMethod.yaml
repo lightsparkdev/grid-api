@@ -1,0 +1,6 @@
+type: string
+description: Method the customer used to affirmatively accept the End User Terms.
+enum:
+  - CHECKBOX
+  - CLICK_TO_ACCEPT
+example: CHECKBOX

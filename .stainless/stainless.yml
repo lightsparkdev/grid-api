@@ -113,6 +113,9 @@ resources:
       business_customer_create_request: '#/components/schemas/BusinessCustomerCreateRequest'
       individual_customer_update_request: '#/components/schemas/IndividualCustomerUpdateRequest'
       business_customer_update_request: '#/components/schemas/BusinessCustomerUpdateRequest'
+      end_user_terms: '#/components/schemas/EndUserTerms'
+      end_user_terms_consent: '#/components/schemas/EndUserTermsConsent'
+      end_user_terms_consent_request: '#/components/schemas/EndUserTermsConsentRequest'
       # Internal-account management (list/update/export under this resource)
       internal_account_list_response: '#/components/schemas/InternalAccountListResponse'
       internal_account_update_request: '#/components/schemas/InternalAccountUpdateRequest'
@@ -139,6 +142,11 @@ resources:
       create_kyc_link:
         endpoint: post /customers/{customerId}/kyc-link
         body_param_name: KycLinkCreateRequest
+      retrieve_end_user_terms: get /customers/end-user-terms
+      retrieve_end_user_terms_consent: get /customers/{customerId}/end-user-terms-consent
+      update_end_user_terms_consent:
+        endpoint: patch /customers/{customerId}/end-user-terms-consent
+        body_param_name: EndUserTermsConsentRequest
     # Subresources define resources that are nested within another for more powerful
     # logical groupings, e.g. `cards.payments`.
     subresources:

@@ -1,0 +1,80 @@
+get:
+  summary: Get a customer's End User Terms consent
+  description: Retrieve the End User Terms acceptance recorded for one customer.
+  operationId: getCustomerEndUserTermsConsent
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: path
+      required: true
+      description: Unique Grid identifier for the customer.
+      schema:
+        type: string
+  responses:
+    '200':
+      description: End User Terms consent retrieved successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/EndUserTermsConsent.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or consent record not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+patch:
+  summary: Update a customer's End User Terms consent
+  description: Record or replace the End User Terms acceptance for one customer.
+  operationId: updateCustomerEndUserTermsConsent
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: customerId
+      in: path
+      required: true
+      description: Unique Grid identifier for the customer.
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/EndUserTermsConsentRequest.yaml
+  responses:
+    '200':
+      description: End User Terms consent updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/EndUserTermsConsent.yaml
+    '400':
+      description: Invalid input or unsupported terms version
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml

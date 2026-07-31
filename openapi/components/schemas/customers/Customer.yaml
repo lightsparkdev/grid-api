@@ -3,6 +3,7 @@ required:
   - umaAddress
   - platformCustomerId
   - customerType
+  - hasAcceptedEndUserTerms
 properties:
   id:
     type: string
@@ -15,6 +16,14 @@ properties:
     example: 9f84e0c2a72c4fa
   customerType:
     $ref: ./CustomerType.yaml
+  hasAcceptedEndUserTerms:
+    type: boolean
+    readOnly: true
+    description: >-
+      Whether Grid has recorded the customer's acceptance of the End User Terms.
+      For platforms where acceptance is required, a value of `false` means the
+      customer cannot open an account until consent is recorded.
+    example: true
   region:
     type: string
     description: >-
