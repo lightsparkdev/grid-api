@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ethereum L1 CLI for Grid USDC testing.
+"""Ethereum L1 CLI for Grid USDC and USDT testing.
 
 Supports both Ethereum Sepolia testnet (default) and Ethereum mainnet (--mainnet flag).
 
@@ -7,7 +7,9 @@ Subcommands:
   wallet-address              Print public address of loaded key
   eth-balance [--address]     Print ETH balance
   usdc-balance [--address]    Print USDC balance (raw + human-readable)
+  usdt-balance [--address]    Print USDT balance (raw + human-readable)
   send-usdc --to --amount     Send USDC (amount in micro-USDC, 6 decimals)
+  send-usdt --to --amount     Send USDT (amount in micro-USDT, 6 decimals)
 """
 
 import argparse
@@ -28,7 +30,10 @@ NETWORKS = {
     "testnet": {
         "rpc": "https://ethereum-sepolia-rpc.publicnode.com",
         "chain_id": 11155111,
-        "usdc_contract": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+        "tokens": {
+            "usdc": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+            "usdt": "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
+        },
         "cred_key": "ethereumTestnetPrivateKey",
         "name": "Ethereum Sepolia",
         "priority_fee_gwei": 1.5,
@@ -36,15 +41,20 @@ NETWORKS = {
     "mainnet": {
         "rpc": "https://ethereum-rpc.publicnode.com",
         "chain_id": 1,
-        "usdc_contract": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "tokens": {
+            "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "usdt": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        },
         "cred_key": "ethereumMainnetPrivateKey",
         "name": "Ethereum Mainnet",
         "priority_fee_gwei": 1.5,
     },
 }
 
-USDC_DECIMALS = 6
+TOKEN_DECIMALS = 6
 
+# Mainnet USDT's transfer() returns nothing rather than a bool, but web3 only
+# encodes calldata when building a signed transaction, so this ABI serves both.
 ERC20_ABI = [
     {
         "constant": True,
@@ -89,8 +99,18 @@ def get_web3():
     return w3
 
 
-def get_usdc_contract(w3):
-    return w3.eth.contract(address=Web3.to_checksum_address(NET["usdc_contract"]), abi=ERC20_ABI)
+def token_address(asset):
+    return NET["tokens"][asset]
+
+
+def get_token_contract(w3, asset):
+    return w3.eth.contract(address=Web3.to_checksum_address(token_address(asset)), abi=ERC20_ABI)
+
+
+def resolve_address(args):
+    if args.address:
+        return Web3.to_checksum_address(args.address)
+    return load_account().address
 
 
 def cmd_wallet_address(args):
@@ -100,11 +120,7 @@ def cmd_wallet_address(args):
 
 def cmd_eth_balance(args):
     w3 = get_web3()
-    if args.address:
-        address = Web3.to_checksum_address(args.address)
-    else:
-        acct = load_account()
-        address = acct.address
+    address = resolve_address(args)
     balance_wei = w3.eth.get_balance(address)
     print(json.dumps({
         "address": address,
@@ -113,70 +129,71 @@ def cmd_eth_balance(args):
     }))
 
 
-def cmd_usdc_balance(args):
-    w3 = get_web3()
-    usdc = get_usdc_contract(w3)
-    if args.address:
-        address = Web3.to_checksum_address(args.address)
-    else:
+def cmd_token_balance(asset):
+    def run(args):
+        w3 = get_web3()
+        token = get_token_contract(w3, asset)
+        address = resolve_address(args)
+        raw = token.functions.balanceOf(address).call()
+        print(json.dumps({
+            "address": address,
+            "asset": asset.upper(),
+            "contract": token_address(asset),
+            "raw": raw,
+            "amount": raw / (10 ** TOKEN_DECIMALS),
+            "ui_amount": f"{raw / (10 ** TOKEN_DECIMALS):.6f}",
+        }))
+    return run
+
+
+def cmd_send_token(asset):
+    def run(args):
         acct = load_account()
-        address = acct.address
-    raw = usdc.functions.balanceOf(address).call()
-    print(json.dumps({
-        "address": address,
-        "contract": NET["usdc_contract"],
-        "raw": raw,
-        "amount": raw / (10 ** USDC_DECIMALS),
-        "ui_amount": f"{raw / (10 ** USDC_DECIMALS):.6f}",
-    }))
+        w3 = get_web3()
+        token = get_token_contract(w3, asset)
+        recipient = Web3.to_checksum_address(args.to)
+        amount = int(args.amount)
 
+        nonce = w3.eth.get_transaction_count(acct.address)
 
-def cmd_send_usdc(args):
-    acct = load_account()
-    w3 = get_web3()
-    usdc = get_usdc_contract(w3)
-    recipient = Web3.to_checksum_address(args.to)
-    amount = int(args.amount)
+        tx = token.functions.transfer(recipient, amount).build_transaction({
+            "chainId": NET["chain_id"],
+            "from": acct.address,
+            "nonce": nonce,
+            "gas": 100_000,
+            "maxFeePerGas": w3.eth.gas_price * 2,
+            "maxPriorityFeePerGas": w3.to_wei(NET["priority_fee_gwei"], "gwei"),
+        })
 
-    nonce = w3.eth.get_transaction_count(acct.address)
+        signed = acct.sign_transaction(tx)
+        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+        tx_hash_hex = tx_hash.hex()
 
-    tx = usdc.functions.transfer(recipient, amount).build_transaction({
-        "chainId": NET["chain_id"],
-        "from": acct.address,
-        "nonce": nonce,
-        "gas": 100_000,
-        "maxFeePerGas": w3.eth.gas_price * 2,
-        "maxPriorityFeePerGas": w3.to_wei(NET["priority_fee_gwei"], "gwei"),
-    })
+        print(json.dumps({"status": "sent", "asset": asset.upper(), "tx_hash": tx_hash_hex, "message": "Waiting for confirmation..."}))
 
-    signed = acct.sign_transaction(tx)
-    tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
-    tx_hash_hex = tx_hash.hex()
+        for _ in range(90):
+            time.sleep(2)
+            try:
+                receipt = w3.eth.get_transaction_receipt(tx_hash)
+                if receipt is not None:
+                    if receipt["status"] == 1:
+                        print(json.dumps({"status": "confirmed", "asset": asset.upper(), "tx_hash": tx_hash_hex, "block": receipt["blockNumber"]}))
+                        return
+                    else:
+                        print(json.dumps({"status": "failed", "asset": asset.upper(), "tx_hash": tx_hash_hex, "receipt_status": receipt["status"]}))
+                        sys.exit(1)
+            except Exception:
+                pass
 
-    print(json.dumps({"status": "sent", "tx_hash": tx_hash_hex, "message": "Waiting for confirmation..."}))
-
-    for _ in range(90):
-        time.sleep(2)
-        try:
-            receipt = w3.eth.get_transaction_receipt(tx_hash)
-            if receipt is not None:
-                if receipt["status"] == 1:
-                    print(json.dumps({"status": "confirmed", "tx_hash": tx_hash_hex, "block": receipt["blockNumber"]}))
-                    return
-                else:
-                    print(json.dumps({"status": "failed", "tx_hash": tx_hash_hex, "receipt_status": receipt["status"]}))
-                    sys.exit(1)
-        except Exception:
-            pass
-
-    print(json.dumps({"status": "timeout", "tx_hash": tx_hash_hex, "message": "Transaction sent but confirmation timed out."}))
-    sys.exit(1)
+        print(json.dumps({"status": "timeout", "asset": asset.upper(), "tx_hash": tx_hash_hex, "message": "Transaction sent but confirmation timed out."}))
+        sys.exit(1)
+    return run
 
 
 def main():
     global NET
 
-    parser = argparse.ArgumentParser(description="Ethereum L1 helper for Grid USDC testing")
+    parser = argparse.ArgumentParser(description="Ethereum L1 helper for Grid USDC/USDT testing")
     parser.add_argument("--mainnet", action="store_true", help="Use Ethereum mainnet instead of Sepolia testnet")
     sub = parser.add_subparsers(dest="command")
     sub.required = True
@@ -186,22 +203,26 @@ def main():
     eth_bal = sub.add_parser("eth-balance", help="Print ETH balance")
     eth_bal.add_argument("--address", help="Address to check (default: own wallet)")
 
-    usdc_bal = sub.add_parser("usdc-balance", help="Print USDC balance")
-    usdc_bal.add_argument("--address", help="Address to check (default: own wallet)")
+    dispatch = {
+        "wallet-address": cmd_wallet_address,
+        "eth-balance": cmd_eth_balance,
+    }
 
-    send = sub.add_parser("send-usdc", help="Send USDC")
-    send.add_argument("--to", required=True, help="Recipient address (0x...)")
-    send.add_argument("--amount", required=True, help="Amount in micro-USDC (6 decimals)")
+    for asset in ("usdc", "usdt"):
+        upper = asset.upper()
+
+        bal = sub.add_parser(f"{asset}-balance", help=f"Print {upper} balance")
+        bal.add_argument("--address", help="Address to check (default: own wallet)")
+        dispatch[f"{asset}-balance"] = cmd_token_balance(asset)
+
+        send = sub.add_parser(f"send-{asset}", help=f"Send {upper}")
+        send.add_argument("--to", required=True, help="Recipient address (0x...)")
+        send.add_argument("--amount", required=True, help=f"Amount in micro-{upper} (6 decimals)")
+        dispatch[f"send-{asset}"] = cmd_send_token(asset)
 
     args = parser.parse_args()
     NET = NETWORKS["mainnet"] if args.mainnet else NETWORKS["testnet"]
 
-    dispatch = {
-        "wallet-address": cmd_wallet_address,
-        "eth-balance": cmd_eth_balance,
-        "usdc-balance": cmd_usdc_balance,
-        "send-usdc": cmd_send_usdc,
-    }
     dispatch[args.command](args)
 
 

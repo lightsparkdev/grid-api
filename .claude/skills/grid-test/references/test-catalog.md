@@ -1,17 +1,20 @@
 # Test Catalog
 
-All tests use these chain variables (set per-chain in SKILL.md Step 4):
-- `chain_helper` — shell function wrapping the chain's helper script (defined in SKILL.md Step 4)
-- `$CRYPTO_NETWORK` — e.g., `SOLANA_DEVNET`, `BASE_TESTNET`, `POLYGON_TESTNET`, `TRON_TESTNET`
-- `$WALLET_TYPE` — e.g., `SOLANA_WALLET`, `BASE_WALLET`, `POLYGON_WALLET`, `TRON_WALLET`
+All tests use these target variables (set per-target in SKILL.md Step 4). A target is a chain paired with a stablecoin, e.g. `ethereum-usdc` or `ethereum-usdt`.
+
+- `chain_helper` — shell function wrapping the target's helper script (defined in SKILL.md Step 4)
+- `$CRYPTO_NETWORK` — e.g., `SOLANA_DEVNET`, `BASE_TESTNET`, `POLYGON_TESTNET`, `ETHEREUM_TESTNET`, `TRON_TESTNET`
+- `$WALLET_TYPE` — e.g., `SOLANA_WALLET`, `BASE_WALLET`, `POLYGON_WALLET`, `ETHEREUM_WALLET`, `TRON_WALLET`
 - `$WALLET_ADDRESS` — the test wallet's on-chain address
 - `$STABLE_ASSET` — lowercase stablecoin name for helper subcommands (`usdc` or `usdt`)
 - `$STABLE_CURRENCY` — uppercase Grid currency code for API bodies (`USDC` or `USDT`)
-- `$TRANSFER_OUT_AMT` — chain-specific minimum transfer-out amount
+- `$TRANSFER_OUT_AMT` — target-specific minimum transfer-out amount
 - `$IS_SANDBOX` — whether the platform is sandbox
-- `$CHAIN_PREFIX` — unique prefix for this chain run (e.g., `solana-test`, `base-test`, `polygon-test`, `tron-test`)
+- `$CHAIN_PREFIX` — unique prefix for this target run (e.g., `solana-usdc-test`, `ethereum-usdt-test`, `tron-usdt-test`)
 
-Shell variables referenced below (`STABLE_INTERNAL_ID`, `STABLE_EXTERNAL_ID`, etc.) hold the IDs of internal/external accounts denominated in the chain's stablecoin — USDC for Solana/Base/Polygon/Ethereum, USDT for Tron.
+Shell variables referenced below (`STABLE_INTERNAL_ID`, `STABLE_EXTERNAL_ID`, etc.) hold the IDs of internal/external accounts denominated in `$STABLE_CURRENCY`.
+
+On a chain that supports two stablecoins, `$WALLET_TYPE` is identical across both targets — the account's asset is carried by `$STABLE_CURRENCY` in the request body, and by `assetType` on the wallet info Grid returns. When extracting a deposit or payment address from `fundingPaymentInstructions` / `paymentInstructions`, match on **both** `accountOrWalletInfo.accountType == $WALLET_TYPE` **and** `accountOrWalletInfo.assetType == $STABLE_CURRENCY`, or you may pick up the sibling asset's address on Ethereum.
 
 API credentials are in environment variables: `$GRID_API_TOKEN_ID`, `$GRID_API_CLIENT_SECRET`, `$GRID_BASE_URL`.
 
@@ -19,7 +22,7 @@ API credentials are in environment variables: `$GRID_API_TOKEN_ID`, `$GRID_API_C
 
 ## Test 1: Customer + Stablecoin Account Creation
 
-**Goal:** Create a customer and verify the chain's stablecoin (`$STABLE_CURRENCY`) internal account exists with chain-specific wallet funding instructions.
+**Goal:** Create a customer and verify the target's stablecoin (`$STABLE_CURRENCY`) internal account exists with wallet funding instructions for this target's chain.
 
 **Steps:**
 
@@ -51,12 +54,12 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 3. From the response, extract:
    - `STABLE_INTERNAL_ID`: the `id` of the internal account where `balance.currency` matches `$STABLE_CURRENCY`
    - `USD_INTERNAL_ID`: the `id` of the internal account where `balance.currency` is `USD`
-   - `DEPOSIT_ADDRESS`: from the stablecoin account's `fundingPaymentInstructions` array, find the entry where `accountOrWalletInfo.accountType` is `$WALLET_TYPE` and extract `accountOrWalletInfo.address`
+   - `DEPOSIT_ADDRESS`: from the stablecoin account's `fundingPaymentInstructions` array, find the entry where `accountOrWalletInfo.accountType` is `$WALLET_TYPE` and `accountOrWalletInfo.assetType` is `$STABLE_CURRENCY`, then extract `accountOrWalletInfo.address`
 
 4. **PASS criteria:**
    - Customer created successfully
    - `$STABLE_CURRENCY` internal account exists
-   - `fundingPaymentInstructions` contains a `$WALLET_TYPE` entry with a non-empty `address`
+   - `fundingPaymentInstructions` contains a `$WALLET_TYPE` / `$STABLE_CURRENCY` entry with a non-empty `address`
 
 ---
 
@@ -96,7 +99,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ## Test 3: Transfer Out (stablecoin internal -> external wallet)
 
-**Goal:** Withdraw the chain's stablecoin from the internal account to an external wallet on this chain.
+**Goal:** Withdraw the target's stablecoin from the internal account to an external wallet on this chain.
 
 **Steps:**
 
@@ -152,7 +155,7 @@ chain_helper $STABLE_ASSET-balance
 
 ## Test 4: Stablecoin -> USD Quote (Real-Time Funded -> internal USD account)
 
-**Goal:** Use real-time funding to convert the chain's stablecoin to USD, depositing into the customer's internal USD account.
+**Goal:** Use real-time funding to convert the target's stablecoin to USD, depositing into the customer's internal USD account.
 
 **Steps:**
 
@@ -182,7 +185,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 2. Extract from the response:
    - `QUOTE_ID`: the `id` field
    - `TRANSACTION_ID`: the `transactionId` field
-   - `PAYMENT_ADDRESS`: from `paymentInstructions`, find the `$WALLET_TYPE` entry and extract `accountOrWalletInfo.address`
+   - `PAYMENT_ADDRESS`: from `paymentInstructions`, find the entry matching both `$WALLET_TYPE` and `assetType == $STABLE_CURRENCY`, then extract `accountOrWalletInfo.address`
    - `TOTAL_SENDING_AMOUNT`: the `totalSendingAmount` field (smallest-unit stablecoin amount to send)
 
 3. Record initial USD internal account balance:
@@ -213,7 +216,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ## Test 5: Stablecoin -> USD Quote (Real-Time Funded -> external USD bank account)
 
-**Goal:** Convert the chain's stablecoin to USD and send to an external bank account via ACH.
+**Goal:** Convert the target's stablecoin to USD and send to an external bank account via ACH.
 
 **Steps:**
 
@@ -289,7 +292,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ## Test 6: Stablecoin -> MXN Quote (Real-Time Funded -> external MXN CLABE account)
 
-**Goal:** Convert the chain's stablecoin to MXN and send to a Mexican bank account via SPEI.
+**Goal:** Convert the target's stablecoin to MXN and send to a Mexican bank account via SPEI.
 
 **Steps:**
 
@@ -364,7 +367,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ## Test 7: USD -> Stablecoin Quote (Account-Funded -> external wallet)
 
-**Goal:** Convert USD from internal account to the chain's stablecoin delivered to our external wallet on this chain.
+**Goal:** Convert USD from internal account to the target's stablecoin delivered to our external wallet on this chain.
 
 **Steps:**
 
@@ -436,7 +439,7 @@ chain_helper $STABLE_ASSET-balance
 
 ## Test 8: Stablecoin -> USD Quote (Account-Funded -> internal USD account)
 
-**Goal:** Convert the chain's stablecoin from the internal account to USD in the customer's internal USD account, using the existing stablecoin balance (no real-time funding).
+**Goal:** Convert the target's stablecoin from the internal account to USD in the customer's internal USD account, using the existing stablecoin balance (no real-time funding).
 
 **Steps:**
 
@@ -502,7 +505,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 ## Test 9: Stablecoin -> MXN Quote (Account-Funded -> external MXN CLABE account)
 
-**Goal:** Convert the chain's stablecoin from the internal account to MXN and send to a Mexican bank account, using the existing stablecoin balance.
+**Goal:** Convert the target's stablecoin from the internal account to MXN and send to a Mexican bank account, using the existing stablecoin balance.
 
 **Steps:**
 
@@ -629,7 +632,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 3. Extract from the response:
    - `QUOTE_ID`: the `id` field
    - `TRANSACTION_ID`: the `transactionId` field
-   - `PAYMENT_ADDRESS`: from `paymentInstructions`, find the `$WALLET_TYPE` entry and extract `accountOrWalletInfo.address`
+   - `PAYMENT_ADDRESS`: from `paymentInstructions`, find the entry matching both `$WALLET_TYPE` and `assetType == $STABLE_CURRENCY`, then extract `accountOrWalletInfo.address`
    - `TOTAL_SENDING_AMOUNT`: the `totalSendingAmount` field
 
 4. Send the stablecoin to the payment instructions address:
