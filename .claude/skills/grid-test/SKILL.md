@@ -4,13 +4,14 @@ description: >
   This skill should be used when the user asks to "test Grid", "run USDC tests", "run USDT tests",
   "test deposits", "test withdrawals", "test Solana flows", "test Base flows", "test Polygon flows",
   "test Ethereum flows", "test ETH L1", "test Tron flows", "test USDT on Tron", "test USDT on Ethereum",
-  "test USDT on eth", "test USDT on eth L1", "test USDC on Ethereum", "run e2e tests",
+  "test USDT on eth", "test USDT on eth L1", "test USDC on Ethereum", "test Plasma flows",
+  "test USDT on Plasma", "test plasma", "run e2e tests",
   "test sandbox", "test USDC to USD", "test USDT to USD", "test USDC to MXN", "test USDT to MXN",
   "run all Grid tests", "test transfer out", "test realtime funding", "test quote flows",
   "test deposits and withdrawals", "run sandbox tests", "test USDC sandbox", "test USDT sandbox",
   "test Grid API", "run e2e USDC test", "run e2e USDT test", "test USDC on [chain]",
   "test USDT on [chain]", or wants to verify Grid's stablecoin deposit/withdrawal/quote pipeline
-  (USDC on Solana/Base/Polygon/Ethereum, USDT on Ethereum/Tron).
+  (USDC on Solana/Base/Polygon/Ethereum, USDT on Ethereum/Plasma/Tron).
   Even if the user mentions just one chain, one asset, one test, or one corridor, this skill applies.
   This replaces both grid-solana-usdc-sandbox and grid-base-usdc-test.
 allowed-tools:
@@ -23,7 +24,7 @@ allowed-tools:
 
 # Grid API Test Suite
 
-End-to-end tests for stablecoin flows: USDC on Solana, Base, Polygon, and Ethereum L1, and USDT on Ethereum L1 and Tron. Covers deposits, withdrawals, and cross-currency quotes using real testnet (or mainnet) funds.
+End-to-end tests for stablecoin flows: USDC on Solana, Base, Polygon, and Ethereum L1, and USDT on Ethereum L1, Plasma, and Tron. Covers deposits, withdrawals, and cross-currency quotes using real testnet (or mainnet) funds.
 
 A **target** is a chain paired with a stablecoin — `ethereum-usdc` and `ethereum-usdt` are separate targets that share a chain, helper script, private key, and wallet address. The tests themselves are asset-agnostic, parameterized over the target's `STABLE_ASSET` / `STABLE_CURRENCY`.
 
@@ -32,11 +33,11 @@ A **target** is a chain paired with a stablecoin — `ethereum-usdc` and `ethere
 Determine what to run from the user's request:
 
 **Targets** (default: all available — see step 4 for which have keys):
-- `solana-usdc`, `base-usdc`, `polygon-usdc`, `ethereum-usdc`, `ethereum-usdt`, `tron-usdt`, or `all`
-- A bare chain name selects every target on that chain: "test ethereum" → `ethereum-usdc` + `ethereum-usdt`
-- A bare asset name selects every target for that asset: "run USDT tests" → `ethereum-usdt` + `tron-usdt`
+- `solana-usdc`, `base-usdc`, `polygon-usdc`, `ethereum-usdc`, `ethereum-usdt`, `plasma-usdt`, `tron-usdt`, or `all`
+- A bare chain name selects every target on that chain: "test ethereum" → `ethereum-usdc` + `ethereum-usdt`; "test plasma" → `plasma-usdt`
+- A bare asset name selects every target for that asset: "run USDT tests" → `ethereum-usdt` + `plasma-usdt` + `tron-usdt`
 - Chain + asset selects one: "test USDT on eth" → `ethereum-usdt`
-- Multiple targets: "test solana and base", "test USDT on ethereum and tron"
+- Multiple targets: "test solana and base", "test USDT on plasma and tron"
 
 **Tests** (default: all):
 - By number: "run test 4 on solana"
@@ -113,6 +114,7 @@ For each target the user wants to test, set the target-specific variables and ve
 | `polygon-usdc` | `POLYGON_WALLET` | `usdc` | `USDC` | `scripts/polygon_helper.py` | `pol-balance` | POL | 0.1 | 200000 | `web3` |
 | `ethereum-usdc` | `ETHEREUM_WALLET` | `usdc` | `USDC` | `scripts/ethereum_helper.py` | `eth-balance` | ETH | 0.01 | 200000 | `web3` |
 | `ethereum-usdt` | `ETHEREUM_WALLET` | `usdt` | `USDT` | `scripts/ethereum_helper.py` | `eth-balance` | ETH | 0.01 | 200000 | `web3` |
+| `plasma-usdt` | `PLASMA_WALLET` | `usdt` | `USDT` | `scripts/plasma_helper.py` | `xpl-balance` | XPL | 0.01 | 200000 | `web3` |
 | `tron-usdt` | `TRON_WALLET` | `usdt` | `USDT` | `scripts/tron_helper.py` | `trx-balance` | TRX | 50 | 200000 | `tronpy` |
 
 **Network-dependent variables** (pick the column pair matching the mode detected in Step 3):
@@ -124,9 +126,33 @@ For each target the user wants to test, set the target-specific variables and ve
 | `polygon-usdc` | `POLYGON_TESTNET` | `POLYGON_MAINNET` | `polygonTestnetPrivateKey` | `polygonMainnetPrivateKey` |
 | `ethereum-usdc` | `ETHEREUM_TESTNET` | `ETHEREUM_MAINNET` | `ethereumTestnetPrivateKey` | `ethereumMainnetPrivateKey` |
 | `ethereum-usdt` | `ETHEREUM_TESTNET` | `ETHEREUM_MAINNET` | `ethereumTestnetPrivateKey` | `ethereumMainnetPrivateKey` |
+| `plasma-usdt` | `PLASMA` | `PLASMA` | `plasmaTestnetPrivateKey` | `plasmaMainnetPrivateKey` |
 | `tron-usdt` | `TRON_TESTNET` | `TRON_MAINNET` | `tronTestnetPrivateKey` | `tronMainnetPrivateKey` |
 
 `STABLE_ASSET` is the lowercase asset name used in helper subcommands (`$STABLE_ASSET-balance`, `send-$STABLE_ASSET`). `STABLE_CURRENCY` is the uppercase Grid currency code used in API request bodies. Each helper script resolves the right token contract from its own subcommand name, so `ethereum-usdc` and `ethereum-usdt` differ only in `STABLE_ASSET` / `STABLE_CURRENCY`.
+
+**On the `_TESTNET` / `_MAINNET` suffixes:** the spec's `CryptoNetwork` enum contains only bare names (`ETHEREUM`, `SOLANA`, `PLASMA`, …) and says the platform's environment decides testnet vs mainnet. The suffixed values above are accepted as aliases — `ETHEREUM` and `ETHEREUM_TESTNET` resolve to the same network — so they are kept for continuity with earlier runs. `plasma-usdt` uses the bare `PLASMA` in both columns because no suffixed variant has been confirmed to work.
+
+**`plasma-usdt` readiness (as of 2026-08-03):** the backend implementation is complete on `webdev` `main` (commit `68b5932440`, 2026-07-31, "Enable USDT on Plasma customer-facing"), but production had not picked it up yet. Against a pre-Plasma build, external-account creation fails with `MISSING_MANDATORY_USER_INFO: Beneficiary information is required for fiat accounts` — `PlasmaWalletExternalAccountInfo` is absent from that build's `CryptoExternalAccountInfo` union, so the request is classified as fiat.
+
+Plasma is additionally gated behind `GK.USDT_PLASMA_ENABLED`, per platform. Use the error to tell the three states apart:
+
+| Response | Meaning |
+|---|---|
+| `MISSING_MANDATORY_USER_INFO: Beneficiary information is required for fiat accounts` | Deployed build predates Plasma support |
+| `INVALID_INPUT: USDT on Plasma is not enabled for this platform.` | Build is current; gatekeeper is off for this platform |
+| `201` with an account id | Ready — run the target |
+
+Note that Plasma carries USDT only; a USDC Plasma account is rejected by design. Probe before running:
+
+```bash
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d "{\"customerId\":\"$CUSTOMER_ID\",\"currency\":\"USDT\",\"cryptoNetwork\":\"PLASMA\",\"accountInfo\":{\"accountType\":\"PLASMA_WALLET\",\"address\":\"$WALLET_ADDRESS\"}}" \
+  "$GRID_BASE_URL/customers/external-accounts"
+```
+
+Skip the target on either error, reporting which of the two states above it matched. Everything else about the target is wired and runs unchanged once the deploy lands and the gatekeeper is on.
 
 ### Per-target prerequisites
 
@@ -162,6 +188,7 @@ For each selected target, run these checks. Skip a target (with a warning) if it
    - Base: https://www.alchemy.com/faucets/base-sepolia
    - Polygon: https://faucet.polygon.technology/
    - Ethereum: https://www.alchemy.com/faucets/ethereum-sepolia
+   - Plasma: https://faucet.plasma.to/ (Plasma testnet XPL faucet)
    - Tron: https://shasta.tronex.io/ (Shasta testnet TRX faucet)
 
 5. **Check stablecoin balance:**
@@ -174,6 +201,7 @@ For each selected target, run these checks. Skip a target (with a warning) if it
    - `polygon-usdc`: https://faucet.circle.com/ (select Polygon Amoy)
    - `ethereum-usdc`: https://faucet.circle.com/ (select Ethereum Sepolia)
    - `ethereum-usdt`: no public faucet. Acquire Sepolia USDT (ERC-20 contract `0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0`, 6 decimals) by transferring from an existing test wallet or swapping on a Sepolia DEX.
+   - `plasma-usdt`: https://faucet.plasma.to/ (Plasma testnet faucet — dispenses XPL; for testnet USDT0, contract `0x502012b361AebCE43b26Ec812B74D9a51dB4D412`, transfer from an existing test wallet if the faucet does not dispense it)
    - `tron-usdt`: https://shasta.tronex.io/ (Shasta testnet faucet — request TRX, then swap or fund via the TRC-20 USDT contract `TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs`)
 
 6. **Get wallet address:**
@@ -200,6 +228,7 @@ If running a subset, create the customer (Test 1) silently as setup, then run on
 - `polygon-usdc`: `CHAIN_PREFIX="polygon-usdc-test"`
 - `ethereum-usdc`: `CHAIN_PREFIX="ethereum-usdc-test"`
 - `ethereum-usdt`: `CHAIN_PREFIX="ethereum-usdt-test"`
+- `plasma-usdt`: `CHAIN_PREFIX="plasma-usdt-test"`
 - `tron-usdt`: `CHAIN_PREFIX="tron-usdt-test"`
 
 Each target gets its own customer, so `ethereum-usdc` and `ethereum-usdt` never share internal-account state. They do share one on-chain wallet, so run them sequentially — concurrent sends from the same address collide on the nonce.
@@ -246,6 +275,7 @@ If multiple targets were tested, add an aggregate summary:
 | polygon-usdc  | 0/11   | 0      | 11      |
 | ethereum-usdc | 11/11  | 0      | 0       |
 | ethereum-usdt | 11/11  | 0      | 0       |
+| plasma-usdt   | 11/11  | 0      | 0       |
 | tron-usdt     | 11/11  | 0      | 0       |
 ```
 
@@ -295,6 +325,8 @@ All tests use small amounts to conserve testnet funds. Amounts are denominated i
   "polygonMainnetPrivateKey": "hex-private-key-with-or-without-0x",
   "ethereumTestnetPrivateKey": "hex-private-key-with-or-without-0x",
   "ethereumMainnetPrivateKey": "hex-private-key-with-or-without-0x",
+  "plasmaTestnetPrivateKey": "hex-private-key-with-or-without-0x",
+  "plasmaMainnetPrivateKey": "hex-private-key-with-or-without-0x",
   "tronTestnetPrivateKey": "hex-private-key-with-or-without-0x",
   "tronMainnetPrivateKey": "hex-private-key-with-or-without-0x"
 }
@@ -310,6 +342,9 @@ Each helper hardcodes the token contracts it sends and reads. For reference:
 |---|---|---|
 | `ethereum-usdc` | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` (Sepolia) | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
 | `ethereum-usdt` | `0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0` (Sepolia) | `0xdAC17F958D2ee523a2206206994597C13D831ec7` |
+| `plasma-usdt` | `0x502012b361AebCE43b26Ec812B74D9a51dB4D412` | `0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb` |
 | `tron-usdt` | `TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs` (Shasta) | `TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t` |
+
+Both Plasma contracts report `symbol()` as `USDT0` (Plasma's USD₮0 branding) with 6 decimals. Grid treats them as `USDT` — `STABLE_CURRENCY` stays `USDT` in all API bodies.
 
 If a deposit never lands despite a confirmed on-chain send, the most likely cause is a contract mismatch — Grid indexes a different token contract than the helper sent to. Verify against Grid's configured contract for that network before debugging further.
