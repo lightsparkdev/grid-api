@@ -3,11 +3,13 @@ post:
   description: >
     Webhook that is called on every state transition of a card
     `CardTransaction`. Fires when an authorization is approved
-    (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it
-    (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`),
-    when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and
-    when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`).
-    The payload carries the full `CardTransaction` resource.
+    (`CARD_TRANSACTION.AUTHORIZED`), as clearings
+    settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`,
+    `CARD_TRANSACTION.SETTLED`), when settled funds are returned
+    (`CARD_TRANSACTION.REFUNDED`), and when the authorization is declined
+    by the issuer or program or a pull or confirmation fails
+    (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full
+    `CardTransaction` resource.
 
 
     This endpoint should be implemented by clients of the Grid API.

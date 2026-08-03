@@ -224,7 +224,7 @@ patch:
         to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when
         `state: CLOSED` is requested for a card that is already
         `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is
-        `CLOSED`.
+        `CLOSED`. Provider-reported state conflicts return `CONFLICT`.
       content:
         application/json:
           schema:

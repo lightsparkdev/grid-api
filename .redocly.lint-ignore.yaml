@@ -30,3 +30,8 @@ openapi.yaml:
     - '#/paths/~1sandbox~1cards~1{id}~1simulate~1authorization_advice'
     - '#/paths/~1sandbox~1cards~1{id}~1simulate~1credit_authorization_advice'
     - '#/paths/~1sandbox~1cards~1{id}~1simulate~1return_reversal'
+  # threeDSecurePassword: "threeDSecure" is the industry-standard casing for
+  # 3DS and matches the EU provider's wire field; the camelCase checker
+  # rejects the consecutive-capital hump. Deliberate exception.
+  field-names-camelCase:
+    - '#/components/schemas/CardCreateRequest/properties/threeDSecurePassword'

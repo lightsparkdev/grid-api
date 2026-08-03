@@ -17,9 +17,9 @@ description: >-
   Parent transaction row for a card authorization and all of the
   pulls / settlements / refunds that reconcile against it. Child events are
   rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary`
-  aggregates. Delivered as the payload of the generic transaction
-  webhook stream (extends the Transaction model with a card
-  destination type) on every transition.
+  aggregates. Delivered as the payload of the `CARD_TRANSACTION.*`
+  webhook family on every state transition; the webhook type carries the
+  transaction's new status (for example `CARD_TRANSACTION.SETTLED`).
 properties:
   type:
     type: string
@@ -64,6 +64,13 @@ properties:
     $ref: ../common/CurrencyAmount.yaml
   refundedAmount:
     $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      Total merchant refunds linked to this transaction. Populated only when
+      the card program's provider links refunds to the original purchase
+      (US programs). EU card programs receive merchant refunds WITHOUT a
+      purchase reference, so those refunds surface as standalone
+      CREDIT-direction card transactions and never update the purchase's
+      `refundedAmount`/`refundSummary`.
   accountId:
     type: string
     description: >-
