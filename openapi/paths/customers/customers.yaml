@@ -39,6 +39,17 @@ post:
               birthDate: '1988-05-22'
               nationality: MX
               phoneNumber: '+525512345678'
+          individualCustomerCurrenciesOnly:
+            summary: Create an individual customer with currencies and no region
+            value:
+              customerType: INDIVIDUAL
+              platformCustomerId: ind-4c2e8b15
+              currencies:
+                - BRL
+              fullName: Ana Oliveira
+              birthDate: '1992-11-03'
+              nationality: BR
+              phoneNumber: '+5511987654321'
           businessCustomer:
             summary: Create a business customer
             value:
