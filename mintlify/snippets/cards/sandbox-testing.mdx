@@ -5,8 +5,15 @@ Production returns `404` on these paths.
 
 ```text
 POST /sandbox/cards/{id}/simulate/authorization
+POST /sandbox/cards/{id}/simulate/authorization_advice
+POST /sandbox/cards/{id}/simulate/balance_inquiry
 POST /sandbox/cards/{id}/simulate/clearing
+POST /sandbox/cards/{id}/simulate/credit_authorization
+POST /sandbox/cards/{id}/simulate/credit_authorization_advice
+POST /sandbox/cards/{id}/simulate/financial_authorization
+POST /sandbox/cards/{id}/simulate/financial_credit_authorization
 POST /sandbox/cards/{id}/simulate/return
+POST /sandbox/cards/{id}/simulate/return_reversal
 ```
 
 Outcomes are deterministic — driven by magic-value suffixes on the
@@ -102,6 +109,138 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
 
 A full refund flips the parent to `REFUNDED`; a partial refund keeps
 it `SETTLED` with a non-zero `refundedAmount`.
+
+## Authorization advice simulate
+
+Re-sizes an existing open authorization to a new total amount:
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/authorization_advice" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardTransactionId": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100",
+    "amount": 2000
+  }'
+```
+
+The `amount` is the new *total* authorized amount. The parent
+transaction must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state.
+
+## Balance inquiry simulate
+
+Simulates a balance-inquiry authorization (always a zero-amount auth):
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/balance_inquiry" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "merchant": {
+      "descriptor": "SHELL OIL 12345678",
+      "mcc": "5541",
+      "country": "US"
+    }
+  }'
+```
+
+## Credit authorization simulate
+
+Simulates an inbound credit authorization (a merchant-initiated credit
+to the card, e.g. a refund pushed as an authorization):
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/credit_authorization" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 2500,
+    "currency": { "code": "USD" },
+    "merchant": {
+      "descriptor": "ACME MARKETPLACE",
+      "mcc": "5942",
+      "country": "US"
+    }
+  }'
+```
+
+Uses the same [merchant descriptor suffixes](#authorization-simulate)
+for outcome control.
+
+## Credit authorization advice simulate
+
+Re-sizes an existing credit authorization:
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/credit_authorization_advice" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardTransactionId": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100",
+    "amount": 3000
+  }'
+```
+
+## Financial authorization simulate
+
+Simulates a single-message financial authorization (an authorization
+that clears in the same message, e.g. an ATM withdrawal):
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/financial_authorization" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 8000,
+    "currency": { "code": "USD" },
+    "merchant": {
+      "descriptor": "ATM WITHDRAWAL 24TH ST",
+      "mcc": "6011",
+      "country": "US"
+    }
+  }'
+```
+
+Uses the same [merchant descriptor suffixes](#authorization-simulate)
+for outcome control.
+
+## Financial credit authorization simulate
+
+Simulates a single-message financial credit (a credit that clears in
+the same message, e.g. an ATM deposit or push credit):
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/financial_credit_authorization" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 4000,
+    "currency": { "code": "USD" },
+    "merchant": {
+      "descriptor": "ACME PAYOUTS",
+      "mcc": "6012",
+      "country": "US"
+    }
+  }'
+```
+
+Uses the same [merchant descriptor suffixes](#authorization-simulate)
+for outcome control.
+
+## Return reversal simulate
+
+Reverses a previously settled return:
+
+```bash
+curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/return_reversal" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cardTransactionId": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100"
+  }'
+```
+
+The parent transaction must be in `REFUNDED` state.
 
 ## End-to-end happy path
 
