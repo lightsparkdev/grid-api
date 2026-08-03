@@ -2,6 +2,7 @@ type: object
 description: Additional information required for business entities
 required:
   - legalName
+  - country
   - taxId
   - incorporatedOn
 properties:
