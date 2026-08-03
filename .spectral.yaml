@@ -12,7 +12,8 @@ rules:
   # Naming Conventions (README: Naming Conventions)
   # ============================================================
 
-  # Fields must be camelCase (excludes TestWebhookResponse which mirrors external format)
+  # Fields must be camelCase (excludes TestWebhookResponse which mirrors
+  # external format; see the overrides block for per-property exemptions)
   field-names-camelCase:
     description: Schema property names must be camelCase
     message: "Property '{{property}}' must be camelCase. See openapi/README.md#field-naming"
@@ -179,3 +180,13 @@ rules:
       function: pattern
       functionOptions:
         match: "^((\\/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+|\\/sandbox\\/cards\\/\\{id\\}\\/simulate\\/(balance_inquiry|credit_authorization|financial_authorization|financial_credit_authorization|authorization_advice|credit_authorization_advice|return_reversal))$"
+
+# Per-property exemptions from the naming rules above.
+overrides:
+  # "3DS" is the industry spelling of the 3-D Secure factor, and this field
+  # mirrors the issuer's own request field name. Renaming it to satisfy the
+  # camelCase rule would break the wire contract Grid already accepts.
+  - files:
+      - "openapi.yaml#/components/schemas/CardCreateRequest/properties/threeDSecurePassword"
+    rules:
+      field-names-camelCase: "off"
