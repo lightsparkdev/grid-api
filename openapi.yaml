@@ -21804,6 +21804,40 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
+    PlatformFeeOverride:
+      type: object
+      description: Overrides the platform fee for this transaction. When present, it replaces all platform fees that would otherwise apply to the transaction — no standing fee config is required. Only supported when the quote's source currency is USD today; the fixed fee must be denominated in the source currency.
+      required:
+        - platformFixedFee
+        - platformVariableFeeBps
+      properties:
+        platformFixedFee:
+          type: object
+          description: Fixed fee charged for this transaction.
+          required:
+            - amount
+            - currency
+          properties:
+            amount:
+              type: integer
+              format: int64
+              minimum: 0
+              description: Fee amount in the smallest unit of the fixed fee's `currency` (e.g., cents for USD).
+              example: 50
+            currency:
+              type: string
+              description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Must equal the quote's source currency (USD today).
+              example: USD
+        platformVariableFeeBps:
+          type: integer
+          minimum: 0
+          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
+          example: 30
+      example:
+        platformFixedFee:
+          amount: 50
+          currency: USD
+        platformVariableFeeBps: 30
     QuoteRequest:
       type: object
       required:
@@ -21849,6 +21883,8 @@ components:
           example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+        platformFeeOverride:
+          $ref: '#/components/schemas/PlatformFeeOverride'
         scaFactor:
           $ref: '#/components/schemas/ScaFactor'
           description: Optional preferred factor for a Strong Customer Authentication challenge issued at quote creation. Only relevant for a realtime-funding source in a region where SCA is required (e.g. EU); ignored otherwise. Valid values are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected. When the quote is returned in `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.
