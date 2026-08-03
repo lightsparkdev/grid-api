@@ -3,14 +3,14 @@
 All tests use these target variables (set per-target in SKILL.md Step 4). A target is a chain paired with a stablecoin, e.g. `ethereum-usdc` or `ethereum-usdt`.
 
 - `chain_helper` — shell function wrapping the target's helper script (defined in SKILL.md Step 4)
-- `$CRYPTO_NETWORK` — e.g., `SOLANA_DEVNET`, `BASE_TESTNET`, `POLYGON_TESTNET`, `ETHEREUM_TESTNET`, `TRON_TESTNET`
-- `$WALLET_TYPE` — e.g., `SOLANA_WALLET`, `BASE_WALLET`, `POLYGON_WALLET`, `ETHEREUM_WALLET`, `TRON_WALLET`
+- `$CRYPTO_NETWORK` — e.g., `SOLANA_DEVNET`, `BASE_TESTNET`, `POLYGON_TESTNET`, `ETHEREUM_TESTNET`, `PLASMA`, `TRON_TESTNET`
+- `$WALLET_TYPE` — e.g., `SOLANA_WALLET`, `BASE_WALLET`, `POLYGON_WALLET`, `ETHEREUM_WALLET`, `PLASMA_WALLET`, `TRON_WALLET`
 - `$WALLET_ADDRESS` — the test wallet's on-chain address
 - `$STABLE_ASSET` — lowercase stablecoin name for helper subcommands (`usdc` or `usdt`)
 - `$STABLE_CURRENCY` — uppercase Grid currency code for API bodies (`USDC` or `USDT`)
 - `$TRANSFER_OUT_AMT` — target-specific minimum transfer-out amount
 - `$IS_SANDBOX` — whether the platform is sandbox
-- `$CHAIN_PREFIX` — unique prefix for this target run (e.g., `solana-usdc-test`, `ethereum-usdt-test`, `tron-usdt-test`)
+- `$CHAIN_PREFIX` — unique prefix for this target run (e.g., `solana-usdc-test`, `ethereum-usdt-test`, `plasma-usdt-test`, `tron-usdt-test`)
 
 Shell variables referenced below (`STABLE_INTERNAL_ID`, `STABLE_EXTERNAL_ID`, etc.) hold the IDs of internal/external accounts denominated in `$STABLE_CURRENCY`.
 
