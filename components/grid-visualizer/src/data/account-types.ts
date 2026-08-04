@@ -54,7 +54,11 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
   INR_ACCOUNT: {
     accountType: 'INR_ACCOUNT',
     fields: [
-      { name: 'vpa', example: 'customer@okbank' },
+      { name: 'vpa', example: 'customer@okbank', description: 'For UPI' },
+      { name: 'accountNumber', example: '000111222333', description: 'For NEFT/RTGS (9-18 digits)' },
+      { name: 'ifsc', example: 'HDFC0001234', description: 'For NEFT/RTGS (11-character branch code)' },
+      { name: 'rail', example: 'NEFT', description: 'NEFT or RTGS' },
+      { name: 'bankName', example: 'HDFC Bank', description: 'Optional' },
     ],
     beneficiaryRequired: true,
   },
