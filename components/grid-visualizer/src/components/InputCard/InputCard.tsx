@@ -19,7 +19,8 @@ const REGION_SHORT: Record<string, string> = {
   XAF: 'Central Africa', GHS: 'GH', KES: 'KE', ZAR: 'ZA', BWP: 'BW',
   TZS: 'TZ', UGX: 'UG', MWK: 'MW', ZMW: 'ZM', CNY: 'CN', HKD: 'HK',
   IDR: 'ID', KRW: 'KR', MYR: 'MY', THB: 'TH', VND: 'VN', LKR: 'LK',
-  CRC: 'CR', CDF: 'CD', DKK: 'DK', RWF: 'RW',
+  CRC: 'CR', CDF: 'CD', DKK: 'DK', RWF: 'RW', AED: 'AE', BDT: 'BD',
+  COP: 'CO', EGP: 'EG', GTQ: 'GT', HTG: 'HT', JMD: 'JM', PKR: 'PK',
 };
 
 interface InputCardProps {
