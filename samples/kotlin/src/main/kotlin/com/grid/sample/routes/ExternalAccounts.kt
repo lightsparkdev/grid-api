@@ -115,10 +115,19 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
             ExternalAccountCreate.AccountInfo.ofUsdAccount(info)
         }
         "INR_ACCOUNT" -> {
+            // Which fields apply depends on the rail: UPI uses vpa, NEFT/RTGS use
+            // accountNumber + ifsc + rail. All are optional on the builder so one
+            // branch can serve both.
             val info = InrExternalAccountCreateInfo.builder()
                 .accountType(InrExternalAccountCreateInfo.AccountType.INR_ACCOUNT)
-                .vpa(accountInfo.requireText("vpa"))
                 .beneficiary(buildInrBeneficiary(beneficiaryNode))
+                .apply {
+                    accountInfo.optText("vpa")?.let { vpa(it) }
+                    accountInfo.optText("accountNumber")?.let { accountNumber(it) }
+                    accountInfo.optText("ifsc")?.let { ifsc(it) }
+                    accountInfo.optText("rail")?.let { rail(it) }
+                    accountInfo.optText("bankName")?.let { bankName(it) }
+                }
                 .build()
             ExternalAccountCreate.AccountInfo.ofInrAccount(info)
         }
