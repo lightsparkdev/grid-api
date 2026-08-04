@@ -180,11 +180,14 @@ function NetworkDropdown({
                     }}
                     type="button"
                   >
+                    {/* Not every network has an icon in public/networks yet; hide the
+                        broken image rather than showing a torn-page glyph next to the name. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`/networks/${acct.network.toLowerCase()}.svg`}
                       alt=""
                       className={styles.networkMenuIcon}
+                      onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
                     />
                     <span>{acct.network}</span>
                   </button>
