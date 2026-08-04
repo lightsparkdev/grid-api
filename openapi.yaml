@@ -826,87 +826,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /customers/{customerId}/end-user-terms-consent:
-    get:
-      summary: Get a customer's End User Terms consent
-      description: Retrieve the End User Terms acceptance recorded for one customer.
-      operationId: getCustomerEndUserTermsConsent
-      tags:
-        - Customers
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: customerId
-          in: path
-          required: true
-          description: Unique Grid identifier for the customer.
-          schema:
-            type: string
-      responses:
-        '200':
-          description: End User Terms consent retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EndUserTermsConsent'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Customer or consent record not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-    patch:
-      summary: Update a customer's End User Terms consent
-      description: Record or replace the End User Terms acceptance for one customer.
-      operationId: updateCustomerEndUserTermsConsent
-      tags:
-        - Customers
-      security:
-        - BasicAuth: []
-      parameters:
-        - name: customerId
-          in: path
-          required: true
-          description: Unique Grid identifier for the customer.
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EndUserTermsConsentRequest'
-      responses:
-        '200':
-          description: End User Terms consent updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EndUserTermsConsent'
-        '400':
-          description: Invalid input or unsupported terms version
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '404':
-          description: Customer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
   /customers/end-user-terms:
     get:
       summary: Get the current Grid End User Terms
@@ -3819,6 +3738,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Customer has not accepted the End User Terms
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '412':
           description: Counterparty doesn't support UMA version
           content:
@@ -10573,7 +10498,6 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 9f84e0c2a72c4fa
                     customerType: INDIVIDUAL
-                    hasAcceptedEndUserTerms: false
                     region: US
                     currencies:
                       - USD
@@ -10603,7 +10527,11 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000002
                     platformCustomerId: 4b7c1e9d3f5a8e2
                     customerType: INDIVIDUAL
-                    hasAcceptedEndUserTerms: true
+                    endUserTermsConsent:
+                      acceptedAt: '2025-07-21T17:30:00Z'
+                      ipAddress: 203.0.113.42
+                      termsVersion: '2025-10-13'
+                      acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -10626,7 +10554,11 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000003
                     platformCustomerId: 7a2f9d4e1b8c3f5
                     customerType: BUSINESS
-                    hasAcceptedEndUserTerms: true
+                    endUserTermsConsent:
+                      acceptedAt: '2025-07-21T17:30:00Z'
+                      ipAddress: 203.0.113.42
+                      termsVersion: '2025-10-13'
+                      acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -10657,7 +10589,6 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000004
                     platformCustomerId: 3c8e5f2a9d1b7e4
                     customerType: BUSINESS
-                    hasAcceptedEndUserTerms: false
                     region: US
                     currencies:
                       - USD
@@ -12147,6 +12078,39 @@ components:
         - BUSINESS
       description: Whether the customer is an individual or a business entity
       example: INDIVIDUAL
+    EndUserTermsAcceptanceMethod:
+      type: string
+      description: Method the customer used to affirmatively accept the End User Terms.
+      enum:
+        - CHECKBOX
+        - CLICK_TO_ACCEPT
+      example: CHECKBOX
+    EndUserTermsConsentRequest:
+      type: object
+      required:
+        - acceptedAt
+        - ipAddress
+        - termsVersion
+        - acceptanceMethod
+      properties:
+        acceptedAt:
+          type: string
+          format: date-time
+          description: Date and time when the customer accepted the End User Terms.
+        ipAddress:
+          type: string
+          maxLength: 45
+          description: IP address of the device the customer used when accepting the terms.
+          example: 198.51.100.24
+        termsVersion:
+          type: string
+          description: Version identifier of the accepted Grid End User Terms.
+          example: V1
+        acceptanceMethod:
+          $ref: '#/components/schemas/EndUserTermsAcceptanceMethod'
+    EndUserTermsConsent:
+      allOf:
+        - $ref: '#/components/schemas/EndUserTermsConsentRequest'
     ContactVerificationStatus:
       type: string
       description: Status of an individual contact-verification channel (email or phone). `PENDING` means verification is required but not yet completed; `VERIFIED` means the channel has been confirmed.
@@ -12173,7 +12137,6 @@ components:
         - umaAddress
         - platformCustomerId
         - customerType
-        - hasAcceptedEndUserTerms
       properties:
         id:
           type: string
@@ -12186,11 +12149,10 @@ components:
           example: 9f84e0c2a72c4fa
         customerType:
           $ref: '#/components/schemas/CustomerType'
-        hasAcceptedEndUserTerms:
-          type: boolean
+        endUserTermsConsent:
+          $ref: '#/components/schemas/EndUserTermsConsent'
           readOnly: true
-          description: Whether Grid has recorded the customer's acceptance of the End User Terms. For platforms where acceptance is required, a value of `false` means the customer cannot open an account until consent is recorded.
-          example: true
+          description: The customer's recorded acceptance of the End User Terms. Omitted until acceptance has been recorded.
         region:
           type: string
           description: Country code (ISO 3166-1 alpha-2) representing the customer's regional identity and regulatory jurisdiction.
@@ -12945,36 +12907,6 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    EndUserTermsAcceptanceMethod:
-      type: string
-      description: Method the customer used to affirmatively accept the End User Terms.
-      enum:
-        - CHECKBOX
-        - CLICK_TO_ACCEPT
-      example: CHECKBOX
-    EndUserTermsConsentRequest:
-      type: object
-      required:
-        - acceptedAt
-        - ipAddress
-        - termsVersion
-        - acceptanceMethod
-      properties:
-        acceptedAt:
-          type: string
-          format: date-time
-          description: Date and time when the customer accepted the End User Terms.
-        ipAddress:
-          type: string
-          maxLength: 45
-          description: IP address of the device the customer used when accepting the terms.
-          example: 198.51.100.24
-        termsVersion:
-          type: string
-          description: Version identifier of the accepted Grid End User Terms.
-          example: V1
-        acceptanceMethod:
-          $ref: '#/components/schemas/EndUserTermsAcceptanceMethod'
     CustomerCreateRequest:
       type: object
       required:
@@ -13303,6 +13235,8 @@ components:
           type: string
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
+        endUserTermsConsent:
+          $ref: '#/components/schemas/EndUserTermsConsentRequest'
     IndividualCustomerUpdateRequest:
       title: Individual Customer Update Request
       allOf:
@@ -13379,16 +13313,6 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    EndUserTermsConsent:
-      allOf:
-        - $ref: '#/components/schemas/EndUserTermsConsentRequest'
-        - type: object
-          required:
-            - customerId
-          properties:
-            customerId:
-              type: string
-              description: Unique Grid identifier for the customer.
     EndUserTerms:
       type: object
       required:
@@ -21881,6 +21805,41 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
+    Error403:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 403
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+            - END_USER_TERMS_NOT_ACCEPTED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.
@@ -22230,39 +22189,6 @@ components:
           type: string
           description: The UMA address of the customer claiming the invitation
           example: $invitee@uma.domain
-    Error403:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 403
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     SandboxSendRequest:
       type: object
       required:

@@ -49,3 +49,5 @@ properties:
       Optional UMA address identifier. If provided, the customer's UMA address will be updated.
       This is an optional identifier to route payments to the customer.
     example: $john.doe@uma.domain.com
+  endUserTermsConsent:
+    $ref: ./EndUserTermsConsentRequest.yaml

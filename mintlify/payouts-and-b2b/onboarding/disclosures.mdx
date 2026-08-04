@@ -19,9 +19,9 @@ Copy Lightspark's End User Terms and append them to your own terms of service, s
 
 Present the combined terms in your onboarding or consent flow, and require each end user to affirmatively accept them (for example, an unchecked checkbox or an "I Agree" button) before they can use Grid.
 
-Use `GET /customers/end-user-terms` to retrieve the current terms URL and version. Record acceptance when you create the customer with `endUserTermsConsent`, or later with `PATCH /customers/{customerId}/end-user-terms-consent`. The acceptance record includes the timestamp, device IP address, terms version, and acceptance method. Grid rejects versions that it does not recognize.
+Use `GET /customers/end-user-terms` to retrieve the current terms URL and version. Record acceptance with the `endUserTermsConsent` field when you create or update the customer. The acceptance record includes the timestamp, device IP address, terms version, and acceptance method. Grid rejects versions that it does not recognize.
 
-For unregulated platforms, Grid does not open customer accounts until you record this acceptance. You can retrieve the current record with `GET /customers/{customerId}/end-user-terms-consent`.
+For unregulated platforms, Grid does not open customer accounts until you record this acceptance. Customer responses include the full `endUserTermsConsent` object after acceptance is recorded.
 
 ## Provide evidence of your consent flow
 

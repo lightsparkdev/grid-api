@@ -143,8 +143,6 @@ paths:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
-  /customers/{customerId}/end-user-terms-consent:
-    $ref: paths/customers/customers_{customerId}_end-user-terms-consent.yaml
   /customers/end-user-terms:
     $ref: paths/customers/customers_end-user-terms.yaml
   /customers/{customerId}/kyc-link:
