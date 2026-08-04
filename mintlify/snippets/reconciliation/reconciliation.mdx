@@ -89,7 +89,7 @@ We recommend querying days from `00:00:00.000` to `23:59:59.999` in your preferr
 
 ```bash cURL
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?startDate=2025-10-01T00:00:00.000Z&endDate=2025-10-01T23:59:59.999Z&limit=100' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 Response 
