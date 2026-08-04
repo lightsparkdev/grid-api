@@ -1004,7 +1004,7 @@ Fetch one external account by its system-generated ID:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 **Response:**
@@ -1044,7 +1044,7 @@ Delete an external account by its system-generated ID:
 
 ```bash
 curl -X DELETE 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 Returns `204 No Content` on success.
