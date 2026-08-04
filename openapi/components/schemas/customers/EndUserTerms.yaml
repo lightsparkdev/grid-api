@@ -6,7 +6,7 @@ properties:
   version:
     type: string
     description: Current version identifier of the Grid End User Terms.
-    example: '2026-07-31'
+    example: V1
   url:
     type: string
     format: uri

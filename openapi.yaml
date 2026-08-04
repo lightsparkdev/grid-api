@@ -12972,7 +12972,7 @@ components:
         termsVersion:
           type: string
           description: Version identifier of the accepted Grid End User Terms.
-          example: '2026-07-31'
+          example: V1
         acceptanceMethod:
           $ref: '#/components/schemas/EndUserTermsAcceptanceMethod'
     CustomerCreateRequest:
@@ -13398,7 +13398,7 @@ components:
         version:
           type: string
           description: Current version identifier of the Grid End User Terms.
-          example: '2026-07-31'
+          example: V1
         url:
           type: string
           format: uri
