@@ -16,7 +16,7 @@ Use the [Discoveries API](/api-reference/discoveries/list-available-receiving-in
 
 ```bash cURL
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/discoveries?country=PH&currency=PHP' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ```json Response
@@ -48,7 +48,7 @@ Use `bankName` from the response as the `bankName` value when creating an extern
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "USD",
@@ -92,7 +92,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "MXN",
@@ -125,7 +125,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "BRL",
@@ -165,7 +165,7 @@ Colombia supports two payment rails: bank transfer and mobile money.
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "COP",
@@ -197,7 +197,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "COP",
@@ -241,7 +241,7 @@ El Salvador supports two payment rails: bank transfer and mobile money.
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "USD",
@@ -271,7 +271,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "USD",
@@ -306,7 +306,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "EUR",
@@ -340,7 +340,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "PHP",
@@ -376,7 +376,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "GBP",
@@ -411,7 +411,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "INR",
@@ -443,7 +443,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "NGN",
@@ -479,7 +479,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "ZAR",
@@ -515,7 +515,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "KES",
@@ -550,7 +550,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "TZS",
@@ -585,7 +585,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "ZMW",
@@ -620,7 +620,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "RWF",
@@ -655,7 +655,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "MWK",
@@ -690,7 +690,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "UGX",
@@ -725,7 +725,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "XOF",
@@ -763,7 +763,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "CAD",
@@ -802,7 +802,7 @@ Use a SWIFT account to send payouts to bank accounts in countries or currencies 
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "USD",
@@ -842,7 +842,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H 'Content-Type: application/json' \
   -d '{
     "currency": "BTC",
@@ -981,7 +981,7 @@ Beneficiary data may be reviewed for risk and compliance. Only `ACTIVE` accounts
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts?customerId=Customer:019542f5-b3e7-1d02-0000-000000000001' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 ### List platform accounts
@@ -990,13 +990,72 @@ For platform-wide operations, list all platform-level external accounts:
 
 ```bash
 curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/external-accounts' \
-  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
 <Info>
   Platform external accounts are used for platform-wide operations like
   depositing funds from external sources.
 </Info>
+
+## Retrieving a single external account
+
+Fetch one external account by its system-generated ID:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+**Response:**
+
+```json
+{
+  "id": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "ACTIVE",
+  "currency": "USD",
+  "platformAccountId": "acc_123456789",
+  "accountInfo": {
+    "accountType": "USD_ACCOUNT",
+    "accountNumber": "1234567890",
+    "routingNumber": "021000021",
+    "bankName": "Chase Bank",
+    "bankAccountType": "CHECKING",
+    "paymentRails": ["ACH", "WIRE", "RTP", "FEDNOW"],
+    "beneficiary": {
+      "beneficiaryType": "INDIVIDUAL",
+      "fullName": "Jane Doe"
+    }
+  }
+}
+```
+
+<Info>
+  `paymentRails` reports the rails Grid selected for the account. It is
+  returned on the account and is not something you send when creating one.
+</Info>
+
+Returns `404` if no external account matches the ID.
+
+## Deleting an external account
+
+Delete an external account by its system-generated ID:
+
+```bash
+curl -X DELETE 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Returns `204 No Content` on success.
+
+<Warning>
+  An account that is currently a **trusted beneficiary** for Strong Customer
+  Authentication cannot be deleted — the request fails with `409` and code
+  `BENEFICIARY_TRUSTED`. Untrust it first via `POST
+  /customers/external-accounts/{externalAccountId}/untrust` and its
+  `/confirm`, then delete.
+</Warning>
 
 ## Best practices
 
