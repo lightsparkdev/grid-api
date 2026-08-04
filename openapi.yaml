@@ -384,6 +384,8 @@ paths:
                   nationality: US
                   email: jane.smith@example.com
                   phoneNumber: '+14155551234'
+                  idType: SSN
+                  identifier: 123-45-6789
               individualCustomerInferred:
                 summary: Create an individual customer with inferred currencies
                 value:
