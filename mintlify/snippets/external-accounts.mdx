@@ -998,6 +998,65 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/external-accoun
   depositing funds from external sources.
 </Info>
 
+## Retrieving a single external account
+
+Fetch one external account by its system-generated ID:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+```
+
+**Response:**
+
+```json
+{
+  "id": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "status": "ACTIVE",
+  "currency": "USD",
+  "platformAccountId": "acc_123456789",
+  "accountInfo": {
+    "accountType": "USD_ACCOUNT",
+    "accountNumber": "1234567890",
+    "routingNumber": "021000021",
+    "bankName": "Chase Bank",
+    "bankAccountType": "CHECKING",
+    "paymentRails": ["ACH", "WIRE", "RTP", "FEDNOW"],
+    "beneficiary": {
+      "beneficiaryType": "INDIVIDUAL",
+      "fullName": "Jane Doe"
+    }
+  }
+}
+```
+
+<Info>
+  `paymentRails` reports the rails Grid selected for the account. It is
+  returned on the account and is not something you send when creating one.
+</Info>
+
+Returns `404` if no external account matches the ID.
+
+## Deleting an external account
+
+Delete an external account by its system-generated ID:
+
+```bash
+curl -X DELETE 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts/ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965' \
+  -H 'Authorization: Basic $GRID_CLIENT_ID:$GRID_CLIENT_SECRET'
+```
+
+Returns `204 No Content` on success.
+
+<Warning>
+  An account that is currently a **trusted beneficiary** for Strong Customer
+  Authentication cannot be deleted — the request fails with `409` and code
+  `BENEFICIARY_TRUSTED`. Untrust it first via `POST
+  /customers/external-accounts/{externalAccountId}/untrust` and its
+  `/confirm`, then delete.
+</Warning>
+
 ## Best practices
 
 <AccordionGroup>
