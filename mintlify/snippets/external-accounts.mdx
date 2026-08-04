@@ -836,6 +836,804 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Note>
 </Tab>
 
+<Tab title="United Arab Emirates">
+**Bank Transfer (IBAN)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "AED",
+      "platformAccountId": "ae_bank_001",
+      "accountInfo": {
+        "accountType": "AED_ACCOUNT",
+        "iban": "AE070331234567890123456",
+        "swiftCode": "EBILAEAD",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Fatima Al Mansoori",
+          "birthDate": "1990-01-15",
+          "nationality": "AE",
+          "address": {
+            "line1": "Sheikh Zayed Road 12",
+            "city": "Dubai",
+            "postalCode": "00000",
+            "country": "AE"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `iban` is required and must be a 23-character UAE IBAN starting with `AE`. `swiftCode` is optional. An `address` is required on the beneficiary.
+</Note>
+</Tab>
+
+<Tab title="Bangladesh">
+**Bank Transfer or Mobile Money (bKash, Nagad)**
+
+**Bank transfer:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "BDT",
+      "platformAccountId": "bd_bank_001",
+      "accountInfo": {
+        "accountType": "BDT_ACCOUNT",
+        "bankName": "BRAC Bank",
+        "accountNumber": "1234567890123",
+        "branchCode": "12345",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Rahim Chowdhury",
+          "birthDate": "1990-01-15",
+          "nationality": "BD",
+          "address": {
+            "line1": "12 Gulshan Avenue",
+            "city": "Dhaka",
+            "postalCode": "1212",
+            "country": "BD"
+          }
+        }
+      }
+    }'
+```
+
+**Mobile money:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "BDT",
+      "platformAccountId": "bd_mobile_001",
+      "accountInfo": {
+        "accountType": "BDT_ACCOUNT",
+        "bankName": "bKash",
+        "phoneNumber": "+8801712345678",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Rahim Chowdhury",
+          "birthDate": "1990-01-15",
+          "nationality": "BD",
+          "address": {
+            "line1": "12 Gulshan Avenue",
+            "city": "Dhaka",
+            "postalCode": "1212",
+            "country": "BD"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName` is always required. Bank transfer additionally uses `accountNumber` and optionally `branchCode`; mobile money uses `phoneNumber`. `swiftCode` is optional on bank transfers.
+</Note>
+</Tab>
+
+<Tab title="Botswana">
+**Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "BWP",
+      "platformAccountId": "bw_mobile_001",
+      "accountInfo": {
+        "accountType": "BWP_ACCOUNT",
+        "phoneNumber": "+26771234567",
+        "provider": "Orange",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Kagiso Molefe",
+          "birthDate": "1990-01-15",
+          "nationality": "BW",
+          "address": {
+            "line1": "Plot 123 Main Mall",
+            "city": "Gaborone",
+            "postalCode": "00000",
+            "country": "BW"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  Both `phoneNumber` (international format) and `provider` are required.
+</Note>
+</Tab>
+
+<Tab title="China">
+**Bank Transfer or Mobile Money**
+
+**Bank transfer:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "CNY",
+      "platformAccountId": "cn_bank_001",
+      "accountInfo": {
+        "accountType": "CNY_ACCOUNT",
+        "bankName": "Industrial and Commercial Bank of China",
+        "accountNumber": "1234567890",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Wei Zhang",
+          "birthDate": "1990-01-15",
+          "nationality": "CN",
+          "address": {
+            "line1": "1 Nanjing Road",
+            "city": "Shanghai",
+            "postalCode": "200000",
+            "country": "CN"
+          }
+        }
+      }
+    }'
+```
+
+**Mobile money:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "CNY",
+      "platformAccountId": "cn_mobile_001",
+      "accountInfo": {
+        "accountType": "CNY_ACCOUNT",
+        "bankName": "Alipay",
+        "phoneNumber": "+8613812345678",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Wei Zhang",
+          "birthDate": "1990-01-15",
+          "nationality": "CN",
+          "address": {
+            "line1": "1 Nanjing Road",
+            "city": "Shanghai",
+            "postalCode": "200000",
+            "country": "CN"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName` is always required. Bank transfer uses `accountNumber`; mobile money uses `phoneNumber`.
+</Note>
+</Tab>
+
+<Tab title="Egypt">
+**Bank Transfer or Mobile Money**
+
+**Bank transfer:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "EGP",
+      "platformAccountId": "eg_bank_001",
+      "accountInfo": {
+        "accountType": "EGP_ACCOUNT",
+        "bankName": "National Bank of Egypt",
+        "iban": "EG380019000500000000263180002",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Nour Hassan",
+          "birthDate": "1990-01-15",
+          "nationality": "EG",
+          "address": {
+            "line1": "15 Tahrir Square",
+            "city": "Cairo",
+            "postalCode": "11511",
+            "country": "EG"
+          }
+        }
+      }
+    }'
+```
+
+**Mobile money:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "EGP",
+      "platformAccountId": "eg_mobile_001",
+      "accountInfo": {
+        "accountType": "EGP_ACCOUNT",
+        "bankName": "Vodafone Cash",
+        "phoneNumber": "+201012345678",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Nour Hassan",
+          "birthDate": "1990-01-15",
+          "nationality": "EG",
+          "address": {
+            "line1": "15 Tahrir Square",
+            "city": "Cairo",
+            "postalCode": "11511",
+            "country": "EG"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName` is always required. Bank transfer uses `iban`, a 29-character Egyptian IBAN starting with `EG`; mobile money uses `phoneNumber`.
+</Note>
+</Tab>
+
+<Tab title="Ghana">
+**Bank Transfer or Mobile Money (MTN, Vodafone)**
+
+**Bank transfer:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "GHS",
+      "platformAccountId": "gh_bank_001",
+      "accountInfo": {
+        "accountType": "GHS_ACCOUNT",
+        "bankName": "GCB Bank",
+        "accountNumber": "1234567890",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Kwame Mensah",
+          "birthDate": "1990-01-15",
+          "nationality": "GH",
+          "address": {
+            "line1": "23 Independence Avenue",
+            "city": "Accra",
+            "postalCode": "00233",
+            "country": "GH"
+          }
+        }
+      }
+    }'
+```
+
+**Mobile money:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "GHS",
+      "platformAccountId": "gh_mobile_001",
+      "accountInfo": {
+        "accountType": "GHS_ACCOUNT",
+        "bankName": "MTN Mobile Money",
+        "phoneNumber": "+233241234567",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Kwame Mensah",
+          "birthDate": "1990-01-15",
+          "nationality": "GH",
+          "address": {
+            "line1": "23 Independence Avenue",
+            "city": "Accra",
+            "postalCode": "00233",
+            "country": "GH"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName` is always required. Bank transfer uses `accountNumber`; mobile money uses `phoneNumber`.
+</Note>
+</Tab>
+
+<Tab title="Guatemala">
+**Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "GTQ",
+      "platformAccountId": "gt_bank_001",
+      "accountInfo": {
+        "accountType": "GTQ_ACCOUNT",
+        "accountNumber": "1234567890",
+        "bankAccountType": "CHECKING",
+        "bankName": "Banco GYT Continental",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Ana Lucía Ramírez",
+          "birthDate": "1990-01-15",
+          "nationality": "GT",
+          "phoneNumber": "+50251234567",
+          "countryOfResidence": "GT",
+          "address": {
+            "line1": "5a Avenida 12-34 Zona 10",
+            "city": "Guatemala City",
+            "postalCode": "01010",
+            "country": "GT"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `accountNumber`, `bankAccountType` (`CHECKING` or `SAVINGS`) and `bankName` are all required. The beneficiary additionally requires `phoneNumber` and `countryOfResidence`.
+</Note>
+</Tab>
+
+<Tab title="Haiti">
+**Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "HTG",
+      "platformAccountId": "ht_mobile_001",
+      "accountInfo": {
+        "accountType": "HTG_ACCOUNT",
+        "phoneNumber": "+50934567890",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Marie Pierre-Louis",
+          "birthDate": "1990-01-15",
+          "nationality": "HT",
+          "address": {
+            "line1": "45 Rue Capois",
+            "city": "Port-au-Prince",
+            "postalCode": "6110",
+            "country": "HT"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `phoneNumber` in international format is the only required account field.
+</Note>
+</Tab>
+
+<Tab title="Jamaica">
+**Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "JMD",
+      "platformAccountId": "jm_bank_001",
+      "accountInfo": {
+        "accountType": "JMD_ACCOUNT",
+        "accountNumber": "1234567890",
+        "branchCode": "12345",
+        "bankAccountType": "CHECKING",
+        "bankName": "Bank of Nova Scotia",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Andre Campbell",
+          "birthDate": "1990-01-15",
+          "nationality": "JM",
+          "phoneNumber": "+18761234567",
+          "address": {
+            "line1": "10 Knutsford Boulevard",
+            "city": "Kingston",
+            "postalCode": "00000",
+            "country": "JM"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `accountNumber`, `branchCode` (5 digits), `bankAccountType` (`CHECKING` or `SAVINGS`) and `bankName` are all required. The beneficiary additionally requires `phoneNumber` and an `address`.
+</Note>
+</Tab>
+
+<Tab title="Pakistan">
+**Bank Transfer or Mobile Money (JazzCash, Easypaisa)**
+
+**Bank transfer:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "PKR",
+      "platformAccountId": "pk_bank_001",
+      "accountInfo": {
+        "accountType": "PKR_ACCOUNT",
+        "bankName": "HBL",
+        "accountNumber": "1234567890123456",
+        "iban": "PK36SCBL0000001123456702",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Ayesha Khan",
+          "birthDate": "1990-01-15",
+          "nationality": "PK",
+          "address": {
+            "line1": "12 Clifton Block 5",
+            "city": "Karachi",
+            "postalCode": "75600",
+            "country": "PK"
+          }
+        }
+      }
+    }'
+```
+
+**Mobile money:**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "PKR",
+      "platformAccountId": "pk_mobile_001",
+      "accountInfo": {
+        "accountType": "PKR_ACCOUNT",
+        "bankName": "JazzCash",
+        "phoneNumber": "+923001234567",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Ayesha Khan",
+          "birthDate": "1990-01-15",
+          "nationality": "PK",
+          "address": {
+            "line1": "12 Clifton Block 5",
+            "city": "Karachi",
+            "postalCode": "75600",
+            "country": "PK"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName` is always required. Bank transfer uses `accountNumber`, and optionally `iban` (24 characters, starting with `PK`); mobile money uses `phoneNumber`.
+</Note>
+</Tab>
+
+<Tab title="Central Africa">
+**Mobile Money**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "XAF",
+      "platformAccountId": "xaf_mobile_001",
+      "accountInfo": {
+        "accountType": "XAF_ACCOUNT",
+        "phoneNumber": "+237671234567",
+        "provider": "MTN",
+        "region": "CM",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Achille Nkeng",
+          "birthDate": "1990-01-15",
+          "nationality": "CM",
+          "address": {
+            "line1": "Rue Joss 20",
+            "city": "Douala",
+            "postalCode": "00237",
+            "country": "CM"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `phoneNumber`, `provider` and `region` are all required. `region` must be `CM` (Cameroon) or `CG` (Republic of the Congo).
+</Note>
+</Tab>
+<Tab title="Denmark">
+**Bank Transfer (IBAN)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "DKK",
+      "platformAccountId": "dk_bank_001",
+      "accountInfo": {
+        "accountType": "DKK_ACCOUNT",
+        "iban": "DK5000400040116243",
+        "swiftCode": "DABADKKK",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Lars Jensen",
+          "birthDate": "1990-01-15",
+          "nationality": "DK",
+          "address": {
+            "line1": "Vesterbrogade 10",
+            "city": "Copenhagen",
+            "postalCode": "1620",
+            "country": "DK"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `iban` is required; `swiftCode` is optional.
+</Note>
+</Tab>
+
+<Tab title="Hong Kong">
+**Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "HKD",
+      "platformAccountId": "hk_bank_001",
+      "accountInfo": {
+        "accountType": "HKD_ACCOUNT",
+        "bankName": "HSBC Hong Kong",
+        "accountNumber": "123456789012",
+        "swiftCode": "HSBCHKHHHKH",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Emily Chan",
+          "birthDate": "1990-01-15",
+          "nationality": "HK",
+          "address": {
+            "line1": "1 Queen's Road Central",
+            "city": "Hong Kong",
+            "postalCode": "00000",
+            "country": "HK"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName`, `accountNumber` and `swiftCode` are all required.
+</Note>
+</Tab>
+
+<Tab title="Indonesia">
+**Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "IDR",
+      "platformAccountId": "id_bank_001",
+      "accountInfo": {
+        "accountType": "IDR_ACCOUNT",
+        "bankName": "Bank Central Asia",
+        "accountNumber": "1234567890",
+        "swiftCode": "CENAIDJA",
+        "phoneNumber": "+6281234567890",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Siti Rahayu",
+          "birthDate": "1990-01-15",
+          "nationality": "ID",
+          "address": {
+            "line1": "Jl. Sudirman 45",
+            "city": "Jakarta",
+            "postalCode": "10210",
+            "country": "ID"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName`, `accountNumber`, `swiftCode` and `phoneNumber` are all required.
+</Note>
+</Tab>
+
+<Tab title="Malaysia">
+**Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "MYR",
+      "platformAccountId": "my_bank_001",
+      "accountInfo": {
+        "accountType": "MYR_ACCOUNT",
+        "bankName": "Maybank",
+        "accountNumber": "1234567890",
+        "swiftCode": "MABORUMMYYY",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Nurul Aisyah",
+          "birthDate": "1990-01-15",
+          "nationality": "MY",
+          "address": {
+            "line1": "Jalan Ampang 88",
+            "city": "Kuala Lumpur",
+            "postalCode": "50450",
+            "country": "MY"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName`, `accountNumber` and `swiftCode` are all required.
+</Note>
+</Tab>
+
+<Tab title="Singapore">
+**Bank Transfer (PayNow, FAST)**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "SGD",
+      "platformAccountId": "sg_bank_001",
+      "accountInfo": {
+        "accountType": "SGD_ACCOUNT",
+        "bankName": "DBS Bank Ltd",
+        "accountNumber": "0123456789",
+        "swiftCode": "DBSSSGSG",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Wei Lin Tan",
+          "birthDate": "1990-01-15",
+          "nationality": "SG",
+          "address": {
+            "line1": "12 Marina Boulevard",
+            "city": "Singapore",
+            "postalCode": "018982",
+            "country": "SG"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `accountNumber` and `swiftCode` are required; `bankName` is optional.
+</Note>
+</Tab>
+
+<Tab title="Thailand">
+**Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "THB",
+      "platformAccountId": "th_bank_001",
+      "accountInfo": {
+        "accountType": "THB_ACCOUNT",
+        "bankName": "Bangkok Bank",
+        "accountNumber": "1234567890",
+        "swiftCode": "BKKBTHBK",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Somchai Prasert",
+          "birthDate": "1990-01-15",
+          "nationality": "TH",
+          "address": {
+            "line1": "333 Silom Road",
+            "city": "Bangkok",
+            "postalCode": "10500",
+            "country": "TH"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName`, `accountNumber` and `swiftCode` are all required.
+</Note>
+</Tab>
+
+<Tab title="Vietnam">
+**Bank Transfer**
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "VND",
+      "platformAccountId": "vn_bank_001",
+      "accountInfo": {
+        "accountType": "VND_ACCOUNT",
+        "bankName": "Vietcombank",
+        "accountNumber": "1234567890",
+        "swiftCode": "BFTVVNVX",
+        "beneficiary": {
+          "beneficiaryType": "INDIVIDUAL",
+          "fullName": "Nguyen Thi Lan",
+          "birthDate": "1990-01-15",
+          "nationality": "VN",
+          "address": {
+            "line1": "22 Le Loi",
+            "city": "Ho Chi Minh City",
+            "postalCode": "70000",
+            "country": "VN"
+          }
+        }
+      }
+    }'
+```
+
+<Note>
+  `bankName`, `accountNumber` and `swiftCode` are all required.
+</Note>
+</Tab>
 <Tab title="SWIFT (International)">
 **SWIFT / International Wire**
 
@@ -895,8 +1693,136 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
   }'
 ```
 
+**Ethereum L1**
+
+Supported assets: USDC and USDT.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "USDC",
+      "platformAccountId": "eth_usdc_001",
+      "accountInfo": {
+        "accountType": "ETHEREUM_WALLET",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }'
+```
+
+**Base**
+
+Supported assets: USDC.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "USDC",
+      "platformAccountId": "base_usdc_001",
+      "accountInfo": {
+        "accountType": "BASE_WALLET",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }'
+```
+
+**Polygon**
+
+Supported assets: USDC.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "USDC",
+      "platformAccountId": "polygon_usdc_001",
+      "accountInfo": {
+        "accountType": "POLYGON_WALLET",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }'
+```
+
+**Solana**
+
+Supported assets: USDC.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "USDC",
+      "platformAccountId": "sol_usdc_001",
+      "accountInfo": {
+        "accountType": "SOLANA_WALLET",
+        "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
+      }
+    }'
+```
+
+**Tron**
+
+Supported assets: USDT.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "USDT",
+      "platformAccountId": "tron_usdt_001",
+      "accountInfo": {
+        "accountType": "TRON_WALLET",
+        "address": "TNPeeaaFB7K9cmo4uQpcU32zGK8G1NYqeL"
+      }
+    }'
+```
+
+**Plasma**
+
+Supported assets: USDT.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "USDT",
+      "platformAccountId": "plasma_usdt_001",
+      "accountInfo": {
+        "accountType": "PLASMA_WALLET",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }'
+```
+
+**Lightning**
+
+Exactly one of `lightningAddress`, `invoice` (a single-use BOLT11 invoice) or `bolt12`
+(a reusable offer) must be provided.
+
+```bash cURL
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "BTC",
+      "platformAccountId": "btc_lightning_001",
+      "accountInfo": {
+        "accountType": "LIGHTNING",
+        "lightningAddress": "john.doe@lightningwallet.com"
+      }
+    }'
+```
 <Note>
-  Spark wallets don't require beneficiary information as they are self-custody wallets.
+  Crypto wallets don't require beneficiary information. Send only assets on the
+  named network — EVM addresses look identical across Ethereum, Base, Polygon and
+  Plasma, and funds sent on the wrong network are unrecoverable.
 </Note>
 </Tab>
 </Tabs>
