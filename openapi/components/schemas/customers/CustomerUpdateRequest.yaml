@@ -51,3 +51,7 @@ properties:
     example: $john.doe@uma.domain.com
   endUserTermsConsent:
     $ref: ./EndUserTermsConsentRequest.yaml
+    description: >-
+      Evidence that the customer accepted the Grid End User Terms. Unregulated
+      platforms must provide this before initiating customer-scoped
+      transactions; those transactions fail until consent is recorded.

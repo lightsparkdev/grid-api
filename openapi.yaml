@@ -12946,6 +12946,7 @@ components:
           example: $john.doe@uma.domain.com
         endUserTermsConsent:
           $ref: '#/components/schemas/EndUserTermsConsentRequest'
+          description: Evidence that the customer accepted the Grid End User Terms. Unregulated platforms must provide this before initiating customer-scoped transactions; those transactions fail until consent is recorded. This can be supplied during customer creation or in a later customer update.
     IndividualCustomerCreateRequest:
       title: Individual Customer Create Request
       allOf:
@@ -13237,6 +13238,7 @@ components:
           example: $john.doe@uma.domain.com
         endUserTermsConsent:
           $ref: '#/components/schemas/EndUserTermsConsentRequest'
+          description: Evidence that the customer accepted the Grid End User Terms. Unregulated platforms must provide this before initiating customer-scoped transactions; those transactions fail until consent is recorded.
     IndividualCustomerUpdateRequest:
       title: Individual Customer Update Request
       allOf:
