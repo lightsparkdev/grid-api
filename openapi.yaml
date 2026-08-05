@@ -22753,7 +22753,7 @@ components:
           example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
         clientPublicKey:
           type: string
-          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
+          description: Client-generated P-256 public key, hex-encoded in SEC1 format — either uncompressed (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total) or compressed (0x02/0x03 prefix followed by the 32-byte X coordinate; 66 hex characters total). The matching private key must remain on the client. Grid binds the issued session to this public key; when the response carries an `encryptedSessionSigningKey`, that key is sealed to it. The key is ephemeral and one-time-use per verification request.
           example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
     OauthCredentialVerifyRequest:
       title: OAuth Credential Verify Request
@@ -22854,10 +22854,10 @@ components:
       properties:
         clientPublicKey:
           type: string
-          pattern: ^04[0-9a-fA-F]{128}$
-          minLength: 130
+          pattern: ^(04[0-9a-fA-F]{128}|0[23][0-9a-fA-F]{64})$
+          minLength: 66
           maxLength: 130
-          description: Required for `PASSKEY` credentials. Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid bakes this key into the session-creation payload that the returned `challenge` is computed from, so the resulting session signing key is sealed to the client. Ignored for `EMAIL_OTP` and `SMS_OTP`.
+          description: Required for `PASSKEY` credentials. Client-generated ephemeral P-256 public key, hex-encoded in SEC1 format — either uncompressed (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total) or compressed (`02`/`03` prefix followed by the 32-byte X coordinate; 66 hex characters total). The matching private key must remain on the client. Grid bakes this key into the session-creation payload that the returned `challenge` is computed from, binding the issued session to the client. Ignored for `EMAIL_OTP` and `SMS_OTP`.
           example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
