@@ -22,6 +22,8 @@ allOf:
         type: string
         description: Optional platform-specific identifier for this account
         example: acc_123456789
+      ownershipType:
+        $ref: ./OwnershipType.yaml
       currency:
         type: string
         description: The ISO 4217 currency code

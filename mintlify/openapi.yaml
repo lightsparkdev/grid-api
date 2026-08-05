@@ -16715,6 +16715,13 @@ components:
         - UNDER_REVIEW
         - INACTIVE
       description: Status of an external account
+    OwnershipType:
+      type: string
+      enum:
+        - FIRST_PARTY
+        - THIRD_PARTY
+      description: Whether the external account belongs to the customer themselves (first party) or to someone else (third party)
+      example: FIRST_PARTY
     BeneficiaryVerificationStatus:
       type: string
       enum:
@@ -19085,6 +19092,8 @@ components:
               type: string
               description: Optional platform-specific identifier for this account
               example: acc_123456789
+            ownershipType:
+              $ref: '#/components/schemas/OwnershipType'
             currency:
               type: string
               description: The ISO 4217 currency code
@@ -19997,6 +20006,8 @@ components:
               type: string
               description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
               example: ext_acc_123456
+            ownershipType:
+              $ref: '#/components/schemas/OwnershipType'
             defaultUmaDepositAccount:
               type: boolean
               description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
@@ -20017,6 +20028,8 @@ components:
           type: string
           description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
           example: ext_acc_123456
+        ownershipType:
+          $ref: '#/components/schemas/OwnershipType'
         accountInfo:
           $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
     BeneficialOwnerListResponse:
