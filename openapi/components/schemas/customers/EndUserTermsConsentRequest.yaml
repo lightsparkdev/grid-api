@@ -1,0 +1,22 @@
+type: object
+required:
+  - acceptedAt
+  - ipAddress
+  - termsVersion
+  - acceptanceMethod
+properties:
+  acceptedAt:
+    type: string
+    format: date-time
+    description: Date and time when the customer accepted the End User Terms.
+  ipAddress:
+    type: string
+    maxLength: 45
+    description: IP address of the device the customer used when accepting the terms.
+    example: 198.51.100.24
+  termsVersion:
+    type: string
+    description: Version identifier of the accepted Grid End User Terms.
+    example: V1
+  acceptanceMethod:
+    $ref: ./EndUserTermsAcceptanceMethod.yaml

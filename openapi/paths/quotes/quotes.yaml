@@ -140,6 +140,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Customer has not accepted the End User Terms
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '412':
       description: Counterparty doesn't support UMA version
       content:

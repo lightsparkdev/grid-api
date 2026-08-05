@@ -1,0 +1,21 @@
+get:
+  summary: Get the current Grid End User Terms
+  description: Retrieve the current version and Grid-hosted URL of the End User Terms.
+  operationId: getEndUserTerms
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Current End User Terms retrieved successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/EndUserTerms.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml

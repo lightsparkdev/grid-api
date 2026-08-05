@@ -15,6 +15,12 @@ properties:
     example: 9f84e0c2a72c4fa
   customerType:
     $ref: ./CustomerType.yaml
+  endUserTermsConsent:
+    $ref: ./EndUserTermsConsent.yaml
+    readOnly: true
+    description: >-
+      The customer's recorded acceptance of the End User Terms. Omitted until
+      acceptance has been recorded.
   region:
     type: string
     description: >-

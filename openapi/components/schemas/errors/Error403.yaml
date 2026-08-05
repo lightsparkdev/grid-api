@@ -18,11 +18,13 @@ properties:
       | USER_NOT_READY | Customer exists but is not ready for operation |
       | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
       | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+      | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
     enum:
       - FORBIDDEN
       - USER_NOT_READY
       - COUNTERPARTY_NOT_ALLOWED
       - VELOCITY_LIMIT_EXCEEDED
+      - END_USER_TERMS_NOT_ACCEPTED
   message:
     type: string
     description: Error message

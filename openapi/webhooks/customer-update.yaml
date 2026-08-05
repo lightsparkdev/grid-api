@@ -76,6 +76,11 @@ post:
                 id: Customer:019542f5-b3e7-1d02-0000-000000000002
                 platformCustomerId: 4b7c1e9d3f5a8e2
                 customerType: INDIVIDUAL
+                endUserTermsConsent:
+                  acceptedAt: '2025-07-21T17:30:00Z'
+                  ipAddress: 203.0.113.42
+                  termsVersion: '2025-10-13'
+                  acceptanceMethod: CHECKBOX
                 region: US
                 currencies:
                   - USD
@@ -98,6 +103,11 @@ post:
                 id: Customer:019542f5-b3e7-1d02-0000-000000000003
                 platformCustomerId: 7a2f9d4e1b8c3f5
                 customerType: BUSINESS
+                endUserTermsConsent:
+                  acceptedAt: '2025-07-21T17:30:00Z'
+                  ipAddress: 203.0.113.42
+                  termsVersion: '2025-10-13'
+                  acceptanceMethod: CHECKBOX
                 region: US
                 currencies:
                   - USD
