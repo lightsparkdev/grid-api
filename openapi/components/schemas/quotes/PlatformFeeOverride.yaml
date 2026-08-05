@@ -4,6 +4,10 @@ description: >-
   all platform fees that would otherwise apply to the transaction — no standing
   fee config is required. Only supported when the quote's source currency is
   USD today; the fixed fee must be denominated in the source currency.
+
+  Only honored on platform-authenticated requests to `POST /quotes`. Agent
+  tokens carry no fee-control permission, so this field must be omitted on
+  agent-authenticated requests such as `POST /agents/me/quotes`.
 required:
   - platformFixedFee
   - platformVariableFeeBps
