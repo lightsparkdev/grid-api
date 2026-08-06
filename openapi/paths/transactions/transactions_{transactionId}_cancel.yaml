@@ -73,10 +73,10 @@ post:
             $ref: ../../components/schemas/errors/Error500.yaml
     '501':
       description: >-
-        Not implemented for this payment rail. Cancellation depends on the
-        banking partner settling the transfer exposing a cancellation facility;
-        rails without one — wires, and ACH at partners that do not support it —
-        return `501 NOT_IMPLEMENTED`.
+        Cancellation is not yet available for the payment rail settling this
+        transfer. Support is being rolled out per rail and per banking partner;
+        transfers on a rail that is not covered yet return
+        `501 NOT_IMPLEMENTED`. Track availability in the Grid changelog.
       content:
         application/json:
           schema:
