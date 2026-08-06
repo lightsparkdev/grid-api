@@ -10998,7 +10998,7 @@ webhooks:
     post:
       summary: External account status webhook
       description: |
-        Webhook that is called when the status of an external account changes (e.g., `PENDING_OWNERSHIP_VERIFICATION` → `ACTIVE` after ownership verification completes).
+        Webhook that is called whenever the status of an external account changes, for any transition between statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`, `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`) — for example when an account under review becomes active, or when ownership verification completes.
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -12212,7 +12212,7 @@ components:
             | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
             | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
             | SENDER_NOT_ACCEPTED | Sender is not accepted |
-            | AMOUNT_OUT_OF_RANGE | Amount is out of range for the quote or the destination account |
+            | AMOUNT_OUT_OF_RANGE | Amount is out of range |
             | INVALID_CURRENCY | Currency is invalid |
             | INVALID_TIMESTAMP | Timestamp is invalid |
             | INVALID_NONCE | Nonce is invalid |
@@ -12236,7 +12236,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
-            | WALLET_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+            | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -12278,7 +12278,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
-            - WALLET_VERIFICATION_REQUIRED
+            - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
         message:
           type: string
           description: Error message

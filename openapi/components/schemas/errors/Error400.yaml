@@ -30,7 +30,7 @@ properties:
       | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
       | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
       | SENDER_NOT_ACCEPTED | Sender is not accepted |
-      | AMOUNT_OUT_OF_RANGE | Amount is out of range for the quote or the destination account |
+      | AMOUNT_OUT_OF_RANGE | Amount is out of range |
       | INVALID_CURRENCY | Currency is invalid |
       | INVALID_TIMESTAMP | Timestamp is invalid |
       | INVALID_NONCE | Nonce is invalid |
@@ -54,7 +54,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
-      | WALLET_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+      | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -96,7 +96,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
-      - WALLET_VERIFICATION_REQUIRED
+      - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
   message:
     type: string
     description: Error message

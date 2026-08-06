@@ -1,9 +1,10 @@
 post:
   summary: External account status webhook
   description: >
-    Webhook that is called when the status of an external account changes
-    (e.g., `PENDING_OWNERSHIP_VERIFICATION` → `ACTIVE` after ownership
-    verification completes).
+    Webhook that is called whenever the status of an external account changes,
+    for any transition between statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`,
+    `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`) — for example when an account
+    under review becomes active, or when ownership verification completes.
 
     This endpoint should be implemented by clients of the Grid API.
 
