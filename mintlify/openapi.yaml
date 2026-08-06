@@ -11529,6 +11529,23 @@ components:
         - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
           (source currency differs from destination currency).
       example: CROSS_CURRENCY_TRANSACTION
+    FixedFee:
+      type: object
+      description: Fixed fee charged per transaction.
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Fee amount in the smallest unit of the fixed fee's `currency` (e.g., cents for USD).
+          example: 100
+        currency:
+          type: string
+          description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
+          example: USD
     FeeConfig:
       type: object
       description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
@@ -11546,22 +11563,7 @@ components:
           description: Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
           example: 30
         fixedFee:
-          type: object
-          description: Fixed fee charged per transaction.
-          properties:
-            amount:
-              type: integer
-              format: int64
-              minimum: 0
-              description: Fee amount in the smallest unit of the fixed fee's `currency` (e.g., cents for USD).
-              example: 100
-            currency:
-              type: string
-              description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
-              example: USD
-          required:
-            - amount
-            - currency
+          $ref: '#/components/schemas/FixedFee'
       required:
         - feeType
         - sourceCurrency
@@ -21806,33 +21808,18 @@ components:
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
     PlatformFeeOverride:
       type: object
-      description: |-
-        Overrides the platform fee for this transaction. When present, it replaces all platform fees that would otherwise apply to the transaction — no standing fee config is required. Only supported when the quote's source currency is USD today; the fixed fee must be denominated in the source currency.
-        Only honored on platform-authenticated requests to `POST /quotes`. Agent tokens carry no fee-control permission, so this field must be omitted on agent-authenticated requests such as `POST /agents/me/quotes`.
+      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
       required:
         - platformFixedFee
         - platformVariableFeeBps
       properties:
         platformFixedFee:
-          type: object
-          description: Fixed fee charged for this transaction.
-          required:
-            - amount
-            - currency
-          properties:
-            amount:
-              type: integer
-              format: int64
-              minimum: 0
-              description: Fee amount in the smallest unit of the fixed fee's `currency` (e.g., cents for USD).
-              example: 50
-            currency:
-              type: string
-              description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Must equal the quote's source currency (USD today).
-              example: USD
+          $ref: '#/components/schemas/FixedFee'
+          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
         platformVariableFeeBps:
           type: integer
           minimum: 0
+          maximum: 10000
           description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
           example: 30
       example:
