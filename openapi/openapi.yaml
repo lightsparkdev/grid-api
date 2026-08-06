@@ -40,6 +40,10 @@ tags:
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
+  - name: Ownership Verifications
+    description: >-
+      Endpoints for verifying ownership of self-custody crypto wallet external
+      accounts, via wallet signature or a hosted biometric verification flow.
   - name: Same-Currency Transfers
     description: Endpoints for transferring funds between internal and external accounts with the same currency
   - name: Cross-Currency Transfers
@@ -193,6 +197,12 @@ paths:
     $ref: paths/platform/platform_external_accounts.yaml
   /platform/external-accounts/{externalAccountId}:
     $ref: paths/platform/platform_external_accounts_{externalAccountId}.yaml
+  /ownership-verifications:
+    $ref: paths/ownership_verifications/ownership-verifications.yaml
+  /ownership-verifications/{verificationId}:
+    $ref: paths/ownership_verifications/ownership-verifications_{verificationId}.yaml
+  /ownership-verifications/{verificationId}/confirm:
+    $ref: paths/ownership_verifications/ownership-verifications_{verificationId}_confirm.yaml
   /beneficial-owners:
     $ref: paths/beneficial-owners/beneficial_owners.yaml
   /beneficial-owners/{beneficialOwnerId}:
@@ -389,8 +399,12 @@ webhooks:
     $ref: webhooks/customer-update.yaml
   internal-account-status:
     $ref: webhooks/internal-account-status.yaml
+  external-account-status:
+    $ref: webhooks/external-account-status.yaml
   verification-update:
     $ref: webhooks/verification-update.yaml
+  ownership-verification:
+    $ref: webhooks/ownership-verification.yaml
   card-state-change:
     $ref: webhooks/card-state-change.yaml
   card-funding-source-change:

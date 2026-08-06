@@ -1,0 +1,87 @@
+post:
+  summary: External account status webhook
+  description: >
+    Webhook that is called whenever the status of an external account changes,
+    for any transition between statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`,
+    `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`) — for example when an account
+    under review becomes active, or when ownership verification completes.
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+
+
+    ### Event types
+
+    - `EXTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an external
+    account changes. The `data` payload contains the full external account
+    object.
+
+
+  operationId: externalAccountStatusWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/ExternalAccountStatusWebhook.yaml
+        examples:
+          statusUpdated:
+            summary: A wallet account became active after ownership verification
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000042
+              type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                status: ACTIVE
+                currency: USDC
+                ownershipType: FIRST_PARTY
+                accountInfo:
+                  accountType: ETHEREUM_WALLET
+                  address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

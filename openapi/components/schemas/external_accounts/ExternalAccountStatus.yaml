@@ -2,6 +2,15 @@ type: string
 enum:
   - PENDING
   - ACTIVE
+  - PENDING_OWNERSHIP_VERIFICATION
   - UNDER_REVIEW
   - INACTIVE
-description: Status of an external account
+description: |
+  Status of an external account.
+
+  `PENDING_OWNERSHIP_VERIFICATION` applies to `FIRST_PARTY` self-custody
+  crypto wallet accounts on platforms subject to EU Travel Rule requirements.
+  While in this status, the account can be used for transfers below regulatory
+  thresholds; completing ownership verification (see the Ownership
+  Verifications API) moves the account to `ACTIVE` and removes the
+  restriction.

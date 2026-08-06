@@ -33,6 +33,8 @@ tags:
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
+  - name: Ownership Verifications
+    description: Endpoints for verifying ownership of self-custody crypto wallet external accounts, via wallet signature or a hosted biometric verification flow.
   - name: Same-Currency Transfers
     description: Endpoints for transferring funds between internal and external accounts with the same currency
   - name: Cross-Currency Transfers
@@ -2627,6 +2629,248 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /ownership-verifications:
+    post:
+      summary: Create an ownership verification
+      description: |
+        Begin ownership verification for a `FIRST_PARTY` self-custody crypto
+        wallet external account (customer or platform owned). Choose a `method`:
+
+        - `WALLET_SIGNATURE` — the response includes a `messageToSign`; have the
+          wallet sign it and submit the result to
+          `POST /ownership-verifications/{verificationId}/confirm` to complete
+          verification synchronously.
+        - `LIVENESS` — the response includes a `verificationLink` (and a `token`
+          for embedding); the user completes a hosted biometric flow and
+          verification completes asynchronously. Status transitions are delivered
+          via `OWNERSHIP_VERIFICATION.*` webhooks or by polling
+          `GET /ownership-verifications/{verificationId}`.
+
+        Ownership verification applies to accounts in
+        `PENDING_OWNERSHIP_VERIFICATION` status; completing it moves the account
+        to `ACTIVE`. For accounts where ownership verification is not applicable,
+        this returns `409`.
+      operationId: createOwnershipVerification
+      tags:
+        - Ownership Verifications
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerificationRequest'
+      responses:
+        '201':
+          description: Ownership verification created; the method-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipVerification'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List ownership verifications
+      description: |
+        Retrieve a list of ownership verifications with optional filtering by external account ID and status.
+      operationId: listOwnershipVerifications
+      tags:
+        - Ownership Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: query
+          description: Filter by external account ID
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by verification status
+          required: false
+          schema:
+            $ref: '#/components/schemas/OwnershipVerificationState'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipVerificationListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /ownership-verifications/{verificationId}:
+    get:
+      summary: Get an ownership verification
+      description: Retrieve details of a specific ownership verification by ID.
+      operationId: getOwnershipVerification
+      tags:
+        - Ownership Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: verificationId
+          in: path
+          description: Ownership verification ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipVerification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Ownership verification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /ownership-verifications/{verificationId}/confirm:
+    post:
+      summary: Confirm an ownership verification
+      description: |
+        Complete a `WALLET_SIGNATURE` ownership verification by submitting the
+        signature the wallet produced for the `messageToSign` returned by
+        `POST /ownership-verifications`. The message must be signed exactly as
+        returned, and the signature must be submitted before the session's
+        `expiresAt`; after expiry, start a new verification.
+
+        This endpoint is only valid for `WALLET_SIGNATURE` verifications in
+        `PENDING` status. For other verifications, this returns `409`. `LIVENESS`
+        verifications complete asynchronously — their status is delivered via
+        `OWNERSHIP_VERIFICATION.*` webhooks or by polling
+        `GET /ownership-verifications/{verificationId}`.
+      operationId: confirmOwnershipVerification
+      tags:
+        - Ownership Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: verificationId
+          in: path
+          description: Ownership verification ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerificationConfirmRequest'
+      responses:
+        '200':
+          description: Signature submitted; the updated ownership verification is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipVerification'
+        '400':
+          description: Invalid or expired signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Ownership verification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The verification is not a `WALLET_SIGNATURE` verification in `PENDING` status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -10750,6 +10994,74 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  external-account-status:
+    post:
+      summary: External account status webhook
+      description: |
+        Webhook that is called whenever the status of an external account changes, for any transition between statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`, `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`) — for example when an account under review becomes active, or when ownership verification completes.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+
+        ### Event types
+        - `EXTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an external account changes. The `data` payload contains the full external account object.
+      operationId: externalAccountStatusWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalAccountStatusWebhook'
+            examples:
+              statusUpdated:
+                summary: A wallet account became active after ownership verification
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000042
+                  type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: ACTIVE
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    accountInfo:
+                      accountType: ETHEREUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
   verification-update:
     post:
       summary: Verification status change
@@ -10807,6 +11119,92 @@ webhooks:
                           - PROOF_OF_ADDRESS
                         reason: Proof of address document is required
                     createdAt: '2025-08-15T14:00:00Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+  ownership-verification:
+    post:
+      summary: Ownership verification status change
+      description: |
+        Webhook that is called when the status of an ownership verification changes.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+
+        ### Event types
+        - `OWNERSHIP_VERIFICATION.PENDING_REVIEW` — Fired when a submitted ownership verification enters review. The `data` payload contains the full ownership verification object.
+        - `OWNERSHIP_VERIFICATION.VERIFIED` — Fired when ownership of the external account has been verified. The `data` payload contains the full ownership verification object.
+        - `OWNERSHIP_VERIFICATION.FAILED` — Fired when an ownership verification attempt fails; start a new verification to retry. The `data` payload contains the full ownership verification object.
+      operationId: ownershipVerificationWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerificationWebhook'
+            examples:
+              verified:
+                summary: Ownership of a self-custody wallet has been verified
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+                  type: OWNERSHIP_VERIFICATION.VERIFIED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: OwnershipVerification:019542f5-b3e7-1d02-0000-000000000001
+                    externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
+                    method: WALLET_SIGNATURE
+                    status: VERIFIED
+                    messageToSign: 'I verify that I control this wallet. Nonce: 019542f5-b3e7-1d02'
+                    expiresAt: '2025-08-15T15:32:00Z'
+                    createdAt: '2025-08-15T15:02:00Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
+              failed:
+                summary: An ownership verification attempt failed
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+                  type: OWNERSHIP_VERIFICATION.FAILED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: OwnershipVerification:019542f5-b3e7-1d02-0000-000000000002
+                    externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
+                    method: LIVENESS
+                    status: FAILED
+                    verificationLink: https://verify.example.com/session/019542f5-b3e7-1d02
+                    token: eyJhbGciOiJIUzI1NiJ9.example
+                    expiresAt: '2025-08-15T15:32:00Z'
+                    createdAt: '2025-08-15T15:02:00Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
       responses:
         '200':
           description: |
@@ -11838,6 +12236,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+            | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -11879,6 +12278,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+            - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
         message:
           type: string
           description: Error message
@@ -16840,15 +17240,24 @@ components:
       enum:
         - PENDING
         - ACTIVE
+        - PENDING_OWNERSHIP_VERIFICATION
         - UNDER_REVIEW
         - INACTIVE
-      description: Status of an external account
+      description: |
+        Status of an external account.
+
+        `PENDING_OWNERSHIP_VERIFICATION` applies to `FIRST_PARTY` self-custody
+        crypto wallet accounts on platforms subject to EU Travel Rule requirements.
+        While in this status, the account can be used for transfers below regulatory
+        thresholds; completing ownership verification (see the Ownership
+        Verifications API) moves the account to `ACTIVE` and removes the
+        restriction.
     OwnershipType:
       type: string
       enum:
         - FIRST_PARTY
         - THIRD_PARTY
-      description: Whether the external account belongs to the customer themselves (first party) or to someone else (third party)
+      description: Whether the external account belongs to the customer themselves (`FIRST_PARTY`) or to someone else (`THIRD_PARTY`). Required when creating self-custody crypto wallet external accounts on platforms subject to EU Travel Rule requirements; recommended for all other accounts, where providing it can unlock additional capabilities and smoother compliance handling.
       example: FIRST_PARTY
     BeneficiaryVerificationStatus:
       type: string
@@ -20160,6 +20569,204 @@ components:
           $ref: '#/components/schemas/OwnershipType'
         accountInfo:
           $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+    OwnershipVerificationState:
+      type: string
+      enum:
+        - PENDING
+        - PENDING_REVIEW
+        - VERIFIED
+        - FAILED
+      description: |
+        Current status of this ownership verification.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | Awaiting the wallet signature or the user completing the verification flow |
+        | `PENDING_REVIEW` | Submitted and under review |
+        | `VERIFIED` | Ownership was verified. Terminal |
+        | `FAILED` | This verification attempt failed. Terminal; start a new verification to retry |
+      example: PENDING
+    WalletSignatureOwnershipVerification:
+      title: Wallet Signature Ownership Verification
+      type: object
+      description: An ownership verification completed by signing a message with the wallet's key.
+      required:
+        - id
+        - externalAccountId
+        - method
+        - status
+        - messageToSign
+        - expiresAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this ownership verification
+          example: OwnershipVerification:019542f5-b3e7-1d02-0000-000000000001
+        externalAccountId:
+          type: string
+          description: The ID of the external account whose ownership is being verified
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
+        method:
+          type: string
+          enum:
+            - WALLET_SIGNATURE
+          description: The verification method. Always `WALLET_SIGNATURE` for this shape.
+          example: WALLET_SIGNATURE
+        status:
+          $ref: '#/components/schemas/OwnershipVerificationState'
+        messageToSign:
+          type: string
+          description: The exact message the wallet must sign, character-for-character.
+          example: 'I verify that I control this wallet. Nonce: 019542f5-b3e7-1d02'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When this verification session expires. Prompt the user promptly; after expiry, a new verification must be started.
+          example: '2025-08-15T15:32:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When this verification was created
+          example: '2025-08-15T15:02:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this verification was last updated
+          example: '2025-08-15T15:02:00Z'
+    LivenessOwnershipVerification:
+      title: Liveness Ownership Verification
+      type: object
+      description: An ownership verification completed by the user through a hosted biometric verification flow.
+      required:
+        - id
+        - externalAccountId
+        - method
+        - status
+        - verificationLink
+        - token
+        - expiresAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this ownership verification
+          example: OwnershipVerification:019542f5-b3e7-1d02-0000-000000000002
+        externalAccountId:
+          type: string
+          description: The ID of the external account whose ownership is being verified
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
+        method:
+          type: string
+          enum:
+            - LIVENESS
+          description: The verification method. Always `LIVENESS` for this shape.
+          example: LIVENESS
+        status:
+          $ref: '#/components/schemas/OwnershipVerificationState'
+        verificationLink:
+          type: string
+          format: uri
+          description: Hosted verification URL to present to the user.
+          example: https://verify.example.com/session/019542f5-b3e7-1d02
+        token:
+          type: string
+          description: Access token for embedding the verification flow in the platform's own UI, as an alternative to `verificationLink`.
+          example: eyJhbGciOiJIUzI1NiJ9.example
+        expiresAt:
+          type: string
+          format: date-time
+          description: When this verification session expires. Prompt the user promptly; after expiry, a new verification must be started.
+          example: '2025-08-15T15:32:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When this verification was created
+          example: '2025-08-15T15:02:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When this verification was last updated
+          example: '2025-08-15T15:02:00Z'
+    OwnershipVerification:
+      description: An ownership verification for a self-custody crypto wallet external account. The shape is determined by the verification `method`.
+      oneOf:
+        - $ref: '#/components/schemas/WalletSignatureOwnershipVerification'
+        - $ref: '#/components/schemas/LivenessOwnershipVerification'
+      discriminator:
+        propertyName: method
+        mapping:
+          WALLET_SIGNATURE: '#/components/schemas/WalletSignatureOwnershipVerification'
+          LIVENESS: '#/components/schemas/LivenessOwnershipVerification'
+    OwnershipVerificationListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of ownership verifications matching the filter criteria
+          items:
+            $ref: '#/components/schemas/OwnershipVerification'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of results matching the criteria
+    OwnershipVerificationMethod:
+      type: string
+      enum:
+        - WALLET_SIGNATURE
+        - LIVENESS
+      description: |
+        The method used to verify ownership of a self-custody crypto wallet.
+
+        | Method | Description |
+        |--------|-------------|
+        | `WALLET_SIGNATURE` | Prove control of the wallet by signing a message with the wallet's key |
+        | `LIVENESS` | Prove identity via a hosted biometric verification flow |
+      example: WALLET_SIGNATURE
+    OwnershipVerificationRequest:
+      type: object
+      description: Creates an ownership verification for a self-custody crypto wallet external account.
+      required:
+        - externalAccountId
+        - method
+      properties:
+        externalAccountId:
+          type: string
+          description: The ID of the external account (self-custody crypto wallet) whose ownership is being verified.
+          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
+        method:
+          $ref: '#/components/schemas/OwnershipVerificationMethod'
+          description: The verification method to use.
+    OwnershipVerificationConfirmRequest:
+      type: object
+      description: Completes a `WALLET_SIGNATURE` ownership verification by submitting the signature the wallet produced for the verification's `messageToSign`.
+      required:
+        - signature
+        - signedAddress
+      properties:
+        signature:
+          type: string
+          description: The signature produced over the exact `messageToSign` — EIP-191 hex for EVM chains, base64 for Bitcoin, base58-encoded Ed25519 for Solana.
+          example: '0x52d75f01c9e7b8b2ce2fbcbd21bfeeee7bcd1a2f01ce6b8ad9a67a45e83a8f5d1c'
+        signedAddress:
+          type: string
+          description: The wallet address that signed the message.
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+        signatureScheme:
+          type: string
+          enum:
+            - bip137
+            - electrum
+          default: bip137
+          description: Bitcoin message-signing format. Defaults to `bip137`; use `electrum` for Electrum/Sparrow wallets. Ignored for non-Bitcoin chains.
     BeneficialOwnerListResponse:
       type: object
       required:
@@ -24692,6 +25299,10 @@ components:
         - VERIFICATION.IN_PROGRESS
         - VERIFICATION.PENDING_MANUAL_REVIEW
         - VERIFICATION.READY_FOR_VERIFICATION
+        - OWNERSHIP_VERIFICATION.PENDING_REVIEW
+        - OWNERSHIP_VERIFICATION.VERIFIED
+        - OWNERSHIP_VERIFICATION.FAILED
+        - EXTERNAL_ACCOUNT.STATUS_UPDATED
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INTERNAL_ACCOUNT.STATUS_UPDATED
         - INVITATION.CLAIMED
@@ -24886,6 +25497,19 @@ components:
               enum:
                 - INTERNAL_ACCOUNT.BALANCE_UPDATED
                 - INTERNAL_ACCOUNT.STATUS_UPDATED
+    ExternalAccountStatusWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/ExternalAccount'
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT.STATUS_UPDATED
     VerificationWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -24903,6 +25527,21 @@ components:
                 - VERIFICATION.RESOLVE_ERRORS
                 - VERIFICATION.IN_PROGRESS
                 - VERIFICATION.PENDING_MANUAL_REVIEW
+    OwnershipVerificationWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/OwnershipVerification'
+            type:
+              type: string
+              enum:
+                - OWNERSHIP_VERIFICATION.PENDING_REVIEW
+                - OWNERSHIP_VERIFICATION.VERIFIED
+                - OWNERSHIP_VERIFICATION.FAILED
     CardStateChangeWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

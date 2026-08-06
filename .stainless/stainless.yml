@@ -533,6 +533,17 @@ resources:
       submit: post /verifications
       list: get /verifications
       retrieve: get /verifications/{verificationId}
+  ownership_verifications:
+    models:
+      ownership_verification: '#/components/schemas/OwnershipVerification'
+      ownership_verification_list_response: '#/components/schemas/OwnershipVerificationListResponse'
+      ownership_verification_request: '#/components/schemas/OwnershipVerificationRequest'
+      ownership_verification_confirm_request: '#/components/schemas/OwnershipVerificationConfirmRequest'
+    methods:
+      create: post /ownership-verifications
+      list: get /ownership-verifications
+      retrieve: get /ownership-verifications/{verificationId}
+      confirm: post /ownership-verifications/{verificationId}/confirm
   discoveries:
     models:
       discovery_list_response: '#/components/schemas/DiscoveryListResponse'

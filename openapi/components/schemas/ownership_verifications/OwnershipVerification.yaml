@@ -1,0 +1,11 @@
+description: >-
+  An ownership verification for a self-custody crypto wallet external account.
+  The shape is determined by the verification `method`.
+oneOf:
+  - $ref: ./WalletSignatureOwnershipVerification.yaml
+  - $ref: ./LivenessOwnershipVerification.yaml
+discriminator:
+  propertyName: method
+  mapping:
+    WALLET_SIGNATURE: ./WalletSignatureOwnershipVerification.yaml
+    LIVENESS: ./LivenessOwnershipVerification.yaml

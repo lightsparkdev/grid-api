@@ -54,6 +54,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+      | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -95,6 +96,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+      - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
   message:
     type: string
     description: Error message
