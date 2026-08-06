@@ -12613,6 +12613,16 @@ components:
           description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
+        primaryContactFirstName:
+          type: string
+          maxLength: 250
+          description: First name of the business's primary contact — a registered director or authorised representative of the business. Required in regions where a named individual is verified against the business during onboarding (e.g. the EU). The customer's `email` and `phoneNumber` are this person's contact details.
+          example: Jane
+        primaryContactLastName:
+          type: string
+          maxLength: 250
+          description: Last name of the business's primary contact.
+          example: Smith
     BusinessCustomerFields:
       type: object
       required:
@@ -12737,6 +12747,16 @@ components:
           description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
+        primaryContactFirstName:
+          type: string
+          maxLength: 250
+          description: First name of the business's primary contact — a registered director or authorised representative of the business. Required in regions where a named individual is verified against the business during onboarding (e.g. the EU). The customer's `email` and `phoneNumber` are this person's contact details.
+          example: Jane
+        primaryContactLastName:
+          type: string
+          maxLength: 250
+          description: Last name of the business's primary contact.
+          example: Smith
     BeneficialOwnerRole:
       type: string
       enum:
@@ -13080,6 +13100,16 @@ components:
           description: List of countries of the business's expected transaction counterparties (ISO 3166-1 alpha-2)
           example:
             - US
+        primaryContactFirstName:
+          type: string
+          maxLength: 250
+          description: First name of the business's primary contact — a registered director or authorised representative of the business. Required in regions where a named individual is verified against the business during onboarding (e.g. the EU). The customer's `email` and `phoneNumber` are this person's contact details.
+          example: Jane
+        primaryContactLastName:
+          type: string
+          maxLength: 250
+          description: Last name of the business's primary contact.
+          example: Smith
     BusinessCustomerCreateRequest:
       title: Business Customer Create Request
       allOf:
