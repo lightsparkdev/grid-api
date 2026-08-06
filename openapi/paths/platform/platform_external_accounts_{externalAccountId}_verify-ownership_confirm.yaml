@@ -1,0 +1,70 @@
+parameters:
+  - name: externalAccountId
+    in: path
+    description: The unique identifier of the platform external account (self-custody crypto wallet) whose ownership is being verified.
+    required: true
+    schema:
+      type: string
+post:
+  summary: Confirm platform external account ownership verification
+  description: |
+    Complete a `WALLET_SIGNATURE` ownership verification by submitting the
+    signature the wallet produced for the `messageToSign` returned by
+    `POST /platform/external-accounts/{externalAccountId}/verify-ownership`.
+    The message must be signed exactly as returned, and the signature must be
+    submitted before the session's `expiresAt`; after expiry, start a new
+    verification.
+
+    Returns the updated external account, including its new
+    `ownershipVerificationStatus`.
+
+    This endpoint is only meaningful for accounts with an in-progress
+    `WALLET_SIGNATURE` verification. For other accounts, this returns `409`.
+  operationId: confirmPlatformExternalAccountOwnershipVerification
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/external_accounts/OwnershipVerificationConfirmRequest.yaml
+  responses:
+    '200':
+      description: Ownership verification submitted; the updated external account is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+    '400':
+      description: Invalid or expired signature
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: External account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: Ownership verification is not applicable to this external account.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

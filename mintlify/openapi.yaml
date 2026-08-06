@@ -2429,6 +2429,151 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/verify-ownership:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (self-custody crypto wallet) whose ownership is being verified.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Start external account ownership verification
+      description: |
+        Begin ownership verification for a `FIRST_PARTY` self-custody crypto wallet
+        external account. Choose a `method`:
+
+        - `WALLET_SIGNATURE` — the response includes a `messageToSign`; have the
+          wallet sign it and submit the result to
+          `POST /customers/external-accounts/{externalAccountId}/verify-ownership/confirm`
+          to complete verification synchronously.
+        - `LIVENESS` — the response includes a `verificationLink` (and a `token`
+          for embedding); the user completes a hosted biometric flow and
+          verification completes asynchronously. Status transitions are delivered
+          via `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_*` webhooks and reflected in
+          the account's `ownershipVerificationStatus`.
+
+        This endpoint is only meaningful for accounts whose
+        `ownershipVerificationStatus` is `REQUIRED` or `FAILED`. For other accounts, this returns `409`.
+      operationId: verifyExternalAccountOwnership
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerificationStartRequest'
+      responses:
+        '200':
+          description: Ownership verification started; the method-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipVerificationStart'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/verify-ownership/confirm:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the external account (self-custody crypto wallet) whose ownership is being verified.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Confirm external account ownership verification
+      description: |
+        Complete a `WALLET_SIGNATURE` ownership verification by submitting the
+        signature the wallet produced for the `messageToSign` returned by
+        `POST /customers/external-accounts/{externalAccountId}/verify-ownership`.
+        The message must be signed exactly as returned, and the signature must be
+        submitted before the session's `expiresAt`; after expiry, start a new
+        verification.
+
+        Returns the updated external account, including its new
+        `ownershipVerificationStatus`.
+
+        This endpoint is only meaningful for accounts with an in-progress
+        `WALLET_SIGNATURE` verification. For other accounts, this returns `409`.
+      operationId: confirmExternalAccountOwnershipVerification
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerificationConfirmRequest'
+      responses:
+        '200':
+          description: Ownership verification submitted; the updated external account is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Invalid or expired signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or external account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /platform/external-accounts:
     get:
       summary: List platform external accounts
@@ -2627,6 +2772,151 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /platform/external-accounts/{externalAccountId}/verify-ownership:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the platform external account (self-custody crypto wallet) whose ownership is being verified.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Start platform external account ownership verification
+      description: |
+        Begin ownership verification for a `FIRST_PARTY` self-custody crypto wallet
+        external account owned by the platform. Choose a `method`:
+
+        - `WALLET_SIGNATURE` — the response includes a `messageToSign`; have the
+          wallet sign it and submit the result to
+          `POST /platform/external-accounts/{externalAccountId}/verify-ownership/confirm`
+          to complete verification synchronously.
+        - `LIVENESS` — the response includes a `verificationLink` (and a `token`
+          for embedding); the user completes a hosted biometric flow and
+          verification completes asynchronously. Status transitions are delivered
+          via `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_*` webhooks and reflected in
+          the account's `ownershipVerificationStatus`.
+
+        This endpoint is only meaningful for accounts whose
+        `ownershipVerificationStatus` is `REQUIRED` or `FAILED`. For other accounts, this returns `409`.
+      operationId: verifyPlatformExternalAccountOwnership
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerificationStartRequest'
+      responses:
+        '200':
+          description: Ownership verification started; the method-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipVerificationStart'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /platform/external-accounts/{externalAccountId}/verify-ownership/confirm:
+    parameters:
+      - name: externalAccountId
+        in: path
+        description: The unique identifier of the platform external account (self-custody crypto wallet) whose ownership is being verified.
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Confirm platform external account ownership verification
+      description: |
+        Complete a `WALLET_SIGNATURE` ownership verification by submitting the
+        signature the wallet produced for the `messageToSign` returned by
+        `POST /platform/external-accounts/{externalAccountId}/verify-ownership`.
+        The message must be signed exactly as returned, and the signature must be
+        submitted before the session's `expiresAt`; after expiry, start a new
+        verification.
+
+        Returns the updated external account, including its new
+        `ownershipVerificationStatus`.
+
+        This endpoint is only meaningful for accounts with an in-progress
+        `WALLET_SIGNATURE` verification. For other accounts, this returns `409`.
+      operationId: confirmPlatformExternalAccountOwnershipVerification
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerificationConfirmRequest'
+      responses:
+        '200':
+          description: Ownership verification submitted; the updated external account is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Invalid or expired signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -10750,6 +11040,93 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  external-account:
+    post:
+      summary: External account ownership verification status change
+      description: |
+        Webhook that is called when the ownership verification status of an external account changes.
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+
+        ### Event types
+        - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_PENDING_REVIEW` — Fired when a submitted ownership verification enters review. The `data` payload contains the full external account object.
+        - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_VERIFIED` — Fired when ownership of the external account has been verified. The `data` payload contains the full external account object.
+        - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_FAILED` — Fired when an ownership verification attempt fails; a new verification can be started. The `data` payload contains the full external account object.
+      operationId: externalAccountWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalAccountWebhook'
+            examples:
+              ownershipVerified:
+                summary: Ownership of a self-custody wallet has been verified
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+                  type: EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_VERIFIED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: ACTIVE
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    ownershipVerificationStatus: VERIFIED
+                    accountInfo:
+                      accountType: ETHEREUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+              ownershipVerificationFailed:
+                summary: An ownership verification attempt failed
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+                  type: EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_FAILED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: ACTIVE
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    ownershipVerificationStatus: FAILED
+                    accountInfo:
+                      accountType: ETHEREUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
   verification-update:
     post:
       summary: Verification status change
@@ -11838,6 +12215,10 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+            | OWNERSHIP_TYPE_REQUIRED | `ownershipType` must be provided for this external account |
+            | WALLET_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+            | THIRD_PARTY_TRANSFER_LIMIT_EXCEEDED | The transfer exceeds the permitted amount for third-party accounts |
+            | LIGHTNING_TRANSFER_LIMIT_EXCEEDED | The transfer exceeds the permitted amount for this destination type |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -11879,6 +12260,10 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+            - OWNERSHIP_TYPE_REQUIRED
+            - WALLET_VERIFICATION_REQUIRED
+            - THIRD_PARTY_TRANSFER_LIMIT_EXCEEDED
+            - LIGHTNING_TRANSFER_LIMIT_EXCEEDED
         message:
           type: string
           description: Error message
@@ -16848,7 +17233,7 @@ components:
       enum:
         - FIRST_PARTY
         - THIRD_PARTY
-      description: Whether the external account belongs to the customer themselves (first party) or to someone else (third party)
+      description: Whether the external account belongs to the customer themselves (`FIRST_PARTY`) or to someone else (`THIRD_PARTY`). Required when creating self-custody crypto wallet external accounts on platforms subject to EU Travel Rule requirements; recommended for all other accounts, where providing it can unlock additional capabilities and smoother compliance handling.
       example: FIRST_PARTY
     BeneficiaryVerificationStatus:
       type: string
@@ -16877,6 +17262,24 @@ components:
           type: string
           description: The verified full name of the account holder as returned by the payment rail
           example: John Doe
+    OwnershipVerificationStatus:
+      type: string
+      enum:
+        - NOT_REQUIRED
+        - REQUIRED
+        - PENDING_REVIEW
+        - FAILED
+        - VERIFIED
+      description: |
+        The status of ownership verification for this external account.
+
+        | Status | Description |
+        |--------|-------------|
+        | `NOT_REQUIRED` | Ownership verification does not apply to this account |
+        | `REQUIRED` | Ownership must be verified before transfers above regulatory thresholds can be sent to this account |
+        | `PENDING_REVIEW` | A verification was submitted and is under review |
+        | `FAILED` | The most recent verification attempt failed; a new verification can be started |
+        | `VERIFIED` | Ownership has been verified; no further action is needed |
     ExternalAccountType:
       type: string
       enum:
@@ -19236,6 +19639,9 @@ components:
             beneficiaryVerifiedData:
               $ref: '#/components/schemas/BeneficiaryVerifiedData'
               description: Verified beneficiary data returned by the payment rail, if available
+            ownershipVerificationStatus:
+              $ref: '#/components/schemas/OwnershipVerificationStatus'
+              description: The status of ownership verification for this account
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountInfoOneOf'
     ExternalAccountListResponse:
@@ -20142,6 +20548,72 @@ components:
               default: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+    OwnershipVerificationMethod:
+      type: string
+      enum:
+        - WALLET_SIGNATURE
+        - LIVENESS
+      description: |
+        The method used to verify ownership of a self-custody crypto wallet.
+
+        | Method | Description |
+        |--------|-------------|
+        | `WALLET_SIGNATURE` | Prove control of the wallet by signing a message with the wallet's key |
+        | `LIVENESS` | Prove identity via a hosted biometric verification flow |
+      example: WALLET_SIGNATURE
+    OwnershipVerificationStartRequest:
+      type: object
+      description: Starts ownership verification for a self-custody crypto wallet external account.
+      required:
+        - method
+      properties:
+        method:
+          $ref: '#/components/schemas/OwnershipVerificationMethod'
+          description: The verification method to use.
+    OwnershipVerificationStart:
+      type: object
+      description: 'The material needed to complete an ownership verification. Which fields are populated depends on the requested `method`: `messageToSign` for `WALLET_SIGNATURE`; `verificationLink` and `token` for `LIVENESS`.'
+      required:
+        - expiresAt
+      properties:
+        messageToSign:
+          type: string
+          description: '`WALLET_SIGNATURE` only. The exact message the wallet must sign, character-for-character.'
+          example: 'I verify that I control this wallet. Nonce: 019542f5-b3e7-1d02'
+        verificationLink:
+          type: string
+          format: uri
+          description: '`LIVENESS` only. Hosted verification URL to present to the user.'
+          example: https://verify.example.com/session/019542f5-b3e7-1d02
+        token:
+          type: string
+          description: '`LIVENESS` only. Access token for embedding the verification flow in the platform''s own UI, as an alternative to `verificationLink`.'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When this verification session expires. Prompt the user promptly; after expiry, a new verification must be started.
+          example: '2025-08-15T15:32:00Z'
+    OwnershipVerificationConfirmRequest:
+      type: object
+      description: Completes a `WALLET_SIGNATURE` ownership verification by submitting the signature the wallet produced for the `messageToSign` from the start step.
+      required:
+        - signature
+        - signedAddress
+      properties:
+        signature:
+          type: string
+          description: The signature produced over the exact `messageToSign` — EIP-191 hex for EVM chains, base64 for Bitcoin, base58-encoded Ed25519 for Solana.
+        signedAddress:
+          type: string
+          description: The wallet address that signed the message.
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+        signatureScheme:
+          type: string
+          enum:
+            - bip137
+            - electrum
+          default: bip137
+          description: Bitcoin message-signing format. Defaults to `bip137`; use `electrum` for Electrum/Sparrow wallets. Ignored for non-Bitcoin chains.
     PlatformExternalAccountCreateRequest:
       type: object
       required:
@@ -24692,6 +25164,9 @@ components:
         - VERIFICATION.IN_PROGRESS
         - VERIFICATION.PENDING_MANUAL_REVIEW
         - VERIFICATION.READY_FOR_VERIFICATION
+        - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_PENDING_REVIEW
+        - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_VERIFIED
+        - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_FAILED
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INTERNAL_ACCOUNT.STATUS_UPDATED
         - INVITATION.CLAIMED
@@ -24886,6 +25361,21 @@ components:
               enum:
                 - INTERNAL_ACCOUNT.BALANCE_UPDATED
                 - INTERNAL_ACCOUNT.STATUS_UPDATED
+    ExternalAccountWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/ExternalAccount'
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_PENDING_REVIEW
+                - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_VERIFIED
+                - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_FAILED
     VerificationWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

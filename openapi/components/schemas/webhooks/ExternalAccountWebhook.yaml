@@ -1,0 +1,14 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ../external_accounts/ExternalAccount.yaml
+      type:
+        type: string
+        enum:
+          - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_PENDING_REVIEW
+          - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_VERIFIED
+          - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_FAILED

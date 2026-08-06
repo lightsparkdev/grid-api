@@ -1,0 +1,17 @@
+type: string
+enum:
+  - NOT_REQUIRED
+  - REQUIRED
+  - PENDING_REVIEW
+  - FAILED
+  - VERIFIED
+description: |
+  The status of ownership verification for this external account.
+
+  | Status | Description |
+  |--------|-------------|
+  | `NOT_REQUIRED` | Ownership verification does not apply to this account |
+  | `REQUIRED` | Ownership must be verified before transfers above regulatory thresholds can be sent to this account |
+  | `PENDING_REVIEW` | A verification was submitted and is under review |
+  | `FAILED` | The most recent verification attempt failed; a new verification can be started |
+  | `VERIFIED` | Ownership has been verified; no further action is needed |

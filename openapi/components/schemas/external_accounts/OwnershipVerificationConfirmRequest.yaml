@@ -1,0 +1,26 @@
+type: object
+description: >-
+  Completes a `WALLET_SIGNATURE` ownership verification by submitting the
+  signature the wallet produced for the `messageToSign` from the start step.
+required:
+  - signature
+  - signedAddress
+properties:
+  signature:
+    type: string
+    description: >-
+      The signature produced over the exact `messageToSign` — EIP-191 hex for
+      EVM chains, base64 for Bitcoin, base58-encoded Ed25519 for Solana.
+  signedAddress:
+    type: string
+    description: The wallet address that signed the message.
+    example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+  signatureScheme:
+    type: string
+    enum:
+      - bip137
+      - electrum
+    default: bip137
+    description: >-
+      Bitcoin message-signing format. Defaults to `bip137`; use `electrum` for
+      Electrum/Sparrow wallets. Ignored for non-Bitcoin chains.
