@@ -11058,6 +11058,8 @@ webhooks:
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
 
         ### Event types
+        - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_NOT_REQUIRED` — Fired when an external account is created and ownership verification does not apply to it. The `data` payload contains the full external account object.
+        - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_REQUIRED` — Fired when an external account requires ownership verification before transfers above regulatory thresholds can be sent to it. The `data` payload contains the full external account object.
         - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_PENDING_REVIEW` — Fired when a submitted ownership verification enters review. The `data` payload contains the full external account object.
         - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_VERIFIED` — Fired when ownership of the external account has been verified. The `data` payload contains the full external account object.
         - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_FAILED` — Fired when an ownership verification attempt fails; a new verification can be started. The `data` payload contains the full external account object.
@@ -25164,6 +25166,8 @@ components:
         - VERIFICATION.IN_PROGRESS
         - VERIFICATION.PENDING_MANUAL_REVIEW
         - VERIFICATION.READY_FOR_VERIFICATION
+        - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_NOT_REQUIRED
+        - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_REQUIRED
         - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_PENDING_REVIEW
         - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_VERIFIED
         - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_FAILED
@@ -25373,6 +25377,8 @@ components:
             type:
               type: string
               enum:
+                - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_NOT_REQUIRED
+                - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_REQUIRED
                 - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_PENDING_REVIEW
                 - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_VERIFIED
                 - EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_FAILED

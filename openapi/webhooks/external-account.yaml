@@ -29,6 +29,15 @@ post:
 
     ### Event types
 
+    - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_NOT_REQUIRED` — Fired when an
+    external account is created and ownership verification does not apply to
+    it. The `data` payload contains the full external account object.
+
+    - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_REQUIRED` — Fired when an
+    external account requires ownership verification before transfers above
+    regulatory thresholds can be sent to it. The `data` payload contains the
+    full external account object.
+
     - `EXTERNAL_ACCOUNT.OWNERSHIP_VERIFICATION_PENDING_REVIEW` — Fired when a
     submitted ownership verification enters review. The `data` payload contains
     the full external account object.
