@@ -30,7 +30,7 @@ properties:
       | INVALID_PUBKEY_FORMAT | Counterparty Public key format is invalid |
       | MISSING_REQUIRED_UMA_PARAMETERS | Counterparty required UMA parameters are missing |
       | SENDER_NOT_ACCEPTED | Sender is not accepted |
-      | AMOUNT_OUT_OF_RANGE | Amount is out of range |
+      | AMOUNT_OUT_OF_RANGE | Amount is out of range for the quote or the destination account |
       | INVALID_CURRENCY | Currency is invalid |
       | INVALID_TIMESTAMP | Timestamp is invalid |
       | INVALID_NONCE | Nonce is invalid |
@@ -54,10 +54,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
-      | OWNERSHIP_TYPE_REQUIRED | `ownershipType` must be provided for this external account |
       | WALLET_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
-      | THIRD_PARTY_TRANSFER_LIMIT_EXCEEDED | The transfer exceeds the permitted amount for third-party accounts |
-      | LIGHTNING_TRANSFER_LIMIT_EXCEEDED | The transfer exceeds the permitted amount for this destination type |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -99,10 +96,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
-      - OWNERSHIP_TYPE_REQUIRED
       - WALLET_VERIFICATION_REQUIRED
-      - THIRD_PARTY_TRANSFER_LIMIT_EXCEEDED
-      - LIGHTNING_TRANSFER_LIMIT_EXCEEDED
   message:
     type: string
     description: Error message

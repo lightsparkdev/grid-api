@@ -1,0 +1,109 @@
+post:
+  summary: Ownership verification status change
+  description: >
+    Webhook that is called when the status of an ownership verification
+    changes.
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+
+
+    ### Event types
+
+    - `OWNERSHIP_VERIFICATION.PENDING_REVIEW` — Fired when a submitted
+    ownership verification enters review. The `data` payload contains the full
+    ownership verification object.
+
+    - `OWNERSHIP_VERIFICATION.VERIFIED` — Fired when ownership of the external
+    account has been verified. The `data` payload contains the full ownership
+    verification object.
+
+    - `OWNERSHIP_VERIFICATION.FAILED` — Fired when an ownership verification
+    attempt fails; start a new verification to retry. The `data` payload
+    contains the full ownership verification object.
+
+
+  operationId: ownershipVerificationWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/OwnershipVerificationWebhook.yaml
+        examples:
+          verified:
+            summary: Ownership of a self-custody wallet has been verified
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000040
+              type: OWNERSHIP_VERIFICATION.VERIFIED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: OwnershipVerification:019542f5-b3e7-1d02-0000-000000000001
+                externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
+                method: WALLET_SIGNATURE
+                status: VERIFIED
+                messageToSign: 'I verify that I control this wallet. Nonce: 019542f5-b3e7-1d02'
+                expiresAt: '2025-08-15T15:32:00Z'
+                createdAt: '2025-08-15T15:02:00Z'
+                updatedAt: '2025-08-15T14:32:00Z'
+          failed:
+            summary: An ownership verification attempt failed
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000041
+              type: OWNERSHIP_VERIFICATION.FAILED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: OwnershipVerification:019542f5-b3e7-1d02-0000-000000000002
+                externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
+                method: LIVENESS
+                status: FAILED
+                verificationLink: https://verify.example.com/session/019542f5-b3e7-1d02
+                token: eyJhbGciOiJIUzI1NiJ9.example
+                expiresAt: '2025-08-15T15:32:00Z'
+                createdAt: '2025-08-15T15:02:00Z'
+                updatedAt: '2025-08-15T14:32:00Z'
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml

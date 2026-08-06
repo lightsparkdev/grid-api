@@ -42,8 +42,5 @@ allOf:
       beneficiaryVerifiedData:
         $ref: ./BeneficiaryVerifiedData.yaml
         description: Verified beneficiary data returned by the payment rail, if available
-      ownershipVerificationStatus:
-        $ref: ./OwnershipVerificationStatus.yaml
-        description: The status of ownership verification for this account
       accountInfo:
         $ref: ./ExternalAccountInfoOneOf.yaml

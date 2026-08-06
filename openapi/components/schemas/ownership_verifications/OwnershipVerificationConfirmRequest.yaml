@@ -1,7 +1,7 @@
 type: object
 description: >-
   Completes a `WALLET_SIGNATURE` ownership verification by submitting the
-  signature the wallet produced for the `messageToSign` from the start step.
+  signature the wallet produced for the verification's `messageToSign`.
 required:
   - signature
   - signedAddress
@@ -11,6 +11,7 @@ properties:
     description: >-
       The signature produced over the exact `messageToSign` — EIP-191 hex for
       EVM chains, base64 for Bitcoin, base58-encoded Ed25519 for Solana.
+    example: '0x52d75f01c9e7b8b2ce2fbcbd21bfeeee7bcd1a2f01ce6b8ad9a67a45e83a8f5d1c'
   signedAddress:
     type: string
     description: The wallet address that signed the message.
