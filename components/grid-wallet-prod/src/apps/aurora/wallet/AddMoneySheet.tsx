@@ -72,10 +72,17 @@ export type {
   TransferActivity,
 };
 
+/** Corridor copy differs by direction: money can only ARRIVE over the rails this
+ *  wallet settles, but it can be PAID OUT to every corridor in the picker. */
+const BANK_SUB = {
+  funding: 'ACH in the US, SEPA across the euro area',
+  payout: 'Local transfer in 55+ countries',
+};
+
 // Add-money source visuals — Aurora owns the icon + copy per source id; the brain
 // supplies only the ordered ids + routing (the face is where icons live).
 const SOURCE_COPY: Record<string, { title: string; sub: string; speed: string }> = {
-  bank: { title: 'Bank account', sub: 'ACH in the US, SEPA across the euro area', speed: 'Instant' },
+  bank: { title: 'Bank account', sub: BANK_SUB.payout, speed: 'Instant' },
   crypto: { title: 'Crypto wallet', sub: 'Spark, Solana, Base address', speed: 'Instant' },
   cashapp: { title: 'Cash App', sub: 'Use your Cash App balance', speed: 'Instant' },
   applepay: { title: 'Apple Pay', sub: 'Use Apple Wallet', speed: 'Instant' },
@@ -757,7 +764,8 @@ export function AddMoneySheet({
                         <span className={clsx(styles.sourceContent, styles.sourceContentBordered)}>
                           <span className={styles.sourceLabels}>
                             <span className={styles.rowTitle}>Bank account</span>
-                            <span className={styles.rowSub}>ACH in the US, SEPA across the euro area</span>
+                            {/* Receive-only row: who can pay you is the full list. */}
+                            <span className={styles.rowSub}>{BANK_SUB.payout}</span>
                             <span className={styles.rowSub}>Instant</span>
                           </span>
                           <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
@@ -1052,6 +1060,9 @@ export function AddMoneySheet({
                     {sources.map((id, i) => {
                       const active = activeSources.find((a) => a.id === id);
                       const copy = SOURCE_COPY[id];
+                      // Same row, different corridors by direction (see BANK_SUB).
+                      const sub =
+                        id === 'bank' && mode === 'add' ? BANK_SUB.funding : copy.sub;
                       // Crypto uses the glyph in withdraw/send; everything else (and
                       // add-mode crypto) is the polished SVG.
                       const Glyph = id === 'crypto' && mode !== 'add' ? IconWallet1 : null;
@@ -1091,7 +1102,7 @@ export function AddMoneySheet({
                         >
                           <span className={styles.sourceLabels}>
                             <span className={styles.rowTitle}>{copy.title}</span>
-                            <span className={styles.rowSub}>{copy.sub}</span>
+                            <span className={styles.rowSub}>{sub}</span>
                             <span className={styles.rowSub}>{copy.speed}</span>
                           </span>
                           <SfSymbol name="chevron.right" size={14} className={styles.chevron} />
@@ -1124,8 +1135,10 @@ export function AddMoneySheet({
                         emptyTitle={isSend ? 'No recipients yet' : 'No bank accounts yet'}
                         emptySub={
                           isSend
-                            ? 'Send to a US or euro-area bank account, or any crypto wallet'
-                            : 'Add a US or euro-area bank account to get started'
+                            ? 'Send to a bank account in 55+ countries, or any crypto wallet'
+                            : mode === 'add'
+                              ? 'Add a US or euro-area bank account to get started'
+                              : 'Add a bank account in 55+ countries to cash out'
                         }
                         cta={{
                           label: isSend ? 'Add recipient' : 'Add bank',
