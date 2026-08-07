@@ -206,6 +206,7 @@ resources:
           polygon_wallet_info: '#/components/schemas/PolygonWalletExternalAccountInfo'
           lightning_wallet_info: '#/components/schemas/LightningExternalAccountInfo'
           base_wallet_info: '#/components/schemas/BaseWalletExternalAccountInfo'
+          bitcoin_wallet_info: '#/components/schemas/BitcoinWalletExternalAccountInfo'
           external_account: '#/components/schemas/ExternalAccount'
           external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
           external_account_info_one_of: "#/components/schemas/ExternalAccountInfoOneOf"
@@ -939,6 +940,7 @@ openapi:
           - "$.components.schemas.PlasmaWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.PolygonWalletExternalAccountInfo.allOf[0]"
           - "$.components.schemas.BaseWalletExternalAccountInfo.allOf[0]"
+          - "$.components.schemas.BitcoinWalletExternalAccountInfo.allOf[0]"
         keys: [ "$ref" ]
 
     # ── Remove $ref to BaseQuoteSource from quote source variants ──

@@ -38,6 +38,7 @@ oneOf:
 - $ref: ./ZmwExternalAccountCreateInfo.yaml
 - $ref: ./SwiftExternalAccountCreateInfo.yaml
 - $ref: ./BaseWalletExternalAccountInfo.yaml
+- $ref: ./BitcoinWalletExternalAccountInfo.yaml
 - $ref: ./EthereumWalletExternalAccountInfo.yaml
 - $ref: ./LightningExternalAccountInfo.yaml
 - $ref: ./PolygonWalletExternalAccountInfo.yaml
@@ -87,6 +88,7 @@ discriminator:
     ZMW_ACCOUNT: ./ZmwExternalAccountCreateInfo.yaml
     SWIFT_ACCOUNT: ./SwiftExternalAccountCreateInfo.yaml
     BASE_WALLET: ./BaseWalletExternalAccountInfo.yaml
+    BITCOIN_L1: ./BitcoinWalletExternalAccountInfo.yaml
     ETHEREUM_WALLET: ./EthereumWalletExternalAccountInfo.yaml
     LIGHTNING: ./LightningExternalAccountInfo.yaml
     POLYGON_WALLET: ./PolygonWalletExternalAccountInfo.yaml
