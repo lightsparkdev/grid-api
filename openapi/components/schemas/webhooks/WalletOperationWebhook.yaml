@@ -1,0 +1,13 @@
+allOf:
+  - $ref: ./BaseWebhook.yaml
+  - type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: ./WalletOperationWebhookData.yaml
+      type:
+        type: string
+        enum:
+          - WALLET_OPERATION.COMPLETED
+          - WALLET_OPERATION.FAILED
