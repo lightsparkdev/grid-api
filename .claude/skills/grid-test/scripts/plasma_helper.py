@@ -155,13 +155,21 @@ def cmd_send_usdt(args):
 
     nonce = w3.eth.get_transaction_count(acct.address)
 
+    # maxFeePerGas must never fall below maxPriorityFeePerGas, or the node
+    # rejects the tx outright. Deriving it from the block's base fee keeps
+    # that true even when base fee is far below the priority tip, which is
+    # routine on low-fee chains during quiet periods.
+    priority_fee = w3.to_wei(NET["priority_fee_gwei"], "gwei")
+    base_fee = w3.eth.get_block("latest").get("baseFeePerGas") or w3.eth.gas_price
+    max_fee = base_fee * 2 + priority_fee
+
     tx = usdt.functions.transfer(recipient, amount).build_transaction({
         "chainId": NET["chain_id"],
         "from": acct.address,
         "nonce": nonce,
         "gas": 100_000,
-        "maxFeePerGas": w3.eth.gas_price * 2,
-        "maxPriorityFeePerGas": w3.to_wei(NET["priority_fee_gwei"], "gwei"),
+        "maxFeePerGas": max_fee,
+        "maxPriorityFeePerGas": priority_fee,
     })
 
     signed = acct.sign_transaction(tx)
