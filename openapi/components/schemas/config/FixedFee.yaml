@@ -1,0 +1,21 @@
+type: object
+description: Fixed fee charged per transaction.
+required:
+  - amount
+  - currency
+properties:
+  amount:
+    type: integer
+    format: int64
+    minimum: 0
+    description: >-
+      Fee amount in the smallest unit of the fixed fee's `currency`
+      (e.g., cents for USD).
+    example: 100
+  currency:
+    type: string
+    description: >-
+      Three-letter currency code (ISO 4217) the fixed fee is denominated
+      in. Some cryptocurrencies may use their own ticker symbols (e.g.
+      "BTC" for Bitcoin, "USDC" for USDC, etc.)
+    example: USD
