@@ -12,7 +12,7 @@ extends the Transaction model with a card destination type).
 
 | Type | Fires on |
 |------|----------|
-| `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
+| `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `PROCESSING → PENDING_AUTH`, `PENDING_AUTH → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
 
 All three carry the standard envelope:
