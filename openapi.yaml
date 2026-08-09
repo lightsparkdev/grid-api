@@ -8403,6 +8403,8 @@ paths:
 
         Request the reveal right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
 
+        Requires a token with the `MANAGE` permission; `VIEW` alone is not sufficient to mint a reveal URL.
+
         Every reveal is audit-logged with the requesting actor.
       operationId: revealCard
       tags:
@@ -8423,7 +8425,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Forbidden. The session has no attributable actor to audit the reveal against (for example, an impersonated dashboard session).
+          description: Forbidden. The token lacks the `MANAGE` permission, or the session has no attributable actor to audit the reveal against (for example, an impersonated dashboard session).
           content:
             application/json:
               schema:
