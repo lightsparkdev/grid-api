@@ -2,14 +2,24 @@ Every signed Global Account action uses two key pairs:
 
 | Key pair | Where it lives | What it does |
 |---|---|---|
-| **Client key pair** (P-256) | On the customer's device, generated fresh per session-issuing or export request | Used as the HPKE recipient key so Grid can encrypt session keys or wallet export credentials to the client. Ephemeral — one pair per authentication, session refresh, or wallet export. |
-| **Session signing key** (P-256) | Issued by Grid, encrypted to the client public key, decrypted and held on the device | Signs every account action for the lifetime of the session (default 15 minutes). |
+| **Client key pair** (P-256) | On the customer's device, generated fresh per session-issuing or export request | In the recommended client-held-key flow, its private key becomes the session signing key directly. In the legacy flow, its public key is the recipient key Grid encrypts the session key (or wallet export credentials) to. Ephemeral — one pair per authentication, session refresh, or wallet export. |
+| **Session signing key** (P-256) | Held on the customer's device | Signs every account action for the lifetime of the session (default 15 minutes). In the client-held-key flow it is the client key pair's private key; in the legacy flow Grid issues it encrypted to the client public key for the client to decrypt. |
 
-This page covers generating the client key pair, sending the public key to your backend, decrypting the session signing key, and signing payloads. Everything here runs **on the client**; your integrator backend only relays opaque byte strings.
+This page covers generating the client key pair, sending the public key to your backend, holding (or, in the legacy flow, decrypting) the session signing key, and signing payloads. Everything here runs **on the client**; your integrator backend only relays opaque byte strings.
+
+## Client-held session key
+
+In the **recommended client-held-key flow**, the key pair you generate in step 1 *is* your session key: you keep the private key on the device and use it directly to sign account actions. There is no session key to receive or decrypt, and Grid never transmits one — so the verify, refresh, and challenge responses omit `encryptedSessionSigningKey`. This is how `EMAIL_OTP` and `SMS_OTP` have always worked; `OAUTH` and `PASSKEY` now follow the same model.
+
+To use it, send `clientPublicKey` in **compressed** SEC1 form — a 66-character hex string starting with `02` or `03` (the prefix followed by the 32-byte X coordinate). Grid treats a compressed key as a request to adopt it as the session signing key and returns an `AuthSession` with no `encryptedSessionSigningKey`. You then skip steps 2–3 and sign each `payloadToSign` with the private key you kept, exactly as in <a href="#4-sign-a-payloadtosign">step 4</a>. Because this key signs directly, generate it as a P-256 **signing** key (ECDSA) — not the ECDH recipient key the step 1 samples below create for the legacy decrypt flow.
+
+<Note>
+  Sending `clientPublicKey` in **uncompressed** SEC1 form (130 hex characters, `04` prefix) selects the deprecated legacy flow, in which Grid seals the session signing key to your public key and returns it as `encryptedSessionSigningKey` for you to decrypt — steps 2 and 3 below. New integrations should send the compressed key and hold their own session key.
+</Note>
 
 ## 1. Generate a client key pair
 
-Generate a fresh P-256 key pair for every authentication, session refresh, and wallet export. The public key is sent to Grid as `clientPublicKey` — for `PASSKEY` credentials this happens on `POST /auth/credentials/{id}/challenge`; for `EMAIL_OTP` and `OAUTH` it happens on `POST /auth/credentials/{id}/verify`; for session refresh it goes on both `/auth/sessions/{id}/refresh` calls; for wallet export it goes on both `/export` calls. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded — a 130-character string starting with `04` — through your integrator backend. The Web Crypto, iOS, and Android APIs shown below all produce this format natively.
+Generate a fresh P-256 key pair for every authentication, session refresh, and wallet export. The public key is sent to Grid as `clientPublicKey` — for `PASSKEY` credentials this happens on `POST /auth/credentials/{id}/challenge`; for `EMAIL_OTP` and `OAUTH` it happens on `POST /auth/credentials/{id}/verify`; for session refresh it goes on both `/auth/sessions/{id}/refresh` calls; for wallet export it goes on both `/export` calls. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded through your integrator backend. For the recommended client-held-key flow, send the **compressed** form — a 66-character string starting with `02` or `03` (see [Client-held session key](#client-held-session-key)). For the legacy flow, send the **uncompressed** form — a 130-character string starting with `04`, which the Web Crypto, iOS, and Android APIs below produce natively.
 
 <Tip>
   For local development, you can generate a P-256 key pair from the command line:
@@ -165,6 +175,10 @@ function buildEncryptedOtpBundle(
 The private key of the pair you generated in step 1 stays on the device — it becomes the session signing key once verification completes (see <a href="#4-sign-a-payloadtosign">Sign a `payloadToSign`</a>), so `EMAIL_OTP` responses omit `encryptedSessionSigningKey`.
 
 ## 2. Verify the credential and receive the encrypted session signing key
+
+<Note>
+  Steps 2 and 3 apply to the **legacy** flow only (uncompressed `clientPublicKey`). In the recommended [client-held-key flow](#client-held-session-key) the response has no `encryptedSessionSigningKey` to receive or decrypt — skip to <a href="#4-sign-a-payloadtosign">step 4</a>.
+</Note>
 
 Your client sends `publicKeyHex` to your integrator backend along with whatever the credential type requires (OTP value, OIDC token, or WebAuthn assertion — see <a href="authentication">Authentication</a>). Your backend calls `POST /auth/credentials/{id}/verify` and returns the `encryptedSessionSigningKey` from Grid's response to the client.
 
