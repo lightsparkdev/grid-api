@@ -480,7 +480,7 @@ The lowest-friction credential type — works on any device with email access an
 
 Grid creates the first `EMAIL_OTP` credential when the Global Account is provisioned. The credential uses the customer email on file for the internal account. To authenticate with it, send an OTP challenge, then verify using the secure encrypted OTP flow.
 
-The client never sends the plaintext OTP code. Instead, it HPKE-encrypts the code (together with a fresh public key) to an enclave bundle returned from the challenge. The server is a pass-through and never sees the plaintext.
+The client never sends the plaintext OTP code. Instead, it HPKE-encrypts the code (together with a fresh public key) to an encryption target bundle returned from the challenge. The server is a pass-through and never sees the plaintext.
 
 ```mermaid
 sequenceDiagram
@@ -495,7 +495,7 @@ sequenceDiagram
   G-->>IB: 200 AuthMethod + otpEncryptionTargetBundle
   IB-->>C: { otpEncryptionTargetBundle }
   E-->>C: OTP code
-  C->>C: generateClientKeyPair() (TEK)
+  C->>C: generateClientKeyPair()
   C->>C: HPKE-encrypt { otp_code, public_key } → encryptedOtpBundle
   C->>IB: POST /my-backend/otp/verify { encryptedOtpBundle }
   IB->>G: POST /auth/credentials/{id}/verify { type: EMAIL_OTP, encryptedOtpBundle }
@@ -527,7 +527,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 }
 ```
 
-The client generates a fresh P-256 key pair (the TEK — Target Encryption Key), HPKE-encrypts `{otp_code, public_key}` under `otpEncryptionTargetBundle`, and submits the encrypted payload. See <a href="client-keys#encrypt-the-otp-code-email_otp-only">Encrypt the OTP code</a> for implementation details.
+The client generates a fresh ephemeral P-256 key pair, HPKE-encrypts `{otp_code, public_key}` under `otpEncryptionTargetBundle`, and submits the encrypted payload. See <a href="client-keys#encrypt-the-otp-code-email_otp-only">Encrypt the OTP code</a> for implementation details.
 
 Then verify with the encrypted OTP bundle:
 
@@ -552,7 +552,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 }
 ```
 
-The client signs `payloadToSign` with the TEK private key (the same key whose public key was encrypted in the bundle), then retries with the stamp:
+The client signs `payloadToSign` with the private key it generated (the same key whose public key was encrypted in the bundle), then retries with the stamp:
 
 ```bash
 curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000004/verify" \
@@ -580,7 +580,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 }
 ```
 
-The TEK public key becomes the session API key. Unlike `OAUTH` and `PASSKEY` flows, `EMAIL_OTP` does **not** return `encryptedSessionSigningKey` — the client already holds the session signing key (the TEK private key it generated).
+The client's public key becomes the session API key. Unlike `OAUTH` and `PASSKEY` flows, `EMAIL_OTP` does **not** return `encryptedSessionSigningKey` — the client already holds the session signing key (the private key it generated).
 
 <Note>
   **In sandbox, the OTP code is always `000000`** — encrypt that value in the bundle. The sandbox runs real HPKE end-to-end; the only shortcut is skipping email delivery. See <a href="client-keys#encrypt-the-otp-code-email_otp-only">Client keys</a> for the encryption flow.
@@ -601,7 +601,7 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 
 ### Email OTP reauthentication
 
-Same pattern as the first activation: call `/challenge` to send a new OTP and receive a fresh `otpEncryptionTargetBundle`, generate a new TEK key pair, build the `encryptedOtpBundle`, and complete the two-step verify flow.
+Same pattern as the first activation: call `/challenge` to send a new OTP and receive a fresh `otpEncryptionTargetBundle`, generate a new ephemeral P-256 key pair, build the `encryptedOtpBundle`, and complete the two-step verify flow.
 
 ### Changing the email OTP address
 

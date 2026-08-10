@@ -5447,7 +5447,7 @@ paths:
 
         Export is a two-step signed-retry flow (same pattern as add-additional credential, revoke credential, and revoke session):
 
-        1. Call `POST /internal-accounts/{id}/export` with the request body `{ "clientPublicKey": "..." }` and no signature headers. Grid binds the `clientPublicKey` into the `payloadToSign` it returns, so the subsequent stamp in `Grid-Wallet-Signature` commits to the target encryption key. The response is `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+        1. Call `POST /internal-accounts/{id}/export` with the request body `{ "clientPublicKey": "..." }` and no signature headers. Grid binds the `clientPublicKey` into the `payloadToSign` it returns, so the subsequent stamp in `Grid-Wallet-Signature` commits to the encryption key. The response is `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
         2. Use the session API keypair of a verified authentication credential on the same internal account to build an API-key stamp over `payloadToSign`, then retry with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the **same** `clientPublicKey` submitted in step 1 — Grid rejects the retry with `401` if it disagrees with what was bound into `payloadToSign`. The signed retry returns `200` with `encryptedWalletCredentials`, which the client decrypts with the matching private key.
 
@@ -5847,12 +5847,12 @@ paths:
       description: |
         Complete the verification step for a previously created authentication credential and issue a session.
 
-        For `EMAIL_OTP` and `SMS_OTP` credentials, submit the `encryptedOtpBundle` produced by HPKE-encrypting `{otp_code, public_key}` under the `otpEncryptionTargetBundle` returned from registration when present, or from `POST /auth/credentials/{id}/challenge` when registration omitted it or the OTP must be reissued. The server is a pass-through and never sees the plaintext OTP code. On success the response is `202` with a `payloadToSign` carrying the `verificationToken` bound to the client's TEK public key — sign that token with the matching TEK private key, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`. The signed retry returns `200` with the issued `AuthSession`. The TEK public key becomes the session API key on successful completion.
-        In sandbox mode, the OTP flow runs real HPKE end-to-end against a sandbox enclave keypair — clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with their TEK keypair. The only sandbox shortcut is the magic OTP code (`"000000"`) the user "receives" instead of a real email or SMS delivery.
+        For `EMAIL_OTP` and `SMS_OTP` credentials, submit the `encryptedOtpBundle` produced by HPKE-encrypting `{otp_code, public_key}` under the `otpEncryptionTargetBundle` returned from registration when present, or from `POST /auth/credentials/{id}/challenge` when registration omitted it or the OTP must be reissued. The server is a pass-through and never sees the plaintext OTP code. On success the response is `202` with a `payloadToSign` carrying the `verificationToken` bound to the client's public key — sign that token with the matching private key, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`. The signed retry returns `200` with the issued `AuthSession`. The client's public key becomes the session API key on successful completion.
+        In sandbox mode, the OTP flow runs real HPKE end-to-end against a sandbox keypair — clients build a real `encryptedOtpBundle` against the sandbox `otpEncryptionTargetBundle` and sign a real `verificationToken` with the keypair they generated. The only sandbox shortcut is the magic OTP code (`"000000"`) the user "receives" instead of a real email or SMS delivery.
 
         For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
 
-        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. For `OAUTH` and `PASSKEY` the session signing key is delivered as `encryptedSessionSigningKey` (HPKE-sealed to the supplied `clientPublicKey`); for OTP credentials the client already holds the session signing key (the TEK private key it generated) and that field is omitted from the response. The `expiresAt` timestamp marks when the session expires.
+        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. For `OAUTH` and `PASSKEY` the session signing key is delivered as `encryptedSessionSigningKey` (HPKE-sealed to the supplied `clientPublicKey`); for OTP credentials the client already holds the session signing key (the private key it generated) and that field is omitted from the response. The `expiresAt` timestamp marks when the session expires.
       operationId: verifyAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -5868,7 +5868,7 @@ paths:
         - name: Grid-Wallet-Signature
           in: header
           required: false
-          description: Full API-key stamp built over the prior `payloadToSign` with the TEK (Target Encryption Key) keypair the client generated for this login. Required on the signed retry that completes an `EMAIL_OTP` or `SMS_OTP` verification. Not used by `OAUTH` or `PASSKEY` verification, which complete in a single call.
+          description: Full API-key stamp built over the prior `payloadToSign` with the keypair the client generated for this login. Required on the signed retry that completes an `EMAIL_OTP` or `SMS_OTP` verification. Not used by `OAUTH` or `PASSKEY` verification, which complete in a single call.
           schema:
             type: string
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
@@ -5925,7 +5925,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthSession'
         '202':
-          description: Verification challenge issued. Returned only for OTP credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
+          description: Verification challenge issued. Returned only for OTP credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
           content:
             application/json:
               schema:
@@ -5935,7 +5935,7 @@ paths:
                   summary: Email OTP verification challenge (sign and retry)
                   value:
                     type: EMAIL_OTP
-                    payloadToSign: eyJhbGciOiJFUzI1NiIsImtpZCI6InR1cm5rZXkifQ.eyJzdWIiOiJUWnk2NkVPa1RGYTd2NkpXZ0VxaVgyZGFXOENXc2pMQzVDVU9aRUlGY3hzIiwiaWF0IjoxNzc5NDA3MjIxLCJleHAiOjE3Nzk0MTA4MjF9.gKX9MWYGkw8Y55bgzsgrRftvUHFruIe8yu0w9Kpjp5qnrZnXcTV71WVoltGPsr015IY_oRTOkIFLHmiGNG9zBw
+                    payloadToSign: eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJUWnk2NkVPa1RGYTd2NkpXZ0VxaVgyZGFXOENXc2pMQzVDVU9aRUlGY3hzIiwiaWF0IjoxNzc5NDA3MjIxLCJleHAiOjE3Nzk0MTA4MjF9.gKX9MWYGkw8Y55bgzsgrRftvUHFruIe8yu0w9Kpjp5qnrZnXcTV71WVoltGPsr015IY_oRTOkIFLHmiGNG9zBw
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
@@ -22695,7 +22695,7 @@ components:
           properties:
             otpEncryptionTargetBundle:
               type: string
-              description: HPKE encryption target bundle for a freshly initiated OTP challenge. Returned only on `EMAIL_OTP` and `SMS_OTP` responses that initiate or reissue an OTP challenge, such as `POST /auth/credentials/{id}/challenge` and signed-retry add responses. It is omitted from first-time EMAIL_OTP wallet bootstrap registration; call `POST /auth/credentials/{id}/challenge` for the new credential if it is absent. The client generates an ephemeral P-256 keypair (the Target Encryption Key, or TEK) and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching TEK private key must remain on the client and is used to sign the `verificationToken` returned on the subsequent signed-retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
+              description: HPKE encryption target bundle for a freshly initiated OTP challenge. Returned only on `EMAIL_OTP` and `SMS_OTP` responses that initiate or reissue an OTP challenge, such as `POST /auth/credentials/{id}/challenge` and signed-retry add responses. It is omitted from first-time EMAIL_OTP wallet bootstrap registration; call `POST /auth/credentials/{id}/challenge` for the new credential if it is absent. The client generates an ephemeral P-256 keypair and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching private key must remain on the client and is used to sign the `verificationToken` returned on the subsequent signed-retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
               example: '{"version":"v1.0.0","data":"7b227461726765745075626c6963...","dataSignature":"30450221...","enclaveQuorumPublic":"04a1b2c3..."}'
       unevaluatedProperties: false
     AuthSignedRequestChallenge:
@@ -22703,7 +22703,7 @@ components:
       description: |-
         202 response returned from Embedded Wallet Auth endpoints that require a signed retry — `POST /auth/credentials` (adding an additional credential), `DELETE /auth/credentials/{id}` (revoking a credential), `DELETE /auth/sessions/{id}` (revoking a session), and the `EMAIL_OTP` / `SMS_OTP` branch of `POST /auth/credentials/{id}/verify` (the secure OTP login flow, where the client submits an `encryptedOtpBundle` and receives a `verificationToken` to sign for the second-leg session issuance). Carries the signing fields from `SignedRequestChallenge` plus the `type` of the authentication credential involved (being added, revoked, that issued the session being revoked, or being authenticated). The client already knows the target resource id from the request path / body it just sent, so nothing beyond `type` is echoed in the response.
 
-        The keypair used to compute the stamp depends on the operation. For credential / session management retries, sign with the session API keypair of an existing verified credential on the same internal account. For OTP verify retries, sign with the ephemeral Target Encryption Key (TEK) the client generated for this login — its public key is the one carried inside the `encryptedOtpBundle` and bound into the `verificationToken`, and it becomes the client's session API key on successful completion.
+        The keypair used to compute the stamp depends on the operation. For credential / session management retries, sign with the session API keypair of an existing verified credential on the same internal account. For OTP verify retries, sign with the ephemeral keypair the client generated for this login — its public key is the one carried inside the `encryptedOtpBundle` and bound into the `verificationToken`, and it becomes the client's session API key on successful completion.
       allOf:
         - $ref: '#/components/schemas/SignedRequestChallenge'
         - type: object
@@ -22870,7 +22870,7 @@ components:
               description: |-
                 HPKE-encrypted session signing key, sealed to the `clientPublicKey` supplied on the verification or refresh request. Encoded as a base58check string: the decoded payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.
 
-                Returned only by session-issuing responses for `OAUTH` and `PASSKEY` credentials. `EMAIL_OTP` and `SMS_OTP` sessions omit this field — the client generates a TEK keypair before verification and retains the private key throughout, so the server has nothing to deliver. Always omitted from list responses (`GET /auth/sessions`) since Grid does not retain the plaintext key after the client has decrypted it.
+                Returned only by session-issuing responses for `OAUTH` and `PASSKEY` credentials. `EMAIL_OTP` and `SMS_OTP` sessions omit this field — the client generates its keypair before verification and retains the private key throughout, so the server has nothing to deliver. Always omitted from list responses (`GET /auth/sessions`) since Grid does not retain the plaintext key after the client has decrypted it.
               example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
             expiresAt:
               type: string
