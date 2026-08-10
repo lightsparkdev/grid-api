@@ -11838,6 +11838,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+            | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -11879,6 +11880,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+            - CARDHOLDER_KYC_NOT_APPROVED
         message:
           type: string
           description: Error message
@@ -13155,6 +13157,9 @@ components:
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
+            | INVALID_STATE_TRANSITION | The requested card `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
+            | CARD_ALREADY_CLOSED | `state: CLOSED` was requested for a card that is already `CLOSED` |
+            | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
@@ -13165,6 +13170,9 @@ components:
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
             - BENEFICIARY_TRUSTED
+            - INVALID_STATE_TRANSITION
+            - CARD_ALREADY_CLOSED
+            - CARD_NOT_MUTABLE
             - CONFLICT
         message:
           type: string
