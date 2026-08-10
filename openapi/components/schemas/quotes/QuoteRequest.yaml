@@ -67,6 +67,8 @@ properties:
     example: '12345'
   purposeOfPayment:
     $ref: ./PurposeOfPayment.yaml
+  platformFeeOverride:
+    $ref: ./PlatformFeeOverride.yaml
   scaFactor:
     $ref: ../sca/ScaFactor.yaml
     description: >-
