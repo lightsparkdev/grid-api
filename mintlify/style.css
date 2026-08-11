@@ -1330,6 +1330,12 @@ ul.sidebar-group > li[data-title="External Accounts"] > button::before {
   background-image: url('/images/icons/bank.svg') !important;
 }
 
+/* Ownership Verifications - shield */
+.sidebar-group > li[data-title="Ownership Verifications"] > button::before,
+ul.sidebar-group > li[data-title="Ownership Verifications"] > button::before {
+  background-image: url('/images/icons/shield.svg') !important;
+}
+
 /* Same-Currency Transfers - horizontal expand arrows */
 .sidebar-group > li[data-title="Same-Currency Transfers"] > button::before,
 ul.sidebar-group > li[data-title="Same-Currency Transfers"] > button::before {
