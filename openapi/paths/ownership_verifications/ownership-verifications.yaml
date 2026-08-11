@@ -8,8 +8,8 @@ post:
       wallet sign it and submit the result to
       `POST /ownership-verifications/{verificationId}/confirm` to complete
       verification synchronously.
-    - `LIVENESS` — the response includes a `verificationLink` (and a `token`
-      for embedding); the user completes a hosted biometric flow and
+    - `LIVENESS` — the response includes a `verificationLink` and may include a
+      `token` for embedding; the user completes a hosted biometric flow and
       verification completes asynchronously. Status transitions are delivered
       via `OWNERSHIP_VERIFICATION.*` webhooks or by polling
       `GET /ownership-verifications/{verificationId}`.

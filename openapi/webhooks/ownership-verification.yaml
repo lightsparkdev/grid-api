@@ -59,7 +59,7 @@ post:
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000040
               type: OWNERSHIP_VERIFICATION.VERIFIED
-              timestamp: '2025-08-15T14:32:00Z'
+              timestamp: '2025-08-15T15:10:00Z'
               data:
                 id: OwnershipVerification:019542f5-b3e7-1d02-0000-000000000001
                 externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
@@ -68,13 +68,13 @@ post:
                 messageToSign: 'I verify that I control this wallet. Nonce: 019542f5-b3e7-1d02'
                 expiresAt: '2025-08-15T15:32:00Z'
                 createdAt: '2025-08-15T15:02:00Z'
-                updatedAt: '2025-08-15T14:32:00Z'
+                updatedAt: '2025-08-15T15:10:00Z'
           failed:
             summary: An ownership verification attempt failed
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000041
               type: OWNERSHIP_VERIFICATION.FAILED
-              timestamp: '2025-08-15T14:32:00Z'
+              timestamp: '2025-08-15T15:10:00Z'
               data:
                 id: OwnershipVerification:019542f5-b3e7-1d02-0000-000000000002
                 externalAccountId: ExternalAccount:019542f5-b3e7-1d02-0000-000000000001
@@ -84,7 +84,7 @@ post:
                 token: eyJhbGciOiJIUzI1NiJ9.example
                 expiresAt: '2025-08-15T15:32:00Z'
                 createdAt: '2025-08-15T15:02:00Z'
-                updatedAt: '2025-08-15T14:32:00Z'
+                updatedAt: '2025-08-15T15:10:00Z'
   responses:
     '200':
       description: >
