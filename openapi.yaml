@@ -11927,6 +11927,23 @@ components:
         - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
           (source currency differs from destination currency).
       example: CROSS_CURRENCY_TRANSACTION
+    FixedFee:
+      type: object
+      description: Fixed fee charged per transaction.
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Fee amount in the smallest unit of the fixed fee's `currency` (e.g., cents for USD).
+          example: 100
+        currency:
+          type: string
+          description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
+          example: USD
     FeeConfig:
       type: object
       description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
@@ -11944,22 +11961,7 @@ components:
           description: Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
           example: 30
         fixedFee:
-          type: object
-          description: Fixed fee charged per transaction.
-          properties:
-            amount:
-              type: integer
-              format: int64
-              minimum: 0
-              description: Fee amount in the smallest unit of the fixed fee's `currency` (e.g., cents for USD).
-              example: 100
-            currency:
-              type: string
-              description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
-              example: USD
-          required:
-            - amount
-            - currency
+          $ref: '#/components/schemas/FixedFee'
       required:
         - feeType
         - sourceCurrency
@@ -12236,6 +12238,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+            | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
           enum:
             - INVALID_INPUT
@@ -12278,6 +12281,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+            - CARDHOLDER_KYC_NOT_APPROVED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
         message:
           type: string
@@ -13555,6 +13559,9 @@ components:
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
+            | INVALID_STATE_TRANSITION | The requested card `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
+            | CARD_ALREADY_CLOSED | `state: CLOSED` was requested for a card that is already `CLOSED` |
+            | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
@@ -13565,6 +13572,9 @@ components:
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
             - BENEFICIARY_TRUSTED
+            - INVALID_STATE_TRANSITION
+            - CARD_ALREADY_CLOSED
+            - CARD_NOT_MUTABLE
             - CONFLICT
         message:
           type: string
@@ -22211,7 +22221,7 @@ components:
               example: USD
             cryptoNetwork:
               type: string
-              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
+              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
@@ -22411,6 +22421,27 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
+    PlatformFeeOverride:
+      type: object
+      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
+      required:
+        - platformFixedFee
+        - platformVariableFeeBps
+      properties:
+        platformFixedFee:
+          $ref: '#/components/schemas/FixedFee'
+          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
+        platformVariableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
+          example: 30
+      example:
+        platformFixedFee:
+          amount: 50
+          currency: USD
+        platformVariableFeeBps: 30
     QuoteRequest:
       type: object
       required:
@@ -22456,6 +22487,8 @@ components:
           example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+        platformFeeOverride:
+          $ref: '#/components/schemas/PlatformFeeOverride'
         scaFactor:
           $ref: '#/components/schemas/ScaFactor'
           description: Optional preferred factor for a Strong Customer Authentication challenge issued at quote creation. Only relevant for a realtime-funding source in a region where SCA is required (e.g. EU); ignored otherwise. Valid values are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected. When the quote is returned in `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.

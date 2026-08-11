@@ -54,6 +54,7 @@ properties:
       | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
       | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
       | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+      | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
       | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
     enum:
       - INVALID_INPUT
@@ -96,6 +97,7 @@ properties:
       - STABLECOIN_PROVIDER_ACCOUNT_INVALID
       - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
       - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+      - CARDHOLDER_KYC_NOT_APPROVED
       - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
   message:
     type: string

@@ -53,9 +53,10 @@ The **Available Rails** column lists the payment rails Grid may use for the crea
 |------|----------|-------------------|
 | SPARK_WALLET | BTC | Spark wallet address |
 | LIGHTNING | BTC | Lightning invoice, bolt12 offer, or lightning address |
-| ETHEREUM_WALLET | USDC | Ethereum L1 wallet address (0x...) |
+| ETHEREUM_WALLET | USDC, USDT | Ethereum L1 wallet address (0x...) |
 | SOLANA_WALLET | USDC | Solana wallet address |
 | TRON_WALLET | USDT | TRON wallet address |
+| PLASMA_WALLET | USDT | Plasma wallet address (0x...) |
 | POLYGON_WALLET | USDC | Polygon wallet address (0x...) |
 | BASE_WALLET | USDC | Base wallet address (0x...) |
 
@@ -976,9 +977,10 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 #### Other Crypto Wallets
 
 - **TRON_WALLET**: USDT, requires `address`
+- **PLASMA_WALLET**: USDT, requires `address` (0x format)
 - **POLYGON_WALLET**: USDC, requires `address` (0x format)
 - **BASE_WALLET**: USDC, requires `address` (0x format)
-- **ETHEREUM_WALLET**: USDC, requires `address` (0x format)
+- **ETHEREUM_WALLET**: USDC or USDT, requires `address` (0x format)
 
 **Note:** Crypto wallets do NOT require beneficiary information.
 

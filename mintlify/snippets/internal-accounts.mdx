@@ -1,6 +1,6 @@
 Internal accounts are Lightspark managed accounts that hold funds within the Grid platform. They allow you to receive deposits and send payments to external bank accounts or other payment destinations.
 
-They are useful for holding funds on behalf or the platform or customers which will be used for instant, 24/7 quotes and transfers out of the system.
+They are useful for holding funds on behalf of the platform or customers which will be used for instant, 24/7 quotes and transfers out of the system.
 
 Internal accounts are created for both:
 
@@ -192,6 +192,20 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
         "accountType": "SOLANA_WALLET",
         "assetType": "USDC",
         "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Ethereum Stablecoin Funding">
+    For Ethereum L1 wallet accounts (USDC or USDT), using an Ethereum wallet as the funding source:
+
+    ```json
+    {
+      "accountOrWalletInfo": {
+        "accountType": "ETHEREUM_WALLET",
+        "assetType": "USDT",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
       }
     }
     ```

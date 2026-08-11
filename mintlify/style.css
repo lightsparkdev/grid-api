@@ -1426,6 +1426,12 @@ ul.sidebar-group > li[data-title="Contact Verification"] > button::before {
   background-image: url('/images/icons/IconEmail2Check.svg') !important;
 }
 
+/* Strong Customer Authentication - lock */
+.sidebar-group > li[data-title="Strong Customer Authentication"] > button::before,
+ul.sidebar-group > li[data-title="Strong Customer Authentication"] > button::before {
+  background-image: url('/images/icons/lock.svg') !important;
+}
+
 /* Cards - credit card */
 .sidebar-group > li[data-title="Cards"] > button::before,
 ul.sidebar-group > li[data-title="Cards"] > button::before {
