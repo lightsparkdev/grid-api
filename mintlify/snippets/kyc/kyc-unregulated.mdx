@@ -13,7 +13,7 @@ Either path works for unregulated platforms:
 
 The hosted KYC flow provides a secure, hosted interface where customers can complete their identity verification and onboarding process.
 
-The flow is two steps: create the customer with the information you have, then generate a hosted KYC link for that customer. The customer's `kycStatus` stays `PENDING` until they complete the hosted flow.
+The flow is two steps: create the customer with the information you have, then generate a hosted KYC link for that customer. The customer's `kycStatus` starts at `UNVERIFIED` and moves to `PENDING` once they complete the hosted flow and review begins.
 
 #### 1. Create the customer
 
@@ -66,7 +66,7 @@ The response always includes `kycUrl` for the hosted flow. For providers that su
 
 <Steps>
 <Step title="Create the customer">
-  Call `POST /customers` with `customerType` and any pre-fill fields you have. The returned `id` is the customer's Grid ID; their `kycStatus` is `PENDING` until verification completes.
+  Call `POST /customers` with `customerType` and any pre-fill fields you have. The returned `id` is the customer's Grid ID; their `kycStatus` starts at `UNVERIFIED`, becomes `PENDING` while under review, and lands on `APPROVED` or `REJECTED` when the decision is made.
 </Step>
 
 <Step title="Verify contact channels (only where required)">
@@ -125,7 +125,11 @@ The shape of the flow depends on the customer type:
 <Tab title="KYC (individual)">
 <Steps>
 <Step title="Create the customer with personal information">
-  Call `POST /customers` with `customerType: INDIVIDUAL` and the personal information collected from the customer (legal name, date of birth, address, nationality, etc.). The returned `id` is the customer's Grid ID; `kycStatus` starts at `PENDING`.
+  Call `POST /customers` with `customerType: INDIVIDUAL` and the personal information collected from the customer (legal name, date of birth, address, nationality, etc.). The returned `id` is the customer's Grid ID; `kycStatus` starts at `UNVERIFIED` and moves to `PENDING` once you submit for verification.
+
+  <Note>
+  `fullName` must contain both a given name and a family name (for example, `"Jane Doe"`). The name is split into first/last for the verification provider, and a single-word name is rejected at submission.
+  </Note>
 
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
@@ -153,8 +157,8 @@ The shape of the flow depends on the customer type:
   </Note>
 </Step>
 
-<Step title="Upload supporting documents (if requested)">
-  Some jurisdictions or currencies require an ID document or proof of address. Upload them with `POST /documents` using `multipart/form-data`, referencing the customer by `customerId`.
+<Step title="Upload the identity document">
+  Individual verification requires an identity document — a `PASSPORT` (single image), or a `DRIVERS_LICENSE` / `NATIONAL_ID` (uploaded as separate `FRONT` and `BACK` images via the `side` field). Some jurisdictions or currencies also request additional documents such as proof of address. Upload each one with `POST /documents` using `multipart/form-data`; identity documents also require `documentNumber` and `issuingAuthority`.
 
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/documents" \
@@ -202,9 +206,9 @@ The shape of the flow depends on the customer type:
     "errors": [
       {
         "resourceId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-        "type": "MISSING_PROOF_OF_ADDRESS_DOCUMENT",
-        "acceptedDocumentTypes": ["PROOF_OF_ADDRESS"],
-        "reason": "Proof of address document is required"
+        "type": "MISSING_IDENTITY_DOCUMENT",
+        "acceptedDocumentTypes": ["PASSPORT", "DRIVERS_LICENSE", "NATIONAL_ID"],
+        "reason": "Identity document is required"
       }
     ],
     "createdAt": "2025-10-03T12:00:00Z"
