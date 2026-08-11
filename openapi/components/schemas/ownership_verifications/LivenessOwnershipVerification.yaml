@@ -9,7 +9,6 @@ required:
   - method
   - status
   - verificationLink
-  - token
   - expiresAt
   - createdAt
 properties:
@@ -37,8 +36,11 @@ properties:
   token:
     type: string
     description: >-
-      Access token for embedding the verification flow in the platform's own
-      UI, as an alternative to `verificationLink`.
+      Provider-specific token that can be used in place of `verificationLink` —
+      for example, to embed the provider's SDK directly in your application.
+      Only returned for providers that support direct SDK integration. Whether
+      to use the hosted URL or the embedded SDK is up to you; both flows result
+      in the same verification outcome.
     example: eyJhbGciOiJIUzI1NiJ9.example
   expiresAt:
     type: string
