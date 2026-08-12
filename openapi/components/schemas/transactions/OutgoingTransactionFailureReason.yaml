@@ -10,10 +10,12 @@ enum:
   - SETTLEMENT_FAILED
   - TIMEOUT
   - MANUAL_REFUND
+  - COMPLIANCE_REJECTED
 description: >-
   Reason for failure of an outgoing transaction. This is used to provide more
-  context on why a transaction failed. If the transaction is not in a failed
-  state, this field is omitted.
+  context on why a transaction failed. COMPLIANCE_REJECTED means compliance
+  blocked the incoming funding leg. If the transaction is not in a failed state,
+  this field is omitted.
 
 
   `SCA_NOT_COMPLETED` means the customer did not satisfy the Strong Customer

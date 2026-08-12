@@ -1,0 +1,15 @@
+type: string
+enum:
+  - COUNTERPARTY_DECLARATION_REQUIRED
+  - WALLET_VERIFICATION_REQUIRED
+  - COUNTERPARTY_INFORMATION_REQUIRED
+  - COMPLIANCE_REVIEW
+description: |
+  Why an incoming transaction is pending.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `COUNTERPARTY_DECLARATION_REQUIRED` | The customer must declare who controls the sending wallet. |
+  | `WALLET_VERIFICATION_REQUIRED` | The customer must verify ownership of the sending wallet. |
+  | `COUNTERPARTY_INFORMATION_REQUIRED` | Information about the sender is required. |
+  | `COMPLIANCE_REVIEW` | The customer's action is complete and the deposit remains under compliance review. |
