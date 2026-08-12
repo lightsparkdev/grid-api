@@ -15,8 +15,11 @@ post:
     2. Sign `payloadToSign` with the current session signing key, then retry the
     same request with the full API-key stamp as `Grid-Wallet-Signature`, the
     `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in
-    the request body. On success, Grid returns a new `AuthSession` with an
-    `encryptedSessionSigningKey` sealed to that client public key.
+    the request body. On success, Grid returns a new `AuthSession`. Under the
+    client-held-key model the client retains the new session signing key, so
+    no key material is returned; the deprecated `encryptedSessionSigningKey`
+    is sealed to the client public key only for legacy sessions not yet
+    migrated.
 
 
     The original session must still be active on both steps so it can authorize
@@ -81,7 +84,6 @@ post:
                 id: Session:019542f5-b3e7-1d02-0000-000000000011
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 type: EMAIL_OTP
-                encryptedSessionSigningKey: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
                 nickname: example@lightspark.com
                 createdAt: '2026-04-08T15:30:01Z'
                 updatedAt: '2026-04-08T15:35:00Z'
