@@ -158,6 +158,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error424.yaml
+    '429':
+      description: >-
+        Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when
+        `immediatelyExecute` is set and the requested amount would exceed the
+        configured daily volume limit for the trade corridor.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:
