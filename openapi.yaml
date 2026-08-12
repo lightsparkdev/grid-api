@@ -20637,6 +20637,22 @@ components:
         | `FAILED` | An error occurred during payment |
         | `REFUNDED` | Payment was unable to complete and refunded |
         | `EXPIRED` | Quote has expired |
+    TransactionPendingReason:
+      type: string
+      enum:
+        - COUNTERPARTY_DECLARATION_REQUIRED
+        - WALLET_VERIFICATION_REQUIRED
+        - COUNTERPARTY_INFORMATION_REQUIRED
+        - COMPLIANCE_REVIEW
+      description: |
+        Why a transaction is pending.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `COUNTERPARTY_DECLARATION_REQUIRED` | The customer must declare who controls the sending wallet. |
+        | `WALLET_VERIFICATION_REQUIRED` | The customer must verify ownership of the sending wallet. |
+        | `COUNTERPARTY_INFORMATION_REQUIRED` | Information about the sender is required. |
+        | `COMPLIANCE_REVIEW` | The customer's action is complete and the deposit remains under compliance review. |
     TransactionDirection:
       type: string
       enum:
@@ -20797,6 +20813,9 @@ components:
           example: Transaction:019542f5-b3e7-1d02-0000-000000000004
         status:
           $ref: '#/components/schemas/TransactionStatus'
+        pendingReason:
+          $ref: '#/components/schemas/TransactionPendingReason'
+          description: Present when compliance review or required customer action is delaying settlement.
         type:
           $ref: '#/components/schemas/TransactionType'
         direction:
@@ -21007,7 +21026,8 @@ components:
         - MISSING_MANDATORY_PAYEE_DATA
         - QUOTE_EXPIRED
         - QUOTE_EXECUTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+        - COMPLIANCE_REJECTED
+      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. COMPLIANCE_REJECTED means compliance blocked the incoming funds. If the transaction is not in a failed state, this field is omitted.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
