@@ -3415,6 +3415,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when the requested amount would exceed the configured daily volume limit for the withdrawal currency.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -3767,6 +3773,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error424'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when `immediatelyExecute` is set and the requested amount would exceed the configured daily volume limit for the trade corridor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -3867,6 +3879,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when executing the quote would exceed the configured daily volume limit for the trade corridor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -11841,6 +11859,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
+            | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -11883,6 +11902,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
             - CARDHOLDER_KYC_NOT_APPROVED
+            - TRANSACTION_SIZE_LIMIT_EXCEEDED
         message:
           type: string
           description: Error message
@@ -13911,8 +13931,10 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+            | DAILY_VOLUME_LIMIT_EXCEEDED | The requested amount would exceed the configured daily volume limit for this trade corridor or withdrawal currency |
           enum:
             - RATE_LIMITED
+            - DAILY_VOLUME_LIMIT_EXCEEDED
         message:
           type: string
           description: Error message
