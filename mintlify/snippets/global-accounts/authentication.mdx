@@ -673,6 +673,25 @@ Key rules:
 - The retry must reach Grid before `expiresAt` (typically 5 minutes from issue).
 - The `requestId` is returned as `Request:<uuid>` and is single-use; reusing one yields `401`.
 
+### Still-processing responses (202 PENDING)
+
+Global Account operations that touch the wallet — sign-in (`POST /auth/credentials/{id}/verify`), the OTP or passkey challenge (`POST /auth/credentials/{id}/challenge`), adding or revoking a credential, refreshing a session, exporting a wallet, updating a wallet-tied customer email or phone, and creating or revoking a delegated key — run optimistically in line and usually finish within the request. When one can't finish synchronously it falls back to asynchronous processing, and Grid returns **HTTP `202` with `{ "status": "PENDING" }`** instead of the terminal response. This is not an error, and it is not the signed-retry challenge above — it means the request has been accepted and is still in flight.
+
+When you receive a `202 PENDING`, **re-send the identical request** — same method, path, body, and headers — on a short interval until it returns a terminal `200`/`201`/`204` (or a `4xx`/`5xx` error):
+
+```json
+{
+  "status": "PENDING"
+}
+```
+
+Key rules:
+
+- Repeat the request **exactly as you last sent it**. On the initial leg that is the unsigned request; on a signed retry that is the same request *with* its `Grid-Wallet-Signature` and `Request-Id`. A `202 PENDING` never asks you to sign anything new — there is no `payloadToSign` to stamp.
+- Re-sending an in-flight signed request is the expected idempotent resubmit — it continues the same operation and is **not** the reused-`requestId` case that returns `401` (that applies only once the request has reached a terminal response).
+- Tell the two `202` bodies apart by their fields: a `payloadToSign` means "sign and retry"; a `status` of `PENDING` means "re-send unchanged and keep polling".
+- Poll on a short, bounded interval (for example, every 1–2 seconds with a sensible cap) rather than in a tight loop.
+
 ### Add an additional credential
 
 Requires an active session on an *existing* credential on the same account. The first call uses the normal credential-create body; Grid detects the pre-existing credential and responds `202` instead of `201`. `OAUTH` and `PASSKEY` are the typical additional credential types. `EMAIL_OTP` can be added back only after the existing email OTP credential has been removed, because each account supports one.

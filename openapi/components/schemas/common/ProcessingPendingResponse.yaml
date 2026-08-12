@@ -1,0 +1,27 @@
+title: Processing Pending
+type: object
+required:
+  - status
+description: >-
+  Non-terminal response body returned with HTTP `202` when an Embedded Wallet
+  operation is still processing. These operations run optimistically in line and
+  usually complete within the request, but can fall back to asynchronous
+  processing; when that happens Grid returns this body with `202`. The request
+  has been accepted and is progressing — re-send the identical request (same
+  method, path, body, and headers) to check on and complete it. Keep re-sending
+  on a short interval until the operation resolves to its terminal success
+  response (`200`/`201`/`204`, depending on the endpoint) or to a `4xx`/`5xx`
+  error. Each re-send is idempotent and continues the same in-flight operation
+  rather than starting a new one, so this body carries no `payloadToSign` and no
+  request identifier — there is nothing to sign and nothing new to correlate,
+  the request is simply repeated unchanged.
+properties:
+  status:
+    type: string
+    enum:
+      - PENDING
+    description: >-
+      Always `PENDING`. Signals that the operation has not reached a terminal
+      state yet and that the identical request should be re-sent, unchanged, to
+      check for completion.
+    example: PENDING

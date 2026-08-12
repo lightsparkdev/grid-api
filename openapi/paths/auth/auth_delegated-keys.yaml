@@ -110,12 +110,23 @@ post:
                 updatedAt: '2026-04-08T15:30:42Z'
     '202':
       description: >-
-        Challenge issued for the next leg. Stamp `payloadToSign` and retry
-        the same request with `Grid-Wallet-Signature` and `Request-Id`.
+        Non-terminal response carrying one of two bodies, distinguished by
+        their fields. A signed-retry challenge (`payloadToSign` plus
+        `requestId`) is returned for the next leg of the flow: stamp
+        `payloadToSign` and retry the same request with `Grid-Wallet-Signature`
+        and `Request-Id`.
+
+
+        A still-processing body (`status: PENDING`) is returned when the
+        operation ran optimistically in line but has fallen back to
+        asynchronous processing — this can occur on either signed leg. Re-send
+        the identical request, unchanged, on a short interval until it returns
+        either the next signed-retry challenge or the terminal `201`. Do not
+        add or alter a signature; the request is simply repeated as-is.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/auth/DelegatedKeySignedRequestChallenge.yaml
+            $ref: ../../components/schemas/auth/DelegatedKeySignedRequestChallengeOrProcessingPending.yaml
     '400':
       description: Bad request
       content:

@@ -70,6 +70,17 @@ delete:
         type: string
       example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
   responses:
+    '202':
+      description: >-
+        The revocation is still processing. Grid ran it optimistically in line
+        but it has fallen back to asynchronous processing. Re-send the identical
+        `DELETE` request — same method, path, and headers — on a short interval
+        until it returns the terminal `204`. The response body carries
+        `status: PENDING` and nothing else to act on.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/common/ProcessingPendingResponse.yaml
     '204':
       description: >-
         Delegated key revoked. The key can no longer authorize signing.

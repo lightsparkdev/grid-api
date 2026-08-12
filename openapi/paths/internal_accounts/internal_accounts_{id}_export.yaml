@@ -89,14 +89,23 @@ post:
             $ref: ../../components/schemas/internal_accounts/InternalAccountExportResponse.yaml
     '202':
       description: >-
-        Challenge issued. The response contains `payloadToSign` (which
-        binds the submitted `clientPublicKey`) plus a `requestId`.
-        Build an API-key stamp over `payloadToSign` with the session
-        API keypair and echo `requestId` on the retry.
+        Non-terminal response carrying one of two bodies, distinguished by
+        their fields. A signed-retry challenge (`payloadToSign`, which binds
+        the submitted `clientPublicKey`, plus a `requestId`) is returned on the
+        initial call: build an API-key stamp over `payloadToSign` with the
+        session API keypair and echo `requestId` on the retry.
+
+
+        A still-processing body (`status: PENDING`) is returned when the
+        operation ran optimistically in line but has fallen back to
+        asynchronous processing — this can occur on the signed retry. Re-send
+        the identical request, unchanged (including the same `clientPublicKey`),
+        on a short interval until it returns the terminal `200`. Do not add or
+        alter a signature; the request is simply repeated as-is.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/common/SignedRequestChallenge.yaml
+            $ref: ../../components/schemas/common/SignedRequestChallengeOrProcessingPending.yaml
     '400':
       description: Bad request
       content:

@@ -744,11 +744,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/CustomerOneOf'
         '202':
-          description: Challenge issued for an Embedded Wallet email or SMS auth phone update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+          description: |-
+            Non-terminal response for an Embedded Wallet email or SMS auth phone update, carrying one of two bodies distinguished by their fields. A signed-retry challenge (`payloadToSign` plus `requestId`) is returned on the initial call: build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+
+            A still-processing body (`status: PENDING`) is returned when the operation ran optimistically in line but has fallen back to asynchronous processing — this can occur on the signed retry. Re-send the identical request, unchanged, on a short interval until it returns the terminal `200`. Do not add or alter a signature; the request is simply repeated as-is.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SignedRequestChallenge'
+                $ref: '#/components/schemas/SignedRequestChallengeOrProcessingPending'
               examples:
                 embeddedWalletEmailUpdate:
                   summary: Embedded Wallet customer email update challenge
@@ -762,6 +765,10 @@ paths:
                     payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000011
                     expiresAt: '2026-04-08T15:35:00Z'
+                processingPending:
+                  summary: Operation still processing (re-send the identical request)
+                  value:
+                    status: PENDING
         '400':
           description: Bad request
           content:
@@ -5497,11 +5504,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalAccountExportResponse'
         '202':
-          description: Challenge issued. The response contains `payloadToSign` (which binds the submitted `clientPublicKey`) plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair and echo `requestId` on the retry.
+          description: |-
+            Non-terminal response carrying one of two bodies, distinguished by their fields. A signed-retry challenge (`payloadToSign`, which binds the submitted `clientPublicKey`, plus a `requestId`) is returned on the initial call: build an API-key stamp over `payloadToSign` with the session API keypair and echo `requestId` on the retry.
+
+            A still-processing body (`status: PENDING`) is returned when the operation ran optimistically in line but has fallen back to asynchronous processing — this can occur on the signed retry. Re-send the identical request, unchanged (including the same `clientPublicKey`), on a short interval until it returns the terminal `200`. Do not add or alter a signature; the request is simply repeated as-is.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SignedRequestChallenge'
+                $ref: '#/components/schemas/SignedRequestChallengeOrProcessingPending'
         '400':
           description: Bad request
           content:
@@ -5639,11 +5649,14 @@ paths:
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:01Z'
         '202':
-          description: Challenge issued. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account, then send that full stamp as `Grid-Wallet-Signature` and echo `requestId` as `Request-Id` on the retry.
+          description: |-
+            Non-terminal response carrying one of two bodies, distinguished by their fields. A signed-retry challenge (`payloadToSign` plus `requestId`) is returned on the initial call: build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account, then send that full stamp as `Grid-Wallet-Signature` and echo `requestId` as `Request-Id` on the retry.
+
+            A still-processing body (`status: PENDING`) is returned when the operation ran optimistically in line but has fallen back to asynchronous processing — this can occur on the signed retry. Re-send the identical request, unchanged, on a short interval until it returns the terminal `201`. Do not add or alter a signature; the request is simply repeated as-is.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSignedRequestChallenge'
+                $ref: '#/components/schemas/AuthSignedRequestChallengeOrProcessingPending'
               examples:
                 emailOtp:
                   summary: Additional email OTP credential challenge
@@ -5673,6 +5686,10 @@ paths:
                     payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"authenticators":[{"attestation":{"attestationObject":"o2NmbXRk...","clientDataJson":"eyJjaGFsbGVuZ2UiOiJBcktRa...","credentialId":"AdKXJEch1aV5Wo7bj7qLHskVY4OoNaj9qu8TPdJ7kSAgUeRxWNngXlcNIGt4gexZGKVGcqZpqqWordXb_he1izY"},"authenticatorName":"iPhone Face-ID","challenge":"ArkQi2yAYHPlgnJNFBlneIwchQdWXBOTrdB-AmMUB21Lx","transports":["internal","hybrid"]}],"userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_CREATE_AUTHENTICATORS_V2"}'
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
+                processingPending:
+                  summary: Operation still processing (re-send the identical request)
+                  value:
+                    status: PENDING
         '400':
           description: Bad request. Returned with `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an email OTP credential while one already exists, `SMS_OTP_CREDENTIAL_ALREADY_EXISTS` when registering an SMS OTP credential while one already exists, `PASSKEY_CREDENTIAL_ALREADY_EXISTS` when registering a passkey whose WebAuthn credentialId is already attached to the internal account, or `INVALID_INPUT` when an OAuth `oidcToken` is malformed or has an unsupported issuer.
           content:
@@ -5925,11 +5942,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthSession'
         '202':
-          description: Verification challenge issued. Returned only for OTP credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
+          description: |-
+            Non-terminal response carrying one of two bodies, distinguished by their fields. A signed-retry challenge (`payloadToSign` plus `requestId`) is returned for OTP credentials on the first leg of the secure OTP login flow: build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
+
+            A still-processing body (`status: PENDING`) is returned when the operation ran optimistically in line but has fallen back to asynchronous processing — this can occur on the OTP signed retry or on `OAUTH`/`PASSKEY` verification. Re-send the identical request, unchanged, on a short interval until it returns the terminal `200`. Do not add or alter a signature; the request is simply repeated as-is.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSignedRequestChallenge'
+                $ref: '#/components/schemas/AuthSignedRequestChallengeOrProcessingPending'
               examples:
                 emailOtp:
                   summary: Email OTP verification challenge (sign and retry)
@@ -5938,6 +5958,10 @@ paths:
                     payloadToSign: eyJhbGciOiJFUzI1NiIsImtpZCI6InR1cm5rZXkifQ.eyJzdWIiOiJUWnk2NkVPa1RGYTd2NkpXZ0VxaVgyZGFXOENXc2pMQzVDVU9aRUlGY3hzIiwiaWF0IjoxNzc5NDA3MjIxLCJleHAiOjE3Nzk0MTA4MjF9.gKX9MWYGkw8Y55bgzsgrRftvUHFruIe8yu0w9Kpjp5qnrZnXcTV71WVoltGPsr015IY_oRTOkIFLHmiGNG9zBw
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
+                processingPending:
+                  summary: Operation still processing (re-send the identical request)
+                  value:
+                    status: PENDING
         '400':
           description: Bad request
           content:
@@ -6045,6 +6069,12 @@ paths:
                     challenge: 6b35a4c41d9aa7a2a0e742f9f9e7a1c2d65a2db33a3fb748f6d4f1ce78d9a729
                     requestId: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
                     expiresAt: '2026-04-08T15:35:00Z'
+        '202':
+          description: 'The operation is still processing. Grid ran it optimistically in line but it has fallen back to asynchronous processing (for example, while a new OTP is being issued or a passkey reauthentication challenge is being prepared). No action beyond retrying is required: re-send the identical request — same method, path, body, and headers — on a short interval until it returns the terminal `200`. The response body carries `status: PENDING` and nothing else to act on.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingPendingResponse'
         '400':
           description: Bad request
           content:
@@ -6264,11 +6294,14 @@ paths:
                     updatedAt: '2026-04-08T15:35:00Z'
                     expiresAt: '2026-04-08T15:50:00Z'
         '202':
-          description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the current session API keypair, then echo `requestId` on the signed retry.
+          description: |-
+            Non-terminal response carrying one of two bodies, distinguished by their fields. A signed-retry challenge (`payloadToSign` plus `requestId`) is returned on the initial call: build an API-key stamp over `payloadToSign` with the current session API keypair, then echo `requestId` on the signed retry.
+
+            A still-processing body (`status: PENDING`) is returned when the operation ran optimistically in line but has fallen back to asynchronous processing — this can occur on the signed retry. Re-send the identical request, unchanged, on a short interval until it returns the terminal `201`. Do not add or alter a signature; the request is simply repeated as-is.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SignedRequestChallenge'
+                $ref: '#/components/schemas/SignedRequestChallengeOrProcessingPending'
               examples:
                 challenge:
                   summary: Session refresh challenge
@@ -6276,6 +6309,10 @@ paths:
                     payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
+                processingPending:
+                  summary: Operation still processing (re-send the identical request)
+                  value:
+                    status: PENDING
         '400':
           description: Bad request
           content:
@@ -6369,11 +6406,14 @@ paths:
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:30:42Z'
         '202':
-          description: Challenge issued for the next leg. Stamp `payloadToSign` and retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+          description: |-
+            Non-terminal response carrying one of two bodies, distinguished by their fields. A signed-retry challenge (`payloadToSign` plus `requestId`) is returned for the next leg of the flow: stamp `payloadToSign` and retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
+
+            A still-processing body (`status: PENDING`) is returned when the operation ran optimistically in line but has fallen back to asynchronous processing — this can occur on either signed leg. Re-send the identical request, unchanged, on a short interval until it returns either the next signed-retry challenge or the terminal `201`. Do not add or alter a signature; the request is simply repeated as-is.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
+                $ref: '#/components/schemas/DelegatedKeySignedRequestChallengeOrProcessingPending'
         '400':
           description: Bad request
           content:
@@ -6514,6 +6554,12 @@ paths:
             type: string
           example: DelegatedKey:019542f5-b3e7-1d02-0000-000000000021
       responses:
+        '202':
+          description: 'The revocation is still processing. Grid ran it optimistically in line but it has fallen back to asynchronous processing. Re-send the identical `DELETE` request — same method, path, and headers — on a short interval until it returns the terminal `204`. The response body carries `status: PENDING` and nothing else to act on.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingPendingResponse'
         '204':
           description: Delegated key revoked. The key can no longer authorize signing.
         '400':
@@ -13332,6 +13378,25 @@ components:
           format: date-time
           description: Timestamp after which this challenge is no longer valid. The signed retry must be submitted before this time.
           example: '2026-04-08T15:35:00Z'
+    ProcessingPendingResponse:
+      title: Processing Pending
+      type: object
+      required:
+        - status
+      description: Non-terminal response body returned with HTTP `202` when an Embedded Wallet operation is still processing. These operations run optimistically in line and usually complete within the request, but can fall back to asynchronous processing; when that happens Grid returns this body with `202`. The request has been accepted and is progressing — re-send the identical request (same method, path, body, and headers) to check on and complete it. Keep re-sending on a short interval until the operation resolves to its terminal success response (`200`/`201`/`204`, depending on the endpoint) or to a `4xx`/`5xx` error. Each re-send is idempotent and continues the same in-flight operation rather than starting a new one, so this body carries no `payloadToSign` and no request identifier — there is nothing to sign and nothing new to correlate, the request is simply repeated unchanged.
+      properties:
+        status:
+          type: string
+          enum:
+            - PENDING
+          description: Always `PENDING`. Signals that the operation has not reached a terminal state yet and that the identical request should be re-sent, unchanged, to check for completion.
+          example: PENDING
+    SignedRequestChallengeOrProcessingPending:
+      title: Signed Request Challenge Or Processing Pending
+      description: 'The two possible `202` bodies on Embedded Wallet endpoints that use the signed-retry flow. Either a `SignedRequestChallenge` — carrying `payloadToSign`, which the client stamps and re-sends with `Grid-Wallet-Signature` and `Request-Id` — or a `ProcessingPendingResponse` (`status: PENDING`), meaning the operation is still processing and the identical request should be re-sent unchanged until it returns a terminal response. Distinguish the two by their fields: a `payloadToSign` means sign and retry; a `status` of `PENDING` means re-send unchanged and keep polling.'
+      anyOf:
+        - $ref: '#/components/schemas/SignedRequestChallenge'
+        - $ref: '#/components/schemas/ProcessingPendingResponse'
     Error424:
       type: object
       required:
@@ -22747,6 +22812,12 @@ components:
             type:
               $ref: '#/components/schemas/AuthMethodType'
               description: 'Credential type relevant to this challenge: the credential type being added (`POST /auth/credentials`), revoked (`DELETE /auth/credentials/{id}`), or authenticated (`EMAIL_OTP` / `SMS_OTP` branch of `POST /auth/credentials/{id}/verify`). For session revocation, this is the type of credential that issued the session (`DELETE /auth/sessions/{id}`).'
+    AuthSignedRequestChallengeOrProcessingPending:
+      title: Authentication Signed Request Challenge Or Processing Pending
+      description: 'The two possible `202` bodies on Embedded Wallet Auth endpoints that use the signed-retry flow. Either an `AuthSignedRequestChallenge` — carrying `payloadToSign` plus the credential `type`, which the client stamps and re-sends with `Grid-Wallet-Signature` and `Request-Id` — or a `ProcessingPendingResponse` (`status: PENDING`), meaning the operation is still processing and the identical request should be re-sent unchanged until it returns a terminal response. Distinguish the two by their fields: a `payloadToSign` means sign and retry; a `status` of `PENDING` means re-send unchanged and keep polling.'
+      anyOf:
+        - $ref: '#/components/schemas/AuthSignedRequestChallenge'
+        - $ref: '#/components/schemas/ProcessingPendingResponse'
     AuthCredentialVerifyRequest:
       type: object
       required:
@@ -23118,6 +23189,12 @@ components:
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
       allOf:
         - $ref: '#/components/schemas/SignedRequestChallenge'
+    DelegatedKeySignedRequestChallengeOrProcessingPending:
+      title: Delegated Key Signed Request Challenge Or Processing Pending
+      description: 'The two possible `202` bodies on the delegated-key create flow. Either a `DelegatedKeySignedRequestChallenge` — carrying `payloadToSign` for the next leg, which the client stamps and re-sends with `Grid-Wallet-Signature` and `Request-Id` — or a `ProcessingPendingResponse` (`status: PENDING`), meaning the operation is still processing and the identical request should be re-sent unchanged until it returns the next challenge or a terminal response. Distinguish the two by their fields: a `payloadToSign` means sign and retry; a `status` of `PENDING` means re-send unchanged and keep polling.'
+      anyOf:
+        - $ref: '#/components/schemas/DelegatedKeySignedRequestChallenge'
+        - $ref: '#/components/schemas/ProcessingPendingResponse'
     AgentPermission:
       type: string
       enum:

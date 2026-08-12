@@ -175,16 +175,25 @@ patch:
             $ref: ../../components/schemas/customers/CustomerOneOf.yaml
     '202':
       description: >-
-        Challenge issued for an Embedded Wallet email or SMS auth phone update.
-        The response contains `payloadToSign` plus a `requestId`. Build an
-        API-key stamp over `payloadToSign` with the session API keypair from a
-        verified authentication credential on one of the customer's tied
-        Embedded Wallets, then retry the same request with
-        `Grid-Wallet-Signature` and `Request-Id`.
+        Non-terminal response for an Embedded Wallet email or SMS auth phone
+        update, carrying one of two bodies distinguished by their fields. A
+        signed-retry challenge (`payloadToSign` plus `requestId`) is returned
+        on the initial call: build an API-key stamp over `payloadToSign` with
+        the session API keypair from a verified authentication credential on one
+        of the customer's tied Embedded Wallets, then retry the same request
+        with `Grid-Wallet-Signature` and `Request-Id`.
+
+
+        A still-processing body (`status: PENDING`) is returned when the
+        operation ran optimistically in line but has fallen back to
+        asynchronous processing — this can occur on the signed retry. Re-send
+        the identical request, unchanged, on a short interval until it returns
+        the terminal `200`. Do not add or alter a signature; the request is
+        simply repeated as-is.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/common/SignedRequestChallenge.yaml
+            $ref: ../../components/schemas/common/SignedRequestChallengeOrProcessingPending.yaml
           examples:
             embeddedWalletEmailUpdate:
               summary: Embedded Wallet customer email update challenge
@@ -198,6 +207,10 @@ patch:
                 payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
                 requestId: Request:019542f5-b3e7-1d02-0000-000000000011
                 expiresAt: '2026-04-08T15:35:00Z'
+            processingPending:
+              summary: Operation still processing (re-send the identical request)
+              value:
+                status: PENDING
     '400':
       description: Bad request
       content:

@@ -1,0 +1,13 @@
+title: Signed Request Challenge Or Processing Pending
+description: >-
+  The two possible `202` bodies on Embedded Wallet endpoints that use the
+  signed-retry flow. Either a `SignedRequestChallenge` — carrying
+  `payloadToSign`, which the client stamps and re-sends with
+  `Grid-Wallet-Signature` and `Request-Id` — or a `ProcessingPendingResponse`
+  (`status: PENDING`), meaning the operation is still processing and the
+  identical request should be re-sent unchanged until it returns a terminal
+  response. Distinguish the two by their fields: a `payloadToSign` means sign
+  and retry; a `status` of `PENDING` means re-send unchanged and keep polling.
+anyOf:
+  - $ref: ./SignedRequestChallenge.yaml
+  - $ref: ./ProcessingPendingResponse.yaml
