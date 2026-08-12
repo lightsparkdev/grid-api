@@ -318,13 +318,16 @@ grid cards get <cardId>
 # Issue a virtual card
 grid cards create \
   --cardholder-id <customerId> \
-  --funding-sources "InternalAccount:1,InternalAccount:2"
+  --funding-sources "InternalAccount:1,InternalAccount:2" \
+  --max-spend-per-transaction 5000
 
-# Freeze / unfreeze / close, or replace funding sources
+# Freeze / unfreeze / close, replace funding sources, or change the spending limit
 grid cards update <cardId> --state FROZEN
 grid cards update <cardId> --state ACTIVE
 grid cards update <cardId> --state CLOSED
 grid cards update <cardId> --funding-sources "InternalAccount:3"
+grid cards update <cardId> --max-spend-per-transaction 10000
+grid cards update <cardId> --clear-max-spend-per-transaction
 
 # Reveal card details — prints a short-lived panEmbedUrl to render in an iframe.
 # Do not store or log it.
@@ -355,7 +358,6 @@ grid auth delegated-keys list --account-id <id>
 grid auth delegated-keys get <delegatedKeyId>
 grid auth delegated-keys create \
   --card-id <cardId> --internal-account-id <id> --nickname "Card key" \
-  --spending-limit USD:5000 --spending-limit EUR:4000 \
   --wallet-signature <stamp> --request-id <id>
 grid auth delegated-keys revoke <delegatedKeyId>          # no signature needed
 

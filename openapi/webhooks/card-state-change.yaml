@@ -60,6 +60,7 @@ post:
                 expYear: 2029
                 fundingSources:
                   - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                maxSpendPerTransaction: 5000
                 currency: USD
                 processorRef: card_b81c2a4f
                 issuerRef: lead_card_7a1b9c3d
@@ -79,6 +80,7 @@ post:
                 form: VIRTUAL
                 fundingSources:
                   - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                maxSpendPerTransaction: null
                 currency: USD
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-08T14:12:00Z'
@@ -100,6 +102,7 @@ post:
                 expYear: 2029
                 fundingSources:
                   - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                maxSpendPerTransaction: 5000
                 currency: USD
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-09T09:00:00Z'
