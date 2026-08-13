@@ -17256,12 +17256,13 @@ components:
       description: |
         Status of an external account.
 
-        `PENDING_OWNERSHIP_VERIFICATION` applies to `FIRST_PARTY` self-custody
-        crypto wallet accounts on platforms subject to EU Travel Rule requirements.
-        While in this status, the account can be used for transfers below regulatory
-        thresholds; completing ownership verification (see the Ownership
-        Verifications API) moves the account to `ACTIVE` and removes the
-        restriction.
+        `PENDING_OWNERSHIP_VERIFICATION` applies to crypto wallet accounts whose
+        ownership must be verified before the account can be used without
+        restriction — for example, under the EU Travel Rule or similar requirements
+        in other regions. While in this status, the account can be used for
+        transfers below regulatory thresholds; completing ownership verification
+        (see the Ownership Verifications API) moves the account to `ACTIVE` and
+        removes the restriction.
     OwnershipType:
       type: string
       enum:
