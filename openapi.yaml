@@ -24261,7 +24261,7 @@ components:
       description: Stablecoin issuer operation lifecycle status.
     StablecoinOperationSource:
       type: object
-      description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints and external-account burns, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
+      description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
       required:
         - type
       properties:
@@ -24278,7 +24278,7 @@ components:
           example: ACH_DEBIT
         externalAccountId:
           type: string
-          description: Grid `ExternalAccount` funding the operation, present for ACH debit mints and external-account burns.
+          description: Grid `ExternalAccount` funding the operation, present for ACH debit mints.
           example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
         accountId:
           type: string
