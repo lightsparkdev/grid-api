@@ -2,67 +2,121 @@ In sandbox, you can trigger specific KYC/KYB verification outcomes using magic s
 
 ### Individual customer verification (KYC)
 
-The **last 3 characters** of the `fullName` on `POST /customers` (with `customerType: INDIVIDUAL`) determine the outcome when you call `POST /verifications`:
+The **last 3 characters** of the `fullName` on `POST /customers` (with `customerType: INDIVIDUAL`) determine the customer's `kycStatus` **immediately at creation**:
 
-| Suffix | Outcome | Behavior |
-|--------|---------|----------|
-| **001** | `verificationStatus: IN_PROGRESS`, `kycStatus: PENDING` | KYC verification remains pending (manual review) |
-| **002** | `verificationStatus: REJECTED`, `kycStatus: REJECTED` | KYC verification is rejected |
-| **003** | `verificationStatus: RESOLVE_ERRORS` with `MISSING_FIELD` errors on `edd.*` fields | EDD is required — call `PATCH /customers/{customerId}` with the requested fields, then retry `POST /verifications` |
-| **Any other** | `verificationStatus: IN_PROGRESS`, `kycStatus: APPROVED` | KYC verification is approved |
+| Suffix | `kycStatus` at creation | Behavior on `POST /verifications` |
+|--------|-------------------------|-----------------------------------|
+| **001** | `PENDING` | With complete data and an identity document: `verificationStatus: PENDING_MANUAL_REVIEW` — simulates an applicant waiting on manual review |
+| **002** | `REJECTED` | Returns `400` — the customer was terminally rejected at creation |
+| **003** | `UNVERIFIED` | With complete data: `verificationStatus: RESOLVE_ERRORS` with a `POOR_QUALITY_DOCUMENT` error — simulates a correctable provider rejection |
+| **Any other** | `APPROVED` | Returns `400` — the customer was approved at creation |
 
-EDD flow example:
+Because terminal suffixes resolve at creation, only `001` and `003` customers can be submitted for verification. Use any non-suffixed name to mint ready-to-transact approved customers, and a `001` name to exercise the full submission flow.
 
-```bash
-# Create a customer whose fullName ends in "003" to trigger the EDD path
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customerType": "INDIVIDUAL",
-    "fullName": "Jane Doe 003",
-    "birthDate": "1990-01-15",
-    "nationality": "US",
-    "address": { "line1": "123 Main St", "city": "Seattle", "state": "WA", "postalCode": "98101", "country": "US" }
-  }'
+Submitting for verification has the same data requirements as production: full name, birth date, nationality, `taxIdType` + `taxIdentifier`, address, and an identity document uploaded via `POST /documents`. Anything missing comes back as `verificationStatus: RESOLVE_ERRORS` with one entry per problem in `errors`:
 
-# First verification attempt: returns MISSING_FIELD errors on edd.* fields
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/verifications" \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{ "customerId": "Customer:..." }'
-
-# Supply the EDD fields via PATCH
-curl -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/Customer:..." \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customerType": "INDIVIDUAL",
-    "sourceOfWealthCategories": ["SALARY"],
-    "purposeOfAccount": "P2P_TRANSFERS",
-    "annualIncomeRange": "RANGE_100K_250K"
-  }'
-
-# Retry verification — now approves
-curl -X POST "https://api.lightspark.com/grid/2025-10-13/verifications" \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{ "customerId": "Customer:..." }'
+```json
+{
+  "verificationStatus": "RESOLVE_ERRORS",
+  "errors": [
+    {
+      "resourceId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "MISSING_FIELD",
+      "field": "taxIdentifier",
+      "reason": "Tax identifier is required"
+    },
+    {
+      "resourceId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "MISSING_IDENTITY_DOCUMENT",
+      "acceptedDocumentTypes": ["PASSPORT", "DRIVERS_LICENSE", "NATIONAL_ID"],
+      "reason": "Identity document is required"
+    }
+  ]
+}
 ```
+
+Fix-and-resubmit example — the standard integration loop:
+
+<Steps>
+<Step title="Create a customer with a 001 suffix">
+  A `fullName` ending in `001` keeps the customer `PENDING`, so submission is allowed. Persist the returned `id` for the following steps.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "customerType": "INDIVIDUAL",
+      "fullName": "Jane Doe 001",
+      "birthDate": "1990-01-15",
+      "nationality": "US"
+    }'
+  ```
+</Step>
+
+<Step title="Submit for verification">
+  The first attempt returns `verificationStatus: RESOLVE_ERRORS` with every missing field and document listed in `errors`.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/verifications" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{ "customerId": "Customer:..." }'
+  ```
+</Step>
+
+<Step title="Supply the missing fields and document">
+  Patch the missing fields onto the customer, then upload the identity document. Any JPEG, PNG, or PDF works in sandbox.
+
+  ```bash
+  curl -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/Customer:..." \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "customerType": "INDIVIDUAL",
+      "taxIdType": "SSN",
+      "taxIdentifier": "111-22-3333",
+      "address": { "line1": "123 Main St", "city": "Seattle", "state": "WA", "postalCode": "98101", "country": "US" }
+    }'
+
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/documents" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -F "documentHolder=Customer:..." \
+    -F "documentType=PASSPORT" \
+    -F "country=US" \
+    -F "documentNumber=A12345678" \
+    -F "issuingAuthority=U.S. Department of State" \
+    -F "file=@./passport.jpg"
+  ```
+</Step>
+
+<Step title="Resubmit">
+  The verification now advances to `verificationStatus: PENDING_MANUAL_REVIEW` and the customer's `kycStatus` is `PENDING`.
+
+  ```bash
+  curl -X POST "https://api.lightspark.com/grid/2025-10-13/verifications" \
+    -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+    -H "Content-Type: application/json" \
+    -d '{ "customerId": "Customer:..." }'
+  ```
+</Step>
+</Steps>
 
 ### Business customer verification (KYB)
 
-The **last 3 digits** of the `registrationNumber` in `businessInfo` determine the KYB status outcome when you call `POST /verifications`:
+Business customers are always created with `kybStatus: UNVERIFIED` — their suffix applies when you call `POST /verifications`, not at creation. The **last 3 characters** of the `registrationNumber` in `businessInfo` determine the outcome:
 
-| Suffix | `kybStatus` | Behavior |
-|--------|------------|----------|
-| **001** | `PENDING` | KYB verification remains pending |
-| **002** | `REJECTED` | KYB verification is rejected |
-| **Any other** | `APPROVED` | KYB verification is approved |
+| Suffix | Outcome on `POST /verifications` |
+|--------|----------------------------------|
+| **002** | `kybStatus: REJECTED`, `verificationStatus: REJECTED` — immediate, skips data and document validation |
+| **001** / **003** | Normal validation applies: complete business information, business documents, and at least one beneficial owner are required (`RESOLVE_ERRORS` otherwise); a complete submission stays `PENDING` |
+| **Any other** | `kybStatus: APPROVED`, `verificationStatus: APPROVED` — immediate, skips data and document validation |
+
+Once a business customer is approved or rejected, further `POST /verifications` calls return `400`.
 
 ### Beneficial owner KYC
 
-The **last 3 characters** of the `lastName` in `personalInfo` determine the individual KYC status outcome:
+When a business customer resolves terminally through its registration-number suffix, each of its beneficial owners is resolved at the same moment using the **last 3 characters** of the `lastName` in that owner's `personalInfo`:
 
 | Suffix | `kycStatus` | Behavior |
 |--------|------------|----------|

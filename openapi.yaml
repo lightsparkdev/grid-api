@@ -3659,6 +3659,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when the requested amount would exceed the configured daily volume limit for the withdrawal currency.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -4011,6 +4017,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error424'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when `immediatelyExecute` is set and the requested amount would exceed the configured daily volume limit for the trade corridor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -4111,6 +4123,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when executing the quote would exceed the configured daily volume limit for the trade corridor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -8519,11 +8537,7 @@ paths:
         - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
         - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`.
 
-        Because both updates are sensitive state changes, this endpoint uses Grid's 202 → signed-retry pattern (same shape as `DELETE /auth/credentials/{id}` and `POST /internal-accounts/{id}/export`):
-
-        1. Call `PATCH /cards/{id}` with the target fields and no signing headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
-
-        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the card's owning internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with the updated `Card`.
+        This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
         Effects:
         - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
@@ -8537,21 +8551,6 @@ paths:
         - Cards
       security:
         - BasicAuth: []
-      parameters:
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified authentication credential on the card's owning internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
-          schema:
-            type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
-        - name: Request-Id
-          in: header
-          required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
-          schema:
-            type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       requestBody:
         required: true
         content:
@@ -8585,17 +8584,11 @@ paths:
                   state: CLOSED
       responses:
         '200':
-          description: Signed retry accepted. Returns the updated card.
+          description: Card updated. Returns the updated card.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Card'
-        '202':
-          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified authentication credential on the card's owning internal account, along with a `requestId` that must be echoed back on the retry.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SignedRequestChallenge'
         '400':
           description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, and for general invalid parameters.
           content:
@@ -8603,7 +8596,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending update challenge for this card, or when the `Request-Id` does not match an unexpired pending challenge.
+          description: Unauthorized. Returned when the platform credential is missing or invalid, or does not grant access to this card.
           content:
             application/json:
               schema:
@@ -12239,6 +12232,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
+            | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
           enum:
             - INVALID_INPUT
@@ -12282,6 +12276,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
             - CARDHOLDER_KYC_NOT_APPROVED
+            - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
         message:
           type: string
@@ -13401,6 +13396,7 @@ components:
       description: Additional information required for business entities
       required:
         - legalName
+        - country
         - taxId
         - incorporatedOn
       properties:
@@ -14310,8 +14306,10 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+            | DAILY_VOLUME_LIMIT_EXCEEDED | The requested amount would exceed the configured daily volume limit for this trade corridor or withdrawal currency |
           enum:
             - RATE_LIMITED
+            - DAILY_VOLUME_LIMIT_EXCEEDED
         message:
           type: string
           description: Error message
@@ -24870,7 +24868,7 @@ components:
       description: Stablecoin issuer operation lifecycle status.
     StablecoinOperationSource:
       type: object
-      description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints and external-account burns, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
+      description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
       required:
         - type
       properties:
@@ -24887,7 +24885,7 @@ components:
           example: ACH_DEBIT
         externalAccountId:
           type: string
-          description: Grid `ExternalAccount` funding the operation, present for ACH debit mints and external-account burns.
+          description: Grid `ExternalAccount` funding the operation, present for ACH debit mints.
           example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
         accountId:
           type: string
@@ -25092,19 +25090,14 @@ components:
         - type: object
           required:
             - type
-            - externalAccountId
           properties:
             type:
               type: string
               enum:
                 - EXTERNAL_ACCOUNT
-              description: External account burn. References an active Spark external account and returns funding instructions.
+              description: External account burn. The response carries funding instructions naming the provider deposit address to send the stablecoin to.
               example: EXTERNAL_ACCOUNT
-            externalAccountId:
-              type: string
-              description: Grid Spark `ExternalAccount` expected to fund the provider for the burn.
-              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000203
-          description: External account burn source. The issuer funds the provider from a Spark external account.
+          description: External account burn source. The issuer sends the stablecoin to the provider deposit address returned in the operation's funding instructions; it may be sent from any wallet.
     StablecoinGridInternalBurnSource:
       title: Grid Internal Account
       allOf:
