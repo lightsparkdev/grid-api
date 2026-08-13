@@ -5142,7 +5142,12 @@ paths:
     get:
       summary: List VASPs
       description: |
-        Retrieve the directory of Virtual Asset Service Providers (exchanges and other custodial platforms) recognized for counterparty declarations. Search by name to find the VASP that custodies a counterparty account.
+        Retrieve the directory of Virtual Asset Service Providers (exchanges and
+        other custodial platforms) recognized for counterparty declarations.
+        Search by name to find the VASP that custodies a counterparty account.
+
+        The `vaspName` field in each result is the value to pass as `vaspName`
+        when declaring a VASP-hosted counterparty.
       operationId: listVasps
       tags:
         - VASPs
@@ -22458,16 +22463,16 @@ components:
     Vasp:
       type: object
       required:
-        - id
-        - name
+        - vaspName
+        - displayName
       properties:
-        id:
+        vaspName:
           type: string
-          description: Stable identifier for this VASP. Pass it as `vaspId` when declaring a VASP-hosted counterparty.
-          example: Vasp:019542f5-b3e7-1d02-0000-000000000001
-        name:
+          description: Canonical name for this VASP. Pass this value as `vaspName` when declaring a VASP-hosted counterparty.
+          example: Kraken
+        displayName:
           type: string
-          description: Display name of the VASP
+          description: Human-friendly display name for this VASP.
           example: Kraken
       description: A Virtual Asset Service Provider (VASP) — an exchange or other custodial platform — recognized for counterparty declarations.
     VaspListResponse:

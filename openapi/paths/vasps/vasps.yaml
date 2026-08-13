@@ -1,9 +1,12 @@
 get:
   summary: List VASPs
-  description: >
+  description: |
     Retrieve the directory of Virtual Asset Service Providers (exchanges and
     other custodial platforms) recognized for counterparty declarations.
     Search by name to find the VASP that custodies a counterparty account.
+
+    The `vaspName` field in each result is the value to pass as `vaspName`
+    when declaring a VASP-hosted counterparty.
   operationId: listVasps
   tags:
     - VASPs
