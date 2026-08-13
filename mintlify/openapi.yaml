@@ -11835,6 +11835,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
+            | COUNTERPARTY_USER_INFO_REQUIRED | The destination account needs beneficiary information before this transfer can proceed; update the external account with a `beneficiary` and retry |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -11878,6 +11879,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
             - CARDHOLDER_KYC_NOT_APPROVED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
+            - COUNTERPARTY_USER_INFO_REQUIRED
         message:
           type: string
           description: Error message
@@ -16858,6 +16860,13 @@ components:
         - THIRD_PARTY
       description: Whether the external account belongs to the customer themselves (first party) or to someone else (third party)
       example: FIRST_PARTY
+    CustodyType:
+      type: string
+      enum:
+        - SELF_CUSTODY
+        - VASP_HOSTED
+      description: 'How a crypto wallet external account is custodied: `SELF_CUSTODY` for a wallet whose keys the owner controls directly, or `VASP_HOSTED` for an account held at a Virtual Asset Service Provider (an exchange or other custodial platform). Only relevant for crypto wallet accounts; defaults to `SELF_CUSTODY`. Ownership verification applies only to `SELF_CUSTODY` wallets — `VASP_HOSTED` accounts never require it.'
+      example: SELF_CUSTODY
     BeneficiaryVerificationStatus:
       type: string
       enum:
@@ -19230,6 +19239,12 @@ components:
               example: acc_123456789
             ownershipType:
               $ref: '#/components/schemas/OwnershipType'
+            custodyType:
+              $ref: '#/components/schemas/CustodyType'
+            vaspId:
+              type: string
+              description: The VASP that custodies this account, from the VASP directory (`GET /vasps`). Only present when `custodyType` is `VASP_HOSTED`.
+              example: Vasp:019542f5-b3e7-1d02-0000-000000000001
             currency:
               type: string
               description: The ISO 4217 currency code
@@ -20144,6 +20159,12 @@ components:
               example: ext_acc_123456
             ownershipType:
               $ref: '#/components/schemas/OwnershipType'
+            custodyType:
+              $ref: '#/components/schemas/CustodyType'
+            vaspId:
+              type: string
+              description: The VASP that custodies this account, from the VASP directory (`GET /vasps`). Required when `custodyType` is `VASP_HOSTED`; must be omitted otherwise.
+              example: Vasp:019542f5-b3e7-1d02-0000-000000000001
             defaultUmaDepositAccount:
               type: boolean
               description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.

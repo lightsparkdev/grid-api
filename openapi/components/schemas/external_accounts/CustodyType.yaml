@@ -1,0 +1,12 @@
+type: string
+enum:
+  - SELF_CUSTODY
+  - VASP_HOSTED
+description: >-
+  How a crypto wallet external account is custodied: `SELF_CUSTODY` for a
+  wallet whose keys the owner controls directly, or `VASP_HOSTED` for an
+  account held at a Virtual Asset Service Provider (an exchange or other
+  custodial platform). Only relevant for crypto wallet accounts; defaults to
+  `SELF_CUSTODY`. Ownership verification applies only to `SELF_CUSTODY`
+  wallets — `VASP_HOSTED` accounts never require it.
+example: SELF_CUSTODY

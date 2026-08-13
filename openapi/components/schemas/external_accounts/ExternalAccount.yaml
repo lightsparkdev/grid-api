@@ -24,6 +24,14 @@ allOf:
         example: acc_123456789
       ownershipType:
         $ref: ./OwnershipType.yaml
+      custodyType:
+        $ref: ./CustodyType.yaml
+      vaspId:
+        type: string
+        description: >-
+          The VASP that custodies this account, from the VASP directory
+          (`GET /vasps`). Only present when `custodyType` is `VASP_HOSTED`.
+        example: Vasp:019542f5-b3e7-1d02-0000-000000000001
       currency:
         type: string
         description: The ISO 4217 currency code
