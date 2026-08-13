@@ -3,12 +3,14 @@ description: >-
   An authentication session on an Embedded Wallet internal account.
   Returned from `GET /auth/sessions` (list) and
   `POST /auth/credentials/{id}/verify` (on credential verification) or
-  `POST /auth/sessions/{id}/refresh` (on mid-session refresh). Under the
-  client-held-key model the client generates and retains the session
-  signing key, so session-issuing responses carry no key material. The
-  deprecated `encryptedSessionSigningKey` is populated only for legacy
-  sessions not yet migrated to that model and is never returned by the
-  list endpoint.
+  `POST /auth/sessions/{id}/refresh` (on mid-session refresh). The
+  `clientPublicKey` encoding on the issuing request selects the flow: a
+  compressed key gets the client-held-key model, where the client
+  generates and retains the session signing key and session-issuing
+  responses carry no key material; an uncompressed key gets the
+  deprecated legacy flow, where Grid seals the session signing key to
+  that public key and returns it as `encryptedSessionSigningKey`. Never
+  returned by the list endpoint.
 allOf:
   - $ref: ./AuthMethod.yaml
   - type: object
@@ -29,22 +31,21 @@ allOf:
         type: string
         deprecated: true
         description: >-
-          Deprecated. Superseded by the client-held-key model, which is
-          now the norm for every credential type: the client generates a
-          session keypair before authentication and retains the private
-          key, so the server has no key to deliver and this field is
-          omitted from session-issuing responses.
+          Deprecated; present only for the legacy flow, selected by
+          sending an uncompressed `clientPublicKey` on the verification
+          or refresh request. Grid seals the session signing key to
+          that public key and returns it here as a base58check string
+          (a 33-byte compressed P-256 encapsulated public key followed
+          by AES-256-GCM ciphertext) for the client to decrypt with its
+          private key.
 
 
-          Historically populated only for `OAUTH` and `PASSKEY` sessions,
-          where the session signing key was HPKE-sealed to the supplied
-          `clientPublicKey` and returned here as a base58check string (a
-          33-byte compressed P-256 encapsulated public key followed by
-          AES-256-GCM ciphertext) for the client to decrypt with its
-          private key. Migrated credential types omit it entirely; it
-          remains present only for legacy sessions not yet moved to the
-          client-held-key model, and will be removed in a future version.
-          Always omitted from list responses (`GET /auth/sessions`).
+          The recommended client-held-key flow sends a compressed
+          `clientPublicKey` instead: the client generates and retains
+          the session signing key itself, so this field is omitted —
+          the same way `EMAIL_OTP` and `SMS_OTP` sessions have always
+          worked. See the "Client keys & signing" guide. Always omitted
+          from list responses (`GET /auth/sessions`).
         example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
       expiresAt:
         type: string

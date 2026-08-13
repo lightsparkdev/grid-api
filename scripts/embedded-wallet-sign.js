@@ -8,11 +8,15 @@
  *
  * Subcommands:
  *
- *   gen-keypair
- *       Generate an ephemeral P-256 keypair (TEK). Prints JSON with `pubHex`
- *       and `privHex`. The public key is encrypted inside the OTP bundle
- *       for EMAIL_OTP verification; the private key becomes the session
- *       signing key after successful verify.
+ *   gen-keypair [--compressed]
+ *       Generate an ephemeral P-256 keypair. Prints JSON with `pubHex` and
+ *       `privHex`. By default `pubHex` is uncompressed SEC1 (`04...`): for
+ *       EMAIL_OTP, it's encrypted inside the OTP bundle and the private key
+ *       becomes the session signing key after successful verify. With
+ *       `--compressed`, `pubHex` is compressed SEC1 (`02`/`03...`) — pass it
+ *       as `clientPublicKey` on the OAuth/PASSKEY challenge or verify call to
+ *       select the client-held-key flow, where this private key becomes the
+ *       session signing key directly.
  *
  *   encrypt-otp <otpEncryptionTargetBundle> <pubHex> <otpCode>
  *       HPKE-encrypt `{otp_code, public_key}` under the target bundle
@@ -21,10 +25,11 @@
  *       `POST /auth/credentials/{id}/verify`.
  *
  *   decrypt-bundle <bundle> <privHex>
- *       HPKE-open the `encryptedSessionSigningKey` returned by PASSKEY/OAUTH
- *       `POST /auth/credentials/{id}/verify`. (EMAIL_OTP does not return
- *       this field — the TEK private key IS the session signing key.)
- *       Prints the session API private key as hex.
+ *       HPKE-open the `encryptedSessionSigningKey` returned by the legacy
+ *       (uncompressed-key) PASSKEY/OAUTH `POST /auth/credentials/{id}/verify`
+ *       flow. Not needed for EMAIL_OTP or the compressed-key client-held
+ *       flow — in both, the generated private key IS the session signing
+ *       key. Prints the session API private key as hex.
  *
  *   stamp <sessionPrivHex> <payload>
  *       Build a Grid wallet signature over a `payloadToSign`. Prints the value
@@ -51,16 +56,21 @@ function jwkB64ToHex(b64url) {
   return Buffer.from(b64url, "base64url").toString("hex");
 }
 
-function genKeypair() {
+function genKeypair({ compressed = false } = {}) {
   const { publicKey, privateKey } = generateKeyPairSync("ec", {
     namedCurve: "prime256v1",
   });
   const privJwk = privateKey.export({ format: "jwk" });
+  const privHex = jwkB64ToHex(privJwk.d);
+  if (compressed) {
+    // Compressed SEC1 (02/03 prefix) selects the client-held-key flow on
+    // the OAuth/PASSKEY challenge and verify endpoints.
+    return { pubHex: privHexToCompressedPubHex(privHex), privHex };
+  }
   const pubJwk = publicKey.export({ format: "jwk" });
   // Uncompressed SEC1: 0x04 || X || Y
   const pubHex =
     "04" + jwkB64ToHex(pubJwk.x) + jwkB64ToHex(pubJwk.y);
-  const privHex = jwkB64ToHex(privJwk.d);
   return { pubHex, privHex };
 }
 
@@ -102,7 +112,8 @@ async function main() {
   const [, , cmd, ...rest] = process.argv;
   switch (cmd) {
     case "gen-keypair": {
-      const out = genKeypair();
+      const compressed = rest.includes("--compressed");
+      const out = genKeypair({ compressed });
       process.stdout.write(JSON.stringify(out, null, 2) + "\n");
       return;
     }
@@ -155,9 +166,9 @@ function usage(code) {
     "embedded-wallet-sign — signing helpers for the Grid offramp flow",
     "",
     "Subcommands:",
-    "  gen-keypair                                       Generate ephemeral P-256 keypair (TEK)",
+    "  gen-keypair [--compressed]                        Generate ephemeral P-256 keypair; --compressed for the OAuth/PASSKEY client-held flow",
     "  encrypt-otp <targetBundle> <pubHex> <otpCode>     HPKE-encrypt OTP for EMAIL_OTP verify",
-    "  decrypt-bundle <bundle> <privHex>                 HPKE-open the session signing key (PASSKEY/OAUTH)",
+    "  decrypt-bundle <bundle> <privHex>                 HPKE-open the session signing key (legacy PASSKEY/OAUTH flow)",
     "  stamp <sessionPrivHex> <payload>                  Build a Grid-Wallet-Signature stamp",
     "",
     "Use - in place of any argument to read it from stdin.",

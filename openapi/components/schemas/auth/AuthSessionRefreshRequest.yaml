@@ -1,25 +1,29 @@
 title: Auth Session Refresh Request
 description: >-
   Request body for refreshing an active authentication session. The
-  `clientPublicKey` is required on both steps of the signed-retry flow; its
-  matching private key is retained on the client and becomes the new session
-  signing key under the client-held-key model. On the initial call, Grid
-  binds this key into the session-creation payload returned as
-  `payloadToSign`; the client echoes the same key back on the signed retry.
+  `clientPublicKey` is required on both steps of the signed-retry flow and
+  must match on both. Its SEC1 encoding selects how the refreshed session
+  signing key is delivered: a compressed key gets the recommended
+  client-held-key model, where the client retains the new signing key
+  itself; an uncompressed key gets the deprecated legacy flow, where Grid
+  returns the new key as `encryptedSessionSigningKey` sealed to it. On the
+  initial call, Grid binds the supplied key into the session-creation
+  payload returned as `payloadToSign`.
 type: object
 required:
   - clientPublicKey
 properties:
   clientPublicKey:
     type: string
-    pattern: "^04[0-9a-fA-F]{128}$"
+    pattern: "^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$"
     description: >-
-      Client-generated P-256 public key, hex-encoded in uncompressed SEC1
-      format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates;
-      130 hex characters total). The matching private key is retained on the
-      client and serves as the new session signing key under the
-      client-held-key model. Grid binds this public key into the
-      session-creation payload on the initial call; for legacy sessions not
-      yet migrated it additionally seals the deprecated
-      `encryptedSessionSigningKey` to it on the signed retry.
-    example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+      Client-generated P-256 public key; the matching private key is
+      retained on the client. Send a compressed SEC1 key (`02`/`03` prefix
+      followed by the 32-byte X coordinate; 66 hex characters) for the
+      recommended client-held-key model, where that private key becomes the
+      new session signing key. Send an uncompressed SEC1 key (`04` prefix
+      followed by the 32-byte X and 32-byte Y coordinates; 130 hex
+      characters) for the deprecated legacy flow, where Grid seals the new
+      session signing key to it and returns it as
+      `encryptedSessionSigningKey` on the signed retry.
+    example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
