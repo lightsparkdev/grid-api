@@ -19241,10 +19241,10 @@ components:
               $ref: '#/components/schemas/OwnershipType'
             custodyType:
               $ref: '#/components/schemas/CustodyType'
-            vaspId:
+            vaspName:
               type: string
-              description: The VASP that custodies this account, from the VASP directory (`GET /vasps`). Only present when `custodyType` is `VASP_HOSTED`.
-              example: Vasp:019542f5-b3e7-1d02-0000-000000000001
+              description: Canonical name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Only present when `custodyType` is `VASP_HOSTED`.
+              example: Kraken
             currency:
               type: string
               description: The ISO 4217 currency code
@@ -20161,10 +20161,10 @@ components:
               $ref: '#/components/schemas/OwnershipType'
             custodyType:
               $ref: '#/components/schemas/CustodyType'
-            vaspId:
+            vaspName:
               type: string
-              description: The VASP that custodies this account, from the VASP directory (`GET /vasps`). Required when `custodyType` is `VASP_HOSTED`; must be omitted otherwise.
-              example: Vasp:019542f5-b3e7-1d02-0000-000000000001
+              description: Canonical name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Required when `custodyType` is `VASP_HOSTED`; must be omitted otherwise.
+              example: Kraken
             defaultUmaDepositAccount:
               type: boolean
               description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
