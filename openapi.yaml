@@ -8293,11 +8293,7 @@ paths:
         - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
         - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`.
 
-        Because both updates are sensitive state changes, this endpoint uses Grid's 202 → signed-retry pattern (same shape as `DELETE /auth/credentials/{id}` and `POST /internal-accounts/{id}/export`):
-
-        1. Call `PATCH /cards/{id}` with the target fields and no signing headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
-
-        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the card's owning internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with the updated `Card`.
+        This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
         Effects:
         - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
@@ -8311,21 +8307,6 @@ paths:
         - Cards
       security:
         - BasicAuth: []
-      parameters:
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified authentication credential on the card's owning internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
-          schema:
-            type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
-        - name: Request-Id
-          in: header
-          required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
-          schema:
-            type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       requestBody:
         required: true
         content:
@@ -8359,17 +8340,11 @@ paths:
                   state: CLOSED
       responses:
         '200':
-          description: Signed retry accepted. Returns the updated card.
+          description: Card updated. Returns the updated card.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Card'
-        '202':
-          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified authentication credential on the card's owning internal account, along with a `requestId` that must be echoed back on the retry.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SignedRequestChallenge'
         '400':
           description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, and for general invalid parameters.
           content:
@@ -8377,7 +8352,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending update challenge for this card, or when the `Request-Id` does not match an unexpired pending challenge.
+          description: Unauthorized. Returned when the platform credential is missing or invalid, or does not grant access to this card.
           content:
             application/json:
               schema:
