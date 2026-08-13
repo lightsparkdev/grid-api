@@ -1,0 +1,74 @@
+post:
+  summary: Verify ownership with a wallet signature
+  description: |
+    Complete a `WALLET_SIGNATURE` challenge by submitting the signature the
+    wallet produced for the challenge's `messageToSign`. The message must be
+    signed exactly as returned, and the signature must be submitted before
+    the challenge's `expiresAt` — after expiry, start a new challenge.
+
+    On success the account moves to `ACTIVE`; on an invalid signature it
+    moves to `UNVERIFIED` (start a new challenge to retry). `LIVENESS`
+    challenges complete asynchronously and never use this endpoint — their
+    outcome is delivered via `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by
+    polling the account.
+  operationId: verifyPlatformExternalAccountOwnership
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: externalAccountId
+      in: path
+      description: External account ID
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/external_accounts/OwnershipVerifyRequest.yaml
+  responses:
+    '200':
+      description: >-
+        Signature valid; the updated external account is returned with
+        `status: ACTIVE`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/ExternalAccount.yaml
+    '400':
+      description: >-
+        Invalid or expired signature. The account moves to `UNVERIFIED`;
+        start a new challenge to retry.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: External account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        No `WALLET_SIGNATURE` challenge is outstanding for this external
+        account.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

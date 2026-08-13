@@ -3,8 +3,11 @@ post:
   description: >
     Webhook that is called whenever the status of an external account changes,
     for any transition between statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`,
-    `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`) — for example when an account
-    under review becomes active, or when ownership verification completes.
+    `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`, `UNVERIFIED`) — for example
+    when an account under review becomes active, when ownership verification
+    completes (`PENDING_OWNERSHIP_VERIFICATION` → `ACTIVE`), or when a
+    verification attempt fails (`PENDING_OWNERSHIP_VERIFICATION` →
+    `UNVERIFIED`).
 
     This endpoint should be implemented by clients of the Grid API.
 
@@ -48,7 +51,7 @@ post:
         schema:
           $ref: ../components/schemas/webhooks/ExternalAccountStatusWebhook.yaml
         examples:
-          statusUpdated:
+          verificationSucceeded:
             summary: A wallet account became active after ownership verification
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000042
@@ -58,6 +61,21 @@ post:
                 id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
                 customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
                 status: ACTIVE
+                currency: USDC
+                ownershipType: FIRST_PARTY
+                accountInfo:
+                  accountType: ETHEREUM_WALLET
+                  address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+          verificationFailed:
+            summary: A liveness check failed; a new challenge is needed to retry
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000043
+              type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+              timestamp: '2025-08-15T14:45:00Z'
+              data:
+                id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                status: UNVERIFIED
                 currency: USDC
                 ownershipType: FIRST_PARTY
                 accountInfo:

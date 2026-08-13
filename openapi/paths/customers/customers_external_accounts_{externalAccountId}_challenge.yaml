@@ -1,0 +1,81 @@
+post:
+  summary: Start an ownership verification challenge
+  description: |
+    Start (or restart) ownership verification for a `FIRST_PARTY` self-custody
+    crypto wallet external account in `PENDING_OWNERSHIP_VERIFICATION` or
+    `UNVERIFIED` status. The response carries the method-specific challenge
+    material:
+
+    - `WALLET_SIGNATURE` — a `messageToSign`; have the wallet sign it exactly
+      and submit the result to the verify endpoint to complete verification
+      synchronously.
+    - `LIVENESS` — a hosted `verificationLink` (and possibly an embed
+      `token`); the user completes a biometric flow and verification completes
+      asynchronously. The outcome is delivered via
+      `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the account.
+
+    Calling this endpoint again abandons any in-flight challenge and issues a
+    new one with the requested method — use it to retry after a failed
+    attempt, to replace an expired challenge, or to switch methods. An
+    `UNVERIFIED` account returns to `PENDING_OWNERSHIP_VERIFICATION` when a
+    new challenge is issued.
+
+    Completing ownership verification moves the account to `ACTIVE`.
+  operationId: createExternalAccountOwnershipChallenge
+  tags:
+    - External Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: externalAccountId
+      in: path
+      description: External account ID
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/external_accounts/OwnershipChallengeRequest.yaml
+  responses:
+    '201':
+      description: Challenge created; the method-specific material is returned.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/external_accounts/OwnershipChallenge.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: External account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Ownership verification is not applicable to this external account
+        (not a self-custody crypto wallet, not `FIRST_PARTY`, or already
+        verified).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
