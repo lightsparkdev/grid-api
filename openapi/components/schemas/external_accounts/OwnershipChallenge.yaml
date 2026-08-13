@@ -1,0 +1,11 @@
+description: >-
+  An ownership verification challenge for a crypto wallet external account.
+  The shape is determined by the challenge `method`.
+oneOf:
+  - $ref: ./WalletSignatureChallenge.yaml
+  - $ref: ./LivenessChallenge.yaml
+discriminator:
+  propertyName: method
+  mapping:
+    WALLET_SIGNATURE: ./WalletSignatureChallenge.yaml
+    LIVENESS: ./LivenessChallenge.yaml

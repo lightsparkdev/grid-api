@@ -1,0 +1,12 @@
+type: string
+enum:
+  - WALLET_SIGNATURE
+  - LIVENESS
+description: |
+  The method used to verify ownership of a self-custody crypto wallet.
+
+  | Method | Description |
+  |--------|-------------|
+  | `WALLET_SIGNATURE` | Prove control of the wallet by signing a message with the wallet's key |
+  | `LIVENESS` | Prove identity via a hosted biometric verification flow |
+example: WALLET_SIGNATURE

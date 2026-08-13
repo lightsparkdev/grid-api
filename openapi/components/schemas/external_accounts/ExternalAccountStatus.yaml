@@ -2,6 +2,15 @@ type: string
 enum:
   - PENDING
   - ACTIVE
+  - PENDING_OWNERSHIP_VERIFICATION
+  - UNVERIFIED
   - UNDER_REVIEW
   - INACTIVE
-description: Status of an external account
+description: |
+  Status of an external account.
+
+  `PENDING_OWNERSHIP_VERIFICATION`: the wallet's ownership must be verified
+  (e.g. under the EU Travel Rule) before unrestricted use; transfers below
+  regulatory thresholds are still allowed. `UNVERIFIED`: the most recent
+  verification attempt failed; start a new challenge to retry. Successful
+  verification moves the account to `ACTIVE`.
