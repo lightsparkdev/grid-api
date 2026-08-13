@@ -20169,6 +20169,10 @@ components:
               example: ext_acc_123456
             ownershipType:
               $ref: '#/components/schemas/OwnershipType'
+            paymentRail:
+              description: Selects the canonical payment rail for account creation. Required account fields and supported currency and rail combinations are validated by the implementation. When omitted, the implementation infers supported rails from the account fields for backward compatibility.
+              allOf:
+                - $ref: '#/components/schemas/PaymentRail'
             defaultUmaDepositAccount:
               type: boolean
               description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.
@@ -20191,6 +20195,10 @@ components:
           example: ext_acc_123456
         ownershipType:
           $ref: '#/components/schemas/OwnershipType'
+        paymentRail:
+          description: Selects the canonical payment rail for account creation. Required account fields and supported currency and rail combinations are validated by the implementation. When omitted, the implementation infers supported rails from the account fields for backward compatibility.
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
         accountInfo:
           $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
     BeneficialOwnerListResponse:

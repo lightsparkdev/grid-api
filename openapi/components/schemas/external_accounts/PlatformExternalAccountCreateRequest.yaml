@@ -13,5 +13,14 @@ properties:
     example: ext_acc_123456
   ownershipType:
     $ref: ./OwnershipType.yaml
+  paymentRail:
+    description: >-
+      Selects the canonical payment rail for account creation. Required
+      account fields and supported currency and rail combinations are
+      validated by the implementation. When omitted, the implementation
+      infers supported rails from the account fields for backward
+      compatibility.
+    allOf:
+      - $ref: ../common/PaymentRail.yaml
   accountInfo:
     $ref: ./ExternalAccountCreateInfoOneOf.yaml
