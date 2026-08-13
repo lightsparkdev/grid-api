@@ -1,0 +1,19 @@
+type: object
+properties:
+  beneficiary:
+    description: >-
+      The person or business that owns this wallet. Optional for
+      `FIRST_PARTY` accounts — when omitted, the customer's verified identity
+      is used. Required for `THIRD_PARTY` wallets on platforms subject to
+      counterparty requirements — for example, under the EU Travel Rule or
+      similar requirements in other regions.
+    oneOf:
+      - title: Individual Beneficiary
+        $ref: ./IndividualBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/BusinessBeneficiary.yaml
+    discriminator:
+      propertyName: beneficiaryType
+      mapping:
+        INDIVIDUAL: ./IndividualBeneficiary.yaml
+        BUSINESS: ../common/BusinessBeneficiary.yaml

@@ -18991,16 +18991,77 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/SwiftBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    BeneficiaryType:
+      type: string
+      enum:
+        - INDIVIDUAL
+        - BUSINESS
+      description: Whether the beneficiary is an individual or a business entity
+      example: INDIVIDUAL
+    BaseBeneficiary:
+      type: object
+      required:
+        - beneficiaryType
+      properties:
+        beneficiaryType:
+          $ref: '#/components/schemas/BeneficiaryType'
+        address:
+          $ref: '#/components/schemas/Address'
+    IndividualBeneficiary:
+      title: Individual Beneficiary
+      allOf:
+        - $ref: '#/components/schemas/BaseBeneficiary'
+        - type: object
+          required:
+            - fullName
+            - birthDate
+            - nationality
+            - beneficiaryType
+          properties:
+            beneficiaryType:
+              type: string
+              enum:
+                - INDIVIDUAL
+            fullName:
+              type: string
+              description: Individual's full name
+              example: John Michael Doe
+            birthDate:
+              type: string
+              format: date
+              description: Date of birth in ISO 8601 format (YYYY-MM-DD)
+              example: '1990-01-15'
+            nationality:
+              type: string
+              description: Country code (ISO 3166-1 alpha-2)
+              example: US
+    WalletBeneficiaryFields:
+      type: object
+      properties:
+        beneficiary:
+          description: The person or business that owns this wallet. Optional for `FIRST_PARTY` accounts — when omitted, the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms subject to counterparty requirements — for example, under the EU Travel Rule or similar requirements in other regions.
+          oneOf:
+            - title: Individual Beneficiary
+              $ref: '#/components/schemas/IndividualBeneficiary'
+            - title: Business Beneficiary
+              $ref: '#/components/schemas/BusinessBeneficiary'
+          discriminator:
+            propertyName: beneficiaryType
+            mapping:
+              INDIVIDUAL: '#/components/schemas/IndividualBeneficiary'
+              BUSINESS: '#/components/schemas/BusinessBeneficiary'
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     EthereumWalletExternalAccountInfo:
       title: Ethereum L1 Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     LightningInfo:
       type: object
       description: |
@@ -19034,26 +19095,31 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     PlasmaWalletExternalAccountInfo:
       title: Plasma Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     SparkWalletExternalAccountInfo:
       title: Spark Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     TronWalletExternalAccountInfo:
       title: Tron Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     CnyBeneficiary:
       title: Individual Beneficiary
       type: object
