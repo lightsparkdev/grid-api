@@ -9,16 +9,8 @@ enum:
 description: |
   Status of an external account.
 
-  `PENDING_OWNERSHIP_VERIFICATION` applies to crypto wallet accounts whose
-  ownership must be verified before the account can be used without
-  restriction — for example, under the EU Travel Rule or similar requirements
-  in other regions. It covers both "verification not yet started" and
-  "verification in progress" (e.g. a liveness check underway). While in this
-  status, the account can be used for transfers below regulatory thresholds.
-
-  `UNVERIFIED` means the most recent ownership verification attempt failed.
-  The account keeps the same below-threshold capabilities as
-  `PENDING_OWNERSHIP_VERIFICATION`; start a new challenge to retry, which
-  returns the account to `PENDING_OWNERSHIP_VERIFICATION`.
-
-  Completing ownership verification moves the account to `ACTIVE`.
+  `PENDING_OWNERSHIP_VERIFICATION`: the wallet's ownership must be verified
+  (e.g. under the EU Travel Rule) before unrestricted use; transfers below
+  regulatory thresholds are still allowed. `UNVERIFIED`: the most recent
+  verification attempt failed; start a new challenge to retry. Successful
+  verification moves the account to `ACTIVE`.
