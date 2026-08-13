@@ -1,0 +1,59 @@
+get:
+  summary: List VASPs
+  description: >
+    Retrieve the directory of Virtual Asset Service Providers (exchanges and
+    other custodial platforms) recognized for counterparty declarations.
+    Search by name to find the VASP that custodies a counterparty account.
+  operationId: listVasps
+  tags:
+    - VASPs
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: search
+      in: query
+      description: Filter to VASPs whose name matches this string
+      required: false
+      schema:
+        type: string
+        example: kraken
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/vasps/VaspListResponse.yaml
+    '400':
+      description: Bad request - Invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

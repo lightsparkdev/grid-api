@@ -40,6 +40,10 @@ tags:
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
+  - name: VASPs
+    description: >-
+      Directory of Virtual Asset Service Providers (exchanges and other
+      custodial platforms) recognized for counterparty declarations.
   - name: Same-Currency Transfers
     description: Endpoints for transferring funds between internal and external accounts with the same currency
   - name: Cross-Currency Transfers
@@ -259,6 +263,8 @@ paths:
     $ref: paths/sandbox/sandbox_internal_accounts_{accountId}_fund.yaml
   /uma-providers:
     $ref: paths/uma_providers/uma_providers.yaml
+  /vasps:
+    $ref: paths/vasps/vasps.yaml
   /tokens:
     $ref: paths/tokens/tokens.yaml
   /tokens/{tokenId}:

@@ -1,0 +1,18 @@
+type: object
+required:
+  - id
+  - name
+properties:
+  id:
+    type: string
+    description: >-
+      Stable identifier for this VASP. Pass it as `vaspId` when declaring a
+      VASP-hosted counterparty.
+    example: Vasp:019542f5-b3e7-1d02-0000-000000000001
+  name:
+    type: string
+    description: Display name of the VASP
+    example: Kraken
+description: >-
+  A Virtual Asset Service Provider (VASP) — an exchange or other custodial
+  platform — recognized for counterparty declarations.

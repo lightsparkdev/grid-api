@@ -33,6 +33,8 @@ tags:
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
+  - name: VASPs
+    description: Directory of Virtual Asset Service Providers (exchanges and other custodial platforms) recognized for counterparty declarations.
   - name: Same-Currency Transfers
     description: Endpoints for transferring funds between internal and external accounts with the same currency
   - name: Cross-Currency Transfers
@@ -5124,6 +5126,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UmaProviderListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /vasps:
+    get:
+      summary: List VASPs
+      description: |
+        Retrieve the directory of Virtual Asset Service Providers (exchanges and other custodial platforms) recognized for counterparty declarations. Search by name to find the VASP that custodies a counterparty account.
+      operationId: listVasps
+      tags:
+        - VASPs
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: search
+          in: query
+          description: Filter to VASPs whose name matches this string
+          required: false
+          schema:
+            type: string
+            example: kraken
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaspListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
@@ -22395,6 +22455,41 @@ components:
         totalCount:
           type: integer
           description: Total number of transactions matching the criteria (excluding pagination)
+    Vasp:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Stable identifier for this VASP. Pass it as `vaspId` when declaring a VASP-hosted counterparty.
+          example: Vasp:019542f5-b3e7-1d02-0000-000000000001
+        name:
+          type: string
+          description: Display name of the VASP
+          example: Kraken
+      description: A Virtual Asset Service Provider (VASP) — an exchange or other custodial platform — recognized for counterparty declarations.
+    VaspListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of VASPs matching the filter criteria
+          items:
+            $ref: '#/components/schemas/Vasp'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
+        totalCount:
+          type: integer
+          description: Total number of results matching the criteria
     Permission:
       type: string
       enum:
