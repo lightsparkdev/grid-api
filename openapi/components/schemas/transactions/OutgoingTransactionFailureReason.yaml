@@ -8,7 +8,6 @@ enum:
   - TIMEOUT
   - MANUAL_REFUND
   - SCA_NOT_COMPLETED
-  - LSP_OPERATIONAL_FAILURE
   - PAYOUT_RETURNED
   - LIMIT_EXCEEDED
   - ACCOUNT_CANNOT_RECEIVE
@@ -43,7 +42,6 @@ description: |
   | `TIMEOUT` | The transaction did not complete within its processing window |
   | `MANUAL_REFUND` | The transaction was refunded manually |
   | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
-  | `LSP_OPERATIONAL_FAILURE` | A Lightspark-internal operational issue (for example, insufficient operational balance). Not a client error — contact Lightspark to resolve |
   | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
   | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
   | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency isn't supported for that account |
