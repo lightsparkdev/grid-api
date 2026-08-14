@@ -19418,21 +19418,24 @@ components:
           description: The phone number of the beneficiary
         address:
           $ref: '#/components/schemas/Address'
+    WalletBeneficiaryOneOf:
+      description: The person or business that owns a crypto wallet external account.
+      oneOf:
+        - title: Individual Beneficiary
+          $ref: '#/components/schemas/WalletIndividualBeneficiary'
+        - title: Business Beneficiary
+          $ref: '#/components/schemas/BusinessBeneficiary'
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/WalletIndividualBeneficiary'
+          BUSINESS: '#/components/schemas/BusinessBeneficiary'
     WalletBeneficiaryFields:
       type: object
       properties:
         beneficiary:
           description: The person or business that owns this wallet. Optional for `FIRST_PARTY` accounts — when omitted, the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms subject to counterparty requirements — for example, under the EU Travel Rule or similar requirements in other regions.
-          oneOf:
-            - title: Individual Beneficiary
-              $ref: '#/components/schemas/WalletIndividualBeneficiary'
-            - title: Business Beneficiary
-              $ref: '#/components/schemas/BusinessBeneficiary'
-          discriminator:
-            propertyName: beneficiaryType
-            mapping:
-              INDIVIDUAL: '#/components/schemas/WalletIndividualBeneficiary'
-              BUSINESS: '#/components/schemas/BusinessBeneficiary'
+          $ref: '#/components/schemas/WalletBeneficiaryOneOf'
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
