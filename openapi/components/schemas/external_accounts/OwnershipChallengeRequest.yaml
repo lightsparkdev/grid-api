@@ -1,0 +1,10 @@
+type: object
+description: >-
+  Starts (or restarts) an ownership verification challenge for a crypto
+  wallet external account.
+required:
+  - method
+properties:
+  method:
+    $ref: ./OwnershipVerificationMethod.yaml
+    description: The verification method to use for this challenge.

@@ -189,10 +189,18 @@ paths:
     $ref: paths/customers/customers_external_accounts.yaml
   /customers/external-accounts/{externalAccountId}:
     $ref: paths/customers/customers_external_accounts_{externalAccountId}.yaml
+  /customers/external-accounts/{externalAccountId}/challenge:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_challenge.yaml
+  /customers/external-accounts/{externalAccountId}/verify:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_verify.yaml
   /platform/external-accounts:
     $ref: paths/platform/platform_external_accounts.yaml
   /platform/external-accounts/{externalAccountId}:
     $ref: paths/platform/platform_external_accounts_{externalAccountId}.yaml
+  /platform/external-accounts/{externalAccountId}/challenge:
+    $ref: paths/platform/platform_external_accounts_{externalAccountId}_challenge.yaml
+  /platform/external-accounts/{externalAccountId}/verify:
+    $ref: paths/platform/platform_external_accounts_{externalAccountId}_verify.yaml
   /beneficial-owners:
     $ref: paths/beneficial-owners/beneficial_owners.yaml
   /beneficial-owners/{beneficialOwnerId}:
@@ -389,6 +397,8 @@ webhooks:
     $ref: webhooks/customer-update.yaml
   internal-account-status:
     $ref: webhooks/internal-account-status.yaml
+  external-account-status:
+    $ref: webhooks/external-account-status.yaml
   verification-update:
     $ref: webhooks/verification-update.yaml
   card-state-change:
