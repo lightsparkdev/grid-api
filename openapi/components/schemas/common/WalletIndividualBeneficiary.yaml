@@ -15,23 +15,5 @@ properties:
     example: John Michael Doe
   countryOfResidence:
     type: string
-    description: >-
-      The country of residence of the beneficiary (ISO 3166-1 alpha-2)
+    description: The country of residence of the beneficiary (ISO 3166-1 alpha-2)
     example: US
-  birthDate:
-    type: string
-    format: date
-    description: The birth date of the beneficiary in ISO 8601 format (YYYY-MM-DD)
-    example: '1990-01-15'
-  nationality:
-    type: string
-    description: The nationality of the beneficiary (ISO 3166-1 alpha-2)
-    example: US
-  email:
-    type: string
-    description: The email of the beneficiary
-  phoneNumber:
-    type: string
-    description: The phone number of the beneficiary
-  address:
-    $ref: ./Address.yaml

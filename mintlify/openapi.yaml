@@ -19401,23 +19401,6 @@ components:
           type: string
           description: The country of residence of the beneficiary (ISO 3166-1 alpha-2)
           example: US
-        birthDate:
-          type: string
-          format: date
-          description: The birth date of the beneficiary in ISO 8601 format (YYYY-MM-DD)
-          example: '1990-01-15'
-        nationality:
-          type: string
-          description: The nationality of the beneficiary (ISO 3166-1 alpha-2)
-          example: US
-        email:
-          type: string
-          description: The email of the beneficiary
-        phoneNumber:
-          type: string
-          description: The phone number of the beneficiary
-        address:
-          $ref: '#/components/schemas/Address'
     WalletBeneficiaryOneOf:
       description: The person or business that owns a crypto wallet external account.
       oneOf:
@@ -19434,7 +19417,7 @@ components:
       type: object
       properties:
         beneficiary:
-          description: The person or business that owns this wallet. Optional for `FIRST_PARTY` accounts — when omitted, the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms subject to counterparty requirements — for example, under the EU Travel Rule or similar requirements in other regions.
+          description: The wallet's owner. Optional for `FIRST_PARTY` accounts — the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms with counterparty requirements (e.g. EU Travel Rule); if missing there, creation fails with `400 INVALID_INPUT`.
           $ref: '#/components/schemas/WalletBeneficiaryOneOf'
     BaseWalletExternalAccountInfo:
       title: Base Wallet
