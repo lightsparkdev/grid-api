@@ -13,6 +13,8 @@ description: >-
   Reason for failure of an incoming transaction. This is used to provide more
   context on why a transaction failed. If the transaction is not in a failed
   state, this field is omitted. COLLECTION_FAILED means an inbound bank-rail
-  collection (e.g. a SWIFT wire) failed after arrival — typically a
-  compliance-screening rejection or an unresolved request for information —
-  and the funds were returned to the sender by the collection provider.
+  collection deposit (e.g. a SWIFT wire) failed after arrival and did not
+  credit — most commonly a compliance-screening rejection or an unresolved
+  request for information, on either the collection provider's side or
+  Grid's. Failed collections are returned to the sender per the collection
+  provider's process.
