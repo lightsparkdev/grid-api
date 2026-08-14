@@ -11055,7 +11055,7 @@ webhooks:
                           accountHolderName: Acme Exports Pte Ltd
                           paymentRails:
                             - SWIFT
-                        instructionsNotes: Payments are attributed automatically by the destination account number; no reference code is required.
+                        instructionsNotes: Payments are attributed automatically by the destination account; no reference code is required.
                     createdAt: '2025-08-01T10:00:00Z'
                     updatedAt: '2025-08-15T14:32:00Z'
       responses:
