@@ -9,13 +9,6 @@ required:
 - swiftCode
 - bankName
 - country
-# Structural form of the description's invariant: at least one destination
-# identifier, with both allowed when the bank exposes both.
-anyOf:
-- required:
-  - accountNumber
-- required:
-  - iban
 properties:
   accountType:
     type: string
