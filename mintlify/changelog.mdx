@@ -9,6 +9,116 @@ Follow along with the latest additions and improvements to the Grid API. For upc
 changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 [contact support](mailto:support@lightspark.com).
 
+<Update label="August 2026">
+
+## Assess your own fees on every transaction
+
+Charge your customers a platform fee and keep the margin—Grid collects it for you and
+reports it separately from network and FX costs.
+
+- Set a standing fee with `feeConfigs` on `PATCH /config`—a variable rate in basis
+  points, a fixed amount, or both, applied to cross-currency transactions.
+- Override it on a single transaction with `platformFeeOverride` on `POST /quotes`, for
+  promos, VIP pricing, or negotiated rates. No standing config required.
+- Both the standing config and the per-transaction override require a USD source
+  currency today.
+- Reconcile with `platformFeesIncluded` on quotes and `platformFees` on outgoing
+  transactions—your cut, broken out of the total.
+
+See [Fees](/platform-overview/core-concepts/quote-system#fees) for exactly how the
+variable fee is assessed on each locked side.
+
+## Record end-user terms acceptance
+
+Unregulated platforms must record that each customer accepted Grid's end-user terms
+before their account opens.
+
+- `GET /customers/end-user-terms` returns the current terms URL and version.
+- Pass `endUserTermsConsent` on customer create or update with the timestamp, IP address,
+  terms version, and acceptance method.
+- Quotes fail with `END_USER_TERMS_NOT_ACCEPTED` until acceptance is on file.
+
+See [Disclosures](/payouts-and-b2b/onboarding/disclosures).
+
+## Run KYC from your own onboarding form
+
+Collect verification data in your own UI and submit it programmatically instead of
+handing customers to a hosted flow.
+
+- Enhanced due diligence—source of funds and wealth, purpose of account, expected
+  transaction count and volume, income and net worth ranges, PEP status—is now a set of
+  optional fields on the individual customer itself. Send them on `POST /customers` or
+  add them later with `PATCH /customers/{customerId}`; there is no separate EDD resource.
+- `POST /verifications` returns `RESOLVE_ERRORS` with one entry per problem, each naming
+  the exact field or accepted document types still needed, so you can fix and resubmit
+  without guessing.
+- Request validation errors return every invalid field at once in
+  `Error400.details.errors[]`, each with a machine-readable constraint you can render as
+  field-level UX—no more resubmitting to discover the next error.
+- Individual customers and beneficial owners now share one identification vocabulary:
+  `idType`, `identifier`, and `countryOfIssuance`.
+
+Rehearse the fix-and-resubmit loop in [sandbox testing](/api-reference/sandbox-testing).
+
+## Groundwork for EU support: SCA and Travel Rule
+
+The API surface for the two controls EU regulation requires is now defined, so you can
+design against it ahead of EU corridors opening.
+
+- **Strong Customer Authentication**—`POST /sca/login/complete` returns
+  `sessionExpiresAt`, so you can prompt a re-login before the 180-day session lapses
+  rather than discovering it as a failed payment. Quote authorization documents
+  `SCA_SESSION_REQUIRED` (409) and `ACCOUNT_LOCKED` (423), and `SCA_NOT_COMPLETED`
+  explains a transaction that failed on an expired challenge.
+- **Travel Rule ownership verification**—a challenge and verify flow for proving a
+  customer owns a self-custody wallet. `POST …/external-accounts/{id}/challenge` starts
+  verification by wallet signature or hosted liveness check, and `…/verify` completes a
+  signature synchronously. Accounts sit at `PENDING_OWNERSHIP_VERIFICATION`—still usable
+  below regulatory thresholds—and move to `ACTIVE` on success or `UNVERIFIED` on a failed
+  attempt. A single webhook, `EXTERNAL_ACCOUNT.STATUS_UPDATED`, covers the whole
+  lifecycle.
+
+EU availability will be announced separately.
+
+## Issue your own stablecoin
+
+Register a stablecoin with `/stablecoins`, then mint and burn directly against it with
+`/stablecoins/{stablecoinId}/mints` and `/stablecoins/{stablecoinId}/burns`.
+`/stablecoins/{stablecoinId}/operations` tracks each issuance through settlement.
+
+## More ways to move money
+
+- **USDT on Ethereum and Plasma**, alongside Tron.
+- **Bitcoin L1** deposit addresses as a payment instruction on quotes.
+- USD accounts can describe a full wire beneficiary—bank name, checking or savings,
+  intermediary bank and routing number, and bank-to-bank instructions.
+- Businesses outside the US can register as a publicly listed company, trust, private
+  foundation, or charity.
+
+See [Currencies and rails](/platform-overview/core-concepts/currencies-and-rails).
+
+## Know why a payment failed
+
+Failure reasons now name outcomes you act on rather than internal processing steps.
+
+<Warning>
+  Breaking change. `EXECUTION_FAILED_POST_DEBIT` and `SETTLEMENT_FAILED` are removed and
+  collapse into `QUOTE_EXECUTION_FAILED`, whose description now covers the whole path to
+  settlement and states that a debited amount is refunded automatically. `TIMEOUT` and
+  `MANUAL_REFUND` are removed because that outcome already surfaces on the refund object.
+</Warning>
+
+- New payout failure reasons: `PAYOUT_RETURNED`, `LIMIT_EXCEEDED`,
+  `ACCOUNT_CANNOT_RECEIVE`, `ACCOUNT_INVALID`, and `COMPLIANCE_REJECTED`.
+- `pendingReason` on any transaction tells you when it is held for compliance review or
+  waiting on customer action.
+- New limit codes: `TRANSACTION_SIZE_LIMIT_EXCEEDED` (400) and
+  `DAILY_VOLUME_LIMIT_EXCEEDED` (429).
+
+See [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle#failure-handling).
+
+</Update>
+
 <Update label="July 2026">
 
 ## Card issuance in sandbox
@@ -21,6 +131,27 @@ lifecycle—[cardholder setup](/cards/onboarding/cardholder-setup),
 before going live, without touching production.
 
 See [Cards sandbox testing](/cards/platform-tools/sandbox-testing) to get started.
+
+## Cards: real-time webhooks and full event simulation
+
+React to card activity as it happens, and rehearse every event before going live.
+
+- `CARD_TRANSACTION.*` fires on every state transition—authorized, partially settled,
+  settled, refunded, and exception—carrying the full card transaction.
+- All ten sandbox simulate endpoints, covering balance inquiries, credit and financial
+  authorizations, authorization advices, returns, and return reversals.
+- Brand the tokenization verification codes your customers receive with
+  `cardTokenization2faConfig` on platform config.
+
+See [Card webhooks](/cards/platform-tools/webhooks).
+
+## Refund visibility on incoming payments
+
+`INCOMING_PAYMENT.REFUND_PENDING`, `INCOMING_PAYMENT.REFUND_COMPLETED`, and
+`INCOMING_PAYMENT.REFUND_FAILED` now fire the same way outgoing refunds already did, so
+a returned deposit no longer surfaces only as a failed transaction.
+
+See [Refund object](/platform-overview/core-concepts/transaction-lifecycle#refund-object).
 
 ## Expanded country coverage
 
