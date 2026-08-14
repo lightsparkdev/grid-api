@@ -210,6 +210,11 @@ resources:
           external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
           external_account_info_one_of: "#/components/schemas/ExternalAccountInfoOneOf"
           business_beneficiary: "#/components/schemas/BusinessBeneficiary"
+          # Ownership verification (challenge/verify)
+          ownership_verification_method: "#/components/schemas/OwnershipVerificationMethod"
+          ownership_challenge_request: "#/components/schemas/OwnershipChallengeRequest"
+          ownership_challenge: "#/components/schemas/OwnershipChallenge"
+          ownership_verify_request: "#/components/schemas/OwnershipVerifyRequest"
           address: "#/components/schemas/Address"
           beneficiary_verified_data: "#/components/schemas/BeneficiaryVerifiedData"
           # List response
@@ -219,6 +224,8 @@ resources:
           create: post /customers/external-accounts
           retrieve: get /customers/external-accounts/{externalAccountId}
           delete: delete /customers/external-accounts/{externalAccountId}
+          challenge: post /customers/external-accounts/{externalAccountId}/challenge
+          verify: post /customers/external-accounts/{externalAccountId}/verify
       bulk:
         methods:
           upload_csv: post /customers/bulk/csv
@@ -238,6 +245,8 @@ resources:
           create: post /platform/external-accounts
           retrieve: get /platform/external-accounts/{externalAccountId}
           delete: delete /platform/external-accounts/{externalAccountId}
+          challenge: post /platform/external-accounts/{externalAccountId}/challenge
+          verify: post /platform/external-accounts/{externalAccountId}/verify
         models:
           platform_external_account_create_request: "#/components/schemas/PlatformExternalAccountCreateRequest"
           aed_account_info: "#/components/schemas/AedAccountInfo"

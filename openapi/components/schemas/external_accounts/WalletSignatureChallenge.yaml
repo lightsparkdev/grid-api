@@ -1,0 +1,29 @@
+title: Wallet Signature Challenge
+type: object
+description: >-
+  A challenge to prove ownership of the wallet by signing a message with the
+  wallet's key.
+required:
+  - method
+  - messageToSign
+  - expiresAt
+properties:
+  method:
+    type: string
+    enum:
+      - WALLET_SIGNATURE
+    description: The verification method. Always `WALLET_SIGNATURE` for this shape.
+    example: WALLET_SIGNATURE
+  messageToSign:
+    type: string
+    description: >-
+      The exact message the wallet must sign, character-for-character. Submit
+      the resulting signature via the verify endpoint.
+    example: 'I verify that I control this wallet. Nonce: 019542f5-b3e7-1d02'
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When this challenge expires. Prompt the user promptly; after expiry,
+      start a new challenge.
+    example: '2025-08-15T15:32:00Z'
