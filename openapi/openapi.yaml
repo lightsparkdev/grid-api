@@ -413,6 +413,8 @@ webhooks:
     $ref: webhooks/card-transaction.yaml
   wallet-operation:
     $ref: webhooks/wallet-operation.yaml
+  sweep:
+    $ref: webhooks/sweep.yaml
 security:
   - BasicAuth: []
   - AgentAuth: []

@@ -1,3 +1,137 @@
+post:
+  summary: Create a Customer internal account
+  description: |
+    Create a rule-based internal account for an existing customer.
+
+    A rule-based account is an additional account number for a customer that
+    already holds an account in the same currency. It carries a routing rule:
+    every payment that settles into it is attributed to that account number and
+    then forwarded to the rule's destination, so you can issue one number per
+    payer and reconcile incoming payments without matching on remittance text.
+
+    Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
+    `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
+    automatically when a customer is created or approved.
+
+    The response carries the account's own `fundingPaymentInstructions` — the
+    routable number payers send to. Rule-based accounts are currently available
+    in `USD` for individual customers, and must be enabled for your platform
+    before this endpoint accepts requests.
+
+    Creating an account mints a new account number that cannot be reversed, so
+    an `Idempotency-Key` header is required. A retry carrying the same key
+    returns the account created by the first request with a `200` instead of a
+    `201`; reusing a key for a materially different account is rejected with
+    `409`.
+  operationId: createCustomerInternalAccount
+  tags:
+    - Internal Accounts
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      description: >
+        A unique identifier for the request. Required, because creating the
+        account mints an account number that cannot be reversed. Retries must
+        carry the same key.
+      required: true
+      schema:
+        type: string
+        example: 550e8400-e29b-41d4-a716-446655440000
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/InternalAccountCreateRequest.yaml
+        examples:
+          externalDestination:
+            summary: Forward every payment to an external account over ACH
+            value:
+              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              type: RULE_BASED
+              currency: USD
+              label: invoice-4417
+              sweepRule:
+                destination:
+                  accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                  paymentRail: ACH
+                purposeOfPayment: SELF
+                description: Rent forwarding
+                remittanceInformation: Unit 4B March
+          internalDestination:
+            summary: Forward every payment to another internal account
+            value:
+              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              type: RULE_BASED
+              currency: USD
+              label: payer-northwind
+              sweepRule:
+                destination:
+                  accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  responses:
+    '200':
+      description: >-
+        The `Idempotency-Key` was already used to create this account. The
+        account created by the first request is returned unchanged.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/InternalAccount.yaml
+    '201':
+      description: >-
+        Internal account created. `fundingPaymentInstructions` carries the
+        account's own number.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/InternalAccount.yaml
+    '400':
+      description: >-
+        Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule`
+        is missing, when the currency is not supported for rule-based accounts,
+        when the customer has no account in that currency yet, when the
+        destination cannot accept the requested payment rail, and for general
+        invalid parameters.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden - rule-based accounts are not enabled for this platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Customer or destination account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict - the `Idempotency-Key` was already used to create a different
+        account, or the account for this key is still being provisioned. Retry
+        with the same key.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
 get:
   summary: List Customer internal accounts
   description: |
@@ -28,8 +162,9 @@ get:
       in: query
       description: >-
         Filter by internal account type. Use `EMBEDDED_WALLET` to find the
-        self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` /
-        `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+        self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` /
+        `INTERNAL_CRYPTO` for the platform-managed holding accounts, or
+        `RULE_BASED` for the additional account numbers issued for a customer.
       required: false
       schema:
         $ref: ../../components/schemas/customers/InternalAccountType.yaml

@@ -1,0 +1,121 @@
+post:
+  summary: Sweep webhook
+  description: >
+    Webhook that is called when a payment settles into a rule-based internal
+    account but cannot be forwarded to the destination configured on the
+    account's rule.
+
+
+    This endpoint should be implemented by clients of the Grid API.
+
+
+    ### Authentication
+
+
+    The webhook includes a signature in the `X-Grid-Signature` header that
+    allows you to verify that the webhook was sent by Grid.
+
+    To verify the signature:
+
+    1. Get the Grid public key provided to you during integration
+
+    2. Decode the base64 signature from the header
+
+    3. Create a SHA-256 hash of the request body
+
+    4. Verify the signature using the public key and the hash
+
+
+    If the signature verification succeeds, the webhook is authentic. If not, it
+    should be rejected.
+
+
+    ### Event types
+
+
+    - `SWEEP.FAILED` — Fired when the funds do not reach the rule's
+    destination. `reason` says why, and `outcome` says where the funds ended up:
+    moved to the customer's account in the same currency, or still held in the
+    rule-based account. A failed forward that also created an outgoing payment
+    fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on
+    `sendTransactionId` rather than counting the failure twice.
+
+
+    Delivery is at-least-once, so the same failure can arrive more than once
+    with different webhook ids. Deduplicate on `incomingTransactionId`.
+  operationId: sweepWebhook
+  tags:
+    - Webhooks
+  security:
+    - WebhookSignature: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/webhooks/SweepWebhook.yaml
+        examples:
+          movedToCanonicalAccount:
+            summary: The amount was below what the corridor carries, so it was moved to the customer's account
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000050
+              type: SWEEP.FAILED
+              timestamp: '2026-05-09T10:00:00Z'
+              data:
+                sourceAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                destinationAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                amount:
+                  amount: 250
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000010
+                sendTransactionId: null
+                reason: BELOW_MINIMUM
+                outcome: MOVED_TO_CANONICAL_ACCOUNT
+                canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
+          heldInRuleBasedAccount:
+            summary: The forward was sent but did not go through, and the funds stayed put
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000051
+              type: SWEEP.FAILED
+              timestamp: '2026-05-09T10:05:00Z'
+              data:
+                sourceAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                destinationAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                amount:
+                  amount: 12550
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000012
+                sendTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000013
+                reason: EXECUTION_FAILED
+                outcome: HELD_IN_RULE_BASED_ACCOUNT
+                canonicalAccountId: null
+  responses:
+    '200':
+      description: >
+        Webhook received successfully
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized - Signature validation failed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error401.yaml
+    '409':
+      description: Conflict - Webhook has already been processed (duplicate id)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/errors/Error409.yaml
