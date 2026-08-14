@@ -213,8 +213,10 @@ post:
       description: >
         Webhook received successfully.
 
-        For PENDING transactions, this indicates approval to proceed with the
-        payment.
+        For PENDING transactions on approval-mechanism rails, this indicates
+        approval to proceed with the payment. For bank-rail incoming payments
+        (e.g. SWIFT) a 200 only acknowledges receipt: there is nothing to
+        approve.
 
         If `requestedReceiverCustomerInfoFields` were present in the webhook
         request, the corresponding fields for the recipient must be included in
@@ -236,6 +238,9 @@ post:
         The platform must call the `/transactions/{transactionId}/approve` or
         `/transactions/{transactionId}/reject` endpoint to approve or reject the
         payment within 5 seconds or the payment will be automatically rejected.
+
+        Bank-rail incoming payments (e.g. SWIFT) need no approve/reject call: a
+        202 is treated the same as a 200 acknowledgment.
     '400':
       description: Bad request
       content:
@@ -251,7 +256,9 @@ post:
     '403':
       description: |
         Forbidden - Payment rejected by the client.
-        Only applicable for PENDING transactions.
+        Only applicable for PENDING transactions on approval-mechanism rails;
+        a bank-rail incoming payment (e.g. SWIFT) cannot be rejected through
+        this response because the funds have already moved interbank.
       content:
         application/json:
           schema:
@@ -265,7 +272,9 @@ post:
     '422':
       description: |
         Unprocessable Entity - Additional counterparty information required.
-        Only applicable for PENDING transactions.
+        Only applicable for PENDING transactions on approval-mechanism rails;
+        for bank-rail incoming payments (e.g. SWIFT) this response has no
+        effect on the already-received funds.
       content:
         application/json:
           schema:
