@@ -8,13 +8,15 @@ enum:
   - MISSING_MANDATORY_PAYEE_DATA
   - QUOTE_EXPIRED
   - QUOTE_EXECUTION_FAILED
+  - COMPLIANCE_REJECTED
   - COLLECTION_FAILED
 description: >-
   Reason for failure of an incoming transaction. This is used to provide more
   context on why a transaction failed. If the transaction is not in a failed
-  state, this field is omitted. COLLECTION_FAILED means an inbound bank-rail
-  collection deposit (e.g. a SWIFT wire) failed after arrival and did not
-  credit — most commonly a compliance-screening rejection or an unresolved
-  request for information, on either the collection provider's side or
-  Grid's. Failed collections are returned to the sender per the collection
-  provider's process.
+  state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked
+  the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection
+  deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most
+  commonly a compliance-screening rejection or an unresolved request for
+  information, on either the collection provider's side or Grid's. Failed
+  collections are returned to the sender per the collection provider's
+  process.
