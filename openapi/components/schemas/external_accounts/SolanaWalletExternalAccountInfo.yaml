@@ -3,3 +3,4 @@ allOf:
   - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/SolanaWalletInfo.yaml
   
+  - $ref: ./WalletBeneficiaryFields.yaml

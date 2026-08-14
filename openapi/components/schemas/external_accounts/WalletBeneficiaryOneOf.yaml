@@ -1,0 +1,12 @@
+description: >-
+  The person or business that owns a crypto wallet external account.
+oneOf:
+  - title: Individual Beneficiary
+    $ref: ../common/WalletIndividualBeneficiary.yaml
+  - title: Business Beneficiary
+    $ref: ../common/BusinessBeneficiary.yaml
+discriminator:
+  propertyName: beneficiaryType
+  mapping:
+    INDIVIDUAL: ../common/WalletIndividualBeneficiary.yaml
+    BUSINESS: ../common/BusinessBeneficiary.yaml
