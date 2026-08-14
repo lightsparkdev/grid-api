@@ -9,11 +9,11 @@ properties:
       similar requirements in other regions.
     oneOf:
       - title: Individual Beneficiary
-        $ref: ./IndividualBeneficiary.yaml
+        $ref: ../common/WalletIndividualBeneficiary.yaml
       - title: Business Beneficiary
         $ref: ../common/BusinessBeneficiary.yaml
     discriminator:
       propertyName: beneficiaryType
       mapping:
-        INDIVIDUAL: ./IndividualBeneficiary.yaml
+        INDIVIDUAL: ../common/WalletIndividualBeneficiary.yaml
         BUSINESS: ../common/BusinessBeneficiary.yaml

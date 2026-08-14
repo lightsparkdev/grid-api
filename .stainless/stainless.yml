@@ -211,6 +211,7 @@ resources:
           external_account_info_one_of: "#/components/schemas/ExternalAccountInfoOneOf"
           business_beneficiary: "#/components/schemas/BusinessBeneficiary"
           wallet_beneficiary_fields: "#/components/schemas/WalletBeneficiaryFields"
+          wallet_individual_beneficiary: "#/components/schemas/WalletIndividualBeneficiary"
           # Ownership verification (challenge/verify)
           ownership_verification_method: "#/components/schemas/OwnershipVerificationMethod"
           ownership_challenge_request: "#/components/schemas/OwnershipChallengeRequest"
