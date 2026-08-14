@@ -16944,6 +16944,11 @@ components:
         - swiftCode
         - bankName
         - country
+      anyOf:
+        - required:
+            - accountNumber
+        - required:
+            - iban
       properties:
         accountType:
           type: string
