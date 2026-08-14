@@ -38,7 +38,8 @@ allOf:
       countryOfIssuance:
         type: string
         description: >-
-          Country that issued the identification (ISO 3166-1 alpha-2). Required
-          when `idType` is `NON_US_TAX_ID`.
+          Country that issued the identification (ISO 3166-1 alpha-2). Optional
+          for an individual account holder: SSN and ITIN are US-issued, so this
+          defaults to `US` and is rejected if set to anything else.
         example: US
   - $ref: ./CustomerEdd.yaml
