@@ -8,7 +8,6 @@ icon: "/images/icons/people.svg"
 import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
 import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx'
 import KycWebhooks from '/snippets/kyc/kyc-webhooks.mdx'
-import EndUserTermsConsent from '/snippets/creating-customers/end-user-terms-consent.mdx'
 
 This guide covers everything you need to know about creating and managing customers in the Grid API for Bitcoin rewards distribution.
 
@@ -38,10 +37,8 @@ The `platformCustomerId` field is optional but recommended. Use your existing us
 </AccordionGroup>
 
 <Info>
-When a customer is created successfully, internal accounts are automatically created for each currency configured on your platform. These accounts can be used as sources or destinations for transfers. On unregulated platforms, provisioning waits until the customer's End User Terms acceptance is recorded.
+When a customer is created successfully, internal accounts are automatically created for each currency configured on your platform. These accounts can be used as sources or destinations for transfers.
 </Info>
-
-<EndUserTermsConsent />
 
 ### Handling KYC/KYB Webhooks 
 
