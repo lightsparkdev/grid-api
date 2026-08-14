@@ -10149,7 +10149,7 @@ webhooks:
     post:
       summary: Incoming payment webhook and approval mechanism
       description: |
-        Webhook that is called when an incoming payment is received by a customer's UMA address.
+        Webhook that is called when an incoming payment is received by a customer — over UMA to the customer's UMA address, or over a bank rail (e.g. a SWIFT wire to the customer's funding coordinates from `fundingPaymentInstructions`).
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -10174,6 +10174,8 @@ webhooks:
         The Grid system will proceed or cancel the payment based on your response.
 
         For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this webhook is purely informational.
+
+        Bank-rail incoming payments (e.g. SWIFT) are informational at every status, including PENDING: the funds have already moved interbank, so the approval mechanism and the 5-second response window do not apply.
       operationId: incomingPaymentWebhook
       tags:
         - Webhooks
@@ -10949,6 +10951,7 @@ webhooks:
         ### Event types
         - `INTERNAL_ACCOUNT.BALANCE_UPDATED` — Fired when the balance of an internal account changes. The `data` payload contains the full internal account object.
         - `INTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an internal account changes (e.g., `OPEN` → `FROZEN`). The `data` payload contains the full internal account object.
+        - `INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED` — Fired when the account's `fundingPaymentInstructions` change: new funding coordinates became available (e.g., a SWIFT collection account finished provisioning) or previously served coordinates were withdrawn. The `data` payload contains the full internal account object, including the current `fundingPaymentInstructions`.
       operationId: internalAccountStatusWebhook
       tags:
         - Webhooks
@@ -11015,6 +11018,44 @@ webhooks:
                         symbol: $
                         decimals: 2
                     fundingPaymentInstructions: []
+                    createdAt: '2025-08-01T10:00:00Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
+              fundingInstructionsUpdated:
+                summary: A SWIFT collection account finished provisioning and the account gained wire coordinates
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+                  type: INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: INTERNAL_FIAT
+                    status: ACTIVE
+                    balance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    totalBalance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    fundingPaymentInstructions:
+                      - accountOrWalletInfo:
+                          accountType: SWIFT_ACCOUNT
+                          country: SG
+                          swiftCode: DBSSSGSG
+                          bankName: DBS Bank
+                          accountNumber: '8850123456'
+                          accountHolderName: Acme Exports Pte Ltd
+                          paymentRails:
+                            - SWIFT
+                        instructionsNotes: Payments are attributed automatically by the destination account number; no reference code is required.
                     createdAt: '2025-08-01T10:00:00Z'
                     updatedAt: '2025-08-15T14:32:00Z'
       responses:
@@ -14532,6 +14573,7 @@ components:
         - SGD_ACCOUNT
         - THB_ACCOUNT
         - VND_ACCOUNT
+        - SWIFT_ACCOUNT
         - SPARK_WALLET
         - LIGHTNING
         - SOLANA_WALLET
@@ -16891,6 +16933,7 @@ components:
               example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
     SwiftAccountInfoBase:
       type: object
+      description: 'At least one of accountNumber or iban is always present: IBAN-only corridors (e.g. BR, GB) use iban, other corridors use accountNumber, and both appear when the bank exposes both identifiers for the same account.'
       required:
         - accountType
         - swiftCode
@@ -16960,11 +17003,23 @@ components:
         - $ref: '#/components/schemas/SwiftAccountInfo'
         - type: object
           required:
-            - reference
+            - accountHolderName
           properties:
+            accountHolderName:
+              type: string
+              description: The name of the account holder as it must appear on the wire. Remitting banks match this against the beneficiary name field, so payers should copy it exactly.
+              example: Acme Exports Pte Ltd
+              minLength: 1
+              maxLength: 255
+            bankAddress:
+              type: string
+              description: The address of the bank holding the account, when known.
+              example: 12 Marina Boulevard, Singapore 018982
+              minLength: 1
+              maxLength: 1024
             reference:
               type: string
-              description: Unique reference code that must be included with the payment to properly credit it
+              description: Reference code to include with the payment when present. SWIFT payments are attributed by the destination account number/IBAN, so this account type typically requires no reference.
               example: UMA-Q12345-REF
     CnyAccountInfoBase:
       type: object
@@ -21499,7 +21554,8 @@ components:
         - MISSING_MANDATORY_PAYEE_DATA
         - QUOTE_EXPIRED
         - QUOTE_EXECUTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+        - COLLECTION_FAILED
+      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COLLECTION_FAILED means an inbound bank-rail collection (e.g. a SWIFT wire) failed after arrival — typically a compliance-screening rejection or an unresolved request for information — and the funds were returned to the sender by the collection provider.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -25240,6 +25296,7 @@ components:
         - EXTERNAL_ACCOUNT.STATUS_UPDATED
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INTERNAL_ACCOUNT.STATUS_UPDATED
+        - INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
@@ -25432,6 +25489,7 @@ components:
               enum:
                 - INTERNAL_ACCOUNT.BALANCE_UPDATED
                 - INTERNAL_ACCOUNT.STATUS_UPDATED
+                - INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
     ExternalAccountStatusWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

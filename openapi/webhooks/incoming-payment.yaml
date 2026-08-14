@@ -1,8 +1,10 @@
 post:
   summary: Incoming payment webhook and approval mechanism
   description: >
-    Webhook that is called when an incoming payment is received by a customer's UMA
-    address.
+    Webhook that is called when an incoming payment is received by a customer —
+    over UMA to the customer's UMA address, or over a bank rail (e.g. a SWIFT
+    wire to the customer's funding coordinates from
+    `fundingPaymentInstructions`).
 
     This endpoint should be implemented by clients of the Grid API.
 
@@ -55,6 +57,11 @@ post:
 
     For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this
     webhook is purely informational.
+
+
+    Bank-rail incoming payments (e.g. SWIFT) are informational at every
+    status, including PENDING: the funds have already moved interbank, so the
+    approval mechanism and the 5-second response window do not apply.
   operationId: incomingPaymentWebhook
   tags:
     - Webhooks
