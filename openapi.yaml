@@ -12148,7 +12148,7 @@ components:
         field:
           type: string
           description: Dot-notation path to the offending field.
-          example: taxIdentifier
+          example: identifier
         constraint:
           $ref: '#/components/schemas/FieldConstraint'
         message:
@@ -12811,15 +12811,16 @@ components:
               example: US
             address:
               $ref: '#/components/schemas/Address'
-            taxIdType:
+            idType:
               $ref: '#/components/schemas/IdentificationType'
-            taxIdentifier:
+            identifier:
               type: string
-              description: Tax-identification number. For US persons this is the SSN (format `###-##-####`) or ITIN. For non-US persons this is the tax number issued by `taxIdCountryOfIssuance`.
+              writeOnly: true
+              description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only — never returned in customer responses.
               example: 123-45-6789
-            taxIdCountryOfIssuance:
+            countryOfIssuance:
               type: string
-              description: Country that issued the tax identifier (ISO 3166-1 alpha-2). Required when `taxIdType` is `NON_US_TAX_ID`.
+              description: 'Country that issued the identification (ISO 3166-1 alpha-2). Optional for an individual account holder: SSN and ITIN are US-issued, so this defaults to `US` and is rejected if set to anything else.'
               example: US
         - $ref: '#/components/schemas/CustomerEdd'
     IndividualCustomer:
@@ -13363,15 +13364,6 @@ components:
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/IndividualCustomerFields'
-        - type: object
-          properties:
-            idType:
-              $ref: '#/components/schemas/IdentificationType'
-            identifier:
-              type: string
-              writeOnly: true
-              description: The individual's tax identification number. Required to onboard the individual as a US account holder. Only SSN and ITIN are currently accepted for an individual account holder; other identification types are rejected. Write-only — never returned in customer responses.
-              example: 123-45-6789
     BusinessInfo:
       type: object
       description: Additional information required for business entities

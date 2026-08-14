@@ -13,7 +13,7 @@ The **last 3 characters** of the `fullName` on `POST /customers` (with `customer
 
 Because terminal suffixes resolve at creation, only `001` and `003` customers can be submitted for verification. Use any non-suffixed name to mint ready-to-transact approved customers, and a `001` name to exercise the full submission flow.
 
-Submitting for verification has the same data requirements as production: full name, birth date, nationality, `taxIdType` + `taxIdentifier`, address, and an identity document uploaded via `POST /documents`. Anything missing comes back as `verificationStatus: RESOLVE_ERRORS` with one entry per problem in `errors`:
+Submitting for verification has the same data requirements as production: full name, birth date, nationality, `idType` + `identifier`, address, and an identity document uploaded via `POST /documents`. Anything missing comes back as `verificationStatus: RESOLVE_ERRORS` with one entry per problem in `errors`:
 
 ```json
 {
@@ -22,8 +22,8 @@ Submitting for verification has the same data requirements as production: full n
     {
       "resourceId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
       "type": "MISSING_FIELD",
-      "field": "taxIdentifier",
-      "reason": "Tax identifier is required"
+      "field": "identifier",
+      "reason": "Identifier is required"
     },
     {
       "resourceId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
@@ -74,8 +74,8 @@ Fix-and-resubmit example — the standard integration loop:
     -H "Content-Type: application/json" \
     -d '{
       "customerType": "INDIVIDUAL",
-      "taxIdType": "SSN",
-      "taxIdentifier": "111-22-3333",
+      "idType": "SSN",
+      "identifier": "111-22-3333",
       "address": { "line1": "123 Main St", "city": "Seattle", "state": "WA", "postalCode": "98101", "country": "US" }
     }'
 
