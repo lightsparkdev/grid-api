@@ -13,6 +13,14 @@ Internal accounts are created for both:
   are created when you configure your platform with supported currencies.
 </Info>
 
+<Warning>
+  On unregulated platforms, a customer's internal accounts aren't provisioned
+  until you record their End User Terms acceptance in `endUserTermsConsent`, and
+  customer-scoped transactions are rejected with `403
+  END_USER_TERMS_NOT_ACCEPTED` until then. See [Configuring
+  Customers](/payouts-and-b2b/onboarding/configuring-customers).
+</Warning>
+
 ## How internal accounts work
 
 Internal accounts act as an intermediary holding account in the payment flow:
