@@ -2429,6 +2429,154 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/challenge:
+    post:
+      summary: Start an ownership verification challenge
+      description: |
+        Start (or restart) ownership verification for a `FIRST_PARTY` self-custody
+        crypto wallet external account in `PENDING_OWNERSHIP_VERIFICATION` or
+        `UNVERIFIED` status. The response carries the method-specific challenge
+        material:
+
+        - `WALLET_SIGNATURE` — a `messageToSign`; have the wallet sign it exactly
+          and submit the result to the verify endpoint to complete verification
+          synchronously.
+        - `LIVENESS` — a hosted `verificationLink` (and possibly an embed
+          `token`); the user completes a biometric flow and verification completes
+          asynchronously. The outcome is delivered via
+          `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the account.
+
+        Calling this endpoint again abandons any in-flight challenge and issues a
+        new one with the requested method — use it to retry after a failed
+        attempt, to replace an expired challenge, or to switch methods. An
+        `UNVERIFIED` account returns to `PENDING_OWNERSHIP_VERIFICATION` when a
+        new challenge is issued.
+
+        Completing ownership verification moves the account to `ACTIVE`.
+      operationId: createExternalAccountOwnershipChallenge
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: path
+          description: External account ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipChallengeRequest'
+      responses:
+        '201':
+          description: Challenge created; the method-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipChallenge'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account (not a self-custody crypto wallet, not `FIRST_PARTY`, or already verified).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/verify:
+    post:
+      summary: Verify ownership with a wallet signature
+      description: |
+        Complete a `WALLET_SIGNATURE` challenge by submitting the signature the
+        wallet produced for the challenge's `messageToSign`. The message must be
+        signed exactly as returned, and the signature must be submitted before
+        the challenge's `expiresAt` — after expiry, start a new challenge.
+
+        On success the account moves to `ACTIVE`; on an invalid signature it
+        moves to `UNVERIFIED` (start a new challenge to retry). `LIVENESS`
+        challenges complete asynchronously and never use this endpoint — their
+        outcome is delivered via `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by
+        polling the account.
+      operationId: verifyExternalAccountOwnership
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: path
+          description: External account ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerifyRequest'
+      responses:
+        '200':
+          description: 'Signature valid; the updated external account is returned with `status: ACTIVE`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Invalid or expired signature. The account moves to `UNVERIFIED`; start a new challenge to retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: No `WALLET_SIGNATURE` challenge is outstanding for this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /platform/external-accounts:
     get:
       summary: List platform external accounts
@@ -2627,6 +2775,154 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /platform/external-accounts/{externalAccountId}/challenge:
+    post:
+      summary: Start an ownership verification challenge
+      description: |
+        Start (or restart) ownership verification for a `FIRST_PARTY` self-custody
+        crypto wallet external account in `PENDING_OWNERSHIP_VERIFICATION` or
+        `UNVERIFIED` status. The response carries the method-specific challenge
+        material:
+
+        - `WALLET_SIGNATURE` — a `messageToSign`; have the wallet sign it exactly
+          and submit the result to the verify endpoint to complete verification
+          synchronously.
+        - `LIVENESS` — a hosted `verificationLink` (and possibly an embed
+          `token`); the user completes a biometric flow and verification completes
+          asynchronously. The outcome is delivered via
+          `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the account.
+
+        Calling this endpoint again abandons any in-flight challenge and issues a
+        new one with the requested method — use it to retry after a failed
+        attempt, to replace an expired challenge, or to switch methods. An
+        `UNVERIFIED` account returns to `PENDING_OWNERSHIP_VERIFICATION` when a
+        new challenge is issued.
+
+        Completing ownership verification moves the account to `ACTIVE`.
+      operationId: createPlatformExternalAccountOwnershipChallenge
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: path
+          description: External account ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipChallengeRequest'
+      responses:
+        '201':
+          description: Challenge created; the method-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipChallenge'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account (not a self-custody crypto wallet, not `FIRST_PARTY`, or already verified).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /platform/external-accounts/{externalAccountId}/verify:
+    post:
+      summary: Verify ownership with a wallet signature
+      description: |
+        Complete a `WALLET_SIGNATURE` challenge by submitting the signature the
+        wallet produced for the challenge's `messageToSign`. The message must be
+        signed exactly as returned, and the signature must be submitted before
+        the challenge's `expiresAt` — after expiry, start a new challenge.
+
+        On success the account moves to `ACTIVE`; on an invalid signature it
+        moves to `UNVERIFIED` (start a new challenge to retry). `LIVENESS`
+        challenges complete asynchronously and never use this endpoint — their
+        outcome is delivered via `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by
+        polling the account.
+      operationId: verifyPlatformExternalAccountOwnership
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: path
+          description: External account ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerifyRequest'
+      responses:
+        '200':
+          description: 'Signature valid; the updated external account is returned with `status: ACTIVE`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Invalid or expired signature. The account moves to `UNVERIFIED`; start a new challenge to retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: No `WALLET_SIGNATURE` challenge is outstanding for this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -10743,6 +11039,89 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  external-account-status:
+    post:
+      summary: External account status webhook
+      description: |
+        Webhook that is called whenever the status of an external account changes, for any transition between statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`, `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`, `UNVERIFIED`) — for example when an account under review becomes active, when ownership verification completes (`PENDING_OWNERSHIP_VERIFICATION` → `ACTIVE`), or when a verification attempt fails (`PENDING_OWNERSHIP_VERIFICATION` → `UNVERIFIED`).
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+
+        ### Event types
+        - `EXTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an external account changes. The `data` payload contains the full external account object.
+      operationId: externalAccountStatusWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalAccountStatusWebhook'
+            examples:
+              verificationSucceeded:
+                summary: A wallet account became active after ownership verification
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000042
+                  type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: ACTIVE
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    accountInfo:
+                      accountType: ETHEREUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+              verificationFailed:
+                summary: A liveness check failed; a new challenge is needed to retry
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000043
+                  type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+                  timestamp: '2025-08-15T14:45:00Z'
+                  data:
+                    id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: UNVERIFIED
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    accountInfo:
+                      accountType: ETHEREUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
   verification-update:
     post:
       summary: Verification status change
@@ -11769,7 +12148,7 @@ components:
         field:
           type: string
           description: Dot-notation path to the offending field.
-          example: taxIdentifier
+          example: identifier
         constraint:
           $ref: '#/components/schemas/FieldConstraint'
         message:
@@ -11835,6 +12214,7 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
+            | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -11878,6 +12258,7 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
             - CARDHOLDER_KYC_NOT_APPROVED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
+            - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
         message:
           type: string
           description: Error message
@@ -12430,15 +12811,16 @@ components:
               example: US
             address:
               $ref: '#/components/schemas/Address'
-            taxIdType:
+            idType:
               $ref: '#/components/schemas/IdentificationType'
-            taxIdentifier:
+            identifier:
               type: string
-              description: Tax-identification number. For US persons this is the SSN (format `###-##-####`) or ITIN. For non-US persons this is the tax number issued by `taxIdCountryOfIssuance`.
+              writeOnly: true
+              description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only — never returned in customer responses.
               example: 123-45-6789
-            taxIdCountryOfIssuance:
+            countryOfIssuance:
               type: string
-              description: Country that issued the tax identifier (ISO 3166-1 alpha-2). Required when `taxIdType` is `NON_US_TAX_ID`.
+              description: 'Country that issued the identification (ISO 3166-1 alpha-2). Optional for an individual account holder: SSN and ITIN are US-issued, so this defaults to `US` and is rejected if set to anything else.'
               example: US
         - $ref: '#/components/schemas/CustomerEdd'
     IndividualCustomer:
@@ -12982,15 +13364,6 @@ components:
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/IndividualCustomerFields'
-        - type: object
-          properties:
-            idType:
-              $ref: '#/components/schemas/IdentificationType'
-            identifier:
-              type: string
-              writeOnly: true
-              description: The individual's tax identification number. Required to onboard the individual as a US account holder. Only SSN and ITIN are currently accepted for an individual account holder; other identification types are rejected. Write-only — never returned in customer responses.
-              example: 123-45-6789
     BusinessInfo:
       type: object
       description: Additional information required for business entities
@@ -16848,15 +17221,24 @@ components:
       enum:
         - PENDING
         - ACTIVE
+        - PENDING_OWNERSHIP_VERIFICATION
+        - UNVERIFIED
         - UNDER_REVIEW
         - INACTIVE
-      description: Status of an external account
+      description: |
+        Status of an external account.
+
+        `PENDING_OWNERSHIP_VERIFICATION`: the wallet's ownership must be verified
+        (e.g. under the EU Travel Rule) before unrestricted use; transfers below
+        regulatory thresholds are still allowed. `UNVERIFIED`: the most recent
+        verification attempt failed; start a new challenge to retry. Successful
+        verification moves the account to `ACTIVE`.
     OwnershipType:
       type: string
       enum:
         - FIRST_PARTY
         - THIRD_PARTY
-      description: Whether the external account belongs to the customer themselves (first party) or to someone else (third party)
+      description: Whether the external account belongs to the customer themselves (`FIRST_PARTY`) or to someone else (`THIRD_PARTY`). Required when creating self-custody crypto wallet external accounts on platforms subject to counterparty requirements — for example, under the EU Travel Rule or similar requirements in other regions; recommended for all other accounts, where providing it can unlock additional capabilities and smoother compliance handling.
       example: FIRST_PARTY
     BeneficiaryVerificationStatus:
       type: string
@@ -18991,16 +19373,56 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/SwiftBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    WalletIndividualBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+        - countryOfResidence
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+          example: John Michael Doe
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary (ISO 3166-1 alpha-2)
+          example: US
+    WalletBeneficiaryOneOf:
+      description: The person or business that owns a crypto wallet external account.
+      oneOf:
+        - title: Individual Beneficiary
+          $ref: '#/components/schemas/WalletIndividualBeneficiary'
+        - title: Business Beneficiary
+          $ref: '#/components/schemas/BusinessBeneficiary'
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/WalletIndividualBeneficiary'
+          BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    WalletBeneficiaryFields:
+      type: object
+      properties:
+        beneficiary:
+          description: The wallet's owner. Optional for `FIRST_PARTY` accounts — the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms with counterparty requirements (e.g. EU Travel Rule); if missing there, creation fails with `400 INVALID_INPUT`.
+          $ref: '#/components/schemas/WalletBeneficiaryOneOf'
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     EthereumWalletExternalAccountInfo:
       title: Ethereum L1 Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     LightningInfo:
       type: object
       description: |
@@ -19034,26 +19456,31 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     PlasmaWalletExternalAccountInfo:
       title: Plasma Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     SparkWalletExternalAccountInfo:
       title: Spark Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     TronWalletExternalAccountInfo:
       title: Tron Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
     CnyBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -20150,6 +20577,108 @@ components:
               default: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+    OwnershipVerificationMethod:
+      type: string
+      enum:
+        - WALLET_SIGNATURE
+        - LIVENESS
+      description: |
+        The method used to verify ownership of a self-custody crypto wallet.
+
+        | Method | Description |
+        |--------|-------------|
+        | `WALLET_SIGNATURE` | Prove control of the wallet by signing a message with the wallet's key |
+        | `LIVENESS` | Prove identity via a hosted biometric verification flow |
+      example: WALLET_SIGNATURE
+    OwnershipChallengeRequest:
+      type: object
+      description: Starts (or restarts) an ownership verification challenge for a crypto wallet external account.
+      required:
+        - method
+      properties:
+        method:
+          $ref: '#/components/schemas/OwnershipVerificationMethod'
+          description: The verification method to use for this challenge.
+    WalletSignatureChallenge:
+      title: Wallet Signature Challenge
+      type: object
+      description: A challenge to prove ownership of the wallet by signing a message with the wallet's key.
+      required:
+        - method
+        - messageToSign
+        - expiresAt
+      properties:
+        method:
+          type: string
+          enum:
+            - WALLET_SIGNATURE
+          description: The verification method. Always `WALLET_SIGNATURE` for this shape.
+          example: WALLET_SIGNATURE
+        messageToSign:
+          type: string
+          description: The exact message the wallet must sign, character-for-character. Submit the resulting signature via the verify endpoint.
+          example: 'I verify that I control this wallet. Nonce: 019542f5-b3e7-1d02'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When this challenge expires. Prompt the user promptly; after expiry, start a new challenge.
+          example: '2025-08-15T15:32:00Z'
+    LivenessChallenge:
+      title: Liveness Challenge
+      type: object
+      description: A challenge to prove ownership through a hosted biometric verification flow. Completes asynchronously — the outcome is delivered via `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the external account.
+      required:
+        - method
+        - verificationLink
+        - expiresAt
+      properties:
+        method:
+          type: string
+          enum:
+            - LIVENESS
+          description: The verification method. Always `LIVENESS` for this shape.
+          example: LIVENESS
+        verificationLink:
+          type: string
+          format: uri
+          description: Hosted verification URL to present to the user.
+          example: https://verify.example.com/session/019542f5-b3e7-1d02
+        token:
+          type: string
+          description: Provider-specific token that can be used in place of `verificationLink` — for example, to embed the provider's SDK directly in your application. Only returned for providers that support direct SDK integration. Whether to use the hosted URL or the embedded SDK is up to you; both flows result in the same verification outcome.
+          example: eyJhbGciOiJIUzI1NiJ9.example
+        expiresAt:
+          type: string
+          format: date-time
+          description: When this challenge expires. Prompt the user promptly; after expiry, start a new challenge.
+          example: '2025-08-15T15:32:00Z'
+    OwnershipChallenge:
+      description: An ownership verification challenge for a crypto wallet external account. The shape is determined by the challenge `method`.
+      oneOf:
+        - $ref: '#/components/schemas/WalletSignatureChallenge'
+        - $ref: '#/components/schemas/LivenessChallenge'
+      discriminator:
+        propertyName: method
+        mapping:
+          WALLET_SIGNATURE: '#/components/schemas/WalletSignatureChallenge'
+          LIVENESS: '#/components/schemas/LivenessChallenge'
+    OwnershipVerifyRequest:
+      type: object
+      description: Completes a `WALLET_SIGNATURE` challenge by submitting the signature the wallet produced for the challenge's `messageToSign`.
+      required:
+        - signature
+      properties:
+        signature:
+          type: string
+          description: The signature produced over the exact `messageToSign` — EIP-191 hex for EVM chains, base64 for Bitcoin, base58-encoded Ed25519 for Solana.
+          example: '0x52d75f01c9e7b8b2ce2fbcbd21bfeeee7bcd1a2f01ce6b8ad9a67a45e83a8f5d1c'
+        signatureScheme:
+          type: string
+          enum:
+            - bip137
+            - electrum
+          default: bip137
+          description: Bitcoin message-signing format. Defaults to `bip137`; use `electrum` for Electrum/Sparrow wallets. Ignored for non-Bitcoin chains.
     PlatformExternalAccountCreateRequest:
       type: object
       required:
@@ -20630,13 +21159,29 @@ components:
         |--------|-------------|
         | `CREATED` | Initial lookup has been created |
         | `PENDING` | Quote has been created |
-        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `PROCESSING` | Funding has been received and payment initiated |
         | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
         | `FAILED` | An error occurred during payment |
         | `REFUNDED` | Payment was unable to complete and refunded |
         | `EXPIRED` | Quote has expired |
+    TransactionPendingReason:
+      type: string
+      enum:
+        - COUNTERPARTY_DECLARATION_REQUIRED
+        - WALLET_VERIFICATION_REQUIRED
+        - COUNTERPARTY_INFORMATION_REQUIRED
+        - COMPLIANCE_REVIEW
+      description: |
+        Why a transaction is pending.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `COUNTERPARTY_DECLARATION_REQUIRED` | The customer must declare who controls the sending wallet. |
+        | `WALLET_VERIFICATION_REQUIRED` | The customer must verify ownership of the sending wallet. |
+        | `COUNTERPARTY_INFORMATION_REQUIRED` | Information about the sender is required. |
+        | `COMPLIANCE_REVIEW` | The customer's action is complete and the deposit remains under compliance review. |
     TransactionDirection:
       type: string
       enum:
@@ -20797,6 +21342,9 @@ components:
           example: Transaction:019542f5-b3e7-1d02-0000-000000000004
         status:
           $ref: '#/components/schemas/TransactionStatus'
+        pendingReason:
+          $ref: '#/components/schemas/TransactionPendingReason'
+          description: Present when compliance review or required customer action is delaying settlement.
         type:
           $ref: '#/components/schemas/TransactionType'
         direction:
@@ -21007,7 +21555,8 @@ components:
         - MISSING_MANDATORY_PAYEE_DATA
         - QUOTE_EXPIRED
         - QUOTE_EXECUTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+        - COMPLIANCE_REJECTED
+      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. COMPLIANCE_REJECTED means compliance blocked the incoming funds. If the transaction is not in a failed state, this field is omitted.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -21053,7 +21602,7 @@ components:
         | Status | Description |
         |--------|-------------|
         | `PENDING` | Quote is pending confirmation |
-        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `EXPIRED` | Quote wasn't executed before expiry window |
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | Payout successfully reached the destination |
@@ -24720,6 +25269,7 @@ components:
       type: string
       enum:
         - OUTGOING_PAYMENT.PENDING
+        - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
         - OUTGOING_PAYMENT.PROCESSING
         - OUTGOING_PAYMENT.COMPLETED
         - OUTGOING_PAYMENT.FAILED
@@ -24745,6 +25295,7 @@ components:
         - VERIFICATION.IN_PROGRESS
         - VERIFICATION.PENDING_MANUAL_REVIEW
         - VERIFICATION.READY_FOR_VERIFICATION
+        - EXTERNAL_ACCOUNT.STATUS_UPDATED
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INTERNAL_ACCOUNT.STATUS_UPDATED
         - INVITATION.CLAIMED
@@ -24939,6 +25490,19 @@ components:
               enum:
                 - INTERNAL_ACCOUNT.BALANCE_UPDATED
                 - INTERNAL_ACCOUNT.STATUS_UPDATED
+    ExternalAccountStatusWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/ExternalAccount'
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT.STATUS_UPDATED
     VerificationWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

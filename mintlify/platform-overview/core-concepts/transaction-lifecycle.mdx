@@ -122,6 +122,7 @@ A single `status` field represents whether the transaction reached its destinati
 | Status | Description |
 |--------|-------------|
 | **PENDING** | Quote is pending confirmation |
+| **PENDING_AUTHORIZATION** | Awaiting Strong Customer Authentication. Only occurs for customers in regions where SCA is required (e.g., EU). The challenge lives on the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` with `POST /quotes/{quoteId}/authorize`. |
 | **EXPIRED** | Quote wasn't executed before the expiry window |
 | **PROCESSING** | Executing the quote after receiving funds (checking internal balances, or push/pull to/from external account) |
 | **COMPLETED** | Payout successfully reached the destination account |
@@ -136,6 +137,9 @@ A single `status` field represents whether the transaction reached its destinati
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING : Quote created
+    PENDING --> PENDING_AUTHORIZATION : SCA required (EU)
+    PENDING_AUTHORIZATION --> PROCESSING : Authorized
+    PENDING_AUTHORIZATION --> FAILED : Challenge expired unsatisfied
     PENDING --> PROCESSING : Quote confirmed, funds received
     PENDING --> EXPIRED : Quote expired before execution
     PROCESSING --> COMPLETED : Payout reached destination
@@ -204,6 +208,7 @@ Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhoo
 | Event | Description |
 |-------|-------------|
 | `OUTGOING_PAYMENT.PENDING` | Transaction created, quote pending confirmation |
+| `OUTGOING_PAYMENT.PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication (EU customers only) |
 | `OUTGOING_PAYMENT.PROCESSING` | Quote confirmed, payout in progress |
 | `OUTGOING_PAYMENT.COMPLETED` | Payout reached destination |
 | `OUTGOING_PAYMENT.FAILED` | Payout failed |
@@ -230,6 +235,26 @@ Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhoo
   }
 }
 ```
+</Tab>
+
+<Tab title="PENDING_AUTHORIZATION">
+```json
+{
+  "type": "OUTGOING_PAYMENT.PENDING_AUTHORIZATION",
+  "data": {
+    "id": "Transaction:...",
+    "status": "PENDING_AUTHORIZATION",
+    "type": "OUTGOING",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+    "sentAmount": {"amount": 100000, "currency": {"code": "USD"}},
+    "receivedAmount": {"amount": 92000, "currency": {"code": "EUR"}},
+    "createdAt": "2025-10-03T15:00:00Z"
+  }
+}
+```
+
+The payload carries no `scaChallenge` — that field lives on the quote. Use `quoteId` to fetch `GET /quotes/{quoteId}`, read its `scaChallenge`, and authorize with `POST /quotes/{quoteId}/authorize`.
 </Tab>
 
 <Tab title="COMPLETED">
@@ -285,6 +310,13 @@ app.post('/webhooks/grid', async (req, res) => {
   const { data, type } = req.body;
 
   switch (type) {
+    case 'OUTGOING_PAYMENT.PENDING_AUTHORIZATION': {
+      // EU customers only: the challenge is on the quote, not the transaction
+      const quote = await getQuote(data.quoteId);
+      await promptScaChallenge(data.customerId, data.quoteId, quote.scaChallenge);
+      break;
+    }
+
     case 'OUTGOING_PAYMENT.COMPLETED':
       await notifyCustomer(data.customerId, 'Payment delivered!');
       break;
@@ -316,6 +348,21 @@ The standard successful payment flow:
 1. `OUTGOING_PAYMENT.PENDING`
 2. `OUTGOING_PAYMENT.PROCESSING`
 3. `OUTGOING_PAYMENT.COMPLETED`
+</Tab>
+
+<Tab title="SCA Authorization (EU)">
+The customer must satisfy a Strong Customer Authentication challenge before the payout proceeds:
+
+1. `OUTGOING_PAYMENT.PENDING`
+2. `OUTGOING_PAYMENT.PENDING_AUTHORIZATION`
+3. `OUTGOING_PAYMENT.PROCESSING`
+4. `OUTGOING_PAYMENT.COMPLETED`
+
+<Info>
+A single payment can require more than one authorization in sequence, so `OUTGOING_PAYMENT.PENDING_AUTHORIZATION` may arrive several times before `PROCESSING`. Loop on the quote's status rather than assuming one authorization releases the payment.
+</Info>
+
+If the challenge expires before the customer satisfies it, the transaction lands on `OUTGOING_PAYMENT.FAILED` with `failureReason: SCA_NOT_COMPLETED` and no funds move. Create a new quote to try again.
 </Tab>
 
 <Tab title="Failure with Refund">
@@ -490,6 +537,8 @@ When a transaction fails, a refund is initiated automatically. Track the refund 
       switch (webhookType) {
         case 'OUTGOING_PAYMENT.PENDING':
           return 'Payment processing...';
+        case 'OUTGOING_PAYMENT.PENDING_AUTHORIZATION':
+          return 'Authorization required. Complete the security challenge to continue.';
         case 'OUTGOING_PAYMENT.PROCESSING':
           return 'Payment in progress...';
         case 'OUTGOING_PAYMENT.COMPLETED':
