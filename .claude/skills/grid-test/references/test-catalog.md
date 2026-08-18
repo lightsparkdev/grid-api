@@ -307,7 +307,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     \"accountInfo\": {
       \"accountType\": \"MXN_ACCOUNT\",
       \"paymentRails\": [\"SPEI\"],
-      \"clabeNumber\": \"032180000118359719\",
+      \"clabeNumber\": \"646180000118359710\",
       \"beneficiary\": {
         \"beneficiaryType\": \"INDIVIDUAL\",
         \"fullName\": \"Grid Test User\",
@@ -320,6 +320,8 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 ```
 
 Save the `id` as `MXN_EXTERNAL_ID`.
+
+The CLABE above uses bank code `646` (STP). The previous constant `032180000118359719` (Accendo) has a valid check digit but is rejected with `INVALID_INPUT: Invalid CLABE format or check digit` on environments whose bank registry omits `032`. If `646` is ever rejected too, any mainstream bank code with a correct check digit works — `002`, `012`, `014`, `021`, `072`, and `127` were all accepted on 2026-08-16.
 
 2. Create a real-time funded quote:
 
@@ -529,7 +531,7 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
     \"accountInfo\": {
       \"accountType\": \"MXN_ACCOUNT\",
       \"paymentRails\": [\"SPEI\"],
-      \"clabeNumber\": \"032180000118359719\",
+      \"clabeNumber\": \"646180000118359710\",
       \"beneficiary\": {
         \"beneficiaryType\": \"INDIVIDUAL\",
         \"fullName\": \"Grid Test User\",

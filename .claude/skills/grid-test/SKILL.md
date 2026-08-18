@@ -140,7 +140,7 @@ Plasma is additionally gated behind `GK.USDT_PLASMA_ENABLED`, per platform. Use 
 | Response | Meaning |
 |---|---|
 | `MISSING_MANDATORY_USER_INFO: Beneficiary information is required for fiat accounts` | Deployed build predates Plasma support |
-| `INVALID_INPUT: USDT on Plasma is not enabled for this platform.` | Build is current; gatekeeper is off for this platform |
+| `INVALID_INPUT: USDT on Plasma is not enabled for this platform.` (external-account create) or `INVALID_INPUT: USDT on Plasma is not enabled.` (quotes) | Build is current; gatekeeper is off for this platform |
 | `201` with an account id | Ready — run the target |
 
 Note that Plasma carries USDT only; a USDC Plasma account is rejected by design. Probe before running:
