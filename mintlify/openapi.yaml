@@ -5440,7 +5440,6 @@ paths:
       description: |
         Retrieve the directory of Virtual Asset Service Providers (exchanges and
         other custodial platforms) recognized for counterparty declarations.
-        Search by name to find the VASP that custodies a counterparty account.
 
         The `vaspName` field in each result is the value to pass as `vaspName`
         when declaring a VASP-hosted counterparty.
@@ -5450,13 +5449,6 @@ paths:
       security:
         - BasicAuth: []
       parameters:
-        - name: search
-          in: query
-          description: Filter to VASPs whose display name or legal name matches this string
-          required: false
-          schema:
-            type: string
-            example: kraken
         - name: limit
           in: query
           description: Maximum number of results to return (default 20, max 100)
