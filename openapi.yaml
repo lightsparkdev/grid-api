@@ -23015,7 +23015,7 @@ components:
       properties:
         data:
           type: array
-          description: List of VASPs matching the filter criteria
+          description: List of VASPs in the directory
           items:
             $ref: '#/components/schemas/Vasp'
         hasMore:
