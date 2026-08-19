@@ -97,6 +97,20 @@ Register a stablecoin with `/stablecoins`, then mint and burn directly against i
 
 See [Currencies and rails](/platform-overview/core-concepts/currencies-and-rails).
 
+## Track crypto settlement to and from external wallets
+
+A transaction that settles on-chain to or from an external crypto wallet now carries the
+settled transfer inline: `onChainTransaction` on the transaction's source or destination
+reports the transfer's `transactionHash` and `network` once the crypto transfer settles.
+
+<Warning>
+  Deprecation. `reconciliationInstructions.transactionHash` is deprecated for wallet
+  transfers—read `onChainTransaction` instead, which also tells you the network. The field
+  keeps reporting the inter-VASP settlement leg of a UMA payment, which has no
+  `onChainTransaction` equivalent, and will not be removed before that leg has a
+  replacement.
+</Warning>
+
 ## Know why a payment failed
 
 Failure reasons now name outcomes you act on rather than internal processing steps.
