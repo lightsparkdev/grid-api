@@ -1895,6 +1895,36 @@ For business accounts, include business information:
 }
 ```
 
+### Account ownership type
+
+Use the optional `ownershipType` field to indicate whether the external account belongs to the customer themselves or to a third party:
+
+| Value | Description |
+| --- | --- |
+| `FIRST_PARTY` | The account belongs to the customer (e.g., their own bank account at another institution) |
+| `THIRD_PARTY` | The account belongs to someone else (e.g., paying a vendor or sending to a family member) |
+
+```json
+{
+  "currency": "USD",
+  "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+  "ownershipType": "THIRD_PARTY",
+  "accountInfo": {
+    "accountType": "USD_ACCOUNT",
+    "accountNumber": "987654321",
+    "routingNumber": "021000021",
+    "beneficiary": {
+      "beneficiaryType": "INDIVIDUAL",
+      "fullName": "Jane Smith"
+    }
+  }
+}
+```
+
+<Info>
+  `ownershipType` is optional. When omitted, Grid does not assume a default. Use this field when your compliance requirements distinguish between first-party and third-party transfers.
+</Info>
+
 ## Minimum required beneficiary fields
 
 The following tables show the minimum required fields for individual and business beneficiaries. All other fields are optional but recommended for faster compliance review.
