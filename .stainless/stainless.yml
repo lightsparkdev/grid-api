@@ -409,6 +409,13 @@ resources:
     methods:
       list: get /uma-providers
 
+  vasps:
+    models:
+      vasp: '#/components/schemas/Vasp'
+      vasp_list_response: '#/components/schemas/VaspListResponse'
+    methods:
+      list: get /vasps
+
   tokens:
     models:
       permission: '#/components/schemas/Permission'

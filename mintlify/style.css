@@ -1372,6 +1372,12 @@ ul.sidebar-group > li[data-title="Available UMA Providers"] > button::before {
   background-image: url('/images/icons/at.svg') !important;
 }
 
+/* VASPs - globe */
+.sidebar-group > li[data-title="VASPs"] > button::before,
+ul.sidebar-group > li[data-title="VASPs"] > button::before {
+  background-image: url('/images/icons/globe.svg') !important;
+}
+
 /* API Tokens - key */
 .sidebar-group > li[data-title="API Tokens"] > button::before,
 ul.sidebar-group > li[data-title="API Tokens"] > button::before {
