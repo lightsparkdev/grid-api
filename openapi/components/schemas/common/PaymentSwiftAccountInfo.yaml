@@ -4,10 +4,27 @@ allOf:
 - $ref: ./SwiftAccountInfo.yaml
 - type: object
   required:
-  - reference
+  - accountHolderName
   properties:
+    accountHolderName:
+      type: string
+      description: >-
+        The name of the account holder as it must appear on the wire.
+        Remitting banks match this against the beneficiary name field,
+        so payers should copy it exactly.
+      example: Acme Exports Pte Ltd
+      minLength: 1
+      maxLength: 255
+    bankAddress:
+      type: string
+      description: The address of the bank holding the account, when known.
+      example: 12 Marina Boulevard, Singapore 018982
+      minLength: 1
+      maxLength: 1024
     reference:
       type: string
-      description: Unique reference code that must be included with the payment to
-        properly credit it
+      description: >-
+        Reference code to include with the payment when present. SWIFT
+        payments are attributed by the destination account number/IBAN,
+        so this account type typically requires no reference.
       example: UMA-Q12345-REF
