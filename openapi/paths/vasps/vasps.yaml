@@ -15,7 +15,8 @@ get:
   parameters:
     - name: search
       in: query
-      description: Filter to VASPs whose name matches this string
+      description: >-
+        Filter to VASPs whose display name or legal name matches this string
       required: false
       schema:
         type: string

@@ -1,18 +1,19 @@
 type: object
 required:
   - vaspName
-  - displayName
+  - url
 properties:
   vaspName:
     type: string
     description: >-
-      Canonical name for this VASP. Pass this value as `vaspName` when
-      declaring a VASP-hosted counterparty.
+      Name of this VASP. Pass this value as `vaspName` when declaring a
+      VASP-hosted counterparty.
     example: Kraken
-  displayName:
+  url:
     type: string
-    description: Human-friendly display name for this VASP.
-    example: Kraken
+    format: uri
+    description: The VASP's website.
+    example: https://www.kraken.com
 description: >-
   A Virtual Asset Service Provider (VASP) — an exchange or other custodial
   platform — recognized for counterparty declarations.

@@ -5452,7 +5452,7 @@ paths:
       parameters:
         - name: search
           in: query
-          description: Filter to VASPs whose name matches this string
+          description: Filter to VASPs whose display name or legal name matches this string
           required: false
           schema:
             type: string
@@ -23003,16 +23003,17 @@ components:
       type: object
       required:
         - vaspName
-        - displayName
+        - url
       properties:
         vaspName:
           type: string
-          description: Canonical name for this VASP. Pass this value as `vaspName` when declaring a VASP-hosted counterparty.
+          description: Name of this VASP. Pass this value as `vaspName` when declaring a VASP-hosted counterparty.
           example: Kraken
-        displayName:
+        url:
           type: string
-          description: Human-friendly display name for this VASP.
-          example: Kraken
+          format: uri
+          description: The VASP's website.
+          example: https://www.kraken.com
       description: A Virtual Asset Service Provider (VASP) — an exchange or other custodial platform — recognized for counterparty declarations.
     VaspListResponse:
       type: object
@@ -23031,9 +23032,6 @@ components:
         nextCursor:
           type: string
           description: Cursor to retrieve the next page of results (only present if hasMore is true)
-        totalCount:
-          type: integer
-          description: Total number of results matching the criteria
     Permission:
       type: string
       enum:

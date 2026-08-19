@@ -16,6 +16,3 @@ properties:
     description: >-
       Cursor to retrieve the next page of results (only present if
       hasMore is true)
-  totalCount:
-    type: integer
-    description: Total number of results matching the criteria
