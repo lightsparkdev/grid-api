@@ -239,13 +239,13 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 <AccordionGroup>
 <Accordion title="Handle quote expiration">
 ```javascript
-async function refreshQuoteIfNeeded(quote) {
+async function refreshQuoteIfNeeded(quote, quoteRequest) {
   const expiresAt = new Date(quote.expiresAt);
   const now = new Date();
 
   if (expiresAt - now < 60000) {
     // Less than 1 minute left
-    return await createNewQuote(quote.originalParams);
+    return await createNewQuote(quoteRequest);
   }
 
   return quote;
@@ -267,15 +267,22 @@ const settlementTimes = {
 
 <Accordion title="Handle failed transactions">
 ```javascript
-if (transaction.status === "FAILED") {
+// quoteRequest is the request your integration sent to create the original
+// quote: a transaction does not carry the parameters it was quoted from.
+async function handleFailedTransaction(transaction, quoteRequest) {
+  if (transaction.status !== "FAILED") return;
+
   await notifyUser(transaction.customerId, {
     message: "Transaction failed",
     reason: transaction.failureReason,
     action: "retry",
   });
 
-  if (transaction.failureReason === "QUOTE_EXPIRED") {
-    await createNewQuote(transaction.originalParams);
+  if (
+    transaction.failureReason === "QUOTE_EXPIRED" ||
+    transaction.failureReason === "QUOTE_RATE_UNAVAILABLE"
+  ) {
+    await createNewQuote(quoteRequest);
   }
 }
 ```
