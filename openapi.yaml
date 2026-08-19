@@ -21549,7 +21549,12 @@ components:
         transactionHash:
           deprecated: true
           type: string
-          description: 'Deprecated: use the `onChainTransaction` on the relevant source or destination instead. This field remains populated during the deprecation window, including for the inter-VASP leg where no `onChainTransaction` applies. It carries the transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available — and, until removal, the on-chain hash of a crypto transfer to or from an external customer wallet, which also surfaces on `onChainTransaction`.'
+          description: |-
+            Transaction hash of the settlement transfer, when available. This field reports two different transfers, and only one of them has a replacement today:
+
+            For a crypto transfer to or from a customer's own external wallet, use the `onChainTransaction` on the relevant source or destination instead — it names the network alongside the hash. That is the transfer this field is deprecated for.
+
+            For the inter-VASP settlement leg of a UMA payment (e.g. USDC on Solana to the receiving partner), this field remains the only place the hash is reported: a UMA address is not a wallet you hold, so its source and destination carry no `onChainTransaction`. The field will not be removed before that leg has a replacement.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingTransactionFailureReason:
       type: string

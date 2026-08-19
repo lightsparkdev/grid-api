@@ -104,10 +104,11 @@ settled transfer inline: `onChainTransaction` on the transaction's source or des
 reports the transfer's `transactionHash` and `network` once the crypto transfer settles.
 
 <Warning>
-  Deprecation. `reconciliationInstructions.transactionHash` is deprecated in favor of
-  `onChainTransaction` and will be removed in a future API version. It remains populated
-  during the deprecation window, including for the inter-VASP leg where no
-  `onChainTransaction` applies.
+  Deprecation. `reconciliationInstructions.transactionHash` is deprecated for wallet
+  transfers—read `onChainTransaction` instead, which also tells you the network. The field
+  keeps reporting the inter-VASP settlement leg of a UMA payment, which has no
+  `onChainTransaction` equivalent, and will not be removed before that leg has a
+  replacement.
 </Warning>
 
 ## Know why a payment failed
