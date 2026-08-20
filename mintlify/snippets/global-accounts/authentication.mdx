@@ -690,7 +690,7 @@ The signed retry can come back `200` with a `WalletOperationProcessing` body ins
 }
 ```
 
-This means Grid's wallet provider accepted the operation but hasn't settled it yet — the request is not lost, and nothing failed. **Design for this as the normal path, not a rare edge case.** It shows up whenever the provider needs an extra moment to reach consensus, and that happens more, not less, exactly when you have the most traffic — a spike in logins or registrations is the scenario where a "rare" response becomes routine.
+This means Grid's wallet provider accepted the operation but hasn't settled it yet — the request is not lost, and nothing failed. **Design for this as the normal path, not a rare edge case**: handle it the same way you handle the terminal success and error responses below, not as a bolted-on afterthought.
 
 Every signed-retry endpoint can return it on the retry step:
 
