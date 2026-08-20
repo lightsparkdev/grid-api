@@ -204,6 +204,7 @@ When a transaction fails, the `failureReason` field provides specific details:
 **Common outgoing failure reasons:**
 
 - `QUOTE_EXPIRED` - Quote expired before execution
+- `QUOTE_RATE_UNAVAILABLE` - Quoted exchange rate was refused at execution; nothing was exchanged
 - `QUOTE_EXECUTION_FAILED` - Error executing the quote; a debited amount is refunded automatically
 - `FUNDING_AMOUNT_MISMATCH` - Funding amount doesn't match expected amount
 - `PAYOUT_RETURNED` - Receiving bank returned or reversed the payout
@@ -438,6 +439,7 @@ Convert technical errors to user-friendly messages:
 function getUserFriendlyMessage(error) {
   const errorMessages = {
     QUOTE_EXPIRED: "Exchange rate expired. Please try again.",
+    QUOTE_RATE_UNAVAILABLE: "Exchange rate is no longer available. Please try again.",
     INSUFFICIENT_BALANCE: "You don't have enough funds for this payment.",
     INVALID_BANK_ACCOUNT:
       "Bank account details are invalid. Please check and try again.",

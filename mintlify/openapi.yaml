@@ -21791,6 +21791,7 @@ components:
       type: string
       enum:
         - QUOTE_EXPIRED
+        - QUOTE_RATE_UNAVAILABLE
         - QUOTE_EXECUTION_FAILED
         - FUNDING_AMOUNT_MISMATCH
         - SCA_NOT_COMPLETED
@@ -21821,6 +21822,7 @@ components:
         | Reason | Description |
         |--------|-------------|
         | `QUOTE_EXPIRED` | The quote was not executed before its expiry window |
+        | `QUOTE_RATE_UNAVAILABLE` | The quoted exchange rate was no longer available when the quote was executed, so nothing was exchanged. Create a new quote to get a current rate |
         | `QUOTE_EXECUTION_FAILED` | The quote could not be executed. Covers any internal failure on the way to settlement, whether or not funds were debited — a debited amount is refunded automatically |
         | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
         | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |

@@ -454,12 +454,16 @@ For cross-currency quotes the exchange rate applies on top of this: the fee is t
     try {
       await executeQuote(quote.id);
     } catch (error) {
-      if (error.code === 'QUOTE_EXPIRED') {
+      if (error.code === 'QUOTE_EXPIRED' || error.code === 'QUOTE_RATE_UNAVAILABLE') {
         quote = await createQuote(quoteParams); // Recreate with fresh rate
         await executeQuote(quote.id);
       }
     }
     ```
+
+    `QUOTE_RATE_UNAVAILABLE` means the quoted rate was refused when the quote was
+    executed, rather than the quote's own expiry window elapsing. Nothing was
+    exchanged in either case, and the recovery is the same: create a new quote.
   </Accordion>
 
   <Accordion title="Monitor quote status via webhooks">
