@@ -2,5 +2,5 @@ title: Spark Wallet
 allOf:
   - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/SparkWalletInfo.yaml
-  
   - $ref: ./WalletBeneficiaryFields.yaml
+  - $ref: ./WalletCustodyFields.yaml

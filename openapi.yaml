@@ -19537,18 +19537,27 @@ components:
         beneficiary:
           description: The wallet's owner. Optional for `FIRST_PARTY` accounts — the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms with counterparty requirements (e.g. EU Travel Rule); if missing there, creation fails with `400 INVALID_INPUT`.
           $ref: '#/components/schemas/WalletBeneficiaryOneOf'
+    WalletCustodyFields:
+      type: object
+      properties:
+        vaspName:
+          type: string
+          description: Name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Present when the wallet is held at an exchange or other custodial platform; omit it for self-custody wallets. Ownership verification applies only to self-custody wallets.
+          example: Kraken
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     EthereumWalletExternalAccountInfo:
       title: Ethereum L1 Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     LightningInfo:
       type: object
       description: |
@@ -19583,30 +19592,35 @@ components:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     PlasmaWalletExternalAccountInfo:
       title: Plasma Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SparkWalletExternalAccountInfo:
       title: Spark Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     TronWalletExternalAccountInfo:
       title: Tron Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     CnyBeneficiary:
       title: Individual Beneficiary
       type: object
