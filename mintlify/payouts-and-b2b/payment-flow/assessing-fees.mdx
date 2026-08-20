@@ -67,8 +67,8 @@ Every fixed fee on the transaction — yours and Grid's — is subtracted first.
 rates are then applied together to what remains:
 
 ```text
-total_variable_fee = (sending_amount - platform_fixed_fee - grid_fixed_fee)
-                     x (platform_variable_fee + grid_variable_fee)
+totalVariableFee = (sendingAmount - platformFixedFee - gridFixedFee)
+                   x (platformVariableFee + gridVariableFee)
 ```
 
 Your share of that total is your own rate's portion of it. Each component is rounded
