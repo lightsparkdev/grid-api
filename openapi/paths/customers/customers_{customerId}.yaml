@@ -168,11 +168,15 @@ patch:
         Customer updated successfully. For Embedded Wallet email or SMS auth
         phone updates, this is returned only on the signed retry after the
         customer contact field and all tied matching OTP credentials have been
-        updated.
+        updated. When the contact update's underlying wallet-provider activity
+        is still in flight, the body is instead a `WalletOperationProcessing`
+        carrying a `PROCESSING` status — re-send the byte-identical signed
+        retry until it settles; the backend also reconciles it to terminal on
+        its own.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/customers/CustomerOneOf.yaml
+            $ref: ../../components/schemas/customers/CustomerUpdateResponse.yaml
     '202':
       description: >-
         Challenge issued for an Embedded Wallet email or SMS auth phone update.
