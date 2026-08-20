@@ -1,0 +1,9 @@
+type: object
+properties:
+  beneficiary:
+    description: >-
+      The wallet's owner. Optional for `FIRST_PARTY` accounts — the
+      customer's verified identity is used. Required for `THIRD_PARTY`
+      wallets on platforms with counterparty requirements (e.g. EU Travel
+      Rule); if missing there, creation fails with `400 INVALID_INPUT`.
+    $ref: ./WalletBeneficiaryOneOf.yaml

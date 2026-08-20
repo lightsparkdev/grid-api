@@ -1,8 +1,10 @@
 post:
   summary: Incoming payment webhook and approval mechanism
   description: >
-    Webhook that is called when an incoming payment is received by a customer's UMA
-    address.
+    Webhook that is called when an incoming payment is received by a customer —
+    over UMA to the customer's UMA address, or over a bank rail (e.g. a SWIFT
+    wire to the customer's funding coordinates from
+    `fundingPaymentInstructions`).
 
     This endpoint should be implemented by clients of the Grid API.
 
@@ -55,6 +57,11 @@ post:
 
     For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this
     webhook is purely informational.
+
+
+    Bank-rail incoming payments (e.g. SWIFT) are informational at every
+    status, including PENDING: the funds have already moved interbank, so the
+    approval mechanism and the 5-second response window do not apply.
   operationId: incomingPaymentWebhook
   tags:
     - Webhooks
@@ -206,8 +213,10 @@ post:
       description: >
         Webhook received successfully.
 
-        For PENDING transactions, this indicates approval to proceed with the
-        payment.
+        For PENDING transactions on approval-mechanism rails, this indicates
+        approval to proceed with the payment. For bank-rail incoming payments
+        (e.g. SWIFT) a 200 only acknowledges receipt: there is nothing to
+        approve.
 
         If `requestedReceiverCustomerInfoFields` were present in the webhook
         request, the corresponding fields for the recipient must be included in
@@ -229,6 +238,9 @@ post:
         The platform must call the `/transactions/{transactionId}/approve` or
         `/transactions/{transactionId}/reject` endpoint to approve or reject the
         payment within 5 seconds or the payment will be automatically rejected.
+
+        Bank-rail incoming payments (e.g. SWIFT) need no approve/reject call: a
+        202 is treated the same as a 200 acknowledgment.
     '400':
       description: Bad request
       content:
@@ -244,7 +256,9 @@ post:
     '403':
       description: |
         Forbidden - Payment rejected by the client.
-        Only applicable for PENDING transactions.
+        Only applicable for PENDING transactions on approval-mechanism rails;
+        a bank-rail incoming payment (e.g. SWIFT) cannot be rejected through
+        this response because the funds have already moved interbank.
       content:
         application/json:
           schema:
@@ -258,7 +272,9 @@ post:
     '422':
       description: |
         Unprocessable Entity - Additional counterparty information required.
-        Only applicable for PENDING transactions.
+        Only applicable for PENDING transactions on approval-mechanism rails;
+        for bank-rail incoming payments (e.g. SWIFT) this response has no
+        effect on the already-received funds.
       content:
         application/json:
           schema:

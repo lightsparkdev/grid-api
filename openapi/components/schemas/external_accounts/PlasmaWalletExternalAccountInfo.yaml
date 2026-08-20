@@ -2,4 +2,5 @@ title: Plasma Wallet
 allOf:
   - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/PlasmaWalletInfo.yaml
+  - $ref: ./WalletBeneficiaryFields.yaml
   - $ref: ./WalletCustodyFields.yaml

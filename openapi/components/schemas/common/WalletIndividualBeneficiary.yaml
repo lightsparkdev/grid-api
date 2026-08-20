@@ -1,0 +1,19 @@
+title: Individual Beneficiary
+type: object
+required:
+  - beneficiaryType
+  - fullName
+  - countryOfResidence
+properties:
+  beneficiaryType:
+    type: string
+    enum:
+      - INDIVIDUAL
+  fullName:
+    type: string
+    description: The full name of the beneficiary
+    example: John Michael Doe
+  countryOfResidence:
+    type: string
+    description: The country of residence of the beneficiary (ISO 3166-1 alpha-2)
+    example: US

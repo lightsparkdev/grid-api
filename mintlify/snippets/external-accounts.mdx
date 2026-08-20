@@ -974,7 +974,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 </Tab>
 
 <Tab title="China">
-**Bank Transfer or Mobile Money**
+**AliPay / WeChat Pay or Bank Transfer**
 
 **Bank transfer:**
 
@@ -988,12 +988,11 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
       "accountInfo": {
         "accountType": "CNY_ACCOUNT",
         "bankName": "Industrial and Commercial Bank of China",
-        "accountNumber": "1234567890",
+        "accountNumber": "6217000010000000001",
         "beneficiary": {
-          "beneficiaryType": "INDIVIDUAL",
-          "fullName": "Wei Zhang",
-          "birthDate": "1990-01-15",
-          "nationality": "CN",
+          "beneficiaryType": "BUSINESS",
+          "legalName": "Shanghai Trading Co Ltd",
+          "registrationNumber": "91110000000000000X",
           "address": {
             "line1": "1 Nanjing Road",
             "city": "Shanghai",
@@ -1005,7 +1004,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     }'
 ```
 
-**Mobile money:**
+**AliPay / WeChat Pay:**
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
@@ -1016,7 +1015,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
       "platformAccountId": "cn_mobile_001",
       "accountInfo": {
         "accountType": "CNY_ACCOUNT",
-        "bankName": "Alipay",
+        "bankName": "AliPay",
         "phoneNumber": "+8613812345678",
         "beneficiary": {
           "beneficiaryType": "INDIVIDUAL",
@@ -1035,7 +1034,10 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 
 <Note>
-  `bankName` is always required. Bank transfer uses `accountNumber`; mobile money uses `phoneNumber`.
+  `bankName` is always required. For a wallet payout it selects the wallet and must be
+  exactly `AliPay` or `WechatPay`, paired with `phoneNumber`. Bank transfer uses
+  `accountNumber` with the beneficiary bank's name, and is business-to-business only —
+  send `beneficiaryType: "BUSINESS"`.
 </Note>
 </Tab>
 

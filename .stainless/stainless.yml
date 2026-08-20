@@ -212,6 +212,9 @@ resources:
           custody_type: "#/components/schemas/CustodyType"
           wallet_custody_fields: "#/components/schemas/WalletCustodyFields"
           business_beneficiary: "#/components/schemas/BusinessBeneficiary"
+          wallet_beneficiary_fields: "#/components/schemas/WalletBeneficiaryFields"
+          wallet_beneficiary_one_of: "#/components/schemas/WalletBeneficiaryOneOf"
+          wallet_individual_beneficiary: "#/components/schemas/WalletIndividualBeneficiary"
           # Ownership verification (challenge/verify)
           ownership_verification_method: "#/components/schemas/OwnershipVerificationMethod"
           ownership_challenge_request: "#/components/schemas/OwnershipChallengeRequest"
@@ -407,6 +410,13 @@ resources:
       uma_provider_list_response: '#/components/schemas/UmaProviderListResponse'
     methods:
       list: get /uma-providers
+
+  vasps:
+    models:
+      vasp: '#/components/schemas/Vasp'
+      vasp_list_response: '#/components/schemas/VaspListResponse'
+    methods:
+      list: get /vasps
 
   tokens:
     models:

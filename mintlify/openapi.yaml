@@ -33,6 +33,8 @@ tags:
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
+  - name: VASPs
+    description: Directory of Virtual Asset Service Providers (exchanges and other custodial platforms) recognized for counterparty declarations.
   - name: Same-Currency Transfers
     description: Endpoints for transferring funds between internal and external accounts with the same currency
   - name: Cross-Currency Transfers
@@ -5432,6 +5434,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /vasps:
+    get:
+      summary: List VASPs
+      description: |
+        Retrieve the directory of Virtual Asset Service Providers (exchanges and
+        other custodial platforms) recognized for counterparty declarations.
+
+        The `vaspName` field in each result is the value to pass as `vaspName`
+        when declaring a VASP-hosted counterparty.
+      operationId: listVasps
+      tags:
+        - VASPs
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaspListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /tokens:
     post:
       summary: Create a new API token
@@ -5848,7 +5905,7 @@ paths:
 
         Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`SMS_OTP`, `OAUTH`, or `PASSKEY`), or to add `EMAIL_OTP` / `SMS_OTP` back after it has been removed. Only one `EMAIL_OTP` and one `SMS_OTP` credential are supported per internal account; multiple distinct `PASSKEY` credentials may be registered.
 
-        Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (decrypted client-side from its `encryptedSessionSigningKey`) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+        Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (the session signing key the client holds for it) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -6166,7 +6223,7 @@ paths:
 
         For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
 
-        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. For `OAUTH` and `PASSKEY` the session signing key is delivered as `encryptedSessionSigningKey` (HPKE-sealed to the supplied `clientPublicKey`); for OTP credentials the client already holds the session signing key (the TEK private key it generated) and that field is omitted from the response. The `expiresAt` timestamp marks when the session expires.
+        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. Sending a compressed `clientPublicKey` selects the recommended client-held-key model: the client already holds the session signing key — the private key it generated before authentication — so no key material is returned and the deprecated `encryptedSessionSigningKey` is omitted. Sending an uncompressed `clientPublicKey` selects the deprecated legacy flow, where the session signing key is HPKE-sealed to that key and returned as `encryptedSessionSigningKey` for the client to decrypt. The `expiresAt` timestamp marks when the session expires.
       operationId: verifyAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -6221,7 +6278,7 @@ paths:
                 value:
                   type: OAUTH
                   oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
-                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+                  clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
               passkey:
                 summary: Verify a passkey credential
                 value:
@@ -6297,7 +6354,7 @@ paths:
 
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
-        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from — this seals the resulting session signing key to the client. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from — send a compressed key for the recommended client-held-key model, where the client retains the matching private key as the resulting session signing key, or an uncompressed key for the deprecated legacy flow. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -6321,7 +6378,7 @@ paths:
               passkey:
                 summary: Re-challenge a passkey credential
                 value:
-                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+                  clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
               emailOtp:
                 summary: Re-challenge an email-OTP credential (empty body)
                 value: {}
@@ -6515,9 +6572,9 @@ paths:
       description: |
         Refresh an active Embedded Wallet auth session and create a new session signing key. Session refresh is a two-step signed-retry flow:
 
-        1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a Grid session-refresh payload, binds the supplied `clientPublicKey` into that payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+        1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "02..." }` and no signature headers. Send a freshly generated client public key and retain its private key. Grid binds the supplied `clientPublicKey` into the session-refresh payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession` with an `encryptedSessionSigningKey` sealed to that client public key.
+        2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession`. Sending a compressed `clientPublicKey` selects the recommended client-held-key model, where the client retains the new session signing key and no key material is returned; sending an uncompressed key selects the deprecated legacy flow, where the new key is sealed to it and returned as `encryptedSessionSigningKey`.
 
         The original session must still be active on both steps so it can authorize the refresh. If the session has already expired, use the credential reauthentication flow instead.
       operationId: refreshAuthSession
@@ -6557,7 +6614,7 @@ paths:
               refresh:
                 summary: Refresh an active session
                 value:
-                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+                  clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
       responses:
         '201':
           description: New authentication session created successfully.
@@ -6572,7 +6629,6 @@ paths:
                     id: Session:019542f5-b3e7-1d02-0000-000000000011
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
-                    encryptedSessionSigningKey: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
                     nickname: example@lightspark.com
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
@@ -6587,7 +6643,7 @@ paths:
                 challenge:
                   summary: Session refresh challenge
                   value:
-                    payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
+                    payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
@@ -10149,7 +10205,7 @@ webhooks:
     post:
       summary: Incoming payment webhook and approval mechanism
       description: |
-        Webhook that is called when an incoming payment is received by a customer's UMA address.
+        Webhook that is called when an incoming payment is received by a customer — over UMA to the customer's UMA address, or over a bank rail (e.g. a SWIFT wire to the customer's funding coordinates from `fundingPaymentInstructions`).
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -10174,6 +10230,8 @@ webhooks:
         The Grid system will proceed or cancel the payment based on your response.
 
         For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this webhook is purely informational.
+
+        Bank-rail incoming payments (e.g. SWIFT) are informational at every status, including PENDING: the funds have already moved interbank, so the approval mechanism and the 5-second response window do not apply.
       operationId: incomingPaymentWebhook
       tags:
         - Webhooks
@@ -10324,7 +10382,7 @@ webhooks:
         '200':
           description: |
             Webhook received successfully.
-            For PENDING transactions, this indicates approval to proceed with the payment.
+            For PENDING transactions on approval-mechanism rails, this indicates approval to proceed with the payment. For bank-rail incoming payments (e.g. SWIFT) a 200 only acknowledges receipt: there is nothing to approve.
             If `requestedReceiverCustomerInfoFields` were present in the webhook request, the corresponding fields for the recipient must be included in this response in the `receiverCustomerInfo` object.
           content:
             application/json:
@@ -10335,6 +10393,7 @@ webhooks:
             Webhook received and will be processed asynchronously. The synchronous 200 response should be preferred where possible. This asycnhronous path should only be used in
             cases where the platform's architecture requires async (but still very quick) processing before approving or rejecting the payment.
             The platform must call the `/transactions/{transactionId}/approve` or `/transactions/{transactionId}/reject` endpoint to approve or reject the payment within 5 seconds or the payment will be automatically rejected.
+            Bank-rail incoming payments (e.g. SWIFT) need no approve/reject call: a 202 is treated the same as a 200 acknowledgment.
         '400':
           description: Bad request
           content:
@@ -10350,7 +10409,9 @@ webhooks:
         '403':
           description: |
             Forbidden - Payment rejected by the client.
-            Only applicable for PENDING transactions.
+            Only applicable for PENDING transactions on approval-mechanism rails;
+            a bank-rail incoming payment (e.g. SWIFT) cannot be rejected through
+            this response because the funds have already moved interbank.
           content:
             application/json:
               schema:
@@ -10364,7 +10425,9 @@ webhooks:
         '422':
           description: |
             Unprocessable Entity - Additional counterparty information required.
-            Only applicable for PENDING transactions.
+            Only applicable for PENDING transactions on approval-mechanism rails;
+            for bank-rail incoming payments (e.g. SWIFT) this response has no
+            effect on the already-received funds.
           content:
             application/json:
               schema:
@@ -10949,6 +11012,7 @@ webhooks:
         ### Event types
         - `INTERNAL_ACCOUNT.BALANCE_UPDATED` — Fired when the balance of an internal account changes. The `data` payload contains the full internal account object.
         - `INTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an internal account changes (e.g., `OPEN` → `FROZEN`). The `data` payload contains the full internal account object.
+        - `INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED` — Fired when the account's `fundingPaymentInstructions` change: new funding coordinates became available (e.g., a SWIFT collection account finished provisioning) or previously served coordinates were withdrawn. The `data` payload contains the full internal account object, including the current `fundingPaymentInstructions`.
       operationId: internalAccountStatusWebhook
       tags:
         - Webhooks
@@ -11015,6 +11079,44 @@ webhooks:
                         symbol: $
                         decimals: 2
                     fundingPaymentInstructions: []
+                    createdAt: '2025-08-01T10:00:00Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
+              fundingInstructionsUpdated:
+                summary: A SWIFT collection account finished provisioning and the account gained wire coordinates
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+                  type: INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: INTERNAL_FIAT
+                    status: ACTIVE
+                    balance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    totalBalance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    fundingPaymentInstructions:
+                      - accountOrWalletInfo:
+                          accountType: SWIFT_ACCOUNT
+                          country: SG
+                          swiftCode: DBSSSGSG
+                          bankName: DBS Bank
+                          accountNumber: '8850123456'
+                          accountHolderName: Acme Exports Pte Ltd
+                          paymentRails:
+                            - SWIFT
+                        instructionsNotes: Payments are attributed automatically by the destination account; no reference code is required.
                     createdAt: '2025-08-01T10:00:00Z'
                     updatedAt: '2025-08-15T14:32:00Z'
       responses:
@@ -12148,7 +12250,7 @@ components:
         field:
           type: string
           description: Dot-notation path to the offending field.
-          example: taxIdentifier
+          example: identifier
         constraint:
           $ref: '#/components/schemas/FieldConstraint'
         message:
@@ -12813,15 +12915,16 @@ components:
               example: US
             address:
               $ref: '#/components/schemas/Address'
-            taxIdType:
+            idType:
               $ref: '#/components/schemas/IdentificationType'
-            taxIdentifier:
+            identifier:
               type: string
-              description: Tax-identification number. For US persons this is the SSN (format `###-##-####`) or ITIN. For non-US persons this is the tax number issued by `taxIdCountryOfIssuance`.
+              writeOnly: true
+              description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only — never returned in customer responses.
               example: 123-45-6789
-            taxIdCountryOfIssuance:
+            countryOfIssuance:
               type: string
-              description: Country that issued the tax identifier (ISO 3166-1 alpha-2). Required when `taxIdType` is `NON_US_TAX_ID`.
+              description: 'Country that issued the identification (ISO 3166-1 alpha-2). Optional for an individual account holder: SSN and ITIN are US-issued, so this defaults to `US` and is rejected if set to anything else.'
               example: US
         - $ref: '#/components/schemas/CustomerEdd'
     IndividualCustomer:
@@ -13365,15 +13468,6 @@ components:
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/IndividualCustomerFields'
-        - type: object
-          properties:
-            idType:
-              $ref: '#/components/schemas/IdentificationType'
-            identifier:
-              type: string
-              writeOnly: true
-              description: The individual's tax identification number. Required to onboard the individual as a US account holder. Only SSN and ITIN are currently accepted for an individual account holder; other identification types are rejected. Write-only — never returned in customer responses.
-              example: 123-45-6789
     BusinessInfo:
       type: object
       description: Additional information required for business entities
@@ -14534,6 +14628,7 @@ components:
         - SGD_ACCOUNT
         - THB_ACCOUNT
         - VND_ACCOUNT
+        - SWIFT_ACCOUNT
         - SPARK_WALLET
         - LIGHTNING
         - SOLANA_WALLET
@@ -14642,6 +14737,12 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+            bankAddress:
+              type: string
+              description: The postal address of the financial institution holding the account, on a single line. Optional on every rail, and recommended for wires, where some originating banks require the beneficiary institution's address before they will send.
+              example: 885 Teaneck Road, Teaneck, NJ 07666
+              minLength: 1
+              maxLength: 255
     PaymentBrlAccountInfo:
       title: BRL Account
       allOf:
@@ -16893,6 +16994,7 @@ components:
               example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
     SwiftAccountInfoBase:
       type: object
+      description: 'At least one of accountNumber or iban is always present: IBAN-only corridors (e.g. BR, GB) use iban, other corridors use accountNumber, and both appear when the bank exposes both identifiers for the same account.'
       required:
         - accountType
         - swiftCode
@@ -16962,11 +17064,23 @@ components:
         - $ref: '#/components/schemas/SwiftAccountInfo'
         - type: object
           required:
-            - reference
+            - accountHolderName
           properties:
+            accountHolderName:
+              type: string
+              description: The name of the account holder as it must appear on the wire. Remitting banks match this against the beneficiary name field, so payers should copy it exactly.
+              example: Acme Exports Pte Ltd
+              minLength: 1
+              maxLength: 255
+            bankAddress:
+              type: string
+              description: The address of the bank holding the account, when known.
+              example: 12 Marina Boulevard, Singapore 018982
+              minLength: 1
+              maxLength: 1024
             reference:
               type: string
-              description: Unique reference code that must be included with the payment to properly credit it
+              description: Reference code to include with the payment when present. SWIFT payments are attributed by the destination account number/IBAN, so this account type typically requires no reference.
               example: UMA-Q12345-REF
     CnyAccountInfoBase:
       type: object
@@ -16975,8 +17089,8 @@ components:
         - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber, bankName
-        - MOBILE_MONEY: bankName, phoneNumber
+        - BANK_TRANSFER: accountNumber, bankName. Business-to-business only, so the beneficiary must be a business.
+        - MOBILE_MONEY: bankName, phoneNumber. Pays an AliPay or WeChat Pay wallet; bankName selects the wallet.
       properties:
         accountType:
           type: string
@@ -19383,6 +19497,44 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/SwiftBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    WalletIndividualBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+        - countryOfResidence
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+          example: John Michael Doe
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary (ISO 3166-1 alpha-2)
+          example: US
+    WalletBeneficiaryOneOf:
+      description: The person or business that owns a crypto wallet external account.
+      oneOf:
+        - title: Individual Beneficiary
+          $ref: '#/components/schemas/WalletIndividualBeneficiary'
+        - title: Business Beneficiary
+          $ref: '#/components/schemas/BusinessBeneficiary'
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/WalletIndividualBeneficiary'
+          BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    WalletBeneficiaryFields:
+      type: object
+      properties:
+        beneficiary:
+          description: The wallet's owner. Optional for `FIRST_PARTY` accounts — the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms with counterparty requirements (e.g. EU Travel Rule); if missing there, creation fails with `400 INVALID_INPUT`.
+          $ref: '#/components/schemas/WalletBeneficiaryOneOf'
     CustodyType:
       type: string
       enum:
@@ -19404,12 +19556,14 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
     EthereumWalletExternalAccountInfo:
       title: Ethereum L1 Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
     LightningInfo:
       type: object
@@ -19444,30 +19598,35 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
     PlasmaWalletExternalAccountInfo:
       title: Plasma Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
     SparkWalletExternalAccountInfo:
       title: Spark Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
     TronWalletExternalAccountInfo:
       title: Tron Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
     CnyBeneficiary:
       title: Individual Beneficiary
@@ -21147,7 +21306,7 @@ components:
         |--------|-------------|
         | `CREATED` | Initial lookup has been created |
         | `PENDING` | Quote has been created |
-        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `PROCESSING` | Funding has been received and payment initiated |
         | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
@@ -21529,8 +21688,14 @@ components:
           description: Unique reference code to include with the payment to match it with the correct incoming transaction, when available.
           example: UMA-Q12345-REF
         transactionHash:
+          deprecated: true
           type: string
-          description: Transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available. This is not a transfer to a customer's own wallet; for that, see the `onChainTransaction` on the transaction's source or destination.
+          description: |-
+            Transaction hash of the settlement transfer, when available. This field reports two different transfers, and only one of them has a replacement today:
+
+            For a crypto transfer to or from a customer's own external wallet, use the `onChainTransaction` on the relevant source or destination instead — it names the network alongside the hash. That is the transfer this field is deprecated for.
+
+            For the inter-VASP settlement leg of a UMA payment (e.g. USDC on Solana to the receiving partner), this field remains the only place the hash is reported: a UMA address is not a wallet you hold, so its source and destination carry no `onChainTransaction`. The field will not be removed before that leg has a replacement.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingTransactionFailureReason:
       type: string
@@ -21544,7 +21709,8 @@ components:
         - QUOTE_EXPIRED
         - QUOTE_EXECUTION_FAILED
         - COMPLIANCE_REJECTED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. COMPLIANCE_REJECTED means compliance blocked the incoming funds. If the transaction is not in a failed state, this field is omitted.
+        - COLLECTION_FAILED
+      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -21590,7 +21756,7 @@ components:
         | Status | Description |
         |--------|-------------|
         | `PENDING` | Quote is pending confirmation |
-        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `EXPIRED` | Quote wasn't executed before expiry window |
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | Payout successfully reached the destination |
@@ -22959,6 +23125,39 @@ components:
         totalCount:
           type: integer
           description: Total number of transactions matching the criteria (excluding pagination)
+    Vasp:
+      type: object
+      required:
+        - vaspName
+        - url
+      properties:
+        vaspName:
+          type: string
+          description: Name of this VASP. Pass this value as `vaspName` when declaring a VASP-hosted counterparty.
+          example: Kraken
+        url:
+          type: string
+          format: uri
+          description: The VASP's website.
+          example: https://www.kraken.com
+      description: A Virtual Asset Service Provider (VASP) — an exchange or other custodial platform — recognized for counterparty declarations.
+    VaspListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of VASPs in the directory
+          items:
+            $ref: '#/components/schemas/Vasp'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
     Permission:
       type: string
       enum:
@@ -23378,8 +23577,8 @@ components:
           example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
         clientPublicKey:
           type: string
-          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
-          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+          description: Client-generated, ephemeral P-256 public key; the matching private key is retained on the client and is one-time-use per verification request. Send a compressed SEC1 key (`02`/`03` prefix followed by the 32-byte X coordinate; 66 hex characters) for the recommended client-held-key model, where that private key becomes the session signing key. Send an uncompressed SEC1 key (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters) for the deprecated legacy flow, where Grid seals the session signing key to it instead.
+          example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     OauthCredentialVerifyRequest:
       title: OAuth Credential Verify Request
       allOf:
@@ -23448,7 +23647,7 @@ components:
           PASSKEY: '#/components/schemas/PasskeyCredentialVerifyRequest'
     AuthSession:
       title: Authentication Session
-      description: An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification) or `POST /auth/sessions/{id}/refresh` (on mid-session refresh). Only session-issuing responses include `encryptedSessionSigningKey` — it is delivered exactly once at the moment the session is issued and is never returned by the list endpoint.
+      description: 'An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification) or `POST /auth/sessions/{id}/refresh` (on mid-session refresh). The `clientPublicKey` encoding on the issuing request selects the flow: a compressed key gets the client-held-key model, where the client generates and retains the session signing key and session-issuing responses carry no key material; an uncompressed key gets the deprecated legacy flow, where Grid seals the session signing key to that public key and returns it as `encryptedSessionSigningKey`. Never returned by the list endpoint.'
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
         - type: object
@@ -23462,15 +23661,16 @@ components:
               example: Session:019542f5-b3e7-1d02-0000-000000000003
             encryptedSessionSigningKey:
               type: string
+              deprecated: true
               description: |-
-                HPKE-encrypted session signing key, sealed to the `clientPublicKey` supplied on the verification or refresh request. Encoded as a base58check string: the decoded payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.
+                Deprecated; present only for the legacy flow, selected by sending an uncompressed `clientPublicKey` on the verification or refresh request. Grid seals the session signing key to that public key and returns it here as a base58check string (a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext) for the client to decrypt with its private key.
 
-                Returned only by session-issuing responses for `OAUTH` and `PASSKEY` credentials. `EMAIL_OTP` and `SMS_OTP` sessions omit this field — the client generates a TEK keypair before verification and retains the private key throughout, so the server has nothing to deliver. Always omitted from list responses (`GET /auth/sessions`) since Grid does not retain the plaintext key after the client has decrypted it.
+                The recommended client-held-key flow sends a compressed `clientPublicKey` instead: the client generates and retains the session signing key itself, so this field is omitted — the same way `EMAIL_OTP` and `SMS_OTP` sessions have always worked. See the "Client keys & signing" guide. Always omitted from list responses (`GET /auth/sessions`).
               example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
             expiresAt:
               type: string
               format: date-time
-              description: Timestamp after which the session is no longer valid and the `encryptedSessionSigningKey` must not be used to sign further requests.
+              description: Timestamp after which the session is no longer valid and the session signing key must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
@@ -23479,11 +23679,11 @@ components:
       properties:
         clientPublicKey:
           type: string
-          pattern: ^04[0-9a-fA-F]{128}$
-          minLength: 130
+          pattern: ^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
+          minLength: 66
           maxLength: 130
-          description: Required for `PASSKEY` credentials. Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid bakes this key into the session-creation payload that the returned `challenge` is computed from, so the resulting session signing key is sealed to the client. Ignored for `EMAIL_OTP` and `SMS_OTP`.
-          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+          description: Required for `PASSKEY` credentials; the matching private key is retained on the client. Send a compressed SEC1 key (`02`/`03` prefix followed by the 32-byte X coordinate; 66 hex characters) for the recommended client-held-key model, where that private key becomes the session signing key. Send an uncompressed SEC1 key (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters) for the deprecated legacy flow, where Grid seals the session signing key to it instead. Grid bakes this public key into the session-creation payload that the returned `challenge` is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`.
+          example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
       description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn `credentialId` needed to target the passkey, plus the Grid-issued `challenge`, corresponding `requestId`, and challenge `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation request body, not a base64url string. The client UTF-8 encodes this string as the WebAuthn challenge and signs it with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
@@ -23537,16 +23737,16 @@ components:
             $ref: '#/components/schemas/AuthSession'
     AuthSessionRefreshRequest:
       title: Auth Session Refresh Request
-      description: Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow. On the initial call, Grid binds this key into the session-creation payload returned as `payloadToSign`; on the signed retry, the client echoes the same key back and Grid uses it to encrypt the newly issued session signing key.
+      description: 'Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow and must match on both. Its SEC1 encoding selects how the refreshed session signing key is delivered: a compressed key gets the recommended client-held-key model, where the client retains the new signing key itself; an uncompressed key gets the deprecated legacy flow, where Grid returns the new key as `encryptedSessionSigningKey` sealed to it. On the initial call, Grid binds the supplied key into the session-creation payload returned as `payloadToSign`.'
       type: object
       required:
         - clientPublicKey
       properties:
         clientPublicKey:
           type: string
-          pattern: ^04[0-9a-fA-F]{128}$
-          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid binds this key into the session-creation payload on the initial call and seals the returned `encryptedSessionSigningKey` to it on the signed retry.
-          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+          pattern: ^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
+          description: Client-generated P-256 public key; the matching private key is retained on the client. Send a compressed SEC1 key (`02`/`03` prefix followed by the 32-byte X coordinate; 66 hex characters) for the recommended client-held-key model, where that private key becomes the new session signing key. Send an uncompressed SEC1 key (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters) for the deprecated legacy flow, where Grid seals the new session signing key to it and returns it as `encryptedSessionSigningKey` on the signed retry.
+          example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     DelegatedKeyStatus:
       type: string
       enum:
@@ -25257,6 +25457,7 @@ components:
       type: string
       enum:
         - OUTGOING_PAYMENT.PENDING
+        - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
         - OUTGOING_PAYMENT.PROCESSING
         - OUTGOING_PAYMENT.COMPLETED
         - OUTGOING_PAYMENT.FAILED
@@ -25285,6 +25486,7 @@ components:
         - EXTERNAL_ACCOUNT.STATUS_UPDATED
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INTERNAL_ACCOUNT.STATUS_UPDATED
+        - INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
@@ -25477,6 +25679,7 @@ components:
               enum:
                 - INTERNAL_ACCOUNT.BALANCE_UPDATED
                 - INTERNAL_ACCOUNT.STATUS_UPDATED
+                - INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
     ExternalAccountStatusWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
