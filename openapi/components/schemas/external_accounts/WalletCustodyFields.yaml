@@ -1,0 +1,11 @@
+type: object
+properties:
+  custodyType:
+    $ref: ./CustodyType.yaml
+  vaspName:
+    type: string
+    description: >-
+      Name of the VASP that custodies this account, from the VASP directory
+      (`GET /vasps`). Required when `custodyType` is `VASP_HOSTED`; must be
+      omitted otherwise.
+    example: Kraken

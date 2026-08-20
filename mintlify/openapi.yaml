@@ -17250,13 +17250,6 @@ components:
         - THIRD_PARTY
       description: Whether the external account belongs to the customer themselves (`FIRST_PARTY`) or to someone else (`THIRD_PARTY`). Required when creating self-custody crypto wallet external accounts on platforms subject to counterparty requirements — for example, under the EU Travel Rule or similar requirements in other regions; recommended for all other accounts, where providing it can unlock additional capabilities and smoother compliance handling.
       example: FIRST_PARTY
-    CustodyType:
-      type: string
-      enum:
-        - SELF_CUSTODY
-        - VASP_HOSTED
-      description: 'How a crypto wallet external account is custodied: `SELF_CUSTODY` for a wallet whose keys the owner controls directly, or `VASP_HOSTED` for an account held at a Virtual Asset Service Provider (an exchange or other custodial platform). Only relevant for crypto wallet accounts; defaults to `SELF_CUSTODY`. Ownership verification applies only to `SELF_CUSTODY` wallets — `VASP_HOSTED` accounts never require it.'
-      example: SELF_CUSTODY
     BeneficiaryVerificationStatus:
       type: string
       enum:
@@ -19390,16 +19383,34 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/SwiftBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    CustodyType:
+      type: string
+      enum:
+        - SELF_CUSTODY
+        - VASP_HOSTED
+      description: 'How a crypto wallet external account is custodied: `SELF_CUSTODY` for a wallet whose keys the owner controls directly, or `VASP_HOSTED` for an account held at a Virtual Asset Service Provider (an exchange or other custodial platform). Only relevant for crypto wallet accounts; defaults to `SELF_CUSTODY`. Ownership verification applies only to `SELF_CUSTODY` wallets — `VASP_HOSTED` accounts never require it.'
+      example: SELF_CUSTODY
+    WalletCustodyFields:
+      type: object
+      properties:
+        custodyType:
+          $ref: '#/components/schemas/CustodyType'
+        vaspName:
+          type: string
+          description: Name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Required when `custodyType` is `VASP_HOSTED`; must be omitted otherwise.
+          example: Kraken
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     EthereumWalletExternalAccountInfo:
       title: Ethereum L1 Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletInfo'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     LightningInfo:
       type: object
       description: |
@@ -19433,26 +19444,31 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     PlasmaWalletExternalAccountInfo:
       title: Plasma Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletInfo'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletInfo'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SparkWalletExternalAccountInfo:
       title: Spark Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     TronWalletExternalAccountInfo:
       title: Tron Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     CnyBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -19629,12 +19645,6 @@ components:
               example: acc_123456789
             ownershipType:
               $ref: '#/components/schemas/OwnershipType'
-            custodyType:
-              $ref: '#/components/schemas/CustodyType'
-            vaspName:
-              type: string
-              description: Canonical name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Only present when `custodyType` is `VASP_HOSTED`.
-              example: Kraken
             currency:
               type: string
               description: The ISO 4217 currency code
@@ -20549,12 +20559,6 @@ components:
               example: ext_acc_123456
             ownershipType:
               $ref: '#/components/schemas/OwnershipType'
-            custodyType:
-              $ref: '#/components/schemas/CustodyType'
-            vaspName:
-              type: string
-              description: Canonical name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Required when `custodyType` is `VASP_HOSTED`; must be omitted otherwise.
-              example: Kraken
             defaultUmaDepositAccount:
               type: boolean
               description: Whether to set the external account as the default UMA deposit account. When set to true, incoming payments to this customer's UMA address will be automatically deposited into this external account. False if not provided. Note that only one external account can be set as the default UMA deposit account for a customer, so if there is already a default UMA deposit account, this will override the existing default UMA deposit account. If there is no default UMA deposit account, incoming UMA payments will be deposited into the primary internal account for the customer.

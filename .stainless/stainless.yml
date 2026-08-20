@@ -210,6 +210,7 @@ resources:
           external_account_create: '#/components/schemas/ExternalAccountCreateRequest'
           external_account_info_one_of: "#/components/schemas/ExternalAccountInfoOneOf"
           custody_type: "#/components/schemas/CustodyType"
+          wallet_custody_fields: "#/components/schemas/WalletCustodyFields"
           business_beneficiary: "#/components/schemas/BusinessBeneficiary"
           # Ownership verification (challenge/verify)
           ownership_verification_method: "#/components/schemas/OwnershipVerificationMethod"

@@ -20,15 +20,6 @@ allOf:
         example: ext_acc_123456
       ownershipType:
         $ref: ./OwnershipType.yaml
-      custodyType:
-        $ref: ./CustodyType.yaml
-      vaspName:
-        type: string
-        description: >-
-          Canonical name of the VASP that custodies this account, from the
-          VASP directory (`GET /vasps`). Required when `custodyType` is
-          `VASP_HOSTED`; must be omitted otherwise.
-        example: Kraken
       defaultUmaDepositAccount:
         type: boolean
         description: >-

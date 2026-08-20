@@ -3,3 +3,4 @@ allOf:
   - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/SparkWalletInfo.yaml
   
+  - $ref: ./WalletCustodyFields.yaml

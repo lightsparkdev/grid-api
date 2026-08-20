@@ -24,15 +24,6 @@ allOf:
         example: acc_123456789
       ownershipType:
         $ref: ./OwnershipType.yaml
-      custodyType:
-        $ref: ./CustodyType.yaml
-      vaspName:
-        type: string
-        description: >-
-          Canonical name of the VASP that custodies this account, from the
-          VASP directory (`GET /vasps`). Only present when `custodyType` is
-          `VASP_HOSTED`.
-        example: Kraken
       currency:
         type: string
         description: The ISO 4217 currency code
