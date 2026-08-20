@@ -12317,7 +12317,6 @@ components:
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
-            | COUNTERPARTY_USER_INFO_REQUIRED | The destination account needs beneficiary information before this transfer can proceed; update the external account with a `beneficiary` and retry |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -12362,7 +12361,6 @@ components:
             - CARDHOLDER_KYC_NOT_APPROVED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
-            - COUNTERPARTY_USER_INFO_REQUIRED
         message:
           type: string
           description: Error message
@@ -19535,21 +19533,12 @@ components:
         beneficiary:
           description: The wallet's owner. Optional for `FIRST_PARTY` accounts — the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms with counterparty requirements (e.g. EU Travel Rule); if missing there, creation fails with `400 INVALID_INPUT`.
           $ref: '#/components/schemas/WalletBeneficiaryOneOf'
-    CustodyType:
-      type: string
-      enum:
-        - SELF_CUSTODY
-        - VASP_HOSTED
-      description: 'How a crypto wallet external account is custodied: `SELF_CUSTODY` for a wallet whose keys the owner controls directly, or `VASP_HOSTED` for an account held at a Virtual Asset Service Provider (an exchange or other custodial platform). Only relevant for crypto wallet accounts; defaults to `SELF_CUSTODY`. Ownership verification applies only to `SELF_CUSTODY` wallets — `VASP_HOSTED` accounts never require it.'
-      example: SELF_CUSTODY
     WalletCustodyFields:
       type: object
       properties:
-        custodyType:
-          $ref: '#/components/schemas/CustodyType'
         vaspName:
           type: string
-          description: Name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Required when `custodyType` is `VASP_HOSTED`; must be omitted otherwise.
+          description: Name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Present when the wallet is held at an exchange or other custodial platform; omit it for self-custody wallets. Ownership verification applies only to self-custody wallets.
           example: Kraken
     BaseWalletExternalAccountInfo:
       title: Base Wallet
