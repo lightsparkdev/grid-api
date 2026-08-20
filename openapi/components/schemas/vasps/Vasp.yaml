@@ -1,7 +1,6 @@
 type: object
 required:
   - vaspName
-  - url
 properties:
   vaspName:
     type: string
@@ -12,7 +11,7 @@ properties:
   url:
     type: string
     format: uri
-    description: The VASP's website.
+    description: The VASP's website, when known.
     example: https://www.kraken.com
 description: >-
   A Virtual Asset Service Provider (VASP) — an exchange or other custodial
