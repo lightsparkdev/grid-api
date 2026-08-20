@@ -1,3 +1,5 @@
+import KybSandboxSuffixes from '/snippets/kyc/kyb-sandbox-suffixes.mdx'
+
 In sandbox, you can trigger specific KYC/KYB verification outcomes using magic suffixes in customer and beneficial owner fields. These let you test different verification flows without waiting for real review.
 
 ### Individual customer verification (KYC)
@@ -104,15 +106,9 @@ Fix-and-resubmit example — the standard integration loop:
 
 ### Business customer verification (KYB)
 
-Business customers are always created with `kybStatus: UNVERIFIED` — their suffix applies when you call `POST /verifications`, not at creation. The **last 3 characters** of the `registrationNumber` in `businessInfo` determine the outcome:
+<KybSandboxSuffixes />
 
-| Suffix | Outcome on `POST /verifications` |
-|--------|----------------------------------|
-| **002** | `kybStatus: REJECTED`, `verificationStatus: REJECTED` — immediate, skips data and document validation |
-| **001** / **003** | Normal validation applies: complete business information, business documents, and at least one beneficial owner are required (`RESOLVE_ERRORS` otherwise); a complete submission stays `PENDING` |
-| **Any other** | `kybStatus: APPROVED`, `verificationStatus: APPROVED` — immediate, skips data and document validation |
-
-Once a business customer is approved or rejected, further `POST /verifications` calls return `400`.
+For direct API onboarding, `001` and `003` both require complete business information, business documents, and at least one beneficial owner before `POST /verifications` moves past `RESOLVE_ERRORS`. For the hosted flow, see [Configuring customers](/payouts-and-b2b/onboarding/configuring-customers#hosted-kyc-and-kyb-link-flow).
 
 ### Beneficial owner KYC
 

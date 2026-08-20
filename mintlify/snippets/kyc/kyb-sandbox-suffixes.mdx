@@ -1,0 +1,14 @@
+Business customers are always created with `kybStatus: UNVERIFIED`. The **last 3 characters** of `businessInfo.registrationNumber` decide what happens when the business is verified — whether you submit with `POST /verifications` or send the business through a hosted KYB link:
+
+| Suffix | Outcome |
+|--------|---------|
+| **003** | No auto-decision. Document and UBO verification run for real — the hosted flow asks for company documents and beneficial owners, and `POST /verifications` applies normal validation (`RESOLVE_ERRORS` until the data is complete). **Use this to test the link flow.** |
+| **001** | Same as `003` — no auto-decision, normal validation applies |
+| **002** | Immediate `kybStatus: REJECTED` (`verificationStatus: REJECTED`), skipping data and document validation |
+| **Any other** | Immediate `kybStatus: APPROVED` (`verificationStatus: APPROVED`), skipping data and document validation |
+
+<Warning>
+A registration number that doesn't end in `001`, `002`, or `003` is **auto-approved on the spot**. The hosted flow then has nothing left to verify, so it asks for no documents and no beneficial owners — which looks exactly like a broken KYB flow but isn't. Always use a `003` suffix when you want to exercise document and UBO collection.
+</Warning>
+
+Once a business customer is approved or rejected, further `POST /verifications` calls return `400`.
