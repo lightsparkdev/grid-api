@@ -740,11 +740,11 @@ paths:
                   phoneNumber: '+14155559876'
       responses:
         '200':
-          description: Customer updated successfully. For Embedded Wallet email or SMS auth phone updates, this is returned only on the signed retry after the customer contact field and all tied matching OTP credentials have been updated.
+          description: Customer updated successfully. For Embedded Wallet email or SMS auth phone updates, this is returned only on the signed retry after the customer contact field and all tied matching OTP credentials have been updated. When the contact update's underlying wallet-provider activity is still in flight, the body is instead a `WalletOperationProcessing` carrying a `PROCESSING` status — re-send the byte-identical signed retry until it settles; the backend also reconciles it to terminal on its own.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerOneOf'
+                $ref: '#/components/schemas/CustomerUpdateResponse'
         '202':
           description: Challenge issued for an Embedded Wallet email or SMS auth phone update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
           content:
@@ -6300,11 +6300,11 @@ paths:
                     signature: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
       responses:
         '200':
-          description: Authentication credential verified and session issued
+          description: 'Authentication credential verified and session issued (`AuthSession`); or, when the underlying wallet-provider activity is still in flight, a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session, and the backend also reconciles the activity to terminal on its own.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSession'
+                $ref: '#/components/schemas/AuthCredentialVerifyResponse'
         '202':
           description: Verification challenge issued. Returned only for OTP credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
           content:
@@ -6626,6 +6626,12 @@ paths:
                 value:
                   clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
       responses:
+        '200':
+          description: 'The session refresh''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the byte-identical signed retry until it gets the `201`; the backend also reconciles the activity to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '201':
           description: New authentication session created successfully.
           content:
@@ -13790,6 +13796,32 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
+    WalletOperationProcessing:
+      title: Wallet Operation Processing
+      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - PROCESSING
+          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
+          example: PROCESSING
+        message:
+          type: string
+          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
+          example: This login is still being processed. Retry the same request in a moment.
+      example:
+        status: PROCESSING
+        message: This login is still being processed. Retry the same request in a moment.
+    CustomerUpdateResponse:
+      title: Customer Update Response
+      description: 'Response body for `PATCH /customers/{customerId}`. Normally a `CustomerOneOf` — the updated customer. When the update is an Embedded Wallet email or SMS auth phone change and the underlying wallet-provider activity is still in flight on the signed retry, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical signed retry until it settles; the backend also reconciles the activity to terminal on its own.'
+      anyOf:
+        - $ref: '#/components/schemas/CustomerOneOf'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     SignedRequestChallenge:
       title: Signed Request Challenge
       type: object
@@ -23461,26 +23493,6 @@ components:
           SMS_OTP: '#/components/schemas/SmsOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
-    WalletOperationProcessing:
-      title: Wallet Operation Processing
-      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
-      type: object
-      required:
-        - status
-      properties:
-        status:
-          type: string
-          enum:
-            - PROCESSING
-          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
-          example: PROCESSING
-        message:
-          type: string
-          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
-          example: This login is still being processed. Retry the same request in a moment.
-      example:
-        status: PROCESSING
-        message: This login is still being processed. Retry the same request in a moment.
     AuthMethodResponse:
       title: Auth Method Response
       description: |-
@@ -23676,6 +23688,12 @@ components:
               format: date-time
               description: Timestamp after which the session is no longer valid and the session signing key must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
+    AuthCredentialVerifyResponse:
+      title: Auth Credential Verify Response
+      description: 'Response body for `POST /auth/credentials/{id}/verify`. Normally an `AuthSession` — the issued session on successful verification. When the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session; the backend also reconciles the activity to terminal on its own.'
+      anyOf:
+        - $ref: '#/components/schemas/AuthSession'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
       description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.

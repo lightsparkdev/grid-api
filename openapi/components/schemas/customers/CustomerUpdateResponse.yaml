@@ -1,0 +1,13 @@
+title: Customer Update Response
+description: >-
+  Response body for `PATCH /customers/{customerId}`. Normally a
+  `CustomerOneOf` — the updated customer. When the update is an
+  Embedded Wallet email or SMS auth phone change and the underlying
+  wallet-provider activity is still in flight on the signed retry, this
+  is instead a `WalletOperationProcessing` body with `status:
+  "PROCESSING"` — the client re-sends the byte-identical signed retry
+  until it settles; the backend also reconciles the activity to
+  terminal on its own.
+anyOf:
+  - $ref: ./CustomerOneOf.yaml
+  - $ref: ../common/WalletOperationProcessing.yaml
