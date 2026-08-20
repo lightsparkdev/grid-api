@@ -59,6 +59,17 @@ delete:
         type: string
       example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
   responses:
+    '200':
+      description: >-
+        The revocation's underlying wallet-provider activity is still
+        in flight — a `WalletOperationProcessing` body with `status:
+        "PROCESSING"`. The client re-sends the same signed `DELETE`
+        until it settles; the backend also reconciles the revocation to
+        terminal on its own.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/common/WalletOperationProcessing.yaml
     '202':
       description: >-
         Challenge issued. The response contains `payloadToSign` plus a
