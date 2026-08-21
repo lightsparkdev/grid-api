@@ -1,4 +1,5 @@
 type: object
+description: Failure details for a terminally failed operation.
 required:
   - code
 properties:

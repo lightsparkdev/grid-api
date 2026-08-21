@@ -25849,16 +25849,8 @@ components:
                 - CARD_TRANSACTION.SETTLED
                 - CARD_TRANSACTION.REFUNDED
                 - CARD_TRANSACTION.EXCEPTION
-    OperationError:
-      type: object
-      required:
-        - code
-      properties:
-        code:
-          type: string
-          description: Machine-readable failure code for a `FAILED` operation.
-          example: DeleteApiKeysFailed
-    WalletOperationWebhookData:
+    WalletOperationCompletedData:
+      title: Wallet Operation Completed Data
       type: object
       required:
         - operationId
@@ -25879,16 +25871,59 @@ components:
           example: wallet.export
         status:
           type: string
-          description: Terminal status of the operation.
           enum:
             - completed
-            - failed
+          description: Terminal status of the operation.
           example: completed
+    OperationError:
+      type: object
+      description: Failure details for a terminally failed operation.
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: Machine-readable failure code for a `FAILED` operation.
+          example: DeleteApiKeysFailed
+    WalletOperationFailedData:
+      title: Wallet Operation Failed Data
+      type: object
+      required:
+        - operationId
+        - operationType
+        - status
+        - error
+      properties:
+        operationId:
+          type: string
+          description: The `Operation:<uuid>` id of the operation that reached a terminal state.
+          example: Operation:019542f5-b3e7-1d02-0000-000000000099
+        operationType:
+          type: string
+          description: The kind of operation that reached a terminal state.
+          enum:
+            - auth_credential.delete
+            - session.revoke
+            - wallet.export
+          example: wallet.export
+        status:
+          type: string
+          enum:
+            - failed
+          description: Terminal status of the operation.
+          example: failed
         error:
-          anyOf:
-            - $ref: '#/components/schemas/OperationError'
-            - type: 'null'
-          description: Present only on `failed`; `null` otherwise.
+          $ref: '#/components/schemas/OperationError'
+    WalletOperationWebhookData:
+      title: Wallet Operation Data
+      oneOf:
+        - $ref: '#/components/schemas/WalletOperationCompletedData'
+        - $ref: '#/components/schemas/WalletOperationFailedData'
+      discriminator:
+        propertyName: status
+        mapping:
+          completed: '#/components/schemas/WalletOperationCompletedData'
+          failed: '#/components/schemas/WalletOperationFailedData'
     WalletOperationWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

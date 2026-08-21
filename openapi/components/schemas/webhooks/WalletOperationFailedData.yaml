@@ -1,0 +1,28 @@
+title: Wallet Operation Failed Data
+type: object
+required:
+  - operationId
+  - operationType
+  - status
+  - error
+properties:
+  operationId:
+    type: string
+    description: The `Operation:<uuid>` id of the operation that reached a terminal state.
+    example: Operation:019542f5-b3e7-1d02-0000-000000000099
+  operationType:
+    type: string
+    description: The kind of operation that reached a terminal state.
+    enum:
+      - auth_credential.delete
+      - session.revoke
+      - wallet.export
+    example: wallet.export
+  status:
+    type: string
+    enum:
+      - failed
+    description: Terminal status of the operation.
+    example: failed
+  error:
+    $ref: ./OperationError.yaml
