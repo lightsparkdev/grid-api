@@ -1,0 +1,391 @@
+---
+title: "Assessing Fees"
+description: "Charge your own fee on top of Grid's fees and collect it into your platform account"
+icon: "/images/icons/coins.svg"
+"og:image": "/images/og/og-payouts-b2b.png"
+---
+
+import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
+
+Grid lets you charge your own fee on the payments your customers send. You set the
+pricing, Grid collects the fee as part of the transaction, and the proceeds are credited
+to your platform internal account.
+
+Your fee is **additive**: it sits on top of the fees Grid charges you, and the two are
+never netted against each other.
+
+<Note>
+Configuring your own fee does not change Grid's **rates** — Grid's variable rate and fixed
+fee stay exactly as contracted. It can still change the **absolute amount** Grid collects,
+because Grid's variable fee is proportional to the amount being sent. When you lock the
+receiving amount, adding your fee raises the sending amount needed to deliver it, so the
+absolute amount Grid takes rises with it.
+</Note>
+
+## What you can charge
+
+A platform fee has two components, and you can use either or both:
+
+| Component | Field | Charged as |
+| --- | --- | --- |
+| Variable | `variableFeeBps` | Basis points (1 bps = 0.01%) of the sending amount, after fixed fees are deducted |
+| Fixed | `fixedFee` | A flat amount per transaction |
+
+Both are denominated in the **sending currency** and are charged on the sending side of the
+payment — your customer bears the fee as part of the transaction rather than you being
+billed for it separately. Which side absorbs it depends on `lockedCurrencySide`: lock the
+**sending** amount and your fee comes out of what the recipient receives; lock the
+**receiving** amount and the recipient still gets that amount, so the sender pays more.
+
+Fees are configured per **fee type**, which identifies the activity being charged:
+
+- `CROSS_CURRENCY_TRANSACTION` — a transfer where the sending currency differs from the
+  receiving currency.
+
+<Info>
+**Current limits.** Platform fees are supported for a **USD** sending currency only, and
+the fixed fee must be denominated in that same sending currency — other currencies return
+`NOT_IMPLEMENTED`. `CROSS_CURRENCY_TRANSACTION` is the only fee type you can configure
+today.
+
+Both are expanding: a `RAIL` fee type (charged for use of a payment rail) and support for
+stablecoin sending currencies such as USDC are planned. Watch the
+[changelog](/changelog) for when they land rather than assuming today's limits are
+permanent.
+</Info>
+
+<Note>
+A fee can only be charged on a transaction if you hold a platform internal account in that
+transaction's **sending currency** — that account is where the fee is credited. As more
+sending currencies become chargeable, add the matching platform account before you enable a
+fee for them.
+</Note>
+
+### How the amount is calculated
+
+Every fixed fee on the transaction — yours and Grid's — is subtracted first. The variable
+rates are then applied together to what remains:
+
+```text
+totalVariableFee = (sendingAmount - platformFixedFee - gridFixedFee)
+                   x (platformVariableFee + gridVariableFee)
+```
+
+Your share of that total is your own rate's portion of it. Each component is rounded
+independently to the smallest currency unit, so your fee and Grid's are each exact.
+
+For a \$10.00 USD payment where your fee is 30 bps + \$0.50 and Grid charges 100 bps with
+no fixed fee:
+
+```text
+after fixed fees    = 1000 - 50 - 0 = 950 cents
+your variable       = 950 x 0.0030 = 2.85 -> 3 cents
+your fixed          = 50 cents
+your platform fee   = 53 cents
+```
+
+<Note>
+The variable component is charged on the sending amount **net of all fixed fees**, not on
+the gross sending amount — so Grid's fixed fee reduces the base your variable rate applies
+to, and yours reduces Grid's.
+</Note>
+
+## Configuring your fees
+
+### Standing fees
+
+Standing fees apply to every matching transaction until you change them. Set them with
+`PATCH /config`:
+
+```bash Set a standing platform fee
+curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "feeConfigs": [
+      {
+        "feeType": "CROSS_CURRENCY_TRANSACTION",
+        "sourceCurrency": "USD",
+        "variableFeeBps": 30,
+        "fixedFee": {
+          "amount": 50,
+          "currency": "USD"
+        }
+      }
+    ]
+  }'
+```
+
+`feeConfigs` is a **merge-by-key upsert** keyed by `(feeType, sourceCurrency)`:
+
+- Only the keys you send are touched. Configs you omit are left unchanged.
+- Omitting `feeConfigs` entirely leaves all your fee configuration unchanged.
+- There is at most one active config per key.
+
+To read your current fees back, call `GET /config` — the response includes a `feeConfigs`
+array with every currently-active config.
+
+```bash Read current fee configuration
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+### Turning a fee off
+
+Set both `variableFeeBps` and `fixedFee.amount` to `0` for that key. The config is
+deactivated and stops applying to new transactions:
+
+```json
+{
+  "feeConfigs": [
+    {
+      "feeType": "CROSS_CURRENCY_TRANSACTION",
+      "sourceCurrency": "USD",
+      "variableFeeBps": 0,
+      "fixedFee": { "amount": 0, "currency": "USD" }
+    }
+  ]
+}
+```
+
+### Per-transaction overrides
+
+For promotions, negotiated rates, or VIP pricing, you can override your fee on a single
+transaction by passing `platformFeeOverride` when you create the quote. The override
+**replaces** every platform fee that would otherwise have applied to that transaction —
+it is not added to your standing fee.
+
+```bash Quote with a discounted platform fee
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": {
+      "sourceType": "ACCOUNT",
+      "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
+    },
+    "destination": {
+      "destinationType": "ACCOUNT",
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+    },
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "platformFeeOverride": {
+      "platformFixedFee": {
+        "amount": 0,
+        "currency": "USD"
+      },
+      "platformVariableFeeBps": 10
+    }
+  }'
+```
+
+Both `platformFixedFee` and `platformVariableFeeBps` are **required** inside the override
+object — pass `0` for a component you want to waive. To waive your fee entirely on a
+transaction, send `0` for both.
+
+<Warning>
+An override applies only to the quote it is sent on. It never changes your standing
+configuration, and it does not carry over to the next quote.
+</Warning>
+
+Overrides are rejected with a `400 INVALID_INPUT` when:
+
+- The quote's sending currency is not USD.
+- `platformFixedFee.currency` does not match the quote's sending currency.
+- Either value is negative, or `platformVariableFeeBps` is above `10000` (100%).
+
+## When fees are assessed
+
+A platform fee moves through three stages:
+
+<Steps>
+  <Step title="Priced at quote time">
+    When you create a quote, Grid resolves your fee (standing config or override) and
+    prices it into the quote. The amount is returned as `platformFeesIncluded` and is
+    locked for the lifetime of the quote.
+  </Step>
+  <Step title="Charged when the payment executes">
+    Executing the quote charges the fee as part of the sending amount. Your customer pays
+    it — you are not invoiced for it separately.
+  </Step>
+  <Step title="Credited during settlement">
+    The fee is credited to your platform internal account in the sending currency as one
+    step of the payment's settlement, not in a single moment at the end. It can land before
+    the transaction reaches `COMPLETED`.
+  </Step>
+</Steps>
+
+<Warning>
+Because the credit happens partway through settlement, a payment that is **refunded after
+the fee has landed** reverses that credit — the fee is pulled back out of your platform
+account and returned to your customer. You will see the corresponding balance updates in
+both directions.
+
+Treat a fee as earned only once its transaction is `COMPLETED`. A fee visible in your
+balance while the payment is still in flight is not final.
+</Warning>
+
+Every quote returns `platformFeesIncluded`, the portion of `feesIncluded` that you
+collect. It is `0` when no fee applies. Continuing the worked example above — a \$10.00
+send with your 30 bps + \$0.50 fee and Grid's 100 bps:
+
+```json Quote response
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
+  "status": "PENDING",
+  "totalSendingAmount": 1000,
+  "totalReceivingAmount": 863,
+  "exchangeRate": 0.92,
+  "feesIncluded": 63,
+  "platformFeesIncluded": 53,
+  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000005"
+}
+```
+
+<Note>
+`platformFeesIncluded` is **already counted inside** `feesIncluded` — do not add the two
+together. Subtract it from `feesIncluded` to get Grid's portion.
+</Note>
+
+<Warning>
+Without a platform internal account in the sending currency, a payment carrying a fee fails
+rather than silently dropping the fee. See
+[Internal accounts](/payouts-and-b2b/depositing-funds/internal-accounts) to check that yours
+exists.
+
+Platform fees are also not yet supported on every payment flow. When a quote's fee cannot
+be delivered by the flow that would settle it, the quote is rejected at creation rather
+than at settlement — so you find out before your customer is charged.
+</Warning>
+
+## Webhooks
+
+Platform fees do not introduce new webhook types. Two existing events carry the
+information you need:
+
+| Webhook | What it tells you |
+| --- | --- |
+| `OUTGOING_PAYMENT.*` | The transaction payload includes `platformFees` — the fee you collected on that payment. Available on every status in the lifecycle, including `COMPLETED` and `FAILED`. |
+| `INTERNAL_ACCOUNT.BALANCE_UPDATED` | Fired when your platform internal account balance changes — both when a fee is credited to it and when a refund reverses that credit back out. |
+
+To reconcile fee revenue as it accrues, listen for `OUTGOING_PAYMENT.COMPLETED` and read
+`platformFees` from the payload:
+
+```json OUTGOING_PAYMENT.COMPLETED
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000007",
+  "type": "OUTGOING_PAYMENT.COMPLETED",
+  "timestamp": "2025-08-15T14:32:00Z",
+  "data": {
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000005",
+    "status": "COMPLETED",
+    "type": "OUTGOING",
+    "fees": 63,
+    "platformFees": 53
+  }
+}
+```
+
+<Info>
+A fee is only earned once the payment completes. A transaction that fails or is refunded
+generates no revenue — and if the fee had already been credited, the refund reverses it —
+so reconcile against terminal statuses rather than counting `platformFees` on every event
+you receive.
+</Info>
+
+See [Webhooks](/payouts-and-b2b/platform-tools/webhooks) for signature verification and
+delivery behavior.
+
+## Querying transactions and revenue
+
+### Per-transaction fees
+
+Every outgoing transaction carries `platformFees`, the portion of `fees` that you
+collected. Fetch a single transaction:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions/Transaction:019542f5-b3e7-1d02-0000-000000000005' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Or list transactions over a date range and sum `platformFees` across the completed ones:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?status=COMPLETED&startDate=2025-10-01T00:00:00Z&endDate=2025-10-31T23:59:59Z' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+Results are paginated — follow `nextCursor` until `hasMore` is `false` so your totals
+cover the whole period. See [List transactions](/payouts-and-b2b/payment-flow/list-transactions)
+for the full set of filters.
+
+### Accrued balance
+
+Collected fees accumulate in your platform internal account. Query its balance for the
+running total credited to you and not yet withdrawn — bearing in mind it includes fees from
+payments still in flight, which a refund can still reverse:
+
+```bash
+curl -X GET 'https://api.lightspark.com/grid/2025-10-13/platform/internal-accounts?currency=USD' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
+```
+
+<Note>
+Your platform account is a single pool, like a bank balance — fee revenue is not held in a
+separate sub-balance. If you deposit or spend from the same account, derive fee revenue by
+summing `platformFees` across transactions rather than reading the balance.
+</Note>
+
+## Testing in sandbox
+
+Platform fees work end to end in sandbox, so you can verify your pricing before going
+live. Money movements are simulated, but fees are calculated and credited exactly as they
+are in production.
+
+<Steps>
+  <Step title="Confirm you have a platform account">
+    Call `GET /platform/internal-accounts?currency=USD`. If no account exists, fees have
+    nowhere to land and payments carrying them will fail.
+  </Step>
+  <Step title="Configure a fee">
+    `PATCH /config` with a `feeConfigs` entry, then `GET /config` to confirm it is active.
+  </Step>
+  <Step title="Fund a customer account">
+    Use `POST /sandbox/internal-accounts/{accountId}/fund` to add a test balance. See
+    [Sandbox testing](/payouts-and-b2b/platform-tools/sandbox-testing).
+  </Step>
+  <Step title="Create a quote and check the math">
+    `POST /quotes` and confirm `platformFeesIncluded` matches what you expect for the
+    amount you sent. This is the fastest way to validate a fee change — no execution
+    needed.
+  </Step>
+  <Step title="Execute and verify the credit">
+    Execute the quote, wait for the transaction to reach `COMPLETED`, then re-read your
+    platform account balance. It should have increased by exactly
+    `platformFeesIncluded`.
+  </Step>
+</Steps>
+
+<Tip>
+Quote-only testing is cheap and repeatable: because the fee is priced at quote creation,
+you can sweep a range of amounts and compare `platformFeesIncluded` against your own
+pricing model without moving any money.
+</Tip>
+
+To test an override, add `platformFeeOverride` to step 4 and confirm
+`platformFeesIncluded` reflects the override rather than your standing config.
+
+## Next steps
+
+<FeatureCardGrid cols={3}>
+  <FeatureCard icon="/images/icons/settings-gear2.svg" title="Platform configuration" href="/payouts-and-b2b/onboarding/platform-configuration">
+    Configure currencies, webhooks, and credentials for your platform
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/file-text.svg" title="List transactions" href="/payouts-and-b2b/payment-flow/list-transactions">
+    Filter and paginate payment history to total your fee revenue
+  </FeatureCard>
+  <FeatureCard icon="/images/icons/hammer.svg" title="Sandbox testing" href="/payouts-and-b2b/platform-tools/sandbox-testing">
+    Validate your fee configuration before going live
+  </FeatureCard>
+</FeatureCardGrid>

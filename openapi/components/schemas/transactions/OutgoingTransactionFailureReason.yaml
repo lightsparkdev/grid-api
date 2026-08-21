@@ -1,23 +1,45 @@
 type: string
 enum:
   - QUOTE_EXPIRED
+  - QUOTE_RATE_UNAVAILABLE
   - QUOTE_EXECUTION_FAILED
-  - LIGHTNING_PAYMENT_FAILED
   - FUNDING_AMOUNT_MISMATCH
-  - COUNTERPARTY_POST_TX_FAILED
   - SCA_NOT_COMPLETED
-  - EXECUTION_FAILED_POST_DEBIT
-  - SETTLEMENT_FAILED
-  - TIMEOUT
-  - MANUAL_REFUND
-description: >-
+  - PAYOUT_RETURNED
+  - LIMIT_EXCEEDED
+  - ACCOUNT_CANNOT_RECEIVE
+  - ACCOUNT_INVALID
+  - COMPLIANCE_REJECTED
+  - LIGHTNING_PAYMENT_FAILED
+  - COUNTERPARTY_POST_TX_FAILED
+description: |
   Reason for failure of an outgoing transaction. This is used to provide more
   context on why a transaction failed. If the transaction is not in a failed
   state, this field is omitted.
 
+  When a payout partner rejects or fails a payment, one of the granular payout
+  reasons (`PAYOUT_RETURNED`, `LIMIT_EXCEEDED`, `ACCOUNT_CANNOT_RECEIVE`,
+  `ACCOUNT_INVALID`, `COMPLIANCE_REJECTED`) is returned when available.
+  `COUNTERPARTY_POST_TX_FAILED` is a coarse fallback used only when no granular
+  reason is available.
 
   `SCA_NOT_COMPLETED` means the customer did not satisfy the Strong Customer
   Authentication challenge before it expired, so the transaction was never
   authorized and no funds were moved. Only occurs for customers in a region
   where SCA is required (e.g. the EU). Create a new quote to try again, and have
   the customer authorize it while the challenge is live.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `QUOTE_EXPIRED` | The quote was not executed before its expiry window |
+  | `QUOTE_RATE_UNAVAILABLE` | The quoted exchange rate was no longer available when the quote was executed, so nothing was exchanged. Create a new quote to get a current rate |
+  | `QUOTE_EXECUTION_FAILED` | The quote could not be executed. Covers any internal failure on the way to settlement, whether or not funds were debited — a debited amount is refunded automatically |
+  | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
+  | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
+  | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
+  | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
+  | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency isn't supported for that account |
+  | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
+  | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
+  | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
+  | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |

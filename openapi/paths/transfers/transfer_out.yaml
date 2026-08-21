@@ -60,6 +60,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '429':
+      description: >-
+        Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when
+        the requested amount would exceed the configured daily volume limit
+        for the withdrawal currency.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

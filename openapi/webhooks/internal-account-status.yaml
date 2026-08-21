@@ -38,6 +38,13 @@ post:
     account changes (e.g., `OPEN` → `FROZEN`). The `data` payload contains the
     full internal account object.
 
+    - `INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED` — Fired when the
+    account's `fundingPaymentInstructions` change: new funding coordinates
+    became available (e.g., a SWIFT collection account finished provisioning)
+    or previously served coordinates were withdrawn. The `data` payload
+    contains the full internal account object, including the current
+    `fundingPaymentInstructions`.
+
 
   operationId: internalAccountStatusWebhook
   tags:
@@ -105,6 +112,44 @@ post:
                     symbol: $
                     decimals: 2
                 fundingPaymentInstructions: []
+                createdAt: '2025-08-01T10:00:00Z'
+                updatedAt: '2025-08-15T14:32:00Z'
+          fundingInstructionsUpdated:
+            summary: A SWIFT collection account finished provisioning and the account gained wire coordinates
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+              type: INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: INTERNAL_FIAT
+                status: ACTIVE
+                balance:
+                  amount: 10000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                totalBalance:
+                  amount: 10000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                fundingPaymentInstructions:
+                  - accountOrWalletInfo:
+                      accountType: SWIFT_ACCOUNT
+                      country: SG
+                      swiftCode: DBSSSGSG
+                      bankName: DBS Bank
+                      accountNumber: '8850123456'
+                      accountHolderName: Acme Exports Pte Ltd
+                      paymentRails:
+                        - SWIFT
+                    instructionsNotes: Payments are attributed automatically by the destination account; no reference code is required.
                 createdAt: '2025-08-01T10:00:00Z'
                 updatedAt: '2025-08-15T14:32:00Z'
   responses:

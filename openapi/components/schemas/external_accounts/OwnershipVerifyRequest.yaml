@@ -1,0 +1,22 @@
+type: object
+description: >-
+  Completes a `WALLET_SIGNATURE` challenge by submitting the signature the
+  wallet produced for the challenge's `messageToSign`.
+required:
+  - signature
+properties:
+  signature:
+    type: string
+    description: >-
+      The signature produced over the exact `messageToSign` — EIP-191 hex for
+      EVM chains, base64 for Bitcoin, base58-encoded Ed25519 for Solana.
+    example: '0x52d75f01c9e7b8b2ce2fbcbd21bfeeee7bcd1a2f01ce6b8ad9a67a45e83a8f5d1c'
+  signatureScheme:
+    type: string
+    enum:
+      - bip137
+      - electrum
+    default: bip137
+    description: >-
+      Bitcoin message-signing format. Defaults to `bip137`; use `electrum` for
+      Electrum/Sparrow wallets. Ignored for non-Bitcoin chains.

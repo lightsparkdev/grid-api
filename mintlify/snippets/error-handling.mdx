@@ -17,6 +17,7 @@ Grid uses standard HTTP status codes to indicate the success or failure of reque
 | `404 Not Found`             | Resource not found      | Customer, transaction, or quote doesn't exist           |
 | `409 Conflict`              | Resource conflict       | Quote already executed, external account already exists |
 | `412 Precondition Failed`   | UMA version mismatch    | Counterparty doesn't support required UMA version       |
+| `429 Too Many Requests`     | Rate/volume limited     | Rate limit hit or daily volume limit exceeded           |
 | `422 Unprocessable Entity`  | Missing info            | Additional counterparty information required            |
 | `424 Failed Dependency`     | Counterparty issue      | Problem with external UMA provider                      |
 | `500 Internal Server Error` | Server error            | Unexpected server issue (contact support)               |
@@ -123,6 +124,65 @@ function validateUSAccount(account) {
 ```
 
 </Accordion>
+
+<Accordion title="TRANSACTION_SIZE_LIMIT_EXCEEDED">
+**Cause:** The requested amount exceeds the maximum single-transaction limit for the trade corridor or withdrawal currency
+
+**Solution:** Reduce the transaction amount or split into multiple smaller transactions
+
+```javascript
+async function handleLargeTransfer(amount, maxPerTransaction) {
+  if (amount <= maxPerTransaction) {
+    return await createQuote({ amount });
+  }
+
+  // Split into multiple transactions
+  const batches = [];
+  let remaining = amount;
+
+  while (remaining > 0) {
+    const batchAmount = Math.min(remaining, maxPerTransaction);
+    batches.push(batchAmount);
+    remaining -= batchAmount;
+  }
+
+  return Promise.all(batches.map((amt) => createQuote({ amount: amt })));
+}
+```
+
+</Accordion>
+
+<Accordion title="DAILY_VOLUME_LIMIT_EXCEEDED">
+**Cause:** The requested amount would exceed the daily volume limit for the trade corridor or withdrawal currency (HTTP 429)
+
+**Solution:** Wait until the next day or reduce the transaction amount
+
+```javascript
+async function createQuoteWithLimitCheck(params) {
+  try {
+    return await createQuote(params);
+  } catch (error) {
+    if (error.code === "DAILY_VOLUME_LIMIT_EXCEEDED") {
+      // Notify user about daily limit
+      return {
+        error: "DAILY_VOLUME_LIMIT_EXCEEDED",
+        message: "Daily transfer limit reached. Try again tomorrow.",
+        retryAfter: getNextDayMidnight(),
+      };
+    }
+    throw error;
+  }
+}
+
+function getNextDayMidnight() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  return tomorrow.toISOString();
+}
+```
+
+</Accordion>
 </AccordionGroup>
 
 ## Transaction failure reasons
@@ -144,8 +204,14 @@ When a transaction fails, the `failureReason` field provides specific details:
 **Common outgoing failure reasons:**
 
 - `QUOTE_EXPIRED` - Quote expired before execution
-- `QUOTE_EXECUTION_FAILED` - Error executing the quote
+- `QUOTE_RATE_UNAVAILABLE` - Quoted exchange rate was refused at execution; nothing was exchanged
+- `QUOTE_EXECUTION_FAILED` - Error executing the quote; a debited amount is refunded automatically
 - `FUNDING_AMOUNT_MISMATCH` - Funding amount doesn't match expected amount
+- `PAYOUT_RETURNED` - Receiving bank returned or reversed the payout
+- `LIMIT_EXCEEDED` - Payout exceeds a partner limit
+- `ACCOUNT_CANNOT_RECEIVE` - Recipient account can't accept the payment
+- `ACCOUNT_INVALID` - Recipient account details are wrong or not found
+- `COMPLIANCE_REJECTED` - Payout partner rejected on compliance grounds
 
 ### Incoming payment failures
 
@@ -207,17 +273,25 @@ async function createQuoteWithRetry(params, maxRetries = 3) {
     try {
       return await createQuote(params);
     } catch (error) {
+      // Rate limiting (429 with RATE_LIMITED) is retryable with backoff
+      // Volume limits (DAILY_VOLUME_LIMIT_EXCEEDED) are NOT retryable
+      const isRateLimited =
+        error.status === 429 && error.code === "RATE_LIMITED";
       const isRetryable =
         error.status === 500 ||
         error.status === 424 ||
-        error.code === "QUOTE_REQUEST_FAILED";
+        error.code === "QUOTE_REQUEST_FAILED" ||
+        isRateLimited;
 
       if (!isRetryable || attempt === maxRetries) {
         throw error;
       }
 
-      // Exponential backoff
-      const delay = Math.pow(2, attempt) * 1000;
+      // Use Retry-After header if present, otherwise exponential backoff
+      const retryAfter = error.headers?.["retry-after"];
+      const delay = retryAfter
+        ? parseInt(retryAfter, 10) * 1000
+        : Math.pow(2, attempt) * 1000;
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
@@ -365,6 +439,7 @@ Convert technical errors to user-friendly messages:
 function getUserFriendlyMessage(error) {
   const errorMessages = {
     QUOTE_EXPIRED: "Exchange rate expired. Please try again.",
+    QUOTE_RATE_UNAVAILABLE: "Exchange rate is no longer available. Please try again.",
     INSUFFICIENT_BALANCE: "You don't have enough funds for this payment.",
     INVALID_BANK_ACCOUNT:
       "Bank account details are invalid. Please check and try again.",
@@ -373,6 +448,10 @@ function getUserFriendlyMessage(error) {
     INVALID_CURRENCY: "This currency is not supported.",
     WEBHOOK_ENDPOINT_NOT_SET:
       "Payment receiving is not configured. Contact support.",
+    TRANSACTION_SIZE_LIMIT_EXCEEDED:
+      "This amount exceeds the maximum single transaction limit. Try a smaller amount.",
+    DAILY_VOLUME_LIMIT_EXCEEDED:
+      "Daily transfer limit reached. Please try again tomorrow.",
   };
 
   return (

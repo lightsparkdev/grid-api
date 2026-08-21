@@ -7,6 +7,13 @@ post:
     with `CARDHOLDER_KYC_NOT_APPROVED`.
 
 
+    An optional `maxSpendPerTransaction` value sets the largest amount a single card
+    transaction may authorize. The limit is enforced by Grid for card programs
+    where Grid makes the authorization decision, whether the card is funded by
+    an Embedded Wallet account or custodial fiat. Omit it for no limit. The
+    value is in the smallest unit of the card's currency.
+
+
     If any funding source is an Embedded Wallet internal account, the
     cardholder must authorize Grid to sign Spark token transactions for that
     card funding source by completing the delegated-key creation flow with
@@ -39,6 +46,7 @@ post:
               form: VIRTUAL
               fundingSources:
                 - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              maxSpendPerTransaction: 5000
   responses:
     '201':
       description: >-

@@ -165,6 +165,8 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 
 # Create customer (BUSINESS)
 # businessInfo REQUIRES legalName, taxId, and incorporatedOn (ISO date YYYY-MM-DD).
+# Always send businessType too: it's optional to the schema, but receivers can
+# require it, and without it POST /quotes fails with MISSING_MANDATORY_USER_INFO.
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
@@ -173,7 +175,8 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     "businessInfo": {
       "legalName": "Acme Corporation, Inc.",
       "taxId": "47-1234567",
-      "incorporatedOn": "2018-03-14"
+      "incorporatedOn": "2018-03-14",
+      "businessType": "INFORMATION"
     }
   }' \
   "$GRID_BASE_URL/customers" | jq .
@@ -556,7 +559,7 @@ Use this flow when the user asks for a "realtime quote" or "just in time" funded
 
 **Compatible instant methods:**
 
-- **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon, Ethereum), USDT (Tron)
+- **Crypto:** BTC (Lightning, Spark), USDC (Solana, Base, Polygon, Ethereum), USDT (Tron, Ethereum, Plasma)
 - **Fiat:** RTP, SEPA Instant, and other instant payment rails
 
 **Flow:**

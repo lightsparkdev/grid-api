@@ -14,6 +14,12 @@ post:
     session private key of a verified authentication credential on the source
     Embedded Wallet.
 
+    Requires a token with the `TRANSACT` permission; `VIEW` alone is not
+    sufficient to release a transfer. On an `EMBEDDED_WALLET` source this is in
+    addition to the `Grid-Wallet-Signature` header: the signature proves the
+    wallet holder authorized the payment, while `TRANSACT` is what authorizes
+    your integration to release it.
+
     Once executed, the quote cannot be cancelled and the transfer will be processed.
   operationId: executeQuote
   tags:
@@ -95,6 +101,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden. The token lacks the `TRANSACT` permission.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Quote not found
       content:
@@ -107,6 +119,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '429':
+      description: >-
+        Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when
+        executing the quote would exceed the configured daily volume limit
+        for the trade corridor.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

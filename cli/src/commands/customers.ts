@@ -47,11 +47,11 @@ function validateAddress(
   };
 }
 
-// BusinessInfo requires legalName, taxId, and incorporatedOn on create.
+// BusinessInfo requires legalName, businessCountry, taxId, and incorporatedOn on create.
 function validateBusinessRequired(
   options: Record<string, string | undefined>
 ): ValidationResult {
-  const missing = ["legalName", "taxId", "incorporatedOn"].filter(
+  const missing = ["legalName", "businessCountry", "taxId", "incorporatedOn"].filter(
     (key) => !options[key]
   );
   if (missing.length === 0) return { valid: true };

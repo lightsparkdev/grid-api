@@ -118,7 +118,7 @@ describe("auth delegated-keys", () => {
     expect(calls).toBe(0);
   });
 
-  it("create builds the body with parsed spending limits", async () => {
+  it("create builds the delegated-key request body", async () => {
     const { request } = await runCli([
       "auth",
       "delegated-keys",
@@ -129,19 +129,11 @@ describe("auth delegated-keys", () => {
       "InternalAccount:1",
       "--nickname",
       "Card key",
-      "--spending-limit",
-      "USD:5000",
-      "--spending-limit",
-      "EUR:4000",
     ]);
     expect(request?.body).toMatchObject({
       cardId: "Card:1",
       internalAccountId: "InternalAccount:1",
       nickname: "Card key",
-      spendingLimits: [
-        { currencyCode: "USD", maxPerTransaction: 5000 },
-        { currencyCode: "EUR", maxPerTransaction: 4000 },
-      ],
     });
   });
 
@@ -155,24 +147,6 @@ describe("auth delegated-keys", () => {
     ]);
     expect(request?.method).toBe("DELETE");
     expect(request?.path).toBe("/grid/v1/auth/delegated-keys/DelegatedKey:1");
-  });
-
-  it("rejects a malformed spending limit before sending", async () => {
-    await expect(
-      runCli([
-        "auth",
-        "delegated-keys",
-        "create",
-        "--card-id",
-        "Card:1",
-        "--internal-account-id",
-        "InternalAccount:1",
-        "--nickname",
-        "Card key",
-        "--spending-limit",
-        "USD5000",
-      ])
-    ).rejects.toThrow();
   });
 });
 

@@ -111,7 +111,7 @@ describe("customers update validation", () => {
 });
 
 describe("customers create", () => {
-  it("includes the required incorporatedOn for business customers", async () => {
+  it("includes the required fields for business customers", async () => {
     const { request } = await runCli([
       "customers",
       "create",
@@ -121,6 +121,8 @@ describe("customers create", () => {
       "BUSINESS",
       "--legal-name",
       "Acme LLC",
+      "--business-country",
+      "US",
       "--tax-id",
       "12-3456789",
       "--incorporated-on",
@@ -131,6 +133,7 @@ describe("customers create", () => {
       customerType: "BUSINESS",
       businessInfo: {
         legalName: "Acme LLC",
+        country: "US",
         taxId: "12-3456789",
         incorporatedOn: "2020-01-01",
       },
@@ -147,7 +150,7 @@ describe("customers create", () => {
       "BUSINESS",
       "--legal-name",
       "Acme LLC",
-      // taxId and incorporatedOn omitted
+      // businessCountry, taxId, and incorporatedOn omitted
     ]);
 
     expect(calls).toBe(0);

@@ -17,6 +17,10 @@ post:
 
     **Important:** If you are transferring funds in the same currency (no exchange required),
     use the `/transfer-in` or `/transfer-out` endpoints instead.
+
+    Requires a token with the `TRANSACT` permission; `VIEW` alone is not
+    sufficient. A quote is the instrument a later execute draws on, and
+    `immediatelyExecute` moves funds within this same request.
   operationId: createQuote
   tags:
     - Cross-Currency Transfers
@@ -141,7 +145,9 @@ post:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
     '403':
-      description: Customer has not accepted the End User Terms
+      description: >-
+        Forbidden. The token lacks the `TRANSACT` permission, or the customer has
+        not accepted the End User Terms.
       content:
         application/json:
           schema:
@@ -158,6 +164,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error424.yaml
+    '429':
+      description: >-
+        Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when
+        `immediatelyExecute` is set and the requested amount would exceed the
+        configured daily volume limit for the trade corridor.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

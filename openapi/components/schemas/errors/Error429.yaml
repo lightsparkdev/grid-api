@@ -15,8 +15,10 @@ properties:
       | Error Code | Description |
       |------------|-------------|
       | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+      | DAILY_VOLUME_LIMIT_EXCEEDED | The requested amount would exceed the configured daily volume limit for this trade corridor or withdrawal currency |
     enum:
       - RATE_LIMITED
+      - DAILY_VOLUME_LIMIT_EXCEEDED
   message:
     type: string
     description: Error message

@@ -1,10 +1,11 @@
 type: object
 description: >-
-  Update request for `PATCH /cards/{id}`. At least one of `state` or
-  `fundingSources` must be supplied. `state` transitions are limited to
-  `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition
-  returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and
-  irreversible and cannot be combined with `fundingSources`.
+  Update request for `PATCH /cards/{id}`. At least one of `state`,
+  `fundingSources`, or `maxSpendPerTransaction` must be supplied. `state`
+  transitions are limited to `ACTIVE ⇄ FROZEN` and
+  `ACTIVE | FROZEN → CLOSED`; any other transition returns
+  `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and
+  cannot be combined with `fundingSources` or `maxSpendPerTransaction`.
   `fundingSources`, when supplied, fully replaces the card's bound
   funding sources — the array order determines the priority Authorization
   Decisioning tries them in.
@@ -36,3 +37,16 @@ properties:
     example:
       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
       - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+  maxSpendPerTransaction:
+    anyOf:
+      - type: integer
+        format: int64
+        minimum: 1
+      - type: 'null'
+    description: >-
+      Replacement per-transaction spending limit for the card, in the smallest
+      unit of its currency. Omit this field to leave the current limit
+      unchanged, supply null to clear it, or supply a positive integer to set
+      it. Supported only for card programs whose authorization decisions are
+      made by Grid. Cannot be supplied alongside `state: CLOSED`.
+    example: 10000

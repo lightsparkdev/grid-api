@@ -228,6 +228,44 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
 }
 ```
 
+### Strong Customer Authentication (EU Customers)
+
+For customers in regions where Strong Customer Authentication (SCA) is required (e.g., EU), quotes may enter a `PENDING_AUTHORIZATION` status with an `scaChallenge` object. The transfer is not released until the customer authorizes it.
+
+Where the challenge appears depends on how the quote is funded:
+
+- **Prefunded** — `POST /quotes/{quoteId}/execute` returns `PENDING_AUTHORIZATION` with the challenge instead of initiating the transfer. The challenge does not exist until `execute` is called, so the proof always goes on the follow-up authorize; re-calling `execute` returns `409`.
+- **Realtime (JIT) funded** — the challenge arrives earlier and `paymentInstructions` are withheld until it is satisfied.
+
+**Quote response with SCA challenge:**
+
+```json
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000050",
+  "status": "PENDING_AUTHORIZATION",
+  "scaChallenge": {
+    "id": "ScaChallenge:...",
+    "expiresAt": "2025-10-03T12:05:00Z",
+    "factor": "SMS_OTP",
+    "availableFactors": ["SMS_OTP", "PASSKEY"],
+    "purpose": "PAYOUT"
+  }
+}
+```
+
+To authorize the quote, call `POST /quotes/{quoteId}/authorize` with the appropriate proof:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/authorize \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"code": "123456"}'
+```
+
+<Note>
+  Multiple authorizations may be required in sequence (e.g., currency conversion + payout). After each authorization, check the quote status — if still `PENDING_AUTHORIZATION`, authorize the next challenge.
+</Note>
+
 ### Execution Timing
 
 <Tabs>
@@ -416,12 +454,16 @@ For cross-currency quotes the exchange rate applies on top of this: the fee is t
     try {
       await executeQuote(quote.id);
     } catch (error) {
-      if (error.code === 'QUOTE_EXPIRED') {
+      if (error.code === 'QUOTE_EXPIRED' || error.code === 'QUOTE_RATE_UNAVAILABLE') {
         quote = await createQuote(quoteParams); // Recreate with fresh rate
         await executeQuote(quote.id);
       }
     }
     ```
+
+    `QUOTE_RATE_UNAVAILABLE` means the quoted rate was refused when the quote was
+    executed, rather than the quote's own expiry window elapsing. Nothing was
+    exchanged in either case, and the recovery is the same: create a new quote.
   </Accordion>
 
   <Accordion title="Monitor quote status via webhooks">
