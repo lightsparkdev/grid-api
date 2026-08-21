@@ -702,15 +702,16 @@ Every signed-retry endpoint can return it on the retry step:
 | `POST /auth/sessions/{id}/refresh` | Refresh a session |
 | `DELETE /auth/credentials/{id}` | Revoke a credential |
 | `DELETE /auth/sessions/{id}` | Revoke a session |
+| `POST /internal-accounts/{id}/export` | Export wallet credentials |
 
 To handle it:
 
 1. **Re-send the exact same signed request** — identical body, `Grid-Wallet-Signature`, and `Request-Id`. Don't regenerate the stamp or start a fresh request; Grid correlates the retry with the same underlying operation and returns its real outcome once the provider settles, rather than starting a second one.
 2. **Show a pending state in your UI** while you retry — "removing…" for a credential revoke, "signing in…" for a login — instead of treating `PROCESSING` as an error or leaving the caller blocked with no feedback.
-3. **Keep retrying with backoff** until you get a terminal response — the success code above, or an error. Grid also reconciles the operation to its terminal state on its own, so even a client that stops retrying and checks back later (for example via `GET /auth/credentials` or `GET /auth/sessions`) will see the settled result.
+3. **Keep retrying with backoff** until you get a terminal response — the success code above, or an error. Grid also reconciles the operation to its terminal state on its own, so even a client that stops retrying and checks back later (for example via `GET /auth/credentials` or `GET /auth/sessions`) will see the settled result. **Wallet export is the exception**: Grid never stores the encrypted credentials, so re-sending the signed retry is the only way to receive them. Grid's own reconciliation settles the operation but has nothing to hand back, and the export challenge expires like any other (typically 5 minutes) — if it lapses, start a fresh export.
 
 <Note>
-  `verify` and `challenge` already use `200` for their terminal success body (`AuthSession` or the challenge response). For those two, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
+  `verify`, `challenge`, and `export` already use `200` for their terminal success body (`AuthSession`, the challenge response, or the encrypted credentials). For those three, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
 </Note>
 
 ### Add an additional credential

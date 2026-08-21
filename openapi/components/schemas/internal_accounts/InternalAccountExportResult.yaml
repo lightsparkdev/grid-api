@@ -1,0 +1,14 @@
+title: Internal Account Export Result
+description: >-
+  Response body for the signed retry of `POST
+  /internal-accounts/{internalAccountId}/export`. Normally an
+  `InternalAccountExportResponse` — the encrypted wallet credentials. When
+  the underlying wallet-provider activity is still in flight, this is
+  instead a `WalletOperationProcessing` body with `status: "PROCESSING"`.
+  The credentials are never stored server-side, so re-sending the
+  byte-identical signed retry is how they are collected: the re-send
+  returns them as soon as the activity has settled, and the challenge is
+  consumed only by the attempt that delivers them.
+anyOf:
+  - $ref: ./InternalAccountExportResponse.yaml
+  - $ref: ../common/WalletOperationProcessing.yaml
