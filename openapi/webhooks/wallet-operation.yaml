@@ -3,10 +3,11 @@ post:
   description: |
     Webhook that is called when an asynchronous embedded-wallet operation reaches a terminal state. Fires `WALLET_OPERATION.COMPLETED` on terminal success and `WALLET_OPERATION.FAILED` on terminal failure. The payload is self-contained — handle it from the fields below with no follow-up API call needed.
 
-    The specific operation is carried in `data.operationType` (`auth_credential.delete`, `session.revoke`, or `wallet.export`), and the business resource it affected is carried in `data.resourceType` / `data.resourceId`:
+    The specific operation is carried in `data.operationType` (`auth_credential.create`, `auth_credential.delete`, `session.revoke`, or `wallet.export`), and the business resource it affected is carried in `data.resourceType` / `data.resourceId`:
 
     | `operationType` | `resourceType` | `resourceId` identifies |
     | --- | --- | --- |
+    | `auth_credential.create` | `AUTH_METHOD` | the created credential — its id can't be known before this webhook, since the create request has nothing to echo |
     | `auth_credential.delete` | `AUTH_METHOD` | the deleted credential |
     | `session.revoke` | `SESSION` | the revoked session |
     | `wallet.export` | `INTERNAL_ACCOUNT` | the account whose wallet was exported |
@@ -16,6 +17,7 @@ post:
     ### Correlating this webhook
 
     - **`data.requestId`** is the primary correlation key. It is the same `Request-Id` value you supplied on the signed retry that produced this terminal result — echo it against the `Request-Id` you sent (and, if you polled through one or more `200 { status: "PROCESSING" }` responses, against the value you kept resending).
+    - **`data.resourceId`** is the primary correlator for the *business resource* itself, distinct from `requestId`'s role of matching the request. For `auth_credential.create` this is the only way to learn the created credential's id — the request that created it had nothing to echo.
     - **`id`** (the top-level webhook envelope id) is for deduplication. Grid may redeliver a webhook after a transient failure; track `id` to avoid double-processing.
     - **`data.operationId`** is a Grid-internal identifier for the operation. It's useful when contacting support about a specific operation, but isn't intended as a correlation key.
 
@@ -70,7 +72,7 @@ post:
                 resourceId: Session:019542f5-b3e7-1d02-0000-00000000009a
                 status: failed
                 error:
-                  code: OPERATION_FAILED
+                  code: SIGNER_PROVIDER_REJECTED
   responses:
     '200':
       description: Webhook received successfully
