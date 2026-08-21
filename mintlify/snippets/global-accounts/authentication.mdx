@@ -607,7 +607,7 @@ Same pattern as the first activation: call `/challenge` to send a new OTP and re
 
 ### Changing the email OTP address
 
-The `EMAIL_OTP` address comes from the customer email on file. To change it, update the customer with `PATCH /customers/{customerId}`. If the customer has tied Embedded Wallet `EMAIL_OTP` credentials, Grid returns a signed-retry challenge; stamp the returned `payloadToSign` with an active session signing key, then retry the same customer update with `Grid-Wallet-Signature` and `Request-Id`. Grid syncs the customer email and tied `EMAIL_OTP` credential email together. The signed retry can also return a <a href="#handling-a-still-processing-response">still-processing `200`</a> while the tied credential update settles — re-send the identical customer update until you get the updated customer back.
+The `EMAIL_OTP` address comes from the customer email on file. To change it, update the customer with `PATCH /customers/{customerId}`. If the customer has tied Embedded Wallet `EMAIL_OTP` credentials, Grid returns a signed-retry challenge; stamp the returned `payloadToSign` with an active session signing key, then retry the same customer update with `Grid-Wallet-Signature` and `Request-Id`. Grid syncs the customer email and tied `EMAIL_OTP` credential email together.
 
 ## Managing credentials
 
@@ -700,7 +700,6 @@ Every signed-retry endpoint can return it on the retry step:
 | `POST /auth/credentials/{id}/challenge` | Re-send an OTP / re-issue a challenge |
 | `POST /auth/credentials/{id}/verify` | Log in / verify a credential |
 | `POST /auth/sessions/{id}/refresh` | Refresh a session |
-| `PATCH /customers/{customerId}` | Change the email or phone tied to an `EMAIL_OTP` / `SMS_OTP` credential |
 | `DELETE /auth/credentials/{id}` | Revoke a credential |
 | `DELETE /auth/sessions/{id}` | Revoke a session |
 
@@ -711,7 +710,7 @@ To handle it:
 3. **Keep retrying with backoff** until you get a terminal response — the success code above, or an error. Grid also reconciles the operation to its terminal state on its own, so even a client that stops retrying and checks back later (for example via `GET /auth/credentials` or `GET /auth/sessions`) will see the settled result.
 
 <Note>
-  `verify`, `challenge`, and the customer update endpoint already use `200` for their terminal success body (`AuthSession`, the challenge response, or the updated customer). For those three, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
+  `verify` and `challenge` already use `200` for their terminal success body (`AuthSession` or the challenge response). For those two, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
 </Note>
 
 ### Add an additional credential
