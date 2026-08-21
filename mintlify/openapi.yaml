@@ -11843,7 +11843,7 @@ webhooks:
                     resourceId: Session:019542f5-b3e7-1d02-0000-00000000009a
                     status: failed
                     error:
-                      code: DeleteApiKeysFailed
+                      code: OPERATION_FAILED
       responses:
         '200':
           description: Webhook received successfully
@@ -25922,8 +25922,11 @@ components:
       properties:
         code:
           type: string
-          description: Machine-readable failure code for a `FAILED` operation.
-          example: DeleteApiKeysFailed
+          description: |
+            Machine-readable failure code for a `FAILED` operation. Codes are
+            Grid-defined and stable regardless of which vendor Grid uses under the
+            hood for a given operation.
+          example: OPERATION_FAILED
     WalletOperationFailedData:
       title: Wallet Operation Failed Data
       type: object

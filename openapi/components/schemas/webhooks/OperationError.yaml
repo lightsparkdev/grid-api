@@ -5,5 +5,8 @@ required:
 properties:
   code:
     type: string
-    description: Machine-readable failure code for a `FAILED` operation.
-    example: DeleteApiKeysFailed
+    description: |
+      Machine-readable failure code for a `FAILED` operation. Codes are
+      Grid-defined and stable regardless of which vendor Grid uses under the
+      hood for a given operation.
+    example: OPERATION_FAILED
