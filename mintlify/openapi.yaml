@@ -1195,19 +1195,23 @@ paths:
 
         A contact that is also a login credential — the email behind `EMAIL_OTP`, the phone number behind `SMS_OTP` — can only be changed with the customer's own signature, because changing it re-keys what they log in with. So a change arrives in one of three states:
 
-        - **`AWAITING_SIGNATURE` — the customer has a tied Embedded Wallet OTP credential of that type.** Grid resolves every tied credential, binds that set into `payloadToSign`, and returns `201` with the change awaiting its signature. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified credential on one of the customer's tied Embedded Wallets, then apply the change with `POST /customers/{customerId}/contact-changes/{changeId}/submit`.
+        - **`202` + `AWAITING_SIGNATURE` — the customer has a tied Embedded Wallet OTP credential of that type.** Grid resolves every tied credential, binds that set into `payloadToSign`, and accepts the change pending the customer's signature. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified credential on one of the customer's tied Embedded Wallets, then apply the change with `POST /customers/{customerId}/contact-changes/{changeId}/submit`.
 
-        - **`APPLIED` — no tied OTP credential of that type.** There is nothing to re-key and no signature to collect, so Grid applies the change on create and returns `201` with it already done, carrying no `payloadToSign` and no `expiresAt`. Nothing further to call.
+        - **`201` + `APPLIED` — no tied OTP credential of that type.** There is nothing to re-key and no signature to collect, so Grid applies the change on create and it arrives already done, carrying no `payloadToSign` and no `expiresAt`. Nothing further to call.
 
-        - **`FAILED` — no tied OTP credential of that type, and applying it didn't work.** Still `201`: the attempt happened and is recorded, so it shows up in `GET /customers/{customerId}/contact-changes` alongside the successful ones. `failureReason` carries a stable code you can branch on, the customer contact field is unchanged, and the fix is a new contact change rather than anything on this one.
+        - **`201` + `FAILED` — no tied OTP credential of that type, and applying it didn't work.** The attempt happened and is recorded, so it shows up in `GET /customers/{customerId}/contact-changes` alongside the successful ones. `failureReason` carries a stable code you can branch on, the customer contact field is unchanged, and the fix is a new contact change rather than anything on this one.
+
+        So the status code tells you whether you still owe Grid something, and `status` tells you what happened:
+
+        - **`202`** — accepted, and your signature is required before it takes effect. The change is `AWAITING_SIGNATURE`.
+        - **`201`** — created and settled. Nothing further is required of you, though "settled" includes a recorded `FAILED` attempt, so a `201` means the change was recorded rather than that it worked.
+        - **`4xx`** — refused. No contact change exists, because nothing was attempted and so there is nothing to record.
 
         Branch on the returned `status` rather than on what you believe about the customer's credentials: a wallet that gained or lost an OTP credential since you last looked changes which arrival state you get.
 
-        A `201` therefore means "the change was recorded", not "the change worked". A `4xx` means the request itself was refused and no contact change exists — nothing was attempted, so there is nothing to record.
-
         A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`) contact change per contact type. Creating a second one while the first is still active returns `409` naming the active change, which the caller can read with `GET /customers/{customerId}/contact-changes/{changeId}` or abandon with `DELETE`. A change that arrives terminal — `APPLIED` or `FAILED` — never blocks the next one.
 
-        Unlike the `202` challenge on `PATCH /customers/{customerId}`, the challenge here survives the response: a client that lost the create response can re-read `payloadToSign` from the change resource instead of starting over.
+        The `202` follows the same convention as every other Embedded Wallet endpoint that needs a signature first, but unlike the `202` on `PATCH /customers/{customerId}` its body is the change resource rather than a bare challenge — so the challenge survives the response. A client that lost the create response can re-read `payloadToSign` from the resource instead of starting over.
       operationId: createContactChange
       tags:
         - Customers
@@ -1232,7 +1236,35 @@ paths:
                   value: '+14155559876'
       responses:
         '201':
-          description: 'Contact change recorded. `AWAITING_SIGNATURE` when a tied OTP credential of that type exists, carrying the `payloadToSign` to stamp and the `expiresAt` deadline to submit by. When none exists Grid applies the change inline and it arrives terminal, carrying neither field: `APPLIED` on success, or `FAILED` with a `failureReason` if applying it didn''t work, which is still recorded so the attempt is visible in the customer''s contact-change history. Branch on `status`.'
+          description: Contact change created and settled — no signature was required because the customer has no tied OTP credential of that type, so Grid applied it inline. `APPLIED` on success, or `FAILED` with a `failureReason` when applying it didn't work, which is still recorded so the attempt stays visible in the customer's contact-change history. Either way the change is terminal on arrival and there is nothing further to call. Branch on `status`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactChange'
+              examples:
+                appliedOnCreate:
+                  summary: Applied on create (no tied OTP credential of that type)
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000022
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: PHONE
+                    value: '+14155559876'
+                    status: APPLIED
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:30:00Z'
+                failedOnCreate:
+                  summary: Recorded but not applied (inline apply failed)
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000023
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: PHONE
+                    value: '+14155559876'
+                    status: FAILED
+                    failureReason: CONTACT_UPDATE_REJECTED
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:30:02Z'
+        '202':
+          description: Contact change accepted, and the customer's signature is required before it takes effect. The customer has a tied OTP credential of that type, so the change is `AWAITING_SIGNATURE` and carries the `payloadToSign` to stamp and the `expiresAt` deadline to submit by. Apply it with `POST /customers/{customerId}/contact-changes/{changeId}/submit`.
           content:
             application/json:
               schema:
@@ -1262,27 +1294,6 @@ paths:
                     expiresAt: '2026-04-08T15:35:00Z'
                     createdAt: '2026-04-08T15:30:00Z'
                     updatedAt: '2026-04-08T15:30:00Z'
-                appliedOnCreate:
-                  summary: Applied on create (no tied OTP credential of that type)
-                  value:
-                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000022
-                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    type: PHONE
-                    value: '+14155559876'
-                    status: APPLIED
-                    createdAt: '2026-04-08T15:30:00Z'
-                    updatedAt: '2026-04-08T15:30:00Z'
-                failedOnCreate:
-                  summary: Recorded but not applied (inline apply failed)
-                  value:
-                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000023
-                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    type: PHONE
-                    value: '+14155559876'
-                    status: FAILED
-                    failureReason: CONTACT_UPDATE_REJECTED
-                    createdAt: '2026-04-08T15:30:00Z'
-                    updatedAt: '2026-04-08T15:30:02Z'
         '400':
           description: 'Bad request. Returned with `INVALID_INPUT` when `value` is not a valid email address for `type: EMAIL` or not a valid E.164 phone number for `type: PHONE`.'
           content:

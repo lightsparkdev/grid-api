@@ -815,15 +815,15 @@ A credential is revoked by signing with a session from **a different credential 
 
 It's a single endpoint because whether a signature is needed isn't something your backend should have to work out. The email behind `EMAIL_OTP` and the phone number behind `SMS_OTP` are what the customer logs in with, so changing either re-keys a login credential and needs the customer's own signature. A contact that isn't backing a credential is just a field. Grid decides which case applies and tells you in the response `status`:
 
-| Arrival `status` | Means | What to do |
-|---|---|---|
-| `AWAITING_SIGNATURE` | A tied `EMAIL_OTP` / `SMS_OTP` credential exists, so the change re-keys a login credential. Carries `payloadToSign` and `expiresAt`. | Stamp and submit — the steps below. |
-| `APPLIED` | No tied credential of that type, so there was nothing to re-key. Grid applied it on create; no `payloadToSign`, no `expiresAt`. | Nothing. It's done. |
-| `FAILED` | Same path, but applying it didn't work. `failureReason` carries a stable code; the contact is unchanged. | Branch on the code, then create a new change. Don't retry this one — it's terminal. |
+| Code | Arrival `status` | Means | What to do |
+|---|---|---|---|
+| `202` | `AWAITING_SIGNATURE` | A tied `EMAIL_OTP` / `SMS_OTP` credential exists, so the change re-keys a login credential. Carries `payloadToSign` and `expiresAt`. | Stamp and submit — the steps below. |
+| `201` | `APPLIED` | No tied credential of that type, so there was nothing to re-key. Grid applied it on create; no `payloadToSign`, no `expiresAt`. | Nothing. It's done. |
+| `201` | `FAILED` | Same path, but applying it didn't work. `failureReason` carries a stable code; the contact is unchanged. | Branch on the code, then create a new change. Don't retry this one — it's terminal. |
 
 **Branch on `status`, not on what you think the customer has.** A wallet that gained or lost an OTP credential since you last looked flips which one you get, and the whole point of one endpoint is that you don't have to track that.
 
-A `201` means the change was **recorded**, not that it worked — a failed attempt still gets a resource, so it shows up in the customer's history next to the successful ones. A `4xx` is different: the request was refused before anything was attempted, so no change exists at all. That's why a duplicate value or an in-flight change of the same type comes back `409` rather than `201 FAILED`.
+The status code answers a different question — whether you still owe Grid anything. `202` means accepted but waiting on the customer's signature, the same convention as every other Embedded Wallet call that needs one first. `201` means created and settled, so nothing further is required of you; "settled" includes a recorded `FAILED` attempt, so a `201` means the change was **recorded**, not that it worked. A `4xx` is different again: the request was refused before anything was attempted, so no change exists at all — which is why a duplicate value or an in-flight change of the same type comes back `409` rather than `201 FAILED`.
 
 The rest of this section covers the `AWAITING_SIGNATURE` path.
 
@@ -836,7 +836,7 @@ The rest of this section covers the `AWAITING_SIGNATURE` path.
       -d '{ "type": "EMAIL", "value": "jane.smith@example.com" }'
     ```
 
-    **Response (201):**
+    **Response (202):**
 
     ```json
     {
