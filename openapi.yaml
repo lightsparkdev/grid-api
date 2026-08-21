@@ -1564,7 +1564,7 @@ paths:
           example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
       responses:
         '200':
-          description: 'Either the applied contact change or a `WalletOperationProcessing` body with `status: "PROCESSING"`. `200` alone does not distinguish them — check the body: a `PROCESSING` status means the wallet-provider activity is still in flight, so re-send this same stamped request until the change comes back `APPLIED`. A change that is already `APPLIED` returns that same body on a re-send.'
+          description: 'Either the applied contact change or a `WalletOperationProcessing` body with `status: "PROCESSING"`. `200` alone does not distinguish them — check the body: a `PROCESSING` status means the wallet-provider activity is still in flight, so re-send this same stamped request until the change comes back `APPLIED`. A change that is already `APPLIED` returns that same body, so a blind retry is always safe — including for a change that arrived `APPLIED` on create and so never had a `payloadToSign`. There is nothing to verify against and nothing to mutate on an applied change, so the stamp is not checked in that case.'
           content:
             application/json:
               schema:
