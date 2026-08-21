@@ -607,7 +607,7 @@ Same pattern as the first activation: call `/challenge` to send a new OTP and re
 
 ### Changing the email OTP address
 
-The `EMAIL_OTP` address comes from the customer email on file. To change it, update the customer with `PATCH /customers/{customerId}`. If the customer has tied Embedded Wallet `EMAIL_OTP` credentials, Grid returns a signed-retry challenge; stamp the returned `payloadToSign` with an active session signing key, then retry the same customer update with `Grid-Wallet-Signature` and `Request-Id`. Grid syncs the customer email and tied `EMAIL_OTP` credential email together.
+The `EMAIL_OTP` address comes from the customer email on file, so changing it re-keys the credential the customer logs in with. Use the contact-change endpoints — see <a href="#changing-the-contact-on-file">changing the contact on file</a>. `PATCH /customers/{customerId}` still accepts `email` and `phoneNumber` with its own in-response challenge, but contact changes supersede that path for wallet customers.
 
 ## Managing credentials
 
@@ -650,7 +650,7 @@ The response is not paginated — each account holds a small, bounded number of 
 
 ### The signed-retry pattern
 
-Adding an additional credential, revoking a credential, refreshing or revoking a session, exporting a wallet, updating wallet privacy, and updating a customer email tied to `EMAIL_OTP` all share the same shape:
+Adding an additional credential, revoking a credential, refreshing or revoking a session, exporting a wallet, and updating wallet privacy all share the same shape. Contact changes use the same stamp over the same kind of `payloadToSign`, but keep the challenge on a resource instead of in one response — see <a href="#changing-the-contact-on-file">changing the contact on file</a>.
 
 ```mermaid
 sequenceDiagram
@@ -702,15 +702,16 @@ Every signed-retry endpoint can return it on the retry step:
 | `POST /auth/sessions/{id}/refresh` | Refresh a session |
 | `DELETE /auth/credentials/{id}` | Revoke a credential |
 | `DELETE /auth/sessions/{id}` | Revoke a session |
+| `POST /customers/{customerId}/contact-changes/{changeId}/submit` | Change the email or phone on file |
 
 To handle it:
 
-1. **Re-send the exact same signed request** — identical body, `Grid-Wallet-Signature`, and `Request-Id`. Don't regenerate the stamp or start a fresh request; Grid correlates the retry with the same underlying operation and returns its real outcome once the provider settles, rather than starting a second one.
+1. **Re-send the exact same signed request** — identical body, `Grid-Wallet-Signature`, and `Request-Id` (for a contact-change submit, there is no body or `Request-Id`: just the same stamp on the same `changeId`). Don't regenerate the stamp or start a fresh request; Grid correlates the retry with the same underlying operation and returns its real outcome once the provider settles, rather than starting a second one.
 2. **Show a pending state in your UI** while you retry — "removing…" for a credential revoke, "signing in…" for a login — instead of treating `PROCESSING` as an error or leaving the caller blocked with no feedback.
 3. **Keep retrying with backoff** until you get a terminal response — the success code above, or an error. Grid also reconciles the operation to its terminal state on its own, so even a client that stops retrying and checks back later (for example via `GET /auth/credentials` or `GET /auth/sessions`) will see the settled result.
 
 <Note>
-  `verify` and `challenge` already use `200` for their terminal success body (`AuthSession` or the challenge response). For those two, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
+  `verify`, `challenge`, and the contact-change `submit` already use `200` for their terminal success body (`AuthSession`, the challenge response, or the applied `ContactChange`). For those three, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
 </Note>
 
 ### Add an additional credential
@@ -807,3 +808,52 @@ A credential is revoked by signing with a session from **a different credential 
     **Response:** `204 No Content`. All active sessions issued by the revoked credential are also revoked. If the revocation is still settling at the wallet provider, this returns `200 { status: "PROCESSING" }` instead — <a href="#handling-a-still-processing-response">re-send the identical `DELETE`</a> until you get the `204`, and show the credential as "removing…" in your UI in the meantime rather than assuming success or failure.
   </Step>
 </Steps>
+
+### Changing the contact on file
+
+The email behind `EMAIL_OTP` and the phone number behind `SMS_OTP` are what the customer logs in with, so changing either is a login-security operation, not a profile edit — it needs the customer's signature, and it re-keys every tied credential of that type. Contact changes get their own resource for that reason: `POST /customers/{customerId}/contact-changes` creates one, and it holds the challenge until it is signed, cancelled, or expires.
+
+<Steps>
+  <Step title="Create the change">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000001/contact-changes" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Content-Type: application/json" \
+      -d '{ "type": "EMAIL", "value": "jane.smith@example.com" }'
+    ```
+
+    **Response (201):**
+
+    ```json
+    {
+      "id": "ContactChange:019542f5-b3e7-1d02-0000-000000000020",
+      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+      "type": "EMAIL",
+      "value": "jane.smith@example.com",
+      "status": "AWAITING_SIGNATURE",
+      "payloadToSign": "{\"organizationId\":\"org_2m9F...\",\"parameters\":{\"userEmail\":\"jane.smith@example.com\",\"userId\":\"user_2m9F...\"},\"timestampMs\":\"1775681700000\",\"type\":\"ACTIVITY_TYPE_UPDATE_USER_EMAIL\"}",
+      "expiresAt": "2026-04-08T15:35:00Z",
+      "createdAt": "2026-04-08T15:30:00Z",
+      "updatedAt": "2026-04-08T15:30:00Z"
+    }
+    ```
+
+    One active change per contact type. A second `POST` while this one is still active returns `409 CONTACT_CHANGE_PENDING` with `details.contactChangeId` naming it, rather than a competing change.
+  </Step>
+  <Step title="Client stamps the payload">
+    The client stamps `payloadToSign` with the session signing key of any verified credential on the customer's wallet — the same stamp as every other signed operation. If your app loses the create response, re-read `payloadToSign` from `GET /customers/{customerId}/contact-changes/{changeId}` instead of starting a new change.
+  </Step>
+  <Step title="Submit the signature">
+    ```bash
+    curl -X POST "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000001/contact-changes/ContactChange:019542f5-b3e7-1d02-0000-000000000020/submit" \
+      -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+      -H "Grid-Wallet-Signature: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9"
+    ```
+
+    **Response (200):** the change with `"status": "APPLIED"`. There is no request body and no `Request-Id` — `changeId` in the path is the correlation. If the wallet provider hasn't settled yet you get `200 { status: "PROCESSING" }` instead; <a href="#handling-a-still-processing-response">re-send the identical request</a> until the change comes back `APPLIED`, and show "updating…" in the meantime. Re-sending after it applies returns the same `APPLIED` change, so a retry is never destructive.
+  </Step>
+</Steps>
+
+Grid updates the customer contact field and every tied matching OTP credential as one operation. If any tied credential can't be updated, the contact field is left alone and the change ends `FAILED` with a `failureReason` — nothing lands half-applied.
+
+To abandon a change the customer backed out of, `DELETE /customers/{customerId}/contact-changes/{changeId}` while it is still `AWAITING_SIGNATURE`. After the signature is submitted there is nothing to cancel: the change resolves to `APPLIED` or `FAILED` on its own. Unsubmitted changes lapse to `EXPIRED` at `expiresAt`, so cancelling is only for deliberately backing out. `GET /customers/{customerId}/contact-changes` lists them newest first for a customer's change history.
