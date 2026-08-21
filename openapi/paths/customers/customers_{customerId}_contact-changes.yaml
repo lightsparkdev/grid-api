@@ -6,40 +6,46 @@ parameters:
     schema:
       type: string
 post:
-  summary: Start a contact change
+  summary: Create a contact change
   description: >
-    Start changing an Embedded Wallet customer's email or phone number.
+    Change a customer's email or phone number. Every contact change goes
+    through this endpoint. `PATCH /customers/{customerId}` still accepts
+    `email` and `phoneNumber` during migration, but those two fields are
+    deprecated in favor of this endpoint.
 
 
-    The email behind an `EMAIL_OTP` credential and the phone number behind an
-    `SMS_OTP` credential are what the customer logs in with, so changing
-    either one is a login-security operation that the customer's own wallet
-    session has to authorize. This endpoint creates the change as a durable
-    resource and returns the `payloadToSign` for it; the change takes effect
-    only after `POST
-    /customers/{customerId}/contact-changes/{changeId}/submit` carries the
-    signature.
+    A contact that is also a login credential — the email behind `EMAIL_OTP`,
+    the phone number behind `SMS_OTP` — can only be changed with the
+    customer's own signature, because changing it re-keys what they log in
+    with. So a change arrives in one of two states:
 
 
-    1. Call this endpoint with the contact `type` and its new `value`. Grid
-    resolves every tied Embedded Wallet OTP credential of that type, binds
-    that set into `payloadToSign`, and returns `201` with the change in
-    `AWAITING_SIGNATURE`.
+    - **The customer has a tied Embedded Wallet OTP credential of that
+    type.** Grid resolves every tied credential, binds that set into
+    `payloadToSign`, and returns `201` with the change in
+    `AWAITING_SIGNATURE`. Build an API-key stamp over `payloadToSign` with
+    the session API keypair of a verified credential on one of the customer's
+    tied Embedded Wallets, then apply the change with `POST
+    /customers/{customerId}/contact-changes/{changeId}/submit`.
 
 
-    2. Use the session API keypair of a verified authentication credential on
-    one of the customer's tied Embedded Wallets to build an API-key stamp
-    over `payloadToSign`, then submit it. Grid updates the customer contact
-    field and every tied matching OTP credential as one logical operation; if
-    any tied credential cannot be updated, the customer contact field is left
-    unchanged.
+    - **The customer has no tied OTP credential of that type.** There is
+    nothing to re-key and no signature to collect, so Grid applies the change
+    on create and returns `201` with the change already `APPLIED`, carrying
+    no `payloadToSign` and no `expiresAt`. Nothing further to call.
+
+
+    Branch on the returned `status` rather than on what you believe about the
+    customer's credentials: a wallet that gained or lost an OTP credential
+    since you last looked changes which arrival state you get.
 
 
     A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`)
     contact change per contact type. Creating a second one while the first is
     still active returns `409` naming the active change, which the caller can
     read with `GET /customers/{customerId}/contact-changes/{changeId}` or
-    abandon with `DELETE`.
+    abandon with `DELETE`. A change that arrives `APPLIED` is terminal on
+    arrival, so it never blocks the next one.
 
 
     Unlike the `202` challenge on `PATCH /customers/{customerId}`, the
@@ -71,8 +77,11 @@ post:
   responses:
     '201':
       description: >-
-        Contact change created in `AWAITING_SIGNATURE`, carrying the
-        `payloadToSign` to stamp and the `expiresAt` deadline to submit by.
+        Contact change created. `AWAITING_SIGNATURE` when a tied OTP
+        credential of that type exists, carrying the `payloadToSign` to stamp
+        and the `expiresAt` deadline to submit by; `APPLIED` when none
+        exists, in which case the change is already done and carries neither
+        field. Branch on `status`.
       content:
         application/json:
           schema:
@@ -102,14 +111,21 @@ post:
                 expiresAt: '2026-04-08T15:35:00Z'
                 createdAt: '2026-04-08T15:30:00Z'
                 updatedAt: '2026-04-08T15:30:00Z'
+            appliedOnCreate:
+              summary: Applied on create (no tied OTP credential of that type)
+              value:
+                id: ContactChange:019542f5-b3e7-1d02-0000-000000000022
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: PHONE
+                value: '+14155559876'
+                status: APPLIED
+                createdAt: '2026-04-08T15:30:00Z'
+                updatedAt: '2026-04-08T15:30:00Z'
     '400':
       description: >-
         Bad request. Returned with `INVALID_INPUT` when `value` is not a valid
         email address for `type: EMAIL` or not a valid E.164 phone number for
-        `type: PHONE`, and when the customer has no tied Embedded Wallet OTP
-        credential of the requested type — such a customer has no login
-        credential to re-key, so update its contact fields with
-        `PATCH /customers/{customerId}` instead.
+        `type: PHONE`.
       content:
         application/json:
           schema:

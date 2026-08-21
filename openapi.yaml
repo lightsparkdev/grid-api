@@ -653,6 +653,8 @@ paths:
       description: |
         Update a customer's metadata by their system-generated ID.
 
+        **`email` and `phoneNumber` are deprecated on this endpoint.** Use `POST /customers/{customerId}/contact-changes` instead, which handles both the signed flow for a contact that is a login credential and the immediate apply when it is not, and leaves a readable record of the change either way. Both fields remain functional here during migration; everything else on this endpoint is unaffected.
+
         Most customer updates complete synchronously and return `200` with the updated customer. If the request changes `email` for a customer that has one or more tied Embedded Wallet internal accounts with `EMAIL_OTP` credentials, or changes `phoneNumber` for a customer that has one or more tied Embedded Wallet internal accounts with `SMS_OTP` credentials, the contact update uses the two-step signed-retry flow so the customer's wallet session authorizes the authentication credential update. On the signed retry, Grid updates the customer contact field and every tied matching OTP credential across all tied Embedded Wallets as one logical operation. If any tied credential cannot be updated, the customer contact field is not changed.
 
         Update `email` and `phoneNumber` in separate PATCH calls. A request that includes both fields is rejected.
@@ -1187,17 +1189,19 @@ paths:
         schema:
           type: string
     post:
-      summary: Start a contact change
+      summary: Create a contact change
       description: |
-        Start changing an Embedded Wallet customer's email or phone number.
+        Change a customer's email or phone number. Every contact change goes through this endpoint. `PATCH /customers/{customerId}` still accepts `email` and `phoneNumber` during migration, but those two fields are deprecated in favor of this endpoint.
 
-        The email behind an `EMAIL_OTP` credential and the phone number behind an `SMS_OTP` credential are what the customer logs in with, so changing either one is a login-security operation that the customer's own wallet session has to authorize. This endpoint creates the change as a durable resource and returns the `payloadToSign` for it; the change takes effect only after `POST /customers/{customerId}/contact-changes/{changeId}/submit` carries the signature.
+        A contact that is also a login credential — the email behind `EMAIL_OTP`, the phone number behind `SMS_OTP` — can only be changed with the customer's own signature, because changing it re-keys what they log in with. So a change arrives in one of two states:
 
-        1. Call this endpoint with the contact `type` and its new `value`. Grid resolves every tied Embedded Wallet OTP credential of that type, binds that set into `payloadToSign`, and returns `201` with the change in `AWAITING_SIGNATURE`.
+        - **The customer has a tied Embedded Wallet OTP credential of that type.** Grid resolves every tied credential, binds that set into `payloadToSign`, and returns `201` with the change in `AWAITING_SIGNATURE`. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified credential on one of the customer's tied Embedded Wallets, then apply the change with `POST /customers/{customerId}/contact-changes/{changeId}/submit`.
 
-        2. Use the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets to build an API-key stamp over `payloadToSign`, then submit it. Grid updates the customer contact field and every tied matching OTP credential as one logical operation; if any tied credential cannot be updated, the customer contact field is left unchanged.
+        - **The customer has no tied OTP credential of that type.** There is nothing to re-key and no signature to collect, so Grid applies the change on create and returns `201` with the change already `APPLIED`, carrying no `payloadToSign` and no `expiresAt`. Nothing further to call.
 
-        A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`) contact change per contact type. Creating a second one while the first is still active returns `409` naming the active change, which the caller can read with `GET /customers/{customerId}/contact-changes/{changeId}` or abandon with `DELETE`.
+        Branch on the returned `status` rather than on what you believe about the customer's credentials: a wallet that gained or lost an OTP credential since you last looked changes which arrival state you get.
+
+        A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`) contact change per contact type. Creating a second one while the first is still active returns `409` naming the active change, which the caller can read with `GET /customers/{customerId}/contact-changes/{changeId}` or abandon with `DELETE`. A change that arrives `APPLIED` is terminal on arrival, so it never blocks the next one.
 
         Unlike the `202` challenge on `PATCH /customers/{customerId}`, the challenge here survives the response: a client that lost the create response can re-read `payloadToSign` from the change resource instead of starting over.
       operationId: createContactChange
@@ -1224,7 +1228,7 @@ paths:
                   value: '+14155559876'
       responses:
         '201':
-          description: Contact change created in `AWAITING_SIGNATURE`, carrying the `payloadToSign` to stamp and the `expiresAt` deadline to submit by.
+          description: Contact change created. `AWAITING_SIGNATURE` when a tied OTP credential of that type exists, carrying the `payloadToSign` to stamp and the `expiresAt` deadline to submit by; `APPLIED` when none exists, in which case the change is already done and carries neither field. Branch on `status`.
           content:
             application/json:
               schema:
@@ -1254,8 +1258,18 @@ paths:
                     expiresAt: '2026-04-08T15:35:00Z'
                     createdAt: '2026-04-08T15:30:00Z'
                     updatedAt: '2026-04-08T15:30:00Z'
+                appliedOnCreate:
+                  summary: Applied on create (no tied OTP credential of that type)
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000022
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: PHONE
+                    value: '+14155559876'
+                    status: APPLIED
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:30:00Z'
         '400':
-          description: 'Bad request. Returned with `INVALID_INPUT` when `value` is not a valid email address for `type: EMAIL` or not a valid E.164 phone number for `type: PHONE`, and when the customer has no tied Embedded Wallet OTP credential of the requested type — such a customer has no login credential to re-key, so update its contact fields with `PATCH /customers/{customerId}` instead.'
+          description: 'Bad request. Returned with `INVALID_INPUT` when `value` is not a valid email address for `type: EMAIL` or not a valid E.164 phone number for `type: PHONE`.'
           content:
             application/json:
               schema:
@@ -14187,7 +14201,10 @@ components:
           additionalProperties: true
     CustomerUpdateRequest:
       title: Customer Update Request
-      description: Request body for `PATCH /customers/{customerId}`. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential through the endpoint's signed-retry flow. When `phoneNumber` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer phone number and every tied `SMS_OTP` credential through the same signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
+      description: |-
+        Request body for `PATCH /customers/{customerId}`.
+
+        `email` and `phoneNumber` are deprecated here in favor of `POST /customers/{customerId}/contact-changes`; they remain functional during migration. When `email` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer email and every tied `EMAIL_OTP` credential through the endpoint's signed-retry flow. When `phoneNumber` changes for a customer with tied Embedded Wallet internal accounts, Grid updates the customer phone number and every tied `SMS_OTP` credential through the same signed-retry flow. Update `email` and `phoneNumber` in separate PATCH calls.
       type: object
       required:
         - customerType
@@ -14206,12 +14223,12 @@ components:
         email:
           type: string
           format: email
-          description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
+          description: 'Email address for the customer. **Deprecated — use `POST /customers/{customerId}/contact-changes` with `type: EMAIL`.** Still functional during migration. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.'
           example: john.doe@example.com
         phoneNumber:
           type: string
           pattern: ^\+[1-9]\d{1,14}$
-          description: Phone number for the customer in strict E.164 format. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `SMS_OTP` credential across all tied Embedded Wallets. Send phone number and email updates as separate PATCH calls.
+          description: 'Phone number for the customer in strict E.164 format. **Deprecated — use `POST /customers/{customerId}/contact-changes` with `type: PHONE`.** Still functional during migration. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `SMS_OTP` credential across all tied Embedded Wallets. Send phone number and email updates as separate PATCH calls.'
           example: '+14155551234'
         umaAddress:
           type: string
@@ -14373,8 +14390,8 @@ components:
         - CANCELLED
       description: |-
         Lifecycle state of a contact change.
-        | Value | Terminal | Meaning | |-------|----------|---------| | `AWAITING_SIGNATURE` | no | Created; waiting for the signed submit. `payloadToSign` and `expiresAt` are populated, and the change can still be cancelled. | | `PROCESSING` | no | Submitted, and the wallet-provider activity is still in flight. Re-send the identical signed submit until it settles; Grid also reconciles it on its own. | | `APPLIED` | **yes** | The customer contact field and every tied matching OTP credential were updated. | | `FAILED` | **yes** | The change could not be applied; see `failureReason`. The customer contact field is unchanged. Start a new contact change. | | `EXPIRED` | **yes** | `expiresAt` passed with no signed submit. Start a new contact change. | | `CANCELLED` | **yes** | Cancelled via `DELETE` while still `AWAITING_SIGNATURE`. |
-        Only `AWAITING_SIGNATURE` accepts a submit, and only `AWAITING_SIGNATURE` accepts a cancel. A change never leaves a terminal state.
+        | Value | Terminal | Meaning | |-------|----------|---------| | `AWAITING_SIGNATURE` | no | Created against a tied OTP credential; waiting for the signed submit. `payloadToSign` and `expiresAt` are populated, and the change can still be cancelled. | | `PROCESSING` | no | Submitted, and the wallet-provider activity is still in flight. Re-send the identical signed submit until it settles; Grid also reconciles it on its own. | | `APPLIED` | **yes** | The customer contact field and every tied matching OTP credential were updated. Also the arrival state when the customer has no tied OTP credential of that type: nothing needs re-keying, so no signature is collected and Grid applies the change on create. | | `FAILED` | **yes** | The change could not be applied; see `failureReason`. The customer contact field is unchanged. Start a new contact change. | | `EXPIRED` | **yes** | `expiresAt` passed with no signed submit. Start a new contact change. | | `CANCELLED` | **yes** | Cancelled via `DELETE` while still `AWAITING_SIGNATURE`. |
+        A change arrives either `AWAITING_SIGNATURE` or `APPLIED`, depending on whether a tied OTP credential of that type exists. Only `AWAITING_SIGNATURE` accepts a submit, and only `AWAITING_SIGNATURE` accepts a cancel. A change never leaves a terminal state.
       example: AWAITING_SIGNATURE
     ContactChangeType:
       title: Contact Change Type
@@ -14394,9 +14411,11 @@ components:
       title: Contact Change
       type: object
       description: |-
-        A pending or completed change to a customer's email or phone number.
+        A pending or completed change to a customer's email or phone number. Every contact change goes through this resource, whether or not it needs a signature.
 
-        Changing the contact on an Embedded Wallet customer is a login-security operation, not a profile edit: the email behind `EMAIL_OTP` and the phone number behind `SMS_OTP` are the credentials the customer authenticates with. So the change is authorized by the customer's own wallet session rather than by platform credentials alone, and it lands as a durable resource the platform can read, retry, and cancel — instead of a challenge that exists only inside one request/response pair.
+        When the contact is a login credential — the email behind `EMAIL_OTP`, the phone number behind `SMS_OTP` — changing it is a login-security operation, not a profile edit, so it is authorized by the customer's own wallet session rather than by platform credentials alone. The change then lands as a durable resource the platform can read, retry, and cancel, instead of a challenge that exists only inside one request/response pair.
+
+        A change therefore arrives in one of two states. With a tied OTP credential of that type, it arrives `AWAITING_SIGNATURE` carrying `payloadToSign` and `expiresAt`, and applies on the signed submit. With no tied credential of that type there is nothing to re-key and no signature to collect, so Grid applies it on create and it arrives `APPLIED` with no `payloadToSign` and no `expiresAt`.
 
         Grid applies the customer contact field and every tied matching OTP credential as one logical operation. If any tied credential cannot be updated, the customer contact field is left unchanged and the change goes to `FAILED`.
       required:

@@ -1,12 +1,17 @@
 title: Customer Update Request
 description: >-
-  Request body for `PATCH /customers/{customerId}`. When `email` changes for a
-  customer with tied Embedded Wallet internal accounts, Grid updates the
-  customer email and every tied `EMAIL_OTP` credential through the endpoint's
-  signed-retry flow. When `phoneNumber` changes for a customer with tied
-  Embedded Wallet internal accounts, Grid updates the customer phone number and
-  every tied `SMS_OTP` credential through the same signed-retry flow. Update
-  `email` and `phoneNumber` in separate PATCH calls.
+  Request body for `PATCH /customers/{customerId}`.
+
+
+  `email` and `phoneNumber` are deprecated here in favor of `POST
+  /customers/{customerId}/contact-changes`; they remain functional during
+  migration. When `email` changes for a customer with tied Embedded Wallet
+  internal accounts, Grid updates the customer email and every tied
+  `EMAIL_OTP` credential through the endpoint's signed-retry flow. When
+  `phoneNumber` changes for a customer with tied Embedded Wallet internal
+  accounts, Grid updates the customer phone number and every tied `SMS_OTP`
+  credential through the same signed-retry flow. Update `email` and
+  `phoneNumber` in separate PATCH calls.
 type: object
 required:
   - customerType
@@ -30,7 +35,9 @@ properties:
     type: string
     format: email
     description: >-
-      Email address for the customer. For customers with tied Embedded Wallet
+      Email address for the customer. **Deprecated — use `POST
+      /customers/{customerId}/contact-changes` with `type: EMAIL`.** Still
+      functional during migration. For customers with tied Embedded Wallet
       internal accounts, changing this value also updates every tied
       `EMAIL_OTP` credential across all tied Embedded Wallets.
     example: john.doe@example.com
@@ -38,10 +45,12 @@ properties:
     type: string
     pattern: '^\+[1-9]\d{1,14}$'
     description: >-
-      Phone number for the customer in strict E.164 format. For customers with
-      tied Embedded Wallet internal accounts, changing this value also updates
-      every tied `SMS_OTP` credential across all tied Embedded Wallets. Send
-      phone number and email updates as separate PATCH calls.
+      Phone number for the customer in strict E.164 format. **Deprecated —
+      use `POST /customers/{customerId}/contact-changes` with `type: PHONE`.**
+      Still functional during migration. For customers with tied Embedded
+      Wallet internal accounts, changing this value also updates every tied
+      `SMS_OTP` credential across all tied Embedded Wallets. Send phone
+      number and email updates as separate PATCH calls.
     example: '+14155551234'
   umaAddress:
     type: string

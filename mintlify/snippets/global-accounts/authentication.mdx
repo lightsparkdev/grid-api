@@ -607,7 +607,7 @@ Same pattern as the first activation: call `/challenge` to send a new OTP and re
 
 ### Changing the email OTP address
 
-The `EMAIL_OTP` address comes from the customer email on file, so changing it re-keys the credential the customer logs in with. Use the contact-change endpoints — see <a href="#changing-the-contact-on-file">changing the contact on file</a>. `PATCH /customers/{customerId}` still accepts `email` and `phoneNumber` with its own in-response challenge, but contact changes supersede that path for wallet customers.
+The `EMAIL_OTP` address comes from the customer email on file, so changing it re-keys the credential the customer logs in with. Use the contact-change endpoints — see <a href="#changing-the-contact-on-file">changing the contact on file</a>. `email` and `phoneNumber` on `PATCH /customers/{customerId}` are deprecated in favor of them; they still work during migration.
 
 ## Managing credentials
 
@@ -811,7 +811,18 @@ A credential is revoked by signing with a session from **a different credential 
 
 ### Changing the contact on file
 
-The email behind `EMAIL_OTP` and the phone number behind `SMS_OTP` are what the customer logs in with, so changing either is a login-security operation, not a profile edit — it needs the customer's signature, and it re-keys every tied credential of that type. Contact changes get their own resource for that reason: `POST /customers/{customerId}/contact-changes` creates one, and it holds the challenge until it is signed, cancelled, or expires.
+`POST /customers/{customerId}/contact-changes` is the one endpoint for changing a customer's email or phone number. (`email` and `phoneNumber` on `PATCH /customers/{customerId}` are deprecated in favor of it, and still work during migration.)
+
+It's a single endpoint because whether a signature is needed isn't something your backend should have to work out. The email behind `EMAIL_OTP` and the phone number behind `SMS_OTP` are what the customer logs in with, so changing either re-keys a login credential and needs the customer's own signature. A contact that isn't backing a credential is just a field. Grid decides which case applies and tells you in the response `status`:
+
+| Arrival `status` | Means | What to do |
+|---|---|---|
+| `AWAITING_SIGNATURE` | A tied `EMAIL_OTP` / `SMS_OTP` credential exists, so the change re-keys a login credential. Carries `payloadToSign` and `expiresAt`. | Stamp and submit — the steps below. |
+| `APPLIED` | No tied credential of that type, so there was nothing to re-key. Grid applied it on create; no `payloadToSign`, no `expiresAt`. | Nothing. It's done. |
+
+**Branch on `status`, not on what you think the customer has.** A wallet that gained or lost an OTP credential since you last looked flips which one you get, and the whole point of one endpoint is that you don't have to track that.
+
+The rest of this section covers the `AWAITING_SIGNATURE` path.
 
 <Steps>
   <Step title="Create the change">

@@ -1,16 +1,25 @@
 title: Contact Change
 type: object
 description: >-
-  A pending or completed change to a customer's email or phone number.
+  A pending or completed change to a customer's email or phone number. Every
+  contact change goes through this resource, whether or not it needs a
+  signature.
 
 
-  Changing the contact on an Embedded Wallet customer is a login-security
-  operation, not a profile edit: the email behind `EMAIL_OTP` and the phone
-  number behind `SMS_OTP` are the credentials the customer authenticates
-  with. So the change is authorized by the customer's own wallet session
-  rather than by platform credentials alone, and it lands as a durable
-  resource the platform can read, retry, and cancel — instead of a
+  When the contact is a login credential — the email behind `EMAIL_OTP`, the
+  phone number behind `SMS_OTP` — changing it is a login-security operation,
+  not a profile edit, so it is authorized by the customer's own wallet
+  session rather than by platform credentials alone. The change then lands as
+  a durable resource the platform can read, retry, and cancel, instead of a
   challenge that exists only inside one request/response pair.
+
+
+  A change therefore arrives in one of two states. With a tied OTP credential
+  of that type, it arrives `AWAITING_SIGNATURE` carrying `payloadToSign` and
+  `expiresAt`, and applies on the signed submit. With no tied credential of
+  that type there is nothing to re-key and no signature to collect, so Grid
+  applies it on create and it arrives `APPLIED` with no `payloadToSign` and
+  no `expiresAt`.
 
 
   Grid applies the customer contact field and every tied matching OTP
