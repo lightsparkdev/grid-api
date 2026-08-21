@@ -16,6 +16,10 @@ sequenceDiagram
   C->>C: stamp(payloadToSign, sessionPrivateKey)
   C->>IB: { stamp }
   IB->>G: POST /internal-accounts/{id}/export { same clientPublicKey }<br/>Grid-Wallet-Signature<br/>Request-Id
+  alt still settling at the wallet provider
+    G-->>IB: 200 { status: "PROCESSING" }
+    IB->>G: Re-send the identical signed request
+  end
   G-->>IB: 200 { id, encryptedWalletCredentials }
   IB-->>C: { encryptedWalletCredentials }
   C->>C: decrypt with client private key<br/>→ mnemonic
@@ -65,6 +69,8 @@ sequenceDiagram
       "encryptedWalletCredentials": "{\"version\":\"v1.0.0\",\"data\":\"7b22656e6361707065645075626c6963223a2230346634356632612e2e2e222c2263697068657274657874223a22316661313032333339302e2e2e222c226f7267616e697a6174696f6e4964223a226f72675f326d39462e2e2e227d\",\"dataSignature\":\"3045022100...\",\"enclaveQuorumPublic\":\"04a1b2c3...\"}"
     }
     ```
+
+    Export shares its terminal status code with the still-processing response: a `200` here is only the encrypted seed if the body isn't `{ "status": "PROCESSING" }`. See <a href="authentication#handling-a-still-processing-response">handling a still-processing response</a> — if you get `PROCESSING`, re-send the identical signed retry (same `clientPublicKey`, `Grid-Wallet-Signature`, and `Request-Id`) until you get the credentials. Because Grid never stores them, the re-send is the only way to receive them; subscribe to `wallet_operation.completed` to know when it will succeed. The `Request-Id` challenge is consumed only by the attempt that actually returns credentials, so a `PROCESSING` response leaves it usable.
   </Step>
   <Step title="Decrypt on the client">
     `encryptedWalletCredentials` is a signed wallet export envelope, not the base58check session-bundle format used by `encryptedSessionSigningKey`. Parse the envelope, verify `dataSignature` against `enclaveQuorumPublic`, decode the hex `data` JSON to get `encappedPublic` and `ciphertext`, then decrypt with the export private key that matches the `clientPublicKey` you sent on both export requests.
