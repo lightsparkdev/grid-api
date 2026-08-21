@@ -11774,16 +11774,30 @@ webhooks:
     post:
       summary: Wallet operation completed or failed
       description: |
-        Webhook that is called when an asynchronous embedded-wallet operation reaches a terminal state. Fires `WALLET_OPERATION.COMPLETED` on terminal success and `WALLET_OPERATION.FAILED` on terminal failure.
+        Webhook that is called when an asynchronous embedded-wallet operation reaches a terminal state. Fires `WALLET_OPERATION.COMPLETED` on terminal success and `WALLET_OPERATION.FAILED` on terminal failure. The payload is self-contained — handle it from the fields below with no follow-up API call needed.
 
-        The specific operation is carried in `data.operationType` (`auth_credential.delete`, `session.revoke`, or `wallet.export`). The webhook carries no sensitive result material — only the `operationId`, `operationType`, `status`, and (on failure) `error.code`. For a data-returning operation (`wallet.export`), the result is never delivered in the webhook; retrieve it by resubmitting the original signed export request until it returns the result.
+        The specific operation is carried in `data.operationType` (`auth_credential.delete`, `session.revoke`, or `wallet.export`), and the business resource it affected is carried in `data.resourceType` / `data.resourceId`:
+
+        | `operationType` | `resourceType` | `resourceId` identifies |
+        | --- | --- | --- |
+        | `auth_credential.delete` | `AUTH_METHOD` | the deleted credential |
+        | `session.revoke` | `SESSION` | the revoked session |
+        | `wallet.export` | `INTERNAL_ACCOUNT` | the account whose wallet was exported |
+
+        The webhook carries no sensitive result material — for `wallet.export`, the export bundle itself is never delivered here; retrieve it by resubmitting the original signed export request until it returns the result.
+
+        ### Correlating this webhook
+
+        - **`data.requestId`** is the primary correlation key. It is the same `Request-Id` value you supplied on the signed retry that produced this terminal result — echo it against the `Request-Id` you sent (and, if you polled through one or more `200 { status: "PROCESSING" }` responses, against the value you kept resending).
+        - **`id`** (the top-level webhook envelope id) is for deduplication. Grid may redeliver a webhook after a transient failure; track `id` to avoid double-processing.
+        - **`data.operationId`** is a Grid-internal identifier for the operation. It's useful when contacting support about a specific operation, but isn't intended as a correlation key.
 
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
 
-        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
-        To verify the signature:
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid. To verify the signature:
+
         1. Get the Grid public key provided to you during integration
         2. Decode the base64 signature from the header
         3. Create a SHA-256 hash of the request body
@@ -11810,7 +11824,10 @@ webhooks:
                   timestamp: '2026-06-08T14:31:00Z'
                   data:
                     operationId: Operation:019542f5-b3e7-1d02-0000-000000000099
+                    requestId: Request:9f7a2c10-5e88-4fb1-bd0e-1c3a8e7b2d45
                     operationType: wallet.export
+                    resourceType: INTERNAL_ACCOUNT
+                    resourceId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
                     status: completed
               failed:
                 summary: Session revoke failed terminally
@@ -11820,7 +11837,10 @@ webhooks:
                   timestamp: '2026-06-08T14:32:00Z'
                   data:
                     operationId: Operation:019542f5-b3e7-1d02-0000-00000000009a
+                    requestId: Request:3c1e5a2f-8b44-4d7a-9e10-6f2b8c4d1a90
                     operationType: session.revoke
+                    resourceType: SESSION
+                    resourceId: Session:019542f5-b3e7-1d02-0000-00000000009a
                     status: failed
                     error:
                       code: DeleteApiKeysFailed
@@ -25854,13 +25874,20 @@ components:
       type: object
       required:
         - operationId
+        - requestId
         - operationType
+        - resourceType
+        - resourceId
         - status
       properties:
         operationId:
           type: string
-          description: The `Operation:<uuid>` id of the operation that reached a terminal state.
+          description: Grid-internal identifier for this operation. Useful when contacting support about a specific operation; not a correlation key — use `requestId` to match this webhook to the request you made.
           example: Operation:019542f5-b3e7-1d02-0000-000000000099
+        requestId:
+          type: string
+          description: 'The `Request-Id` you supplied on the signed retry that produced this terminal result — the same value you would have echoed on every retry had you received a `200 { status: "PROCESSING" }` response while it was settling. This is the primary way to correlate this webhook to the request you made.'
+          example: Request:9f7a2c10-5e88-4fb1-bd0e-1c3a8e7b2d45
         operationType:
           type: string
           description: The kind of operation that reached a terminal state.
@@ -25869,6 +25896,18 @@ components:
             - session.revoke
             - wallet.export
           example: wallet.export
+        resourceType:
+          type: string
+          description: 'The kind of business resource `resourceId` identifies. Determined by `operationType`: `auth_credential.delete` → `AUTH_METHOD`, `session.revoke` → `SESSION`, `wallet.export` → `INTERNAL_ACCOUNT`.'
+          enum:
+            - AUTH_METHOD
+            - SESSION
+            - INTERNAL_ACCOUNT
+          example: INTERNAL_ACCOUNT
+        resourceId:
+          type: string
+          description: 'LSID of the business resource this operation affected: the deleted `AuthMethod:<uuid>` for `auth_credential.delete`, the revoked `Session:<uuid>` for `session.revoke`, or the `InternalAccount:<uuid>` whose wallet was exported for `wallet.export`.'
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
         status:
           type: string
           enum:
@@ -25890,14 +25929,21 @@ components:
       type: object
       required:
         - operationId
+        - requestId
         - operationType
+        - resourceType
+        - resourceId
         - status
         - error
       properties:
         operationId:
           type: string
-          description: The `Operation:<uuid>` id of the operation that reached a terminal state.
+          description: Grid-internal identifier for this operation. Useful when contacting support about a specific operation; not a correlation key — use `requestId` to match this webhook to the request you made.
           example: Operation:019542f5-b3e7-1d02-0000-000000000099
+        requestId:
+          type: string
+          description: 'The `Request-Id` you supplied on the signed retry that produced this terminal result — the same value you would have echoed on every retry had you received a `200 { status: "PROCESSING" }` response while it was settling. This is the primary way to correlate this webhook to the request you made.'
+          example: Request:9f7a2c10-5e88-4fb1-bd0e-1c3a8e7b2d45
         operationType:
           type: string
           description: The kind of operation that reached a terminal state.
@@ -25906,6 +25952,18 @@ components:
             - session.revoke
             - wallet.export
           example: wallet.export
+        resourceType:
+          type: string
+          description: 'The kind of business resource `resourceId` identifies. Determined by `operationType`: `auth_credential.delete` → `AUTH_METHOD`, `session.revoke` → `SESSION`, `wallet.export` → `INTERNAL_ACCOUNT`.'
+          enum:
+            - AUTH_METHOD
+            - SESSION
+            - INTERNAL_ACCOUNT
+          example: SESSION
+        resourceId:
+          type: string
+          description: 'LSID of the business resource this operation affected: the deleted `AuthMethod:<uuid>` for `auth_credential.delete`, the revoked `Session:<uuid>` for `session.revoke`, or the `InternalAccount:<uuid>` whose wallet was exported for `wallet.export`.'
+          example: Session:019542f5-b3e7-1d02-0000-00000000009a
         status:
           type: string
           enum:
