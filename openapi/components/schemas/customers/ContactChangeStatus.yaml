@@ -1,0 +1,24 @@
+title: Contact Change Status
+type: string
+enum:
+  - AWAITING_SIGNATURE
+  - PROCESSING
+  - APPLIED
+  - FAILED
+  - EXPIRED
+  - CANCELLED
+description: >-
+  Lifecycle state of a contact change.
+
+  | Value | Terminal | Meaning |
+  |-------|----------|---------|
+  | `AWAITING_SIGNATURE` | no | Created; waiting for the signed submit. `payloadToSign` and `expiresAt` are populated, and the change can still be cancelled. |
+  | `PROCESSING` | no | Submitted, and the wallet-provider activity is still in flight. Re-send the identical signed submit until it settles; Grid also reconciles it on its own. |
+  | `APPLIED` | **yes** | The customer contact field and every tied matching OTP credential were updated. |
+  | `FAILED` | **yes** | The change could not be applied; see `failureReason`. The customer contact field is unchanged. Start a new contact change. |
+  | `EXPIRED` | **yes** | `expiresAt` passed with no signed submit. Start a new contact change. |
+  | `CANCELLED` | **yes** | Cancelled via `DELETE` while still `AWAITING_SIGNATURE`. |
+
+  Only `AWAITING_SIGNATURE` accepts a submit, and only `AWAITING_SIGNATURE`
+  accepts a cancel. A change never leaves a terminal state.
+example: AWAITING_SIGNATURE

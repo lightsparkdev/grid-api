@@ -1,0 +1,24 @@
+title: Contact Change List Response
+type: object
+description: >-
+  Paginated list of a customer's contact changes, newest first.
+required:
+  - data
+  - hasMore
+properties:
+  data:
+    type: array
+    description: Contact changes on this customer, ordered by `createdAt` descending.
+    items:
+      $ref: ./ContactChange.yaml
+  hasMore:
+    type: boolean
+    description: Indicates if more results are available beyond this page.
+  nextCursor:
+    type: string
+    description: Cursor to retrieve the next page of results.
+    example: eyJpZCI6IkNvbnRhY3RDaGFuZ2U6MDE5NTQyZjUifQ==
+  totalCount:
+    type: integer
+    description: Total number of contact changes matching the query.
+    example: 3

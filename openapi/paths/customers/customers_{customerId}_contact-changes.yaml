@@ -1,0 +1,263 @@
+parameters:
+  - name: customerId
+    in: path
+    description: System-generated unique customer identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Start a contact change
+  description: >
+    Start changing an Embedded Wallet customer's email or phone number.
+
+
+    The email behind an `EMAIL_OTP` credential and the phone number behind an
+    `SMS_OTP` credential are what the customer logs in with, so changing
+    either one is a login-security operation that the customer's own wallet
+    session has to authorize. This endpoint creates the change as a durable
+    resource and returns the `payloadToSign` for it; the change takes effect
+    only after `POST
+    /customers/{customerId}/contact-changes/{changeId}/submit` carries the
+    signature.
+
+
+    1. Call this endpoint with the contact `type` and its new `value`. Grid
+    resolves every tied Embedded Wallet OTP credential of that type, binds
+    that set into `payloadToSign`, and returns `201` with the change in
+    `AWAITING_SIGNATURE`.
+
+
+    2. Use the session API keypair of a verified authentication credential on
+    one of the customer's tied Embedded Wallets to build an API-key stamp
+    over `payloadToSign`, then submit it. Grid updates the customer contact
+    field and every tied matching OTP credential as one logical operation; if
+    any tied credential cannot be updated, the customer contact field is left
+    unchanged.
+
+
+    A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`)
+    contact change per contact type. Creating a second one while the first is
+    still active returns `409` naming the active change, which the caller can
+    read with `GET /customers/{customerId}/contact-changes/{changeId}` or
+    abandon with `DELETE`.
+
+
+    Unlike the `202` challenge on `PATCH /customers/{customerId}`, the
+    challenge here survives the response: a client that lost the create
+    response can re-read `payloadToSign` from the change resource instead of
+    starting over.
+  operationId: createContactChange
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/customers/ContactChangeCreateRequest.yaml
+        examples:
+          email:
+            summary: Change the customer email
+            value:
+              type: EMAIL
+              value: jane.smith@example.com
+          phone:
+            summary: Change the customer phone number
+            value:
+              type: PHONE
+              value: '+14155559876'
+  responses:
+    '201':
+      description: >-
+        Contact change created in `AWAITING_SIGNATURE`, carrying the
+        `payloadToSign` to stamp and the `expiresAt` deadline to submit by.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/ContactChange.yaml
+          examples:
+            email:
+              summary: Email change awaiting signature
+              value:
+                id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: EMAIL
+                value: jane.smith@example.com
+                status: AWAITING_SIGNATURE
+                payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"jane.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
+                expiresAt: '2026-04-08T15:35:00Z'
+                createdAt: '2026-04-08T15:30:00Z'
+                updatedAt: '2026-04-08T15:30:00Z'
+            phone:
+              summary: Phone change awaiting signature
+              value:
+                id: ContactChange:019542f5-b3e7-1d02-0000-000000000021
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: PHONE
+                value: '+14155559876'
+                status: AWAITING_SIGNATURE
+                payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                expiresAt: '2026-04-08T15:35:00Z'
+                createdAt: '2026-04-08T15:30:00Z'
+                updatedAt: '2026-04-08T15:30:00Z'
+    '400':
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when `value` is not a valid
+        email address for `type: EMAIL` or not a valid E.164 phone number for
+        `type: PHONE`, and when the customer has no tied Embedded Wallet OTP
+        credential of the requested type — such a customer has no login
+        credential to re-key, so update its contact fields with
+        `PATCH /customers/{customerId}` instead.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CONTACT_CHANGE_PENDING` when the customer
+        already has an active contact change of this type — `details`
+        carries `contactChangeId` so the caller can read or cancel it —
+        with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` when the supplied email is
+        already associated with an `EMAIL_OTP` credential, or with
+        `SMS_OTP_PHONE_ALREADY_EXISTS` when the supplied phone number is
+        already associated with an `SMS_OTP` credential, on this or another
+        internal account.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+          examples:
+            alreadyPending:
+              summary: An active contact change of this type already exists
+              value:
+                status: 409
+                code: CONTACT_CHANGE_PENDING
+                message: >-
+                  This customer already has an active EMAIL contact change.
+                  Submit or cancel it before starting another.
+                details:
+                  contactChangeId: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+get:
+  summary: List contact changes
+  description: >-
+    List a customer's contact changes, newest first — the active one, if any,
+    plus the history of applied, failed, expired, and cancelled attempts.
+
+
+    Use this to show a customer's pending contact change after losing the
+    create response, or to audit who changed what and when. To check only
+    whether a change is in flight, filter on `status`.
+  operationId: listContactChanges
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: status
+      in: query
+      description: >-
+        Return only contact changes in this state. Omit to return every
+        contact change on the customer.
+      required: false
+      schema:
+        $ref: ../../components/schemas/customers/ContactChangeStatus.yaml
+    - name: limit
+      in: query
+      description: Maximum number of results to return (default 20, max 100)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: cursor
+      in: query
+      description: Cursor for pagination (returned from previous request)
+      required: false
+      schema:
+        type: string
+  responses:
+    '200':
+      description: >-
+        Contact changes on this customer, newest first. Returns an empty
+        `data` array when the customer has never had a contact change.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/ContactChangeListResponse.yaml
+          examples:
+            pendingAndHistory:
+              summary: One active change plus prior attempts
+              value:
+                data:
+                  - id: ContactChange:019542f5-b3e7-1d02-0000-000000000021
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: PHONE
+                    value: '+14155559876'
+                    status: AWAITING_SIGNATURE
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                    expiresAt: '2026-04-08T15:35:00Z'
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:30:00Z'
+                  - id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: EMAIL
+                    value: jane.smith@example.com
+                    status: APPLIED
+                    createdAt: '2026-04-07T09:12:00Z'
+                    updatedAt: '2026-04-07T09:13:04Z'
+                hasMore: false
+                totalCount: 2
+            empty:
+              summary: No contact changes on this customer
+              value:
+                data: []
+                hasMore: false
+                totalCount: 0
+    '400':
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when `status` is not a
+        recognized contact change status or the pagination parameters are
+        out of range.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

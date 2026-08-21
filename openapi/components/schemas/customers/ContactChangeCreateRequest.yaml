@@ -1,0 +1,20 @@
+title: Contact Change Create Request
+type: object
+description: >-
+  Request body for `POST /customers/{customerId}/contact-changes`. Names the
+  contact field to change and its new value; Grid resolves which tied
+  Embedded Wallet OTP credentials must be updated alongside it and binds
+  that set into the returned `payloadToSign`.
+required:
+  - type
+  - value
+properties:
+  type:
+    $ref: ./ContactChangeType.yaml
+    description: Which contact field to change.
+  value:
+    type: string
+    description: >-
+      The new contact value: an email address when `type` is `EMAIL`, an
+      E.164 phone number when `type` is `PHONE`.
+    example: jane.smith@example.com

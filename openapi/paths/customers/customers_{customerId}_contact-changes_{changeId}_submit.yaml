@@ -1,0 +1,142 @@
+parameters:
+  - name: customerId
+    in: path
+    description: System-generated unique customer identifier
+    required: true
+    schema:
+      type: string
+  - name: changeId
+    in: path
+    description: >-
+      The id of the contact change being submitted (the `id` field returned
+      from `POST /customers/{customerId}/contact-changes`).
+    required: true
+    schema:
+      type: string
+post:
+  summary: Submit a signed contact change
+  description: >
+    Apply a contact change by submitting the customer's signature over its
+    `payloadToSign`.
+
+
+    Build an API-key stamp over `payloadToSign` **byte-for-byte as Grid
+    returned it**, using the session API keypair of a verified authentication
+    credential on one of the customer's tied Embedded Wallets, and send the
+    full stamp as `Grid-Wallet-Signature`. The change itself carries what is
+    being changed, so there is no request body and no `Request-Id` to echo —
+    `changeId` in the path is the correlation the other Embedded Wallet
+    signed-retry endpoints get from `Request-Id`.
+
+
+    Grid updates the customer contact field and every tied matching OTP
+    credential as one logical operation. If any tied credential cannot be
+    updated, the customer contact field is left unchanged.
+
+
+    This endpoint is idempotent, which is what makes the still-processing
+    response safe to drive: re-sending the same stamp returns
+    `WalletOperationProcessing` while the wallet-provider activity is in
+    flight and the `APPLIED` change once it settles, without starting a
+    second change. A client that stops re-sending loses nothing — Grid
+    reconciles the activity on its own, and
+    `GET /customers/{customerId}/contact-changes/{changeId}` reaches the same
+    answer.
+  operationId: submitContactChange
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Grid-Wallet-Signature
+      in: header
+      required: true
+      description: >-
+        Full API-key stamp built over the contact change's `payloadToSign`
+        with the session API keypair of a verified authentication credential
+        on one of the customer's tied Embedded Wallets.
+      schema:
+        type: string
+      example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+  responses:
+    '200':
+      description: >-
+        Either the applied contact change or a `WalletOperationProcessing`
+        body with `status: "PROCESSING"`. `200` alone does not distinguish
+        them — check the body: a `PROCESSING` status means the wallet-provider
+        activity is still in flight, so re-send this same stamped request
+        until the change comes back `APPLIED`. A change that is already
+        `APPLIED` returns that same body on a re-send.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/ContactChangeSubmitResponse.yaml
+          examples:
+            applied:
+              summary: Contact change applied
+              value:
+                id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: EMAIL
+                value: jane.smith@example.com
+                status: APPLIED
+                createdAt: '2026-04-08T15:30:00Z'
+                updatedAt: '2026-04-08T15:31:12Z'
+            processing:
+              summary: Still settling at the wallet provider
+              value:
+                status: PROCESSING
+                message: >-
+                  This contact change is still being processed. Retry the same
+                  request in a moment.
+    '401':
+      description: >-
+        Unauthorized. Returned when `Grid-Wallet-Signature` is missing,
+        malformed, or was not produced by a verified authentication
+        credential on one of the customer's tied Embedded Wallets, or when
+        the stamp does not match this contact change's `payloadToSign`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or contact change not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CONTACT_CHANGE_NOT_AWAITING_SIGNATURE` when
+        the change is `EXPIRED`, `CANCELLED`, or `FAILED` — all terminal, so
+        start a new contact change rather than re-signing this one. A change
+        that is `PROCESSING` or `APPLIED` is not a conflict and returns `200`.
+        Also returned with `EMAIL_OTP_CREDENTIAL_SET_CHANGED` or
+        `SMS_OTP_CREDENTIAL_SET_CHANGED` when the set of tied OTP credentials
+        bound into `payloadToSign` at create time no longer matches the
+        account, and with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` or
+        `SMS_OTP_PHONE_ALREADY_EXISTS` when the new value was claimed by
+        another credential between create and submit.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '424':
+      description: >-
+        Failed dependency. Returned with `EMAIL_OTP_CREDENTIAL_SYNC_FAILED`
+        or `SMS_OTP_CREDENTIAL_SYNC_FAILED` when Grid cannot update one or
+        more tied Embedded Wallet OTP credentials. The customer contact field
+        is not changed, and the contact change moves to `FAILED`. A failure
+        that only surfaces after this call returned `PROCESSING` has no status
+        code to land on and shows up as `FAILED` with a `failureReason` on the
+        change itself.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error424.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

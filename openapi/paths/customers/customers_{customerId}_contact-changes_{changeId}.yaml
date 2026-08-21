@@ -1,0 +1,146 @@
+parameters:
+  - name: customerId
+    in: path
+    description: System-generated unique customer identifier
+    required: true
+    schema:
+      type: string
+  - name: changeId
+    in: path
+    description: >-
+      The id of the contact change (the `id` field returned from
+      `POST /customers/{customerId}/contact-changes`).
+    required: true
+    schema:
+      type: string
+get:
+  summary: Get a contact change
+  description: >-
+    Read a single contact change.
+
+
+    While the change is `AWAITING_SIGNATURE` this returns its `payloadToSign`
+    and `expiresAt`, so a client that lost the create response can recover
+    the payload to stamp rather than starting a new change. Once the change
+    is `PROCESSING`, this is also how a client that stopped re-sending the
+    signed submit learns the outcome — Grid reconciles the underlying
+    activity to terminal on its own.
+  operationId: getContactChange
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: The contact change.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/ContactChange.yaml
+          examples:
+            applied:
+              summary: Applied email change
+              value:
+                id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: EMAIL
+                value: jane.smith@example.com
+                status: APPLIED
+                createdAt: '2026-04-08T15:30:00Z'
+                updatedAt: '2026-04-08T15:31:12Z'
+            failed:
+              summary: Failed phone change
+              value:
+                id: ContactChange:019542f5-b3e7-1d02-0000-000000000021
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: PHONE
+                value: '+14155559876'
+                status: FAILED
+                failureReason: One or more tied SMS_OTP credentials could not be updated.
+                createdAt: '2026-04-08T15:30:00Z'
+                updatedAt: '2026-04-08T15:31:44Z'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or contact change not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+delete:
+  summary: Cancel a contact change
+  description: >-
+    Cancel a contact change that has not been submitted yet, moving it to
+    `CANCELLED`.
+
+
+    Only an `AWAITING_SIGNATURE` change can be cancelled. Once the signature
+    is submitted the change is in the wallet provider's hands and resolves to
+    `APPLIED` or `FAILED` on its own — Grid does not pretend to un-sign it.
+    An unsubmitted change also lapses to `EXPIRED` on its own at `expiresAt`,
+    so cancelling is for abandoning a change deliberately (the customer
+    backed out, or the platform needs to start one with a different value)
+    rather than for cleanup.
+  operationId: cancelContactChange
+  tags:
+    - Customers
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: >-
+        Contact change cancelled. The body is the change with
+        `status: "CANCELLED"`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/customers/ContactChange.yaml
+          examples:
+            cancelled:
+              summary: Cancelled email change
+              value:
+                id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: EMAIL
+                value: jane.smith@example.com
+                status: CANCELLED
+                createdAt: '2026-04-08T15:30:00Z'
+                updatedAt: '2026-04-08T15:32:00Z'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '404':
+      description: Customer or contact change not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CONTACT_CHANGE_NOT_AWAITING_SIGNATURE` when
+        the change is not `AWAITING_SIGNATURE` — a submitted change
+        (`PROCESSING`) has to resolve on its own, and a change that is
+        already `APPLIED`, `FAILED`, `EXPIRED`, or `CANCELLED` is terminal.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml

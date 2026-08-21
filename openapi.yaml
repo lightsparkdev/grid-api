@@ -1178,6 +1178,429 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/contact-changes:
+    parameters:
+      - name: customerId
+        in: path
+        description: System-generated unique customer identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Start a contact change
+      description: |
+        Start changing an Embedded Wallet customer's email or phone number.
+
+        The email behind an `EMAIL_OTP` credential and the phone number behind an `SMS_OTP` credential are what the customer logs in with, so changing either one is a login-security operation that the customer's own wallet session has to authorize. This endpoint creates the change as a durable resource and returns the `payloadToSign` for it; the change takes effect only after `POST /customers/{customerId}/contact-changes/{changeId}/submit` carries the signature.
+
+        1. Call this endpoint with the contact `type` and its new `value`. Grid resolves every tied Embedded Wallet OTP credential of that type, binds that set into `payloadToSign`, and returns `201` with the change in `AWAITING_SIGNATURE`.
+
+        2. Use the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets to build an API-key stamp over `payloadToSign`, then submit it. Grid updates the customer contact field and every tied matching OTP credential as one logical operation; if any tied credential cannot be updated, the customer contact field is left unchanged.
+
+        A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`) contact change per contact type. Creating a second one while the first is still active returns `409` naming the active change, which the caller can read with `GET /customers/{customerId}/contact-changes/{changeId}` or abandon with `DELETE`.
+
+        Unlike the `202` challenge on `PATCH /customers/{customerId}`, the challenge here survives the response: a client that lost the create response can re-read `payloadToSign` from the change resource instead of starting over.
+      operationId: createContactChange
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactChangeCreateRequest'
+            examples:
+              email:
+                summary: Change the customer email
+                value:
+                  type: EMAIL
+                  value: jane.smith@example.com
+              phone:
+                summary: Change the customer phone number
+                value:
+                  type: PHONE
+                  value: '+14155559876'
+      responses:
+        '201':
+          description: Contact change created in `AWAITING_SIGNATURE`, carrying the `payloadToSign` to stamp and the `expiresAt` deadline to submit by.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactChange'
+              examples:
+                email:
+                  summary: Email change awaiting signature
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: EMAIL
+                    value: jane.smith@example.com
+                    status: AWAITING_SIGNATURE
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"jane.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
+                    expiresAt: '2026-04-08T15:35:00Z'
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:30:00Z'
+                phone:
+                  summary: Phone change awaiting signature
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000021
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: PHONE
+                    value: '+14155559876'
+                    status: AWAITING_SIGNATURE
+                    payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                    expiresAt: '2026-04-08T15:35:00Z'
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:30:00Z'
+        '400':
+          description: 'Bad request. Returned with `INVALID_INPUT` when `value` is not a valid email address for `type: EMAIL` or not a valid E.164 phone number for `type: PHONE`, and when the customer has no tied Embedded Wallet OTP credential of the requested type — such a customer has no login credential to re-key, so update its contact fields with `PATCH /customers/{customerId}` instead.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `CONTACT_CHANGE_PENDING` when the customer already has an active contact change of this type — `details` carries `contactChangeId` so the caller can read or cancel it — with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` when the supplied email is already associated with an `EMAIL_OTP` credential, or with `SMS_OTP_PHONE_ALREADY_EXISTS` when the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+              examples:
+                alreadyPending:
+                  summary: An active contact change of this type already exists
+                  value:
+                    status: 409
+                    code: CONTACT_CHANGE_PENDING
+                    message: This customer already has an active EMAIL contact change. Submit or cancel it before starting another.
+                    details:
+                      contactChangeId: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    get:
+      summary: List contact changes
+      description: |-
+        List a customer's contact changes, newest first — the active one, if any, plus the history of applied, failed, expired, and cancelled attempts.
+
+        Use this to show a customer's pending contact change after losing the create response, or to audit who changed what and when. To check only whether a change is in flight, filter on `status`.
+      operationId: listContactChanges
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Return only contact changes in this state. Omit to return every contact change on the customer.
+          required: false
+          schema:
+            $ref: '#/components/schemas/ContactChangeStatus'
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contact changes on this customer, newest first. Returns an empty `data` array when the customer has never had a contact change.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactChangeListResponse'
+              examples:
+                pendingAndHistory:
+                  summary: One active change plus prior attempts
+                  value:
+                    data:
+                      - id: ContactChange:019542f5-b3e7-1d02-0000-000000000021
+                        customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                        type: PHONE
+                        value: '+14155559876'
+                        status: AWAITING_SIGNATURE
+                        payloadToSign: '{"organizationId":"org_2m9F...","parameters":{"userId":"user_2m9F...","userPhoneNumber":"+14155559876"},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_PHONE_NUMBER"}'
+                        expiresAt: '2026-04-08T15:35:00Z'
+                        createdAt: '2026-04-08T15:30:00Z'
+                        updatedAt: '2026-04-08T15:30:00Z'
+                      - id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                        customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                        type: EMAIL
+                        value: jane.smith@example.com
+                        status: APPLIED
+                        createdAt: '2026-04-07T09:12:00Z'
+                        updatedAt: '2026-04-07T09:13:04Z'
+                    hasMore: false
+                    totalCount: 2
+                empty:
+                  summary: No contact changes on this customer
+                  value:
+                    data: []
+                    hasMore: false
+                    totalCount: 0
+        '400':
+          description: Bad request. Returned with `INVALID_INPUT` when `status` is not a recognized contact change status or the pagination parameters are out of range.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/contact-changes/{changeId}:
+    parameters:
+      - name: customerId
+        in: path
+        description: System-generated unique customer identifier
+        required: true
+        schema:
+          type: string
+      - name: changeId
+        in: path
+        description: The id of the contact change (the `id` field returned from `POST /customers/{customerId}/contact-changes`).
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get a contact change
+      description: |-
+        Read a single contact change.
+
+        While the change is `AWAITING_SIGNATURE` this returns its `payloadToSign` and `expiresAt`, so a client that lost the create response can recover the payload to stamp rather than starting a new change. Once the change is `PROCESSING`, this is also how a client that stopped re-sending the signed submit learns the outcome — Grid reconciles the underlying activity to terminal on its own.
+      operationId: getContactChange
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The contact change.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactChange'
+              examples:
+                applied:
+                  summary: Applied email change
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: EMAIL
+                    value: jane.smith@example.com
+                    status: APPLIED
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:31:12Z'
+                failed:
+                  summary: Failed phone change
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000021
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: PHONE
+                    value: '+14155559876'
+                    status: FAILED
+                    failureReason: One or more tied SMS_OTP credentials could not be updated.
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:31:44Z'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or contact change not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Cancel a contact change
+      description: |-
+        Cancel a contact change that has not been submitted yet, moving it to `CANCELLED`.
+
+        Only an `AWAITING_SIGNATURE` change can be cancelled. Once the signature is submitted the change is in the wallet provider's hands and resolves to `APPLIED` or `FAILED` on its own — Grid does not pretend to un-sign it. An unsubmitted change also lapses to `EXPIRED` on its own at `expiresAt`, so cancelling is for abandoning a change deliberately (the customer backed out, or the platform needs to start one with a different value) rather than for cleanup.
+      operationId: cancelContactChange
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: 'Contact change cancelled. The body is the change with `status: "CANCELLED"`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactChange'
+              examples:
+                cancelled:
+                  summary: Cancelled email change
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: EMAIL
+                    value: jane.smith@example.com
+                    status: CANCELLED
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:32:00Z'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or contact change not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `CONTACT_CHANGE_NOT_AWAITING_SIGNATURE` when the change is not `AWAITING_SIGNATURE` — a submitted change (`PROCESSING`) has to resolve on its own, and a change that is already `APPLIED`, `FAILED`, `EXPIRED`, or `CANCELLED` is terminal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/{customerId}/contact-changes/{changeId}/submit:
+    parameters:
+      - name: customerId
+        in: path
+        description: System-generated unique customer identifier
+        required: true
+        schema:
+          type: string
+      - name: changeId
+        in: path
+        description: The id of the contact change being submitted (the `id` field returned from `POST /customers/{customerId}/contact-changes`).
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Submit a signed contact change
+      description: |
+        Apply a contact change by submitting the customer's signature over its `payloadToSign`.
+
+        Build an API-key stamp over `payloadToSign` **byte-for-byte as Grid returned it**, using the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets, and send the full stamp as `Grid-Wallet-Signature`. The change itself carries what is being changed, so there is no request body and no `Request-Id` to echo — `changeId` in the path is the correlation the other Embedded Wallet signed-retry endpoints get from `Request-Id`.
+
+        Grid updates the customer contact field and every tied matching OTP credential as one logical operation. If any tied credential cannot be updated, the customer contact field is left unchanged.
+
+        This endpoint is idempotent, which is what makes the still-processing response safe to drive: re-sending the same stamp returns `WalletOperationProcessing` while the wallet-provider activity is in flight and the `APPLIED` change once it settles, without starting a second change. A client that stops re-sending loses nothing — Grid reconciles the activity on its own, and `GET /customers/{customerId}/contact-changes/{changeId}` reaches the same answer.
+      operationId: submitContactChange
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Grid-Wallet-Signature
+          in: header
+          required: true
+          description: Full API-key stamp built over the contact change's `payloadToSign` with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets.
+          schema:
+            type: string
+          example: eyJwdWJsaWNLZXkiOiIwMmExYjIuLi4iLCJzY2hlbWUiOiJTSUdOQVRVUkVfU0NIRU1FX1RLX0FQSV9QMjU2Iiwic2lnbmF0dXJlIjoiMzA0NTAyMjEwMC4uLiJ9
+      responses:
+        '200':
+          description: 'Either the applied contact change or a `WalletOperationProcessing` body with `status: "PROCESSING"`. `200` alone does not distinguish them — check the body: a `PROCESSING` status means the wallet-provider activity is still in flight, so re-send this same stamped request until the change comes back `APPLIED`. A change that is already `APPLIED` returns that same body on a re-send.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactChangeSubmitResponse'
+              examples:
+                applied:
+                  summary: Contact change applied
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: EMAIL
+                    value: jane.smith@example.com
+                    status: APPLIED
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:31:12Z'
+                processing:
+                  summary: Still settling at the wallet provider
+                  value:
+                    status: PROCESSING
+                    message: This contact change is still being processed. Retry the same request in a moment.
+        '401':
+          description: Unauthorized. Returned when `Grid-Wallet-Signature` is missing, malformed, or was not produced by a verified authentication credential on one of the customer's tied Embedded Wallets, or when the stamp does not match this contact change's `payloadToSign`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer or contact change not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Returned with `CONTACT_CHANGE_NOT_AWAITING_SIGNATURE` when the change is `EXPIRED`, `CANCELLED`, or `FAILED` — all terminal, so start a new contact change rather than re-signing this one. A change that is `PROCESSING` or `APPLIED` is not a conflict and returns `200`. Also returned with `EMAIL_OTP_CREDENTIAL_SET_CHANGED` or `SMS_OTP_CREDENTIAL_SET_CHANGED` when the set of tied OTP credentials bound into `payloadToSign` at create time no longer matches the account, and with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` or `SMS_OTP_PHONE_ALREADY_EXISTS` when the new value was claimed by another credential between create and submit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '424':
+          description: Failed dependency. Returned with `EMAIL_OTP_CREDENTIAL_SYNC_FAILED` or `SMS_OTP_CREDENTIAL_SYNC_FAILED` when Grid cannot update one or more tied Embedded Wallet OTP credentials. The customer contact field is not changed, and the contact change moves to `FAILED`. A failure that only surfaces after this call returned `PROCESSING` has no status code to land on and shows up as `FAILED` with a `failureReason` on the change itself.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error424'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /sca/factors:
     parameters:
       - name: customerId
@@ -13655,6 +14078,10 @@ components:
             | UMA_ADDRESS_EXISTS | UMA address already exists |
             | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
             | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
+            | SMS_OTP_PHONE_ALREADY_EXISTS | Phone number is already associated with an SMS_OTP credential |
+            | SMS_OTP_CREDENTIAL_SET_CHANGED | Tied SMS_OTP credential set changed after the signed-retry challenge was issued |
+            | CONTACT_CHANGE_PENDING | The customer already has an active contact change of this type. `details.contactChangeId` names it; submit or cancel it before starting another |
+            | CONTACT_CHANGE_NOT_AWAITING_SIGNATURE | The contact change is not `AWAITING_SIGNATURE`, so it can no longer be signed or cancelled |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
@@ -13668,6 +14095,10 @@ components:
             - UMA_ADDRESS_EXISTS
             - EMAIL_OTP_EMAIL_ALREADY_EXISTS
             - EMAIL_OTP_CREDENTIAL_SET_CHANGED
+            - SMS_OTP_PHONE_ALREADY_EXISTS
+            - SMS_OTP_CREDENTIAL_SET_CHANGED
+            - CONTACT_CHANGE_PENDING
+            - CONTACT_CHANGE_NOT_AWAITING_SIGNATURE
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
             - BENEFICIARY_TRUSTED
@@ -13852,12 +14283,14 @@ components:
             | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
             | LNURLP_REQUEST_FAILED | LNURLP request failed |
             | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
+            | SMS_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied SMS_OTP credentials |
           enum:
             - PAYREQ_REQUEST_FAILED
             - COUNTERPARTY_PUBKEY_FETCH_ERROR
             - NO_COMPATIBLE_UMA_VERSION
             - LNURLP_REQUEST_FAILED
             - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
+            - SMS_OTP_CREDENTIAL_SYNC_FAILED
         message:
           type: string
           description: Error message
@@ -13928,6 +14361,159 @@ components:
           type: string
           description: The one-time verification code the customer received via email or SMS. In sandbox, the code is always `123456`.
           example: '123456'
+    ContactChangeStatus:
+      title: Contact Change Status
+      type: string
+      enum:
+        - AWAITING_SIGNATURE
+        - PROCESSING
+        - APPLIED
+        - FAILED
+        - EXPIRED
+        - CANCELLED
+      description: |-
+        Lifecycle state of a contact change.
+        | Value | Terminal | Meaning | |-------|----------|---------| | `AWAITING_SIGNATURE` | no | Created; waiting for the signed submit. `payloadToSign` and `expiresAt` are populated, and the change can still be cancelled. | | `PROCESSING` | no | Submitted, and the wallet-provider activity is still in flight. Re-send the identical signed submit until it settles; Grid also reconciles it on its own. | | `APPLIED` | **yes** | The customer contact field and every tied matching OTP credential were updated. | | `FAILED` | **yes** | The change could not be applied; see `failureReason`. The customer contact field is unchanged. Start a new contact change. | | `EXPIRED` | **yes** | `expiresAt` passed with no signed submit. Start a new contact change. | | `CANCELLED` | **yes** | Cancelled via `DELETE` while still `AWAITING_SIGNATURE`. |
+        Only `AWAITING_SIGNATURE` accepts a submit, and only `AWAITING_SIGNATURE` accepts a cancel. A change never leaves a terminal state.
+      example: AWAITING_SIGNATURE
+    ContactChangeType:
+      title: Contact Change Type
+      type: string
+      enum:
+        - EMAIL
+        - PHONE
+      description: |-
+        Which contact field a contact change replaces.
+
+        - `EMAIL`: the customer `email` on file, together with the `EMAIL_OTP` credential on every tied Embedded Wallet internal account.
+        - `PHONE`: the customer `phoneNumber` on file, together with the `SMS_OTP` credential on every tied Embedded Wallet internal account.
+
+        A contact change covers exactly one field. Changing both email and phone takes two separate contact changes, each signed on its own.
+      example: EMAIL
+    ContactChange:
+      title: Contact Change
+      type: object
+      description: |-
+        A pending or completed change to a customer's email or phone number.
+
+        Changing the contact on an Embedded Wallet customer is a login-security operation, not a profile edit: the email behind `EMAIL_OTP` and the phone number behind `SMS_OTP` are the credentials the customer authenticates with. So the change is authorized by the customer's own wallet session rather than by platform credentials alone, and it lands as a durable resource the platform can read, retry, and cancel — instead of a challenge that exists only inside one request/response pair.
+
+        Grid applies the customer contact field and every tied matching OTP credential as one logical operation. If any tied credential cannot be updated, the customer contact field is left unchanged and the change goes to `FAILED`.
+      required:
+        - id
+        - customerId
+        - type
+        - value
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: System-generated unique identifier for the contact change.
+          example: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+        customerId:
+          type: string
+          description: Identifier of the customer whose contact is being changed.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        type:
+          $ref: '#/components/schemas/ContactChangeType'
+          description: Which contact field this change replaces.
+        value:
+          type: string
+          description: 'The new contact value: an email address when `type` is `EMAIL`, an E.164 phone number when `type` is `PHONE`. This is the value that becomes the customer contact field and the nickname of every tied matching OTP credential once the change is `APPLIED`.'
+          example: jane.smith@example.com
+        status:
+          $ref: '#/components/schemas/ContactChangeStatus'
+          description: Lifecycle state of this contact change.
+        payloadToSign:
+          type: string
+          description: Canonical payload for the submit authorization stamp. Build an API-key stamp over this exact value with the session API keypair of a verified authentication credential on one of the customer's tied Embedded Wallets, then send the full stamp as `Grid-Wallet-Signature` on `POST /customers/{customerId}/contact-changes/{changeId}/submit`. Present only while `status` is `AWAITING_SIGNATURE` — a client that lost the create response can re-read it here rather than starting over.
+          example: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"jane.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Deadline for the signed submit. A change with no submit by this time moves to `EXPIRED`. Present only while `status` is `AWAITING_SIGNATURE`.
+          example: '2026-04-08T15:35:00Z'
+        failureReason:
+          type: string
+          description: Human-readable explanation of why the change could not be applied. Present only when `status` is `FAILED`.
+          example: One or more tied SMS_OTP credentials could not be updated.
+        createdAt:
+          type: string
+          format: date-time
+          description: When the contact change was created.
+          example: '2026-04-08T15:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the contact change last changed status.
+          example: '2026-04-08T15:31:12Z'
+    ContactChangeListResponse:
+      title: Contact Change List Response
+      type: object
+      description: Paginated list of a customer's contact changes, newest first.
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: Contact changes on this customer, ordered by `createdAt` descending.
+          items:
+            $ref: '#/components/schemas/ContactChange'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page.
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results.
+          example: eyJpZCI6IkNvbnRhY3RDaGFuZ2U6MDE5NTQyZjUifQ==
+        totalCount:
+          type: integer
+          description: Total number of contact changes matching the query.
+          example: 3
+    ContactChangeCreateRequest:
+      title: Contact Change Create Request
+      type: object
+      description: Request body for `POST /customers/{customerId}/contact-changes`. Names the contact field to change and its new value; Grid resolves which tied Embedded Wallet OTP credentials must be updated alongside it and binds that set into the returned `payloadToSign`.
+      required:
+        - type
+        - value
+      properties:
+        type:
+          $ref: '#/components/schemas/ContactChangeType'
+          description: Which contact field to change.
+        value:
+          type: string
+          description: 'The new contact value: an email address when `type` is `EMAIL`, an E.164 phone number when `type` is `PHONE`.'
+          example: jane.smith@example.com
+    WalletOperationProcessing:
+      title: Wallet Operation Processing
+      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - PROCESSING
+          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
+          example: PROCESSING
+        message:
+          type: string
+          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
+          example: This login is still being processed. Retry the same request in a moment.
+      example:
+        status: PROCESSING
+        message: This login is still being processed. Retry the same request in a moment.
+    ContactChangeSubmitResponse:
+      title: Contact Change Submit Response
+      description: 'Response body for `POST /customers/{customerId}/contact-changes/{changeId}/submit`. Normally a `ContactChange` — the change with `status: "APPLIED"`. When the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — re-send the byte-identical signed submit until it settles; the backend also reconciles the activity to terminal on its own, so `GET /customers/{customerId}/contact-changes/{changeId}` reaches the same answer for a client that stops retrying.'
+      anyOf:
+        - $ref: '#/components/schemas/ContactChange'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     ScaFactor:
       type: string
       enum:
@@ -23479,26 +24065,6 @@ components:
           SMS_OTP: '#/components/schemas/SmsOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
-    WalletOperationProcessing:
-      title: Wallet Operation Processing
-      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
-      type: object
-      required:
-        - status
-      properties:
-        status:
-          type: string
-          enum:
-            - PROCESSING
-          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
-          example: PROCESSING
-        message:
-          type: string
-          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
-          example: This login is still being processed. Retry the same request in a moment.
-      example:
-        status: PROCESSING
-        message: This login is still being processed. Retry the same request in a moment.
     AuthMethodResponse:
       title: Auth Method Response
       description: |-

@@ -1,0 +1,86 @@
+title: Contact Change
+type: object
+description: >-
+  A pending or completed change to a customer's email or phone number.
+
+
+  Changing the contact on an Embedded Wallet customer is a login-security
+  operation, not a profile edit: the email behind `EMAIL_OTP` and the phone
+  number behind `SMS_OTP` are the credentials the customer authenticates
+  with. So the change is authorized by the customer's own wallet session
+  rather than by platform credentials alone, and it lands as a durable
+  resource the platform can read, retry, and cancel — instead of a
+  challenge that exists only inside one request/response pair.
+
+
+  Grid applies the customer contact field and every tied matching OTP
+  credential as one logical operation. If any tied credential cannot be
+  updated, the customer contact field is left unchanged and the change goes
+  to `FAILED`.
+required:
+  - id
+  - customerId
+  - type
+  - value
+  - status
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier for the contact change.
+    example: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+  customerId:
+    type: string
+    description: Identifier of the customer whose contact is being changed.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  type:
+    $ref: ./ContactChangeType.yaml
+    description: Which contact field this change replaces.
+  value:
+    type: string
+    description: >-
+      The new contact value: an email address when `type` is `EMAIL`, an
+      E.164 phone number when `type` is `PHONE`. This is the value that
+      becomes the customer contact field and the nickname of every tied
+      matching OTP credential once the change is `APPLIED`.
+    example: jane.smith@example.com
+  status:
+    $ref: ./ContactChangeStatus.yaml
+    description: Lifecycle state of this contact change.
+  payloadToSign:
+    type: string
+    description: >-
+      Canonical payload for the submit authorization stamp. Build an API-key
+      stamp over this exact value with the session API keypair of a verified
+      authentication credential on one of the customer's tied Embedded
+      Wallets, then send the full stamp as `Grid-Wallet-Signature` on
+      `POST /customers/{customerId}/contact-changes/{changeId}/submit`.
+      Present only while `status` is `AWAITING_SIGNATURE` — a client that
+      lost the create response can re-read it here rather than starting
+      over.
+    example: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"jane.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      Deadline for the signed submit. A change with no submit by this time
+      moves to `EXPIRED`. Present only while `status` is
+      `AWAITING_SIGNATURE`.
+    example: '2026-04-08T15:35:00Z'
+  failureReason:
+    type: string
+    description: >-
+      Human-readable explanation of why the change could not be applied.
+      Present only when `status` is `FAILED`.
+    example: One or more tied SMS_OTP credentials could not be updated.
+  createdAt:
+    type: string
+    format: date-time
+    description: When the contact change was created.
+    example: '2026-04-08T15:30:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the contact change last changed status.
+    example: '2026-04-08T15:31:12Z'

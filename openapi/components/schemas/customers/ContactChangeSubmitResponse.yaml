@@ -1,0 +1,14 @@
+title: Contact Change Submit Response
+description: >-
+  Response body for
+  `POST /customers/{customerId}/contact-changes/{changeId}/submit`. Normally
+  a `ContactChange` — the change with `status: "APPLIED"`. When the
+  underlying wallet-provider activity is still in flight, this is instead a
+  `WalletOperationProcessing` body with `status: "PROCESSING"` — re-send the
+  byte-identical signed submit until it settles; the backend also reconciles
+  the activity to terminal on its own, so `GET
+  /customers/{customerId}/contact-changes/{changeId}` reaches the same
+  answer for a client that stops retrying.
+anyOf:
+  - $ref: ./ContactChange.yaml
+  - $ref: ../common/WalletOperationProcessing.yaml
