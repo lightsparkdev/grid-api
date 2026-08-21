@@ -121,6 +121,15 @@ post:
         account, and with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` or
         `SMS_OTP_PHONE_ALREADY_EXISTS` when the new value was claimed by
         another credential between create and submit.
+
+
+        Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when a
+        matching OTP credential operation started after this change was
+        created and is still in flight — the two rewrite the same underlying
+        user attribute, so this change waits rather than racing it. The
+        change stays `AWAITING_SIGNATURE` and the same stamp can be submitted
+        again once the credential operation settles, provided `expiresAt` has
+        not passed.
       content:
         application/json:
           schema:

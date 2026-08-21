@@ -82,9 +82,13 @@ properties:
   failureReason:
     type: string
     description: >-
-      Human-readable explanation of why the change could not be applied.
+      Stable failure code for a `FAILED` change, safe to branch on — an
+      integrator needs to tell "the new value was rejected" from "a tied
+      credential could not be updated" without matching on prose. Grid's own
+      vocabulary, not a pass-through of whatever the underlying provider
+      called it, and the same code a `FAILED` operation webhook would carry.
       Present only when `status` is `FAILED`.
-    example: One or more tied SMS_OTP credentials could not be updated.
+    example: SMS_OTP_CREDENTIAL_SYNC_FAILED
   createdAt:
     type: string
     format: date-time

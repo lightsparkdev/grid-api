@@ -1199,7 +1199,7 @@ paths:
 
         - **`APPLIED` — no tied OTP credential of that type.** There is nothing to re-key and no signature to collect, so Grid applies the change on create and returns `201` with it already done, carrying no `payloadToSign` and no `expiresAt`. Nothing further to call.
 
-        - **`FAILED` — no tied OTP credential of that type, and applying it didn't work.** Still `201`: the attempt happened and is recorded, so it shows up in `GET /customers/{customerId}/contact-changes` alongside the successful ones. `failureReason` says what went wrong, the customer contact field is unchanged, and the fix is a new contact change rather than anything on this one.
+        - **`FAILED` — no tied OTP credential of that type, and applying it didn't work.** Still `201`: the attempt happened and is recorded, so it shows up in `GET /customers/{customerId}/contact-changes` alongside the successful ones. `failureReason` carries a stable code you can branch on, the customer contact field is unchanged, and the fix is a new contact change rather than anything on this one.
 
         Branch on the returned `status` rather than on what you believe about the customer's credentials: a wallet that gained or lost an OTP credential since you last looked changes which arrival state you get.
 
@@ -1280,7 +1280,7 @@ paths:
                     type: PHONE
                     value: '+14155559876'
                     status: FAILED
-                    failureReason: The payment provider rejected the phone number update.
+                    failureReason: CONTACT_UPDATE_REJECTED
                     createdAt: '2026-04-08T15:30:00Z'
                     updatedAt: '2026-04-08T15:30:02Z'
         '400':
@@ -1306,6 +1306,8 @@ paths:
             Conflict, and no contact change is created — the request is refused before anything is attempted, so there is no failed attempt to record. This is the boundary against a `201 FAILED`: a rejected request leaves no resource, a failed attempt leaves one.
 
             Returned with `CONTACT_CHANGE_PENDING` when the customer already has an active contact change of this type — `details` carries `contactChangeId` so the caller can read or cancel it — with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` when the supplied email is already associated with an `EMAIL_OTP` credential, or with `SMS_OTP_PHONE_ALREADY_EXISTS` when the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account.
+
+            Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when an `EMAIL_OTP` or `SMS_OTP` credential operation of the matching type is still in flight on one of the customer's tied Embedded Wallets. Adding an OTP credential and changing the contact behind one both rewrite the same underlying user attribute, so letting the two run concurrently would leave whichever finished last silently winning. Wait for the credential operation to reach a terminal state, then create the contact change.
           content:
             application/json:
               schema:
@@ -1469,7 +1471,7 @@ paths:
                     type: PHONE
                     value: '+14155559876'
                     status: FAILED
-                    failureReason: One or more tied SMS_OTP credentials could not be updated.
+                    failureReason: SMS_OTP_CREDENTIAL_SYNC_FAILED
                     createdAt: '2026-04-08T15:30:00Z'
                     updatedAt: '2026-04-08T15:31:44Z'
         '401':
@@ -1616,7 +1618,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned with `CONTACT_CHANGE_NOT_AWAITING_SIGNATURE` when the change is `EXPIRED`, `CANCELLED`, or `FAILED` — all terminal, so start a new contact change rather than re-signing this one. A change that is `PROCESSING` or `APPLIED` is not a conflict and returns `200`. Also returned with `EMAIL_OTP_CREDENTIAL_SET_CHANGED` or `SMS_OTP_CREDENTIAL_SET_CHANGED` when the set of tied OTP credentials bound into `payloadToSign` at create time no longer matches the account, and with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` or `SMS_OTP_PHONE_ALREADY_EXISTS` when the new value was claimed by another credential between create and submit.
+          description: |-
+            Conflict. Returned with `CONTACT_CHANGE_NOT_AWAITING_SIGNATURE` when the change is `EXPIRED`, `CANCELLED`, or `FAILED` — all terminal, so start a new contact change rather than re-signing this one. A change that is `PROCESSING` or `APPLIED` is not a conflict and returns `200`. Also returned with `EMAIL_OTP_CREDENTIAL_SET_CHANGED` or `SMS_OTP_CREDENTIAL_SET_CHANGED` when the set of tied OTP credentials bound into `payloadToSign` at create time no longer matches the account, and with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` or `SMS_OTP_PHONE_ALREADY_EXISTS` when the new value was claimed by another credential between create and submit.
+
+            Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when a matching OTP credential operation started after this change was created and is still in flight — the two rewrite the same underlying user attribute, so this change waits rather than racing it. The change stays `AWAITING_SIGNATURE` and the same stamp can be submitted again once the credential operation settles, provided `expiresAt` has not passed.
           content:
             application/json:
               schema:
@@ -14114,6 +14119,7 @@ components:
             | SMS_OTP_CREDENTIAL_SET_CHANGED | Tied SMS_OTP credential set changed after the signed-retry challenge was issued |
             | CONTACT_CHANGE_PENDING | The customer already has an active contact change of this type. `details.contactChangeId` names it; submit or cancel it before starting another |
             | CONTACT_CHANGE_NOT_AWAITING_SIGNATURE | The contact change is not `AWAITING_SIGNATURE`, so it can no longer be signed or cancelled |
+            | AUTH_CREDENTIAL_OPERATION_IN_FLIGHT | An authentication-credential operation on the same internal account is still in flight and targets the same underlying attribute as this request. Wait for it to reach a terminal state, then retry |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
@@ -14131,6 +14137,7 @@ components:
             - SMS_OTP_CREDENTIAL_SET_CHANGED
             - CONTACT_CHANGE_PENDING
             - CONTACT_CHANGE_NOT_AWAITING_SIGNATURE
+            - AUTH_CREDENTIAL_OPERATION_IN_FLIGHT
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
             - BENEFICIARY_TRUSTED
@@ -14474,8 +14481,8 @@ components:
           example: '2026-04-08T15:35:00Z'
         failureReason:
           type: string
-          description: Human-readable explanation of why the change could not be applied. Present only when `status` is `FAILED`.
-          example: One or more tied SMS_OTP credentials could not be updated.
+          description: Stable failure code for a `FAILED` change, safe to branch on — an integrator needs to tell "the new value was rejected" from "a tied credential could not be updated" without matching on prose. Grid's own vocabulary, not a pass-through of whatever the underlying provider called it, and the same code a `FAILED` operation webhook would carry. Present only when `status` is `FAILED`.
+          example: SMS_OTP_CREDENTIAL_SYNC_FAILED
         createdAt:
           type: string
           format: date-time

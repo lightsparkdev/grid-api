@@ -56,7 +56,7 @@ get:
                 type: PHONE
                 value: '+14155559876'
                 status: FAILED
-                failureReason: One or more tied SMS_OTP credentials could not be updated.
+                failureReason: SMS_OTP_CREDENTIAL_SYNC_FAILED
                 createdAt: '2026-04-08T15:30:00Z'
                 updatedAt: '2026-04-08T15:31:44Z'
     '401':

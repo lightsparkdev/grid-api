@@ -38,9 +38,9 @@ post:
     - **`FAILED` — no tied OTP credential of that type, and applying it
     didn't work.** Still `201`: the attempt happened and is recorded, so it
     shows up in `GET /customers/{customerId}/contact-changes` alongside the
-    successful ones. `failureReason` says what went wrong, the customer
-    contact field is unchanged, and the fix is a new contact change rather
-    than anything on this one.
+    successful ones. `failureReason` carries a stable code you can branch on,
+    the customer contact field is unchanged, and the fix is a new contact
+    change rather than anything on this one.
 
 
     Branch on the returned `status` rather than on what you believe about the
@@ -144,7 +144,7 @@ post:
                 type: PHONE
                 value: '+14155559876'
                 status: FAILED
-                failureReason: The payment provider rejected the phone number update.
+                failureReason: CONTACT_UPDATE_REJECTED
                 createdAt: '2026-04-08T15:30:00Z'
                 updatedAt: '2026-04-08T15:30:02Z'
     '400':
@@ -184,6 +184,16 @@ post:
         `SMS_OTP_PHONE_ALREADY_EXISTS` when the supplied phone number is
         already associated with an `SMS_OTP` credential, on this or another
         internal account.
+
+
+        Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when an
+        `EMAIL_OTP` or `SMS_OTP` credential operation of the matching type is
+        still in flight on one of the customer's tied Embedded Wallets.
+        Adding an OTP credential and changing the contact behind one both
+        rewrite the same underlying user attribute, so letting the two run
+        concurrently would leave whichever finished last silently winning.
+        Wait for the credential operation to reach a terminal state, then
+        create the contact change.
       content:
         application/json:
           schema:
