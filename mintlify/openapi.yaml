@@ -740,11 +740,11 @@ paths:
                   phoneNumber: '+14155559876'
       responses:
         '200':
-          description: Customer updated successfully. For Embedded Wallet email or SMS auth phone updates, this is returned only on the signed retry after the customer contact field and all tied matching OTP credentials have been updated. When the contact update's underlying wallet-provider activity is still in flight, the body is instead a `WalletOperationProcessing` carrying a `PROCESSING` status — re-send the byte-identical signed retry until it settles; the backend also reconciles it to terminal on its own.
+          description: Customer updated successfully. For Embedded Wallet email or SMS auth phone updates, this is returned only on the signed retry after the customer contact field and all tied matching OTP credentials have been updated.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerUpdateResponse'
+                $ref: '#/components/schemas/CustomerOneOf'
         '202':
           description: Challenge issued for an Embedded Wallet email or SMS auth phone update. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair from a verified authentication credential on one of the customer's tied Embedded Wallets, then retry the same request with `Grid-Wallet-Signature` and `Request-Id`.
           content:
@@ -13840,32 +13840,6 @@ components:
         mapping:
           INDIVIDUAL: '#/components/schemas/IndividualCustomerUpdateRequest'
           BUSINESS: '#/components/schemas/BusinessCustomerUpdateRequest'
-    WalletOperationProcessing:
-      title: Wallet Operation Processing
-      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
-      type: object
-      required:
-        - status
-      properties:
-        status:
-          type: string
-          enum:
-            - PROCESSING
-          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
-          example: PROCESSING
-        message:
-          type: string
-          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
-          example: This login is still being processed. Retry the same request in a moment.
-      example:
-        status: PROCESSING
-        message: This login is still being processed. Retry the same request in a moment.
-    CustomerUpdateResponse:
-      title: Customer Update Response
-      description: 'Response body for `PATCH /customers/{customerId}`. Normally a `CustomerOneOf` — the updated customer. When the update is an Embedded Wallet email or SMS auth phone change and the underlying wallet-provider activity is still in flight on the signed retry, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical signed retry until it settles; the backend also reconciles the activity to terminal on its own.'
-      anyOf:
-        - $ref: '#/components/schemas/CustomerOneOf'
-        - $ref: '#/components/schemas/WalletOperationProcessing'
     SignedRequestChallenge:
       title: Signed Request Challenge
       type: object
@@ -23553,6 +23527,26 @@ components:
           SMS_OTP: '#/components/schemas/SmsOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
+    WalletOperationProcessing:
+      title: Wallet Operation Processing
+      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - PROCESSING
+          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
+          example: PROCESSING
+        message:
+          type: string
+          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
+          example: This login is still being processed. Retry the same request in a moment.
+      example:
+        status: PROCESSING
+        message: This login is still being processed. Retry the same request in a moment.
     AuthMethodResponse:
       title: Auth Method Response
       description: |-
