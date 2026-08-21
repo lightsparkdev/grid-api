@@ -8450,6 +8450,8 @@ paths:
       description: |
         Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
+        An optional `maxSpendPerTransaction` value sets the largest amount a single card transaction may authorize. The limit is enforced by Grid for card programs where Grid makes the authorization decision, whether the card is funded by an Embedded Wallet account or custodial fiat. Omit it for no limit. The value is in the smallest unit of the card's currency.
+
         If any funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
         New cards start in `state: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on each state transition, including the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
@@ -8473,6 +8475,7 @@ paths:
                   form: VIRTUAL
                   fundingSources:
                     - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  maxSpendPerTransaction: 5000
       responses:
         '201':
           description: Card created successfully. Newly-created cards start in `PROCESSING` while the issuer provisions them. Cards funded by an Embedded Wallet internal account also require an active delegated key for that funding source before Authorization Decisioning can use it.
@@ -8644,10 +8647,11 @@ paths:
     patch:
       summary: Update a card
       description: |
-        Update a card's `state` and / or its bound `fundingSources`. At least one of the two fields must be supplied.
+        Update a card's `state`, bound `fundingSources`, and / or `maxSpendPerTransaction`. At least one field must be supplied.
 
         - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
         - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`.
+        - `maxSpendPerTransaction`, when supplied, replaces the card's application-enforced per-transaction limit. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. Limits are supported only for card programs where Grid makes the authorization decision. `maxSpendPerTransaction` cannot be supplied alongside `state: CLOSED`.
 
         This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
@@ -8684,6 +8688,14 @@ paths:
                   fundingSources:
                     - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+              setSpendingLimit:
+                summary: Set the card's per-transaction spending limit
+                value:
+                  maxSpendPerTransaction: 10000
+              clearSpendingLimit:
+                summary: Remove the card's per-transaction spending limit
+                value:
+                  maxSpendPerTransaction: null
               freezeAndUpdateSources:
                 summary: Freeze the card and replace its funding sources in one call
                 value:
@@ -11356,6 +11368,7 @@ webhooks:
                     expYear: 2029
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    maxSpendPerTransaction: 5000
                     currency: USD
                     processorRef: card_b81c2a4f
                     issuerRef: lead_card_7a1b9c3d
@@ -11375,6 +11388,7 @@ webhooks:
                     form: VIRTUAL
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    maxSpendPerTransaction: null
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:12:00Z'
@@ -11396,6 +11410,7 @@ webhooks:
                     expYear: 2029
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    maxSpendPerTransaction: 5000
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-09T09:00:00Z'
@@ -11470,6 +11485,7 @@ webhooks:
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                    maxSpendPerTransaction: null
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:30:00Z'
@@ -23754,24 +23770,6 @@ components:
         - `ACTIVE`: The policy is granted and the key may stamp quote executions.
         - `REVOKED`: The delegated user has been deleted and the key can no longer sign.
       example: ACTIVE
-    DelegatedKeySpendingLimit:
-      title: Delegated Key Spending Limit
-      type: object
-      required:
-        - currencyCode
-        - maxPerTransaction
-      properties:
-        currencyCode:
-          type: string
-          pattern: ^[A-Z0-9]{3,16}$
-          description: Uppercase alphanumeric currency code the limit applies to — ISO 4217 for fiat (e.g. USD), or a Grid token code for stablecoins (e.g. USDB). Must match the card's currency; requests with any other currency are rejected.
-          example: USD
-        maxPerTransaction:
-          type: integer
-          format: int64
-          minimum: 1
-          description: Largest amount a single card transaction may authorize, in the smallest unit of the currency (e.g., cents for USD).
-          example: 5000
     DelegatedKey:
       title: Delegated Key
       type: object
@@ -23813,12 +23811,6 @@ components:
           example: Settlement service key
         status:
           $ref: '#/components/schemas/DelegatedKeyStatus'
-        spendingLimits:
-          type: array
-          uniqueItems: true
-          description: Per-transaction spending limits the key was created with, at most one entry per currency. Absent when the key has no limits.
-          items:
-            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
         createdAt:
           type: string
           format: date-time
@@ -23862,12 +23854,6 @@ components:
           maxLength: 256
           description: Human-readable label for the delegated key.
           example: Card payments key
-        spendingLimits:
-          type: array
-          uniqueItems: true
-          description: Optional per-transaction spending limits for the key, at most one entry per currency — a request with duplicate currency entries is rejected. Grid enforces the limits when authorizing card transactions funded by the key's Embedded Wallet account; a currency with no entry is unlimited. Immutable — revoke the key and create a new one to change limits.
-          items:
-            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
     DelegatedKeySignedRequestChallenge:
       title: Delegated Key Signed Request Challenge
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
@@ -24431,6 +24417,7 @@ components:
         - state
         - form
         - fundingSources
+        - maxSpendPerTransaction
         - createdAt
         - updatedAt
       properties:
@@ -24480,6 +24467,14 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        maxSpendPerTransaction:
+          anyOf:
+            - type: integer
+              format: int64
+              minimum: 1
+            - type: 'null'
+          description: Largest amount a single card transaction may authorize, in the smallest unit of the card's `currency`. Null means the card has no application-enforced per-transaction limit. A transaction for exactly this amount is allowed.
+          example: 5000
         currency:
           type: string
           description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
@@ -24550,15 +24545,21 @@ components:
           $ref: '#/components/schemas/CardForm'
         fundingSources:
           type: array
-          description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency (USDB in v1); otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+          description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency; otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
           minItems: 1
           items:
             type: string
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        maxSpendPerTransaction:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Optional largest amount a single card transaction may authorize, in the smallest unit of the card currency derived from its funding sources. Omit this field for no limit. Supported only for card programs whose authorization decisions are made by Grid. A transaction for exactly this amount is allowed.
+          example: 5000
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `state` or `fundingSources` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSources`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
+      description: Update request for `PATCH /cards/{id}`. At least one of `state`, `fundingSources`, or `maxSpendPerTransaction` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSources` or `maxSpendPerTransaction`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
       properties:
         state:
           type: string
@@ -24577,6 +24578,14 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        maxSpendPerTransaction:
+          anyOf:
+            - type: integer
+              format: int64
+              minimum: 1
+            - type: 'null'
+          description: 'Replacement per-transaction spending limit for the card, in the smallest unit of its currency. Omit this field to leave the current limit unchanged, supply null to clear it, or supply a positive integer to set it. Supported only for card programs whose authorization decisions are made by Grid. Cannot be supplied alongside `state: CLOSED`.'
+          example: 10000
     CardRevealResponse:
       type: object
       required:

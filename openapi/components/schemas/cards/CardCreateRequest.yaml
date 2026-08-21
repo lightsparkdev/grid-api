@@ -36,10 +36,21 @@ properties:
       The first entry is tried first by Authorization Decisioning. Every
       card must be bound to at least one source, and every source must
       belong to the cardholder and be denominated in a card-eligible
-      currency (USDB in v1); otherwise the request is rejected with
+      currency; otherwise the request is rejected with
       `FUNDING_SOURCE_INELIGIBLE`.
     minItems: 1
     items:
       type: string
     example:
       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+  maxSpendPerTransaction:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      Optional largest amount a single card transaction may authorize, in the
+      smallest unit of the card currency derived from its funding sources.
+      Omit this field for no limit. Supported only for card programs whose
+      authorization decisions are made by Grid. A transaction for exactly this
+      amount is allowed.
+    example: 5000

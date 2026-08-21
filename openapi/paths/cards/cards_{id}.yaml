@@ -54,8 +54,8 @@ get:
 patch:
   summary: Update a card
   description: >
-    Update a card's `state` and / or its bound `fundingSources`. At least
-    one of the two fields must be supplied.
+    Update a card's `state`, bound `fundingSources`, and / or
+    `maxSpendPerTransaction`. At least one field must be supplied.
 
 
     - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and
@@ -68,6 +68,13 @@ patch:
     be denominated in the card's currency; the list must contain at least
     one source. `fundingSources` cannot be supplied alongside
     `state: CLOSED`.
+
+    - `maxSpendPerTransaction`, when supplied, replaces the card's
+    application-enforced per-transaction limit. Supply a positive integer in
+    the smallest unit of the card's currency to set it or null to clear it.
+    Limits are supported only for card programs where Grid makes the
+    authorization decision. `maxSpendPerTransaction` cannot be supplied
+    alongside `state: CLOSED`.
 
 
     This endpoint is authenticated by the platform credential alone and
@@ -135,6 +142,14 @@ patch:
               fundingSources:
                 - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+          setSpendingLimit:
+            summary: Set the card's per-transaction spending limit
+            value:
+              maxSpendPerTransaction: 10000
+          clearSpendingLimit:
+            summary: Remove the card's per-transaction spending limit
+            value:
+              maxSpendPerTransaction: null
           freezeAndUpdateSources:
             summary: Freeze the card and replace its funding sources in one call
             value:

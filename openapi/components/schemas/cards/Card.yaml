@@ -5,6 +5,7 @@ required:
   - state
   - form
   - fundingSources
+  - maxSpendPerTransaction
   - createdAt
   - updatedAt
 properties:
@@ -61,6 +62,18 @@ properties:
     example:
       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
       - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+  maxSpendPerTransaction:
+    anyOf:
+      - type: integer
+        format: int64
+        minimum: 1
+      - type: 'null'
+    description: >-
+      Largest amount a single card transaction may authorize, in the smallest
+      unit of the card's `currency`. Null means the card has no
+      application-enforced per-transaction limit. A transaction for exactly
+      this amount is allowed.
+    example: 5000
   currency:
     type: string
     description: >-

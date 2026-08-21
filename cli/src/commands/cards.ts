@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import { GridClient, PaginatedResponse } from "../client";
 import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
@@ -13,6 +13,7 @@ interface Card {
   form: "VIRTUAL";
   last4?: string;
   fundingSources: string[];
+  maxSpendPerTransaction: number | null;
   currency?: string;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +22,21 @@ interface Card {
 interface CardRevealResponse {
   panEmbedUrl: string;
   expiresAt: string;
+}
+
+function parseMaxSpendPerTransaction(value: string): number {
+  if (!/^\d+$/.test(value)) {
+    throw new InvalidArgumentError(
+      `--max-spend-per-transaction must be a positive integer (got "${value}")`
+    );
+  }
+  const amount = Number(value);
+  if (!Number.isSafeInteger(amount) || amount < 1) {
+    throw new InvalidArgumentError(
+      `--max-spend-per-transaction must be a positive integer within the safe range (got "${value}")`
+    );
+  }
+  return amount;
 }
 
 export function registerCardsCommand(
@@ -84,6 +100,11 @@ export function registerCardsCommand(
     .requiredOption("--funding-sources <list>", "Comma-separated internal account IDs, in priority order")
     .option("--form <form>", "Card form (VIRTUAL)", "VIRTUAL")
     .option("--platform-card-id <id>", "Your platform's identifier for the card")
+    .option(
+      "--max-spend-per-transaction <amount>",
+      "Maximum amount per transaction in the card currency's smallest unit",
+      parseMaxSpendPerTransaction
+    )
     .action(async (options) => {
       const opts = program.opts<GlobalOptions>();
       const client = getClient(opts);
@@ -102,6 +123,9 @@ export function registerCardsCommand(
         fundingSources,
       };
       if (options.platformCardId) body.platformCardId = options.platformCardId;
+      if (options.maxSpendPerTransaction !== undefined) {
+        body.maxSpendPerTransaction = options.maxSpendPerTransaction;
+      }
 
       const response = await client.post<Card>("/cards", body);
       outputResponse(response);
@@ -110,9 +134,20 @@ export function registerCardsCommand(
   addSignedOptions(
     cardsCmd
       .command("update <cardId>")
-      .description("Update a card (freeze/unfreeze, replace funding sources, or close)")
+      .description(
+        "Update a card (freeze/unfreeze, replace funding sources, set a spending limit, or close)"
+      )
       .option("--state <state>", "Target state: ACTIVE, FROZEN, or CLOSED")
       .option("--funding-sources <list>", "Comma-separated internal account IDs (fully replaces the binding)")
+      .option(
+        "--max-spend-per-transaction <amount>",
+        "Set the maximum amount per transaction in the card currency's smallest unit",
+        parseMaxSpendPerTransaction
+      )
+      .option(
+        "--clear-max-spend-per-transaction",
+        "Remove the per-transaction spending limit"
+      )
   ).action(async (cardId: string, options) => {
     const opts = program.opts<GlobalOptions>();
     const client = getClient(opts);
@@ -126,8 +161,17 @@ export function registerCardsCommand(
     }
 
     const fundingSources = parseList(options.fundingSources);
-    if (!options.state && options.fundingSources === undefined) {
-      output(formatError("Provide --state and/or --funding-sources"));
+    if (
+      !options.state &&
+      options.fundingSources === undefined &&
+      options.maxSpendPerTransaction === undefined &&
+      !options.clearMaxSpendPerTransaction
+    ) {
+      output(
+        formatError(
+          "Provide --state, --funding-sources, --max-spend-per-transaction, and/or --clear-max-spend-per-transaction"
+        )
+      );
       process.exitCode = 1;
       return;
     }
@@ -138,8 +182,29 @@ export function registerCardsCommand(
       process.exitCode = 1;
       return;
     }
-    if (options.state === "CLOSED" && options.fundingSources !== undefined) {
-      output(formatError("--state CLOSED cannot be combined with --funding-sources"));
+    if (
+      options.maxSpendPerTransaction !== undefined &&
+      options.clearMaxSpendPerTransaction
+    ) {
+      output(
+        formatError(
+          "--max-spend-per-transaction cannot be combined with --clear-max-spend-per-transaction"
+        )
+      );
+      process.exitCode = 1;
+      return;
+    }
+    if (
+      options.state === "CLOSED" &&
+      (options.fundingSources !== undefined ||
+        options.maxSpendPerTransaction !== undefined ||
+        options.clearMaxSpendPerTransaction)
+    ) {
+      output(
+        formatError(
+          "--state CLOSED cannot be combined with funding-source or spending-limit changes"
+        )
+      );
       process.exitCode = 1;
       return;
     }
@@ -147,6 +212,11 @@ export function registerCardsCommand(
     const body: Record<string, unknown> = {};
     if (options.state) body.state = options.state;
     if (fundingSources) body.fundingSources = fundingSources;
+    if (options.maxSpendPerTransaction !== undefined) {
+      body.maxSpendPerTransaction = options.maxSpendPerTransaction;
+    } else if (options.clearMaxSpendPerTransaction) {
+      body.maxSpendPerTransaction = null;
+    }
 
     const response = await client.patch<Card>(
       `/cards/${cardId}`,
