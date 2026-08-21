@@ -187,13 +187,20 @@ post:
 
 
         Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when an
-        `EMAIL_OTP` or `SMS_OTP` credential operation of the matching type is
-        still in flight on one of the customer's tied Embedded Wallets.
-        Adding an OTP credential and changing the contact behind one both
-        rewrite the same underlying user attribute, so letting the two run
-        concurrently would leave whichever finished last silently winning.
-        Wait for the credential operation to reach a terminal state, then
-        create the contact change.
+        `EMAIL_OTP` or `SMS_OTP` credential operation of the matching type has
+        been submitted and not yet settled on one of the customer's tied
+        Embedded Wallets. Adding an OTP credential and changing the contact
+        behind one both rewrite the same underlying user attribute, so letting
+        two submitted operations run concurrently would leave whichever
+        finished last silently winning. Wait for the credential operation to
+        reach a terminal state, then create the contact change.
+
+
+        Only a *submitted* credential operation blocks. A credential whose
+        challenge has been issued but not yet signed has not touched the
+        attribute, so it does not block — otherwise two abandoned challenges,
+        one on each side, would lock the customer out of both flows until
+        they expired.
       content:
         application/json:
           schema:

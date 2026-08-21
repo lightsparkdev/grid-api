@@ -124,12 +124,14 @@ post:
 
 
         Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when a
-        matching OTP credential operation started after this change was
-        created and is still in flight — the two rewrite the same underlying
+        matching OTP credential operation was submitted after this change was
+        created and has not yet settled — the two rewrite the same underlying
         user attribute, so this change waits rather than racing it. The
         change stays `AWAITING_SIGNATURE` and the same stamp can be submitted
         again once the credential operation settles, provided `expiresAt` has
-        not passed.
+        not passed; a transient overlap never costs the customer their
+        signature. As on create, only a submitted credential operation blocks
+        — an unsigned credential challenge has not touched the attribute.
       content:
         application/json:
           schema:

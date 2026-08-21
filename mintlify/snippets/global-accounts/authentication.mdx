@@ -870,4 +870,6 @@ The rest of this section covers the `AWAITING_SIGNATURE` path.
 
 Grid updates the customer contact field and every tied matching OTP credential as one operation. If any tied credential can't be updated, the contact field is left alone and the change ends `FAILED` with a `failureReason` — nothing lands half-applied.
 
+Don't run a contact change and an OTP credential add of the same type at once — they rewrite the same thing. If a credential add has already been submitted, the contact change is refused with `409 AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` until it settles; wait and retry. In the other order, an applied contact change invalidates an outstanding credential-add challenge, because the payload the client stamped names the old contact — that add fails and has to be re-issued against the new value. Sequence the two rather than overlapping them.
+
 To abandon a change the customer backed out of, `DELETE /customers/{customerId}/contact-changes/{changeId}` while it is still `AWAITING_SIGNATURE`. After the signature is submitted there is nothing to cancel: the change resolves to `APPLIED` or `FAILED` on its own. Unsubmitted changes lapse to `EXPIRED` at `expiresAt`, so cancelling is only for deliberately backing out. `GET /customers/{customerId}/contact-changes` lists them newest first for a customer's change history.

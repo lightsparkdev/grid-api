@@ -1307,7 +1307,9 @@ paths:
 
             Returned with `CONTACT_CHANGE_PENDING` when the customer already has an active contact change of this type — `details` carries `contactChangeId` so the caller can read or cancel it — with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` when the supplied email is already associated with an `EMAIL_OTP` credential, or with `SMS_OTP_PHONE_ALREADY_EXISTS` when the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account.
 
-            Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when an `EMAIL_OTP` or `SMS_OTP` credential operation of the matching type is still in flight on one of the customer's tied Embedded Wallets. Adding an OTP credential and changing the contact behind one both rewrite the same underlying user attribute, so letting the two run concurrently would leave whichever finished last silently winning. Wait for the credential operation to reach a terminal state, then create the contact change.
+            Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when an `EMAIL_OTP` or `SMS_OTP` credential operation of the matching type has been submitted and not yet settled on one of the customer's tied Embedded Wallets. Adding an OTP credential and changing the contact behind one both rewrite the same underlying user attribute, so letting two submitted operations run concurrently would leave whichever finished last silently winning. Wait for the credential operation to reach a terminal state, then create the contact change.
+
+            Only a *submitted* credential operation blocks. A credential whose challenge has been issued but not yet signed has not touched the attribute, so it does not block — otherwise two abandoned challenges, one on each side, would lock the customer out of both flows until they expired.
           content:
             application/json:
               schema:
@@ -1621,7 +1623,7 @@ paths:
           description: |-
             Conflict. Returned with `CONTACT_CHANGE_NOT_AWAITING_SIGNATURE` when the change is `EXPIRED`, `CANCELLED`, or `FAILED` — all terminal, so start a new contact change rather than re-signing this one. A change that is `PROCESSING` or `APPLIED` is not a conflict and returns `200`. Also returned with `EMAIL_OTP_CREDENTIAL_SET_CHANGED` or `SMS_OTP_CREDENTIAL_SET_CHANGED` when the set of tied OTP credentials bound into `payloadToSign` at create time no longer matches the account, and with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` or `SMS_OTP_PHONE_ALREADY_EXISTS` when the new value was claimed by another credential between create and submit.
 
-            Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when a matching OTP credential operation started after this change was created and is still in flight — the two rewrite the same underlying user attribute, so this change waits rather than racing it. The change stays `AWAITING_SIGNATURE` and the same stamp can be submitted again once the credential operation settles, provided `expiresAt` has not passed.
+            Also returned with `AUTH_CREDENTIAL_OPERATION_IN_FLIGHT` when a matching OTP credential operation was submitted after this change was created and has not yet settled — the two rewrite the same underlying user attribute, so this change waits rather than racing it. The change stays `AWAITING_SIGNATURE` and the same stamp can be submitted again once the credential operation settles, provided `expiresAt` has not passed; a transient overlap never costs the customer their signature. As on create, only a submitted credential operation blocks — an unsigned credential challenge has not touched the attribute.
           content:
             application/json:
               schema:
@@ -14119,7 +14121,7 @@ components:
             | SMS_OTP_CREDENTIAL_SET_CHANGED | Tied SMS_OTP credential set changed after the signed-retry challenge was issued |
             | CONTACT_CHANGE_PENDING | The customer already has an active contact change of this type. `details.contactChangeId` names it; submit or cancel it before starting another |
             | CONTACT_CHANGE_NOT_AWAITING_SIGNATURE | The contact change is not `AWAITING_SIGNATURE`, so it can no longer be signed or cancelled |
-            | AUTH_CREDENTIAL_OPERATION_IN_FLIGHT | An authentication-credential operation on the same internal account is still in flight and targets the same underlying attribute as this request. Wait for it to reach a terminal state, then retry |
+            | AUTH_CREDENTIAL_OPERATION_IN_FLIGHT | An authentication-credential operation on the same internal account has been submitted, has not yet settled, and targets the same underlying attribute as this request. Wait for it to reach a terminal state, then retry. A credential whose challenge is issued but unsigned does not block — it has not touched the attribute |
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
