@@ -14,12 +14,14 @@ description: >-
   challenge that exists only inside one request/response pair.
 
 
-  A change therefore arrives in one of two states. With a tied OTP credential
-  of that type, it arrives `AWAITING_SIGNATURE` carrying `payloadToSign` and
-  `expiresAt`, and applies on the signed submit. With no tied credential of
-  that type there is nothing to re-key and no signature to collect, so Grid
-  applies it on create and it arrives `APPLIED` with no `payloadToSign` and
-  no `expiresAt`.
+  A change therefore arrives in one of three states. With a tied OTP
+  credential of that type, it arrives `AWAITING_SIGNATURE` carrying
+  `payloadToSign` and `expiresAt`, and applies on the signed submit. With no
+  tied credential of that type there is nothing to re-key and no signature to
+  collect, so Grid applies it on create and it arrives terminal with neither
+  field — `APPLIED` on success, `FAILED` with a `failureReason` if applying it
+  didn't work. A failed attempt is recorded rather than discarded, so every
+  attempt on a customer is visible in the list, successful or not.
 
 
   Grid applies the customer contact field and every tied matching OTP

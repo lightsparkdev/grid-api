@@ -819,8 +819,11 @@ It's a single endpoint because whether a signature is needed isn't something you
 |---|---|---|
 | `AWAITING_SIGNATURE` | A tied `EMAIL_OTP` / `SMS_OTP` credential exists, so the change re-keys a login credential. Carries `payloadToSign` and `expiresAt`. | Stamp and submit — the steps below. |
 | `APPLIED` | No tied credential of that type, so there was nothing to re-key. Grid applied it on create; no `payloadToSign`, no `expiresAt`. | Nothing. It's done. |
+| `FAILED` | Same path, but applying it didn't work. `failureReason` says why; the contact is unchanged. | Show the reason and create a new change. Don't retry this one — it's terminal. |
 
 **Branch on `status`, not on what you think the customer has.** A wallet that gained or lost an OTP credential since you last looked flips which one you get, and the whole point of one endpoint is that you don't have to track that.
+
+A `201` means the change was **recorded**, not that it worked — a failed attempt still gets a resource, so it shows up in the customer's history next to the successful ones. A `4xx` is different: the request was refused before anything was attempted, so no change exists at all. That's why a duplicate value or an in-flight change of the same type comes back `409` rather than `201 FAILED`.
 
 The rest of this section covers the `AWAITING_SIGNATURE` path.
 

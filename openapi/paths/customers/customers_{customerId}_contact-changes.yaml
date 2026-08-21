@@ -17,22 +17,30 @@ post:
     A contact that is also a login credential — the email behind `EMAIL_OTP`,
     the phone number behind `SMS_OTP` — can only be changed with the
     customer's own signature, because changing it re-keys what they log in
-    with. So a change arrives in one of two states:
+    with. So a change arrives in one of three states:
 
 
-    - **The customer has a tied Embedded Wallet OTP credential of that
-    type.** Grid resolves every tied credential, binds that set into
-    `payloadToSign`, and returns `201` with the change in
-    `AWAITING_SIGNATURE`. Build an API-key stamp over `payloadToSign` with
-    the session API keypair of a verified credential on one of the customer's
+    - **`AWAITING_SIGNATURE` — the customer has a tied Embedded Wallet OTP
+    credential of that type.** Grid resolves every tied credential, binds
+    that set into `payloadToSign`, and returns `201` with the change awaiting
+    its signature. Build an API-key stamp over `payloadToSign` with the
+    session API keypair of a verified credential on one of the customer's
     tied Embedded Wallets, then apply the change with `POST
     /customers/{customerId}/contact-changes/{changeId}/submit`.
 
 
-    - **The customer has no tied OTP credential of that type.** There is
-    nothing to re-key and no signature to collect, so Grid applies the change
-    on create and returns `201` with the change already `APPLIED`, carrying
-    no `payloadToSign` and no `expiresAt`. Nothing further to call.
+    - **`APPLIED` — no tied OTP credential of that type.** There is nothing
+    to re-key and no signature to collect, so Grid applies the change on
+    create and returns `201` with it already done, carrying no
+    `payloadToSign` and no `expiresAt`. Nothing further to call.
+
+
+    - **`FAILED` — no tied OTP credential of that type, and applying it
+    didn't work.** Still `201`: the attempt happened and is recorded, so it
+    shows up in `GET /customers/{customerId}/contact-changes` alongside the
+    successful ones. `failureReason` says what went wrong, the customer
+    contact field is unchanged, and the fix is a new contact change rather
+    than anything on this one.
 
 
     Branch on the returned `status` rather than on what you believe about the
@@ -40,12 +48,17 @@ post:
     since you last looked changes which arrival state you get.
 
 
+    A `201` therefore means "the change was recorded", not "the change
+    worked". A `4xx` means the request itself was refused and no contact
+    change exists — nothing was attempted, so there is nothing to record.
+
+
     A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`)
     contact change per contact type. Creating a second one while the first is
     still active returns `409` naming the active change, which the caller can
     read with `GET /customers/{customerId}/contact-changes/{changeId}` or
-    abandon with `DELETE`. A change that arrives `APPLIED` is terminal on
-    arrival, so it never blocks the next one.
+    abandon with `DELETE`. A change that arrives terminal — `APPLIED` or
+    `FAILED` — never blocks the next one.
 
 
     Unlike the `202` challenge on `PATCH /customers/{customerId}`, the
@@ -77,11 +90,13 @@ post:
   responses:
     '201':
       description: >-
-        Contact change created. `AWAITING_SIGNATURE` when a tied OTP
+        Contact change recorded. `AWAITING_SIGNATURE` when a tied OTP
         credential of that type exists, carrying the `payloadToSign` to stamp
-        and the `expiresAt` deadline to submit by; `APPLIED` when none
-        exists, in which case the change is already done and carries neither
-        field. Branch on `status`.
+        and the `expiresAt` deadline to submit by. When none exists Grid
+        applies the change inline and it arrives terminal, carrying neither
+        field: `APPLIED` on success, or `FAILED` with a `failureReason` if
+        applying it didn't work, which is still recorded so the attempt is
+        visible in the customer's contact-change history. Branch on `status`.
       content:
         application/json:
           schema:
@@ -121,6 +136,17 @@ post:
                 status: APPLIED
                 createdAt: '2026-04-08T15:30:00Z'
                 updatedAt: '2026-04-08T15:30:00Z'
+            failedOnCreate:
+              summary: Recorded but not applied (inline apply failed)
+              value:
+                id: ContactChange:019542f5-b3e7-1d02-0000-000000000023
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                type: PHONE
+                value: '+14155559876'
+                status: FAILED
+                failureReason: The payment provider rejected the phone number update.
+                createdAt: '2026-04-08T15:30:00Z'
+                updatedAt: '2026-04-08T15:30:02Z'
     '400':
       description: >-
         Bad request. Returned with `INVALID_INPUT` when `value` is not a valid
@@ -144,11 +170,17 @@ post:
             $ref: ../../components/schemas/errors/Error404.yaml
     '409':
       description: >-
-        Conflict. Returned with `CONTACT_CHANGE_PENDING` when the customer
-        already has an active contact change of this type — `details`
-        carries `contactChangeId` so the caller can read or cancel it —
-        with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` when the supplied email is
-        already associated with an `EMAIL_OTP` credential, or with
+        Conflict, and no contact change is created — the request is refused
+        before anything is attempted, so there is no failed attempt to
+        record. This is the boundary against a `201 FAILED`: a rejected
+        request leaves no resource, a failed attempt leaves one.
+
+
+        Returned with `CONTACT_CHANGE_PENDING` when the customer already has
+        an active contact change of this type — `details` carries
+        `contactChangeId` so the caller can read or cancel it — with
+        `EMAIL_OTP_EMAIL_ALREADY_EXISTS` when the supplied email is already
+        associated with an `EMAIL_OTP` credential, or with
         `SMS_OTP_PHONE_ALREADY_EXISTS` when the supplied phone number is
         already associated with an `SMS_OTP` credential, on this or another
         internal account.

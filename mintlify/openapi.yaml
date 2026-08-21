@@ -1193,15 +1193,19 @@ paths:
       description: |
         Change a customer's email or phone number. Every contact change goes through this endpoint. `PATCH /customers/{customerId}` still accepts `email` and `phoneNumber` during migration, but those two fields are deprecated in favor of this endpoint.
 
-        A contact that is also a login credential — the email behind `EMAIL_OTP`, the phone number behind `SMS_OTP` — can only be changed with the customer's own signature, because changing it re-keys what they log in with. So a change arrives in one of two states:
+        A contact that is also a login credential — the email behind `EMAIL_OTP`, the phone number behind `SMS_OTP` — can only be changed with the customer's own signature, because changing it re-keys what they log in with. So a change arrives in one of three states:
 
-        - **The customer has a tied Embedded Wallet OTP credential of that type.** Grid resolves every tied credential, binds that set into `payloadToSign`, and returns `201` with the change in `AWAITING_SIGNATURE`. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified credential on one of the customer's tied Embedded Wallets, then apply the change with `POST /customers/{customerId}/contact-changes/{changeId}/submit`.
+        - **`AWAITING_SIGNATURE` — the customer has a tied Embedded Wallet OTP credential of that type.** Grid resolves every tied credential, binds that set into `payloadToSign`, and returns `201` with the change awaiting its signature. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified credential on one of the customer's tied Embedded Wallets, then apply the change with `POST /customers/{customerId}/contact-changes/{changeId}/submit`.
 
-        - **The customer has no tied OTP credential of that type.** There is nothing to re-key and no signature to collect, so Grid applies the change on create and returns `201` with the change already `APPLIED`, carrying no `payloadToSign` and no `expiresAt`. Nothing further to call.
+        - **`APPLIED` — no tied OTP credential of that type.** There is nothing to re-key and no signature to collect, so Grid applies the change on create and returns `201` with it already done, carrying no `payloadToSign` and no `expiresAt`. Nothing further to call.
+
+        - **`FAILED` — no tied OTP credential of that type, and applying it didn't work.** Still `201`: the attempt happened and is recorded, so it shows up in `GET /customers/{customerId}/contact-changes` alongside the successful ones. `failureReason` says what went wrong, the customer contact field is unchanged, and the fix is a new contact change rather than anything on this one.
 
         Branch on the returned `status` rather than on what you believe about the customer's credentials: a wallet that gained or lost an OTP credential since you last looked changes which arrival state you get.
 
-        A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`) contact change per contact type. Creating a second one while the first is still active returns `409` naming the active change, which the caller can read with `GET /customers/{customerId}/contact-changes/{changeId}` or abandon with `DELETE`. A change that arrives `APPLIED` is terminal on arrival, so it never blocks the next one.
+        A `201` therefore means "the change was recorded", not "the change worked". A `4xx` means the request itself was refused and no contact change exists — nothing was attempted, so there is nothing to record.
+
+        A customer has at most one active (`AWAITING_SIGNATURE` or `PROCESSING`) contact change per contact type. Creating a second one while the first is still active returns `409` naming the active change, which the caller can read with `GET /customers/{customerId}/contact-changes/{changeId}` or abandon with `DELETE`. A change that arrives terminal — `APPLIED` or `FAILED` — never blocks the next one.
 
         Unlike the `202` challenge on `PATCH /customers/{customerId}`, the challenge here survives the response: a client that lost the create response can re-read `payloadToSign` from the change resource instead of starting over.
       operationId: createContactChange
@@ -1228,7 +1232,7 @@ paths:
                   value: '+14155559876'
       responses:
         '201':
-          description: Contact change created. `AWAITING_SIGNATURE` when a tied OTP credential of that type exists, carrying the `payloadToSign` to stamp and the `expiresAt` deadline to submit by; `APPLIED` when none exists, in which case the change is already done and carries neither field. Branch on `status`.
+          description: 'Contact change recorded. `AWAITING_SIGNATURE` when a tied OTP credential of that type exists, carrying the `payloadToSign` to stamp and the `expiresAt` deadline to submit by. When none exists Grid applies the change inline and it arrives terminal, carrying neither field: `APPLIED` on success, or `FAILED` with a `failureReason` if applying it didn''t work, which is still recorded so the attempt is visible in the customer''s contact-change history. Branch on `status`.'
           content:
             application/json:
               schema:
@@ -1268,6 +1272,17 @@ paths:
                     status: APPLIED
                     createdAt: '2026-04-08T15:30:00Z'
                     updatedAt: '2026-04-08T15:30:00Z'
+                failedOnCreate:
+                  summary: Recorded but not applied (inline apply failed)
+                  value:
+                    id: ContactChange:019542f5-b3e7-1d02-0000-000000000023
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: PHONE
+                    value: '+14155559876'
+                    status: FAILED
+                    failureReason: The payment provider rejected the phone number update.
+                    createdAt: '2026-04-08T15:30:00Z'
+                    updatedAt: '2026-04-08T15:30:02Z'
         '400':
           description: 'Bad request. Returned with `INVALID_INPUT` when `value` is not a valid email address for `type: EMAIL` or not a valid E.164 phone number for `type: PHONE`.'
           content:
@@ -1287,7 +1302,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict. Returned with `CONTACT_CHANGE_PENDING` when the customer already has an active contact change of this type — `details` carries `contactChangeId` so the caller can read or cancel it — with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` when the supplied email is already associated with an `EMAIL_OTP` credential, or with `SMS_OTP_PHONE_ALREADY_EXISTS` when the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account.
+          description: |-
+            Conflict, and no contact change is created — the request is refused before anything is attempted, so there is no failed attempt to record. This is the boundary against a `201 FAILED`: a rejected request leaves no resource, a failed attempt leaves one.
+
+            Returned with `CONTACT_CHANGE_PENDING` when the customer already has an active contact change of this type — `details` carries `contactChangeId` so the caller can read or cancel it — with `EMAIL_OTP_EMAIL_ALREADY_EXISTS` when the supplied email is already associated with an `EMAIL_OTP` credential, or with `SMS_OTP_PHONE_ALREADY_EXISTS` when the supplied phone number is already associated with an `SMS_OTP` credential, on this or another internal account.
           content:
             application/json:
               schema:
@@ -14390,8 +14408,8 @@ components:
         - CANCELLED
       description: |-
         Lifecycle state of a contact change.
-        | Value | Terminal | Meaning | |-------|----------|---------| | `AWAITING_SIGNATURE` | no | Created against a tied OTP credential; waiting for the signed submit. `payloadToSign` and `expiresAt` are populated, and the change can still be cancelled. | | `PROCESSING` | no | Submitted, and the wallet-provider activity is still in flight. Re-send the identical signed submit until it settles; Grid also reconciles it on its own. | | `APPLIED` | **yes** | The customer contact field and every tied matching OTP credential were updated. Also the arrival state when the customer has no tied OTP credential of that type: nothing needs re-keying, so no signature is collected and Grid applies the change on create. | | `FAILED` | **yes** | The change could not be applied; see `failureReason`. The customer contact field is unchanged. Start a new contact change. | | `EXPIRED` | **yes** | `expiresAt` passed with no signed submit. Start a new contact change. | | `CANCELLED` | **yes** | Cancelled via `DELETE` while still `AWAITING_SIGNATURE`. |
-        A change arrives either `AWAITING_SIGNATURE` or `APPLIED`, depending on whether a tied OTP credential of that type exists. Only `AWAITING_SIGNATURE` accepts a submit, and only `AWAITING_SIGNATURE` accepts a cancel. A change never leaves a terminal state.
+        | Value | Terminal | Meaning | |-------|----------|---------| | `AWAITING_SIGNATURE` | no | Created against a tied OTP credential; waiting for the signed submit. `payloadToSign` and `expiresAt` are populated, and the change can still be cancelled. | | `PROCESSING` | no | Submitted, and the wallet-provider activity is still in flight. Re-send the identical signed submit until it settles; Grid also reconciles it on its own. | | `APPLIED` | **yes** | The customer contact field and every tied matching OTP credential were updated. Also the arrival state when the customer has no tied OTP credential of that type: nothing needs re-keying, so no signature is collected and Grid applies the change on create. | | `FAILED` | **yes** | The change could not be applied; see `failureReason`. The customer contact field is unchanged. Start a new contact change. Also an arrival state: a change with no tied OTP credential is applied on create, and a create whose inline apply fails is still recorded here rather than vanishing into an error. | | `EXPIRED` | **yes** | `expiresAt` passed with no signed submit. Start a new contact change. | | `CANCELLED` | **yes** | Cancelled via `DELETE` while still `AWAITING_SIGNATURE`. |
+        A change arrives `AWAITING_SIGNATURE` when a tied OTP credential of that type exists, and terminal — `APPLIED` or `FAILED` — when none does, since Grid applies those inline on create. Only `AWAITING_SIGNATURE` accepts a submit, and only `AWAITING_SIGNATURE` accepts a cancel. A change never leaves a terminal state.
       example: AWAITING_SIGNATURE
     ContactChangeType:
       title: Contact Change Type
@@ -14415,7 +14433,7 @@ components:
 
         When the contact is a login credential — the email behind `EMAIL_OTP`, the phone number behind `SMS_OTP` — changing it is a login-security operation, not a profile edit, so it is authorized by the customer's own wallet session rather than by platform credentials alone. The change then lands as a durable resource the platform can read, retry, and cancel, instead of a challenge that exists only inside one request/response pair.
 
-        A change therefore arrives in one of two states. With a tied OTP credential of that type, it arrives `AWAITING_SIGNATURE` carrying `payloadToSign` and `expiresAt`, and applies on the signed submit. With no tied credential of that type there is nothing to re-key and no signature to collect, so Grid applies it on create and it arrives `APPLIED` with no `payloadToSign` and no `expiresAt`.
+        A change therefore arrives in one of three states. With a tied OTP credential of that type, it arrives `AWAITING_SIGNATURE` carrying `payloadToSign` and `expiresAt`, and applies on the signed submit. With no tied credential of that type there is nothing to re-key and no signature to collect, so Grid applies it on create and it arrives terminal with neither field — `APPLIED` on success, `FAILED` with a `failureReason` if applying it didn't work. A failed attempt is recorded rather than discarded, so every attempt on a customer is visible in the list, successful or not.
 
         Grid applies the customer contact field and every tied matching OTP credential as one logical operation. If any tied credential cannot be updated, the customer contact field is left unchanged and the change goes to `FAILED`.
       required:

@@ -15,12 +15,13 @@ description: >-
   | `AWAITING_SIGNATURE` | no | Created against a tied OTP credential; waiting for the signed submit. `payloadToSign` and `expiresAt` are populated, and the change can still be cancelled. |
   | `PROCESSING` | no | Submitted, and the wallet-provider activity is still in flight. Re-send the identical signed submit until it settles; Grid also reconciles it on its own. |
   | `APPLIED` | **yes** | The customer contact field and every tied matching OTP credential were updated. Also the arrival state when the customer has no tied OTP credential of that type: nothing needs re-keying, so no signature is collected and Grid applies the change on create. |
-  | `FAILED` | **yes** | The change could not be applied; see `failureReason`. The customer contact field is unchanged. Start a new contact change. |
+  | `FAILED` | **yes** | The change could not be applied; see `failureReason`. The customer contact field is unchanged. Start a new contact change. Also an arrival state: a change with no tied OTP credential is applied on create, and a create whose inline apply fails is still recorded here rather than vanishing into an error. |
   | `EXPIRED` | **yes** | `expiresAt` passed with no signed submit. Start a new contact change. |
   | `CANCELLED` | **yes** | Cancelled via `DELETE` while still `AWAITING_SIGNATURE`. |
 
-  A change arrives either `AWAITING_SIGNATURE` or `APPLIED`, depending on
-  whether a tied OTP credential of that type exists. Only
-  `AWAITING_SIGNATURE` accepts a submit, and only `AWAITING_SIGNATURE`
-  accepts a cancel. A change never leaves a terminal state.
+  A change arrives `AWAITING_SIGNATURE` when a tied OTP credential of that
+  type exists, and terminal — `APPLIED` or `FAILED` — when none does, since
+  Grid applies those inline on create. Only `AWAITING_SIGNATURE` accepts a
+  submit, and only `AWAITING_SIGNATURE` accepts a cancel. A change never
+  leaves a terminal state.
 example: AWAITING_SIGNATURE
