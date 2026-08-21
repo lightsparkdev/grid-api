@@ -3940,6 +3940,10 @@ paths:
 
         **Important:** If you are transferring funds in the same currency (no exchange required),
         use the `/transfer-in` or `/transfer-out` endpoints instead.
+
+        Requires a token with the `TRANSACT` permission; `VIEW` alone is not
+        sufficient. A quote is the instrument a later execute draws on, and
+        `immediatelyExecute` moves funds within this same request.
       operationId: createQuote
       tags:
         - Cross-Currency Transfers
@@ -4058,7 +4062,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Customer has not accepted the End User Terms
+          description: Forbidden. The token lacks the `TRANSACT` permission, or the customer has not accepted the End User Terms.
           content:
             application/json:
               schema:
@@ -4109,6 +4113,12 @@ paths:
         the quote's `paymentInstructions[].accountOrWalletInfo` entry with the
         session private key of a verified authentication credential on the source
         Embedded Wallet.
+
+        Requires a token with the `TRANSACT` permission; `VIEW` alone is not
+        sufficient to release a transfer. On an `EMBEDDED_WALLET` source this is in
+        addition to the `Grid-Wallet-Signature` header: the signature proves the
+        wallet holder authorized the payment, while `TRANSACT` is what authorizes
+        your integration to release it.
 
         Once executed, the quote cannot be cancelled and the transfer will be processed.
       operationId: executeQuote
@@ -4169,6 +4179,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The token lacks the `TRANSACT` permission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Quote not found
           content:
