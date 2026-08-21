@@ -5968,6 +5968,12 @@ paths:
                       - internal
                       - hybrid
       responses:
+        '200':
+          description: 'An additional-credential setup leg''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the byte-identical stamped retry (same `Request-Id`) until the credential is added; the backend also reconciles the activity to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '201':
           description: Authentication credential created successfully. The body is the created `AuthMethod`. For `EMAIL_OTP`, the nickname is the customer email tied to the internal account; for `SMS_OTP`, it is the customer phone number. OTP responses that trigger a secure OTP challenge carry `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. First-time EMAIL_OTP wallet bootstrap responses may omit that bundle; if it is absent, call `POST /auth/credentials/{id}/challenge` for the new credential to issue a fresh OTP and receive `otpEncryptionTargetBundle` before verifying. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
           content:
@@ -6184,6 +6190,12 @@ paths:
             type: string
           example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
+        '200':
+          description: 'The revocation''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the same signed `DELETE` until it settles; the backend also reconciles the revocation to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '202':
           description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account (other than the one being revoked), then echo `requestId` on the retry.
           content:
@@ -6294,11 +6306,11 @@ paths:
                     signature: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
       responses:
         '200':
-          description: Authentication credential verified and session issued
+          description: 'Authentication credential verified and session issued (`AuthSession`); or, when the underlying wallet-provider activity is still in flight, a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session, and the backend also reconciles the activity to terminal on its own.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSession'
+                $ref: '#/components/schemas/AuthCredentialVerifyResponse'
         '202':
           description: Verification challenge issued. Returned only for OTP credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the TEK keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
           content:
@@ -6391,11 +6403,11 @@ paths:
                 value: {}
       responses:
         '200':
-          description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` and `SMS_OTP` the body is a plain `AuthMethod` and a new OTP has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the passkey `credentialId`, freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`.
+          description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` and `SMS_OTP` the body is a plain `AuthMethod` and a new OTP has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the passkey `credentialId`, freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`. When the OTP send's underlying wallet-provider activity is still in flight, the body is instead a `WalletOperationProcessing` carrying a `PROCESSING` status — re-request the challenge until the send settles; the backend also reconciles it to terminal on its own.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+                $ref: '#/components/schemas/AuthCredentialChallengeResponse'
               examples:
                 emailOtp:
                   summary: Email OTP challenge re-issued
@@ -6538,6 +6550,12 @@ paths:
             type: string
           example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
+        '200':
+          description: 'The revocation''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the same signed `DELETE` until it settles; the backend also reconciles the revocation to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '202':
           description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified session on the same internal account, then echo `requestId` on the retry.
           content:
@@ -6620,6 +6638,12 @@ paths:
                 value:
                   clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
       responses:
+        '200':
+          description: 'The session refresh''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the byte-identical signed retry until it gets the `201`; the backend also reconciles the activity to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '201':
           description: New authentication session created successfully.
           content:
@@ -23487,6 +23511,26 @@ components:
           SMS_OTP: '#/components/schemas/SmsOtpCredentialCreateRequest'
           OAUTH: '#/components/schemas/OauthCredentialCreateRequest'
           PASSKEY: '#/components/schemas/PasskeyCredentialCreateRequest'
+    WalletOperationProcessing:
+      title: Wallet Operation Processing
+      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - PROCESSING
+          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
+          example: PROCESSING
+        message:
+          type: string
+          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
+          example: This login is still being processed. Retry the same request in a moment.
+      example:
+        status: PROCESSING
+        message: This login is still being processed. Retry the same request in a moment.
     AuthMethodResponse:
       title: Auth Method Response
       description: |-
@@ -23682,6 +23726,12 @@ components:
               format: date-time
               description: Timestamp after which the session is no longer valid and the session signing key must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
+    AuthCredentialVerifyResponse:
+      title: Auth Credential Verify Response
+      description: 'Response body for `POST /auth/credentials/{id}/verify`. Normally an `AuthSession` — the issued session on successful verification. When the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session; the backend also reconciles the activity to terminal on its own.'
+      anyOf:
+        - $ref: '#/components/schemas/AuthSession'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
       description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
@@ -23735,6 +23785,12 @@ components:
           EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
           SMS_OTP: '#/components/schemas/AuthMethodResponse'
           PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
+    AuthCredentialChallengeResponse:
+      title: Auth Credential Challenge Response
+      description: 'Response body for `POST /auth/credentials/{id}/challenge`. Normally an `AuthCredentialResponseOneOf` — the re-issued challenge or re-sent OTP. When the OTP send''s underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — re-request the challenge until the send settles; the backend also reconciles it to terminal on its own.'
+      anyOf:
+        - $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     SessionListResponse:
       type: object
       required:
