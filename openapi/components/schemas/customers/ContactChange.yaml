@@ -1,0 +1,101 @@
+title: Contact Change
+type: object
+description: >-
+  A pending or completed change to a customer's email or phone number. Every
+  contact change goes through this resource, whether or not it needs a
+  signature.
+
+
+  When the contact is a login credential — the email behind `EMAIL_OTP`, the
+  phone number behind `SMS_OTP` — changing it is a login-security operation,
+  not a profile edit, so it is authorized by the customer's own wallet
+  session rather than by platform credentials alone. The change then lands as
+  a durable resource the platform can read, retry, and cancel, instead of a
+  challenge that exists only inside one request/response pair.
+
+
+  A change therefore arrives in one of three states. With a tied OTP
+  credential of that type, it arrives `AWAITING_SIGNATURE` carrying
+  `payloadToSign` and `expiresAt`, and applies on the signed submit. With no
+  tied credential of that type there is nothing to re-key and no signature to
+  collect, so Grid applies it on create and it arrives terminal with neither
+  field — `APPLIED` on success, `FAILED` with a `failureReason` if applying it
+  didn't work. A failed attempt is recorded rather than discarded, so every
+  attempt on a customer is visible in the list, successful or not.
+
+
+  Grid applies the customer contact field and every tied matching OTP
+  credential as one logical operation. If any tied credential cannot be
+  updated, the customer contact field is left unchanged and the change goes
+  to `FAILED`.
+required:
+  - id
+  - customerId
+  - type
+  - value
+  - status
+  - createdAt
+  - updatedAt
+properties:
+  id:
+    type: string
+    description: System-generated unique identifier for the contact change.
+    example: ContactChange:019542f5-b3e7-1d02-0000-000000000020
+  customerId:
+    type: string
+    description: Identifier of the customer whose contact is being changed.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  type:
+    $ref: ./ContactChangeType.yaml
+    description: Which contact field this change replaces.
+  value:
+    type: string
+    description: >-
+      The new contact value: an email address when `type` is `EMAIL`, an
+      E.164 phone number when `type` is `PHONE`. This is the value that
+      becomes the customer contact field and the nickname of every tied
+      matching OTP credential once the change is `APPLIED`.
+    example: jane.smith@example.com
+  status:
+    $ref: ./ContactChangeStatus.yaml
+    description: Lifecycle state of this contact change.
+  payloadToSign:
+    type: string
+    description: >-
+      Canonical payload for the submit authorization stamp. Build an API-key
+      stamp over this exact value with the session API keypair of a verified
+      authentication credential on one of the customer's tied Embedded
+      Wallets, then send the full stamp as `Grid-Wallet-Signature` on
+      `POST /customers/{customerId}/contact-changes/{changeId}/submit`.
+      Present only while `status` is `AWAITING_SIGNATURE` — a client that
+      lost the create response can re-read it here rather than starting
+      over.
+    example: '{"organizationId":"org_2m9F...","parameters":{"userEmail":"jane.smith@example.com","userId":"user_2m9F..."},"timestampMs":"1775681700000","type":"ACTIVITY_TYPE_UPDATE_USER_EMAIL"}'
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      Deadline for the signed submit. A change with no submit by this time
+      moves to `EXPIRED`. Present only while `status` is
+      `AWAITING_SIGNATURE`.
+    example: '2026-04-08T15:35:00Z'
+  failureReason:
+    type: string
+    description: >-
+      Stable failure code for a `FAILED` change, safe to branch on — an
+      integrator needs to tell "the new value was rejected" from "a tied
+      credential could not be updated" without matching on prose. Grid's own
+      vocabulary, not a pass-through of whatever the underlying provider
+      called it, and the same code a `FAILED` operation webhook would carry.
+      Present only when `status` is `FAILED`.
+    example: SMS_OTP_CREDENTIAL_SYNC_FAILED
+  createdAt:
+    type: string
+    format: date-time
+    description: When the contact change was created.
+    example: '2026-04-08T15:30:00Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the contact change last changed status.
+    example: '2026-04-08T15:31:12Z'

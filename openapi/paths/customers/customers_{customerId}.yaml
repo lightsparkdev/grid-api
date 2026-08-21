@@ -44,6 +44,14 @@ patch:
     Update a customer's metadata by their system-generated ID.
 
 
+    **`email` and `phoneNumber` are deprecated on this endpoint.** Use `POST
+    /customers/{customerId}/contact-changes` instead, which handles both the
+    signed flow for a contact that is a login credential and the immediate
+    apply when it is not, and leaves a readable record of the change either
+    way. Both fields remain functional here during migration; everything
+    else on this endpoint is unaffected.
+
+
     Most customer updates complete synchronously and return `200` with the
     updated customer. If the request changes `email` for a customer that has
     one or more tied Embedded Wallet internal accounts with `EMAIL_OTP`

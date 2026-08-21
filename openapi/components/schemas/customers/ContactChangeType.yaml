@@ -1,0 +1,19 @@
+title: Contact Change Type
+type: string
+enum:
+  - EMAIL
+  - PHONE
+description: >-
+  Which contact field a contact change replaces.
+
+
+  - `EMAIL`: the customer `email` on file, together with the `EMAIL_OTP`
+  credential on every tied Embedded Wallet internal account.
+
+  - `PHONE`: the customer `phoneNumber` on file, together with the `SMS_OTP`
+  credential on every tied Embedded Wallet internal account.
+
+
+  A contact change covers exactly one field. Changing both email and phone
+  takes two separate contact changes, each signed on its own.
+example: EMAIL

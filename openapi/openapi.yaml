@@ -159,6 +159,12 @@ paths:
     $ref: paths/customers/customers_{customerId}_verify-phone.yaml
   /customers/{customerId}/verify-phone/confirm:
     $ref: paths/customers/customers_{customerId}_verify-phone_confirm.yaml
+  /customers/{customerId}/contact-changes:
+    $ref: paths/customers/customers_{customerId}_contact-changes.yaml
+  /customers/{customerId}/contact-changes/{changeId}:
+    $ref: paths/customers/customers_{customerId}_contact-changes_{changeId}.yaml
+  /customers/{customerId}/contact-changes/{changeId}/submit:
+    $ref: paths/customers/customers_{customerId}_contact-changes_{changeId}_submit.yaml
   /sca/factors:
     $ref: paths/sca/sca_factors.yaml
   /sca/factors/confirm:

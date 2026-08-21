@@ -19,6 +19,11 @@ properties:
       | UMA_ADDRESS_EXISTS | UMA address already exists |
       | EMAIL_OTP_EMAIL_ALREADY_EXISTS | Email address is already associated with an EMAIL_OTP credential |
       | EMAIL_OTP_CREDENTIAL_SET_CHANGED | Tied EMAIL_OTP credential set changed after the signed-retry challenge was issued |
+      | SMS_OTP_PHONE_ALREADY_EXISTS | Phone number is already associated with an SMS_OTP credential |
+      | SMS_OTP_CREDENTIAL_SET_CHANGED | Tied SMS_OTP credential set changed after the signed-retry challenge was issued |
+      | CONTACT_CHANGE_PENDING | The customer already has an active contact change of this type. `details.contactChangeId` names it; submit or cancel it before starting another |
+      | CONTACT_CHANGE_NOT_AWAITING_SIGNATURE | The contact change is not `AWAITING_SIGNATURE`, so it can no longer be signed or cancelled |
+      | AUTH_CREDENTIAL_OPERATION_IN_FLIGHT | An authentication-credential operation on the same internal account has been submitted, has not yet settled, and targets the same underlying attribute as this request. Wait for it to reach a terminal state, then retry. A credential whose challenge is issued but unsigned does not block — it has not touched the attribute |
       | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
       | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
       | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
@@ -32,6 +37,11 @@ properties:
       - UMA_ADDRESS_EXISTS
       - EMAIL_OTP_EMAIL_ALREADY_EXISTS
       - EMAIL_OTP_CREDENTIAL_SET_CHANGED
+      - SMS_OTP_PHONE_ALREADY_EXISTS
+      - SMS_OTP_CREDENTIAL_SET_CHANGED
+      - CONTACT_CHANGE_PENDING
+      - CONTACT_CHANGE_NOT_AWAITING_SIGNATURE
+      - AUTH_CREDENTIAL_OPERATION_IN_FLIGHT
       - PASSKEY_ALREADY_ENROLLED
       - SCA_SESSION_REQUIRED
       - BENEFICIARY_TRUSTED
