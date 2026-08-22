@@ -1,0 +1,61 @@
+title: Sweep Failure
+type: object
+description: >-
+  A payment that settled into a rule-based account but did not reach the
+  destination of the account's rule.
+required:
+  - sourceAccountId
+  - destinationAccountId
+  - amount
+  - incomingTransactionId
+  - reason
+  - outcome
+properties:
+  sourceAccountId:
+    type: string
+    description: The rule-based internal account the payment settled into.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+  destinationAccountId:
+    type: string
+    description: >-
+      The destination configured on the account's rule, which the funds did not
+      reach.
+    example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+  amount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: The amount that could not be forwarded.
+  incomingTransactionId:
+    type: string
+    description: >-
+      The transaction that brought the funds into the rule-based account.
+      Delivery of this event is at-least-once, so deduplicate on this value.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000010
+  sendTransactionId:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The outgoing transaction created for the forward, when the forward got
+      far enough to create one. Null when the forward was never attempted. Use
+      it to correlate this event with the `OUTGOING_PAYMENT.FAILED` event for
+      the same forward rather than counting the failure twice.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000011
+  reason:
+    allOf:
+      - $ref: ./SweepFailureReason.yaml
+    description: Why the forward could not be completed.
+    example: BELOW_MINIMUM
+  outcome:
+    allOf:
+      - $ref: ./SweepFailureOutcome.yaml
+    description: Where the funds ended up.
+    example: MOVED_TO_CANONICAL_ACCOUNT
+  canonicalAccountId:
+    type:
+      - string
+      - 'null'
+    description: >-
+      The customer's account in the same currency that the funds were moved to.
+      Null when `outcome` is `HELD_IN_RULE_BASED_ACCOUNT`.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000006

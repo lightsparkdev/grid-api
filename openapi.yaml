@@ -2091,6 +2091,125 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error500'
   /customers/internal-accounts:
+    post:
+      summary: Create a Customer internal account
+      description: |
+        Create a rule-based internal account for an existing customer.
+
+        A rule-based account is an additional account number for a customer that
+        already holds an account in the same currency. It carries a routing rule:
+        every payment that settles into it is attributed to that account number and
+        then forwarded to the rule's destination, so you can issue one number per
+        payer and reconcile incoming payments without matching on remittance text.
+
+        Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
+        `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
+        automatically when a customer is created or approved.
+
+        The response carries the account's own `fundingPaymentInstructions` — the
+        routable number payers send to. Rule-based accounts are currently available
+        in `USD` for individual customers, and must be enabled for your platform
+        before this endpoint accepts requests.
+
+        Creating an account mints a new account number that cannot be reversed, so
+        an `Idempotency-Key` header is required. A retry carrying the same key
+        returns the account created by the first request with a `200` instead of a
+        `201`; reusing a key for a materially different account is rejected with
+        `409`.
+      operationId: createCustomerInternalAccount
+      tags:
+        - Internal Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: |
+            A unique identifier for the request. Required, because creating the account mints an account number that cannot be reversed. Retries must carry the same key.
+          required: true
+          schema:
+            type: string
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalAccountCreateRequest'
+            examples:
+              externalDestination:
+                summary: Forward every payment to an external account over ACH
+                value:
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  type: RULE_BASED
+                  currency: USD
+                  label: invoice-4417
+                  sweepRule:
+                    destination:
+                      accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                      paymentRail: ACH
+                    purposeOfPayment: SELF
+                    description: Rent forwarding
+                    remittanceInformation: Unit 4B March
+              internalDestination:
+                summary: Forward every payment to another internal account
+                value:
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  type: RULE_BASED
+                  currency: USD
+                  label: payer-northwind
+                  sweepRule:
+                    destination:
+                      accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      responses:
+        '200':
+          description: The `Idempotency-Key` was already used to create this account. The account created by the first request is returned unchanged.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '201':
+          description: Internal account created. `fundingPaymentInstructions` carries the account's own number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '400':
+          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the customer has no account in that currency yet, when the destination cannot accept the requested payment rail, and for general invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - rule-based accounts are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer or destination account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - the `Idempotency-Key` was already used to create a different account, or the account for this key is still being provisioned. Retry with the same key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
     get:
       summary: List Customer internal accounts
       description: |
@@ -2119,7 +2238,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued for a customer.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -11770,6 +11889,106 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+  sweep:
+    post:
+      summary: Sweep webhook
+      description: |
+        Webhook that is called when a payment settles into a rule-based internal account but cannot be forwarded to the destination configured on the account's rule.
+
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+
+        ### Event types
+
+        - `SWEEP.FAILED` — Fired when the funds do not reach the rule's destination. `reason` says why, and `outcome` says where the funds ended up: moved to the customer's account in the same currency, or still held in the rule-based account. A failed forward that also created an outgoing payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on `sendTransactionId` rather than counting the failure twice.
+
+        Delivery is at-least-once, so the same failure can arrive more than once with different webhook ids. Deduplicate on `incomingTransactionId`.
+      operationId: sweepWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SweepWebhook'
+            examples:
+              movedToCanonicalAccount:
+                summary: The amount was below what the corridor carries, so it was moved to the customer's account
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000050
+                  type: SWEEP.FAILED
+                  timestamp: '2026-05-09T10:00:00Z'
+                  data:
+                    sourceAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    destinationAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    amount:
+                      amount: 250
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000010
+                    sendTransactionId: null
+                    reason: BELOW_MINIMUM
+                    outcome: MOVED_TO_CANONICAL_ACCOUNT
+                    canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
+              heldInRuleBasedAccount:
+                summary: The forward was sent but did not go through, and the funds stayed put
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000051
+                  type: SWEEP.FAILED
+                  timestamp: '2026-05-09T10:05:00Z'
+                  data:
+                    sourceAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    destinationAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    amount:
+                      amount: 12550
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000012
+                    sendTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000013
+                    reason: EXECUTION_FAILED
+                    outcome: HELD_IN_RULE_BASED_ACCOUNT
+                    canonicalAccountId: null
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
 components:
   securitySchemes:
     BasicAuth:
@@ -14604,12 +14823,14 @@ components:
         - INTERNAL_FIAT
         - INTERNAL_CRYPTO
         - EMBEDDED_WALLET
+        - RULE_BASED
       description: |-
         Classification of an internal account.
 
         - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
         - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
         - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
+        - `RULE_BASED`: An additional account number for an existing customer, with a routing rule attached, so incoming payments can be attributed to a specific payer and forwarded automatically. Created with `POST /customers/internal-accounts`.
     InternalAccountStatus:
       title: Internal Account Status
       type: string
@@ -17364,6 +17585,134 @@ components:
         totalCount:
           type: integer
           description: Total number of customers matching the criteria (excluding pagination)
+    SweepRuleDestinationRequest:
+      title: Sweep Rule Destination Request
+      type: object
+      description: The account a rule-based account forwards its incoming payments to.
+      additionalProperties: false
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: Reference to the account that receives the forwarded funds. May be an external account or another internal account, but never a `RULE_BASED` internal account — that account's own rule would forward the funds on again. The destination may be denominated in a different currency, in which case the forward is converted at the prevailing rate.
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        paymentRail:
+          description: The payment rail to use when forwarding to an external account. Must be one of the rails supported by the destination account. If omitted, a rail is selected automatically for each forward. Not accepted when the destination is an internal account, which settles without a payment rail.
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+    PurposeOfPayment:
+      type: string
+      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
+      enum:
+        - GIFT
+        - SELF
+        - GOODS_OR_SERVICES
+        - EDUCATION
+        - HEALTH_OR_MEDICAL
+        - REAL_ESTATE_PURCHASE
+        - TAX_PAYMENT
+        - LOAN_PAYMENT
+        - UTILITY_BILL
+        - DONATION
+        - TRAVEL
+        - FAMILY_SUPPORT
+        - SALARY_PAYMENT
+        - OTHER
+    SweepRuleRequest:
+      title: Sweep Rule Request
+      type: object
+      description: The routing rule attached to a rule-based account. Every payment that settles into the account is forwarded to the rule's destination, carrying the payment metadata configured here.
+      additionalProperties: false
+      required:
+        - destination
+      properties:
+        destination:
+          allOf:
+            - $ref: '#/components/schemas/SweepRuleDestinationRequest'
+          description: Where funds that settle into this account are forwarded.
+        purposeOfPayment:
+          allOf:
+            - $ref: '#/components/schemas/PurposeOfPayment'
+          description: The purpose of payment applied to each forward. Required by some destination geographies.
+          example: SELF
+        description:
+          type: string
+          maxLength: 255
+          description: Free-form description recorded on each forward. Not delivered to the recipient; use `remittanceInformation` for that.
+          example: Rent forwarding
+        remittanceInformation:
+          type: string
+          maxLength: 1024
+          description: 'Free-form information that travels with each forward to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information. Only printable ASCII characters are accepted, because the underlying rails carry nothing else.'
+          example: Unit 4B March
+    InternalAccountCreateRequest:
+      title: Internal Account Create Request
+      type: object
+      description: Request body for `POST /customers/internal-accounts`. Only `RULE_BASED` accounts can be created directly, and they always carry a `sweepRule`.
+      additionalProperties: false
+      required:
+        - customerId
+        - type
+        - currency
+      properties:
+        customerId:
+          type: string
+          description: The customer the account is created for. The customer must already have a verified account in the same currency, which is where funds land when a forward cannot be completed.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        type:
+          allOf:
+            - $ref: '#/components/schemas/InternalAccountType'
+          description: Must be `RULE_BASED`. `INTERNAL_FIAT`, `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned automatically when a customer is created or approved, so they cannot be created through this endpoint.
+          example: RULE_BASED
+        currency:
+          type: string
+          description: Currency code the account is denominated in (ISO 4217). Rule-based accounts are currently available in `USD` only.
+          example: USD
+        label:
+          type: string
+          maxLength: 255
+          description: Your own name for the account, echoed back on reads. Useful for identifying which payer the account was issued for.
+          example: invoice-4417
+        sweepRule:
+          allOf:
+            - $ref: '#/components/schemas/SweepRuleRequest'
+          description: The routing rule for the account. Required when `type` is `RULE_BASED`.
+    Error403:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 403
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+            - END_USER_TERMS_NOT_ACCEPTED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     PlatformInternalAccountListResponse:
       type: object
       required:
@@ -22172,24 +22521,6 @@ components:
           description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
-    PurposeOfPayment:
-      type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
-      enum:
-        - GIFT
-        - SELF
-        - GOODS_OR_SERVICES
-        - EDUCATION
-        - HEALTH_OR_MEDICAL
-        - REAL_ESTATE_PURCHASE
-        - TAX_PAYMENT
-        - LOAN_PAYMENT
-        - UTILITY_BILL
-        - DONATION
-        - TRAVEL
-        - FAMILY_SUPPORT
-        - SALARY_PAYMENT
-        - OTHER
     TransferOutRequest:
       type: object
       required:
@@ -22649,41 +22980,6 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
-    Error403:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 403
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-            - END_USER_TERMS_NOT_ACCEPTED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.
@@ -25517,6 +25813,7 @@ components:
         - CARD_TRANSACTION.SETTLED
         - CARD_TRANSACTION.REFUNDED
         - CARD_TRANSACTION.EXCEPTION
+        - SWEEP.FAILED
         - TEST
       description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
@@ -25772,6 +26069,99 @@ components:
                 - CARD_TRANSACTION.SETTLED
                 - CARD_TRANSACTION.REFUNDED
                 - CARD_TRANSACTION.EXCEPTION
+    SweepFailureReason:
+      type: string
+      enum:
+        - BELOW_MINIMUM
+        - ABOVE_MAXIMUM
+        - NO_ELIGIBLE_RAIL
+        - QUOTE_FAILED
+        - EXECUTION_FAILED
+      description: |
+        Why the payment could not be forwarded to the rule's destination.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `BELOW_MINIMUM` | The amount is below the smallest amount the corridor to the destination can carry. |
+        | `ABOVE_MAXIMUM` | The amount is above the largest amount the corridor to the destination can carry. |
+        | `NO_ELIGIBLE_RAIL` | No payment rail available to the destination could carry the forward. |
+        | `QUOTE_FAILED` | Grid could not price the forward to the destination. |
+        | `EXECUTION_FAILED` | The forward was priced but the resulting payment did not go through. |
+    SweepFailureOutcome:
+      type: string
+      enum:
+        - MOVED_TO_CANONICAL_ACCOUNT
+        - HELD_IN_RULE_BASED_ACCOUNT
+      description: |
+        Where the funds ended up after the forward failed.
+
+        | Outcome | Description |
+        |---------|-------------|
+        | `MOVED_TO_CANONICAL_ACCOUNT` | The funds were moved to the customer's account in the same currency, identified by `canonicalAccountId`. |
+        | `HELD_IN_RULE_BASED_ACCOUNT` | The funds remain in the rule-based account. Grid retries the move when the next payment settles into the account. |
+    SweepFailure:
+      title: Sweep Failure
+      type: object
+      description: A payment that settled into a rule-based account but did not reach the destination of the account's rule.
+      required:
+        - sourceAccountId
+        - destinationAccountId
+        - amount
+        - incomingTransactionId
+        - reason
+        - outcome
+      properties:
+        sourceAccountId:
+          type: string
+          description: The rule-based internal account the payment settled into.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+        destinationAccountId:
+          type: string
+          description: The destination configured on the account's rule, which the funds did not reach.
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: The amount that could not be forwarded.
+        incomingTransactionId:
+          type: string
+          description: The transaction that brought the funds into the rule-based account. Delivery of this event is at-least-once, so deduplicate on this value.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000010
+        sendTransactionId:
+          type:
+            - string
+            - 'null'
+          description: The outgoing transaction created for the forward, when the forward got far enough to create one. Null when the forward was never attempted. Use it to correlate this event with the `OUTGOING_PAYMENT.FAILED` event for the same forward rather than counting the failure twice.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000011
+        reason:
+          allOf:
+            - $ref: '#/components/schemas/SweepFailureReason'
+          description: Why the forward could not be completed.
+          example: BELOW_MINIMUM
+        outcome:
+          allOf:
+            - $ref: '#/components/schemas/SweepFailureOutcome'
+          description: Where the funds ended up.
+          example: MOVED_TO_CANONICAL_ACCOUNT
+        canonicalAccountId:
+          type:
+            - string
+            - 'null'
+          description: The customer's account in the same currency that the funds were moved to. Null when `outcome` is `HELD_IN_RULE_BASED_ACCOUNT`.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
+    SweepWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/SweepFailure'
+            type:
+              type: string
+              enum:
+                - SWEEP.FAILED
   requestBodies:
     DocumentUploadRequestBody:
       required: true

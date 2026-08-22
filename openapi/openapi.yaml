@@ -413,6 +413,8 @@ webhooks:
     $ref: webhooks/card-funding-source-change.yaml
   card-transaction:
     $ref: webhooks/card-transaction.yaml
+  sweep:
+    $ref: webhooks/sweep.yaml
 security:
   - BasicAuth: []
   - AgentAuth: []

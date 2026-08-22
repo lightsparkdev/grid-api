@@ -4,6 +4,7 @@ enum:
   - INTERNAL_FIAT
   - INTERNAL_CRYPTO
   - EMBEDDED_WALLET
+  - RULE_BASED
 description: >-
   Classification of an internal account.
 
@@ -17,3 +18,8 @@ description: >-
   - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the
   customer. Outbound transfers require a session signature produced by the
   customer's device — see the Embedded Wallets guide.
+
+  - `RULE_BASED`: An additional account number for an existing customer, with a
+  routing rule attached, so incoming payments can be attributed to a specific
+  payer and forwarded automatically. Created with
+  `POST /customers/internal-accounts`.
