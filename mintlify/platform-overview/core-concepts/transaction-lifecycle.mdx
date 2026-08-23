@@ -74,17 +74,27 @@ Most transactions on Grid are completed in seconds.
 
 ## Same-Currency Transfers
 
-For same-currency transfers without quotes:
+Same-currency transfers use `/quotes` like every other transfer. With
+`immediatelyExecute` set to `true`, the quote is created and executed in one
+request.
 
-### Transfer-Out (Internal → External)
+<Note>
+  The `/transfer-out` and `/transfer-in` endpoints are deprecated. They still work
+  and their request and response shapes are unchanged, but new integrations should
+  use `/quotes`.
+</Note>
+
+### Internal → External
 
 ```bash
-POST /transfer-out
+POST /quotes
 
 {
-  "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-  "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
-  "amount": 100000
+  "source": {"sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+  "destination": {"destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
+  "lockedCurrencySide": "SENDING",
+  "lockedCurrencyAmount": 100000,
+  "immediatelyExecute": true
 }
 ```
 
@@ -92,24 +102,26 @@ POST /transfer-out
 
 ```json
 {
-  "id": "Transaction:...",
-  "status": "PENDING",
-  "type": "OUTGOING",
-  "direction": "DEBIT"
+  "id": "Quote:...",
+  "status": "PROCESSING",
+  "transactionId": "Transaction:..."
 }
 ```
 
-Follows same lifecycle as quote-based outgoing transactions.
+The transaction referenced by `transactionId` follows the same lifecycle as any
+other outgoing transaction.
 
-### Transfer-In (External → Internal)
+### External → Internal
 
 ```bash
-POST /transfer-in
+POST /quotes
 
 {
-  "source": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
-  "destination": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-  "amount": 100000
+  "source": {"sourceType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
+  "destination": {"destinationType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+  "lockedCurrencySide": "SENDING",
+  "lockedCurrencyAmount": 100000,
+  "immediatelyExecute": true
 }
 ```
 
@@ -196,7 +208,7 @@ Where a refund lands depends on how the transaction was funded:
 - **Real-time (JIT) funding via crypto** (for example USDC or BTC) — the refunded amount is credited to the customer's **internal account balance for that asset**. It is **not** returned to the wallet the funds were sent from.
 
 <Note>
-  Crypto deposits are not refunded to the source wallet because Grid cannot verify that the sending wallet belongs to your customer — the funds may have originated from an exchange or another third-party address. The credited internal balance is reusable: spend it with a new quote, or withdraw it to an external wallet with `POST /transfer-out`.
+  Crypto deposits are not refunded to the source wallet because Grid cannot verify that the sending wallet belongs to your customer — the funds may have originated from an exchange or another third-party address. The credited internal balance is reusable: spend it with a new quote, or withdraw it to an external wallet with a quote whose destination is that wallet.
 </Note>
 
 ## Webhooks

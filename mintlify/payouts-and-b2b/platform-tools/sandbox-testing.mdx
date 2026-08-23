@@ -53,7 +53,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/internal-account
 
 This endpoint returns the updated `InternalAccount` object with the new balance.
 
-Alternatively, you can also fund internal accounts using the `/quotes` or `/transfer-in` endpoints as described below.
+Alternatively, you can also fund internal accounts using the `/quotes` endpoint as described below.
 
 ## Testing Transfer Scenarios
 
@@ -67,19 +67,23 @@ Alternatively, you can also fund internal accounts using the `/quotes` or `/tran
 
 ### Testing Transfer-In (Pull from External Account)
 
-When you call `/transfer-in` with an external account created using test patterns, the transfer will complete instantly in sandbox with the behavior determined by the account number:
+When you create a quote whose source is an external account created using test patterns, the transfer will complete instantly in sandbox with the behavior determined by the account number:
 
 ```bash
-POST /transfer-in
+POST /quotes
 
 {
   "source": {
+    "sourceType": "ACCOUNT",
     "accountId": "ExternalAccount:abc123"  // Uses test pattern from creation
   },
   "destination": {
+    "destinationType": "ACCOUNT",
     "accountId": "InternalAccount:xyz789"
   },
-  "amount": 10000  // $100 in cents
+  "lockedCurrencySide": "SENDING",
+  "lockedCurrencyAmount": 10000,  // $100 in cents
+  "immediatelyExecute": true
 }
 ```
 
@@ -90,16 +94,20 @@ POST /transfer-in
 Transfer-out works the same way - the destination external account's test pattern determines the outcome:
 
 ```bash
-POST /transfer-out
+POST /quotes
 
 {
   "source": {
+    "sourceType": "ACCOUNT",
     "accountId": "InternalAccount:xyz789"
   },
   "destination": {
+    "destinationType": "ACCOUNT",
     "accountId": "ExternalAccount:abc123"  // Uses test pattern
   },
-  "amount": 10000
+  "lockedCurrencySide": "SENDING",
+  "lockedCurrencyAmount": 10000,
+  "immediatelyExecute": true
 }
 ```
 
@@ -229,22 +237,22 @@ Test each failure mode systematically:
 # Create external account ending in 002
 POST /customers/external-accounts { "accountNumber": "000000002" }
 
-# Attempt transfer-in - should fail immediately
-POST /transfer-in
+# Attempt to pull from it - should fail immediately
+POST /quotes
 
 # 2. Test account closed
 # Create external account ending in 003
 POST /customers/external-accounts { "accountNumber": "000000003" }
 
-# Attempt transfer-out - should fail immediately
-POST /transfer-out
+# Attempt to push to it - should fail immediately
+POST /quotes
 
 # 3. Test timeout scenario
 # Create external account ending in 005
 POST /customers/external-accounts { "accountNumber": "000000005" }
 
 # Attempt transfer - should pend then fail after ~30s
-POST /transfer-in
+POST /quotes
 # Check status immediately - will show PENDING
 GET /transactions/{transactionId}
 # Wait 30s, check again - will show FAILED

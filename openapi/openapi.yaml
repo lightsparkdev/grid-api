@@ -45,9 +45,15 @@ tags:
       Directory of Virtual Asset Service Providers (exchanges and other
       custodial platforms) recognized for counterparty declarations.
   - name: Same-Currency Transfers
-    description: Endpoints for transferring funds between internal and external accounts with the same currency
+    description: >-
+      Deprecated endpoints for transferring funds between internal and external
+      accounts with the same currency. Use the quote endpoints under
+      Cross-Currency Transfers instead, which now serve same-currency transfers
+      as well.
   - name: Cross-Currency Transfers
-    description: Endpoints for creating and confirming quotes for cross-currency transfers
+    description: >-
+      Endpoints for creating and confirming quotes for transfers, both
+      same-currency and cross-currency
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks

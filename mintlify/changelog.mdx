@@ -11,6 +11,25 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="August 2026">
 
+## `/transfer-in` and `/transfer-out` are deprecated
+
+Same-currency transfers now go through the quote endpoint, so one integration covers
+same-currency and cross-currency alike.
+
+- Use `POST /quotes` with `immediatelyExecute: true` to create and execute a
+  same-currency transfer in a single request.
+- `amount` becomes `lockedCurrencyAmount` with `lockedCurrencySide: "SENDING"`; source
+  and destination gain `sourceType: "ACCOUNT"` and `destinationType: "ACCOUNT"`.
+  `remittanceInformation`, `purposeOfPayment`, and the destination `paymentRail` carry
+  over unchanged.
+- The response is a `Quote` rather than a `Transaction`—read `transactionId` from it to
+  track the resulting transaction.
+- `POST /transfer-in` and `POST /transfer-out` continue to work with unchanged request
+  and response shapes.
+
+See [Send a payment](/payouts-and-b2b/payment-flow/send-payment#same-currency-transfers)
+for the updated flow.
+
 ## Assess your own fees on every transaction
 
 Charge your customers a platform fee and keep the margin—Grid collects it for you and

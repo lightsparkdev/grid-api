@@ -118,10 +118,12 @@ Internal accounts are auto-created when customers are created based on platform 
 
 ## Same-Currency Transfers
 
+Deprecated — use `POST /quotes` with `immediatelyExecute` instead.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/transfer-in` | Create a transfer-in request (external to internal) |
-| POST | `/transfer-out` | Create a transfer-out request (internal to external) |
+| POST | `/transfer-in` | **Deprecated.** Create a transfer-in request (external to internal) |
+| POST | `/transfer-out` | **Deprecated.** Create a transfer-out request (internal to external) |
 
 ## Receiver Lookup
 

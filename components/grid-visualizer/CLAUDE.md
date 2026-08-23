@@ -204,10 +204,10 @@ Stablecoins: `SOLANA_WALLET` (USDC), `POLYGON_WALLET` (USDC), `BASE_WALLET` (USD
 - `POST /customers/external-accounts` — Register external account
 - `GET /customers/internal-accounts` — List customer internal accounts
 - `GET /platform/internal-accounts` — List platform internal accounts
-- `POST /quotes` — Create cross-currency transfer quote
+- `POST /quotes` — Create a transfer quote (same-currency and cross-currency)
 - `POST /quotes/{quoteId}/execute` — Execute quote
-- `POST /transfer-out` — Same-currency internal → external
-- `POST /transfer-in` — Same-currency external → internal
+- `POST /transfer-out` — **Deprecated.** Same-currency internal → external; use `/quotes`
+- `POST /transfer-in` — **Deprecated.** Same-currency external → internal; use `/quotes`
 
 ### Quote Request Shape
 

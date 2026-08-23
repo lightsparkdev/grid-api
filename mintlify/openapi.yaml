@@ -36,9 +36,9 @@ tags:
   - name: VASPs
     description: Directory of Virtual Asset Service Providers (exchanges and other custodial platforms) recognized for counterparty declarations.
   - name: Same-Currency Transfers
-    description: Endpoints for transferring funds between internal and external accounts with the same currency
+    description: Deprecated endpoints for transferring funds between internal and external accounts with the same currency. Use the quote endpoints under Cross-Currency Transfers instead, which now serve same-currency transfers as well.
   - name: Cross-Currency Transfers
-    description: Endpoints for creating and confirming quotes for cross-currency transfers
+    description: Endpoints for creating and confirming quotes for transfers, both same-currency and cross-currency
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks
@@ -3593,8 +3593,29 @@ paths:
   /transfer-in:
     post:
       summary: Create a transfer-in request
+      deprecated: true
       description: |
-        Transfer funds from an external account to an internal account for a specific customer. This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull). Otherwise, use the paymentInstructions on the internal account to deposit funds.
+        **Deprecated. Use `POST /quotes` instead.**
+
+        Same-currency transfers are now served by the quote endpoint. Create a quote
+        with an external account source and an internal account destination and set
+        `immediatelyExecute: true` to move the funds in a single request, exactly as
+        this endpoint does. This endpoint continues to work and its request and
+        response shapes are unchanged.
+
+        To migrate a request to `POST /quotes`:
+
+        - add `sourceType: ACCOUNT` to `source` and `destinationType: ACCOUNT` to
+          `destination`; the account IDs are unchanged
+        - rename `amount` to `lockedCurrencyAmount` and add `lockedCurrencySide: SENDING`
+        - add `immediatelyExecute: true` to keep the single-request behavior
+
+        The quote response is a `Quote` rather than a `Transaction`; read
+        `transactionId` from it to track the resulting transaction.
+
+        Transfer funds from an external account to an internal account for a specific customer.
+        This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull).
+        Otherwise, use the paymentInstructions on the internal account to deposit funds.
       operationId: createTransferIn
       tags:
         - Same-Currency Transfers
@@ -3658,7 +3679,27 @@ paths:
   /transfer-out:
     post:
       summary: Create a transfer-out request
+      deprecated: true
       description: |
+        **Deprecated. Use `POST /quotes` instead.**
+
+        Same-currency transfers are now served by the quote endpoint. Create a quote
+        with an internal account source and an external account destination and set
+        `immediatelyExecute: true` to move the funds in a single request, exactly as
+        this endpoint does. This endpoint continues to work and its request and
+        response shapes are unchanged.
+
+        To migrate a request to `POST /quotes`:
+
+        - add `sourceType: ACCOUNT` to `source` and `destinationType: ACCOUNT` to
+          `destination`; the account IDs and `destination.paymentRail` are unchanged
+        - rename `amount` to `lockedCurrencyAmount` and add `lockedCurrencySide: SENDING`
+        - `remittanceInformation` and `purposeOfPayment` carry over unchanged
+        - add `immediatelyExecute: true` to keep the single-request behavior
+
+        The quote response is a `Quote` rather than a `Transaction`; read
+        `transactionId` from it to track the resulting transaction.
+
         Transfer funds from an internal account to an external account for a specific customer.
       operationId: createTransferOut
       tags:
@@ -3924,12 +3965,12 @@ paths:
     post:
       summary: Create a transfer quote
       description: |
-        Generate a quote for a cross-currency transfer between any combination of accounts
-        and UMA addresses. This endpoint handles currency exchange and provides the necessary
-        instructions to execute the transfer.
+        Generate a quote for a transfer between any combination of accounts
+        and UMA addresses. This endpoint handles same-currency and cross-currency
+        transfers alike, and provides the necessary instructions to execute the transfer.
 
         **Transfer Types Supported:**
-        - **Account to Account**: Transfer between internal/external accounts with currency exchange.
+        - **Account to Account**: Transfer between internal/external accounts, with or without currency exchange.
         - **Account to UMA**: Transfer from an internal account to an UMA address.
         - **UMA to Account or UMA to UMA**: This transfer type will only be funded by payment instructions, not from an internal account.
 
@@ -3938,8 +3979,9 @@ paths:
         - **Currency Exchange**: Handles all cross-currency transfers with real-time exchange rates
         - **Payment Instructions**: For UMA or customer ID sources, provides banking details needed for execution
 
-        **Important:** If you are transferring funds in the same currency (no exchange required),
-        use the `/transfer-in` or `/transfer-out` endpoints instead.
+        **Same-currency transfers:** Use this endpoint for same-currency transfers too.
+        Set `immediatelyExecute: true` to create and execute in a single request. The
+        older `/transfer-in` and `/transfer-out` endpoints are deprecated.
 
         Requires a token with the `TRANSACT` permission; `VIEW` alone is not
         sufficient. A quote is the instrument a later execute draws on, and
@@ -3965,6 +4007,21 @@ paths:
             schema:
               $ref: '#/components/schemas/QuoteRequest'
             examples:
+              sameCurrencyAccountToAccount:
+                summary: Same-Currency Account to Account Transfer (immediate execution)
+                value:
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    paymentRail: ACH
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 12550
+                  immediatelyExecute: true
+                  remittanceInformation: INV-12345
+                  description: Same-currency payout, no exchange required.
               accountToAccount:
                 summary: Account to Account Transfer
                 value:
