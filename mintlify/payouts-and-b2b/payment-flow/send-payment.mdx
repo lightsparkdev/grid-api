@@ -179,15 +179,10 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-When SCA does not apply, the quote comes back with `status` `PROCESSING` and the same
-`transactionId` it carried at creation.
-
-<Warning>
-  **Strong Customer Authentication.** Where SCA applies (currently EU customers), execute
-  does **not** initiate the transfer. The quote returns with `PENDING_AUTHORIZATION` and an
-  `scaChallenge`; release the transfer by authorizing it with
-  `POST /quotes/{quoteId}/authorize`. Re-calling execute returns 409.
-</Warning>
+The quote comes back with `status` `PROCESSING` and the same `transactionId` it carried at
+creation — unless the customer requires
+[Strong Customer Authentication](/platform-overview/core-concepts/quote-system), in which
+case it returns `PENDING_AUTHORIZATION` and the transfer waits on that.
 
 <Check>
   Once executed, the quote creates a transaction and the transfer begins processing. The `transactionId` can be used to track the payment.
