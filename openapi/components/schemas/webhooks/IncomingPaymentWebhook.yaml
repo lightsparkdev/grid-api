@@ -10,6 +10,7 @@ allOf:
         type: string
         enum:
           - INCOMING_PAYMENT.PENDING
+          - INCOMING_PAYMENT.PROCESSING
           - INCOMING_PAYMENT.COMPLETED
           - INCOMING_PAYMENT.FAILED
           - INCOMING_PAYMENT.REFUND_PENDING
