@@ -5,7 +5,7 @@ description: "How exchange rates, pricing, and payment execution work"
 "og:image": "/images/og/og-get-started.png"
 ---
 
-Quotes are Grid's mechanism for providing locked-in exchange rates, transparent fee calculations, and payment instructions. Understanding quotes is essential for all cross-currency or crypto-involved transactions.
+Quotes are Grid's mechanism for providing locked-in exchange rates, transparent fee calculations, and payment instructions. Every transfer goes through a quote, whether or not a currency conversion is involved.
 
 ## What is a Quote?
 
@@ -20,26 +20,25 @@ Quotes ensure that your customers know exactly what they'll pay and what the rec
 
 ## When Do You Need a Quote?
 
-<Tabs>
-  <Tab title="Quotes Required">
-    Use quotes for:
-    - **Cross-currency transfers** (USD → EUR, BRL → MXN)
-    - **Fiat-to-crypto conversion** (USD → BTC)
-    - **Crypto-to-fiat conversion** (BTC → USD)
-    - **UMA payments** (always require quotes)
-    - **JIT funded payments** (need payment instructions)
+Use `POST /quotes` for every transfer:
 
-    These scenarios involve currency conversion, exchange rate risk, or complex routing.
-  </Tab>
+- **Cross-currency transfers** (USD → EUR, BRL → MXN)
+- **Fiat-to-crypto conversion** (USD → BTC)
+- **Crypto-to-fiat conversion** (BTC → USD)
+- **UMA payments**
+- **JIT funded payments** (need payment instructions)
+- **Same-currency transfers** (USD → USD), including pulling funds from a
+  pullable external account into an internal account
 
-  <Tab title="Quotes Optional">
-    For same-currency transfers, use simpler endpoints:
-    - `POST /transfer-out` - Send from internal to external account (same currency)
-    - `POST /transfer-in` - Pull from external to internal account (same currency)
+For a same-currency transfer there is no exchange rate to lock, so the two-step
+create-then-execute flow rarely buys you anything. Set `immediatelyExecute` to
+`true` and the quote is created and executed in a single request.
 
-    No quote needed because there's no currency conversion.
-  </Tab>
-</Tabs>
+<Note>
+  The `/transfer-out` and `/transfer-in` endpoints previously served same-currency
+  transfers and are now deprecated. They still work and their request and response
+  shapes are unchanged, but new integrations should use `/quotes`.
+</Note>
 
 ## Creating a Quote
 

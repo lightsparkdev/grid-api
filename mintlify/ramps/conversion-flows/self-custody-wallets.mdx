@@ -173,24 +173,25 @@ console.log("Will receive:", `${quote.totalReceivingAmount / 100000000} BTC`);
 Transfer crypto from internal account to user's wallet:
 
 ```javascript
-// Same-currency transfer (no quote needed)
-const transaction = await fetch(
-  "https://api.lightspark.com/grid/2025-10-13/transfer-out",
-  {
-    method: "POST",
-    body: JSON.stringify({
-      source: {
-        accountId: "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
-      },
-      destination: {
-        accountId: externalAccount.id,
-      },
-      amount: 100000, // 0.001 BTC in satoshis
-    }),
-  }
-).then((r) => r.json());
+// Same-currency transfer: immediatelyExecute creates and executes in one request
+const quote = await fetch("https://api.lightspark.com/grid/2025-10-13/quotes", {
+  method: "POST",
+  body: JSON.stringify({
+    source: {
+      sourceType: "ACCOUNT",
+      accountId: "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+    },
+    destination: {
+      destinationType: "ACCOUNT",
+      accountId: externalAccount.id,
+    },
+    lockedCurrencySide: "SENDING",
+    lockedCurrencyAmount: 100000, // 0.001 BTC in satoshis
+    immediatelyExecute: true,
+  }),
+}).then((r) => r.json());
 
-console.log("Transfer initiated:", transaction.id);
+console.log("Transfer initiated:", quote.transactionId);
 ```
 
 ### Step 4: Monitor transfer completion

@@ -98,7 +98,7 @@ async function safeSendPayment(accountId, amount) {
     );
   }
 
-  return await createTransferOut({ accountId, amount });
+  return await createQuote({ accountId, amount });
 }
 ```
 
@@ -564,7 +564,7 @@ async function createTransferIdempotent(params) {
   }
 
   try {
-    const result = await createTransferOut(params);
+    const result = await createQuote(params);
     processedTransactions.add(idempotencyKey);
     return result;
   } catch (error) {

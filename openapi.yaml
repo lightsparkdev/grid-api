@@ -36,9 +36,9 @@ tags:
   - name: VASPs
     description: Directory of Virtual Asset Service Providers (exchanges and other custodial platforms) recognized for counterparty declarations.
   - name: Same-Currency Transfers
-    description: Endpoints for transferring funds between internal and external accounts with the same currency
+    description: Deprecated endpoints for transferring funds between internal and external accounts with the same currency. Use the quote endpoints under Cross-Currency Transfers instead, which now serve same-currency transfers as well.
   - name: Cross-Currency Transfers
-    description: Endpoints for creating and confirming quotes for cross-currency transfers
+    description: Endpoints for creating and confirming quotes for transfers, both same-currency and cross-currency
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks
@@ -3593,8 +3593,29 @@ paths:
   /transfer-in:
     post:
       summary: Create a transfer-in request
+      deprecated: true
       description: |
-        Transfer funds from an external account to an internal account for a specific customer. This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull). Otherwise, use the paymentInstructions on the internal account to deposit funds.
+        **Deprecated. Use `POST /quotes` instead.**
+
+        Same-currency transfers are now served by the quote endpoint. Create a quote
+        with an external account source and an internal account destination and set
+        `immediatelyExecute: true` to move the funds in a single request, exactly as
+        this endpoint does. This endpoint continues to work and its request and
+        response shapes are unchanged.
+
+        To migrate a request to `POST /quotes`:
+
+        - add `sourceType: ACCOUNT` to `source` and `destinationType: ACCOUNT` to
+          `destination`; the account IDs are unchanged
+        - rename `amount` to `lockedCurrencyAmount` and add `lockedCurrencySide: SENDING`
+        - add `immediatelyExecute: true` to keep the single-request behavior
+
+        The quote response is a `Quote` rather than a `Transaction`; read
+        `transactionId` from it to track the resulting transaction.
+
+        Transfer funds from an external account to an internal account for a specific customer.
+        This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull).
+        Otherwise, use the paymentInstructions on the internal account to deposit funds.
       operationId: createTransferIn
       tags:
         - Same-Currency Transfers
@@ -3658,7 +3679,27 @@ paths:
   /transfer-out:
     post:
       summary: Create a transfer-out request
+      deprecated: true
       description: |
+        **Deprecated. Use `POST /quotes` instead.**
+
+        Same-currency transfers are now served by the quote endpoint. Create a quote
+        with an internal account source and an external account destination and set
+        `immediatelyExecute: true` to move the funds in a single request, exactly as
+        this endpoint does. This endpoint continues to work and its request and
+        response shapes are unchanged.
+
+        To migrate a request to `POST /quotes`:
+
+        - add `sourceType: ACCOUNT` to `source` and `destinationType: ACCOUNT` to
+          `destination`; the account IDs and `destination.paymentRail` are unchanged
+        - rename `amount` to `lockedCurrencyAmount` and add `lockedCurrencySide: SENDING`
+        - `remittanceInformation` and `purposeOfPayment` carry over unchanged
+        - add `immediatelyExecute: true` to keep the single-request behavior
+
+        The quote response is a `Quote` rather than a `Transaction`; read
+        `transactionId` from it to track the resulting transaction.
+
         Transfer funds from an internal account to an external account for a specific customer.
       operationId: createTransferOut
       tags:
@@ -3924,12 +3965,12 @@ paths:
     post:
       summary: Create a transfer quote
       description: |
-        Generate a quote for a cross-currency transfer between any combination of accounts
-        and UMA addresses. This endpoint handles currency exchange and provides the necessary
-        instructions to execute the transfer.
+        Generate a quote for a transfer between any combination of accounts
+        and UMA addresses. This endpoint handles same-currency and cross-currency
+        transfers alike, and provides the necessary instructions to execute the transfer.
 
         **Transfer Types Supported:**
-        - **Account to Account**: Transfer between internal/external accounts with currency exchange.
+        - **Account to Account**: Transfer between internal/external accounts, with or without currency exchange.
         - **Account to UMA**: Transfer from an internal account to an UMA address.
         - **UMA to Account or UMA to UMA**: This transfer type will only be funded by payment instructions, not from an internal account.
 
@@ -3938,8 +3979,9 @@ paths:
         - **Currency Exchange**: Handles all cross-currency transfers with real-time exchange rates
         - **Payment Instructions**: For UMA or customer ID sources, provides banking details needed for execution
 
-        **Important:** If you are transferring funds in the same currency (no exchange required),
-        use the `/transfer-in` or `/transfer-out` endpoints instead.
+        **Same-currency transfers:** Use this endpoint for same-currency transfers too.
+        Set `immediatelyExecute: true` to create and execute in a single request. The
+        older `/transfer-in` and `/transfer-out` endpoints are deprecated.
 
         Requires a token with the `TRANSACT` permission; `VIEW` alone is not
         sufficient. A quote is the instrument a later execute draws on, and
@@ -3965,6 +4007,21 @@ paths:
             schema:
               $ref: '#/components/schemas/QuoteRequest'
             examples:
+              sameCurrencyAccountToAccount:
+                summary: Same-Currency Account to Account Transfer (immediate execution)
+                value:
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    paymentRail: ACH
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 12550
+                  immediatelyExecute: true
+                  remittanceInformation: INV-12345
+                  description: Same-currency payout, no exchange required.
               accountToAccount:
                 summary: Account to Account Transfer
                 value:
@@ -8068,151 +8125,6 @@ paths:
                 $ref: '#/components/schemas/Error401'
         '404':
           description: Action not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /agents/me/transfer-in:
-    post:
-      summary: Create a transfer-in
-      description: |
-        Transfer funds from an external account to an internal account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
-        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
-        This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull). Otherwise, use the payment instructions on the internal account to deposit funds.
-      operationId: agentCreateTransferIn
-      tags:
-        - Agent Operations
-      security:
-        - AgentAuth: []
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          description: |
-            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
-          schema:
-            type: string
-            example: 550e8400-e29b-41d4-a716-446655440000
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferInRequest'
-            examples:
-              transferIn:
-                summary: Transfer from external to internal account
-                value:
-                  source:
-                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  destination:
-                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                  amount: 12550
-      responses:
-        '201':
-          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentAction'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error403'
-        '404':
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /agents/me/transfer-out:
-    post:
-      summary: Create a transfer-out
-      description: |
-        Transfer funds from an internal account to an external account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
-        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
-      operationId: agentCreateTransferOut
-      tags:
-        - Agent Operations
-      security:
-        - AgentAuth: []
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          description: |
-            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
-          schema:
-            type: string
-            example: 550e8400-e29b-41d4-a716-446655440000
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferOutRequest'
-            examples:
-              transferOut:
-                summary: Transfer from internal to external account
-                value:
-                  source:
-                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                  destination:
-                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  amount: 12550
-      responses:
-        '201':
-          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentAction'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error403'
-        '404':
-          description: Account not found
           content:
             application/json:
               schema:
@@ -23935,11 +23847,10 @@ components:
       type: string
       enum:
         - VIEW_TRANSACTIONS
-        - CREATE_TRANSFERS
         - CREATE_QUOTES
         - EXECUTE_QUOTES
         - MANAGE_EXTERNAL_ACCOUNTS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_TRANSFERS: Can initiate same-currency transfers. CREATE_QUOTES: Can create cross-currency quotes. EXECUTE_QUOTES: Can execute cross-currency quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
     AgentExecutionMode:
       type: string
       enum:
@@ -24217,42 +24128,12 @@ components:
       type: string
       enum:
         - EXECUTE_QUOTE
-        - TRANSFER_OUT
-        - TRANSFER_IN
       description: |
         The type of action the agent is requesting.
 
         | Type | Description |
         |------|-------------|
-        | `EXECUTE_QUOTE` | Execute a cross-currency quote |
-        | `TRANSFER_OUT` | Transfer from an internal account to an external account |
-        | `TRANSFER_IN` | Transfer from an external account to an internal account |
-    AgentTransferDetails:
-      type: object
-      description: Details of a transfer-type agent action (TRANSFER_OUT or TRANSFER_IN).
-      required:
-        - amount
-        - currency
-        - sourceAccountId
-        - destinationAccountId
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Transfer amount in the smallest unit of the specified currency.
-          example: 50000
-        currency:
-          type: string
-          description: ISO 4217 currency code for the transfer amount.
-          example: USD
-        sourceAccountId:
-          type: string
-          description: ID of the source account (internal or external).
-          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-        destinationAccountId:
-          type: string
-          description: ID of the destination account (internal or external).
-          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        | `EXECUTE_QUOTE` | Execute a quote |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -24289,11 +24170,7 @@ components:
         quote:
           allOf:
             - $ref: '#/components/schemas/Quote'
-          description: The quote being executed. Populated for `EXECUTE_QUOTE` actions; absent for transfer actions. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
-        transferDetails:
-          allOf:
-            - $ref: '#/components/schemas/AgentTransferDetails'
-          description: Details of the transfer being requested. Populated for `TRANSFER_OUT` and `TRANSFER_IN` actions; absent for `EXECUTE_QUOTE` actions.
+          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
         transaction:
           allOf:
             - $ref: '#/components/schemas/TransactionOneOf'
