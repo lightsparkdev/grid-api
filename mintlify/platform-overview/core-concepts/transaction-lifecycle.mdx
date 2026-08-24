@@ -74,58 +74,14 @@ Most transactions on Grid are completed in seconds.
 
 ## Same-Currency Transfers
 
-Same-currency transfers use `/quotes` like every other transfer. With
-`immediatelyExecute` set to `true`, the quote is created and executed in one
-request.
+Same-currency transfers go through `/quotes` and follow the lifecycle above
+unchanged. Setting `immediatelyExecute` to `true` collapses the create and execute
+steps into one request; the quote's `transactionId` identifies the resulting
+transaction. Pulling from an external account into an internal one works the same
+way, and requires a "pullable" external account (e.g., debit cards).
 
-<Note>
-  The `/transfer-out` and `/transfer-in` endpoints are deprecated. They still work
-  and their request and response shapes are unchanged, but new integrations should
-  use `/quotes`.
-</Note>
-
-### Internal → External
-
-```bash
-POST /quotes
-
-{
-  "source": {"sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-  "destination": {"destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
-  "lockedCurrencySide": "SENDING",
-  "lockedCurrencyAmount": 100000,
-  "immediatelyExecute": true
-}
-```
-
-**Response:**
-
-```json
-{
-  "id": "Quote:...",
-  "status": "PROCESSING",
-  "transactionId": "Transaction:..."
-}
-```
-
-The transaction referenced by `transactionId` follows the same lifecycle as any
-other outgoing transaction.
-
-### External → Internal
-
-```bash
-POST /quotes
-
-{
-  "source": {"sourceType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
-  "destination": {"destinationType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-  "lockedCurrencySide": "SENDING",
-  "lockedCurrencyAmount": 100000,
-  "immediatelyExecute": true
-}
-```
-
-Only works for "pullable" external accounts (e.g., debit cards).
+See [Send a payment](/payouts-and-b2b/payment-flow/send-payment#same-currency-transfers)
+for a worked example.
 
 ## Outgoing Payment Status
 

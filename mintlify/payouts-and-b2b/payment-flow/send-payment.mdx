@@ -41,10 +41,6 @@ Before sending payments, ensure you have:
 
 Use the `/quotes` endpoint when sending funds in the same currency (no exchange rate needed). Quotes cover same-currency and cross-currency transfers alike, so one integration handles both.
 
-<Note>
-  The `/transfer-out` and `/transfer-in` endpoints are deprecated. They still work and their request and response shapes are unchanged, but new integrations should use `/quotes`.
-</Note>
-
 ### When to use same-currency transfers
 
 - Transferring USD from a USD internal account to a USD external account
