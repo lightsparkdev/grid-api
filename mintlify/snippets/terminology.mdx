@@ -126,7 +126,7 @@ Understanding how entities map to your specific use case helps clarify your inte
 
 **Transactions** represent completed or in-progress payment transfers. Each transaction:
 
-- Has a type (INCOMING or OUTGOING from the platform's perspective)
+- Has a type (INCOMING or OUTGOING), keyed on whether the destination is an internal account
 - Has a status (PENDING, COMPLETED, FAILED, etc.)
 - References a customer (sender for outgoing, recipient for incoming) or a platform internal account
 - Specifies source and destination (accounts or UMA addresses)

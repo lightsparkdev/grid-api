@@ -7,6 +7,34 @@ description: "Follow a payment from creation to settlement"
 
 Understanding the transaction lifecycle helps you build robust payment flows, handle edge cases, and provide accurate status updates to your customers.
 
+## Incoming or outgoing
+
+Every transfer creates a transaction, and its `type` is keyed on the **destination** —
+where the money came from makes no difference:
+
+| Destination | `type` | Webhook family |
+|---|---|---|
+| Internal account | `INCOMING` | `INCOMING_PAYMENT.<STATUS>` |
+| External account | `OUTGOING` | `OUTGOING_PAYMENT.<STATUS>` |
+| UMA address | `OUTGOING` | `OUTGOING_PAYMENT.<STATUS>` |
+
+In practice:
+
+- A payout from an internal account to an external account is `OUTGOING`.
+- A pull from an external account into an internal account is `INCOMING`, even though you
+  initiated it.
+- A transfer between two internal accounts is `INCOMING`.
+- A deposit that lands by paying an internal account's
+  [payment instructions](/payouts-and-b2b/depositing-funds/internal-accounts) is `INCOMING`,
+  as is a payment received at one of your customers' UMA addresses.
+
+The type decides which lifecycle below applies and which webhooks you receive, so branch on
+it rather than on which endpoint you called.
+
+<Info>
+  Card spending produces a third type, `CARD`, which follows its own lifecycle.
+</Info>
+
 ## Outgoing Transaction Flow
 
 **Your customer/platform sends funds to an external recipient.**
@@ -158,9 +186,10 @@ Where a refund lands depends on how the transaction was funded:
 
 ## Webhooks
 
-Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhook request body contains the full transaction resource.
+Payment webhooks use the format `<TYPE>_PAYMENT.<STATUS>`, matching the transaction's `type`.
+The webhook request body contains the full transaction resource.
 
-### Event Types
+### Outgoing event types
 
 | Event | Description |
 |-------|-------------|
@@ -173,6 +202,18 @@ Outgoing payment webhooks use the format `OUTGOING_PAYMENT.<STATUS>`. The webhoo
 | `OUTGOING_PAYMENT.REFUND_PENDING` | Refund initiated |
 | `OUTGOING_PAYMENT.REFUND_COMPLETED` | Refund settled |
 | `OUTGOING_PAYMENT.REFUND_FAILED` | Refund failed |
+
+### Incoming event types
+
+| Event | Description |
+|-------|-------------|
+| `INCOMING_PAYMENT.PENDING` | Funds are on their way to the internal account |
+| `INCOMING_PAYMENT.PROCESSING` | Funding received, credit in progress |
+| `INCOMING_PAYMENT.COMPLETED` | Funds credited to the internal account |
+| `INCOMING_PAYMENT.FAILED` | The deposit failed |
+| `INCOMING_PAYMENT.REFUND_PENDING` | Refund initiated |
+| `INCOMING_PAYMENT.REFUND_COMPLETED` | Refund settled |
+| `INCOMING_PAYMENT.REFUND_FAILED` | Refund failed |
 
 ### Example Payloads
 

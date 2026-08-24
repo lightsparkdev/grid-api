@@ -81,7 +81,11 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/transactions?platformCus
 
 ### Filter by transaction type
 
-Get only incoming or outgoing transactions:
+Get only incoming or outgoing transactions. A transaction's type is keyed on its
+destination — anything landing in an internal account is `INCOMING`, and anything landing in
+an external account or at a UMA address is `OUTGOING`. See
+[Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle#incoming-or-outgoing)
+for the full table.
 
 <Tabs>
 <Tab title="Outgoing Only">
