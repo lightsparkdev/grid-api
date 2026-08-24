@@ -73,6 +73,17 @@ post:
             value:
               clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
   responses:
+    '200':
+      description: >-
+        The session refresh's underlying wallet-provider activity is
+        still in flight — a `WalletOperationProcessing` body with
+        `status: "PROCESSING"`. The client re-sends the byte-identical
+        signed retry until it gets the `201`; the backend also
+        reconciles the activity to terminal on its own.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/common/WalletOperationProcessing.yaml
     '201':
       description: New authentication session created successfully.
       content:
