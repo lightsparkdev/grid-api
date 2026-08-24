@@ -208,14 +208,12 @@ The webhook request body contains the full transaction resource.
 | Event | Description |
 |-------|-------------|
 | `INCOMING_PAYMENT.PENDING` | Funds are on their way to the internal account |
+| `INCOMING_PAYMENT.PROCESSING` | Funding received, credit in progress |
 | `INCOMING_PAYMENT.COMPLETED` | Funds credited to the internal account |
 | `INCOMING_PAYMENT.FAILED` | The deposit failed |
 | `INCOMING_PAYMENT.REFUND_PENDING` | Refund initiated |
 | `INCOMING_PAYMENT.REFUND_COMPLETED` | Refund settled |
 | `INCOMING_PAYMENT.REFUND_FAILED` | Refund failed |
-
-Read the transaction in the webhook body for its precise `status`; the event name is a
-coarser signal than the `status` field it carries.
 
 ### Example Payloads
 
