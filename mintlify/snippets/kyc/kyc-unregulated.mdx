@@ -213,7 +213,7 @@ The shape of the flow depends on the customer type:
 </Step>
 
 <Step title="Upload the identity document">
-  Individual verification requires an identity document — a `PASSPORT` (single image), or a `DRIVERS_LICENSE` / `NATIONAL_ID` (uploaded as separate `FRONT` and `BACK` images via the `side` field). Some jurisdictions or currencies also request additional documents such as proof of address. Upload each one with `POST /documents` using `multipart/form-data`; identity documents also require `documentNumber` and `issuingAuthority`.
+  Individual verification requires an identity document — a `PASSPORT` (single image), or a `DRIVERS_LICENSE` / `NATIONAL_ID` (uploaded as separate `FRONT` and `BACK` images via the `side` field). Some jurisdictions or currencies also request additional documents such as proof of address. Upload each one with `POST /documents` using `multipart/form-data`; identity documents also require `documentNumber` and `issuingAuthority`. Files must be `application/pdf`, `image/jpeg`, or `image/png`, and 10 MB or smaller. A photo of a document has to show all four corners in frame, in focus and in color, or the upload is rejected with `422 DOCUMENT_REJECTED`.
 
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/documents" \

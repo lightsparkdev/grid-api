@@ -1,12 +1,32 @@
 post:
   summary: Upload a document
-  description: >
+  description: |
     Upload a verification document for a customer or beneficial owner.
     The request must use multipart/form-data with the file in the `file` field
     and metadata in the remaining fields.
 
+    Supported file types: `application/pdf`, `image/jpeg`, and `image/png`.
+    Grid matches on the `Content-Type` of the multipart part, not the file
+    extension. Any other type, and any file over 10 MB, returns
+    `400 INVALID_INPUT`.
 
-    Supported file types: PDF, JPEG, PNG. Maximum file size: 10 MB.
+    Grid forwards the file to its verification provider, which screens it as
+    the request is handled and can reject it with `422 DOCUMENT_REJECTED`.
+    To pass that screen, a photo or scan of a document must:
+
+    - show the whole document, with all four corners inside the frame and
+      nothing overlapping an edge
+    - be in focus and free of glare, so every field and the machine-readable
+      zone can be read
+    - be in color, not a black-and-white copy
+    - be a photo or scan of the physical document, not a screen capture, and
+      not retouched in an image editor
+    - be unexpired
+
+    Grid runs no image analysis of its own and sets no resolution floor. The
+    labels in `precheckErrors` come from the verification provider and are
+    passed through unchanged, so a rejection cannot be broken down further
+    than the label it carries.
   operationId: uploadDocument
   tags:
     - Documents
@@ -39,6 +59,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '422':
+      description: >-
+        The verification provider rejected the file. `precheckErrors` names
+        each problem it found. No document is created, so re-upload a
+        corrected file with `POST /documents`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error422.yaml
     '500':
       description: Internal service error
       content:

@@ -7,7 +7,17 @@ properties:
   file:
     type: string
     format: binary
-    description: The document file (PDF, JPEG, or PNG, max 10 MB)
+    description: |
+      The document file. Grid accepts three formats, matched on the
+      `Content-Type` of the multipart part rather than the file extension:
+      `application/pdf`, `image/jpeg`, and `image/png`. Any other type,
+      including `image/heic`, `image/webp`, and `image/tiff`, returns
+      `400 INVALID_INPUT`. The file must be 10 MB or smaller.
+
+      Grid runs no image analysis of its own. It forwards the file to the
+      verification provider, which screens it on upload and rejects an image
+      it cannot read with `422 DOCUMENT_REJECTED`. For the requirements a
+      photo has to meet, see the endpoint description.
   documentType:
     $ref: ./DocumentType.yaml
   side:

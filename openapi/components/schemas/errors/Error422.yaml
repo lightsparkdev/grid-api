@@ -1,0 +1,40 @@
+type: object
+required:
+  - message
+  - status
+  - code
+properties:
+  status:
+    type: integer
+    enum: 
+      - 422
+    description: HTTP status code
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | DOCUMENT_REJECTED | The verification provider screened the uploaded file and marked it unusable. `precheckErrors` names each problem it found |
+    enum:
+      - DOCUMENT_REJECTED
+  message:
+    type: string
+    description: Error message
+  precheckErrors:
+    type: array
+    description: >-
+      One entry per problem the verification provider found in the uploaded
+      file, passed through verbatim. Common values are `dataNotReadable` (the
+      data on the document cannot be read), `screenshot` (the file is a screen
+      capture rather than a photo or scan), `grayscale` (a black-and-white copy
+      of a color document), and `documentExpired`. Grid does not compute these
+      labels and cannot break one down further, so this array is the full extent
+      of what Grid knows about the rejection.
+    items:
+      type: string
+    example:
+      - dataNotReadable
+  details:
+    type: object
+    description: Additional error details
+    additionalProperties: true
