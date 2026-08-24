@@ -50,9 +50,8 @@ An approval is not always a guarantee that the action will execute. Your product
 - `agentId` — the agent that submitted the action
 - `customerId` / `platformCustomerId` — the customer on whose behalf the agent acted
 - `status` — `PENDING_APPROVAL` while awaiting a decision; transitions to `APPROVED`, `REJECTED`, or `FAILED`
-- `type` — `EXECUTE_QUOTE`, `TRANSFER_OUT`, or `TRANSFER_IN`
-- `quote` — for `EXECUTE_QUOTE` actions, the full quote object including amounts, currencies, exchange rate, and destination
-- `transferDetails` — for `TRANSFER_OUT` / `TRANSFER_IN` actions, amount, currency, and source/destination account IDs
+- `type` — `EXECUTE_QUOTE`
+- `quote` — the full quote object including amounts, currencies, exchange rate, and destination
 - `transaction` — populated after the action is approved and execution begins; absent while pending or rejected
 - `rejectionReason` — optional reason string set when your platform rejects the action
 - `createdAt` / `updatedAt` — timestamps for the action lifecycle

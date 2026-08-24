@@ -1,26 +1,30 @@
 ---
 title: "Sending Payments"
-description: "Learn how to send payments from internal accounts to external bank accounts with same-currency and cross-currency transfers"
+description: "Learn how to send payments from internal accounts to external bank accounts, with or without currency conversion"
 icon: "/images/icons/paper-plane-top-right.svg"
 "og:image": "/images/og/og-payouts-b2b.png"
 ---
 
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
-Send payments from your customers' internal accounts to their external bank accounts or to other destinations. Grid supports both same-currency transfers and cross-currency transfers with automatic exchange rate handling.
+Send payments from your customers' internal accounts to their external bank accounts or to other destinations, with automatic exchange rate handling when the currencies differ.
 
 ## Overview
 
-Grid provides two payment methods depending on your use case:
+Every payment goes through `POST /quotes`, whether or not the currencies differ. A quote
+prices the transfer — the amounts, the fees, and, when the currencies differ, the exchange
+rate — and creates the transaction that carries the money.
 
-<FeatureCardGrid cols={2}>
-  <FeatureCard icon="/images/icons/arrow-left-right.svg" title="Same-Currency Transfers" href="#same-currency-transfers">
-    Send funds in the same currency from an internal account to an external account. Fast and straightforward.
-  </FeatureCard>
-  <FeatureCard icon="/images/icons/globe.svg" title="Cross-Currency Transfers" href="#cross-currency-transfers">
-    Send funds with currency conversion using real-time exchange rates. Supports multiple fiat currencies and payment rails.
-  </FeatureCard>
-</FeatureCardGrid>
+What varies is when you execute it:
+
+- **In one request.** Set `immediatelyExecute` and Grid creates and executes the quote
+  together. This is the usual choice for a same-currency transfer, where there is no rate
+  to weigh up.
+- **In two steps.** Create the quote, check the rate and fees, then call execute before the
+  quote expires. This is the usual choice when converting currency.
+
+Either way the request shape is the same, and the payment rail is chosen from the
+destination account.
 
 ## Prerequisites
 
@@ -37,17 +41,7 @@ Before sending payments, ensure you have:
   Accounts](/payouts-and-b2b/depositing-funds/external-accounts) guides first.
 </Tip>
 
-## Same-Currency Transfers
-
-Use the `/quotes` endpoint when sending funds in the same currency (no exchange rate needed). Quotes cover same-currency and cross-currency transfers alike, so one integration handles both.
-
-### When to use same-currency transfers
-
-- Transferring USD from a USD internal account to a USD external account
-- Sending funds within the same country using the same payment rail
-- No currency conversion is required
-
-### Create a transfer
+## Send a payment
 
 <Steps>
 <Step title="Get account IDs">
@@ -62,146 +56,8 @@ Note the `id` fields from both the internal and external accounts you want to us
 
 </Step>
 
-<Step title="Create and execute the quote">
-  Create the quote by specifying the source and destination accounts. Set `immediatelyExecute` to `true` to move the funds in the same request:
-
-```bash cURL
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "source": {
-      "sourceType": "ACCOUNT",
-      "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
-    },
-    "destination": {
-      "destinationType": "ACCOUNT",
-      "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965",
-      "paymentRail": "ACH"
-    },
-    "lockedCurrencySide": "SENDING",
-    "lockedCurrencyAmount": 12550,
-    "immediatelyExecute": true,
-    "remittanceInformation": "INV-12345"
-  }'
-```
-
-<Tip>
-  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer.
-</Tip>
-
-<Info>
-  `remittanceInformation` is optional. Use it to send a reference that travels with the payment to the recipient (max 80 characters). This populates the ACH Addenda record, FedNow/RTP remittance information, or wire OBI field depending on the payment rail.
-</Info>
-
-<Info>
-  `purposeOfPayment` is optional. Some destinations require it, and some rails carry it on
-  the payment itself.
-</Info>
-
-
-```json Success (201 Created)
-{
-  "id": "Quote:019542f5-b3e7-1d02-0000-000000000006",
-  "status": "PROCESSING",
-  "createdAt": "2025-10-03T15:00:00Z",
-  "expiresAt": "2025-10-03T15:05:00Z",
-  "source": {
-    "sourceType": "ACCOUNT",
-    "accountId": "InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
-  },
-  "destination": {
-    "destinationType": "ACCOUNT",
-    "accountId": "ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
-  },
-  "sendingCurrency": {
-    "code": "USD",
-    "name": "United States Dollar",
-    "symbol": "$",
-    "decimals": 2
-  },
-  "receivingCurrency": {
-    "code": "USD",
-    "name": "United States Dollar",
-    "symbol": "$",
-    "decimals": 2
-  },
-  "totalSendingAmount": 12550,
-  "totalReceivingAmount": 12550,
-  "exchangeRate": 1,
-  "feesIncluded": 0,
-  "platformFeesIncluded": 0,
-  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000015"
-}
-```
-
-<Info>
-  Amounts are specified in the smallest unit of the currency (cents for USD, pence for GBP, etc.). For example, `12550` represents $125.50 USD.
-</Info>
-
-<Info>
-  To review the fees before any funds move, omit `immediatelyExecute` (it defaults to `false`), inspect the returned quote, and then call `POST /quotes/{quoteId}/execute` before `expiresAt`. Same-currency transfers have no exchange rate to review, so immediate execution is usually what you want.
-</Info>
-</Step>
-
-<Step title="Track transfer status">
-  The quote's `transactionId` identifies the transaction that carries the payment. It is created with a `PENDING` status and progresses through `PROCESSING` to `COMPLETED` or `FAILED`. Monitor the status by:
-
-You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transaction progresses. The webhook body contains the full transaction resource:
-
-```json
-{
-  "type": "OUTGOING_PAYMENT.COMPLETED",
-  "data": {
-    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000015",
-    "status": "COMPLETED",
-    "type": "OUTGOING",
-    "direction": "DEBIT",
-    "sentAmount": { "amount": 12550, "currency": { "code": "USD", "decimals": 2 } },
-    "receivedAmount": { "amount": 12550, "currency": { "code": "USD", "decimals": 2 } },
-    "settledAt": "2025-10-03T15:02:30Z"
-  },
-  "timestamp": "2025-10-03T15:03:00Z"
-}
-```
-
-If a transaction fails, Grid initiates a refund automatically. You'll receive `OUTGOING_PAYMENT.REFUND_PENDING` followed by `OUTGOING_PAYMENT.REFUND_COMPLETED` or `OUTGOING_PAYMENT.REFUND_FAILED`. The transaction's `refund` object tracks the refund status and reference.
-
-<Info>
-  For the full state diagram, refund object details, and all webhook scenarios (including bank returns and manual cancellations), see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
-</Info>
-</Step>
-</Steps>
-
-### Transaction statuses
-
-| Status       | Description                                   |
-| ------------ | --------------------------------------------- |
-| `PENDING`    | Transfer initiated and awaiting processing    |
-| `EXPIRED`    | Quote wasn't executed before the expiry window |
-| `PROCESSING` | Transfer in progress through the payment rail |
-| `COMPLETED`  | Transfer successfully completed               |
-| `FAILED`     | Transfer failed — accompanied by a `failureReason` |
-
-<Info>
-For the full state diagram including refund tracking and edge cases like bank returns, see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
-</Info>
-
-## Cross-Currency Transfers
-
-Use the quotes flow when sending funds with currency conversion. This locks in an exchange rate and provides all details needed to execute the transfer.
-
-### When to use cross-currency transfers
-
-- Converting USD to EUR, MXN, BRL, or other supported currencies
-- Sending international payments with automatic currency conversion
-- Need to lock in a specific exchange rate for the transfer
-
-### Create and execute a quote
-
-<Steps>
-<Step title="Create a quote">
-  Request a quote to lock in the exchange rate and get transfer details:
+<Step title="Create the quote">
+  Specify the source and destination accounts and the amount to lock:
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
@@ -214,10 +70,12 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
     },
     "destination": {
       "destinationType": "ACCOUNT",
-      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
+      "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123",
+      "paymentRail": "ACH"
     },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
+    "remittanceInformation": "INV-12345",
     "description": "Payment for services - Invoice #1234"
   }'
 ```
@@ -259,68 +117,63 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 ```
 
 <Info>
+  **Same-currency transfers use this exact request.** The two currencies simply match, and
+  the quote comes back with an `exchangeRate` of `1`. Add `"immediatelyExecute": true` to
+  create and execute in this one request, and skip the next two steps.
+</Info>
+
+<Info>
   **Locked currency side** determines which amount is fixed:
   - `SENDING`: Lock the sending amount (receiving amount calculated based on exchange rate)
   - `RECEIVING`: Lock the receiving amount (sending amount calculated based on exchange rate)
 </Info>
+
+<Tip>
+  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer.
+</Tip>
+
+<Info>
+  `remittanceInformation` is optional. Use it to send a reference that travels with the payment to the recipient (max 80 characters). This populates the ACH Addenda record, FedNow/RTP remittance information, or wire OBI field depending on the payment rail.
+</Info>
+
+<Info>
+  `purposeOfPayment` is optional. Some destinations require it, and some rails carry it on
+  the payment itself.
+</Info>
+
+<Info>
+  Amounts are specified in the smallest unit of the currency (cents for USD, pence for GBP, etc.). For example, `12550` represents $125.50 USD.
+</Info>
 </Step>
 
-<Step title="Review quote details">
-  Before executing, review the quote to ensure:
+<Step title="Review the quote">
+  Before executing, check that:
 
-- Exchange rate is acceptable
+- The exchange rate is acceptable
 - Fees are as expected
-- Receiving amount meets requirements
-- Quote hasn't expired (check `expiresAt`)
+- The receiving amount meets requirements
+- The quote hasn't expired (check `expiresAt`)
 
 <Warning>
   Quote expiration depends on the corridor but is typically ~5 minutes or greater. If expired, create a new quote to get an updated exchange rate.
 </Warning>
+
+<Info>
+  For a same-currency transfer there is no rate to weigh up, so this step is usually skipped
+  in favor of `immediatelyExecute`.
+</Info>
 </Step>
 
 <Step title="Execute the quote">
   Confirm and execute the quote to initiate the transfer:
-
 
 ```bash cURL
 curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b3e7-1d02-0000-000000000025/execute' \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-```json Success (200 OK)
-{
-  "id": "Quote:019542f5-b3e7-1d02-0000-000000000025",
-  "status": "PROCESSING",
-  "createdAt": "2025-10-03T15:00:00Z",
-  "expiresAt": "2025-10-03T15:15:00Z",
-  "source": {
-    "sourceType": "ACCOUNT",
-    "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"
-  },
-  "destination": {
-    "destinationType": "ACCOUNT",
-    "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"
-  },
-  "sendingCurrency": {
-    "code": "USD",
-    "name": "United States Dollar",
-    "symbol": "$",
-    "decimals": 2
-  },
-  "receivingCurrency": {
-    "code": "EUR",
-    "name": "Euro",
-    "symbol": "€",
-    "decimals": 2
-  },
-  "totalSendingAmount": 10000,
-  "totalReceivingAmount": 9200,
-  "exchangeRate": 0.92,
-  "feesIncluded": 50,
-  "platformFeesIncluded": 0,
-  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000030"
-}
-```
+The quote comes back with `status` `PROCESSING` and the same `transactionId` it carried at
+creation.
 
 <Check>
   Once executed, the quote creates a transaction and the transfer begins processing. The `transactionId` can be used to track the payment.
@@ -331,8 +184,8 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes/Quote:019542f5-b
 </Info>
 </Step>
 
-<Step title="Monitor completion">
-  After execution, a transaction is created and progresses through `PENDING` → `PROCESSING` → `COMPLETED` or `FAILED`. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transaction progresses:
+<Step title="Track the transfer">
+  The quote's `transactionId` identifies the transaction that carries the payment. It progresses through `PENDING` → `PROCESSING` → `COMPLETED` or `FAILED`. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as it does:
 
 ```json
 {
@@ -368,13 +221,17 @@ If a transaction fails, Grid initiates a refund automatically. You'll receive `O
 
 ### Transaction statuses
 
-| Status       | Description                                |
-| ------------ | ------------------------------------------ |
-| `PENDING`    | Quote created, awaiting execution          |
-| `PROCESSING` | Quote executed, transfer in progress       |
-| `COMPLETED`  | Transfer successfully completed            |
-| `FAILED`     | Transfer failed — refund initiated automatically (track via `refund` object) |
-| `EXPIRED`    | Quote expired without execution            |
+| Status       | Description                                   |
+| ------------ | --------------------------------------------- |
+| `PENDING`    | Quote created, awaiting execution             |
+| `PROCESSING` | Quote executed, transfer in progress through the payment rail |
+| `COMPLETED`  | Transfer successfully completed               |
+| `FAILED`     | Transfer failed — accompanied by a `failureReason`, and a refund is initiated automatically (track via the `refund` object) |
+| `EXPIRED`    | Quote wasn't executed before the expiry window |
+
+<Info>
+For the full state diagram including refund tracking and edge cases like bank returns, see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
+</Info>
 
 ## Checking Payment Status
 

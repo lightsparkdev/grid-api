@@ -8111,151 +8111,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/me/transfer-in:
-    post:
-      summary: Create a transfer-in
-      description: |
-        Transfer funds from an external account to an internal account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
-        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
-        This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull). Otherwise, use the payment instructions on the internal account to deposit funds.
-      operationId: agentCreateTransferIn
-      tags:
-        - Agent Operations
-      security:
-        - AgentAuth: []
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          description: |
-            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
-          schema:
-            type: string
-            example: 550e8400-e29b-41d4-a716-446655440000
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferInRequest'
-            examples:
-              transferIn:
-                summary: Transfer from external to internal account
-                value:
-                  source:
-                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  destination:
-                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                  amount: 12550
-      responses:
-        '201':
-          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentAction'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error403'
-        '404':
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /agents/me/transfer-out:
-    post:
-      summary: Create a transfer-out
-      description: |
-        Transfer funds from an internal account to an external account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
-        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
-      operationId: agentCreateTransferOut
-      tags:
-        - Agent Operations
-      security:
-        - AgentAuth: []
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          description: |
-            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
-          schema:
-            type: string
-            example: 550e8400-e29b-41d4-a716-446655440000
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferOutRequest'
-            examples:
-              transferOut:
-                summary: Transfer from internal to external account
-                value:
-                  source:
-                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                  destination:
-                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  amount: 12550
-      responses:
-        '201':
-          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentAction'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error403'
-        '404':
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
   /agents/me/internal-accounts:
     get:
       summary: List agent's internal accounts
@@ -23936,11 +23791,10 @@ components:
       type: string
       enum:
         - VIEW_TRANSACTIONS
-        - CREATE_TRANSFERS
         - CREATE_QUOTES
         - EXECUTE_QUOTES
         - MANAGE_EXTERNAL_ACCOUNTS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_TRANSFERS: Can initiate same-currency transfers. CREATE_QUOTES: Can create cross-currency quotes. EXECUTE_QUOTES: Can execute cross-currency quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
     AgentExecutionMode:
       type: string
       enum:
@@ -24218,42 +24072,12 @@ components:
       type: string
       enum:
         - EXECUTE_QUOTE
-        - TRANSFER_OUT
-        - TRANSFER_IN
       description: |
         The type of action the agent is requesting.
 
         | Type | Description |
         |------|-------------|
-        | `EXECUTE_QUOTE` | Execute a cross-currency quote |
-        | `TRANSFER_OUT` | Transfer from an internal account to an external account |
-        | `TRANSFER_IN` | Transfer from an external account to an internal account |
-    AgentTransferDetails:
-      type: object
-      description: Details of a transfer-type agent action (TRANSFER_OUT or TRANSFER_IN).
-      required:
-        - amount
-        - currency
-        - sourceAccountId
-        - destinationAccountId
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Transfer amount in the smallest unit of the specified currency.
-          example: 50000
-        currency:
-          type: string
-          description: ISO 4217 currency code for the transfer amount.
-          example: USD
-        sourceAccountId:
-          type: string
-          description: ID of the source account (internal or external).
-          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-        destinationAccountId:
-          type: string
-          description: ID of the destination account (internal or external).
-          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        | `EXECUTE_QUOTE` | Execute a quote |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -24290,11 +24114,7 @@ components:
         quote:
           allOf:
             - $ref: '#/components/schemas/Quote'
-          description: The quote being executed. Populated for `EXECUTE_QUOTE` actions; absent for transfer actions. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
-        transferDetails:
-          allOf:
-            - $ref: '#/components/schemas/AgentTransferDetails'
-          description: Details of the transfer being requested. Populated for `TRANSFER_OUT` and `TRANSFER_IN` actions; absent for `EXECUTE_QUOTE` actions.
+          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
         transaction:
           allOf:
             - $ref: '#/components/schemas/TransactionOneOf'

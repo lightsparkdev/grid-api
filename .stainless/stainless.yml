@@ -505,7 +505,6 @@ resources:
       pkr_beneficiary: "#/components/schemas/PkrBeneficiary"
       ethereum_wallet_external_account_info: "#/components/schemas/EthereumWalletExternalAccountInfo"
       verification_error: "#/components/schemas/VerificationError"
-      agent_transfer_details: "#/components/schemas/AgentTransferDetails"
       slv_external_account_create_info: "#/components/schemas/SlvExternalAccountCreateInfo"
       slv_beneficiary: "#/components/schemas/SlvBeneficiary"
       individual_customer: "#/components/schemas/IndividualCustomer"
@@ -624,8 +623,6 @@ resources:
       me:
         methods:
           retrieve: get /agents/me
-          create_transfer_in: post /agents/me/transfer-in
-          create_transfer_out: post /agents/me/transfer-out
           list_internal_accounts: get /agents/me/internal-accounts
         subresources:
           transactions:

@@ -283,8 +283,6 @@ The `/agents/me/*` endpoints are called by an agent using its own credentials (A
 | POST | `/agents/me/quotes/{quoteId}/execute` | Execute a quote |
 | GET | `/agents/me/actions` | List agent's own actions |
 | GET | `/agents/me/actions/{actionId}` | Get an agent action |
-| POST | `/agents/me/transfer-in` | Create a transfer-in |
-| POST | `/agents/me/transfer-out` | Create a transfer-out |
 | GET | `/agents/me/internal-accounts` | List agent's internal accounts |
 | GET | `/agents/me/external-accounts` | List agent external accounts |
 | POST | `/agents/me/external-accounts` | Add an external account |

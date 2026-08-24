@@ -1,13 +1,9 @@
 type: string
 enum:
   - EXECUTE_QUOTE
-  - TRANSFER_OUT
-  - TRANSFER_IN
 description: |
   The type of action the agent is requesting.
 
   | Type | Description |
   |------|-------------|
-  | `EXECUTE_QUOTE` | Execute a cross-currency quote |
-  | `TRANSFER_OUT` | Transfer from an internal account to an external account |
-  | `TRANSFER_IN` | Transfer from an external account to an internal account |
+  | `EXECUTE_QUOTE` | Execute a quote |

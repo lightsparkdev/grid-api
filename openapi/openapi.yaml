@@ -340,10 +340,6 @@ paths:
     $ref: paths/agents/agents_me_actions.yaml
   /agents/me/actions/{actionId}:
     $ref: paths/agents/agents_me_actions_{actionId}.yaml
-  /agents/me/transfer-in:
-    $ref: paths/agents/agents_me_transfer-in.yaml
-  /agents/me/transfer-out:
-    $ref: paths/agents/agents_me_transfer-out.yaml
   /agents/me/internal-accounts:
     $ref: paths/agents/agents_me_internal-accounts.yaml
   /agents/me/external-accounts:
