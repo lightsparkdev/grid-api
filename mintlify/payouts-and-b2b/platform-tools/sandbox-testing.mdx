@@ -65,9 +65,15 @@ Alternatively, you can also fund internal accounts using the `/quotes` endpoint 
 
 <SandboxBeneficiaryVerification />
 
-### Testing Transfer-In (Pull from External Account)
+### Testing Transfer Outcomes
 
-When you create a quote whose source is an external account created using test patterns, the transfer will complete instantly in sandbox with the behavior determined by the account number:
+The external account's test pattern determines the outcome whenever that account is used,
+whether you are pushing funds to it or pulling funds from it:
+
+<SandboxTransferPatterns />
+
+Create a quote with the external account on the side you want to test and
+`immediatelyExecute` set to `true`:
 
 ```bash
 POST /quotes
@@ -75,11 +81,11 @@ POST /quotes
 {
   "source": {
     "sourceType": "ACCOUNT",
-    "accountId": "ExternalAccount:abc123"  // Uses test pattern from creation
+    "accountId": "InternalAccount:xyz789"
   },
   "destination": {
     "destinationType": "ACCOUNT",
-    "accountId": "InternalAccount:xyz789"
+    "accountId": "ExternalAccount:abc123"  // Uses test pattern from creation
   },
   "lockedCurrencySide": "SENDING",
   "lockedCurrencyAmount": 10000,  // $100 in cents
@@ -87,31 +93,8 @@ POST /quotes
 }
 ```
 
-<SandboxTransferPatterns />
-
-### Testing Transfer-Out (Push to External Account)
-
-Transfer-out works the same way - the destination external account's test pattern determines the outcome:
-
-```bash
-POST /quotes
-
-{
-  "source": {
-    "sourceType": "ACCOUNT",
-    "accountId": "InternalAccount:xyz789"
-  },
-  "destination": {
-    "destinationType": "ACCOUNT",
-    "accountId": "ExternalAccount:abc123"  // Uses test pattern
-  },
-  "lockedCurrencySide": "SENDING",
-  "lockedCurrencyAmount": 10000,
-  "immediatelyExecute": true
-}
-```
-
-The transfer will instantly simulate the bank transfer process and complete with the appropriate status based on the external account's test pattern.
+Swap the two `accountId` values to pull from the external account instead. Either way the
+transfer completes instantly in sandbox with the status the pattern dictates.
 
 ## Testing Cross-Currency Quotes
 
