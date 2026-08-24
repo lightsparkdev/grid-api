@@ -33,9 +33,12 @@ In production, internal accounts are funded by sending a bank transfer to the ac
 
 ### Transfer in from an external account
 
-Use the `/quotes` endpoint with `immediatelyExecute` set to `true` to pull funds from an external account into an internal account. The external account's number suffix determines the outcome:
+Create a quote with the external account as the source and `immediatelyExecute` set to `true`. The external account's number suffix determines the outcome:
 
 <SandboxTransferPatterns />
+
+These suffixes govern any transfer touching the external account, in either direction — use
+the same patterns to test pushing funds out to it.
 
 ### Sandbox fund endpoint
 
@@ -74,10 +77,6 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/send \
     "currencyCode": "USD"
   }'
 ```
-
-## Transferring out funds
-
-Use the `/quotes` endpoint with `immediatelyExecute` set to `true` to push funds from an internal account to an external account in the same currency. The external account's number suffix controls the outcome using the same patterns as [transfer in](#transfer-in-from-an-external-account).
 
 ## Sending to a UMA address
 

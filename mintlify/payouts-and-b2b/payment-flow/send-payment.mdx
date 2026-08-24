@@ -1,13 +1,13 @@
 ---
 title: "Sending Payments"
-description: "Learn how to send payments from internal accounts to external bank accounts, with or without currency conversion"
+description: "Learn how to send payments between accounts in either direction, with or without currency conversion"
 icon: "/images/icons/paper-plane-top-right.svg"
 "og:image": "/images/og/og-payouts-b2b.png"
 ---
 
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx';
 
-Send payments from your customers' internal accounts to their external bank accounts or to other destinations, with automatic exchange rate handling when the currencies differ.
+Send payments between any combination of internal and external accounts, in either direction, with automatic exchange rate handling when the currencies differ.
 
 ## Overview
 
@@ -18,13 +18,18 @@ rate — and creates the transaction that carries the money.
 What varies is when you execute it:
 
 - **In one request.** Set `immediatelyExecute` and Grid creates and executes the quote
-  together. This is the usual choice for a same-currency transfer, where there is no rate
-  to weigh up.
-- **In two steps.** Create the quote, check the rate and fees, then call execute before the
-  quote expires. This is the usual choice when converting currency.
+  together. Use this when you don't need to put rate or fee details in front of your user
+  before the money moves.
+- **In two steps.** Create the quote, show your user what the transfer will cost, then call
+  execute before the quote expires. Use this whenever your UX surfaces rates or fees — which
+  includes same-currency transfers, where there is no exchange rate but there can still be
+  fees worth showing.
 
 Either way the request shape is the same, and the payment rail is chosen from the
 destination account.
+
+The same endpoint sends to UMA addresses by giving the quote a `UMA_ADDRESS` destination.
+See [Sending payments](/global-p2p/sending-receiving-payments/sending-payments) for that flow.
 
 ## Prerequisites
 
@@ -118,8 +123,9 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 
 <Info>
   **Same-currency transfers use this exact request.** The two currencies simply match, and
-  the quote comes back with an `exchangeRate` of `1`. Add `"immediatelyExecute": true` to
-  create and execute in this one request, and skip the next two steps.
+  the quote comes back with an `exchangeRate` of `1` — the fee fields are still populated.
+  Add `"immediatelyExecute": true` to create and execute in this one request and skip the
+  next two steps.
 </Info>
 
 <Info>
@@ -159,8 +165,9 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 </Warning>
 
 <Info>
-  For a same-currency transfer there is no rate to weigh up, so this step is usually skipped
-  in favor of `immediatelyExecute`.
+  Skip this step by setting `immediatelyExecute` on the quote. A same-currency quote has no
+  exchange rate to review, but check `feesIncluded` if your UX shows the customer what the
+  transfer costs.
 </Info>
 </Step>
 
@@ -184,8 +191,8 @@ creation.
 </Info>
 </Step>
 
-<Step title="Track the transfer">
-  The quote's `transactionId` identifies the transaction that carries the payment. It progresses through `PENDING` → `PROCESSING` → `COMPLETED` or `FAILED`. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as it does:
+<Step title="Monitor completion">
+  After execution, a transaction is created and progresses through `PENDING` → `PROCESSING` → `COMPLETED` or `FAILED`. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transaction progresses:
 
 ```json
 {
