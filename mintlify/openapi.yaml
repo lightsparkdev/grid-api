@@ -14705,43 +14705,10 @@ components:
           minLength: 9
           maxLength: 9
           pattern: ^[0-9]{9}$
-        bankName:
-          type: string
-          description: The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message.
-          example: Chase Bank
-          minLength: 1
-          maxLength: 140
-        bankAccountType:
-          type: string
-          description: Whether the account is a checking or a savings account. Optional on every rail; when omitted, the account is treated as a checking account.
-          enum:
-            - CHECKING
-            - SAVINGS
-          example: CHECKING
-        intermediaryBankName:
-          type: string
-          description: The name of the intermediary financial institution, for accounts reachable only through a correspondent bank. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.
-          example: JPMorgan Chase Bank
-          minLength: 1
-          maxLength: 140
-        intermediaryRoutingNumber:
-          type: string
-          description: The ABA routing number of the intermediary financial institution. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.
-          example: '021000021'
-          minLength: 9
-          maxLength: 9
-          pattern: ^[0-9]{9}$
-        fiToFiInformation:
-          type: string
-          description: Bank-to-bank instructions carried alongside the payment. Used on the WIRE rail; ignored on ACH, RTP and FEDNOW.
-          example: /BNF/Invoice 4471
-          maxLength: 210
       example:
         accountType: USD_ACCOUNT
         accountNumber: '1234567890'
         routingNumber: '021000021'
-        bankName: Chase Bank
-        bankAccountType: CHECKING
     UsdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/UsdAccountInfoBase'
@@ -15393,6 +15360,12 @@ components:
           type: string
           enum:
             - PHP_ACCOUNT
+        rail:
+          type: string
+          description: The payment rail to route the payout over, for currencies that support more than one (e.g. NEFT or RTGS for INR).
+          example: NEFT
+          minLength: 1
+          maxLength: 32
         bankName:
           type: string
           description: Name of the beneficiary's bank
@@ -15408,6 +15381,7 @@ components:
           pattern: ^[0-9]{8,16}$
       example:
         accountType: PHP_ACCOUNT
+        rail: NEFT
         bankName: BDO Unibank
         accountNumber: '001234567890'
     PhpAccountInfo:
@@ -16722,7 +16696,7 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the beneficiary's bank
+          description: The name of the bank
           minLength: 1
           maxLength: 255
       example:
@@ -17123,8 +17097,8 @@ components:
         - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber, bankName. Business-to-business only, so the beneficiary must be a business.
-        - MOBILE_MONEY: bankName, phoneNumber. Pays an AliPay or WeChat Pay wallet; bankName selects the wallet.
+        - BANK_TRANSFER: accountNumber, bankName
+        - MOBILE_MONEY: bankName, phoneNumber
       properties:
         accountType:
           type: string
@@ -17171,6 +17145,59 @@ components:
       allOf:
         - $ref: '#/components/schemas/BasePaymentAccountInfo'
         - $ref: '#/components/schemas/CnyAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
+    IlsAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - iban
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ILS_ACCOUNT
+        iban:
+          type: string
+          description: Israeli IBAN (23 characters, starting with IL)
+          example: IL620108000000099999999
+          minLength: 23
+          maxLength: 23
+          pattern: ^IL[0-9]{21}$
+        bankName:
+          type: string
+          description: The name of the bank
+          minLength: 1
+          maxLength: 255
+      example:
+        accountType: ILS_ACCOUNT
+        iban: IL620108000000099999999
+        bankName: Example Bank
+    IlsAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/IlsAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    PaymentIlsAccountInfo:
+      title: ILS Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/IlsAccountInfo'
         - type: object
           required:
             - reference
@@ -17233,6 +17260,7 @@ components:
             - $ref: '#/components/schemas/PaymentSlvAccountInfo'
             - $ref: '#/components/schemas/PaymentSwiftAccountInfo'
             - $ref: '#/components/schemas/PaymentCnyAccountInfo'
+            - $ref: '#/components/schemas/PaymentIlsAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -17295,6 +17323,7 @@ components:
               EMBEDDED_WALLET: '#/components/schemas/PaymentEmbeddedWalletInfo'
               SWIFT_ACCOUNT: '#/components/schemas/PaymentSwiftAccountInfo'
               CNY_ACCOUNT: '#/components/schemas/PaymentCnyAccountInfo'
+              ILS_ACCOUNT: '#/components/schemas/PaymentIlsAccountInfo'
     InternalAccount:
       type: object
       required:
@@ -17474,6 +17503,7 @@ components:
         - SPARK_WALLET
         - TRON_WALLET
         - CNY_ACCOUNT
+        - ILS_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -19704,6 +19734,57 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/CnyBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    IlsBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    IlsExternalAccountInfo:
+      title: ILS Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/IlsAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/IlsBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/BusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/IlsBeneficiary'
+                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -19752,6 +19833,7 @@ components:
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/CnyExternalAccountInfo'
+        - $ref: '#/components/schemas/IlsExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -19802,6 +19884,7 @@ components:
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           CNY_ACCOUNT: '#/components/schemas/CnyExternalAccountInfo'
+          ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
