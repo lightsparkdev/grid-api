@@ -11,6 +11,21 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="August 2026">
 
+## Cancel a pending ACH transfer
+
+Call off an ACH push or pull that hasn't settled yet—for example a payment initiated
+outside the receiving bank's processing window.
+
+- `POST /transactions/{transactionId}/cancel` forwards the request to the banking
+  partner settling the transfer, with an optional `reason` for your own records.
+- A `200` means the partner accepted the request; it confirms asynchronously, so the
+  transaction may still report its pre-cancellation status when the call returns. Once
+  confirmed, the transaction reaches the new terminal `CANCELED` status and no funds
+  moved.
+- A transfer the partner has already processed returns `409 TRANSACTION_NOT_CANCELLABLE`.
+  Rails that cannot be withdrawn once submitted—wires and RTP—are never cancellable.
+- Rails whose partner exposes no cancellation facility return `501 NOT_IMPLEMENTED`.
+
 ## Assess your own fees on every transaction
 
 Charge your customers a platform fee and keep the margin—Grid collects it for you and

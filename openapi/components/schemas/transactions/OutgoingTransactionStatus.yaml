@@ -6,6 +6,7 @@ enum:
   - PROCESSING
   - COMPLETED
   - FAILED
+  - CANCELED
 description: |
   Status of an outgoing payment transaction.
 
@@ -17,3 +18,4 @@ description: |
   | `PROCESSING` | Executing the quote after receiving funds |
   | `COMPLETED` | Payout successfully reached the destination |
   | `FAILED` | Something went wrong — accompanied by a `failureReason` |
+  | `CANCELED` | The transfer was cancelled at the platform's request via `POST /transactions/{transactionId}/cancel` before it settled, so no funds moved |

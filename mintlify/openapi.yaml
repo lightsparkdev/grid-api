@@ -4706,10 +4706,10 @@ paths:
                 $ref: '#/components/schemas/Error500'
   /transactions/{transactionId}/cancel:
     post:
-      summary: Cancel a bank transfer
+      summary: Cancel an ACH transfer
       description: |
-        Request cancellation of a pending bank transfer — an ACH transfer (push or pull) or a wire — before it has settled, for example a payment or collection initiated outside of the receiving bank's processing window.
-        Whether a transfer can still be cancelled is determined by the banking partner that is settling it: the request is forwarded to the partner's own cancellation facility, and a transfer that the partner has already processed (or that is otherwise past its cancellation window) cannot be cancelled. Cancellation applies to bank-rail transfers; requests for transaction types that cannot be cancelled are rejected.
+        Request cancellation of a pending ACH transfer — a push or a pull — before it has settled, for example a payment or collection initiated outside of the receiving bank's processing window.
+        Whether a transfer can still be cancelled is determined by the banking partner that is settling it: the request is forwarded to the partner's own cancellation facility, and a transfer that the partner has already processed (or that is otherwise past its cancellation window) cannot be cancelled. Rails that cannot be withdrawn once submitted — wires and RTP — are never cancellable, and requests for transaction types that cannot be cancelled are rejected.
       operationId: cancelTransaction
       tags:
         - Transactions
@@ -4730,7 +4730,7 @@ paths:
               $ref: '#/components/schemas/CancelTransactionRequest'
       responses:
         '200':
-          description: Cancellation requested successfully
+          description: The banking partner accepted the cancellation request. The transfer reaches its cancelled state once the partner confirms it, so the transaction returned here may still report its pre-cancellation status.
           content:
             application/json:
               schema:
@@ -4765,6 +4765,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Cancellation is not yet available for the payment rail settling this transfer. Support is being rolled out per rail and per banking partner; transfers on a rail that is not covered yet return `501 NOT_IMPLEMENTED`. Track availability in the Grid changelog.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /crypto/estimate-withdrawal-fee:
     post:
       summary: Estimate crypto withdrawal fee
@@ -21775,6 +21781,7 @@ components:
         - PROCESSING
         - COMPLETED
         - FAILED
+        - CANCELED
       description: |
         Status of an outgoing payment transaction.
 
@@ -21786,6 +21793,7 @@ components:
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | Payout successfully reached the destination |
         | `FAILED` | Something went wrong — accompanied by a `failureReason` |
+        | `CANCELED` | The transfer was cancelled at the platform's request via `POST /transactions/{transactionId}/cancel` before it settled, so no funds moved |
     OutgoingRateDetails:
       description: 'Details about the rate and fees for an outgoing transaction or quote. Note: `counterpartyFixedFee` is denominated in the receiving currency, so its equivalent value in the sending currency fluctuates with the FX rate. As a result, the total fee on a subsequent quote for the same transfer may differ even if the underlying fee structure is unchanged.'
       type: object
@@ -25481,6 +25489,7 @@ components:
         - OUTGOING_PAYMENT.COMPLETED
         - OUTGOING_PAYMENT.FAILED
         - OUTGOING_PAYMENT.EXPIRED
+        - OUTGOING_PAYMENT.CANCELED
         - OUTGOING_PAYMENT.REFUND_PENDING
         - OUTGOING_PAYMENT.REFUND_COMPLETED
         - OUTGOING_PAYMENT.REFUND_FAILED
@@ -25629,6 +25638,7 @@ components:
                 - OUTGOING_PAYMENT.COMPLETED
                 - OUTGOING_PAYMENT.FAILED
                 - OUTGOING_PAYMENT.EXPIRED
+                - OUTGOING_PAYMENT.CANCELED
                 - OUTGOING_PAYMENT.REFUND_PENDING
                 - OUTGOING_PAYMENT.REFUND_COMPLETED
                 - OUTGOING_PAYMENT.REFUND_FAILED
