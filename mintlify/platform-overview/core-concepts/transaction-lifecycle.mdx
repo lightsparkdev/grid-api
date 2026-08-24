@@ -214,8 +214,16 @@ The webhook request body contains the full transaction resource.
 | `INCOMING_PAYMENT.REFUND_COMPLETED` | Refund settled |
 | `INCOMING_PAYMENT.REFUND_FAILED` | Refund failed |
 
-The incoming family has no `PENDING_AUTHORIZATION`, `PROCESSING`, or `EXPIRED` event — those
-belong to executing a quote, which is the sending side of a transfer.
+The incoming family fires fewer events than the outgoing one: there is no
+`INCOMING_PAYMENT.PROCESSING`, `INCOMING_PAYMENT.PENDING_AUTHORIZATION`, or
+`INCOMING_PAYMENT.EXPIRED`.
+
+<Warning>
+  That is a difference in which **events fire**, not in which states exist. An incoming
+  transaction's `status` field uses the same set as any other transaction and does reach
+  `PROCESSING`. Read the transaction rather than inferring its state from the webhooks you
+  have received.
+</Warning>
 
 ### Example Payloads
 
