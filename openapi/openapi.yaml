@@ -40,10 +40,20 @@ tags:
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
+  - name: VASPs
+    description: >-
+      Directory of Virtual Asset Service Providers (exchanges and other
+      custodial platforms) recognized for counterparty declarations.
   - name: Same-Currency Transfers
-    description: Endpoints for transferring funds between internal and external accounts with the same currency
+    description: >-
+      Deprecated endpoints for transferring funds between internal and external
+      accounts with the same currency. Use the quote endpoints under
+      Cross-Currency Transfers instead, which now serve same-currency transfers
+      as well.
   - name: Cross-Currency Transfers
-    description: Endpoints for creating and confirming quotes for cross-currency transfers
+    description: >-
+      Endpoints for creating and confirming quotes for transfers, both
+      same-currency and cross-currency
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks
@@ -189,10 +199,18 @@ paths:
     $ref: paths/customers/customers_external_accounts.yaml
   /customers/external-accounts/{externalAccountId}:
     $ref: paths/customers/customers_external_accounts_{externalAccountId}.yaml
+  /customers/external-accounts/{externalAccountId}/challenge:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_challenge.yaml
+  /customers/external-accounts/{externalAccountId}/verify:
+    $ref: paths/customers/customers_external_accounts_{externalAccountId}_verify.yaml
   /platform/external-accounts:
     $ref: paths/platform/platform_external_accounts.yaml
   /platform/external-accounts/{externalAccountId}:
     $ref: paths/platform/platform_external_accounts_{externalAccountId}.yaml
+  /platform/external-accounts/{externalAccountId}/challenge:
+    $ref: paths/platform/platform_external_accounts_{externalAccountId}_challenge.yaml
+  /platform/external-accounts/{externalAccountId}/verify:
+    $ref: paths/platform/platform_external_accounts_{externalAccountId}_verify.yaml
   /beneficial-owners:
     $ref: paths/beneficial-owners/beneficial_owners.yaml
   /beneficial-owners/{beneficialOwnerId}:
@@ -259,6 +277,8 @@ paths:
     $ref: paths/sandbox/sandbox_internal_accounts_{accountId}_fund.yaml
   /uma-providers:
     $ref: paths/uma_providers/uma_providers.yaml
+  /vasps:
+    $ref: paths/vasps/vasps.yaml
   /tokens:
     $ref: paths/tokens/tokens.yaml
   /tokens/{tokenId}:
@@ -320,10 +340,6 @@ paths:
     $ref: paths/agents/agents_me_actions.yaml
   /agents/me/actions/{actionId}:
     $ref: paths/agents/agents_me_actions_{actionId}.yaml
-  /agents/me/transfer-in:
-    $ref: paths/agents/agents_me_transfer-in.yaml
-  /agents/me/transfer-out:
-    $ref: paths/agents/agents_me_transfer-out.yaml
   /agents/me/internal-accounts:
     $ref: paths/agents/agents_me_internal-accounts.yaml
   /agents/me/external-accounts:
@@ -389,6 +405,8 @@ webhooks:
     $ref: webhooks/customer-update.yaml
   internal-account-status:
     $ref: webhooks/internal-account-status.yaml
+  external-account-status:
+    $ref: webhooks/external-account-status.yaml
   verification-update:
     $ref: webhooks/verification-update.yaml
   card-state-change:

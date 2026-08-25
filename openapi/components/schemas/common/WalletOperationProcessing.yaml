@@ -1,0 +1,30 @@
+title: Wallet Operation Processing
+description: >-
+  `200` response returned by an Embedded Wallet operation that the wallet
+  provider has accepted but not yet settled — a consensus- or
+  approval-gated activity that is still in flight. It is not an error and
+  needs no client action beyond patience: the backend reconciles the
+  operation to its terminal state on its own. The client MAY re-send the
+  byte-identical request to converge sooner; the request is idempotent
+  and returns the settled success response once the operation completes.
+type: object
+required:
+  - status
+properties:
+  status:
+    type: string
+    enum:
+      - PROCESSING
+    description: >-
+      Always `PROCESSING`. Marks a still-in-flight operation whose
+      terminal result is not yet available.
+    example: PROCESSING
+  message:
+    type: string
+    description: >-
+      Human-readable explanation that the operation is still being
+      processed and the same request may be retried.
+    example: This login is still being processed. Retry the same request in a moment.
+example:
+  status: PROCESSING
+  message: This login is still being processed. Retry the same request in a moment.

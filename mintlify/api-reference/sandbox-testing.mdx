@@ -23,23 +23,20 @@ The Grid sandbox environment simulates real payment flows without moving real mo
 
 <SandboxExternalAccounts />
 
+<SandboxTransferPatterns />
+
+These outcomes apply whenever the account is used, as the source of a pull or the
+destination of a payout.
+
 ### Beneficiary name verification
 
 <SandboxBeneficiaryVerification />
 
-## Transfer in
+## Funding an internal account
 
-In production, internal accounts are funded by sending a bank transfer to the account's payment instructions or by pulling from an external account. In sandbox, you have two options:
-
-### Transfer in from an external account
-
-Use the `/transfer-in` endpoint to pull funds from an external account into an internal account. The external account's number suffix determines the outcome:
-
-<SandboxTransferPatterns />
-
-### Sandbox fund endpoint
-
-Instantly add funds to any internal account using `/sandbox/internal-accounts/{accountId}/fund`:
+Internal accounts are funded from their payment instructions or by pulling from an external
+account — see [Internal Accounts](/payouts-and-b2b/depositing-funds/internal-accounts) for
+both. Sandbox adds a shortcut that skips the wait:
 
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/internal-accounts/{accountId}/fund \
@@ -48,7 +45,10 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/internal-account
   -d '{ "amount": 100000 }'
 ```
 
-## Creating quotes (cross-currency transfers)
+To exercise the pull path instead, create a quote with an external account as the source and
+`immediatelyExecute` set to `true`. The account's suffix decides the outcome.
+
+## Creating quotes
 
 <SandboxQuotePatterns />
 
@@ -56,7 +56,7 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/internal-account
 
 After creating a quote, you need to fund it to trigger execution. There are two ways to do this in sandbox:
 
-**Prefunded internal account** — If your quote's source is an internal account, fund the account using one of the methods described in [transfer in](#transfer-in), then call the quote execute endpoint to trigger the transaction:
+**Prefunded internal account** — If your quote's source is an internal account, fund the account using one of the methods described in [funding an internal account](#funding-an-internal-account), then call the quote execute endpoint to trigger the transaction:
 
 ```bash
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/execute \
@@ -74,10 +74,6 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/sandbox/send \
     "currencyCode": "USD"
   }'
 ```
-
-## Transferring out funds
-
-Use the `/transfer-out` endpoint to push funds from an internal account to an external account in the same currency. The external account's number suffix controls the outcome using the same patterns as [transfer in](#transfer-in-from-an-external-account).
 
 ## Sending to a UMA address
 

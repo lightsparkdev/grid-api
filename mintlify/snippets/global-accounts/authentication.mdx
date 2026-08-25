@@ -582,13 +582,15 @@ curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000
 
 The client's public key becomes the session API key. Unlike `OAUTH` and `PASSKEY` flows, `EMAIL_OTP` does **not** return `encryptedSessionSigningKey` — the client already holds the session signing key (the private key it generated).
 
+`verify` shares its terminal status code with the still-processing response: a `200` here is only a session if the body isn't `{ "status": "PROCESSING" }`. See <a href="#handling-a-still-processing-response">handling a still-processing response</a> — if you get `PROCESSING`, re-send the identical signed retry (same `encryptedOtpBundle`, `Grid-Wallet-Signature`, and `Request-Id`) until you get the session shown above.
+
 <Note>
   **In sandbox, the OTP code is always `000000`** — encrypt that value in the bundle. The sandbox runs real HPKE end-to-end; the only shortcut is skipping email delivery. See <a href="client-keys#encrypt-the-otp-code-email_otp-only">Client keys</a> for the encryption flow.
 </Note>
 
 ### Resending an OTP
 
-If the code expires or the email didn't arrive, re-issue the challenge with `POST /auth/credentials/{id}/challenge`. This sends a fresh OTP email and leaves the `AuthMethod` otherwise untouched.
+If the code expires or the email didn't arrive, re-issue the challenge with `POST /auth/credentials/{id}/challenge`. This sends a fresh OTP email and leaves the `AuthMethod` otherwise untouched. `challenge` can also return a <a href="#handling-a-still-processing-response">still-processing `200`</a> while the resend settles at the wallet provider — re-request the challenge until you get the `AuthMethod` back rather than a fresh OTP being sent twice.
 
 ```bash
 curl -X POST "$GRID_BASE_URL/auth/credentials/AuthMethod:019542f5-b3e7-1d02-0000-000000000004/challenge" \
@@ -662,6 +664,10 @@ sequenceDiagram
   C->>C: stamp(payloadToSign, sessionPrivateKey)
   C->>IB: { stamp }
   IB->>G: Same request<br/>Grid-Wallet-Signature: stamp<br/>Request-Id: requestId
+  alt still settling at the wallet provider
+    G-->>IB: 200 { status: "PROCESSING" }
+    IB->>G: Re-send the identical signed request
+  end
   G-->>IB: 2xx (terminal success)
   IB-->>C: done
 ```
@@ -672,6 +678,41 @@ Key rules:
 - Sign with the **session private key** held on the client — never ship it back to your backend.
 - The retry must reach Grid before `expiresAt` (typically 5 minutes from issue).
 - The `requestId` is returned as `Request:<uuid>` and is single-use; reusing one yields `401`.
+
+### Handling a still-processing response
+
+The signed retry can come back `200` with a `WalletOperationProcessing` body instead of the terminal success shown above:
+
+```json
+{
+  "status": "PROCESSING",
+  "message": "This login is still being processed. Retry the same request in a moment."
+}
+```
+
+This means Grid's wallet provider accepted the operation but hasn't settled it yet — the request is not lost, and nothing failed. **Design for this as the normal path, not a rare edge case**: handle it the same way you handle the terminal success and error responses below, not as a bolted-on afterthought.
+
+Every signed-retry endpoint can return it on the retry step:
+
+| Endpoint | Action |
+|---|---|
+| `POST /auth/credentials` | Add a credential |
+| `POST /auth/credentials/{id}/challenge` | Re-send an OTP / re-issue a challenge |
+| `POST /auth/credentials/{id}/verify` | Log in / verify a credential |
+| `POST /auth/sessions/{id}/refresh` | Refresh a session |
+| `DELETE /auth/credentials/{id}` | Revoke a credential |
+| `DELETE /auth/sessions/{id}` | Revoke a session |
+| `POST /internal-accounts/{id}/export` | Export wallet credentials |
+
+To handle it:
+
+1. **Re-send the exact same signed request** — identical body, `Grid-Wallet-Signature`, and `Request-Id`. Don't regenerate the stamp or start a fresh request; Grid correlates the retry with the same underlying operation and returns its real outcome once the provider settles, rather than starting a second one.
+2. **Show a pending state in your UI** while you retry — "removing…" for a credential revoke, "signing in…" for a login — instead of treating `PROCESSING` as an error or leaving the caller blocked with no feedback.
+3. **Keep retrying with backoff** until you get a terminal response — the success code above, or an error. Grid also reconciles the operation to its terminal state on its own, so even a client that stops retrying and checks back later (for example via `GET /auth/credentials` or `GET /auth/sessions`) will see the settled result. **Wallet export is the exception**: Grid never stores the encrypted credentials, so re-sending the signed retry is the only way to receive them. Grid's own reconciliation settles the operation but has nothing to hand back, and the export challenge expires like any other (typically 5 minutes) — if it lapses, start a fresh export.
+
+<Note>
+  `verify`, `challenge`, and `export` already use `200` for their terminal success body (`AuthSession`, the challenge response, or the encrypted credentials). For those three, `200` alone doesn't tell you which case you're in — check the response body's `status` field for `"PROCESSING"` to distinguish it from a settled success. The other four endpoints (`add credential`, `session refresh`, `revoke credential`, `revoke session`) use `201` or `204` on success, so a `200` by itself already means still-processing.
+</Note>
 
 ### Add an additional credential
 
@@ -720,7 +761,7 @@ Requires an active session on an *existing* credential on the same account. The 
       }'
     ```
 
-    **Response (201):** a plain `AuthMethod`.
+    **Response (201):** a plain `AuthMethod`. If the underlying wallet-provider activity is still settling, this returns `200 { status: "PROCESSING" }` instead — see <a href="#handling-a-still-processing-response">handling a still-processing response</a>; re-send the identical signed request until you get the `201`.
   </Step>
   <Step title="Activate the new credential">
     Activate the new credential the same way you would activate the first credential of that type — `OAUTH` goes straight to `POST /auth/credentials/{id}/verify` with a fresh `clientPublicKey`; `EMAIL_OTP` uses the `otpEncryptionTargetBundle` from the signed-retry registration response when present, or first calls `POST /auth/credentials/{id}/challenge` if the bundle is absent; `PASSKEY` first calls `POST /auth/credentials/{id}/challenge` with the `clientPublicKey` to get a Grid-issued WebAuthn challenge, then `POST /auth/credentials/{id}/verify` with the assertion and the `Request-Id` header.
@@ -764,6 +805,6 @@ A credential is revoked by signing with a session from **a different credential 
       -H "Request-Id: Request:9f7a2c10-5e88-4fb1-bd0e-1c3a8e7b2d45"
     ```
 
-    **Response:** `204 No Content`. All active sessions issued by the revoked credential are also revoked.
+    **Response:** `204 No Content`. All active sessions issued by the revoked credential are also revoked. If the revocation is still settling at the wallet provider, this returns `200 { status: "PROCESSING" }` instead — <a href="#handling-a-still-processing-response">re-send the identical `DELETE`</a> until you get the `204`, and show the credential as "removing…" in your UI in the meantime rather than assuming success or failure.
   </Step>
 </Steps>

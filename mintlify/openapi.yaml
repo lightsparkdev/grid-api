@@ -33,10 +33,12 @@ tags:
     description: Internal account management endpoints for creating and managing internal accounts
   - name: External Accounts
     description: External account management endpoints for creating and managing external bank accounts
+  - name: VASPs
+    description: Directory of Virtual Asset Service Providers (exchanges and other custodial platforms) recognized for counterparty declarations.
   - name: Same-Currency Transfers
-    description: Endpoints for transferring funds between internal and external accounts with the same currency
+    description: Deprecated endpoints for transferring funds between internal and external accounts with the same currency. Use the quote endpoints under Cross-Currency Transfers instead, which now serve same-currency transfers as well.
   - name: Cross-Currency Transfers
-    description: Endpoints for creating and confirming quotes for cross-currency transfers
+    description: Endpoints for creating and confirming quotes for transfers, both same-currency and cross-currency
   - name: Transactions
     description: Endpoints for retrieving transaction information
   - name: Webhooks
@@ -868,11 +870,15 @@ paths:
         schema:
           type: string
     post:
-      summary: Generate a hosted KYC link for an existing customer
+      summary: Generate a hosted KYC/KYB link for an existing customer
       description: |
         Generate a single-use hosted URL the customer can complete to verify their identity, and (where supported) a provider-specific `token` for embedding the verification flow directly via the provider's SDK.
 
-        The customer must already exist — create them with `POST /customers` first. Calling this endpoint does not change the customer's `kycStatus`; the customer remains `PENDING` until they complete (or fail) the hosted flow.
+        The customer must already exist — create them with `POST /customers` first. Calling this endpoint does not change the customer's verification status; the customer remains at their current status until they complete (or fail) the hosted flow.
+
+        This endpoint generates the link for both customer types; `customerType` selects which flow the provider runs. `INDIVIDUAL` runs identity verification (KYC), tracked on `kycStatus`. `BUSINESS` runs business verification (KYB), tracked on `kybStatus` — the flow confirms the company details, collects formation, ownership, and proof-of-address documents, and gathers the control person and every beneficial owner holding 25% or more. Business information already supplied via `POST /customers` or `PATCH /customers/{customerId}` is prefilled, so send what you have before generating the link.
+
+        The hosted link is one of two ways to verify a customer. To collect the data yourself instead, submit it through `POST /customers`, `POST /beneficial-owners` (business customers), and `POST /documents`, then call `POST /verifications`. Both paths produce the same status transitions and the same `CUSTOMER.KYC_*` / `CUSTOMER.KYB_*` webhooks.
 
         Each call returns a fresh link. Previously-issued links are not invalidated, but they remain single-use and will expire on their own. For request-level retry safety, include an `Idempotency-Key` header.
       operationId: createCustomerKycLink
@@ -2429,6 +2435,154 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/challenge:
+    post:
+      summary: Start an ownership verification challenge
+      description: |
+        Start (or restart) ownership verification for a `FIRST_PARTY` self-custody
+        crypto wallet external account in `PENDING_OWNERSHIP_VERIFICATION` or
+        `UNVERIFIED` status. The response carries the method-specific challenge
+        material:
+
+        - `WALLET_SIGNATURE` — a `messageToSign`; have the wallet sign it exactly
+          and submit the result to the verify endpoint to complete verification
+          synchronously.
+        - `LIVENESS` — a hosted `verificationLink` (and possibly an embed
+          `token`); the user completes a biometric flow and verification completes
+          asynchronously. The outcome is delivered via
+          `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the account.
+
+        Calling this endpoint again abandons any in-flight challenge and issues a
+        new one with the requested method — use it to retry after a failed
+        attempt, to replace an expired challenge, or to switch methods. An
+        `UNVERIFIED` account returns to `PENDING_OWNERSHIP_VERIFICATION` when a
+        new challenge is issued.
+
+        Completing ownership verification moves the account to `ACTIVE`.
+      operationId: createExternalAccountOwnershipChallenge
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: path
+          description: External account ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipChallengeRequest'
+      responses:
+        '201':
+          description: Challenge created; the method-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipChallenge'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account (not a self-custody crypto wallet, not `FIRST_PARTY`, or already verified).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /customers/external-accounts/{externalAccountId}/verify:
+    post:
+      summary: Verify ownership with a wallet signature
+      description: |
+        Complete a `WALLET_SIGNATURE` challenge by submitting the signature the
+        wallet produced for the challenge's `messageToSign`. The message must be
+        signed exactly as returned, and the signature must be submitted before
+        the challenge's `expiresAt` — after expiry, start a new challenge.
+
+        On success the account moves to `ACTIVE`; on an invalid signature it
+        moves to `UNVERIFIED` (start a new challenge to retry). `LIVENESS`
+        challenges complete asynchronously and never use this endpoint — their
+        outcome is delivered via `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by
+        polling the account.
+      operationId: verifyExternalAccountOwnership
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: path
+          description: External account ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerifyRequest'
+      responses:
+        '200':
+          description: 'Signature valid; the updated external account is returned with `status: ACTIVE`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Invalid or expired signature. The account moves to `UNVERIFIED`; start a new challenge to retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: No `WALLET_SIGNATURE` challenge is outstanding for this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /platform/external-accounts:
     get:
       summary: List platform external accounts
@@ -2627,6 +2781,154 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /platform/external-accounts/{externalAccountId}/challenge:
+    post:
+      summary: Start an ownership verification challenge
+      description: |
+        Start (or restart) ownership verification for a `FIRST_PARTY` self-custody
+        crypto wallet external account in `PENDING_OWNERSHIP_VERIFICATION` or
+        `UNVERIFIED` status. The response carries the method-specific challenge
+        material:
+
+        - `WALLET_SIGNATURE` — a `messageToSign`; have the wallet sign it exactly
+          and submit the result to the verify endpoint to complete verification
+          synchronously.
+        - `LIVENESS` — a hosted `verificationLink` (and possibly an embed
+          `token`); the user completes a biometric flow and verification completes
+          asynchronously. The outcome is delivered via
+          `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the account.
+
+        Calling this endpoint again abandons any in-flight challenge and issues a
+        new one with the requested method — use it to retry after a failed
+        attempt, to replace an expired challenge, or to switch methods. An
+        `UNVERIFIED` account returns to `PENDING_OWNERSHIP_VERIFICATION` when a
+        new challenge is issued.
+
+        Completing ownership verification moves the account to `ACTIVE`.
+      operationId: createPlatformExternalAccountOwnershipChallenge
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: path
+          description: External account ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipChallengeRequest'
+      responses:
+        '201':
+          description: Challenge created; the method-specific material is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipChallenge'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Ownership verification is not applicable to this external account (not a self-custody crypto wallet, not `FIRST_PARTY`, or already verified).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /platform/external-accounts/{externalAccountId}/verify:
+    post:
+      summary: Verify ownership with a wallet signature
+      description: |
+        Complete a `WALLET_SIGNATURE` challenge by submitting the signature the
+        wallet produced for the challenge's `messageToSign`. The message must be
+        signed exactly as returned, and the signature must be submitted before
+        the challenge's `expiresAt` — after expiry, start a new challenge.
+
+        On success the account moves to `ACTIVE`; on an invalid signature it
+        moves to `UNVERIFIED` (start a new challenge to retry). `LIVENESS`
+        challenges complete asynchronously and never use this endpoint — their
+        outcome is delivered via `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by
+        polling the account.
+      operationId: verifyPlatformExternalAccountOwnership
+      tags:
+        - External Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: externalAccountId
+          in: path
+          description: External account ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipVerifyRequest'
+      responses:
+        '200':
+          description: 'Signature valid; the updated external account is returned with `status: ACTIVE`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalAccount'
+        '400':
+          description: Invalid or expired signature. The account moves to `UNVERIFIED`; start a new challenge to retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: External account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: No `WALLET_SIGNATURE` challenge is outstanding for this external account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -3291,8 +3593,29 @@ paths:
   /transfer-in:
     post:
       summary: Create a transfer-in request
+      deprecated: true
       description: |
-        Transfer funds from an external account to an internal account for a specific customer. This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull). Otherwise, use the paymentInstructions on the internal account to deposit funds.
+        **Deprecated. Use `POST /quotes` instead.**
+
+        Same-currency transfers are now served by the quote endpoint. Create a quote
+        with an external account source and an internal account destination and set
+        `immediatelyExecute: true` to move the funds in a single request, exactly as
+        this endpoint does. This endpoint continues to work and its request and
+        response shapes are unchanged.
+
+        To migrate a request to `POST /quotes`:
+
+        - add `sourceType: ACCOUNT` to `source` and `destinationType: ACCOUNT` to
+          `destination`; the account IDs are unchanged
+        - rename `amount` to `lockedCurrencyAmount` and add `lockedCurrencySide: SENDING`
+        - add `immediatelyExecute: true` to keep the single-request behavior
+
+        The quote response is a `Quote` rather than a `Transaction`; read
+        `transactionId` from it to track the resulting transaction.
+
+        Transfer funds from an external account to an internal account for a specific customer.
+        This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull).
+        Otherwise, use the paymentInstructions on the internal account to deposit funds.
       operationId: createTransferIn
       tags:
         - Same-Currency Transfers
@@ -3356,7 +3679,27 @@ paths:
   /transfer-out:
     post:
       summary: Create a transfer-out request
+      deprecated: true
       description: |
+        **Deprecated. Use `POST /quotes` instead.**
+
+        Same-currency transfers are now served by the quote endpoint. Create a quote
+        with an internal account source and an external account destination and set
+        `immediatelyExecute: true` to move the funds in a single request, exactly as
+        this endpoint does. This endpoint continues to work and its request and
+        response shapes are unchanged.
+
+        To migrate a request to `POST /quotes`:
+
+        - add `sourceType: ACCOUNT` to `source` and `destinationType: ACCOUNT` to
+          `destination`; the account IDs and `destination.paymentRail` are unchanged
+        - rename `amount` to `lockedCurrencyAmount` and add `lockedCurrencySide: SENDING`
+        - `remittanceInformation` and `purposeOfPayment` carry over unchanged
+        - add `immediatelyExecute: true` to keep the single-request behavior
+
+        The quote response is a `Quote` rather than a `Transaction`; read
+        `transactionId` from it to track the resulting transaction.
+
         Transfer funds from an internal account to an external account for a specific customer.
       operationId: createTransferOut
       tags:
@@ -3415,6 +3758,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when the requested amount would exceed the configured daily volume limit for the withdrawal currency.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -3616,12 +3965,12 @@ paths:
     post:
       summary: Create a transfer quote
       description: |
-        Generate a quote for a cross-currency transfer between any combination of accounts
-        and UMA addresses. This endpoint handles currency exchange and provides the necessary
-        instructions to execute the transfer.
+        Generate a quote for a transfer between any combination of accounts
+        and UMA addresses. This endpoint handles same-currency and cross-currency
+        transfers alike, and provides the necessary instructions to execute the transfer.
 
         **Transfer Types Supported:**
-        - **Account to Account**: Transfer between internal/external accounts with currency exchange.
+        - **Account to Account**: Transfer between internal/external accounts, with or without currency exchange.
         - **Account to UMA**: Transfer from an internal account to an UMA address.
         - **UMA to Account or UMA to UMA**: This transfer type will only be funded by payment instructions, not from an internal account.
 
@@ -3630,8 +3979,13 @@ paths:
         - **Currency Exchange**: Handles all cross-currency transfers with real-time exchange rates
         - **Payment Instructions**: For UMA or customer ID sources, provides banking details needed for execution
 
-        **Important:** If you are transferring funds in the same currency (no exchange required),
-        use the `/transfer-in` or `/transfer-out` endpoints instead.
+        **Same-currency transfers:** Use this endpoint for same-currency transfers too.
+        Set `immediatelyExecute: true` to create and execute in a single request. The
+        older `/transfer-in` and `/transfer-out` endpoints are deprecated.
+
+        Requires a token with the `TRANSACT` permission; `VIEW` alone is not
+        sufficient. A quote is the instrument a later execute draws on, and
+        `immediatelyExecute` moves funds within this same request.
       operationId: createQuote
       tags:
         - Cross-Currency Transfers
@@ -3653,6 +4007,21 @@ paths:
             schema:
               $ref: '#/components/schemas/QuoteRequest'
             examples:
+              sameCurrencyAccountToAccount:
+                summary: Same-Currency Account to Account Transfer (immediate execution)
+                value:
+                  source:
+                    sourceType: ACCOUNT
+                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  destination:
+                    destinationType: ACCOUNT
+                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    paymentRail: ACH
+                  lockedCurrencySide: SENDING
+                  lockedCurrencyAmount: 12550
+                  immediatelyExecute: true
+                  remittanceInformation: INV-12345
+                  description: Same-currency payout, no exchange required.
               accountToAccount:
                 summary: Account to Account Transfer
                 value:
@@ -3750,7 +4119,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error401'
         '403':
-          description: Customer has not accepted the End User Terms
+          description: Forbidden. The token lacks the `TRANSACT` permission, or the customer has not accepted the End User Terms.
           content:
             application/json:
               schema:
@@ -3767,6 +4136,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error424'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when `immediatelyExecute` is set and the requested amount would exceed the configured daily volume limit for the trade corridor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -3795,6 +4170,12 @@ paths:
         the quote's `paymentInstructions[].accountOrWalletInfo` entry with the
         session private key of a verified authentication credential on the source
         Embedded Wallet.
+
+        Requires a token with the `TRANSACT` permission; `VIEW` alone is not
+        sufficient to release a transfer. On an `EMBEDDED_WALLET` source this is in
+        addition to the `Grid-Wallet-Signature` header: the signature proves the
+        wallet holder authorized the payment, while `TRANSACT` is what authorizes
+        your integration to release it.
 
         Once executed, the quote cannot be cancelled and the transfer will be processed.
       operationId: executeQuote
@@ -3855,6 +4236,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The token lacks the `TRANSACT` permission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Quote not found
           content:
@@ -3867,6 +4254,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when executing the quote would exceed the configured daily volume limit for the trade corridor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -5118,6 +5511,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /vasps:
+    get:
+      summary: List VASPs
+      description: |
+        Retrieve the directory of Virtual Asset Service Providers (exchanges and
+        other custodial platforms) recognized for counterparty declarations.
+
+        The `vaspName` field in each result is the value to pass as `vaspName`
+        when declaring a VASP-hosted counterparty.
+      operationId: listVasps
+      tags:
+        - VASPs
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default 20, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination (returned from previous request)
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaspListResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /tokens:
     post:
       summary: Create a new API token
@@ -5451,6 +5899,8 @@ paths:
 
         2. Use the session API keypair of a verified authentication credential on the same internal account to build an API-key stamp over `payloadToSign`, then retry with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The retry body must carry the **same** `clientPublicKey` submitted in step 1 — Grid rejects the retry with `401` if it disagrees with what was bound into `payloadToSign`. The signed retry returns `200` with `encryptedWalletCredentials`, which the client decrypts with the matching private key.
 
+        The export may not settle within that request: an approval- or consensus-gated wallet-provider activity answers `200` with `status: "PROCESSING"` instead. The credentials are never stored server-side, so collecting them is the client's job — re-send the byte-identical signed retry (same headers, same body) until it returns `encryptedWalletCredentials`. The `Request-Id` challenge stays usable until an attempt actually delivers them, so a `PROCESSING` response never burns it; a delivered export does, and a later re-send is then rejected with `401`. Subscribe to `wallet_operation.completed` to learn when re-sending will succeed rather than polling blind.
+
         The `clientPublicKey` is ephemeral: generate a fresh P-256 keypair for this export and discard the private key after decrypting. Do not reuse the keypair from any prior verify call — that private key was already discarded after decrypting the session signing key it was issued against.
       operationId: exportInternalAccount
       tags:
@@ -5491,11 +5941,11 @@ paths:
                   clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
       responses:
         '200':
-          description: Signed retry accepted. Returns the encrypted wallet credentials.
+          description: 'Signed retry accepted. Returns the encrypted wallet credentials (`InternalAccountExportResponse`); or, when the underlying wallet-provider activity is still in flight, a `WalletOperationProcessing` body with `status: "PROCESSING"` — the credentials are never stored server-side, so the client re-sends the byte-identical signed retry to collect them once the activity settles. The challenge stays usable until an attempt actually returns credentials.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalAccountExportResponse'
+                $ref: '#/components/schemas/InternalAccountExportResult'
         '202':
           description: Challenge issued. The response contains `payloadToSign` (which binds the submitted `clientPublicKey`) plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair and echo `requestId` on the retry.
           content:
@@ -5534,7 +5984,7 @@ paths:
 
         Embedded Wallet internal accounts are initialized with an `EMAIL_OTP` credential tied to the customer email on the account. Use this endpoint to add another credential (`SMS_OTP`, `OAUTH`, or `PASSKEY`), or to add `EMAIL_OTP` / `SMS_OTP` back after it has been removed. Only one `EMAIL_OTP` and one `SMS_OTP` credential are supported per internal account; multiple distinct `PASSKEY` credentials may be registered.
 
-        Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (decrypted client-side from its `encryptedSessionSigningKey`) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
+        Adding a credential requires a signature from an existing verified credential on the same account. Call this endpoint with the new credential's details to receive `202` with `payloadToSign` and `requestId`. Use the session API keypair of an existing verified credential (the session signing key the client holds for it) to build an API-key stamp over `payloadToSign`, then retry the same request with that full stamp as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `201` with the created `AuthMethod`. For OTP credentials, the one-time password is triggered on the signed retry, and the credential must then be activated via `POST /auth/credentials/{id}/verify`.
       operationId: createAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -5593,6 +6043,12 @@ paths:
                       - internal
                       - hybrid
       responses:
+        '200':
+          description: 'An additional-credential setup leg''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the byte-identical stamped retry (same `Request-Id`) until the credential is added; the backend also reconciles the activity to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '201':
           description: Authentication credential created successfully. The body is the created `AuthMethod`. For `EMAIL_OTP`, the nickname is the customer email tied to the internal account; for `SMS_OTP`, it is the customer phone number. OTP responses that trigger a secure OTP challenge carry `otpEncryptionTargetBundle` — the HPKE target bundle the client uses to encrypt the OTP attempt on the subsequent `POST /auth/credentials/{id}/verify`. First-time EMAIL_OTP wallet bootstrap responses may omit that bundle; if it is absent, call `POST /auth/credentials/{id}/challenge` for the new credential to issue a fresh OTP and receive `otpEncryptionTargetBundle` before verifying. For `PASSKEY`, the credential must be authenticated for the first time via `POST /auth/credentials/{id}/challenge` followed by `POST /auth/credentials/{id}/verify` to produce a session — there is no inline authentication challenge on the registration response.
           content:
@@ -5809,6 +6265,12 @@ paths:
             type: string
           example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
+        '200':
+          description: 'The revocation''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the same signed `DELETE` until it settles; the backend also reconciles the revocation to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '202':
           description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of an existing verified credential on the same internal account (other than the one being revoked), then echo `requestId` on the retry.
           content:
@@ -5852,7 +6314,7 @@ paths:
 
         For `OAUTH` credentials, supply a fresh OIDC token (`iat` must be less than 60 seconds before the request) along with the client-generated public key; this is also the reauthentication path after a prior session expired. The token identity (`iss`, `aud`, and `sub`) must match the OAuth credential being verified. In sandbox, the token's `nonce` must equal `sha256(clientPublicKey)`. For `PASSKEY` credentials, the client completes a WebAuthn assertion (`navigator.credentials.get()`) against the Grid-issued `challenge` returned from `POST /auth/credentials/{id}/challenge`, and submits the resulting `assertion` with the `Request-Id` header. The `clientPublicKey` for `PASSKEY` credentials is supplied on the challenge call, where it is bound into the pending session-creation request.
 
-        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. For `OAUTH` and `PASSKEY` the session signing key is delivered as `encryptedSessionSigningKey` (HPKE-sealed to the supplied `clientPublicKey`); for OTP credentials the client already holds the session signing key (the private key it generated) and that field is omitted from the response. The `expiresAt` timestamp marks when the session expires.
+        On success for `OAUTH` and `PASSKEY`, and on the signed retry for OTP credentials, the response contains an `AuthSession`. Sending a compressed `clientPublicKey` selects the recommended client-held-key model: the client already holds the session signing key — the private key it generated before authentication — so no key material is returned and the deprecated `encryptedSessionSigningKey` is omitted. Sending an uncompressed `clientPublicKey` selects the deprecated legacy flow, where the session signing key is HPKE-sealed to that key and returned as `encryptedSessionSigningKey` for the client to decrypt. The `expiresAt` timestamp marks when the session expires.
       operationId: verifyAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -5907,7 +6369,7 @@ paths:
                 value:
                   type: OAUTH
                   oidcToken: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
-                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+                  clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
               passkey:
                 summary: Verify a passkey credential
                 value:
@@ -5919,11 +6381,11 @@ paths:
                     signature: MEUCIQDYXBOpCWSWq2Ll4558GJKD2RoWg958lvJSB_GdeokxogIgWuEVQ7ee6AswQY0OsuQ6y8Ks6jhd45bDx92wjXKs900
       responses:
         '200':
-          description: Authentication credential verified and session issued
+          description: 'Authentication credential verified and session issued (`AuthSession`); or, when the underlying wallet-provider activity is still in flight, a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session, and the backend also reconciles the activity to terminal on its own.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSession'
+                $ref: '#/components/schemas/AuthCredentialVerifyResponse'
         '202':
           description: Verification challenge issued. Returned only for OTP credentials, on the first leg of the secure OTP login flow. Build an API-key stamp over `payloadToSign` (the `verificationToken`) with the keypair the client generated for this login, then resubmit the same request with that full stamp as `Grid-Wallet-Signature` and `requestId` echoed as `Request-Id` to receive the issued session on the signed retry.
           content:
@@ -5983,7 +6445,7 @@ paths:
 
         `OAUTH` credentials do not have a challenge step. To authenticate or reauthenticate an OAuth credential, call `POST /auth/credentials/{id}/verify` with a fresh OIDC token and a `clientPublicKey`.
 
-        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from — this seals the resulting session signing key to the client. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
+        For `PASSKEY` credentials, this issues a fresh Grid reauthentication challenge. The request body must carry the client's ephemeral `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from — send a compressed key for the recommended client-held-key model, where the client retains the matching private key as the resulting session signing key, or an uncompressed key for the deprecated legacy flow. The response is a `PasskeyAuthChallenge` — the passkey auth method fields plus the WebAuthn `credentialId`, new `challenge`, `requestId`, and `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation body, not a base64url string. The client base64url-decodes `credentialId` for `allowCredentials[].id` and UTF-8 encodes `challenge` (for example, `new TextEncoder().encode(challenge)`) as the WebAuthn challenge in `navigator.credentials.get()`, then submits the resulting assertion to `POST /auth/credentials/{id}/verify` with `Request-Id: <requestId>` to receive a session.
       operationId: challengeAuthCredential
       tags:
         - Embedded Wallet Auth
@@ -6007,7 +6469,7 @@ paths:
               passkey:
                 summary: Re-challenge a passkey credential
                 value:
-                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+                  clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
               emailOtp:
                 summary: Re-challenge an email-OTP credential (empty body)
                 value: {}
@@ -6016,11 +6478,11 @@ paths:
                 value: {}
       responses:
         '200':
-          description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` and `SMS_OTP` the body is a plain `AuthMethod` and a new OTP has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the passkey `credentialId`, freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`.
+          description: Challenge re-issued for the authentication credential. For `EMAIL_OTP` and `SMS_OTP` the body is a plain `AuthMethod` and a new OTP has been sent. For `PASSKEY` the body is a `PasskeyAuthChallenge` carrying the passkey `credentialId`, freshly issued `challenge`, `requestId`, and `expiresAt` required to complete reauthentication via `POST /auth/credentials/{id}/verify`. When the OTP send's underlying wallet-provider activity is still in flight, the body is instead a `WalletOperationProcessing` carrying a `PROCESSING` status — re-request the challenge until the send settles; the backend also reconciles it to terminal on its own.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+                $ref: '#/components/schemas/AuthCredentialChallengeResponse'
               examples:
                 emailOtp:
                   summary: Email OTP challenge re-issued
@@ -6163,6 +6625,12 @@ paths:
             type: string
           example: Request:7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       responses:
+        '200':
+          description: 'The revocation''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the same signed `DELETE` until it settles; the backend also reconciles the revocation to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '202':
           description: Challenge issued. The response contains `payloadToSign` plus a `requestId`. Build an API-key stamp over `payloadToSign` with the session API keypair of a verified session on the same internal account, then echo `requestId` on the retry.
           content:
@@ -6201,9 +6669,9 @@ paths:
       description: |
         Refresh an active Embedded Wallet auth session and create a new session signing key. Session refresh is a two-step signed-retry flow:
 
-        1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a Grid session-refresh payload, binds the supplied `clientPublicKey` into that payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+        1. Call `POST /auth/sessions/{id}/refresh` with the request body `{ "clientPublicKey": "02..." }` and no signature headers. Send a freshly generated client public key and retain its private key. Grid binds the supplied `clientPublicKey` into the session-refresh payload, persists it as a pending request, and returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
 
-        2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession` with an `encryptedSessionSigningKey` sealed to that client public key.
+        2. Sign `payloadToSign` with the current session signing key, then retry the same request with the full API-key stamp as `Grid-Wallet-Signature`, the `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in the request body. On success, Grid returns a new `AuthSession`. Sending a compressed `clientPublicKey` selects the recommended client-held-key model, where the client retains the new session signing key and no key material is returned; sending an uncompressed key selects the deprecated legacy flow, where the new key is sealed to it and returned as `encryptedSessionSigningKey`.
 
         The original session must still be active on both steps so it can authorize the refresh. If the session has already expired, use the credential reauthentication flow instead.
       operationId: refreshAuthSession
@@ -6243,8 +6711,14 @@ paths:
               refresh:
                 summary: Refresh an active session
                 value:
-                  clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+                  clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
       responses:
+        '200':
+          description: 'The session refresh''s underlying wallet-provider activity is still in flight — a `WalletOperationProcessing` body with `status: "PROCESSING"`. The client re-sends the byte-identical signed retry until it gets the `201`; the backend also reconciles the activity to terminal on its own.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletOperationProcessing'
         '201':
           description: New authentication session created successfully.
           content:
@@ -6258,7 +6732,6 @@ paths:
                     id: Session:019542f5-b3e7-1d02-0000-000000000011
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     type: EMAIL_OTP
-                    encryptedSessionSigningKey: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
                     nickname: example@lightspark.com
                     createdAt: '2026-04-08T15:30:01Z'
                     updatedAt: '2026-04-08T15:35:00Z'
@@ -6273,7 +6746,7 @@ paths:
                 challenge:
                   summary: Session refresh challenge
                   value:
-                    payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
+                    payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
                     requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                     expiresAt: '2026-04-08T15:35:00Z'
         '400':
@@ -7664,151 +8137,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-  /agents/me/transfer-in:
-    post:
-      summary: Create a transfer-in
-      description: |
-        Transfer funds from an external account to an internal account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
-        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
-        This endpoint should only be used for external account sources with pull functionality (e.g. ACH Pull). Otherwise, use the payment instructions on the internal account to deposit funds.
-      operationId: agentCreateTransferIn
-      tags:
-        - Agent Operations
-      security:
-        - AgentAuth: []
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          description: |
-            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
-          schema:
-            type: string
-            example: 550e8400-e29b-41d4-a716-446655440000
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferInRequest'
-            examples:
-              transferIn:
-                summary: Transfer from external to internal account
-                value:
-                  source:
-                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  destination:
-                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                  amount: 12550
-      responses:
-        '201':
-          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentAction'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error403'
-        '404':
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /agents/me/transfer-out:
-    post:
-      summary: Create a transfer-out
-      description: |
-        Transfer funds from an internal account to an external account for the authenticated agent's customer. Accounts must belong to the agent's customer. Requires the CREATE_TRANSFERS permission in the agent's policy.
-        If the agent's policy requires approval for this amount, the transaction will be created in a pending state and must be approved by the platform via `POST /agents/{agentId}/actions/{actionId}/approve`.
-      operationId: agentCreateTransferOut
-      tags:
-        - Agent Operations
-      security:
-        - AgentAuth: []
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          description: |
-            A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
-          schema:
-            type: string
-            example: 550e8400-e29b-41d4-a716-446655440000
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferOutRequest'
-            examples:
-              transferOut:
-                summary: Transfer from internal to external account
-                value:
-                  source:
-                    accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-                  destination:
-                    accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                  amount: 12550
-      responses:
-        '201':
-          description: Action submitted successfully. If the agent's policy requires approval, the returned `AgentAction` will have status `PENDING_APPROVAL` and no `transaction` yet. If the policy permits automatic execution, status will be `APPROVED` and `transaction` will be populated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentAction'
-        '400':
-          description: Bad request - Invalid parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '403':
-          description: Forbidden - Agent policy does not permit this operation or spending limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error403'
-        '404':
-          description: Account not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
   /agents/me/internal-accounts:
     get:
       summary: List agent's internal accounts
@@ -8076,6 +8404,8 @@ paths:
       description: |
         Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
+        An optional `maxSpendPerTransaction` value sets the largest amount a single card transaction may authorize. The limit is enforced by Grid for card programs where Grid makes the authorization decision, whether the card is funded by an Embedded Wallet account or custodial fiat. Omit it for no limit. The value is in the smallest unit of the card's currency.
+
         If any funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
         New cards start in `state: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on each state transition, including the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
@@ -8099,6 +8429,7 @@ paths:
                   form: VIRTUAL
                   fundingSources:
                     - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  maxSpendPerTransaction: 5000
       responses:
         '201':
           description: Card created successfully. Newly-created cards start in `PROCESSING` while the issuer provisions them. Cards funded by an Embedded Wallet internal account also require an active delegated key for that funding source before Authorization Decisioning can use it.
@@ -8270,16 +8601,13 @@ paths:
     patch:
       summary: Update a card
       description: |
-        Update a card's `state` and / or its bound `fundingSources`. At least one of the two fields must be supplied.
+        Update a card's `state`, bound `fundingSources`, and / or `maxSpendPerTransaction`. At least one field must be supplied.
 
         - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
         - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`.
+        - `maxSpendPerTransaction`, when supplied, replaces the card's application-enforced per-transaction limit. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. Limits are supported only for card programs where Grid makes the authorization decision. `maxSpendPerTransaction` cannot be supplied alongside `state: CLOSED`.
 
-        Because both updates are sensitive state changes, this endpoint uses Grid's 202 → signed-retry pattern (same shape as `DELETE /auth/credentials/{id}` and `POST /internal-accounts/{id}/export`):
-
-        1. Call `PATCH /cards/{id}` with the target fields and no signing headers. The response is `202` with a `payloadToSign`, `requestId`, and `expiresAt`.
-
-        2. Sign the `payloadToSign` with the session private key of a verified authentication credential on the card's owning internal account and retry with the signature as the `Grid-Wallet-Signature` header and the `requestId` echoed back as the `Request-Id` header. The signed retry returns `200` with the updated `Card`.
+        This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
         Effects:
         - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
@@ -8293,21 +8621,6 @@ paths:
         - Cards
       security:
         - BasicAuth: []
-      parameters:
-        - name: Grid-Wallet-Signature
-          in: header
-          required: false
-          description: Signature over the `payloadToSign` returned in a prior `202` response, produced with the session private key of a verified authentication credential on the card's owning internal account and base64-encoded. Required on the signed retry; ignored on the initial call.
-          schema:
-            type: string
-          example: MEUCIQDx7k2N0aK4p8f3vR9J6yT5wL1mB0sXnG2hQ4vJ8zYkCgIgZ4rP9dT7eWfU3oM6KjR1qSpNvBwL0tXyA2iG8fH5dE=
-        - name: Request-Id
-          in: header
-          required: false
-          description: The `requestId` returned in a prior `202` response, echoed back on the signed retry so the server can correlate it with the issued challenge. Required on the signed retry; must be paired with `Grid-Wallet-Signature`.
-          schema:
-            type: string
-          example: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21
       requestBody:
         required: true
         content:
@@ -8329,6 +8642,14 @@ paths:
                   fundingSources:
                     - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+              setSpendingLimit:
+                summary: Set the card's per-transaction spending limit
+                value:
+                  maxSpendPerTransaction: 10000
+              clearSpendingLimit:
+                summary: Remove the card's per-transaction spending limit
+                value:
+                  maxSpendPerTransaction: null
               freezeAndUpdateSources:
                 summary: Freeze the card and replace its funding sources in one call
                 value:
@@ -8341,17 +8662,11 @@ paths:
                   state: CLOSED
       responses:
         '200':
-          description: Signed retry accepted. Returns the updated card.
+          description: Card updated. Returns the updated card.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Card'
-        '202':
-          description: Challenge issued. The response contains a `payloadToSign` that must be signed with the session private key of a verified authentication credential on the card's owning internal account, along with a `requestId` that must be echoed back on the retry.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SignedRequestChallenge'
         '400':
           description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, and for general invalid parameters.
           content:
@@ -8359,7 +8674,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error400'
         '401':
-          description: Unauthorized. Returned when the provided `Grid-Wallet-Signature` is missing, malformed, or does not match a pending update challenge for this card, or when the `Request-Id` does not match an unexpired pending challenge.
+          description: Unauthorized. Returned when the platform credential is missing or invalid, or does not grant access to this card.
           content:
             application/json:
               schema:
@@ -9860,7 +10175,7 @@ webhooks:
     post:
       summary: Incoming payment webhook and approval mechanism
       description: |
-        Webhook that is called when an incoming payment is received by a customer's UMA address.
+        Webhook that is called when an incoming payment is received by a customer — over UMA to the customer's UMA address, or over a bank rail (e.g. a SWIFT wire to the customer's funding coordinates from `fundingPaymentInstructions`).
         This endpoint should be implemented by clients of the Grid API.
 
         ### Authentication
@@ -9885,6 +10200,8 @@ webhooks:
         The Grid system will proceed or cancel the payment based on your response.
 
         For transactions with other statuses (COMPLETED, FAILED, REFUNDED), this webhook is purely informational.
+
+        Bank-rail incoming payments (e.g. SWIFT) are informational at every status, including PENDING: the funds have already moved interbank, so the approval mechanism and the 5-second response window do not apply.
       operationId: incomingPaymentWebhook
       tags:
         - Webhooks
@@ -10035,7 +10352,7 @@ webhooks:
         '200':
           description: |
             Webhook received successfully.
-            For PENDING transactions, this indicates approval to proceed with the payment.
+            For PENDING transactions on approval-mechanism rails, this indicates approval to proceed with the payment. For bank-rail incoming payments (e.g. SWIFT) a 200 only acknowledges receipt: there is nothing to approve.
             If `requestedReceiverCustomerInfoFields` were present in the webhook request, the corresponding fields for the recipient must be included in this response in the `receiverCustomerInfo` object.
           content:
             application/json:
@@ -10046,6 +10363,7 @@ webhooks:
             Webhook received and will be processed asynchronously. The synchronous 200 response should be preferred where possible. This asycnhronous path should only be used in
             cases where the platform's architecture requires async (but still very quick) processing before approving or rejecting the payment.
             The platform must call the `/transactions/{transactionId}/approve` or `/transactions/{transactionId}/reject` endpoint to approve or reject the payment within 5 seconds or the payment will be automatically rejected.
+            Bank-rail incoming payments (e.g. SWIFT) need no approve/reject call: a 202 is treated the same as a 200 acknowledgment.
         '400':
           description: Bad request
           content:
@@ -10061,7 +10379,9 @@ webhooks:
         '403':
           description: |
             Forbidden - Payment rejected by the client.
-            Only applicable for PENDING transactions.
+            Only applicable for PENDING transactions on approval-mechanism rails;
+            a bank-rail incoming payment (e.g. SWIFT) cannot be rejected through
+            this response because the funds have already moved interbank.
           content:
             application/json:
               schema:
@@ -10075,7 +10395,9 @@ webhooks:
         '422':
           description: |
             Unprocessable Entity - Additional counterparty information required.
-            Only applicable for PENDING transactions.
+            Only applicable for PENDING transactions on approval-mechanism rails;
+            for bank-rail incoming payments (e.g. SWIFT) this response has no
+            effect on the already-received funds.
           content:
             application/json:
               schema:
@@ -10660,6 +10982,7 @@ webhooks:
         ### Event types
         - `INTERNAL_ACCOUNT.BALANCE_UPDATED` — Fired when the balance of an internal account changes. The `data` payload contains the full internal account object.
         - `INTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an internal account changes (e.g., `OPEN` → `FROZEN`). The `data` payload contains the full internal account object.
+        - `INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED` — Fired when the account's `fundingPaymentInstructions` change: new funding coordinates became available (e.g., a SWIFT collection account finished provisioning) or previously served coordinates were withdrawn. The `data` payload contains the full internal account object, including the current `fundingPaymentInstructions`.
       operationId: internalAccountStatusWebhook
       tags:
         - Webhooks
@@ -10728,6 +11051,127 @@ webhooks:
                     fundingPaymentInstructions: []
                     createdAt: '2025-08-01T10:00:00Z'
                     updatedAt: '2025-08-15T14:32:00Z'
+              fundingInstructionsUpdated:
+                summary: A SWIFT collection account finished provisioning and the account gained wire coordinates
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000009
+                  type: INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    type: INTERNAL_FIAT
+                    status: ACTIVE
+                    balance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    totalBalance:
+                      amount: 10000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    fundingPaymentInstructions:
+                      - accountOrWalletInfo:
+                          accountType: SWIFT_ACCOUNT
+                          country: SG
+                          swiftCode: DBSSSGSG
+                          bankName: DBS Bank
+                          accountNumber: '8850123456'
+                          accountHolderName: Acme Exports Pte Ltd
+                          paymentRails:
+                            - SWIFT
+                        instructionsNotes: Payments are attributed automatically by the destination account; no reference code is required.
+                    createdAt: '2025-08-01T10:00:00Z'
+                    updatedAt: '2025-08-15T14:32:00Z'
+      responses:
+        '200':
+          description: |
+            Webhook received successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized - Signature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict - Webhook has already been processed (duplicate id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+  external-account-status:
+    post:
+      summary: External account status webhook
+      description: |
+        Webhook that is called whenever the status of an external account changes, for any transition between statuses (`PENDING`, `ACTIVE`, `UNDER_REVIEW`, `INACTIVE`, `PENDING_OWNERSHIP_VERIFICATION`, `UNVERIFIED`) — for example when an account under review becomes active, when ownership verification completes (`PENDING_OWNERSHIP_VERIFICATION` → `ACTIVE`), or when a verification attempt fails (`PENDING_OWNERSHIP_VERIFICATION` → `UNVERIFIED`).
+        This endpoint should be implemented by clients of the Grid API.
+
+        ### Authentication
+        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
+        To verify the signature:
+        1. Get the Grid public key provided to you during integration
+        2. Decode the base64 signature from the header
+        3. Create a SHA-256 hash of the request body
+        4. Verify the signature using the public key and the hash
+
+        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
+
+        ### Event types
+        - `EXTERNAL_ACCOUNT.STATUS_UPDATED` — Fired when the status of an external account changes. The `data` payload contains the full external account object.
+      operationId: externalAccountStatusWebhook
+      tags:
+        - Webhooks
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalAccountStatusWebhook'
+            examples:
+              verificationSucceeded:
+                summary: A wallet account became active after ownership verification
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000042
+                  type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: ACTIVE
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    accountInfo:
+                      accountType: ETHEREUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+              verificationFailed:
+                summary: A liveness check failed; a new challenge is needed to retry
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000043
+                  type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+                  timestamp: '2025-08-15T14:45:00Z'
+                  data:
+                    id: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: UNVERIFIED
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    accountInfo:
+                      accountType: ETHEREUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
       responses:
         '200':
           description: |
@@ -10878,6 +11322,7 @@ webhooks:
                     expYear: 2029
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    maxSpendPerTransaction: 5000
                     currency: USD
                     processorRef: card_b81c2a4f
                     issuerRef: lead_card_7a1b9c3d
@@ -10897,6 +11342,7 @@ webhooks:
                     form: VIRTUAL
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    maxSpendPerTransaction: null
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:12:00Z'
@@ -10918,6 +11364,7 @@ webhooks:
                     expYear: 2029
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    maxSpendPerTransaction: 5000
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-09T09:00:00Z'
@@ -10992,6 +11439,7 @@ webhooks:
                     fundingSources:
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                       - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                    maxSpendPerTransaction: null
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:30:00Z'
@@ -11529,6 +11977,23 @@ components:
         - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
           (source currency differs from destination currency).
       example: CROSS_CURRENCY_TRANSACTION
+    FixedFee:
+      type: object
+      description: Fixed fee charged per transaction.
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Fee amount in the smallest unit of the fixed fee's `currency` (e.g., cents for USD).
+          example: 100
+        currency:
+          type: string
+          description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
+          example: USD
     FeeConfig:
       type: object
       description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
@@ -11546,22 +12011,7 @@ components:
           description: Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
           example: 30
         fixedFee:
-          type: object
-          description: Fixed fee charged per transaction.
-          properties:
-            amount:
-              type: integer
-              format: int64
-              minimum: 0
-              description: Fee amount in the smallest unit of the fixed fee's `currency` (e.g., cents for USD).
-              example: 100
-            currency:
-              type: string
-              description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
-              example: USD
-          required:
-            - amount
-            - currency
+          $ref: '#/components/schemas/FixedFee'
       required:
         - feeType
         - sourceCurrency
@@ -11774,7 +12224,7 @@ components:
         field:
           type: string
           description: Dot-notation path to the offending field.
-          example: taxIdentifier
+          example: identifier
         constraint:
           $ref: '#/components/schemas/FieldConstraint'
         message:
@@ -11838,6 +12288,9 @@ components:
             | STABLECOIN_PROVIDER_ACCOUNT_INVALID | The stablecoin provider account link is not usable |
             | STABLECOIN_PROVIDER_ACCOUNT_REVOKED | The stablecoin provider account link has been revoked |
             | STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED | Multiple active provider account links exist; pass `stablecoinProviderAccountId` to select one |
+            | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
+            | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
+            | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -11879,6 +12332,9 @@ components:
             - STABLECOIN_PROVIDER_ACCOUNT_INVALID
             - STABLECOIN_PROVIDER_ACCOUNT_REVOKED
             - STABLECOIN_PROVIDER_ACCOUNT_SELECTION_REQUIRED
+            - CARDHOLDER_KYC_NOT_APPROVED
+            - TRANSACTION_SIZE_LIMIT_EXCEEDED
+            - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
         message:
           type: string
           description: Error message
@@ -12431,15 +12887,16 @@ components:
               example: US
             address:
               $ref: '#/components/schemas/Address'
-            taxIdType:
+            idType:
               $ref: '#/components/schemas/IdentificationType'
-            taxIdentifier:
+            identifier:
               type: string
-              description: Tax-identification number. For US persons this is the SSN (format `###-##-####`) or ITIN. For non-US persons this is the tax number issued by `taxIdCountryOfIssuance`.
+              writeOnly: true
+              description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only — never returned in customer responses.
               example: 123-45-6789
-            taxIdCountryOfIssuance:
+            countryOfIssuance:
               type: string
-              description: Country that issued the tax identifier (ISO 3166-1 alpha-2). Required when `taxIdType` is `NON_US_TAX_ID`.
+              description: 'Country that issued the identification (ISO 3166-1 alpha-2). Optional for an individual account holder: SSN and ITIN are US-issued, so this defaults to `US` and is rejected if set to anything else.'
               example: US
         - $ref: '#/components/schemas/CustomerEdd'
     IndividualCustomer:
@@ -12983,20 +13440,12 @@ components:
       allOf:
         - $ref: '#/components/schemas/CustomerCreateRequest'
         - $ref: '#/components/schemas/IndividualCustomerFields'
-        - type: object
-          properties:
-            idType:
-              $ref: '#/components/schemas/IdentificationType'
-            identifier:
-              type: string
-              writeOnly: true
-              description: The individual's tax identification number. Required to onboard the individual as a US account holder. Only SSN and ITIN are currently accepted for an individual account holder; other identification types are rejected. Write-only — never returned in customer responses.
-              example: 123-45-6789
     BusinessInfo:
       type: object
       description: Additional information required for business entities
       required:
         - legalName
+        - country
         - taxId
         - incorporatedOn
       properties:
@@ -13155,6 +13604,9 @@ components:
             | PASSKEY_ALREADY_ENROLLED | The customer already has an enrolled passkey factor; only one passkey per customer is supported. Delete the existing one before enrolling another |
             | SCA_SESSION_REQUIRED | The customer's Strong Customer Authentication login session is missing or expired. Re-authenticate the customer, then retry the request. Distinct from a `401`, which means the platform's own API credentials were rejected |
             | BENEFICIARY_TRUSTED | The external account is currently a trusted beneficiary, so it cannot be deleted. Untrust it first via `POST /customers/external-accounts/{externalAccountId}/untrust` (and its `/confirm`), then delete |
+            | INVALID_STATE_TRANSITION | The requested card `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
+            | CARD_ALREADY_CLOSED | `state: CLOSED` was requested for a card that is already `CLOSED` |
+            | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
@@ -13165,6 +13617,9 @@ components:
             - PASSKEY_ALREADY_ENROLLED
             - SCA_SESSION_REQUIRED
             - BENEFICIARY_TRUSTED
+            - INVALID_STATE_TRANSITION
+            - CARD_ALREADY_CLOSED
+            - CARD_NOT_MUTABLE
             - CONFLICT
         message:
           type: string
@@ -13900,8 +14355,10 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+            | DAILY_VOLUME_LIMIT_EXCEEDED | The requested amount would exceed the configured daily volume limit for this trade corridor or withdrawal currency |
           enum:
             - RATE_LIMITED
+            - DAILY_VOLUME_LIMIT_EXCEEDED
         message:
           type: string
           description: Error message
@@ -14143,6 +14600,7 @@ components:
         - SGD_ACCOUNT
         - THB_ACCOUNT
         - VND_ACCOUNT
+        - SWIFT_ACCOUNT
         - SPARK_WALLET
         - LIGHTNING
         - SOLANA_WALLET
@@ -14251,6 +14709,12 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+            bankAddress:
+              type: string
+              description: The postal address of the financial institution holding the account, on a single line. Optional on every rail, and recommended for wires, where some originating banks require the beneficiary institution's address before they will send.
+              example: 885 Teaneck Road, Teaneck, NJ 07666
+              minLength: 1
+              maxLength: 255
     PaymentBrlAccountInfo:
       title: BRL Account
       allOf:
@@ -16502,6 +16966,7 @@ components:
               example: '{"type":"ACTIVITY_TYPE_SIGN_TRANSACTION_V2","timestampMs":"1746736509954","organizationId":"org_abc123","parameters":{"signWith":"wallet_abc123def456","unsignedTransaction":"ea69b4bf05f775209f26ff0a34a05569180f7936579d5c4af9377ae550194f72","type":"TRANSACTION_TYPE_ETHEREUM"},"generateAppProofs":true}'
     SwiftAccountInfoBase:
       type: object
+      description: 'At least one of accountNumber or iban is always present: IBAN-only corridors (e.g. BR, GB) use iban, other corridors use accountNumber, and both appear when the bank exposes both identifiers for the same account.'
       required:
         - accountType
         - swiftCode
@@ -16571,11 +17036,23 @@ components:
         - $ref: '#/components/schemas/SwiftAccountInfo'
         - type: object
           required:
-            - reference
+            - accountHolderName
           properties:
+            accountHolderName:
+              type: string
+              description: The name of the account holder as it must appear on the wire. Remitting banks match this against the beneficiary name field, so payers should copy it exactly.
+              example: Acme Exports Pte Ltd
+              minLength: 1
+              maxLength: 255
+            bankAddress:
+              type: string
+              description: The address of the bank holding the account, when known.
+              example: 12 Marina Boulevard, Singapore 018982
+              minLength: 1
+              maxLength: 1024
             reference:
               type: string
-              description: Unique reference code that must be included with the payment to properly credit it
+              description: Reference code to include with the payment when present. SWIFT payments are attributed by the destination account number/IBAN, so this account type typically requires no reference.
               example: UMA-Q12345-REF
     CnyAccountInfoBase:
       type: object
@@ -16584,8 +17061,8 @@ components:
         - bankName
       description: |-
         Required fields depend on the selected paymentRails:
-        - BANK_TRANSFER: accountNumber, bankName
-        - MOBILE_MONEY: bankName, phoneNumber
+        - BANK_TRANSFER: accountNumber, bankName. Business-to-business only, so the beneficiary must be a business.
+        - MOBILE_MONEY: bankName, phoneNumber. Pays an AliPay or WeChat Pay wallet; bankName selects the wallet.
       properties:
         accountType:
           type: string
@@ -16840,15 +17317,24 @@ components:
       enum:
         - PENDING
         - ACTIVE
+        - PENDING_OWNERSHIP_VERIFICATION
+        - UNVERIFIED
         - UNDER_REVIEW
         - INACTIVE
-      description: Status of an external account
+      description: |
+        Status of an external account.
+
+        `PENDING_OWNERSHIP_VERIFICATION`: the wallet's ownership must be verified
+        (e.g. under the EU Travel Rule) before unrestricted use; transfers below
+        regulatory thresholds are still allowed. `UNVERIFIED`: the most recent
+        verification attempt failed; start a new challenge to retry. Successful
+        verification moves the account to `ACTIVE`.
     OwnershipType:
       type: string
       enum:
         - FIRST_PARTY
         - THIRD_PARTY
-      description: Whether the external account belongs to the customer themselves (first party) or to someone else (third party)
+      description: Whether the external account belongs to the customer themselves (`FIRST_PARTY`) or to someone else (`THIRD_PARTY`). Required when creating self-custody crypto wallet external accounts on platforms subject to counterparty requirements — for example, under the EU Travel Rule or similar requirements in other regions; recommended for all other accounts, where providing it can unlock additional capabilities and smoother compliance handling.
       example: FIRST_PARTY
     BeneficiaryVerificationStatus:
       type: string
@@ -18983,16 +19469,65 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/SwiftBeneficiary'
                   BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    WalletIndividualBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - fullName
+        - countryOfResidence
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          description: The full name of the beneficiary
+          example: John Michael Doe
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary (ISO 3166-1 alpha-2)
+          example: US
+    WalletBeneficiaryOneOf:
+      description: The person or business that owns a crypto wallet external account.
+      oneOf:
+        - title: Individual Beneficiary
+          $ref: '#/components/schemas/WalletIndividualBeneficiary'
+        - title: Business Beneficiary
+          $ref: '#/components/schemas/BusinessBeneficiary'
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: '#/components/schemas/WalletIndividualBeneficiary'
+          BUSINESS: '#/components/schemas/BusinessBeneficiary'
+    WalletBeneficiaryFields:
+      type: object
+      properties:
+        beneficiary:
+          description: The wallet's owner. Optional for `FIRST_PARTY` accounts — the customer's verified identity is used. Required for `THIRD_PARTY` wallets on platforms with counterparty requirements (e.g. EU Travel Rule); if missing there, creation fails with `400 INVALID_INPUT`.
+          $ref: '#/components/schemas/WalletBeneficiaryOneOf'
+    WalletCustodyFields:
+      type: object
+      properties:
+        vaspName:
+          type: string
+          description: Name of the VASP that custodies this account, from the VASP directory (`GET /vasps`). Present when the wallet is held at an exchange or other custodial platform; omit it for self-custody wallets. Ownership verification applies only to self-custody wallets.
+          example: Kraken
     BaseWalletExternalAccountInfo:
       title: Base Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/BaseWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     EthereumWalletExternalAccountInfo:
       title: Ethereum L1 Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/EthereumWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     LightningInfo:
       type: object
       description: |
@@ -19026,26 +19561,36 @@ components:
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     PlasmaWalletExternalAccountInfo:
       title: Plasma Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SparkWalletExternalAccountInfo:
       title: Spark Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     TronWalletExternalAccountInfo:
       title: Tron Wallet
       allOf:
         - $ref: '#/components/schemas/BaseExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     CnyBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -20142,6 +20687,108 @@ components:
               default: false
             accountInfo:
               $ref: '#/components/schemas/ExternalAccountCreateInfoOneOf'
+    OwnershipVerificationMethod:
+      type: string
+      enum:
+        - WALLET_SIGNATURE
+        - LIVENESS
+      description: |
+        The method used to verify ownership of a self-custody crypto wallet.
+
+        | Method | Description |
+        |--------|-------------|
+        | `WALLET_SIGNATURE` | Prove control of the wallet by signing a message with the wallet's key |
+        | `LIVENESS` | Prove identity via a hosted biometric verification flow |
+      example: WALLET_SIGNATURE
+    OwnershipChallengeRequest:
+      type: object
+      description: Starts (or restarts) an ownership verification challenge for a crypto wallet external account.
+      required:
+        - method
+      properties:
+        method:
+          $ref: '#/components/schemas/OwnershipVerificationMethod'
+          description: The verification method to use for this challenge.
+    WalletSignatureChallenge:
+      title: Wallet Signature Challenge
+      type: object
+      description: A challenge to prove ownership of the wallet by signing a message with the wallet's key.
+      required:
+        - method
+        - messageToSign
+        - expiresAt
+      properties:
+        method:
+          type: string
+          enum:
+            - WALLET_SIGNATURE
+          description: The verification method. Always `WALLET_SIGNATURE` for this shape.
+          example: WALLET_SIGNATURE
+        messageToSign:
+          type: string
+          description: The exact message the wallet must sign, character-for-character. Submit the resulting signature via the verify endpoint.
+          example: 'I verify that I control this wallet. Nonce: 019542f5-b3e7-1d02'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When this challenge expires. Prompt the user promptly; after expiry, start a new challenge.
+          example: '2025-08-15T15:32:00Z'
+    LivenessChallenge:
+      title: Liveness Challenge
+      type: object
+      description: A challenge to prove ownership through a hosted biometric verification flow. Completes asynchronously — the outcome is delivered via `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the external account.
+      required:
+        - method
+        - verificationLink
+        - expiresAt
+      properties:
+        method:
+          type: string
+          enum:
+            - LIVENESS
+          description: The verification method. Always `LIVENESS` for this shape.
+          example: LIVENESS
+        verificationLink:
+          type: string
+          format: uri
+          description: Hosted verification URL to present to the user.
+          example: https://verify.example.com/session/019542f5-b3e7-1d02
+        token:
+          type: string
+          description: Provider-specific token that can be used in place of `verificationLink` — for example, to embed the provider's SDK directly in your application. Only returned for providers that support direct SDK integration. Whether to use the hosted URL or the embedded SDK is up to you; both flows result in the same verification outcome.
+          example: eyJhbGciOiJIUzI1NiJ9.example
+        expiresAt:
+          type: string
+          format: date-time
+          description: When this challenge expires. Prompt the user promptly; after expiry, start a new challenge.
+          example: '2025-08-15T15:32:00Z'
+    OwnershipChallenge:
+      description: An ownership verification challenge for a crypto wallet external account. The shape is determined by the challenge `method`.
+      oneOf:
+        - $ref: '#/components/schemas/WalletSignatureChallenge'
+        - $ref: '#/components/schemas/LivenessChallenge'
+      discriminator:
+        propertyName: method
+        mapping:
+          WALLET_SIGNATURE: '#/components/schemas/WalletSignatureChallenge'
+          LIVENESS: '#/components/schemas/LivenessChallenge'
+    OwnershipVerifyRequest:
+      type: object
+      description: Completes a `WALLET_SIGNATURE` challenge by submitting the signature the wallet produced for the challenge's `messageToSign`.
+      required:
+        - signature
+      properties:
+        signature:
+          type: string
+          description: The signature produced over the exact `messageToSign` — EIP-191 hex for EVM chains, base64 for Bitcoin, base58-encoded Ed25519 for Solana.
+          example: '0x52d75f01c9e7b8b2ce2fbcbd21bfeeee7bcd1a2f01ce6b8ad9a67a45e83a8f5d1c'
+        signatureScheme:
+          type: string
+          enum:
+            - bip137
+            - electrum
+          default: bip137
+          description: Bitcoin message-signing format. Defaults to `bip137`; use `electrum` for Electrum/Sparrow wallets. Ignored for non-Bitcoin chains.
     PlatformExternalAccountCreateRequest:
       type: object
       required:
@@ -20622,13 +21269,29 @@ components:
         |--------|-------------|
         | `CREATED` | Initial lookup has been created |
         | `PENDING` | Quote has been created |
-        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `PROCESSING` | Funding has been received and payment initiated |
         | `COMPLETED` | Cross border payment has been received, converted and payment has been sent to the offramp network |
         | `REJECTED` | Receiving institution or wallet rejected payment, payment has been refunded |
         | `FAILED` | An error occurred during payment |
         | `REFUNDED` | Payment was unable to complete and refunded |
         | `EXPIRED` | Quote has expired |
+    TransactionPendingReason:
+      type: string
+      enum:
+        - COUNTERPARTY_DECLARATION_REQUIRED
+        - WALLET_VERIFICATION_REQUIRED
+        - COUNTERPARTY_INFORMATION_REQUIRED
+        - COMPLIANCE_REVIEW
+      description: |
+        Why a transaction is pending.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `COUNTERPARTY_DECLARATION_REQUIRED` | The customer must declare who controls the sending wallet. |
+        | `WALLET_VERIFICATION_REQUIRED` | The customer must verify ownership of the sending wallet. |
+        | `COUNTERPARTY_INFORMATION_REQUIRED` | Information about the sender is required. |
+        | `COMPLIANCE_REVIEW` | The customer's action is complete and the deposit remains under compliance review. |
     TransactionDirection:
       type: string
       enum:
@@ -20789,6 +21452,9 @@ components:
           example: Transaction:019542f5-b3e7-1d02-0000-000000000004
         status:
           $ref: '#/components/schemas/TransactionStatus'
+        pendingReason:
+          $ref: '#/components/schemas/TransactionPendingReason'
+          description: Present when compliance review or required customer action is delaying settlement.
         type:
           $ref: '#/components/schemas/TransactionType'
         direction:
@@ -20985,8 +21651,14 @@ components:
           description: Unique reference code to include with the payment to match it with the correct incoming transaction, when available.
           example: UMA-Q12345-REF
         transactionHash:
+          deprecated: true
           type: string
-          description: Transaction hash of the internal settlement transfer used to deliver a UMA payment — the inter-VASP settlement leg (e.g. USDC on Solana to the receiving partner), when available. This is not a transfer to a customer's own wallet; for that, see the `onChainTransaction` on the transaction's source or destination.
+          description: |-
+            Transaction hash of the settlement transfer, when available. This field reports two different transfers, and only one of them has a replacement today:
+
+            For a crypto transfer to or from a customer's own external wallet, use the `onChainTransaction` on the relevant source or destination instead — it names the network alongside the hash. That is the transfer this field is deprecated for.
+
+            For the inter-VASP settlement leg of a UMA payment (e.g. USDC on Solana to the receiving partner), this field remains the only place the hash is reported: a UMA address is not a wallet you hold, so its source and destination carry no `onChainTransaction`. The field will not be removed before that leg has a replacement.
           example: '0x9f2c6b6f4b6c8f2a8d9e0b1c2d3e4f5061728394a5b6c7d8e9f00112233445566'
     IncomingTransactionFailureReason:
       type: string
@@ -20999,7 +21671,9 @@ components:
         - MISSING_MANDATORY_PAYEE_DATA
         - QUOTE_EXPIRED
         - QUOTE_EXECUTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+        - COMPLIANCE_REJECTED
+        - COLLECTION_FAILED
+      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -21045,7 +21719,7 @@ components:
         | Status | Description |
         |--------|-------------|
         | `PENDING` | Quote is pending confirmation |
-        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU); authorize the transaction's `scaChallenge` to proceed. |
+        | `PENDING_AUTHORIZATION` | Awaiting Strong Customer Authentication. Only occurs for customers in a region where SCA is required (e.g. EU). The challenge is carried by the quote, not the transaction — fetch `GET /quotes/{quoteId}` using the transaction's `quoteId`, then authorize its `scaChallenge` via `POST /quotes/{quoteId}/authorize`. |
         | `EXPIRED` | Quote wasn't executed before expiry window |
         | `PROCESSING` | Executing the quote after receiving funds |
         | `COMPLETED` | Payout successfully reached the destination |
@@ -21101,19 +21775,48 @@ components:
       type: string
       enum:
         - QUOTE_EXPIRED
+        - QUOTE_RATE_UNAVAILABLE
         - QUOTE_EXECUTION_FAILED
-        - LIGHTNING_PAYMENT_FAILED
         - FUNDING_AMOUNT_MISMATCH
-        - COUNTERPARTY_POST_TX_FAILED
         - SCA_NOT_COMPLETED
-        - EXECUTION_FAILED_POST_DEBIT
-        - SETTLEMENT_FAILED
-        - TIMEOUT
-        - MANUAL_REFUND
-      description: |-
-        Reason for failure of an outgoing transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted.
+        - PAYOUT_RETURNED
+        - LIMIT_EXCEEDED
+        - ACCOUNT_CANNOT_RECEIVE
+        - ACCOUNT_INVALID
+        - COMPLIANCE_REJECTED
+        - LIGHTNING_PAYMENT_FAILED
+        - COUNTERPARTY_POST_TX_FAILED
+      description: |
+        Reason for failure of an outgoing transaction. This is used to provide more
+        context on why a transaction failed. If the transaction is not in a failed
+        state, this field is omitted.
 
-        `SCA_NOT_COMPLETED` means the customer did not satisfy the Strong Customer Authentication challenge before it expired, so the transaction was never authorized and no funds were moved. Only occurs for customers in a region where SCA is required (e.g. the EU). Create a new quote to try again, and have the customer authorize it while the challenge is live.
+        When a payout partner rejects or fails a payment, one of the granular payout
+        reasons (`PAYOUT_RETURNED`, `LIMIT_EXCEEDED`, `ACCOUNT_CANNOT_RECEIVE`,
+        `ACCOUNT_INVALID`, `COMPLIANCE_REJECTED`) is returned when available.
+        `COUNTERPARTY_POST_TX_FAILED` is a coarse fallback used only when no granular
+        reason is available.
+
+        `SCA_NOT_COMPLETED` means the customer did not satisfy the Strong Customer
+        Authentication challenge before it expired, so the transaction was never
+        authorized and no funds were moved. Only occurs for customers in a region
+        where SCA is required (e.g. the EU). Create a new quote to try again, and have
+        the customer authorize it while the challenge is live.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `QUOTE_EXPIRED` | The quote was not executed before its expiry window |
+        | `QUOTE_RATE_UNAVAILABLE` | The quoted exchange rate was no longer available when the quote was executed, so nothing was exchanged. Create a new quote to get a current rate |
+        | `QUOTE_EXECUTION_FAILED` | The quote could not be executed. Covers any internal failure on the way to settlement, whether or not funds were debited — a debited amount is refunded automatically |
+        | `FUNDING_AMOUNT_MISMATCH` | The funds received did not match the expected amount |
+        | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
+        | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
+        | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
+        | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency isn't supported for that account |
+        | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
+        | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
+        | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
+        | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
     RailSelectionMode:
       type: string
       enum:
@@ -21804,6 +22507,27 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
+    PlatformFeeOverride:
+      type: object
+      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
+      required:
+        - platformFixedFee
+        - platformVariableFeeBps
+      properties:
+        platformFixedFee:
+          $ref: '#/components/schemas/FixedFee'
+          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
+        platformVariableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
+          example: 30
+      example:
+        platformFixedFee:
+          amount: 50
+          currency: USD
+        platformVariableFeeBps: 30
     QuoteRequest:
       type: object
       required:
@@ -21849,6 +22573,8 @@ components:
           example: '12345'
         purposeOfPayment:
           $ref: '#/components/schemas/PurposeOfPayment'
+        platformFeeOverride:
+          $ref: '#/components/schemas/PlatformFeeOverride'
         scaFactor:
           $ref: '#/components/schemas/ScaFactor'
           description: Optional preferred factor for a Strong Customer Authentication challenge issued at quote creation. Only relevant for a realtime-funding source in a region where SCA is required (e.g. EU); ignored otherwise. Valid values are `SMS_OTP` (default) and `PASSKEY` — `TOTP` cannot carry the required dynamic linking and is rejected. When the quote is returned in `PENDING_AUTHORIZATION`, authorize it via `POST /quotes/{quoteId}/authorize`.
@@ -22364,6 +23090,38 @@ components:
         totalCount:
           type: integer
           description: Total number of transactions matching the criteria (excluding pagination)
+    Vasp:
+      type: object
+      required:
+        - vaspName
+      properties:
+        vaspName:
+          type: string
+          description: Name of this VASP. Pass this value as `vaspName` when declaring a VASP-hosted counterparty.
+          example: Kraken
+        url:
+          type: string
+          format: uri
+          description: The VASP's website, when known.
+          example: https://www.kraken.com
+      description: A Virtual Asset Service Provider (VASP) — an exchange or other custodial platform — recognized for counterparty declarations.
+    VaspListResponse:
+      type: object
+      required:
+        - data
+        - hasMore
+      properties:
+        data:
+          type: array
+          description: List of VASPs in the directory
+          items:
+            $ref: '#/components/schemas/Vasp'
+        hasMore:
+          type: boolean
+          description: Indicates if more results are available beyond this page
+        nextCursor:
+          type: string
+          description: Cursor to retrieve the next page of results (only present if hasMore is true)
     Permission:
       type: string
       enum:
@@ -22485,6 +23243,32 @@ components:
             The value is a JSON string of the form `{"version": "v1.0.0", "data": "<hex>", "dataSignature": "<hex>", "enclaveQuorumPublic": "<hex>"}`. `data` hex-decodes to JSON `{"encappedPublic": "<hex>", "ciphertext": "<hex>", "organizationId": "<id>"}`, where `encappedPublic` is the uncompressed SEC1 ephemeral public key. `dataSignature` is an ECDSA-P256-SHA256 signature over the `data` bytes produced by the issuer key in `enclaveQuorumPublic`; verify before decrypting.
             In sandbox, `dataSignature` and `enclaveQuorumPublic` are empty strings. Clients should bypass attestation verification when calling against sandbox.
           example: '{"version":"v1.0.0","data":"7b22656e6361707065645075626c6963223a22303433...","dataSignature":"3045022100c9...","enclaveQuorumPublic":"04a1b2c3..."}'
+    WalletOperationProcessing:
+      title: Wallet Operation Processing
+      description: '`200` response returned by an Embedded Wallet operation that the wallet provider has accepted but not yet settled — a consensus- or approval-gated activity that is still in flight. It is not an error and needs no client action beyond patience: the backend reconciles the operation to its terminal state on its own. The client MAY re-send the byte-identical request to converge sooner; the request is idempotent and returns the settled success response once the operation completes.'
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - PROCESSING
+          description: Always `PROCESSING`. Marks a still-in-flight operation whose terminal result is not yet available.
+          example: PROCESSING
+        message:
+          type: string
+          description: Human-readable explanation that the operation is still being processed and the same request may be retried.
+          example: This login is still being processed. Retry the same request in a moment.
+      example:
+        status: PROCESSING
+        message: This login is still being processed. Retry the same request in a moment.
+    InternalAccountExportResult:
+      title: Internal Account Export Result
+      description: 'Response body for the signed retry of `POST /internal-accounts/{internalAccountId}/export`. Normally an `InternalAccountExportResponse` — the encrypted wallet credentials. When the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"`. The credentials are never stored server-side, so re-sending the byte-identical signed retry is how they are collected: the re-send returns them as soon as the activity has settled, and the challenge is consumed only by the attempt that delivers them.'
+      anyOf:
+        - $ref: '#/components/schemas/InternalAccountExportResponse'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     AuthMethodType:
       type: string
       enum:
@@ -22783,8 +23567,8 @@ components:
           example: eyJhbGciOiJSUzI1NiIsImtpZCI6ImFiYzEyMyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJzdWIiOiIxMTIyMzM0NDU1IiwiYXVkIjoiMTIzNDU2Ny5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTc0NjczNjUwOSwiZXhwIjoxNzQ2NzQwMTA5fQ.-3_ETmSGOl4wGNLR1QSOMlHk5IvADpX3YdHFmTH9KmRu6sEhM20RsURjKrI4-_EKj7J_HtsdS1tCHm0iw2J0qtoczYFQqEW_U9qJD6QsuvTFx8Fj9rFa3ieYhZKi3kkBu6cADogUiudP50kf9345ATys2GrYm-ba5esgReW1WzGJG3SgCyIDnHFfxmeLjE2YE9EFxT73To3mPYAk0ywPL2MpFFV9F8I3PsnbDAxinaY75GeA8vJXATr8weEIXqHD2lxmXVE95qd2ZlcuyLUaEYyp9GXcOnx7SjhdJG88jl5BZQvxOVgBMo42iGjK674lSwsMiHpzLX98j6C786Rd9Q
         clientPublicKey:
           type: string
-          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (0x04 prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid encrypts the session signing key returned in the response to this public key. The key is ephemeral and one-time-use per verification request.
-          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+          description: Client-generated, ephemeral P-256 public key; the matching private key is retained on the client and is one-time-use per verification request. Send a compressed SEC1 key (`02`/`03` prefix followed by the 32-byte X coordinate; 66 hex characters) for the recommended client-held-key model, where that private key becomes the session signing key. Send an uncompressed SEC1 key (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters) for the deprecated legacy flow, where Grid seals the session signing key to it instead.
+          example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     OauthCredentialVerifyRequest:
       title: OAuth Credential Verify Request
       allOf:
@@ -22853,7 +23637,7 @@ components:
           PASSKEY: '#/components/schemas/PasskeyCredentialVerifyRequest'
     AuthSession:
       title: Authentication Session
-      description: An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification) or `POST /auth/sessions/{id}/refresh` (on mid-session refresh). Only session-issuing responses include `encryptedSessionSigningKey` — it is delivered exactly once at the moment the session is issued and is never returned by the list endpoint.
+      description: 'An authentication session on an Embedded Wallet internal account. Returned from `GET /auth/sessions` (list) and `POST /auth/credentials/{id}/verify` (on credential verification) or `POST /auth/sessions/{id}/refresh` (on mid-session refresh). The `clientPublicKey` encoding on the issuing request selects the flow: a compressed key gets the client-held-key model, where the client generates and retains the session signing key and session-issuing responses carry no key material; an uncompressed key gets the deprecated legacy flow, where Grid seals the session signing key to that public key and returns it as `encryptedSessionSigningKey`. Never returned by the list endpoint.'
       allOf:
         - $ref: '#/components/schemas/AuthMethod'
         - type: object
@@ -22867,16 +23651,23 @@ components:
               example: Session:019542f5-b3e7-1d02-0000-000000000003
             encryptedSessionSigningKey:
               type: string
+              deprecated: true
               description: |-
-                HPKE-encrypted session signing key, sealed to the `clientPublicKey` supplied on the verification or refresh request. Encoded as a base58check string: the decoded payload is a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext. The client decrypts this key with its private key and uses it to sign subsequent Embedded Wallet requests until `expiresAt`.
+                Deprecated; present only for the legacy flow, selected by sending an uncompressed `clientPublicKey` on the verification or refresh request. Grid seals the session signing key to that public key and returns it here as a base58check string (a 33-byte compressed P-256 encapsulated public key followed by AES-256-GCM ciphertext) for the client to decrypt with its private key.
 
-                Returned only by session-issuing responses for `OAUTH` and `PASSKEY` credentials. `EMAIL_OTP` and `SMS_OTP` sessions omit this field — the client generates its keypair before verification and retains the private key throughout, so the server has nothing to deliver. Always omitted from list responses (`GET /auth/sessions`) since Grid does not retain the plaintext key after the client has decrypted it.
+                The recommended client-held-key flow sends a compressed `clientPublicKey` instead: the client generates and retains the session signing key itself, so this field is omitted — the same way `EMAIL_OTP` and `SMS_OTP` sessions have always worked. See the "Client keys & signing" guide. Always omitted from list responses (`GET /auth/sessions`).
               example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
             expiresAt:
               type: string
               format: date-time
-              description: Timestamp after which the session is no longer valid and the `encryptedSessionSigningKey` must not be used to sign further requests.
+              description: Timestamp after which the session is no longer valid and the session signing key must not be used to sign further requests.
               example: '2026-04-09T15:30:01Z'
+    AuthCredentialVerifyResponse:
+      title: Auth Credential Verify Response
+      description: 'Response body for `POST /auth/credentials/{id}/verify`. Normally an `AuthSession` — the issued session on successful verification. When the underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — the client re-sends the byte-identical request until it gets the session; the backend also reconciles the activity to terminal on its own.'
+      anyOf:
+        - $ref: '#/components/schemas/AuthSession'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     AuthCredentialChallengeRequest:
       title: Auth Credential Challenge Request
       description: Request body for `POST /auth/credentials/{id}/challenge`. Required when re-challenging a `PASSKEY` credential — must carry `clientPublicKey` so Grid can bake it into the session-creation payload the returned challenge is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`, where the credential type alone is sufficient because the OTP is delivered out-of-band. OAuth credentials do not use this endpoint; authenticate or reauthenticate them with `POST /auth/credentials/{id}/verify`.
@@ -22884,11 +23675,11 @@ components:
       properties:
         clientPublicKey:
           type: string
-          pattern: ^04[0-9a-fA-F]{128}$
-          minLength: 130
+          pattern: ^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
+          minLength: 66
           maxLength: 130
-          description: Required for `PASSKEY` credentials. Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid bakes this key into the session-creation payload that the returned `challenge` is computed from, so the resulting session signing key is sealed to the client. Ignored for `EMAIL_OTP` and `SMS_OTP`.
-          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+          description: Required for `PASSKEY` credentials; the matching private key is retained on the client. Send a compressed SEC1 key (`02`/`03` prefix followed by the 32-byte X coordinate; 66 hex characters) for the recommended client-held-key model, where that private key becomes the session signing key. Send an uncompressed SEC1 key (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters) for the deprecated legacy flow, where Grid seals the session signing key to it instead. Grid bakes this public key into the session-creation payload that the returned `challenge` is computed from. Ignored for `EMAIL_OTP` and `SMS_OTP`.
+          example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     PasskeyAuthChallenge:
       title: Passkey Auth Challenge
       description: Extended `AuthMethod` shape returned for `PASSKEY` credentials from `POST /auth/credentials/{id}/challenge`. Includes the WebAuthn `credentialId` needed to target the passkey, plus the Grid-issued `challenge`, corresponding `requestId`, and challenge `expiresAt`. The `challenge` value is the lowercase hex-encoded SHA-256 digest of the canonical session-creation request body, not a base64url string. The client UTF-8 encodes this string as the WebAuthn challenge and signs it with the passkey to produce the assertion submitted to `POST /auth/credentials/{id}/verify`.
@@ -22930,6 +23721,12 @@ components:
           EMAIL_OTP: '#/components/schemas/AuthMethodResponse'
           SMS_OTP: '#/components/schemas/AuthMethodResponse'
           PASSKEY: '#/components/schemas/PasskeyAuthChallenge'
+    AuthCredentialChallengeResponse:
+      title: Auth Credential Challenge Response
+      description: 'Response body for `POST /auth/credentials/{id}/challenge`. Normally an `AuthCredentialResponseOneOf` — the re-issued challenge or re-sent OTP. When the OTP send''s underlying wallet-provider activity is still in flight, this is instead a `WalletOperationProcessing` body with `status: "PROCESSING"` — re-request the challenge until the send settles; the backend also reconciles it to terminal on its own.'
+      anyOf:
+        - $ref: '#/components/schemas/AuthCredentialResponseOneOf'
+        - $ref: '#/components/schemas/WalletOperationProcessing'
     SessionListResponse:
       type: object
       required:
@@ -22942,16 +23739,16 @@ components:
             $ref: '#/components/schemas/AuthSession'
     AuthSessionRefreshRequest:
       title: Auth Session Refresh Request
-      description: Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow. On the initial call, Grid binds this key into the session-creation payload returned as `payloadToSign`; on the signed retry, the client echoes the same key back and Grid uses it to encrypt the newly issued session signing key.
+      description: 'Request body for refreshing an active authentication session. The `clientPublicKey` is required on both steps of the signed-retry flow and must match on both. Its SEC1 encoding selects how the refreshed session signing key is delivered: a compressed key gets the recommended client-held-key model, where the client retains the new signing key itself; an uncompressed key gets the deprecated legacy flow, where Grid returns the new key as `encryptedSessionSigningKey` sealed to it. On the initial call, Grid binds the supplied key into the session-creation payload returned as `payloadToSign`.'
       type: object
       required:
         - clientPublicKey
       properties:
         clientPublicKey:
           type: string
-          pattern: ^04[0-9a-fA-F]{128}$
-          description: Client-generated P-256 public key, hex-encoded in uncompressed SEC1 format (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters total). The matching private key must remain on the client. Grid binds this key into the session-creation payload on the initial call and seals the returned `encryptedSessionSigningKey` to it on the signed retry.
-          example: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+          pattern: ^(0[23][0-9a-fA-F]{64}|04[0-9a-fA-F]{128})$
+          description: Client-generated P-256 public key; the matching private key is retained on the client. Send a compressed SEC1 key (`02`/`03` prefix followed by the 32-byte X coordinate; 66 hex characters) for the recommended client-held-key model, where that private key becomes the new session signing key. Send an uncompressed SEC1 key (`04` prefix followed by the 32-byte X and 32-byte Y coordinates; 130 hex characters) for the deprecated legacy flow, where Grid seals the new session signing key to it and returns it as `encryptedSessionSigningKey` on the signed retry.
+          example: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
     DelegatedKeyStatus:
       type: string
       enum:
@@ -22965,24 +23762,6 @@ components:
         - `ACTIVE`: The policy is granted and the key may stamp quote executions.
         - `REVOKED`: The delegated user has been deleted and the key can no longer sign.
       example: ACTIVE
-    DelegatedKeySpendingLimit:
-      title: Delegated Key Spending Limit
-      type: object
-      required:
-        - currencyCode
-        - maxPerTransaction
-      properties:
-        currencyCode:
-          type: string
-          pattern: ^[A-Z0-9]{3,16}$
-          description: Uppercase alphanumeric currency code the limit applies to — ISO 4217 for fiat (e.g. USD), or a Grid token code for stablecoins (e.g. USDB). Must match the card's currency; requests with any other currency are rejected.
-          example: USD
-        maxPerTransaction:
-          type: integer
-          format: int64
-          minimum: 1
-          description: Largest amount a single card transaction may authorize, in the smallest unit of the currency (e.g., cents for USD).
-          example: 5000
     DelegatedKey:
       title: Delegated Key
       type: object
@@ -23024,12 +23803,6 @@ components:
           example: Settlement service key
         status:
           $ref: '#/components/schemas/DelegatedKeyStatus'
-        spendingLimits:
-          type: array
-          uniqueItems: true
-          description: Per-transaction spending limits the key was created with, at most one entry per currency. Absent when the key has no limits.
-          items:
-            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
         createdAt:
           type: string
           format: date-time
@@ -23073,12 +23846,6 @@ components:
           maxLength: 256
           description: Human-readable label for the delegated key.
           example: Card payments key
-        spendingLimits:
-          type: array
-          uniqueItems: true
-          description: Optional per-transaction spending limits for the key, at most one entry per currency — a request with duplicate currency entries is rejected. Grid enforces the limits when authorizing card transactions funded by the key's Embedded Wallet account; a currency with no entry is unlimited. Immutable — revoke the key and create a new one to change limits.
-          items:
-            $ref: '#/components/schemas/DelegatedKeySpendingLimit'
     DelegatedKeySignedRequestChallenge:
       title: Delegated Key Signed Request Challenge
       description: 202 response returned from the delegated-key endpoints. Stamp `payloadToSign` with the session API keypair of a verified credential on the delegated key's Embedded Wallet funding account, then retry the same request with the full stamp in `Grid-Wallet-Signature` and the `requestId` echoed in `Request-Id`.
@@ -23088,11 +23855,10 @@ components:
       type: string
       enum:
         - VIEW_TRANSACTIONS
-        - CREATE_TRANSFERS
         - CREATE_QUOTES
         - EXECUTE_QUOTES
         - MANAGE_EXTERNAL_ACCOUNTS
-      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_TRANSFERS: Can initiate same-currency transfers. CREATE_QUOTES: Can create cross-currency quotes. EXECUTE_QUOTES: Can execute cross-currency quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
+      description: 'Permission granted to an agent that determines what actions it can perform. VIEW_TRANSACTIONS: Can list and retrieve transactions and account balances. CREATE_QUOTES: Can create quotes. EXECUTE_QUOTES: Can execute quotes. MANAGE_EXTERNAL_ACCOUNTS: Can create and manage external accounts.'
     AgentExecutionMode:
       type: string
       enum:
@@ -23370,42 +24136,12 @@ components:
       type: string
       enum:
         - EXECUTE_QUOTE
-        - TRANSFER_OUT
-        - TRANSFER_IN
       description: |
         The type of action the agent is requesting.
 
         | Type | Description |
         |------|-------------|
-        | `EXECUTE_QUOTE` | Execute a cross-currency quote |
-        | `TRANSFER_OUT` | Transfer from an internal account to an external account |
-        | `TRANSFER_IN` | Transfer from an external account to an internal account |
-    AgentTransferDetails:
-      type: object
-      description: Details of a transfer-type agent action (TRANSFER_OUT or TRANSFER_IN).
-      required:
-        - amount
-        - currency
-        - sourceAccountId
-        - destinationAccountId
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Transfer amount in the smallest unit of the specified currency.
-          example: 50000
-        currency:
-          type: string
-          description: ISO 4217 currency code for the transfer amount.
-          example: USD
-        sourceAccountId:
-          type: string
-          description: ID of the source account (internal or external).
-          example: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
-        destinationAccountId:
-          type: string
-          description: ID of the destination account (internal or external).
-          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        | `EXECUTE_QUOTE` | Execute a quote |
     AgentAction:
       type: object
       description: An action submitted by an agent that may require platform approval before execution. All agent-initiated operations (quote execution, transfers) are represented as AgentActions, giving the platform a consistent object to approve, reject, and audit regardless of the underlying operation type.
@@ -23442,11 +24178,7 @@ components:
         quote:
           allOf:
             - $ref: '#/components/schemas/Quote'
-          description: The quote being executed. Populated for `EXECUTE_QUOTE` actions; absent for transfer actions. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
-        transferDetails:
-          allOf:
-            - $ref: '#/components/schemas/AgentTransferDetails'
-          description: Details of the transfer being requested. Populated for `TRANSFER_OUT` and `TRANSFER_IN` actions; absent for `EXECUTE_QUOTE` actions.
+          description: The quote being executed. Contains the full amount, currency, destination, and rate details needed to present an approval decision to the user.
         transaction:
           allOf:
             - $ref: '#/components/schemas/TransactionOneOf'
@@ -23642,6 +24374,7 @@ components:
         - state
         - form
         - fundingSources
+        - maxSpendPerTransaction
         - createdAt
         - updatedAt
       properties:
@@ -23691,6 +24424,14 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        maxSpendPerTransaction:
+          anyOf:
+            - type: integer
+              format: int64
+              minimum: 1
+            - type: 'null'
+          description: Largest amount a single card transaction may authorize, in the smallest unit of the card's `currency`. Null means the card has no application-enforced per-transaction limit. A transaction for exactly this amount is allowed.
+          example: 5000
         currency:
           type: string
           description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
@@ -23761,15 +24502,21 @@ components:
           $ref: '#/components/schemas/CardForm'
         fundingSources:
           type: array
-          description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency (USDB in v1); otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+          description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency; otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
           minItems: 1
           items:
             type: string
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        maxSpendPerTransaction:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Optional largest amount a single card transaction may authorize, in the smallest unit of the card currency derived from its funding sources. Omit this field for no limit. Supported only for card programs whose authorization decisions are made by Grid. A transaction for exactly this amount is allowed.
+          example: 5000
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `state` or `fundingSources` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSources`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
+      description: Update request for `PATCH /cards/{id}`. At least one of `state`, `fundingSources`, or `maxSpendPerTransaction` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSources` or `maxSpendPerTransaction`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
       properties:
         state:
           type: string
@@ -23788,6 +24535,14 @@ components:
           example:
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
             - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        maxSpendPerTransaction:
+          anyOf:
+            - type: integer
+              format: int64
+              minimum: 1
+            - type: 'null'
+          description: 'Replacement per-transaction spending limit for the card, in the smallest unit of its currency. Omit this field to leave the current limit unchanged, supply null to clear it, or supply a positive integer to set it. Supported only for card programs whose authorization decisions are made by Grid. Cannot be supplied alongside `state: CLOSED`.'
+          example: 10000
     CardRevealResponse:
       type: object
       required:
@@ -24230,7 +24985,7 @@ components:
       description: Stablecoin issuer operation lifecycle status.
     StablecoinOperationSource:
       type: object
-      description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints and external-account burns, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
+      description: 'Source of a stablecoin operation, as reported on a `StablecoinOperation`. A single merged shape (superset of the mint funding source and burn source request variants) so the field is unambiguously deserializable regardless of operation type: `externalAccountId` is present for external-account funded mints, `accountId` for Grid internal account sources, and `sourceTokenIdentifier`/`cryptoNetwork` for provider internal balance sources.'
       required:
         - type
       properties:
@@ -24247,7 +25002,7 @@ components:
           example: ACH_DEBIT
         externalAccountId:
           type: string
-          description: Grid `ExternalAccount` funding the operation, present for ACH debit mints and external-account burns.
+          description: Grid `ExternalAccount` funding the operation, present for ACH debit mints.
           example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000101
         accountId:
           type: string
@@ -24452,19 +25207,14 @@ components:
         - type: object
           required:
             - type
-            - externalAccountId
           properties:
             type:
               type: string
               enum:
                 - EXTERNAL_ACCOUNT
-              description: External account burn. References an active Spark external account and returns funding instructions.
+              description: External account burn. The response carries funding instructions naming the provider deposit address to send the stablecoin to.
               example: EXTERNAL_ACCOUNT
-            externalAccountId:
-              type: string
-              description: Grid Spark `ExternalAccount` expected to fund the provider for the burn.
-              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000203
-          description: External account burn source. The issuer funds the provider from a Spark external account.
+          description: External account burn source. The issuer sends the stablecoin to the provider deposit address returned in the operation's funding instructions; it may be sent from any wallet.
     StablecoinGridInternalBurnSource:
       title: Grid Internal Account
       allOf:
@@ -24667,6 +25417,7 @@ components:
       type: string
       enum:
         - OUTGOING_PAYMENT.PENDING
+        - OUTGOING_PAYMENT.PENDING_AUTHORIZATION
         - OUTGOING_PAYMENT.PROCESSING
         - OUTGOING_PAYMENT.COMPLETED
         - OUTGOING_PAYMENT.FAILED
@@ -24675,6 +25426,7 @@ components:
         - OUTGOING_PAYMENT.REFUND_COMPLETED
         - OUTGOING_PAYMENT.REFUND_FAILED
         - INCOMING_PAYMENT.PENDING
+        - INCOMING_PAYMENT.PROCESSING
         - INCOMING_PAYMENT.COMPLETED
         - INCOMING_PAYMENT.FAILED
         - INCOMING_PAYMENT.REFUND_PENDING
@@ -24692,8 +25444,10 @@ components:
         - VERIFICATION.IN_PROGRESS
         - VERIFICATION.PENDING_MANUAL_REVIEW
         - VERIFICATION.READY_FOR_VERIFICATION
+        - EXTERNAL_ACCOUNT.STATUS_UPDATED
         - INTERNAL_ACCOUNT.BALANCE_UPDATED
         - INTERNAL_ACCOUNT.STATUS_UPDATED
+        - INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
         - INVITATION.CLAIMED
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
@@ -24763,6 +25517,7 @@ components:
               type: string
               enum:
                 - INCOMING_PAYMENT.PENDING
+                - INCOMING_PAYMENT.PROCESSING
                 - INCOMING_PAYMENT.COMPLETED
                 - INCOMING_PAYMENT.FAILED
                 - INCOMING_PAYMENT.REFUND_PENDING
@@ -24886,6 +25641,20 @@ components:
               enum:
                 - INTERNAL_ACCOUNT.BALANCE_UPDATED
                 - INTERNAL_ACCOUNT.STATUS_UPDATED
+                - INTERNAL_ACCOUNT.FUNDING_INSTRUCTIONS_UPDATED
+    ExternalAccountStatusWebhook:
+      allOf:
+        - $ref: '#/components/schemas/BaseWebhook'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/ExternalAccount'
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT.STATUS_UPDATED
     VerificationWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

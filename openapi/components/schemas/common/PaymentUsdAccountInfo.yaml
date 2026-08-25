@@ -12,3 +12,13 @@ allOf:
           Unique reference code that must be included with the payment to properly
           credit it
         example: UMA-Q12345-REF
+      bankAddress:
+        type: string
+        description: >-
+          The postal address of the financial institution holding the account, on
+          a single line. Optional on every rail, and recommended for wires, where
+          some originating banks require the beneficiary institution's address
+          before they will send.
+        example: 885 Teaneck Road, Teaneck, NJ 07666
+        minLength: 1
+        maxLength: 255

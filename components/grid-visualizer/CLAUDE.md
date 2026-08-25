@@ -196,7 +196,7 @@ The Grid API docs and OpenAPI spec are at `/Users/patcapulong/Development/Projec
 
 Fiat: `US_ACCOUNT`, `CLABE`, `PIX`, `IBAN`, `UPI`, `NGN_ACCOUNT`, `CAD_ACCOUNT`, `GBP_ACCOUNT`, `PHP_ACCOUNT`, `SGD_ACCOUNT`
 BTC: `SPARK_WALLET`, `LIGHTNING`
-Stablecoins: `SOLANA_WALLET` (USDC), `TRON_WALLET` (USDT), `POLYGON_WALLET` (USDC), `BASE_WALLET` (USDC)
+Stablecoins: `SOLANA_WALLET` (USDC), `POLYGON_WALLET` (USDC), `BASE_WALLET` (USDC), `ETHEREUM_WALLET` (USDC/USDT), `TRON_WALLET` (USDT), `PLASMA_WALLET` (USDT)
 
 ### Key Endpoints
 
@@ -204,10 +204,10 @@ Stablecoins: `SOLANA_WALLET` (USDC), `TRON_WALLET` (USDT), `POLYGON_WALLET` (USD
 - `POST /customers/external-accounts` — Register external account
 - `GET /customers/internal-accounts` — List customer internal accounts
 - `GET /platform/internal-accounts` — List platform internal accounts
-- `POST /quotes` — Create cross-currency transfer quote
+- `POST /quotes` — Create a transfer quote (same-currency and cross-currency)
 - `POST /quotes/{quoteId}/execute` — Execute quote
-- `POST /transfer-out` — Same-currency internal → external
-- `POST /transfer-in` — Same-currency external → internal
+- `POST /transfer-out` — **Deprecated.** Same-currency internal → external; use `/quotes`
+- `POST /transfer-in` — **Deprecated.** Same-currency external → internal; use `/quotes`
 
 ### Quote Request Shape
 

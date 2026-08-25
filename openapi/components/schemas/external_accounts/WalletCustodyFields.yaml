@@ -1,0 +1,10 @@
+type: object
+properties:
+  vaspName:
+    type: string
+    description: >-
+      Name of the VASP that custodies this account, from the VASP directory
+      (`GET /vasps`). Present when the wallet is held at an exchange or other
+      custodial platform; omit it for self-custody wallets. Ownership
+      verification applies only to self-custody wallets.
+    example: Kraken

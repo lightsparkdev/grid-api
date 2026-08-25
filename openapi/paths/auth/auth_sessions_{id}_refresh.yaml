@@ -6,17 +6,22 @@ post:
 
 
     1. Call `POST /auth/sessions/{id}/refresh` with the request body
-    `{ "clientPublicKey": "04..." }` and no signature headers. Grid builds a
-    Grid session-refresh payload, binds the supplied
-    `clientPublicKey` into that payload, persists it as a pending request, and
-    returns `202` with `payloadToSign`, `requestId`, and `expiresAt`.
+    `{ "clientPublicKey": "02..." }` and no signature headers. Send a
+    freshly generated client public key and retain its private key. Grid
+    binds the supplied `clientPublicKey` into the session-refresh payload,
+    persists it as a pending request, and returns `202` with
+    `payloadToSign`, `requestId`, and `expiresAt`.
 
 
     2. Sign `payloadToSign` with the current session signing key, then retry the
     same request with the full API-key stamp as `Grid-Wallet-Signature`, the
     `requestId` echoed back as `Request-Id`, and the same `clientPublicKey` in
-    the request body. On success, Grid returns a new `AuthSession` with an
-    `encryptedSessionSigningKey` sealed to that client public key.
+    the request body. On success, Grid returns a new `AuthSession`. Sending a
+    compressed `clientPublicKey` selects the recommended client-held-key
+    model, where the client retains the new session signing key and no key
+    material is returned; sending an uncompressed key selects the
+    deprecated legacy flow, where the new key is sealed to it and returned
+    as `encryptedSessionSigningKey`.
 
 
     The original session must still be active on both steps so it can authorize
@@ -66,8 +71,19 @@ post:
           refresh:
             summary: Refresh an active session
             value:
-              clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
+              clientPublicKey: 02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31
   responses:
+    '200':
+      description: >-
+        The session refresh's underlying wallet-provider activity is
+        still in flight — a `WalletOperationProcessing` body with
+        `status: "PROCESSING"`. The client re-sends the byte-identical
+        signed retry until it gets the `201`; the backend also
+        reconciles the activity to terminal on its own.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/common/WalletOperationProcessing.yaml
     '201':
       description: New authentication session created successfully.
       content:
@@ -81,7 +97,6 @@ post:
                 id: Session:019542f5-b3e7-1d02-0000-000000000011
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 type: EMAIL_OTP
-                encryptedSessionSigningKey: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
                 nickname: example@lightspark.com
                 createdAt: '2026-04-08T15:30:01Z'
                 updatedAt: '2026-04-08T15:35:00Z'
@@ -99,7 +114,7 @@ post:
             challenge:
               summary: Session refresh challenge
               value:
-                payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
+                payloadToSign: '{"organizationId":"org_abc123","parameters":{"targetPublicKey":"02f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31"},"timestampMs":"1746736509954","type":"ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2"}'
                 requestId: Request:019542f5-b3e7-1d02-0000-000000000010
                 expiresAt: '2026-04-08T15:35:00Z'
     '400':

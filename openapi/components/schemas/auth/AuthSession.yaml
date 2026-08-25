@@ -3,10 +3,14 @@ description: >-
   An authentication session on an Embedded Wallet internal account.
   Returned from `GET /auth/sessions` (list) and
   `POST /auth/credentials/{id}/verify` (on credential verification) or
-  `POST /auth/sessions/{id}/refresh` (on mid-session refresh).
-  Only session-issuing responses include `encryptedSessionSigningKey` —
-  it is delivered exactly once at the moment the session is issued and is
-  never returned by the list endpoint.
+  `POST /auth/sessions/{id}/refresh` (on mid-session refresh). The
+  `clientPublicKey` encoding on the issuing request selects the flow: a
+  compressed key gets the client-held-key model, where the client
+  generates and retains the session signing key and session-issuing
+  responses carry no key material; an uncompressed key gets the
+  deprecated legacy flow, where Grid seals the session signing key to
+  that public key and returns it as `encryptedSessionSigningKey`. Never
+  returned by the list endpoint.
 allOf:
   - $ref: ./AuthMethod.yaml
   - type: object
@@ -25,30 +29,28 @@ allOf:
         example: Session:019542f5-b3e7-1d02-0000-000000000003
       encryptedSessionSigningKey:
         type: string
+        deprecated: true
         description: >-
-          HPKE-encrypted session signing key, sealed to the
-          `clientPublicKey` supplied on the verification or refresh request.
-          Encoded as
-          a base58check string: the decoded payload is a 33-byte
-          compressed P-256 encapsulated public key followed by
-          AES-256-GCM ciphertext. The client decrypts this key with
-          its private key and uses it to sign subsequent Embedded
-          Wallet requests until `expiresAt`.
+          Deprecated; present only for the legacy flow, selected by
+          sending an uncompressed `clientPublicKey` on the verification
+          or refresh request. Grid seals the session signing key to
+          that public key and returns it here as a base58check string
+          (a 33-byte compressed P-256 encapsulated public key followed
+          by AES-256-GCM ciphertext) for the client to decrypt with its
+          private key.
 
 
-          Returned only by session-issuing responses for `OAUTH` and
-          `PASSKEY` credentials. `EMAIL_OTP` and `SMS_OTP` sessions omit this
-          field — the client generates its keypair before verification and
-          retains the private key throughout, so the server has nothing
-          to deliver. Always omitted from list responses
-          (`GET /auth/sessions`) since Grid does not retain the
-          plaintext key after the client has decrypted it.
+          The recommended client-held-key flow sends a compressed
+          `clientPublicKey` instead: the client generates and retains
+          the session signing key itself, so this field is omitted —
+          the same way `EMAIL_OTP` and `SMS_OTP` sessions have always
+          worked. See the "Client keys & signing" guide. Always omitted
+          from list responses (`GET /auth/sessions`).
         example: w99a5xV6A75TfoAUkZn869fVyDYvgVsKrawMALZXmrauZd8hEv66EkPU1Z42CUaHESQjcA5bqd8dynTGBMLWB9ewtXWPEVbZvocB4Tw2K1vQVp7uwjf
       expiresAt:
         type: string
         format: date-time
         description: >-
           Timestamp after which the session is no longer valid and the
-          `encryptedSessionSigningKey` must not be used to sign further
-          requests.
+          session signing key must not be used to sign further requests.
         example: '2026-04-09T15:30:01Z'

@@ -1372,6 +1372,12 @@ ul.sidebar-group > li[data-title="Available UMA Providers"] > button::before {
   background-image: url('/images/icons/at.svg') !important;
 }
 
+/* VASPs - globe */
+.sidebar-group > li[data-title="VASPs"] > button::before,
+ul.sidebar-group > li[data-title="VASPs"] > button::before {
+  background-image: url('/images/icons/globe.svg') !important;
+}
+
 /* API Tokens - key */
 .sidebar-group > li[data-title="API Tokens"] > button::before,
 ul.sidebar-group > li[data-title="API Tokens"] > button::before {
@@ -1424,6 +1430,12 @@ ul.sidebar-group > li[data-title="Agent Operations"] > button::before {
 .sidebar-group > li[data-title="Contact Verification"] > button::before,
 ul.sidebar-group > li[data-title="Contact Verification"] > button::before {
   background-image: url('/images/icons/IconEmail2Check.svg') !important;
+}
+
+/* Strong Customer Authentication - lock */
+.sidebar-group > li[data-title="Strong Customer Authentication"] > button::before,
+ul.sidebar-group > li[data-title="Strong Customer Authentication"] > button::before {
+  background-image: url('/images/icons/lock.svg') !important;
 }
 
 /* Cards - credit card */

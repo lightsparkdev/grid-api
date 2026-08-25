@@ -39,6 +39,36 @@ describe("cards create", () => {
       fundingSources: ["InternalAccount:1", "InternalAccount:2"],
     });
   });
+
+  it("sets a per-transaction spending limit", async () => {
+    const { request } = await runCli([
+      "cards",
+      "create",
+      "--cardholder-id",
+      "Customer:abc",
+      "--funding-sources",
+      "InternalAccount:1",
+      "--max-spend-per-transaction",
+      "5000",
+    ]);
+
+    expect(request?.body).toMatchObject({ maxSpendPerTransaction: 5000 });
+  });
+
+  it("rejects a non-positive spending limit", async () => {
+    await expect(
+      runCli([
+        "cards",
+        "create",
+        "--cardholder-id",
+        "Customer:abc",
+        "--funding-sources",
+        "InternalAccount:1",
+        "--max-spend-per-transaction",
+        "0",
+      ])
+    ).rejects.toThrow();
+  });
 });
 
 describe("cards update", () => {
@@ -71,6 +101,29 @@ describe("cards update", () => {
 
     expect(request?.headers["Grid-Wallet-Signature"]).toBe("stamp123");
     expect(request?.headers["Request-Id"]).toBe("req-1");
+  });
+
+  it("sets a per-transaction spending limit", async () => {
+    const { request } = await runCli([
+      "cards",
+      "update",
+      "Card:1",
+      "--max-spend-per-transaction",
+      "7500",
+    ]);
+
+    expect(request?.body).toEqual({ maxSpendPerTransaction: 7500 });
+  });
+
+  it("clears a per-transaction spending limit", async () => {
+    const { request } = await runCli([
+      "cards",
+      "update",
+      "Card:1",
+      "--clear-max-spend-per-transaction",
+    ]);
+
+    expect(request?.body).toEqual({ maxSpendPerTransaction: null });
   });
 
   it("rejects an update with no state or funding sources", async () => {
@@ -122,6 +175,31 @@ describe("cards update", () => {
       "CLOSED",
       "--funding-sources",
       "InternalAccount:1",
+    ]);
+    expect(calls).toBe(0);
+  });
+
+  it("rejects setting and clearing the spending limit together", async () => {
+    const { calls } = await runCli([
+      "cards",
+      "update",
+      "Card:1",
+      "--max-spend-per-transaction",
+      "5000",
+      "--clear-max-spend-per-transaction",
+    ]);
+    expect(calls).toBe(0);
+  });
+
+  it("rejects CLOSED combined with a spending-limit change", async () => {
+    const { calls } = await runCli([
+      "cards",
+      "update",
+      "Card:1",
+      "--state",
+      "CLOSED",
+      "--max-spend-per-transaction",
+      "5000",
     ]);
     expect(calls).toBe(0);
   });

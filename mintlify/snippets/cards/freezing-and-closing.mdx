@@ -4,11 +4,12 @@ credential revocation and wallet export. This page covers the flow,
 what each transition does, and how to handle the signing step.
 
 
-`PATCH /cards/{id}` covers both freeze / unfreeze (`state`) and funding
-source updates (`fundingSources`); see
+`PATCH /cards/{id}` covers freeze / unfreeze (`state`), funding source
+updates (`fundingSources`), and per-transaction spending limits
+(`maxSpendPerTransaction`). See
 [Funding sources](/cards/card-management/funding-sources) for the
 funding-source-only flow. The signed-retry mechanics below apply to all
-three.
+fields.
 
 ## Valid state transitions
 
@@ -125,6 +126,24 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
 `fundingSources` cannot be supplied alongside `state: CLOSED`.
 `409 CARD_ALREADY_CLOSED` is returned if the card is already in the
 terminal `CLOSED` state.
+
+## Updating the per-transaction limit
+
+To set or change the per-transaction spending limit:
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Grid-Wallet-Signature: <base64 signature>" \
+  -H "Request-Id: <requestId from prior 202>" \
+  -d '{ "maxSpendPerTransaction": 10000 }'
+```
+
+Supply a positive integer to set the limit (in the smallest unit of the
+card's currency) or `null` to clear it. Omitting the field leaves the
+current limit unchanged. `maxSpendPerTransaction` cannot be supplied
+alongside `state: CLOSED`.
 
 ## Sandbox behavior
 

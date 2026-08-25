@@ -2,4 +2,5 @@ title: Base Wallet
 allOf:
   - $ref: ./BaseExternalAccountInfo.yaml
   - $ref: ../common/BaseWalletInfo.yaml
-  
+  - $ref: ./WalletBeneficiaryFields.yaml
+  - $ref: ./WalletCustodyFields.yaml

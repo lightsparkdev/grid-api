@@ -165,6 +165,8 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 
 # Create customer (BUSINESS)
 # businessInfo REQUIRES legalName, taxId, and incorporatedOn (ISO date YYYY-MM-DD).
+# Always send businessType too: it's optional to the schema, but receivers can
+# require it, and without it POST /quotes fails with MISSING_MANDATORY_USER_INFO.
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
@@ -173,7 +175,8 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     "businessInfo": {
       "legalName": "Acme Corporation, Inc.",
       "taxId": "47-1234567",
-      "incorporatedOn": "2018-03-14"
+      "incorporatedOn": "2018-03-14",
+      "businessType": "INFORMATION"
     }
   }' \
   "$GRID_BASE_URL/customers" | jq .
@@ -417,29 +420,36 @@ values `SMS_OTP` (default) or `PASSKEY`.
 
 ### Same-Currency Transfers
 
+Use `/quotes` with `"immediatelyExecute": true`. The `/transfer-in` and
+`/transfer-out` endpoints are deprecated.
+
 ```bash
-# Transfer in (external → internal, same currency)
+# External → internal, same currency (source must support pull, e.g. ACH pull)
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
-    "source": {"accountId": "<externalAccountId>"},
-    "destination": {"accountId": "<internalAccountId>"},
-    "amount": 10000
+    "source": {"sourceType": "ACCOUNT", "accountId": "<externalAccountId>"},
+    "destination": {"destinationType": "ACCOUNT", "accountId": "<internalAccountId>"},
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "immediatelyExecute": true
   }' \
-  "$GRID_BASE_URL/transfer-in" | jq .
+  "$GRID_BASE_URL/quotes" | jq .
 
-# Transfer out (internal → external, same currency)
+# Internal → external, same currency
 # Optional: top-level "remittanceInformation" (memo, max 80 chars) and a "paymentRail"
 # inside the destination to pick a specific supported rail.
 curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -X POST -H "Content-Type: application/json" \
   -d '{
-    "source": {"accountId": "<internalAccountId>"},
-    "destination": {"accountId": "<externalAccountId>", "paymentRail": "<rail>"},
-    "amount": 10000,
+    "source": {"sourceType": "ACCOUNT", "accountId": "<internalAccountId>"},
+    "destination": {"destinationType": "ACCOUNT", "accountId": "<externalAccountId>", "paymentRail": "<rail>"},
+    "lockedCurrencySide": "SENDING",
+    "lockedCurrencyAmount": 10000,
+    "immediatelyExecute": true,
     "remittanceInformation": "Invoice 1234"
   }' \
-  "$GRID_BASE_URL/transfer-out" | jq .
+  "$GRID_BASE_URL/quotes" | jq .
 ```
 
 ### Transactions
@@ -532,11 +542,12 @@ Use `sourceType: "REALTIME_FUNDING"` with customer ID and currency. Only works w
 
 ### 3. Same-Currency Transfers
 
-Direct transfers between accounts without currency conversion. No quote needed.
+Transfers between accounts without currency conversion. These go through `/quotes`
+like any other transfer; set `immediatelyExecute` to create and execute in one call.
 
 ```
-External Account (USD) → Internal Account (USD)  [transfer-in]
-Internal Account (USD) → External Account (USD)  [transfer-out]
+External Account (USD) → Internal Account (USD)
+Internal Account (USD) → External Account (USD)
 ```
 
 ## Interactive Payment Workflows

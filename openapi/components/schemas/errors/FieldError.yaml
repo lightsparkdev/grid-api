@@ -10,7 +10,7 @@ properties:
   field:
     type: string
     description: Dot-notation path to the offending field.
-    example: taxIdentifier
+    example: identifier
   constraint:
     $ref: ./FieldConstraint.yaml
   message:

@@ -1,6 +1,26 @@
 post:
   summary: Create a transfer-out request
-  description: >
+  deprecated: true
+  description: |
+    **Deprecated. Use `POST /quotes` instead.**
+
+    Same-currency transfers are now served by the quote endpoint. Create a quote
+    with an internal account source and an external account destination and set
+    `immediatelyExecute: true` to move the funds in a single request, exactly as
+    this endpoint does. This endpoint continues to work and its request and
+    response shapes are unchanged.
+
+    To migrate a request to `POST /quotes`:
+
+    - add `sourceType: ACCOUNT` to `source` and `destinationType: ACCOUNT` to
+      `destination`; the account IDs and `destination.paymentRail` are unchanged
+    - rename `amount` to `lockedCurrencyAmount` and add `lockedCurrencySide: SENDING`
+    - `remittanceInformation` and `purposeOfPayment` carry over unchanged
+    - add `immediatelyExecute: true` to keep the single-request behavior
+
+    The quote response is a `Quote` rather than a `Transaction`; read
+    `transactionId` from it to track the resulting transaction.
+
     Transfer funds from an internal account to an external account for a specific customer.
   operationId: createTransferOut
   tags:
@@ -60,6 +80,15 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '429':
+      description: >-
+        Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when
+        the requested amount would exceed the configured daily volume limit
+        for the withdrawal currency.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

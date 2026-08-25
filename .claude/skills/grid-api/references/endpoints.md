@@ -118,10 +118,12 @@ Internal accounts are auto-created when customers are created based on platform 
 
 ## Same-Currency Transfers
 
+Deprecated — use `POST /quotes` with `immediatelyExecute` instead.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/transfer-in` | Create a transfer-in request (external to internal) |
-| POST | `/transfer-out` | Create a transfer-out request (internal to external) |
+| POST | `/transfer-in` | **Deprecated.** Create a transfer-in request (external to internal) |
+| POST | `/transfer-out` | **Deprecated.** Create a transfer-out request (internal to external) |
 
 ## Receiver Lookup
 
@@ -281,8 +283,6 @@ The `/agents/me/*` endpoints are called by an agent using its own credentials (A
 | POST | `/agents/me/quotes/{quoteId}/execute` | Execute a quote |
 | GET | `/agents/me/actions` | List agent's own actions |
 | GET | `/agents/me/actions/{actionId}` | Get an agent action |
-| POST | `/agents/me/transfer-in` | Create a transfer-in |
-| POST | `/agents/me/transfer-out` | Create a transfer-out |
 | GET | `/agents/me/internal-accounts` | List agent's internal accounts |
 | GET | `/agents/me/external-accounts` | List agent external accounts |
 | POST | `/agents/me/external-accounts` | Add an external account |

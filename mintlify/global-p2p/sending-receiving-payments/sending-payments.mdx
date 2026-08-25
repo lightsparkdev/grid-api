@@ -3,25 +3,23 @@ title: "Sending Payments"
 icon: "/images/icons/paper-plane-top-right.svg"
 "og:image": "/images/og/og-global-p2p.png"
 ---
-This guide covers three methods to send payments:
+Every payment goes through `POST /quotes`. What changes is where you are sending:
 
-1. Same-currency transfer to an external account
-2. Cross-currency transfer with a quote
-3. Sending to an UMA address
+1. To an account — internal or external, with or without currency conversion
+2. To an UMA address
 
 ## Choosing the right method
 
-- **Same-currency**: Best for domestic payouts when sender and recipient use the same currency. Uses local payment rails (e.g., RTP, SEPA Instant, PIX, FPS) for low cost and fast settlement.
-- **Cross-currency**: Use when conversion is required or when paying globally across borders. Also supports sending to a crypto wallet address when configured.
+- **Account**: Pay an internal or external account. Grid converts when the currencies differ and settles over local payment rails (e.g., ACH, RTP, SEPA Instant, PIX, FPS) when they match. Also covers sending to a crypto wallet address when configured.
 - **UMA**: Send using a Universal Money Address. Ideal for global counterparties on networks.
 
-import SameCurrency from '/snippets/sending/same-currency.mdx'
+import SendToAccount from '/snippets/sending/accounts.mdx'
 
-<SameCurrency />
+<SendToAccount />
 
-import CrossCurrency from '/snippets/sending/cross-currency.mdx'
+import CryptoFunding from '/snippets/sending/crypto-funding.mdx'
 
-<CrossCurrency />
+<CryptoFunding />
 
 import SendUMA from '/snippets/sending/uma.mdx'
 

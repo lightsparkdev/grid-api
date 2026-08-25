@@ -1,4 +1,4 @@
-import { Command, InvalidArgumentError } from "commander";
+import { Command } from "commander";
 import { GridClient } from "../client";
 import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
@@ -34,28 +34,6 @@ interface AuthSession {
   type: string;
   createdAt: string;
   expiresAt: string;
-}
-
-// Collects a repeated "CURRENCY:amount" flag into spending-limit objects.
-// Amounts are integers in the smallest currency unit; a malformed or non-integer
-// value is rejected up front rather than silently sent as null.
-function collectSpendingLimit(
-  value: string,
-  previous: Array<{ currencyCode: string; maxPerTransaction: number }> = []
-): Array<{ currencyCode: string; maxPerTransaction: number }> {
-  const match = /^([A-Z0-9]{3,16}):(\d+)$/.exec(value);
-  if (!match) {
-    throw new InvalidArgumentError(
-      `expected CURRENCY:amount with an uppercase code and an integer amount, e.g. USD:5000 (got "${value}")`
-    );
-  }
-  const maxPerTransaction = Number(match[2]);
-  if (!Number.isSafeInteger(maxPerTransaction) || maxPerTransaction < 1) {
-    throw new InvalidArgumentError(
-      `spending limit amount must be a positive integer within the safe range (got "${value}")`
-    );
-  }
-  return [...previous, { currencyCode: match[1], maxPerTransaction }];
 }
 
 export function registerAuthCommand(
@@ -269,11 +247,6 @@ export function registerAuthCommand(
       .requiredOption("--card-id <id>", "Card ID")
       .requiredOption("--internal-account-id <id>", "Embedded Wallet internal account ID")
       .requiredOption("--nickname <name>", "Human-readable label for the key")
-      .option(
-        "--spending-limit <CUR:amount>",
-        "Per-transaction limit, e.g. USD:5000 (repeatable)",
-        collectSpendingLimit
-      )
   ).action(async (options) => {
     const opts = program.opts<GlobalOptions>();
     const client = getClient(opts);
@@ -285,7 +258,6 @@ export function registerAuthCommand(
       internalAccountId: options.internalAccountId,
       nickname: options.nickname,
     };
-    if (options.spendingLimit) body.spendingLimits = options.spendingLimit;
 
     const response = await client.post<DelegatedKey>(
       "/auth/delegated-keys",

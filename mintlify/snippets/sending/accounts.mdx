@@ -1,12 +1,18 @@
-## Cross-Currency Transfers
+## Sending to an Account
 
-Use the quotes flow when sending funds with currency conversion. This locks in an exchange rate and provides all details needed to execute the transfer.
+Every payment to an internal or external account goes through `POST /quotes`, whether or not
+the currencies differ. The quote prices the transfer — amounts, fees, and, when converting,
+a locked exchange rate — and creates the transaction that carries the money.
 
-### When to use cross-currency transfers
+What varies is when you execute it:
 
-- Converting USD, USDC, USDT to EUR, MXN, BRL, BTC, or other supported fiat and crypto currencies
-- Sending international payments with automatic currency conversion
-- Need to lock in a specific exchange rate for the transfer
+- **In one request.** Set `immediatelyExecute` and Grid creates and executes the quote
+  together. Use this when you don't need to put rate or fee details in front of your user
+  before the money moves.
+- **In two steps.** Create the quote, show your user what the transfer will cost, then call
+  execute before the quote expires. Use this whenever your UX surfaces rates or fees — which
+  includes same-currency transfers, where there is no exchange rate but there can still be
+  fees worth showing.
 
 ### Create and execute a quote
 
@@ -20,9 +26,10 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
   -H 'Content-Type: application/json' \
   -d '{
     "source": { "sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965" },
-    "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123" },
+    "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123", "paymentRail": "ACH" },
     "lockedCurrencySide": "SENDING",
     "lockedCurrencyAmount": 10000,
+    "remittanceInformation": "INV-12345",
     "description": "Payment for services - Invoice #1234"
   }'
 ```
@@ -48,9 +55,24 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 ```
 
 <Info>
+  **Same-currency transfers use this exact request.** The two currencies simply match, and
+  the quote comes back with an `exchangeRate` of `1` — the fee fields are still populated.
+  Add `"immediatelyExecute": true` to create and execute in this one request and skip the
+  next two steps.
+</Info>
+
+<Info>
   **Locked currency side** determines which amount is fixed:
   - `SENDING`: Lock the sending amount (receiving amount calculated based on exchange rate)
   - `RECEIVING`: Lock the receiving amount (sending amount calculated based on exchange rate)
+</Info>
+
+<Tip>
+  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer.
+</Tip>
+
+<Info>
+  `remittanceInformation` is optional. Use it to send a reference that travels with the payment to the recipient (max 80 characters). This populates the ACH Addenda record, FedNow/RTP remittance information, or wire OBI field depending on the payment rail.
 </Info>
 
 <Accordion title="Including purpose of payment">
@@ -85,7 +107,8 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 </Step>
 
 <Step title="Review quote details">
-  Before executing, review the quote to ensure:
+  Skip this step and the next by setting `immediatelyExecute` on the quote. Otherwise,
+  before executing, review the quote to ensure:
 
 - Exchange rate is acceptable
 - Fees are as expected
@@ -167,131 +190,5 @@ If a transaction fails, Grid initiates a refund automatically. You'll receive `O
 <Info>
   For the full state diagram, refund object details, and all webhook scenarios (including bank returns and manual cancellations), see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
 </Info>
-</Step>
-</Steps>
-
-### Funding with cryptocurrencies
-
-Cross-currency transfers support funding via USDC and BTC on popular blockchains including Solana, Base, Lightning and Spark. When you create a quote specifying the source currency as USDC or BTC, the response includes payment instructions for multiple funding options.
-
-#### Supported blockchains
-
-| Blockchain Network | Cryptocurrencies |
-|-------|-------------|
-| Solana | USDC |
-| Base | USDC |
-| Tron | USDT |
-| Polygon | USDC |
-| Ethereum | USDC, USDT |
-| Lightning | BTC |
-| Spark | BTC |
-
-#### Create a quote for USDC-funded transfer
-
-Request a quote that provides blockchain funding options:
-
-```bash
-curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "source": {
-      "sourceType": "REALTIME_FUNDING",
-      "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-      "currency": "USDC"
-    },
-    "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123" },
-    "lockedCurrencySide": "SENDING",
-    "lockedCurrencyAmount": 10000,
-    "description": "Payment for services - Invoice #1234"
-  }'
-```
-
-The response includes an array of payment instructions, including blockchain wallet addresses for USDC and invoices for BTC:
-
-```json Success (201 Created)
-{
-  "id": "Quote:019542f5-b3e7-1d02-0000-000000000025",
-  "status": "PENDING",
-  "createdAt": "2025-10-03T15:00:00Z",
-  "expiresAt": "2025-10-03T15:15:00Z",
-  "source": { "sourceType": "REALTIME_FUNDING", "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001", "currency": "USDC" },
-  "destination": { "destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123" },
-  "sendingCurrency": { "code": "USDC", "name": "USD Coin", "symbol": "USDC", "decimals": 2 },
-  "receivingCurrency": { "code": "EUR", "name": "Euro", "symbol": "€", "decimals": 2 },
-  "totalSendingAmount": 10000,
-  "totalReceivingAmount": 9200,
-  "exchangeRate": 0.92,
-  "feesIncluded": 50,
-  "platformFeesIncluded": 0,
-  "transactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
-  "paymentInstructions": [
-    {
-      "accountOrWalletInfo": {
-        "accountType": "SOLANA_WALLET",
-        "assetType": "USDC",
-        "address": "4Nd1m6Qkq7RfKuE5vQ9qP9Tn6H94Ueqb4xXHzsAbd8Wg"
-      }
-    },
-    {
-      "accountOrWalletInfo": {
-        "accountType": "BASE_WALLET",
-        "assetType": "USDC",
-        "address": "0x1234567890abcdef1234567890abcdef12345678"
-      }
-    }
-  ]
-}
-```
-
-#### Transaction processing
-
-Grid automatically detects blockchain deposits and processes the transfer once funds are received:
-
-<Steps>
-<Step title="Send USDC to the provided address">
-  Transfer the exact amount of USDC specified in `totalSendingAmount` to your chosen blockchain wallet address.
-</Step>
-
-<Step title="Grid detects the deposit">
-  Grid monitors the blockchain for incoming deposits. You'll receive an `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhook when the deposit is confirmed:
-
-```json
-{
-  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000040",
-  "type": "INTERNAL_ACCOUNT.BALANCE_UPDATED",
-  "timestamp": "2025-10-03T15:05:00Z",
-  "data": {
-    "id": "InternalAccount:019542f5-b3e7-1d02-0000-000000000025",
-    "balance": { "amount": 10000, "currency": { "code": "USDC", "decimals": 2 } },
-    "totalBalance": { "amount": 10000, "currency": { "code": "USDC", "decimals": 2 } }
-  }
-}
-```
-</Step>
-
-<Step title="Transfer executes automatically">
-  Once the deposit is confirmed, Grid executes the cross-currency transfer. You'll receive `OUTGOING_PAYMENT.<STATUS>` webhooks as the transfer progresses:
-
-```json
-{
-  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000041",
-  "type": "OUTGOING_PAYMENT.COMPLETED",
-  "timestamp": "2025-10-03T15:31:00Z",
-  "data": {
-    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000030",
-    "status": "COMPLETED",
-    "type": "OUTGOING",
-    "direction": "DEBIT",
-    "sentAmount": { "amount": 10000, "currency": { "code": "USDC", "decimals": 2 } },
-    "receivedAmount": { "amount": 9200, "currency": { "code": "EUR", "decimals": 2 } },
-    "exchangeRate": 0.92,
-    "settledAt": "2025-10-03T15:30:00Z",
-    "quoteId": "Quote:019542f5-b3e7-1d02-0000-000000000025"
-  }
-}
-```
-
-See the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide for all possible status transitions and refund handling.
 </Step>
 </Steps>

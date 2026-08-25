@@ -5,7 +5,7 @@ description: "How exchange rates, pricing, and payment execution work"
 "og:image": "/images/og/og-get-started.png"
 ---
 
-Quotes are Grid's mechanism for providing locked-in exchange rates, transparent fee calculations, and payment instructions. Understanding quotes is essential for all cross-currency or crypto-involved transactions.
+Quotes are Grid's mechanism for providing locked-in exchange rates, transparent fee calculations, and payment instructions. Every transfer goes through a quote, whether or not a currency conversion is involved.
 
 ## What is a Quote?
 
@@ -20,26 +20,25 @@ Quotes ensure that your customers know exactly what they'll pay and what the rec
 
 ## When Do You Need a Quote?
 
-<Tabs>
-  <Tab title="Quotes Required">
-    Use quotes for:
-    - **Cross-currency transfers** (USD → EUR, BRL → MXN)
-    - **Fiat-to-crypto conversion** (USD → BTC)
-    - **Crypto-to-fiat conversion** (BTC → USD)
-    - **UMA payments** (always require quotes)
-    - **JIT funded payments** (need payment instructions)
+Use `POST /quotes` for every transfer:
 
-    These scenarios involve currency conversion, exchange rate risk, or complex routing.
-  </Tab>
+- **Cross-currency transfers** (USD → EUR, BRL → MXN)
+- **Fiat-to-crypto conversion** (USD → BTC)
+- **Crypto-to-fiat conversion** (BTC → USD)
+- **UMA payments**
+- **JIT funded payments** (need payment instructions)
+- **Same-currency transfers** (USD → USD), including pulling funds from a
+  pullable external account into an internal account
 
-  <Tab title="Quotes Optional">
-    For same-currency transfers, use simpler endpoints:
-    - `POST /transfer-out` - Send from internal to external account (same currency)
-    - `POST /transfer-in` - Pull from external to internal account (same currency)
+For a same-currency transfer there is no exchange rate to lock, so the two-step
+create-then-execute flow rarely buys you anything. Set `immediatelyExecute` to
+`true` and the quote is created and executed in a single request.
 
-    No quote needed because there's no currency conversion.
-  </Tab>
-</Tabs>
+<Note>
+  The `/transfer-out` and `/transfer-in` endpoints previously served same-currency
+  transfers and are now deprecated. They still work and their request and response
+  shapes are unchanged, but new integrations should use `/quotes`.
+</Note>
 
 ## Creating a Quote
 
@@ -227,6 +226,44 @@ curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/exec
   "platformFeesIncluded": 0
 }
 ```
+
+### Strong Customer Authentication (EU Customers)
+
+For customers in regions where Strong Customer Authentication (SCA) is required (e.g., EU), quotes may enter a `PENDING_AUTHORIZATION` status with an `scaChallenge` object. The transfer is not released until the customer authorizes it.
+
+Where the challenge appears depends on how the quote is funded:
+
+- **Prefunded** — `POST /quotes/{quoteId}/execute` returns `PENDING_AUTHORIZATION` with the challenge instead of initiating the transfer. The challenge does not exist until `execute` is called, so the proof always goes on the follow-up authorize; re-calling `execute` returns `409`.
+- **Realtime (JIT) funded** — the challenge arrives earlier and `paymentInstructions` are withheld until it is satisfied.
+
+**Quote response with SCA challenge:**
+
+```json
+{
+  "id": "Quote:019542f5-b3e7-1d02-0000-000000000050",
+  "status": "PENDING_AUTHORIZATION",
+  "scaChallenge": {
+    "id": "ScaChallenge:...",
+    "expiresAt": "2025-10-03T12:05:00Z",
+    "factor": "SMS_OTP",
+    "availableFactors": ["SMS_OTP", "PASSKEY"],
+    "purpose": "PAYOUT"
+  }
+}
+```
+
+To authorize the quote, call `POST /quotes/{quoteId}/authorize` with the appropriate proof:
+
+```bash
+curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/Quote:abc123/authorize \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"code": "123456"}'
+```
+
+<Note>
+  Multiple authorizations may be required in sequence (e.g., currency conversion + payout). After each authorization, check the quote status — if still `PENDING_AUTHORIZATION`, authorize the next challenge.
+</Note>
 
 ### Execution Timing
 
@@ -416,12 +453,16 @@ For cross-currency quotes the exchange rate applies on top of this: the fee is t
     try {
       await executeQuote(quote.id);
     } catch (error) {
-      if (error.code === 'QUOTE_EXPIRED') {
+      if (error.code === 'QUOTE_EXPIRED' || error.code === 'QUOTE_RATE_UNAVAILABLE') {
         quote = await createQuote(quoteParams); // Recreate with fresh rate
         await executeQuote(quote.id);
       }
     }
     ```
+
+    `QUOTE_RATE_UNAVAILABLE` means the quoted rate was refused when the quote was
+    executed, rather than the quote's own expiry window elapsing. Nothing was
+    exchanged in either case, and the recovery is the same: create a new quote.
   </Accordion>
 
   <Accordion title="Monitor quote status via webhooks">

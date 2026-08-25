@@ -24,7 +24,7 @@ import { FeatureCard, FeatureCardGrid, FeatureCardList, FeatureCardContainer } f
 | 🇧🇷 Brazil | BR | `PIX` |
 | 🇧🇬 Bulgaria | BG | `SEPA` `SEPA Instant` |
 | 🇨🇲 Cameroon | CM | `Bank Transfer` |
-| 🇨🇳 China | CN | `Bank Transfer` |
+| 🇨🇳 China | CN | `AliPay` `WeChat Pay` `Bank Transfer` |
 | 🇨🇴 Colombia | CO | `Bank Transfer` |
 | 🇭🇷 Croatia | HR | `SEPA` `SEPA Instant` |
 | 🇨🇾 Cyprus | CY | `SEPA` `SEPA Instant` |
@@ -79,6 +79,12 @@ import { FeatureCard, FeatureCardGrid, FeatureCardList, FeatureCardContainer } f
 | 🇺🇸 United States | US | `ACH` `Wire Transfer` `RTP` `FedNow` |
 | 🇻🇳 Vietnam | VN | `Bank Transfer` |
 | 🇿🇲 Zambia | ZM | `Bank Transfer` |
+
+<Note>
+China has two rails serving different beneficiaries. `AliPay` and `WeChat Pay` are
+consumer wallet payouts — use these to pay an individual. `Bank Transfer` is
+business-to-business only, so it cannot be used to pay an individual.
+</Note>
 
 Regional Summary
 

@@ -13,6 +13,14 @@ Internal accounts are created for both:
   are created when you configure your platform with supported currencies.
 </Info>
 
+<Warning>
+  On unregulated platforms, a customer's internal accounts aren't provisioned
+  until you record their End User Terms acceptance in `endUserTermsConsent`, and
+  customer-scoped transactions are rejected with `403
+  END_USER_TERMS_NOT_ACCEPTED` until then. See
+  [Disclosures](/payouts-and-b2b/onboarding/disclosures).
+</Warning>
+
 ## How internal accounts work
 
 Internal accounts act as an intermediary holding account in the payment flow:
@@ -76,7 +84,8 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/internal-accou
             "accountNumber": "9876543210",
             "routingNumber": "021000021",
             "accountHolderName": "Lightspark Payments FBO John Doe",
-            "bankName": "JP Morgan Chase"
+            "bankName": "JP Morgan Chase",
+            "bankAddress": "270 Park Avenue, New York, NY 10017"
           }
         },
         {
@@ -137,7 +146,8 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
         "accountNumber": "9876543210",
         "routingNumber": "021000021",
         "accountHolderName": "Lightspark Payments FBO John Doe",
-        "bankName": "JP Morgan Chase"
+        "bankName": "JP Morgan Chase",
+        "bankAddress": "270 Park Avenue, New York, NY 10017"
       }
     }
     ```

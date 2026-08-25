@@ -218,19 +218,9 @@ You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks as balance changes, a
 
 <Tabs>
   <Tab title="As Destination (Payout)">
-    Send funds from internal account to external account:
-
-    ```bash
-    POST /transfer-out
-
-    {
-      "source": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-      "destination": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
-      "amount": 100000
-    }
-    ```
-
-    Or via quote for cross-currency:
+    Send funds from internal account to external account. Use `/quotes` for both
+    same-currency and cross-currency payouts; `immediatelyExecute` moves the funds
+    in the same request:
 
     ```bash
     POST /quotes
@@ -239,21 +229,27 @@ You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks as balance changes, a
       "source": {"sourceType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
       "destination": {"destinationType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
       "lockedCurrencySide": "SENDING",
-      "lockedCurrencyAmount": 100000
+      "lockedCurrencyAmount": 100000,
+      "immediatelyExecute": true
     }
     ```
+
+    Omit `immediatelyExecute` to review the rate and fees first, then call
+    `POST /quotes/{quoteId}/execute`.
   </Tab>
 
   <Tab title="As Source (Funding)">
     Pull funds from external account to internal account:
 
     ```bash
-    POST /transfer-in
+    POST /quotes
 
     {
-      "source": {"accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
-      "destination": {"accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
-      "amount": 100000
+      "source": {"sourceType": "ACCOUNT", "accountId": "ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123"},
+      "destination": {"destinationType": "ACCOUNT", "accountId": "InternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965"},
+      "lockedCurrencySide": "SENDING",
+      "lockedCurrencyAmount": 100000,
+      "immediatelyExecute": true
     }
     ```
 
