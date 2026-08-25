@@ -182,9 +182,10 @@ post:
             $ref: ../../components/schemas/errors/Error424.yaml
     '429':
       description: >-
-        Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when
-        `immediatelyExecute` is set and the requested amount would exceed the
-        configured daily volume limit for the trade corridor.
+        Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when the
+        requested amount would exceed the configured daily volume limit for the
+        trade corridor or withdrawal currency. Sandbox stablecoin withdrawals
+        are checked when the quote is created, not only when it is executed.
       content:
         application/json:
           schema:

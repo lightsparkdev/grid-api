@@ -4137,7 +4137,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error424'
         '429':
-          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when `immediatelyExecute` is set and the requested amount would exceed the configured daily volume limit for the trade corridor.
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when the requested amount would exceed the configured daily volume limit for the trade corridor or withdrawal currency. Sandbox stablecoin withdrawals are checked when the quote is created, not only when it is executed.
           content:
             application/json:
               schema:
@@ -5305,6 +5305,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '429':
+          description: Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when funding the quote would exceed the configured daily volume limit for the withdrawal currency.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
