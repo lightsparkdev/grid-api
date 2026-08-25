@@ -22,11 +22,6 @@ post:
     - be a photo or scan of the physical document, not a screen capture, and
       not retouched in an image editor
     - be unexpired
-
-    Grid runs no image analysis of its own and sets no resolution floor. The
-    labels in `precheckErrors` come from the verification provider and are
-    passed through unchanged, so a rejection cannot be broken down further
-    than the label it carries.
   operationId: uploadDocument
   tags:
     - Documents

@@ -27,9 +27,7 @@ properties:
       file, passed through verbatim. Common values are `dataNotReadable` (the
       data on the document cannot be read), `screenshot` (the file is a screen
       capture rather than a photo or scan), `grayscale` (a black-and-white copy
-      of a color document), and `documentExpired`. Grid does not compute these
-      labels and cannot break one down further, so this array is the full extent
-      of what Grid knows about the rejection.
+      of a color document), and `documentExpired`.
     items:
       type: string
     example:
