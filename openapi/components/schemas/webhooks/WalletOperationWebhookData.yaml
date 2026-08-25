@@ -1,0 +1,9 @@
+title: Wallet Operation Data
+oneOf:
+  - $ref: ./WalletOperationCompletedData.yaml
+  - $ref: ./WalletOperationFailedData.yaml
+discriminator:
+  propertyName: status
+  mapping:
+    completed: ./WalletOperationCompletedData.yaml
+    failed: ./WalletOperationFailedData.yaml

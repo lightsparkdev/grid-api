@@ -1,0 +1,12 @@
+type: object
+description: Failure details for a terminally failed operation.
+required:
+  - code
+properties:
+  code:
+    type: string
+    description: |
+      Machine-readable failure code for a `FAILED` operation. Codes are
+      Grid-defined and stable regardless of which vendor Grid uses under the
+      hood for a given operation.
+    example: SIGNER_PROVIDER_REJECTED
