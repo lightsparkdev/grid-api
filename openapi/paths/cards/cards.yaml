@@ -7,11 +7,14 @@ post:
     with `CARDHOLDER_KYC_NOT_APPROVED`.
 
 
-    An optional `maxSpendPerTransaction` value sets the largest amount a single card
-    transaction may authorize. The limit is enforced by Grid for card programs
-    where Grid makes the authorization decision, whether the card is funded by
-    an Embedded Wallet account or custodial fiat. Omit it for no limit. The
-    value is in the smallest unit of the card's currency.
+    An optional `maxSpendPerTransaction` value sets the card-specific cap on a
+    single transaction. The limit is enforced by Grid for card programs where
+    Grid makes the authorization decision, whether the card is funded by an
+    Embedded Wallet account or custodial fiat. Omit it for no card-specific
+    cap. If the platform config sets
+    `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card
+    and platform values. Both values use the smallest unit of the card's
+    currency.
 
 
     If any funding source is an Embedded Wallet internal account, the
