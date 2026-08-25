@@ -30,6 +30,19 @@ post:
     with the matching private key.
 
 
+    The export may not settle within that request: an approval- or
+    consensus-gated wallet-provider activity answers `200` with
+    `status: "PROCESSING"` instead. The credentials are never stored
+    server-side, so collecting them is the client's job — re-send the
+    byte-identical signed retry (same headers, same body) until it
+    returns `encryptedWalletCredentials`. The `Request-Id` challenge
+    stays usable until an attempt actually delivers them, so a
+    `PROCESSING` response never burns it; a delivered export does, and a
+    later re-send is then rejected with `401`. Subscribe to
+    `wallet_operation.completed` to learn when re-sending will succeed
+    rather than polling blind.
+
+
     The `clientPublicKey` is ephemeral: generate a fresh P-256 keypair
     for this export and discard the private key after decrypting. Do
     not reuse the keypair from any prior verify call — that private
@@ -82,11 +95,19 @@ post:
               clientPublicKey: 04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783adaaa31d4245acfb88c2ebd42b47628d63ecabf345484f0a9f665b63c54c897d5578be2
   responses:
     '200':
-      description: Signed retry accepted. Returns the encrypted wallet credentials.
+      description: >-
+        Signed retry accepted. Returns the encrypted wallet credentials
+        (`InternalAccountExportResponse`); or, when the underlying
+        wallet-provider activity is still in flight, a
+        `WalletOperationProcessing` body with `status: "PROCESSING"` — the
+        credentials are never stored server-side, so the client re-sends
+        the byte-identical signed retry to collect them once the activity
+        settles. The challenge stays usable until an attempt actually
+        returns credentials.
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/internal_accounts/InternalAccountExportResponse.yaml
+            $ref: ../../components/schemas/internal_accounts/InternalAccountExportResult.yaml
     '202':
       description: >-
         Challenge issued. The response contains `payloadToSign` (which
