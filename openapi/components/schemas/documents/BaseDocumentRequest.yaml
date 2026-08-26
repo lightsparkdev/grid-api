@@ -7,7 +7,12 @@ properties:
   file:
     type: string
     format: binary
-    description: The document file (PDF, JPEG, or PNG, max 10 MB)
+    description: |
+      The document file. Grid accepts three formats, matched on the
+      `Content-Type` of the multipart part rather than the file extension:
+      `application/pdf`, `image/jpeg`, and `image/png`. Any other type,
+      including `image/heic`, `image/webp`, and `image/tiff`, returns
+      `400 INVALID_INPUT`. The file must be 10 MB or smaller.
   documentType:
     $ref: ./DocumentType.yaml
   side:

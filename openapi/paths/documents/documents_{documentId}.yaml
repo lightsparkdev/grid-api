@@ -40,10 +40,39 @@ get:
             $ref: ../../components/schemas/errors/Error500.yaml
 put:
   summary: Replace a document
-  description: >
+  description: |
     Replace an existing document with a new file and/or updated metadata.
-    This is useful when a document was rejected and needs to be re-uploaded.
     The request must use multipart/form-data.
+
+    Use this when a stored document was rejected during review, which arrives
+    as an entry in the verification's `errors` array rather than as an error
+    on upload. Replacing marks the previously submitted file inactive, which
+    a second `POST /documents` would not do: that leaves the rejected file
+    active alongside the new one, and the rejection can carry. Call
+    `POST /verifications` afterwards to start a new review, since existing
+    errors persist until a new review produces a new verdict.
+
+    A file rejected on upload with `422 DOCUMENT_REJECTED` never creates a
+    document, so there is nothing to replace. Retry those with
+    `POST /documents`.
+
+    Supported file types: `application/pdf`, `image/jpeg`, and `image/png`.
+    Grid matches on the `Content-Type` of the multipart part, not the file
+    extension. Any other type, and any file over 10 MB, returns
+    `400 INVALID_INPUT`.
+
+    Grid forwards the file to its verification provider, which screens it as
+    the request is handled and can reject it with `422 DOCUMENT_REJECTED`.
+    To pass that screen, a photo or scan of a document must:
+
+    - show the whole document, with all four corners inside the frame and
+      nothing overlapping an edge
+    - be in focus and free of glare, so every field and the machine-readable
+      zone can be read
+    - be in color, not a black-and-white copy
+    - be a photo or scan of the physical document, not a screen capture, and
+      not retouched in an image editor
+    - be unexpired
   operationId: replaceDocument
   tags:
     - Documents
@@ -83,6 +112,15 @@ put:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '422':
+      description: >-
+        The verification provider rejected the file. `precheckErrors` names
+        each problem it found. The stored document keeps its previous file and
+        metadata, so retry with a corrected file.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error422.yaml
     '500':
       description: Internal service error
       content:

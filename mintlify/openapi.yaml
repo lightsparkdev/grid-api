@@ -3135,9 +3135,27 @@ paths:
     post:
       summary: Upload a document
       description: |
-        Upload a verification document for a customer or beneficial owner. The request must use multipart/form-data with the file in the `file` field and metadata in the remaining fields.
+        Upload a verification document for a customer or beneficial owner.
+        The request must use multipart/form-data with the file in the `file` field
+        and metadata in the remaining fields.
 
-        Supported file types: PDF, JPEG, PNG. Maximum file size: 10 MB.
+        Supported file types: `application/pdf`, `image/jpeg`, and `image/png`.
+        Grid matches on the `Content-Type` of the multipart part, not the file
+        extension. Any other type, and any file over 10 MB, returns
+        `400 INVALID_INPUT`.
+
+        Grid forwards the file to its verification provider, which screens it as
+        the request is handled and can reject it with `422 DOCUMENT_REJECTED`.
+        To pass that screen, a photo or scan of a document must:
+
+        - show the whole document, with all four corners inside the frame and
+          nothing overlapping an edge
+        - be in focus and free of glare, so every field and the machine-readable
+          zone can be read
+        - be in color, not a black-and-white copy
+        - be a photo or scan of the physical document, not a screen capture, and
+          not retouched in an image editor
+        - be unexpired
       operationId: uploadDocument
       tags:
         - Documents
@@ -3170,6 +3188,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '422':
+          description: The verification provider rejected the file. `precheckErrors` names each problem it found. No document is created, so re-upload a corrected file with `POST /documents`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
         '500':
           description: Internal service error
           content:
@@ -3276,7 +3300,38 @@ paths:
     put:
       summary: Replace a document
       description: |
-        Replace an existing document with a new file and/or updated metadata. This is useful when a document was rejected and needs to be re-uploaded. The request must use multipart/form-data.
+        Replace an existing document with a new file and/or updated metadata.
+        The request must use multipart/form-data.
+
+        Use this when a stored document was rejected during review, which arrives
+        as an entry in the verification's `errors` array rather than as an error
+        on upload. Replacing marks the previously submitted file inactive, which
+        a second `POST /documents` would not do: that leaves the rejected file
+        active alongside the new one, and the rejection can carry. Call
+        `POST /verifications` afterwards to start a new review, since existing
+        errors persist until a new review produces a new verdict.
+
+        A file rejected on upload with `422 DOCUMENT_REJECTED` never creates a
+        document, so there is nothing to replace. Retry those with
+        `POST /documents`.
+
+        Supported file types: `application/pdf`, `image/jpeg`, and `image/png`.
+        Grid matches on the `Content-Type` of the multipart part, not the file
+        extension. Any other type, and any file over 10 MB, returns
+        `400 INVALID_INPUT`.
+
+        Grid forwards the file to its verification provider, which screens it as
+        the request is handled and can reject it with `422 DOCUMENT_REJECTED`.
+        To pass that screen, a photo or scan of a document must:
+
+        - show the whole document, with all four corners inside the frame and
+          nothing overlapping an edge
+        - be in focus and free of glare, so every field and the machine-readable
+          zone can be read
+        - be in color, not a black-and-white copy
+        - be a photo or scan of the physical document, not a screen capture, and
+          not retouched in an image editor
+        - be unexpired
       operationId: replaceDocument
       tags:
         - Documents
@@ -3316,6 +3371,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '422':
+          description: The verification provider rejected the file. `precheckErrors` names each problem it found. The stored document keeps its previous file and metadata, so retry with a corrected file.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
         '500':
           description: Internal service error
           content:
@@ -21138,7 +21199,12 @@ components:
         file:
           type: string
           format: binary
-          description: The document file (PDF, JPEG, or PNG, max 10 MB)
+          description: |
+            The document file. Grid accepts three formats, matched on the
+            `Content-Type` of the multipart part rather than the file extension:
+            `application/pdf`, `image/jpeg`, and `image/png`. Any other type,
+            including `image/heic`, `image/webp`, and `image/tiff`, returns
+            `400 INVALID_INPUT`. The file must be 10 MB or smaller.
         documentType:
           $ref: '#/components/schemas/DocumentType'
         side:
@@ -21172,6 +21238,40 @@ components:
               type: string
               description: ID of the entity that owns this document. Can be a Customer ID or a BeneficialOwner ID.
               example: BeneficialOwner:019542f5-b3e7-1d02-0000-000000000001
+    Error422:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 422
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | DOCUMENT_REJECTED | The verification provider screened the uploaded file and marked it unusable. `precheckErrors` names each problem it found |
+          enum:
+            - DOCUMENT_REJECTED
+        message:
+          type: string
+          description: Error message
+        precheckErrors:
+          type: array
+          description: One entry per problem the verification provider found in the uploaded file, passed through verbatim. Common values are `dataNotReadable` (the data on the document cannot be read), `screenshot` (the file is a screen capture rather than a photo or scan), `grayscale` (a black-and-white copy of a color document), and `documentExpired`.
+          items:
+            type: string
+          example:
+            - dataNotReadable
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     DocumentReplaceRequest:
       title: Document Replace Request
       allOf:
