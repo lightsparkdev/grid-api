@@ -1,8 +1,18 @@
 type: object
 required:
+  - sendingCurrency
   - supportedCurrencies
   - lookupId
 properties:
+  sendingCurrency:
+    allOf:
+      - $ref: ../common/Currency.yaml
+      - description: >-
+          The currency the payment is sent from — the sender's default, or the
+          one named by the `sendingCurrency` query parameter. Every
+          `estimatedExchangeRate` in `supportedCurrencies` converts from this
+          currency, and any `minSendingAmount`/`maxSendingAmount` is denominated
+          in its smallest unit.
   supportedCurrencies:
     type: array
     description: List of currencies supported by the receiving account

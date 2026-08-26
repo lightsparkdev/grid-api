@@ -3861,6 +3861,13 @@ paths:
           required: false
           schema:
             type: string
+        - name: sendingCurrency
+          in: query
+          description: 'Currency code the sender will send from (e.g., USD). Selects which of the sender''s configured currencies the response is priced against: it is echoed back as the response''s `sendingCurrency`, and the `minSendingAmount`/`maxSendingAmount` bounds are denominated in its smallest unit. Defaults to the sender''s default currency.'
+          required: false
+          schema:
+            type: string
+          example: USD
       responses:
         '200':
           description: Successful lookup
@@ -3935,6 +3942,13 @@ paths:
           required: false
           schema:
             type: string
+        - name: sendingCurrency
+          in: query
+          description: 'Currency code the sender will send from (e.g., USD). Selects which of the sender''s configured currencies the response is priced against: it is echoed back as the response''s `sendingCurrency`, and the `minSendingAmount`/`maxSendingAmount` bounds are denominated in its smallest unit. Defaults to the sender''s default currency.'
+          required: false
+          schema:
+            type: string
+          example: USD
       responses:
         '200':
           description: Successful lookup
@@ -22376,12 +22390,29 @@ components:
           description: The maximum amount that can be received in this currency.
           exclusiveMinimum: 0
           example: 1000000
+        minSendingAmount:
+          type: integer
+          format: int64
+          description: The minimum amount that can be sent for this currency, in the smallest unit of the sender's currency (e.g. cents for USD). Same semantics as `minSendingAmount` on the exchange rates endpoint. This is an estimate based on the current exchange rate and is subject to change when calling the quotes endpoint. Omitted when the sending-side bound cannot be resolved.
+          minimum: 0
+          example: 100
+        maxSendingAmount:
+          type: integer
+          format: int64
+          description: The maximum amount that can be sent for this currency, in the smallest unit of the sender's currency (e.g. cents for USD). Same semantics as `maxSendingAmount` on the exchange rates endpoint. This is an estimate based on the current exchange rate and is subject to change when calling the quotes endpoint. Omitted when the sending-side bound cannot be resolved.
+          minimum: 0
+          example: 500000
     ReceiverLookupResponse:
       type: object
       required:
+        - sendingCurrency
         - supportedCurrencies
         - lookupId
       properties:
+        sendingCurrency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - description: The currency the payment is sent from — the sender's default, or the one named by the `sendingCurrency` query parameter. Every `estimatedExchangeRate` in `supportedCurrencies` converts from this currency, and any `minSendingAmount`/`maxSendingAmount` is denominated in its smallest unit.
         supportedCurrencies:
           type: array
           description: List of currencies supported by the receiving account
