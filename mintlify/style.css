@@ -4875,3 +4875,99 @@ html.ls-page-custom .ls-nav-rail {
   }
 }
 
+/* ===========================================
+   Corridor required fields table
+   (styles the generated snippets/corridor-required-fields.mdx)
+   =========================================== */
+
+.corridor-fields-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+}
+
+html.dark .corridor-fields-filters {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+.corridor-fields-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ls-gray-600);
+}
+
+html.dark .corridor-fields-filters label {
+  color: var(--ls-gray-400);
+}
+
+.corridor-fields-filters select {
+  padding: 6px 8px;
+  font-size: 14px;
+  color: var(--ls-gray-950);
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-sm);
+  outline: none;
+  transition: box-shadow 0.15s ease;
+}
+
+.corridor-fields-filters select:focus {
+  box-shadow: 0 0 0 2px var(--ls-gray-200);
+}
+
+html.dark .corridor-fields-filters select {
+  color: var(--ls-white);
+  background-color: var(--ls-gray-975);
+  border-color: var(--ls-white-06);
+}
+
+html.dark .corridor-fields-filters select:focus {
+  box-shadow: 0 0 0 2px var(--ls-gray-800);
+}
+
+.corridor-fields table th {
+  white-space: nowrap;
+}
+
+
+/* Mintlify's prose rules set `display` on the table, which beats the browser's
+   own [hidden] rule and leaves a bare header behind when nothing matches. */
+.corridor-fields [hidden] {
+  display: none !important;
+}
+
+.corridor-fields-table {
+  overflow-x: auto;
+}
+
+.corridor-fields table th,
+.corridor-fields table td {
+  padding: 12px 16px;
+  vertical-align: top;
+}
+
+
+.corridor-fields-empty {
+  padding: 24px;
+  font-size: 14px;
+  text-align: center;
+  color: var(--ls-gray-600);
+  background-color: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+}
+
+html.dark .corridor-fields-empty {
+  color: var(--ls-gray-400);
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
