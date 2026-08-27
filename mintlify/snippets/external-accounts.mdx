@@ -77,7 +77,9 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 
 <Note>
-  Category must be `CHECKING` or `SAVINGS`. Routing number must be 9 digits.
+  `bankAccountType` is required and must be `CHECKING` or `SAVINGS`. Grid uses it to set the
+  ACH transaction code, so a value that does not match the account causes the receiving bank
+  to return a notification of change. `routingNumber` must be 9 digits.
 </Note>
 
 <Note>

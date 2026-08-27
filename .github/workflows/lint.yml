@@ -46,3 +46,10 @@ jobs:
       
       - name: Lint
         run: make lint
+
+      # bankAccountFields.generated.ts is generated from openapi/; fail if it drifts.
+      - name: Verify generated wallet bank fields
+        run: |
+          for app in components/grid-wallet-demo components/grid-wallet-prod; do
+            (cd "$app" && npm run verify:bank-fields)
+          done

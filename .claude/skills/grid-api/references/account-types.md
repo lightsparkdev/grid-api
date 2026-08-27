@@ -42,7 +42,7 @@ The **Available Rails** column lists the payment rails Grid may use for the crea
 | UAE | AED_ACCOUNT | AED | BANK_TRANSFER | IBAN |
 | Uganda | UGX_ACCOUNT | UGX | MOBILE_MONEY | Phone number + Provider |
 | United Kingdom | GBP_ACCOUNT | GBP | FASTER_PAYMENTS | Sort code + Account number |
-| United States | USD_ACCOUNT | USD | ACH, WIRE, RTP, FEDNOW | Routing number + Account number |
+| United States | USD_ACCOUNT | USD | ACH, WIRE, RTP, FEDNOW | Routing number + Account number + Account type |
 | Vietnam | VND_ACCOUNT | VND | BANK_TRANSFER | Bank name + SWIFT + Account number |
 | West Africa (CFA) | XOF_ACCOUNT | XOF | MOBILE_MONEY | Phone number + Provider + Region |
 | Zambia | ZMW_ACCOUNT | ZMW | MOBILE_MONEY | Phone number + Provider |
@@ -290,6 +290,7 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
       "accountType": "USD_ACCOUNT",
       "routingNumber": "123456789",
       "accountNumber": "12345678901",
+      "bankAccountType": "CHECKING",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Full Name",
@@ -312,6 +313,7 @@ Required fields:
 
 - `routingNumber`: 9-digit ABA routing number
 - `accountNumber`: Bank account number
+- `bankAccountType`: `CHECKING` or `SAVINGS`
 
 ### India (INR_ACCOUNT)
 

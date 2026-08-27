@@ -110,6 +110,7 @@ g -X POST -H 'Content-Type: application/json' \
       "paymentRails": ["RTP"],
       "routingNumber": "121042882",
       "accountNumber": "0000000000",
+      "bankAccountType": "CHECKING",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Alice Example",

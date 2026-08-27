@@ -11,6 +11,19 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="August 2026">
 
+## `bankAccountType` is required on USD external accounts
+
+Creating an external account with `accountType: USD_ACCOUNT` now requires
+`bankAccountType`. Send `CHECKING` or `SAVINGS` on `POST /customers/external-accounts`,
+`POST /platform/external-accounts`, and `POST /agents/me/external-accounts`.
+
+- Grid uses `bankAccountType` to set the ACH transaction code. Accounts created without
+  it were sent as checking, and the receiving bank returned a notification of change to
+  correct savings accounts.
+- External accounts created before this change are unaffected.
+
+See [External accounts](/ramps/accounts/external-accounts) for a full request body.
+
 ## `/transfer-in` and `/transfer-out` are deprecated
 
 Same-currency transfers now go through the quote endpoint, so one integration covers
