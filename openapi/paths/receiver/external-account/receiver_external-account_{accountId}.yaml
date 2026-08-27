@@ -32,6 +32,18 @@ get:
       required: false
       schema:
         type: string
+    - name: sendingCurrency
+      in: query
+      description: >-
+        Currency code the sender will send from (e.g., USD). Selects which of the
+        sender's configured currencies the response is priced against: it is
+        echoed back as the response's `sendingCurrency`, and the
+        `minSendingAmount`/`maxSendingAmount` bounds are denominated in its
+        smallest unit. Defaults to the sender's default currency.
+      required: false
+      schema:
+        type: string
+      example: USD
   responses:
     '200':
       description: Successful lookup
