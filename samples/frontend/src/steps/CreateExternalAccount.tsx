@@ -126,6 +126,7 @@ const COUNTRY_CONFIGS: Record<string, {
       accountType: "USD_ACCOUNT",
       accountNumber: "1234567890",
       routingNumber: "021000021",
+      bankAccountType: "CHECKING",
       paymentRails: ["ACH"]
     },
     beneficiary: {

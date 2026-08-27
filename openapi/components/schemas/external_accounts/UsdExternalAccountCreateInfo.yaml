@@ -4,6 +4,7 @@ allOf:
 - $ref: ../common/UsdAccountInfoBase.yaml
 - type: object
   required:
+  - bankAccountType
   - beneficiary
   properties:
     beneficiary:
