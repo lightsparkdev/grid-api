@@ -242,6 +242,28 @@ If a transaction fails, Grid initiates a refund automatically. You'll receive `O
 For the full state diagram including refund tracking and edge cases, see the [Transaction Lifecycle](/platform-overview/core-concepts/transaction-lifecycle) guide.
 </Info>
 
+## Payout timing
+
+How long a payout takes is determined by the rail it settles over. Timings below are typical
+end-to-end times measured from quote execution:
+
+| Timing | Rails |
+| ------ | ----- |
+| **Instant** (seconds) | RTP, FedNow, SEPA Instant, UPI, IMPS, SPEI, PIX, FPS, PayNow, FAST, InstaPay, Bre-B, Mobile Money, UnionPay, internal transfers, Lightning/Spark, and crypto on Solana/Base/Polygon/Plasma/Tron |
+| **Minutes** | RTGS 30 min · Ethereum 15 min |
+| **~10 min – 1 hour** | Bitcoin L1, depending on network congestion |
+| **~1 day** | SEPA, Wire, NEFT, PesoNet, CIPS (24h) |
+| **~2 days** | ACH, Bank Transfer, EFT, ACH Colombia (48h) |
+| **~3 days** | SWIFT |
+
+<Info>
+  These are typical times, not guarantees. Instant rails run continuously — including weekends
+  and holidays — but still depend on the receiving institution. The slower bank rails settle on
+  banking hours, so a transfer submitted after a bank's cutoff, on a weekend, or on a local
+  holiday starts on the next banking day. Compliance review on a given payment can extend any
+  of these.
+</Info>
+
 ## Checking Payment Status
 
 Configure a webhook endpoint to receive real-time notifications when payment status changes:
