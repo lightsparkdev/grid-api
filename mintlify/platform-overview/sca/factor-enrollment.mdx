@@ -1,0 +1,145 @@
+---
+icon: "/images/icons/key2.svg"
+title: "Factor enrollment"
+description: "Enroll and manage a customer's TOTP and passkey factors"
+"og:image": "/images/og/og-get-started.png"
+---
+
+<Note>
+Applies only to customers in an SCA-required region (EU). Every endpoint here
+returns **`409`** for other customers.
+</Note>
+
+`SMS_OTP` needs no enrollment; a code is sent to the customer's verified phone.
+`TOTP` and `PASSKEY` must be enrolled before a customer can authenticate with
+them. Enrolled factors then appear in `scaChallenge.availableFactors` and can be
+requested per transaction (see
+[per-transaction authorization](/platform-overview/sca/per-transaction-authorization)).
+
+Enrollment is two calls, both discriminated by a `type` field (`TOTP` or
+`PASSKEY`) — the same shape the [login and session](/platform-overview/sca/login-and-sessions)
+endpoints use:
+
+- `POST /sca/factors` — start enrollment; returns the factor-specific material.
+- `POST /sca/factors/confirm` — finish enrollment with the factor-specific proof.
+
+All paths below are relative to `https://api.lightspark.com/grid/2025-10-13`.
+
+## Enroll a TOTP authenticator
+
+<Steps>
+<Step title="Start enrollment">
+
+```bash
+POST /sca/factors?customerId={customerId}
+
+{ "type": "TOTP" }
+```
+
+Returns the shared secret and an `otpauth://` provisioning URI. Render `totpUri`
+as a QR code (or show `secretBase32Encoded` for manual entry) so the customer can
+add it to their authenticator app.
+
+```json
+{
+  "type": "TOTP",
+  "secret": "…",
+  "secretBase32Encoded": "ABC123…",
+  "totpUri": "otpauth://totp/Grid:customer@example.com?secret=ABC123&issuer=Grid"
+}
+```
+
+</Step>
+<Step title="Confirm enrollment">
+Submit the `secret` from the start call plus the first code the app produces.
+Grid returns one-time **recovery codes**; surface them to the customer once and
+don't store them server-side.
+
+```bash
+POST /sca/factors/confirm?customerId={customerId}
+
+{ "type": "TOTP", "secret": "…", "code": "123456" }
+```
+
+```json
+{ "type": "TOTP", "recoveryCodes": ["ABCD-EFGH-IJKL", "MNOP-QRST-UVWX"] }
+```
+
+A wrong or expired code returns `400`. **In sandbox, the code is always
+`123456`.**
+</Step>
+</Steps>
+
+## Enroll a passkey
+
+Passkey enrollment is a standard WebAuthn registration ceremony. Grid issues the
+options, the customer's device produces the credential, and you hand it back.
+
+<Note>
+A customer may have **only one passkey**. If one is already enrolled, starting
+another returns `409` (`PASSKEY_ALREADY_ENROLLED`) — delete the existing passkey
+first (see below). `GET /sca/factors` therefore lists at most one passkey.
+</Note>
+
+<Steps>
+<Step title="Start enrollment">
+
+```bash
+POST /sca/factors?customerId={customerId}
+
+{ "type": "PASSKEY" }
+```
+
+```json
+{
+  "type": "PASSKEY",
+  "options": { "…": "opaque WebAuthn PublicKeyCredentialCreationOptions" },
+  "allowedOrigins": ["https://app.example.com"],
+  "relyingPartyId": "app.example.com"
+}
+```
+
+Pass `options` unmodified to the device's WebAuthn API
+(`navigator.credentials.create`). The ceremony must run against one of
+`allowedOrigins`.
+</Step>
+<Step title="Confirm enrollment">
+Submit the credential the device produced and the `origin` it ran against.
+
+```bash
+POST /sca/factors/confirm?customerId={customerId}
+
+{ "type": "PASSKEY", "origin": "https://app.example.com", "credential": { "…": "opaque WebAuthn credential" } }
+```
+
+Returns the enrolled `factor` (an `ScaFactorView`, including the `credentialId`
+you'll use to delete it later). An invalid credential or origin returns `400`.
+</Step>
+</Steps>
+
+## List enrolled factors
+
+```bash
+GET /sca/factors?customerId={customerId}
+```
+
+```json
+{
+  "factors": [
+    { "factor": "TOTP", "name": "Authenticator app" },
+    { "factor": "PASSKEY", "credentialId": "…", "name": "iPhone" }
+  ]
+}
+```
+
+`credentialId` is populated only for `PASSKEY` factors.
+
+## Delete a factor
+
+```bash
+DELETE /sca/factors/{credentialId}?customerId={customerId}
+```
+
+Returns `204`. Use the `credentialId` from the factor list (or the confirm
+response). Today only passkeys carry a `credentialId`, so this is how you remove
+an enrolled passkey.
