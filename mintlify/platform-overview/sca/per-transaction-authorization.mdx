@@ -6,9 +6,10 @@ description: "Authorize an SCA-gated money movement"
 ---
 
 This is the flow you hit most often: an SCA-required customer initiates a money
-movement, it comes back `PENDING_AUTHORIZATION` with an `scaChallenge`, and you
-authorize it before the transfer is released. For where this sits in the wider
-SCA surface, see the [overview](/platform-overview/sca/overview).
+movement, the quote comes back `PENDING_AUTHORIZATION` carrying an
+`scaChallenge`, and you authorize it before the transfer is released. For where
+this sits in the wider SCA surface, see the
+[overview](/platform-overview/sca/overview).
 
 import StrongCustomerAuthentication from '/snippets/sca/strong-customer-authentication.mdx';
 
@@ -66,10 +67,13 @@ nothing to fund.
 </Steps>
 </Tab>
 
-<Tab title="Transfer-out">
-`transfer-out` has no associated quote, and per-transaction SCA is authorized
-only on the quote resource, so SCA-gated EU debits are **not** offered on this
-endpoint — use the quote + `execute` flow above for EU customers. For customers
-outside SCA-regulated regions, `transfer-out` proceeds as usual.
+<Tab title="Transfer-out (deprecated)">
+`POST /transfer-out` is **deprecated** — create a quote with an internal account
+source, an external account destination, and `immediatelyExecute: true` for the
+same single-request send, then follow the quote + `execute` flow above (see the
+[quote system](/platform-overview/core-concepts/quote-system) guide). The legacy
+endpoint has no associated quote, and per-transaction SCA is authorized only on
+the quote resource, so SCA-gated EU debits are not offered on it. For customers
+outside SCA-regulated regions it continues to work until removal.
 </Tab>
 </Tabs>

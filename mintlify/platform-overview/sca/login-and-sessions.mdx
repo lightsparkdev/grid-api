@@ -50,33 +50,39 @@ The factor must already be enrolled (or, for `SMS_OTP`, the phone verified). See
 <Step title="Complete the login">
 Submit the proof for the factor you started with: `code` for `SMS_OTP` / `TOTP`
 (echoing `challengeId` for `SMS_OTP`), or `passkeyAssertion` + `origin` for
-`PASSKEY`.
+`PASSKEY`. Every completion also requires **`endUserIpAddress`** — the IP of the
+end user's device the login is performed from, recorded against the login event
+and fed into risk assessment. Supply the customer's address, not your server's.
 
 ```bash
 POST /sca/login/complete?customerId={customerId}
 
-{ "factor": "SMS_OTP", "challengeId": "…", "code": "123456" }
+{ "factor": "SMS_OTP", "challengeId": "…", "code": "123456", "endUserIpAddress": "203.0.113.42" }
 ```
 
 ```json
-{ "status": "SUCCESS" }
+{ "status": "SUCCESS", "sessionExpiresAt": "2026-01-29T12:00:00Z" }
 ```
 
-A `status` of `SUCCESS` means the session is open for 180 days and revokes any
-previous SCA session for that customer. Any other value means the
-login did not complete; the field is passed through verbatim, so treat only
-`SUCCESS` as success. An invalid or expired proof returns `400`. **In sandbox,
-the code is always `123456`.**
+A `status` of `SUCCESS` opens the session and revokes any previous SCA session
+for that customer, and `sessionExpiresAt` gives its absolute expiry — prompt a
+re-login ahead of it rather than waiting for a call to fail. Any other `status`
+value means the login did not complete; treat only `SUCCESS` as success. An
+invalid or expired proof — or a missing or malformed `endUserIpAddress` —
+returns `400`. **In sandbox, the code is always `123456`.**
 </Step>
 </Steps>
 
 ## Session scope and fresh authentication
 
-An active SCA login session covers EUR / USDC account reads for 180 days. A
-request for transaction history older than 90 days requires fresh SCA, even when
-the broader session has not expired. When Grid indicates that a session is
-missing, expired, or too old for the requested history, restart the login flow
-before retrying the read.
+An active SCA login session covers EUR / USDC account reads for 180 days; the
+login-complete response's `sessionExpiresAt` gives the exact timestamp it
+lapses. A request for transaction history older than 90 days requires fresh SCA,
+even when the broader session has not expired. Money movement in SCA-regulated
+currencies is refused with **`409` `SCA_SESSION_REQUIRED`** once the session
+passes, so track `sessionExpiresAt` and drive a re-login before it does. When
+Grid indicates that a session is missing, expired, or too old for the requested
+history, restart the login flow before retrying the read.
 
 ## Account-security signals
 
@@ -92,8 +98,10 @@ POST /sca/record-event?customerId={customerId}
 
 Returns the customer's resulting login-security state so you can surface a
 lockout — `{ eventType, suspended, lockedUntil, failedAttempts }`. When the
-customer is locked out, this (and `POST /sca/login/complete`) returns `423` with
-`details.lockedUntil` (when they may retry) and `details.failedAttempts`.
+customer is locked out, this endpoint, `POST /sca/login/complete`, and
+[quote authorization](/platform-overview/sca/per-transaction-authorization)
+return `423` with `details.lockedUntil` (when they may retry) and
+`details.failedAttempts`.
 `eventType` must be one of:
 
 | `eventType` | Effect |
@@ -109,8 +117,8 @@ The failed-login counter is cumulative and is **not** reset by a successful
 login; only `RESET_PASSWORD_COMPLETED` clears it. Record that event after a
 password recovery to zero the counter and clear a time-bounded lockout, rather
 than relying on the customer simply logging in again. A suspended customer
-(9 or more failed attempts) requires support intervention; password recovery
-does not unsuspend the account.
+(9 or more failed attempts, locked with no automatic expiry) clears the
+suspension the same way — a completed password reset.
 </Note>
 
 ## Your responsibilities

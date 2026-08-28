@@ -14,9 +14,12 @@ separate SCA product to integrate.
 ### When you'll encounter it
 
 For an SCA-required customer, a money-movement call that would otherwise complete
-instead returns the transaction (or quote) in status **`PENDING_AUTHORIZATION`**
-with an **`scaChallenge`** object, and the transfer is **not** released until the
-challenge is satisfied. This affects debits such as:
+instead returns the **quote** in status **`PENDING_AUTHORIZATION`** carrying an
+**`scaChallenge`** object, and the transfer is **not** released until the
+challenge is satisfied. The resulting transaction's webhooks also report
+`PENDING_AUTHORIZATION`, but the challenge lives on the quote — fetch it with
+`GET /quotes/{quoteId}` using the transaction's `quoteId`. This affects debits
+such as:
 
 - Sending EUR / USDC (SEPA and intra-ledger transfers)
 - Cross-currency conversions from EUR / USDC (the swap leg)
@@ -53,8 +56,16 @@ or `passkeyAssertion` + `origin` (for `PASSKEY`):
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/authorize \
   -u "$GRID_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{ "code": "123456" }'
+  -d '{ "code": "123456", "endUserIpAddress": "203.0.113.42" }'
 ```
+
+The optional `endUserIpAddress` is the IP of the end user's device authorizing
+the operation; it feeds the SCA provider's risk assessment, so supply the
+customer's address, not your server's.
+
+Authorizing requires an active [SCA login session](/platform-overview/sca/login-and-sessions):
+if it has lapsed, the call returns `409` `SCA_SESSION_REQUIRED` — complete a
+fresh login, then authorize again.
 
 <Warning>
 **Write your client to loop on status, not on a fixed challenge count.** Treat
@@ -87,6 +98,10 @@ reused, and its `expiresAt` is not extended. Use the quote resend endpoint:
 curl -X POST https://api.lightspark.com/grid/2025-10-13/quotes/{quoteId}/authorize/resend \
   -u "$GRID_API_TOKEN"
 ```
+
+If the challenge expires unsatisfied, the transaction fails with
+`failureReason: SCA_NOT_COMPLETED` and no funds move. Create a new quote and
+have the customer authorize while the new challenge is live.
 
 <Note>
 In **sandbox**, the SMS code is always `123456`.

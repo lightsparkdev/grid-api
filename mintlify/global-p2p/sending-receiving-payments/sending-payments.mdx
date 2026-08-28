@@ -28,10 +28,8 @@ import SendUMA from '/snippets/sending/uma.mdx'
 ## Strong Customer Authentication (EU customers)
 
 Customers in SCA-regulated regions (in practice the EU: EUR / USDC) must confirm
-payments with Strong Customer Authentication. When it applies, the payment comes
-back `PENDING_AUTHORIZATION` with an `scaChallenge` that you authorize before the
-transfer is released; for every other customer nothing changes. See
+payments with Strong Customer Authentication. When it applies, the quote comes
+back `PENDING_AUTHORIZATION` carrying an `scaChallenge` that you authorize
+before the transfer is released; for every other customer nothing changes. See
 [Per-transaction authorization](/platform-overview/sca/per-transaction-authorization)
 for the full walkthrough.
-
-

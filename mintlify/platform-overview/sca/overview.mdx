@@ -80,7 +80,7 @@ source of truth for the challenge Grid issued.
 ## The authorization flow
 
 For an SCA-required customer, a money-movement call that would otherwise complete
-instead returns the resource in status **`PENDING_AUTHORIZATION`** carrying an
+instead returns the quote in status **`PENDING_AUTHORIZATION`** carrying an
 **`scaChallenge`**, and the transfer is not released until the challenge is
 satisfied. A single money movement can require **more than one** challenge in
 sequence, so loop on status rather than assuming one authorization releases the
@@ -97,10 +97,10 @@ sequenceDiagram
   G->>U: Deliver challenge (e.g. SMS OTP)
   loop while status == PENDING_AUTHORIZATION
     U-->>P: Provide proof (code / passkey assertion)
-    P->>G: POST .../authorize (scaChallenge.id + proof)
-    G-->>P: Updated resource + next scaChallenge (if any)
+    P->>G: POST /quotes/{quoteId}/authorize (proof)
+    G-->>P: Updated quote + next scaChallenge (if any)
   end
-  G-->>P: Resource leaves PENDING_AUTHORIZATION, transfer released
+  G-->>P: Quote leaves PENDING_AUTHORIZATION, transfer released
 ```
 
 [Per-transaction authorization](/platform-overview/sca/per-transaction-authorization)
@@ -111,10 +111,10 @@ expired code, and the realtime-funding-quote nuance.
 
 | Aspect | Behavior |
 |---|---|
-| Challenge expiry | Each challenge carries an absolute `scaChallenge.expiresAt` (UTC). SMS codes expire after 5 minutes; TOTP and passkey challenges expire after 10 minutes. After expiry, the challenge can no longer be authorized. |
+| Challenge expiry | Each challenge carries an absolute `scaChallenge.expiresAt` (UTC). SMS codes expire after 5 minutes; TOTP and passkey challenges expire after 10 minutes. After expiry, the challenge can no longer be authorized — if it lapses unsatisfied, the transaction fails with `failureReason: SCA_NOT_COMPLETED` and no funds move; create a new quote and authorize while the new challenge is live. |
 | Resend | `SMS_OTP` only. Resending reuses the existing challenge and does not extend `expiresAt`; `PASSKEY` (and `TOTP`) codes can't be resent. |
 | Repeated failures | A challenge permits at most 5 attempts. Too many failed authorizations may invalidate it and return `429 RATE_LIMITED`, so honor `Retry-After`. |
-| Login session | A completed [SCA login](/platform-overview/sca/login-and-sessions) grants a 180-day session. EUR / USDC history older than 90 days requires fresh SCA even during that session. |
+| Login session | A completed [SCA login](/platform-overview/sca/login-and-sessions) grants a 180-day session whose exact expiry is returned as `sessionExpiresAt`. EUR / USDC history older than 90 days requires fresh SCA even during that session, and money movement is refused with `SCA_SESSION_REQUIRED` once it passes — prompt a re-login ahead of `sessionExpiresAt`. |
 | Account lockout | Repeated `FAILED_LOGIN_ATTEMPT` signals escalate a lockout (5 → 15 min, 6 → 30 min, 7 → 1 hour, 8 → 24 hours, 9+ → suspension). See [account-security signals](/platform-overview/sca/login-and-sessions#account-security-signals). |
 | 2FA reset window | A started reset carries its own `expiresAt`; complete it before then. |
 
@@ -124,8 +124,15 @@ expired code, and the realtime-funding-quote nuance.
 |---|---|---|
 | `400` | Invalid or expired proof: wrong code, expired challenge, or a factor that can't satisfy this challenge (e.g. `TOTP` on a dynamically-linked debit). | Re-collect the proof. If the code lapsed, resend (`SMS_OTP`) or start over. |
 | `409` | SCA isn't required for this customer (non-EU), there's no pending challenge, or the factor's code can't be resent (e.g. `PASSKEY`). | Don't retry the same call. Treat a non-EU `409` as nothing to authorize. |
+| `409` `SCA_SESSION_REQUIRED` | The customer's SCA login session is missing or expired, so the money movement or authorization is refused. | Complete a fresh [SCA login](/platform-overview/sca/login-and-sessions), then retry the call. |
+| `423` `ACCOUNT_LOCKED` | The customer is locked out after repeated failed attempts. | Wait out `details.lockedUntil`; see [account-security signals](/platform-overview/sca/login-and-sessions#account-security-signals). |
 | `429` | `RATE_LIMITED`: too many attempts or resends, and the challenge may now be invalidated. | Honor `Retry-After`; you may need to restart the flow. |
 | `404` | The customer, transaction, quote, external account, or reset wasn't found. | Check the id. |
+
+A challenge left unsatisfied until it expires fails the transaction with
+`failureReason: SCA_NOT_COMPLETED` rather than an HTTP error — no funds moved,
+so create a new quote and have the customer authorize while the challenge is
+live.
 
 ## Calling a customer outside SCA-regulated regions
 

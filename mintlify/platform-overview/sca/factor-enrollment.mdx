@@ -17,8 +17,7 @@ requested per transaction (see
 [per-transaction authorization](/platform-overview/sca/per-transaction-authorization)).
 
 Enrollment is two calls, both discriminated by a `type` field (`TOTP` or
-`PASSKEY`) — the same shape the [login and session](/platform-overview/sca/login-and-sessions)
-endpoints use:
+`PASSKEY`):
 
 - `POST /sca/factors` — start enrollment; returns the factor-specific material.
 - `POST /sca/factors/confirm` — finish enrollment with the factor-specific proof.

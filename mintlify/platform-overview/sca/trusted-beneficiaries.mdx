@@ -92,3 +92,11 @@ POST /customers/external-accounts/{externalAccountId}/untrust/confirm
 
 Once untrusted, sends to that beneficiary are dynamically linked again and each
 one requires a full per-transaction challenge.
+
+## Deleting a trusted account
+
+A trusted external account can't be deleted while the trust is in place:
+`DELETE /customers/external-accounts/{externalAccountId}` returns
+**`409` `BENEFICIARY_TRUSTED`**. Untrust first (the SCA-gated flow above), then
+delete. Trust is never revoked as a side effect of a delete — untrusting
+requires the customer's SCA challenge, which a `DELETE` has no way to carry.

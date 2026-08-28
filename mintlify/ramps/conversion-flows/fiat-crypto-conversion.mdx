@@ -117,7 +117,7 @@ function displayPaymentInstructions(quote) {
   // PENDING_AUTHORIZATION with paymentInstructions withheld until its
   // scaChallenge is authorized (see "Strong Customer Authentication" below).
   // Authorize first, then display — don't read paymentInstructions while pending.
-  if (!quote.paymentInstructions?.length) {
+  if (quote.status === "PENDING_AUTHORIZATION") {
     return { pendingAuthorization: true, scaChallenge: quote.scaChallenge };
   }
 
@@ -246,8 +246,8 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 
 Customers in SCA-regulated regions (in practice the EU: EUR / USDC) must confirm
 money movements with Strong Customer Authentication, and a conversion out of
-EUR / USDC is gated on its swap leg. When it applies, the transaction comes back
-`PENDING_AUTHORIZATION` with an `scaChallenge` that you authorize before the
+EUR / USDC is gated on its swap leg. When it applies, the quote comes back
+`PENDING_AUTHORIZATION` carrying an `scaChallenge` that you authorize before the
 conversion is released; for every other customer nothing changes. See
 [Per-transaction authorization](/platform-overview/sca/per-transaction-authorization)
 for the full walkthrough.
