@@ -11,9 +11,9 @@ allOf:
       - title: Individual Beneficiary
         $ref: ../common/InrBeneficiary.yaml
       - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+        $ref: ../common/InrBusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
           INDIVIDUAL: ../common/InrBeneficiary.yaml
-          BUSINESS: ../common/BusinessBeneficiary.yaml
+          BUSINESS: ../common/InrBusinessBeneficiary.yaml
