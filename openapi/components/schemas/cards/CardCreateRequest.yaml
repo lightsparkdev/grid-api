@@ -56,3 +56,17 @@ properties:
       are made by Grid. A transaction for exactly the effective limit is
       allowed.
     example: 5000
+  maxSpendPerDay:
+    type: integer
+    format: int64
+    minimum: 1
+    description: >-
+      Optional card-specific cap on cumulative new spend during one UTC
+      calendar day, in the smallest unit of the card currency derived from its
+      funding sources. Omit this field for no card-specific daily cap. When the
+      platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
+      the lower of the two values. The window resets at 00:00 UTC, and refunds,
+      reversals, and authorization expiries do not restore capacity during the
+      day. Supported only for card programs whose authorization decisions are
+      made by Grid. Spend exactly equal to the effective limit is allowed.
+    example: 25000

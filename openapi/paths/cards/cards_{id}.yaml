@@ -55,7 +55,8 @@ patch:
   summary: Update a card
   description: >
     Update a card's `state`, bound `fundingSources`, and / or
-    `maxSpendPerTransaction`. At least one field must be supplied.
+    `maxSpendPerTransaction`, or `maxSpendPerDay`. At least one field must be
+    supplied.
 
 
     - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and
@@ -75,6 +76,14 @@ patch:
     `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card
     and platform values. Limits are supported only for card programs where
     Grid makes the authorization decision. `maxSpendPerTransaction` cannot be
+    supplied alongside `state: CLOSED`.
+
+    - `maxSpendPerDay`, when supplied, replaces the card-specific cap on
+    cumulative new spend during one UTC calendar day. Supply a positive integer
+    in the smallest unit of the card's currency to set it or null to clear it.
+    If the platform config sets `cardConfigs.maxSpendPerDay`, Grid enforces the
+    lower of the card and platform values. Refunds, reversals, and authorization
+    expiries do not restore capacity during the day. `maxSpendPerDay` cannot be
     supplied alongside `state: CLOSED`.
 
 
@@ -147,10 +156,12 @@ patch:
             summary: Set the card's per-transaction spending limit
             value:
               maxSpendPerTransaction: 10000
+              maxSpendPerDay: 25000
           clearSpendingLimit:
-            summary: Remove the card's per-transaction spending limit
+            summary: Remove the card's spending limits
             value:
               maxSpendPerTransaction: null
+              maxSpendPerDay: null
           freezeAndUpdateSources:
             summary: Freeze the card and replace its funding sources in one call
             value:

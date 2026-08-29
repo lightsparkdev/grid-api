@@ -1,15 +1,13 @@
-Freeze, close, and other sensitive card updates use Grid's
-`202 → signed-retry` pattern — the same one used by Embedded Wallet
-credential revocation and wallet export. This page covers the flow,
-what each transition does, and how to handle the signing step.
+Freeze, close, and other card updates use a single authenticated
+`PATCH /cards/{id}` request and return the updated card with `200 OK`.
 
 
 `PATCH /cards/{id}` covers freeze / unfreeze (`state`), funding source
-updates (`fundingSources`), and per-transaction spending limits
-(`maxSpendPerTransaction`). See
+updates (`fundingSources`), per-transaction spending limits
+(`maxSpendPerTransaction`), and UTC-calendar-day spending limits
+(`maxSpendPerDay`). See
 [Funding sources](/cards/card-management/funding-sources) for the
-funding-source-only flow. The signed-retry mechanics below apply to all
-fields.
+funding-source-only flow.
 
 ## Valid state transitions
 
@@ -26,23 +24,6 @@ particular, you cannot un-freeze a `CLOSED` card — close is terminal.
 You can also combine a state change with a funding source replacement
 in one PATCH — just include both fields in the body.
 
-## The signed-retry flow
-
-Each request follows the same two-call shape:
-
-```text
-1. PATCH /cards/{id}                      ─►  202  with payloadToSign, requestId, expiresAt
-2. PATCH /cards/{id}                      ─►  200  with the updated Card
-   Headers:
-     Grid-Wallet-Signature: <sig>
-     Request-Id: <requestId from step 1>
-```
-
-The signature is produced with the session private key of a verified
-authentication credential on the card's owning internal account.
-
-### Step 1 — initial call
-
 ```bash
 curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
@@ -50,40 +31,8 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   -d '{ "state": "FROZEN" }'
 ```
 
-Response — `202 Accepted`:
-
-```json
-{
-  "payloadToSign": "Y2hhbGxlbmdlLXBheWxvYWQtdG8tc2lnbg==",
-  "requestId": "7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21",
-  "expiresAt": "2026-05-08T15:35:00Z"
-}
-```
-
-### Step 2 — signed retry
-
-Sign `payloadToSign` with the session private key of a verified
-authentication credential on the card's owning internal account, then
-retry the same request with the signature and the request id echoed
-back:
-
-```bash
-curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
-  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  -H "Grid-Wallet-Signature: <base64 signature>" \
-  -H "Request-Id: 7c4a8d09-ca37-4e3e-9e0d-8c2b3e9a1f21" \
-  -d '{ "state": "FROZEN" }'
-```
-
-Response — `200 OK` with the updated `Card` and a
+The response is `200 OK` with the updated `Card` and a
 `CARD.STATE_CHANGE` webhook.
-
-<Note>
-The signing flow is identical to the one used by Embedded Wallet
-credential revocation. If you've already wired that up, you can reuse
-the same key-handling code for cards.
-</Note>
 
 ## What freeze does
 
@@ -118,8 +67,6 @@ setting `state: "CLOSED"`. The operation is permanent:
 curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
-  -H "Grid-Wallet-Signature: <base64 signature>" \
-  -H "Request-Id: <requestId from prior 202>" \
   -d '{ "state": "CLOSED" }'
 ```
 
@@ -135,8 +82,6 @@ To set or change the per-transaction spending limit:
 curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
-  -H "Grid-Wallet-Signature: <base64 signature>" \
-  -H "Request-Id: <requestId from prior 202>" \
   -d '{ "maxSpendPerTransaction": 10000 }'
 ```
 
@@ -145,8 +90,21 @@ card's currency) or `null` to clear it. Omitting the field leaves the
 current limit unchanged. `maxSpendPerTransaction` cannot be supplied
 alongside `state: CLOSED`.
 
+## Updating the daily limit
+
+Set `maxSpendPerDay` to a positive integer in the smallest unit of the card's
+currency, or set it to `null` to clear the card-specific daily limit. The
+window resets at 00:00 UTC. Refunds, reversals, and authorization expiries do
+not restore capacity during the same day.
+
+```bash
+curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ "maxSpendPerDay": 25000 }'
+```
+
 ## Sandbox behavior
 
 In Sandbox the state changes are instant — no issuer round-trip is
-simulated, but the signed-retry shape is the same as production so
-you can exercise the full client flow.
+simulated. The request and response shape is the same as production.
