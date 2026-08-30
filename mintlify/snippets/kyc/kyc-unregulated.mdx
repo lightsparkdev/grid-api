@@ -342,7 +342,7 @@ The shape of the flow depends on the customer type:
 </Step>
 
 <Step title="Upload supporting documents">
-  Upload business documents (registration, articles of incorporation) and any documents required for individual beneficial owners with `POST /documents`. Reference the company by `customerId` and each owner by `beneficialOwnerId`.
+  Upload business documents (registration, articles of incorporation) and any documents required for individual beneficial owners with `POST /documents`. Reference the company by `customerId` and each owner by `beneficialOwnerId`. Files must be `application/pdf`, `image/jpeg`, or `image/png`, and 10 MB or smaller. A scan or photo that can't be read — out of focus, cut off, or black-and-white — is rejected with `422 DOCUMENT_REJECTED`.
 
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/documents" \
