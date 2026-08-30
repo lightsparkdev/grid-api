@@ -13,7 +13,7 @@ post:
     1. Call `POST /internal-accounts/{id}/export` with the request body
     `{ "clientPublicKey": "..." }` and no signature headers. Grid binds
     the `clientPublicKey` into the `payloadToSign` it returns, so the
-    subsequent stamp in `Grid-Wallet-Signature` commits to the target
+    subsequent stamp in `Grid-Wallet-Signature` commits to the
     encryption key. The response is `202` with `payloadToSign`,
     `requestId`, and `expiresAt`.
 
