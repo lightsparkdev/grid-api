@@ -17,68 +17,88 @@ import { FeatureCard, FeatureCardGrid, FeatureCardList, FeatureCardContainer } f
 
 | Country | ISO Code | Payment Rails |
 |---|---|---:|
-| 🇦🇹 Austria | AT | `SEPA` `SEPA Instant` |
-| 🇧🇩 Bangladesh | BD | `Bank Transfer` |
-| 🇧🇪 Belgium | BE | `SEPA` `SEPA Instant` |
-| 🇧🇯 Benin | BJ | `Bank Transfer` |
-| 🇧🇷 Brazil | BR | `PIX` |
-| 🇧🇬 Bulgaria | BG | `SEPA` `SEPA Instant` |
-| 🇨🇲 Cameroon | CM | `Bank Transfer` |
-| 🇨🇳 China | CN | `AliPay` `WeChat Pay` `Bank Transfer` |
-| 🇨🇴 Colombia | CO | `Bank Transfer` |
+| 🇦🇹 Austria | AT | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇧🇩 Bangladesh | BD | `Bank Transfer` `Mobile Money` (bKash, Nagad) `SWIFT` |
+| 🇧🇪 Belgium | BE | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇧🇯 Benin | BJ | `Mobile Money` (MTN, Moov) `SWIFT` |
+| 🇧🇷 Brazil | BR | `PIX` `SWIFT` |
+| 🇧🇬 Bulgaria | BG | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇨🇲 Cameroon | CM | `Mobile Money` (Orange, MTN) `SWIFT` |
+| 🇨🇳 China | CN | `AliPay` `WeChat Pay` `Bank Transfer` `SWIFT` |
+| 🇨🇴 Colombia | CO | `Bank Transfer` `Mobile Money` (Nequi, Daviplata) `SWIFT` |
 | 🇭🇷 Croatia | HR | `SEPA` `SEPA Instant` |
-| 🇨🇾 Cyprus | CY | `SEPA` `SEPA Instant` |
-| 🇨🇿 Czech Republic | CZ | `SEPA` `SEPA Instant` |
-| 🇩🇰 Denmark | DK | `SEPA` `SEPA Instant` |
-| 🇪🇬 Egypt | EG | `Bank Transfer` |
-| 🇪🇪 Estonia | EE | `SEPA` `SEPA Instant` |
-| 🇫🇮 Finland | FI | `SEPA` `SEPA Instant` |
-| 🇫🇷 France | FR | `SEPA` `SEPA Instant` |
-| 🇩🇪 Germany | DE | `SEPA` `SEPA Instant` |
-| 🇬🇭 Ghana | GH | `Bank Transfer` |
-| 🇬🇷 Greece | GR | `SEPA` `SEPA Instant` |
-| 🇭🇹 Haiti | HT | `Bank Transfer` |
-| 🇭🇺 Hungary | HU | `SEPA` `SEPA Instant` |
-| 🇮🇸 Iceland | IS | `SEPA` `SEPA Instant` |
-| 🇮🇳 India | IN | `UPI` `NEFT` `RTGS` |
-| 🇮🇩 Indonesia | ID | `Bank Transfer` |
-| 🇮🇪 Ireland | IE | `SEPA` `SEPA Instant` |
-| 🇮🇹 Italy | IT | `SEPA` `SEPA Instant` |
-| 🇨🇮 Ivory Coast | CI | `Bank Transfer` |
-| 🇰🇪 Kenya | KE | `Bank Transfer` |
-| 🇱🇻 Latvia | LV | `SEPA` `SEPA Instant` |
-| 🇱🇮 Liechtenstein | LI | `SEPA` `SEPA Instant` |
-| 🇱🇹 Lithuania | LT | `SEPA` `SEPA Instant` |
-| 🇱🇺 Luxembourg | LU | `SEPA` `SEPA Instant` |
-| 🇲🇼 Malawi | MW | `Bank Transfer` |
-| 🇲🇾 Malaysia | MY | `Bank Transfer` |
-| 🇲🇹 Malta | MT | `SEPA` `SEPA Instant` |
-| 🇲🇽 Mexico | MX | `SPEI` |
-| 🇳🇱 Netherlands | NL | `SEPA` `SEPA Instant` |
-| 🇳🇬 Nigeria | NG | `Bank Transfer` |
-| 🇳🇴 Norway | NO | `SEPA` `SEPA Instant` |
-| 🇵🇰 Pakistan | PK | `Bank Transfer` |
-| 🇵🇭 Philippines | PH | `Bank Transfer` |
-| 🇵🇱 Poland | PL | `SEPA` `SEPA Instant` |
-| 🇵🇹 Portugal | PT | `SEPA` `SEPA Instant` |
-| 🇷🇴 Romania | RO | `SEPA` `SEPA Instant` |
-| 🇷🇼 Rwanda | RW | `Bank Transfer` |
-| 🇸🇳 Senegal | SN | `Bank Transfer` |
-| 🇸🇬 Singapore | SG | `PayNow` `FAST` `Bank Transfer` |
-| 🇸🇰 Slovakia | SK | `SEPA` `SEPA Instant` |
+| 🇨🇾 Cyprus | CY | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇨🇿 Czech Republic | CZ | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇩🇰 Denmark | DK | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇪🇬 Egypt | EG | `Bank Transfer` `Mobile Money` (Orange Cash, Vodafone Cash, Etisalat Cash, Meeza) `SWIFT` |
+| 🇪🇪 Estonia | EE | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇫🇮 Finland | FI | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇫🇷 France | FR | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇩🇪 Germany | DE | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇬🇭 Ghana | GH | `Bank Transfer` `Mobile Money` (MTN MoMo, AirtelTigo) `SWIFT` |
+| 🇬🇷 Greece | GR | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇭🇹 Haiti | HT | `Mobile Money` (MonCash) `SWIFT` |
+| 🇭🇺 Hungary | HU | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇮🇸 Iceland | IS | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇮🇳 India | IN | `UPI` `NEFT` `RTGS` `SWIFT` |
+| 🇮🇩 Indonesia | ID | `Bank Transfer` `SWIFT` |
+| 🇮🇪 Ireland | IE | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇮🇹 Italy | IT | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇨🇮 Ivory Coast | CI | `Mobile Money` (Wave) `SWIFT` |
+| 🇰🇪 Kenya | KE | `Mobile Money` (M-PESA) `SWIFT` |
+| 🇱🇻 Latvia | LV | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇱🇮 Liechtenstein | LI | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇱🇹 Lithuania | LT | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇱🇺 Luxembourg | LU | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇲🇼 Malawi | MW | `Mobile Money` (Airtel, TNM) `SWIFT` |
+| 🇲🇾 Malaysia | MY | `Bank Transfer` `SWIFT` |
+| 🇲🇹 Malta | MT | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇲🇽 Mexico | MX | `SPEI` `SWIFT` |
+| 🇳🇱 Netherlands | NL | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇳🇬 Nigeria | NG | `Bank Transfer` `SWIFT` |
+| 🇳🇴 Norway | NO | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇵🇰 Pakistan | PK | `Bank Transfer` `Mobile Money` (JazzCash, EasyPaisa) `SWIFT` |
+| 🇵🇭 Philippines | PH | `Bank Transfer` `SWIFT` |
+| 🇵🇱 Poland | PL | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇵🇹 Portugal | PT | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇷🇴 Romania | RO | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇷🇼 Rwanda | RW | `Mobile Money` (MTN, Airtel) `SWIFT` |
+| 🇸🇳 Senegal | SN | `Mobile Money` (Orange Money, Wave) `SWIFT` |
+| 🇸🇬 Singapore | SG | `PayNow` `FAST` `Bank Transfer` `SWIFT` |
+| 🇸🇰 Slovakia | SK | `SEPA` `SEPA Instant` `SWIFT` |
 | 🇸🇮 Slovenia | SI | `SEPA` `SEPA Instant` |
-| 🇿🇦 South Africa | ZA | `Bank Transfer` |
-| 🇪🇸 Spain | ES | `SEPA`  `SEPA Instant` |
-| 🇸🇪 Sweden | SE | `SEPA` `SEPA Instant` |
-| 🇨🇭 Switzerland | CH | `SEPA` `SEPA Instant` |
-| 🇹🇿 Tanzania | TZ | `Bank Transfer` |
-| 🇹🇭 Thailand | TH | `Bank Transfer` |
-| 🇺🇬 Uganda | UG | `Bank Transfer` |
-| 🇦🇪 United Arab Emirates | AE | `Bank Transfer` |
-| 🇬🇧 United Kingdom | GB | `Faster Payments` `Bank Transfer` |
-| 🇺🇸 United States | US | `ACH` `Wire Transfer` `RTP` `FedNow` |
-| 🇻🇳 Vietnam | VN | `Bank Transfer` |
-| 🇿🇲 Zambia | ZM | `Bank Transfer` |
+| 🇿🇦 South Africa | ZA | `Bank Transfer` `SWIFT` |
+| 🇪🇸 Spain | ES | `SEPA`  `SEPA Instant` `SWIFT` |
+| 🇸🇪 Sweden | SE | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇨🇭 Switzerland | CH | `SEPA` `SEPA Instant` `SWIFT` |
+| 🇹🇿 Tanzania | TZ | `Mobile Money` (Airtel, Vodacom) `SWIFT` |
+| 🇹🇭 Thailand | TH | `Bank Transfer` `SWIFT` |
+| 🇺🇬 Uganda | UG | `Mobile Money` (Airtel, MTN) `SWIFT` |
+| 🇦🇪 United Arab Emirates | AE | `Bank Transfer` `SWIFT` |
+| 🇬🇧 United Kingdom | GB | `Faster Payments` `SWIFT` |
+| 🇺🇸 United States | US | `ACH` `Wire Transfer` `RTP` `FedNow` `SWIFT` |
+| 🇻🇳 Vietnam | VN | `Bank Transfer` `SWIFT` |
+| 🇿🇲 Zambia | ZM | `Mobile Money` (Airtel, MTN, Zamtel) `SWIFT` |
+
+<Note>
+`SWIFT` is the international-wire fallback, available in USD and EUR to nearly every
+destination — including the countries above, and many not listed here that have no local Grid
+rail. Prefer the local rail where one exists: it is faster and cheaper. `SWIFT` cannot reach
+sanctioned or prohibited destinations; Croatia and Slovenia are the two countries in this table
+it does not cover, and both are fully served by `SEPA`. Contact your Lightspark account manager
+to confirm coverage for a specific corridor.
+</Note>
+
+<Note>
+`Mobile Money` pays a wallet held against the beneficiary's phone number rather than a bank
+account. Create the external account with `phoneNumber` (and, in corridors served by more than
+one wallet, the `provider` or `bankName` that selects it) instead of an account number.
+Corridors that list both rails accept either — pick the one your beneficiary holds.
+
+The wallets in parentheses show which providers a corridor reaches. Use the
+[Discoveries API](/api-reference/discoveries/list-available-receiving-institution-names) for the
+exact accepted values and current coverage, since wallet availability changes over time.
+</Note>
 
 <Note>
 China has two rails serving different beneficiaries. `AliPay` and `WeChat Pay` are
@@ -93,7 +113,7 @@ Regional Summary
     Primary: SEPA/SEPA Instant
   </FeatureCard>
   <FeatureCard icon="/images/icons/globe.svg" title="Middle East and Africa" tag="15 countries">
-    Primary: Bank Transfer
+    Primary: Mobile Money and Bank Transfer
   </FeatureCard>
   <FeatureCard icon="/images/icons/globe.svg" title="Asia-Pacific" tag="10 countries">
     Various instant payment systems
