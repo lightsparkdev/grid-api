@@ -37,11 +37,11 @@ properties:
     pattern: ^[A-Z]{4}0[A-Z0-9]{6}$
   rail:
     type: string
-    description: The payment rail to route the payout over, for currencies that support
-      more than one (e.g. NEFT or RTGS for INR).
-    example: NEFT
+    description: 'The payment rail to route the payout over: NEFT or RTGS. Omitted,
+      the payout resolves it by amount.'
     minLength: 1
     maxLength: 32
+    example: NEFT
   bankName:
     type: string
     description: The name of the bank
