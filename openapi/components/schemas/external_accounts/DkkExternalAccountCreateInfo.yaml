@@ -11,9 +11,9 @@ allOf:
       - title: Individual Beneficiary
         $ref: ../common/DkkBeneficiary.yaml
       - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+        $ref: ../common/DkkBusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
           INDIVIDUAL: ../common/DkkBeneficiary.yaml
-          BUSINESS: ../common/BusinessBeneficiary.yaml
+          BUSINESS: ../common/DkkBusinessBeneficiary.yaml

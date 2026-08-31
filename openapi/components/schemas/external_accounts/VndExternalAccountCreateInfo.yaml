@@ -11,9 +11,9 @@ allOf:
       - title: Individual Beneficiary
         $ref: ../common/VndBeneficiary.yaml
       - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+        $ref: ../common/VndBusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
           INDIVIDUAL: ../common/VndBeneficiary.yaml
-          BUSINESS: ../common/BusinessBeneficiary.yaml
+          BUSINESS: ../common/VndBusinessBeneficiary.yaml

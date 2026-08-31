@@ -45,6 +45,7 @@ oneOf:
 - $ref: ./SolanaWalletExternalAccountInfo.yaml
 - $ref: ./SparkWalletExternalAccountInfo.yaml
 - $ref: ./TronWalletExternalAccountInfo.yaml
+- $ref: ./IlsExternalAccountCreateInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -94,3 +95,4 @@ discriminator:
     SOLANA_WALLET: ./SolanaWalletExternalAccountInfo.yaml
     SPARK_WALLET: ./SparkWalletExternalAccountInfo.yaml
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
+    ILS_ACCOUNT: ./IlsExternalAccountCreateInfo.yaml

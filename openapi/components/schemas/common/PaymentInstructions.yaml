@@ -53,6 +53,7 @@ properties:
     - $ref: ../common/PaymentSlvAccountInfo.yaml
     - $ref: ../common/PaymentSwiftAccountInfo.yaml
     - $ref: ../common/PaymentCnyAccountInfo.yaml
+    - $ref: ../common/PaymentIlsAccountInfo.yaml
     - $ref: ../common/PaymentSparkWalletInfo.yaml
     - $ref: ../common/PaymentLightningInvoiceInfo.yaml
     - $ref: ../common/PaymentSolanaWalletInfo.yaml
@@ -115,3 +116,4 @@ properties:
         EMBEDDED_WALLET: ../common/PaymentEmbeddedWalletInfo.yaml
         SWIFT_ACCOUNT: ../common/PaymentSwiftAccountInfo.yaml
         CNY_ACCOUNT: ../common/PaymentCnyAccountInfo.yaml
+        ILS_ACCOUNT: ../common/PaymentIlsAccountInfo.yaml
