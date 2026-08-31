@@ -1,0 +1,26 @@
+type: object
+required:
+- accountType
+- iban
+- bankName
+properties:
+  accountType:
+    type: string
+    enum:
+    - ILS_ACCOUNT
+  iban:
+    type: string
+    description: Israeli IBAN (23 characters, starting with IL)
+    example: IL620108000000099999999
+    minLength: 23
+    maxLength: 23
+    pattern: ^IL[0-9]{21}$
+  bankName:
+    type: string
+    description: The name of the bank
+    minLength: 1
+    maxLength: 255
+example:
+  accountType: ILS_ACCOUNT
+  iban: IL620108000000099999999
+  bankName: Example Bank

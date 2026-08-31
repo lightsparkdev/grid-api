@@ -11,9 +11,9 @@ allOf:
       - title: Individual Beneficiary
         $ref: ../common/PhpBeneficiary.yaml
       - title: Business Beneficiary
-        $ref: ../common/BusinessBeneficiary.yaml
+        $ref: ../common/PhpBusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
           INDIVIDUAL: ../common/PhpBeneficiary.yaml
-          BUSINESS: ../common/BusinessBeneficiary.yaml
+          BUSINESS: ../common/PhpBusinessBeneficiary.yaml

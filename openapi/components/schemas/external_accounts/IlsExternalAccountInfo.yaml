@@ -1,0 +1,19 @@
+title: ILS Account
+allOf:
+- $ref: ./BaseExternalAccountInfo.yaml
+- $ref: ../common/IlsAccountInfo.yaml
+- type: object
+  required:
+  - beneficiary
+  properties:
+    beneficiary:
+      oneOf:
+      - title: Individual Beneficiary
+        $ref: ../common/IlsBeneficiary.yaml
+      - title: Business Beneficiary
+        $ref: ../common/IlsBusinessBeneficiary.yaml
+      discriminator:
+        propertyName: beneficiaryType
+        mapping:
+          INDIVIDUAL: ../common/IlsBeneficiary.yaml
+          BUSINESS: ../common/IlsBusinessBeneficiary.yaml
