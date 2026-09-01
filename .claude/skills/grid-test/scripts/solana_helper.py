@@ -9,6 +9,8 @@ Subcommands:
   usdc-balance [--address]    Print USDC balance (raw + human-readable)
   send-usdc --to --amount     Send USDC (amount in micro-USDC)
   airdrop-sol [--amount]      Request devnet SOL airdrop (devnet only)
+  sign-message --message      Sign a message (ed25519, base58 signature)
+  gen-keypair                 Print a fresh throwaway keypair (address + private key)
 """
 
 import argparse
@@ -27,13 +29,33 @@ try:
     from solders.message import Message
     from solders.instruction import Instruction, AccountMeta
     from solders.hash import Hash
-    from solana.rpc.api import Client
-    from solana.rpc.commitment import Confirmed, Finalized
-    from solana.rpc.types import TxOpts
     import struct
 except ImportError as e:
-    print(json.dumps({"error": "Missing dependencies. Install with: pip3 install solders solana base58", "detail": str(e)}))
+    print(json.dumps({"error": "Missing dependencies. Install with: pip3 install solders base58", "detail": str(e)}))
     sys.exit(1)
+
+
+def _rpc():
+    """The solana-py RPC symbols, imported on first use.
+
+    Only the on-chain subcommands need these; sign-message and wallet-address
+    are pure key operations. Importing lazily keeps those two working when
+    solana-py is absent or its sync client has moved, which it has across
+    releases -- 0.40.x ships no solana.rpc.api at all.
+    """
+    try:
+        from solana.rpc.api import Client
+        from solana.rpc.commitment import Confirmed
+        from solana.rpc.types import TxOpts
+    except ImportError as e:
+        print(json.dumps({
+            "error": "Missing or incompatible solana-py. Install a release that "
+                     "provides solana.rpc.api: pip3 install 'solana<0.40'",
+            "detail": str(e),
+        }))
+        sys.exit(1)
+    return Client, Confirmed, TxOpts
+
 
 NETWORKS = {
     "devnet": {
@@ -70,6 +92,7 @@ def load_keypair(creds_path=None):
 
 
 def get_client():
+    Client, _, _ = _rpc()
     return Client(NET["rpc"])
 
 
@@ -96,7 +119,55 @@ def cmd_wallet_address(args):
     print(json.dumps({"address": str(kp.pubkey())}))
 
 
+def read_message(args):
+    """The exact bytes to sign.
+
+    Grid's ownership challenge is matched character-for-character by the
+    provider, so --message-file exists to keep a shell out of the round trip.
+    Only a trailing newline is stripped: the file is the message, not a line of
+    text about it.
+    """
+    if args.message_file:
+        raw = Path(args.message_file).read_text(encoding="utf-8")
+        return raw[:-1] if raw.endswith("\n") else raw
+    return args.message
+
+
+def resolve_keypair(args):
+    """The funded wallet by default, or a throwaway passed on the command line.
+
+    Travel Rule negative cases need a key that is deliberately not the one the
+    wallet was registered under, and throwaway wallets never belong in
+    ~/.grid-credentials.
+    """
+    key = getattr(args, "private_key", None)
+    if not key:
+        return load_keypair()
+    raw = base58.b58decode(key)
+    return Keypair.from_seed(raw) if len(raw) == 32 else Keypair.from_bytes(raw)
+
+
+def cmd_gen_keypair(args):
+    kp = Keypair()
+    print(json.dumps({
+        "address": str(kp.pubkey()),
+        "privateKey": base58.b58encode(bytes(kp)).decode("ascii"),
+    }))
+
+
+def cmd_sign_message(args):
+    kp = resolve_keypair(args)
+    message = read_message(args)
+    signature = kp.sign_message(message.encode("utf-8"))
+    print(json.dumps({
+        "address": str(kp.pubkey()),
+        "message": message,
+        "signature": base58.b58encode(bytes(signature)).decode("ascii"),
+    }))
+
+
 def cmd_sol_balance(args):
+    _, Confirmed, _ = _rpc()
     client = get_client()
     if args.address:
         pubkey = Pubkey.from_string(args.address)
@@ -131,6 +202,7 @@ def cmd_usdc_balance(args):
 
 
 def cmd_send_usdc(args):
+    _, Confirmed, TxOpts = _rpc()
     kp = load_keypair()
     client = get_client()
     mint_str = args.mint or NET["usdc_mint"]
@@ -206,6 +278,7 @@ def cmd_send_usdc(args):
 
 
 def cmd_airdrop_sol(args):
+    _, Confirmed, _ = _rpc()
     if NET is NETWORKS["mainnet"]:
         print(json.dumps({"error": "Airdrop is only available on devnet"}))
         sys.exit(1)
@@ -256,6 +329,14 @@ def main():
     send.add_argument("--amount", required=True, help="Amount in micro-USDC (6 decimals)")
     send.add_argument("--mint", help="Token mint address (default: network USDC)")
 
+    sign = sub.add_parser("sign-message", help="Sign a message with the wallet key")
+    sign_src = sign.add_mutually_exclusive_group(required=True)
+    sign_src.add_argument("--message", help="Exact message text to sign")
+    sign_src.add_argument("--message-file", help="File whose contents are the message")
+    sign.add_argument("--private-key", help="Sign with this base58 key instead of the funded wallet")
+
+    sub.add_parser("gen-keypair", help="Print a fresh throwaway keypair")
+
     airdrop = sub.add_parser("airdrop-sol", help="Request devnet SOL airdrop")
     airdrop.add_argument("--amount", default="1000000000", help="Lamports to request (default: 1 SOL = 1000000000)")
 
@@ -268,6 +349,8 @@ def main():
         "usdc-balance": cmd_usdc_balance,
         "send-usdc": cmd_send_usdc,
         "airdrop-sol": cmd_airdrop_sol,
+        "sign-message": cmd_sign_message,
+        "gen-keypair": cmd_gen_keypair,
     }
     dispatch[args.command](args)
 

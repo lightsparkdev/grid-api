@@ -10,6 +10,8 @@ Subcommands:
   usdt-balance [--address]    Print USDT balance (raw + human-readable)
   send-usdc --to --amount     Send USDC (amount in micro-USDC, 6 decimals)
   send-usdt --to --amount     Send USDT (amount in micro-USDT, 6 decimals)
+  sign-message --message      Sign a message (EIP-191, 0x-hex signature)
+  gen-keypair                 Print a fresh throwaway keypair (address + private key)
 """
 
 import argparse
@@ -22,6 +24,7 @@ from pathlib import Path
 try:
     from web3 import Web3
     from eth_account import Account
+    from eth_account.messages import encode_defunct
 except ImportError as e:
     print(json.dumps({"error": "Missing dependencies. Install with: pip3 install web3", "detail": str(e)}))
     sys.exit(1)
@@ -89,6 +92,54 @@ def load_account(creds_path=None):
     if not private_key.startswith("0x"):
         private_key = "0x" + private_key
     return Account.from_key(private_key)
+
+
+def read_message(args):
+    """The exact bytes to sign.
+
+    Grid's ownership challenge is matched character-for-character by the
+    provider, so --message-file exists to keep a shell out of the round trip.
+    Only a trailing newline is stripped: the file is the message, not a line of
+    text about it.
+    """
+    if args.message_file:
+        raw = Path(args.message_file).read_text(encoding="utf-8")
+        return raw[:-1] if raw.endswith("\n") else raw
+    return args.message
+
+
+def resolve_account(args):
+    """The funded wallet by default, or a throwaway passed on the command line.
+
+    Travel Rule negative cases need a key that is deliberately not the one the
+    wallet was registered under, and throwaway wallets never belong in
+    ~/.grid-credentials.
+    """
+    key = getattr(args, "private_key", None)
+    if not key:
+        return load_account()
+    return Account.from_key(key if key.startswith("0x") else "0x" + key)
+
+
+def cmd_gen_keypair(args):
+    account = Account.create()
+    print(json.dumps({
+        "address": account.address,
+        "privateKey": "0x" + bytes(account.key).hex(),
+    }))
+
+
+def cmd_sign_message(args):
+    account = resolve_account(args)
+    message = read_message(args)
+    # encode_defunct applies the EIP-191 personal_sign prefix, which is what
+    # every EVM wallet signs and what the verifier rebuilds.
+    signed = Account.sign_message(encode_defunct(text=message), private_key=account.key)
+    print(json.dumps({
+        "address": account.address,
+        "message": message,
+        "signature": "0x" + bytes(signed.signature).hex(),
+    }))
 
 
 def get_web3():
@@ -208,12 +259,22 @@ def main():
 
     sub.add_parser("wallet-address", help="Print public address of loaded key")
 
+    sign = sub.add_parser("sign-message", help="Sign a message with the wallet key")
+    sign_src = sign.add_mutually_exclusive_group(required=True)
+    sign_src.add_argument("--message", help="Exact message text to sign")
+    sign_src.add_argument("--message-file", help="File whose contents are the message")
+    sign.add_argument("--private-key", help="Sign with this hex key instead of the funded wallet")
+
+    sub.add_parser("gen-keypair", help="Print a fresh throwaway keypair")
+
     eth_bal = sub.add_parser("eth-balance", help="Print ETH balance")
     eth_bal.add_argument("--address", help="Address to check (default: own wallet)")
 
     dispatch = {
         "wallet-address": cmd_wallet_address,
         "eth-balance": cmd_eth_balance,
+        "sign-message": cmd_sign_message,
+        "gen-keypair": cmd_gen_keypair,
     }
 
     for asset in ("usdc", "usdt"):

@@ -10,7 +10,9 @@ description: >
   "FX rate", "payment corridor", "what rate will I get", "estimate withdrawal fee",
   "crypto withdrawal fee", "USDB", "USDB offramp", "embedded wallet", "embedded wallet sign",
   "Grid-Wallet-Signature", "Turnkey stamp", "payloadToSign", "EMAIL_OTP credential",
-  "HPKE bundle", "decrypt credential bundle", or any payment operations using the Grid API CLI.
+  "HPKE bundle", "decrypt credential bundle", "verify wallet ownership", "ownership challenge",
+  "travel rule", "self-custody wallet verification", "PENDING_OWNERSHIP_VERIFICATION",
+  or any payment operations using the Grid API CLI.
 allowed-tools:
   - Bash
   - Read

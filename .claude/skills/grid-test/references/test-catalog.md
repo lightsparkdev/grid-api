@@ -122,6 +122,11 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 Save the `id` as `STABLE_EXTERNAL_ID`.
 
+> This body sends no `ownershipType`, which is right for these tests but means the
+> wallet is not first-party and never enters ownership verification. On a
+> Striga-backed platform that silently skips the EU Travel Rule path entirely —
+> see `travel-rule-catalog.md`, TR8.
+
 2. Record initial on-chain stablecoin balance:
 
 ```bash

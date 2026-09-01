@@ -106,6 +106,8 @@ Internal accounts are auto-created when customers are created based on platform 
 | POST | `/customers/external-accounts/{externalAccountId}/trust/confirm` | Confirm trusting a beneficiary |
 | POST | `/customers/external-accounts/{externalAccountId}/untrust` | Start untrusting a beneficiary |
 | POST | `/customers/external-accounts/{externalAccountId}/untrust/confirm` | Confirm untrusting a beneficiary |
+| POST | `/customers/external-accounts/{externalAccountId}/challenge` | Start an ownership verification challenge |
+| POST | `/customers/external-accounts/{externalAccountId}/verify` | Complete a wallet-signature challenge |
 
 ## Platform External Accounts
 
@@ -115,6 +117,32 @@ Internal accounts are auto-created when customers are created based on platform 
 | POST | `/platform/external-accounts` | Add a new platform external account |
 | GET | `/platform/external-accounts/{externalAccountId}` | Get platform external account by ID |
 | DELETE | `/platform/external-accounts/{externalAccountId}` | Delete platform external account by ID |
+| POST | `/platform/external-accounts/{externalAccountId}/challenge` | Start an ownership verification challenge |
+| POST | `/platform/external-accounts/{externalAccountId}/verify` | Complete a wallet-signature challenge |
+
+### Wallet Ownership Verification
+
+Under the EU Travel Rule, a self-custody crypto wallet must prove its owner controls it
+before unrestricted use. Registering one parks the account in
+`PENDING_OWNERSHIP_VERIFICATION`; transfers below the regulatory threshold still work.
+
+A challenge is issued only for an account that is **all** of: a crypto wallet, no
+`vaspName` (self-custody), `ownershipType: FIRST_PARTY`, and in
+`PENDING_OWNERSHIP_VERIFICATION` or `UNVERIFIED`. Anything else is refused —
+`ownershipType` is nullable, so omitting it silently opts the wallet out.
+
+`POST .../challenge` takes `{"method": "WALLET_SIGNATURE" | "LIVENESS"}`.
+
+- `WALLET_SIGNATURE` returns `messageToSign` and `expiresAt`. Sign the message
+  **character-for-character** — the provider rebuilds it server-side and compares
+  exactly — and submit the signature to `.../verify`, which returns the updated
+  external account. Signature formats: EIP-191 hex on EVM chains, base64 on Bitcoin
+  (`signatureScheme`: `bip137` default, or `electrum`), base58 Ed25519 on Solana.
+- `LIVENESS` returns a hosted `verificationLink` and completes asynchronously via
+  `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks.
+
+Successful verification moves the account to `ACTIVE`. A refused signature moves it to
+`UNVERIFIED`, from which a new challenge can be issued to retry.
 
 ## Same-Currency Transfers
 

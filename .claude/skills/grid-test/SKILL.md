@@ -12,6 +12,10 @@ description: >
   "test Grid API", "run e2e USDC test", "run e2e USDT test", "test USDC on [chain]",
   "test USDT on [chain]", or wants to verify Grid's stablecoin deposit/withdrawal/quote pipeline
   (USDC on Solana/Base/Polygon/Ethereum, USDT on Ethereum/Plasma/Tron).
+  Also covers EU Travel Rule wallet ownership verification on Striga-backed platforms:
+  "test travel rule", "test ownership verification", "verify wallet ownership", "test wallet signature",
+  "test PENDING_OWNERSHIP_VERIFICATION", "test the counterparty declare", "sign an ownership challenge",
+  "test self-custody wallet verification", "test Striga travel rule".
   Even if the user mentions just one chain, one asset, one test, or one corridor, this skill applies.
   This replaces both grid-solana-usdc-sandbox and grid-base-usdc-test.
 allowed-tools:
@@ -59,6 +63,11 @@ Determine what to run from the user's request:
 | 9 | usdc-to-mxn-acct | USDC→MXN account funded, SPEI account funded |
 | 10 | usdc-to-uma-rt | USDC→UMA RT, UMA realtime, send to UMA |
 | 11 | usd-to-uma-acct | USD→UMA account funded, UMA payout |
+
+**Travel Rule tests** (`TR0`-`TR24`, Striga-backed platforms only) are numbered separately and
+described in `references/travel-rule-catalog.md`. Select them with "test travel rule",
+"test ownership verification", or by id ("run TR3"). They are not part of "all" — a
+non-Striga platform cannot run them at all — so run them only when asked.
 
 **Category shortcuts:**
 - "quote flows" or "quotes" → tests 4-11
@@ -169,6 +178,13 @@ For each selected target, run these checks. Skip a target (with a warning) if it
    pip3 install $PIP_DEPS 2>&1 | tail -5
    ```
 
+   For `solana-usdc`, pin solana-py below 0.40 — 0.40.x ships no `solana.rpc.api`, so the
+   on-chain subcommands fail to import against a default `pip3 install solana`:
+   ```bash
+   pip3 install solders 'solana<0.40' base58 2>&1 | tail -5
+   ```
+   `sign-message`, `gen-keypair` and `wallet-address` are unaffected either way.
+
 3. **Define helper function** (pass `--mainnet` if running on mainnet):
    ```bash
    # Testnet:
@@ -178,6 +194,17 @@ For each selected target, run these checks. Skip a target (with a warning) if it
    ```
 
    Use a shell function (not a variable) so that arguments are word-split correctly. Then call as `chain_helper send-$STABLE_ASSET --to ...`. All helper scripts accept `--mainnet` to switch RPC endpoints, chain IDs, token contract addresses, and credential keys automatically.
+
+   **Key-only subcommands.** `solana_helper.py` and `ethereum_helper.py` also expose two subcommands that touch no RPC and need no `~/.grid-credentials`, used by the Travel Rule catalog:
+
+   | Subcommand | Purpose |
+   |---|---|
+   | `sign-message --message-file FILE [--private-key KEY]` | Sign a message with the wallet key. Ed25519/base58 on Solana, EIP-191/`0x`-hex on Ethereum. `--message-file` strips one trailing newline and signs the rest verbatim, so a `jq -r` pipe is safe. |
+   | `gen-keypair` | Print a fresh throwaway keypair (`address`, `privateKey`) for negative tests. |
+
+   `--private-key` signs with a supplied key instead of the funded wallet — needed for the wrong-key case, and so throwaway keys never have to be written into `~/.grid-credentials`.
+
+   **solana-py version note.** `solana_helper.py` imports its RPC client lazily, so `sign-message`, `gen-keypair` and `wallet-address` work even when solana-py is missing or incompatible. The on-chain subcommands need `solana.rpc.api`, which **0.40.x does not ship** — install `'solana<0.40'` if `sol-balance` reports an incompatible install.
 
 4. **Check gas balance:**
    ```bash
@@ -212,7 +239,7 @@ For each selected target, run these checks. Skip a target (with a warning) if it
 
 ## Step 5: Run Tests
 
-Read `references/test-catalog.md` for detailed test steps. Each test is parameterized by target variables set in Step 4. Run tests sequentially within each target (later tests depend on state from earlier ones).
+Read `references/test-catalog.md` for detailed test steps, or `references/travel-rule-catalog.md` when running `TR*` tests. Each test is parameterized by target variables set in Step 4. Run tests sequentially within each target (later tests depend on state from earlier ones).
 
 **Dependency note:** If the user requests a specific test (e.g., test 4), also run its dependencies:
 - Tests 2-11 depend on Test 1 (customer + account creation)
