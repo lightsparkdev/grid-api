@@ -15460,7 +15460,7 @@ components:
           description: Name of the beneficiary's bank
           minLength: 1
           maxLength: 255
-          example: BDO Unibank
+          example: Bank of the Philippine Islands (BPI)
         accountNumber:
           type: string
           description: Bank account number
@@ -15471,7 +15471,7 @@ components:
       example:
         accountType: PHP_ACCOUNT
         rail: INSTAPAY
-        bankName: BDO Unibank
+        bankName: Bank of the Philippine Islands (BPI)
         accountNumber: '001234567890'
     PhpAccountInfo:
       allOf:
