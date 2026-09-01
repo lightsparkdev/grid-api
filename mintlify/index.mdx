@@ -27,7 +27,7 @@ export const ProductTiles = ({ categories }) => {
               setActiveCategory(cat.id);
               setActiveItem(cat.items[0]?.id);
             }}
-            className={`product-tiles-tab ${activeCategory === cat.id ? 'active' : ''}`}
+            className={['product-tiles-tab', activeCategory === cat.id && 'active'].filter(Boolean).join(' ')}
           >
             {cat.label}
           </button>
@@ -45,7 +45,7 @@ export const ProductTiles = ({ categories }) => {
                 }
               }}
               onMouseEnter={() => setActiveItem(item.id)}
-              className={`product-tiles-item ${activeItem === item.id ? 'active' : ''}`}
+              className={['product-tiles-item', activeItem === item.id && 'active'].filter(Boolean).join(' ')}
             >
               <img src={item.icon} alt="" className="product-tiles-icon" />
               <div className="product-tiles-item-content">
@@ -64,7 +64,7 @@ export const ProductTiles = ({ categories }) => {
               key={item.id} 
               src={item.image} 
               alt={item.title} 
-              className={`product-tiles-preview-img ${activeItem === item.id ? 'active' : ''}`}
+              className={['product-tiles-preview-img', activeItem === item.id && 'active'].filter(Boolean).join(' ')}
             />
           ))}
         </div>
