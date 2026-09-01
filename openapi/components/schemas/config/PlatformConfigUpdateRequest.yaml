@@ -23,6 +23,13 @@ properties:
       Update card-tokenization authentication branding and delivery settings.
       Fields omitted from the nested object are left unchanged. Changes apply
       to subsequent delivery attempts.
+  cardConfigs:
+    $ref: ./CardConfig.yaml
+    description: >-
+      Update platform-level card settings. Fields omitted from the nested
+      object are left unchanged. For `maxSpendPerTransaction`, supply null to
+      clear the platform cap or a positive integer to set it. Omit this field
+      at the top level to leave all card settings unchanged.
   feeConfigs:
     type: array
     items:

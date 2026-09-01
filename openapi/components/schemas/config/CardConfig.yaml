@@ -1,0 +1,17 @@
+type: object
+description: Platform-level settings that apply to cards issued by the platform.
+properties:
+  maxSpendPerTransaction:
+    anyOf:
+      - type: integer
+        format: int64
+        minimum: 1
+      - type: 'null'
+    description: >-
+      Platform-level cap on a single transaction for every card whose
+      authorization decisions are made by Grid. The value is interpreted in
+      the smallest unit of each card's currency. Grid enforces the lower of
+      this cap and the card's configured `maxSpendPerTransaction`; null means
+      no platform-level cap. The cap applies to existing cards and to cards
+      issued later. Provider-decided card programs are unaffected.
+    example: 10000

@@ -43,6 +43,9 @@ properties:
     description: |
       Branding and sender configuration for card-tokenization authentication
       messages. This configuration is independent of embedded-wallet support.
+  cardConfigs:
+    $ref: ./CardConfig.yaml
+    description: Platform-level settings for cards issued by this platform.
   feeConfigs:
     type: array
     items:

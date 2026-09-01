@@ -92,7 +92,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update platform configuration
-      description: Update the platform configuration settings
+      description: Update platform configuration settings. Setting `cardConfigs.maxSpendPerTransaction` establishes a platform-level card cap; Grid enforces the lower of that cap and each card's configured `maxSpendPerTransaction` without replacing the card-specific value.
       operationId: updatePlatformConfig
       tags:
         - Platform Configuration
@@ -139,6 +139,8 @@ paths:
                 sms:
                   templateSid: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                   bodyText: Use this code to finish adding your Acme card to your digital wallet.
+              cardConfigs:
+                maxSpendPerTransaction: 10000
       responses:
         '200':
           description: Configuration updated successfully
@@ -8422,7 +8424,7 @@ paths:
       description: |
         Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
-        An optional `maxSpendPerTransaction` value sets the largest amount a single card transaction may authorize. The limit is enforced by Grid for card programs where Grid makes the authorization decision, whether the card is funded by an Embedded Wallet account or custodial fiat. Omit it for no limit. The value is in the smallest unit of the card's currency.
+        An optional `maxSpendPerTransaction` value sets the card-specific cap on a single transaction. The limit is enforced by Grid for card programs where Grid makes the authorization decision, whether the card is funded by an Embedded Wallet account or custodial fiat. Omit it for no card-specific cap. If the platform config sets `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card and platform values. Both values use the smallest unit of the card's currency.
 
         If any funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
@@ -8623,7 +8625,7 @@ paths:
 
         - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
         - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`.
-        - `maxSpendPerTransaction`, when supplied, replaces the card's application-enforced per-transaction limit. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. Limits are supported only for card programs where Grid makes the authorization decision. `maxSpendPerTransaction` cannot be supplied alongside `state: CLOSED`.
+        - `maxSpendPerTransaction`, when supplied, replaces the card-specific per-transaction cap. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card and platform values. Limits are supported only for card programs where Grid makes the authorization decision. `maxSpendPerTransaction` cannot be supplied alongside `state: CLOSED`.
 
         This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
@@ -12082,6 +12084,18 @@ components:
           $ref: '#/components/schemas/CardTokenization2FAEmailConfig'
         sms:
           $ref: '#/components/schemas/CardTokenization2FASmsConfig'
+    CardConfig:
+      type: object
+      description: Platform-level settings that apply to cards issued by the platform.
+      properties:
+        maxSpendPerTransaction:
+          anyOf:
+            - type: integer
+              format: int64
+              minimum: 1
+            - type: 'null'
+          description: Platform-level cap on a single transaction for every card whose authorization decisions are made by Grid. The value is interpreted in the smallest unit of each card's currency. Grid enforces the lower of this cap and the card's configured `maxSpendPerTransaction`; null means no platform-level cap. The cap applies to existing cards and to cards issued later. Provider-decided card programs are unaffected.
+          example: 10000
     FeeType:
       type: string
       enum:
@@ -12178,6 +12192,9 @@ components:
           description: |
             Branding and sender configuration for card-tokenization authentication
             messages. This configuration is independent of embedded-wallet support.
+        cardConfigs:
+          $ref: '#/components/schemas/CardConfig'
+          description: Platform-level settings for cards issued by this platform.
         feeConfigs:
           type: array
           items:
@@ -12292,6 +12309,9 @@ components:
             Update card-tokenization authentication branding and delivery settings.
             Fields omitted from the nested object are left unchanged. Changes apply
             to subsequent delivery attempts.
+        cardConfigs:
+          $ref: '#/components/schemas/CardConfig'
+          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. For `maxSpendPerTransaction`, supply null to clear the platform cap or a positive integer to set it. Omit this field at the top level to leave all card settings unchanged.
         feeConfigs:
           type: array
           items:
@@ -25606,7 +25626,7 @@ components:
               format: int64
               minimum: 1
             - type: 'null'
-          description: Largest amount a single card transaction may authorize, in the smallest unit of the card's `currency`. Null means the card has no application-enforced per-transaction limit. A transaction for exactly this amount is allowed.
+          description: Card-specific cap on a single transaction, in the smallest unit of the card's `currency`. Null means the card has no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values without replacing this configured value. A transaction for exactly the effective limit is allowed.
           example: 5000
         currency:
           type: string
@@ -25688,7 +25708,7 @@ components:
           type: integer
           format: int64
           minimum: 1
-          description: Optional largest amount a single card transaction may authorize, in the smallest unit of the card currency derived from its funding sources. Omit this field for no limit. Supported only for card programs whose authorization decisions are made by Grid. A transaction for exactly this amount is allowed.
+          description: Optional card-specific cap on a single transaction, in the smallest unit of the card currency derived from its funding sources. Omit this field for no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Supported only for card programs whose authorization decisions are made by Grid. A transaction for exactly the effective limit is allowed.
           example: 5000
     CardUpdateRequest:
       type: object
@@ -25717,7 +25737,7 @@ components:
               format: int64
               minimum: 1
             - type: 'null'
-          description: 'Replacement per-transaction spending limit for the card, in the smallest unit of its currency. Omit this field to leave the current limit unchanged, supply null to clear it, or supply a positive integer to set it. Supported only for card programs whose authorization decisions are made by Grid. Cannot be supplied alongside `state: CLOSED`.'
+          description: 'Replacement card-specific per-transaction cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Supported only for card programs whose authorization decisions are made by Grid. Cannot be supplied alongside `state: CLOSED`.'
           example: 10000
     CardRevealResponse:
       type: object

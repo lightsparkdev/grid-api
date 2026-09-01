@@ -27,7 +27,11 @@ get:
             $ref: ../../components/schemas/errors/Error500.yaml
 patch:
   summary: Update platform configuration
-  description: Update the platform configuration settings
+  description: >-
+    Update platform configuration settings. Setting
+    `cardConfigs.maxSpendPerTransaction` establishes a platform-level card
+    cap; Grid enforces the lower of that cap and each card's configured
+    `maxSpendPerTransaction` without replacing the card-specific value.
   operationId: updatePlatformConfig
   tags:
     - Platform Configuration
@@ -74,6 +78,8 @@ patch:
             sms:
               templateSid: HJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
               bodyText: Use this code to finish adding your Acme card to your digital wallet.
+          cardConfigs:
+            maxSpendPerTransaction: 10000
   responses:
     '200':
       description: Configuration updated successfully
