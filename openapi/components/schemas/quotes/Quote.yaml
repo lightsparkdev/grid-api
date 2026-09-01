@@ -80,7 +80,11 @@ properties:
     example: 1000
   exchangeRate:
     type: number
-    description: Number of sending currency units per receiving currency unit.
+    description: >-
+      Number of sending currency units per receiving currency unit. The rate is
+      fee-exclusive: Grid deducts `feesIncluded` from `totalSendingAmount`
+      first, then converts the remainder at this rate to reach
+      `totalReceivingAmount`.
     exclusiveMinimum: 0
   feesIncluded:
     type: integer

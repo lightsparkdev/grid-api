@@ -71,7 +71,10 @@ properties:
     description: Amount sent in the sender's currency
   exchangeRate:
     type: number
-    description: Number of sending currency units per receiving currency unit.
+    description: >-
+      Number of sending currency units per receiving currency unit. The rate is
+      fee-exclusive: Grid deducts fees from the sending amount before converting
+      at this rate.
     exclusiveMinimum: 0
     example: 1.08
   quoteId:
