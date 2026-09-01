@@ -9694,6 +9694,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /stablecoins/{stablecoinId}/request-grid-enablement:
+    parameters:
+      - name: stablecoinId
+        in: path
+        description: System-generated stablecoin identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Request Grid enablement for a stablecoin
+      description: |
+        Ask Lightspark to approve a registered stablecoin as a Grid settlement currency. Grid enablement is a reviewed workflow rather than a self-service switch, so this endpoint only records the request: it moves `gridOperationsStatus` from `NOT_ENABLED` to `PENDING_APPROVAL` and returns the updated stablecoin. Lightspark drives the remaining `ENABLING` and `ENABLED` steps.
+
+        The request is idempotent. Repeating it while the stablecoin is already `PENDING_APPROVAL` succeeds and changes nothing. A stablecoin in any other Grid operations status cannot be requested, and returns `409`.
+      operationId: requestStablecoinGridEnablement
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Grid enablement requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stablecoin'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The caller may not request Grid enablement for this stablecoin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Stablecoin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: The stablecoin is not in a Grid operations status that can be requested for enablement.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /stablecoins/{stablecoinId}/mints:
     parameters:
       - name: stablecoinId
@@ -13722,6 +13778,7 @@ components:
             | INVALID_STATE_TRANSITION | The requested card `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
             | CARD_ALREADY_CLOSED | `state: CLOSED` was requested for a card that is already `CLOSED` |
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
+            | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
@@ -13735,6 +13792,7 @@ components:
             - INVALID_STATE_TRANSITION
             - CARD_ALREADY_CLOSED
             - CARD_NOT_MUTABLE
+            - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - CONFLICT
         message:
           type: string

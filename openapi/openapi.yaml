@@ -370,6 +370,8 @@ paths:
     $ref: paths/stablecoins/stablecoins.yaml
   /stablecoins/{stablecoinId}:
     $ref: paths/stablecoins/stablecoins_{stablecoinId}.yaml
+  /stablecoins/{stablecoinId}/request-grid-enablement:
+    $ref: paths/stablecoins/stablecoins_{stablecoinId}_request-grid-enablement.yaml
   /stablecoins/{stablecoinId}/mints:
     $ref: paths/stablecoins/stablecoins_{stablecoinId}_mints.yaml
   /stablecoins/{stablecoinId}/burns:
