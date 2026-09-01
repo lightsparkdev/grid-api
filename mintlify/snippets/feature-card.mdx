@@ -3,12 +3,20 @@ export const FeatureCard = ({ icon, title, children, href, linkHref, linkText, c
   const isFlat = variant === 'flat';
   const isLargeIcon = iconSize === 'lg';
   const isInlineTag = tagPosition === 'inline';
+  const className = [
+    'feature-card',
+    href && 'feature-card-link',
+    !icon && 'feature-card-no-icon',
+    isHorizontal && 'feature-card-horizontal',
+    isFlat && 'feature-card-flat',
+    isLargeIcon && 'feature-card-icon-lg',
+  ].filter(Boolean).join(' ');
   const card = (
-    <div className={`feature-card ${href ? 'feature-card-link' : ''} ${!icon ? 'feature-card-no-icon' : ''} ${isHorizontal ? 'feature-card-horizontal' : ''} ${isFlat ? 'feature-card-flat' : ''} ${isLargeIcon ? 'feature-card-icon-lg' : ''}`}>
+    <div className={className}>
       {icon && (
         <div className="feature-card-icon-wrapper">
           {color ? (
-            <div 
+            <div
               className="feature-card-icon"
               style={{
                 WebkitMaskImage: `url(${icon})`,
@@ -76,8 +84,9 @@ export const FeatureCardContainer = ({ children }) => (
 );
 
 export const ImageCard = ({ img, title, children, href }) => {
+  const className = ['image-card', href && 'image-card-link'].filter(Boolean).join(' ');
   const card = (
-    <div className={`image-card ${href ? 'image-card-link' : ''}`}>
+    <div className={className}>
       <div className="image-card-img-wrapper">
         <img src={img} alt={title} className="image-card-img" />
       </div>
