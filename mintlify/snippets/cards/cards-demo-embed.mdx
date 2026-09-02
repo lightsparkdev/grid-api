@@ -1,7 +1,7 @@
-export const WalletDemoEmbed = () => {
+export const CardsDemoEmbed = () => {
   React.useEffect(() => {
     const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-    const base = isLocal ? 'http://localhost:4000' : 'https://grid-wallet-demo.vercel.app';
+    const base = isLocal ? 'http://localhost:4002' : 'https://grid-cards-demo.vercel.app';
     const isDark = () => document.documentElement.classList.contains('dark');
 
     const navWidth = () => {
@@ -12,26 +12,26 @@ export const WalletDemoEmbed = () => {
       return Number.isFinite(v) ? v : (collapsed ? 48 : 280);
     };
 
-    let host = document.getElementById('wallet-demo-host');
+    let host = document.getElementById('cards-demo-host');
     if (!host) {
       host = document.createElement('div');
-      host.id = 'wallet-demo-host';
+      host.id = 'cards-demo-host';
       host.className = 'ls-playground-host';
       host.style.cssText = 'position:fixed;z-index:1;overflow:hidden;';
       const iframe = document.createElement('iframe');
-      iframe.id = 'wallet-demo-iframe';
+      iframe.id = 'cards-demo-iframe';
       iframe.className = 'ls-playground-iframe';
       iframe.src = base + '/?embed=true&theme=' + (isDark() ? 'dark' : 'light') + '&nav=' + navWidth();
-      iframe.title = 'Grid Global Accounts — live demo';
+      iframe.title = 'Grid Cards — playground';
       iframe.setAttribute('allow', 'publickey-credentials-create *; publickey-credentials-get *; clipboard-write');
       iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
       host.appendChild(iframe);
       document.body.appendChild(host);
     }
-    if (window.__wdHideTimer) { clearTimeout(window.__wdHideTimer); window.__wdHideTimer = null; }
+    if (window.__cdHideTimer) { clearTimeout(window.__cdHideTimer); window.__cdHideTimer = null; }
     host.style.display = 'block';
     const sendNav = () => {
-      const iframe = document.getElementById('wallet-demo-iframe');
+      const iframe = document.getElementById('cards-demo-iframe');
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage({ type: 'nav-sync', sidebarWidth: navWidth() }, '*');
       }
@@ -40,7 +40,7 @@ export const WalletDemoEmbed = () => {
     let raf = 0;
     let last = { left: -1, top: -1, width: -1, height: -1 };
     const sync = () => {
-      const el = document.getElementById('wallet-demo-container');
+      const el = document.getElementById('cards-demo-container');
       if (el && host) {
         const r = el.getBoundingClientRect();
         if (r.left !== last.left || r.top !== last.top || r.width !== last.width || r.height !== last.height) {
@@ -59,7 +59,7 @@ export const WalletDemoEmbed = () => {
     let ignoreNextMutation = false;
     const sendTheme = () => {
       const t = isDark() ? 'dark' : 'light';
-      const iframe = document.getElementById('wallet-demo-iframe');
+      const iframe = document.getElementById('cards-demo-iframe');
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage({ type: 'theme-sync', theme: t }, '*');
       }
@@ -99,8 +99,8 @@ export const WalletDemoEmbed = () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('message', handleMessage);
       obs.disconnect();
-      window.__wdHideTimer = setTimeout(() => {
-        const h = document.getElementById('wallet-demo-host');
+      window.__cdHideTimer = setTimeout(() => {
+        const h = document.getElementById('cards-demo-host');
         if (h) h.style.display = 'none';
       }, 150);
     };

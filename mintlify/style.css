@@ -4144,11 +4144,11 @@ html.dark.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]
 }
 
 /* ===========================================
-   Wallet demo page (global-accounts/demo)
+   Playground pages (global-accounts/demo, cards/demo)
    Docs sidebar stays; content column is iframe-only, edge-to-edge.
    =========================================== */
 
-#content-container:has(#wallet-demo-container) {
+#content-container:has(.ls-playground-container) {
   max-width: none !important;
   width: 100% !important;
   margin: 0 !important;
@@ -4156,8 +4156,8 @@ html.dark.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]
 }
 
 /* Mintlify wraps content in max-w-5xl (1024px) — bust it for the demo */
-#content-container:has(#wallet-demo-container) > div.max-w-5xl,
-#content-container:has(#wallet-demo-container) > div[class*="max-w-5xl"] {
+#content-container:has(.ls-playground-container) > div.max-w-5xl,
+#content-container:has(.ls-playground-container) > div[class*="max-w-5xl"] {
   max-width: none !important;
   width: 100% !important;
   margin-left: 0 !important;
@@ -4165,7 +4165,7 @@ html.dark.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]
   gap: 0 !important;
 }
 
-#content-area:has(#wallet-demo-container) {
+#content-area:has(.ls-playground-container) {
   width: 100% !important;
   flex: 1 1 auto !important;
   min-width: 0 !important;
@@ -4182,8 +4182,8 @@ html.dark.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]
    sticky bar, AND the "Was this page helpful?" feedback widget (which only
    renders on staging/prod). A catch-all (everything that isn't #content / the
    embed) covers the feedback wherever Mintlify injects it. */
-#content-area:has(#wallet-demo-container) > *:not(#content),
-#content:has(#wallet-demo-container) > *:not(#wallet-demo-container) {
+#content-area:has(.ls-playground-container) > *:not(#content),
+#content:has(.ls-playground-container) > *:not(.ls-playground-container) {
   display: none !important;
   height: 0 !important;
   margin: 0 !important;
@@ -4192,11 +4192,11 @@ html.dark.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]
   visibility: hidden !important;
 }
 
-#content-container:has(#wallet-demo-container) #content-side-layout {
+#content-container:has(.ls-playground-container) #content-side-layout {
   display: none !important;
 }
 
-#content-area:has(#wallet-demo-container) > #content {
+#content-area:has(.ls-playground-container) > #content {
   flex: 1 1 auto !important;
   width: 100% !important;
   margin: 0 !important;
@@ -4206,17 +4206,17 @@ html.dark.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]
   contain: none !important;
 }
 
-#content:has(#wallet-demo-container) .prose,
-.prose:has(#wallet-demo-container) {
+#content:has(.ls-playground-container) .prose,
+.prose:has(.ls-playground-container) {
   max-width: none !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
 /* Placeholder that defines the embed's box. The actual iframe lives in
-   #wallet-demo-host on <body> (so theme toggles don't reload it) and is glued
+   .ls-playground-host on <body> (so theme toggles don't reload it) and is glued
    to this box's position by the embed script. */
-#wallet-demo-container {
+.ls-playground-container {
   width: 100%;
   height: calc(100dvh - 112px);
   margin: 0;
@@ -4225,20 +4225,20 @@ html.dark.ls-page-flow-builder #navbar button[class*="h-14"][class*="text-left"]
   background: var(--ls-gray-100);
 }
 
-html.dark #wallet-demo-container {
+html.dark .ls-playground-container {
   background: var(--ls-gray-975);
 }
 
 /* Persistent iframe host — body-mounted, positioned over the placeholder. */
-#wallet-demo-host {
+.ls-playground-host {
   background: var(--ls-gray-100);
 }
 
-html.dark #wallet-demo-host {
+html.dark .ls-playground-host {
   background: var(--ls-gray-975);
 }
 
-#wallet-demo-iframe {
+.ls-playground-iframe {
   width: 100% !important;
   height: 100% !important;
   min-height: 0 !important;
@@ -4248,8 +4248,8 @@ html.dark #wallet-demo-host {
 }
 
 /* Flatten Mintlify's iframe aspect-ratio wrapper */
-#wallet-demo-container > div,
-#wallet-demo-container > [style*="aspect-ratio"] {
+.ls-playground-container > div,
+.ls-playground-container > [style*="aspect-ratio"] {
   aspect-ratio: unset !important;
   width: 100% !important;
   height: 100% !important;
@@ -4259,14 +4259,14 @@ html.dark #wallet-demo-host {
 }
 
 @media (max-width: 1023px) {
-  #content-area:has(#wallet-demo-container) {
+  #content-area:has(.ls-playground-container) {
     min-height: calc(100dvh - 120px) !important;
   }
 
   /* Mobile has no sidebar (hamburger nav), so the embed goes full-bleed below
      the navbar — fixed so it isn't shoved under the navbar or short at the
      bottom (matches the flow-builder embed). */
-  #wallet-demo-container {
+  .ls-playground-container {
     position: fixed !important;
     top: 120px !important;
     left: 0 !important;
@@ -4275,20 +4275,20 @@ html.dark #wallet-demo-host {
   }
 }
 
-/* Prevent outer page scroll when the wallet demo is present.
+/* Prevent outer page scroll when a playground embed is present.
    PERF: class-keyed, not html:has() — see the flow-builder note above. */
-html.ls-page-wallet-demo,
-html.ls-page-wallet-demo body {
+html.ls-page-playground,
+html.ls-page-playground body {
   overflow: hidden !important;
 }
 
-/* Wallet demo mobile breadcrumb — hide text + chevron, keep hamburger, show
+/* Playground mobile breadcrumb — hide text + chevron, keep hamburger, show
    (0, 0, 0) on the right (matches the flow-builder tab). */
-html.ls-page-wallet-demo #navbar button[class*="h-14"][class*="text-left"] > *:not(:first-child) {
+html.ls-page-playground #navbar button[class*="h-14"][class*="text-left"] > *:not(:first-child) {
   display: none !important;
 }
 
-html.ls-page-wallet-demo #navbar button[class*="h-14"][class*="text-left"]::after {
+html.ls-page-playground #navbar button[class*="h-14"][class*="text-left"]::after {
   content: "(0, 0, 0)";
   margin-left: auto;
   font-family: "Suisse Intl Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -4297,7 +4297,7 @@ html.ls-page-wallet-demo #navbar button[class*="h-14"][class*="text-left"]::afte
   color: var(--ls-gray-400);
 }
 
-html.dark.ls-page-wallet-demo #navbar button[class*="h-14"][class*="text-left"]::after {
+html.dark.ls-page-playground #navbar button[class*="h-14"][class*="text-left"]::after {
   color: var(--ls-gray-700);
 }
 
@@ -4359,8 +4359,8 @@ html.ls-nav-dragging .ls-nav-rail {
 /* While dragging, let pointer events pass through the playground iframe so the
    drag keeps tracking when the cursor moves over it (otherwise the iframe
    swallows mousemove/mouseup and the resize stalls on the demo page). */
-html.ls-nav-dragging #wallet-demo-host,
-html.ls-nav-dragging #wallet-demo-iframe {
+html.ls-nav-dragging .ls-playground-host,
+html.ls-nav-dragging .ls-playground-iframe {
   pointer-events: none !important;
 }
 
