@@ -15052,6 +15052,7 @@ components:
         - customerId
         - type
         - currency
+        - sweepRule
       properties:
         customerId:
           type: string
