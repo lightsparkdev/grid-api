@@ -45,3 +45,13 @@
   text-align: center;
   font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
 }
+
+/* Decline reason under the "Declined" label. */
+.reason {
+  margin: -4px 0 0;
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  color: #ff453a;
+  text-align: center;
+}

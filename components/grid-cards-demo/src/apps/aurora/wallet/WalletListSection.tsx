@@ -25,6 +25,8 @@ interface WalletListSectionProps {
   grow?: boolean;
   /** Round (vs squircle) skeleton avatar placeholder — the send recipient list. */
   roundGraphic?: boolean;
+  /** Rows become buttons (card-home transactions open a detail sheet). */
+  onItemClick?: (id: string) => void;
 }
 
 /**
@@ -41,6 +43,7 @@ export function WalletListSection({
   items,
   grow = false,
   roundGraphic = false,
+  onItemClick,
 }: WalletListSectionProps) {
   return (
     <section className={clsx(styles.section, grow && styles.sectionGrow)} aria-label={title}>
@@ -50,6 +53,7 @@ export function WalletListSection({
         grow={grow}
         roundGraphic={roundGraphic}
         items={items}
+        onItemClick={onItemClick}
         emptyTitle={emptyTitle}
         emptySub={emptySub}
         cta={

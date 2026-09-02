@@ -4,6 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReceivePaymentInfo } from '@/data/apiCalls';
 import type { ToastData } from '@/apps/shared/Toast';
 import { formatUsdCents, truncateAddress } from './format';
+import {
+  useCardControls,
+  type DeclineReason,
+  type UseCardControlsOptions,
+} from './useCardControls';
 import type {
   CardView,
   MoneySheetMode,
@@ -28,6 +33,7 @@ import {
 const CREATING_MS = 2700;
 const TAP_HOLD_MS = 1200; // Hold Near Reader dwell before Face ID kicks in.
 const TAP_DONE_MS = 1500; // Done-check dwell before resolving back to card-home.
+const TAP_DECLINED_MS = 1900; // Declined dwell (reads the reason) before resolving.
 // Insert the transaction AFTER card-home has re-entered (content settles ~0.7s)
 // so the new row visibly grows in and pushes the list down.
 const TAP_INSERT_DELAY_MS = 900;
@@ -69,8 +75,13 @@ export interface UseWalletHomeOptions {
   transferSuccessScreen?: boolean;
   /** Transfer confirmed (Face ID) — log execute + settle and move the balance. */
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
-  /** A tap-to-pay charge landed on the phone. */
-  onTapToPay?: (cents: number, merchant: string) => void;
+  /** A tap-to-pay charge landed on the phone. `rowId` identifies the
+   *  transaction row so later settle/refund events can reference it. */
+  onTapToPay?: (cents: number, merchant: string, rowId: string) => void;
+  /** A tap-to-pay authorization was declined (frozen card / over a cap). */
+  onTapDeclined?: (reason: DeclineReason, cents: number, merchant: string) => void;
+  /** Card-control events (freeze, close, limits, reveal, wallet, settle, refund). */
+  card?: UseCardControlsOptions;
   /** A payment was received (Receive flow) — log the inbound webhook + settle. */
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
 }
@@ -89,13 +100,29 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     transferSuccessScreen = false,
     onTransferExecute,
     onTapToPay,
+    onTapDeclined,
     onReceivePayment,
+    card: cardOptions,
   } = options;
+
+  // Card controls (freeze / close / limits / reveal / wallet / transaction
+  // lifecycle) — the hub's brain, composed here so skins read one surface.
+  const card = useCardControls(cardOptions);
 
   const [cardView, setCardView] = useState<CardView>('closed');
   const [issued, setIssued] = useState(false);
   const [tapPhase, setTapPhase] = useState<TapPhase>('idle');
-  const [transactions, setTransactions] = useState<WalletListItemData[]>([]);
+  // Card transactions are the control brain's rows, labelled by lifecycle.
+  const transactions: WalletListItemData[] = useMemo(
+    () =>
+      card.rows.map((r) => ({
+        ...r,
+        detail: r.status === 'AUTHORIZED' ? 'Pending' : r.status === 'REFUNDED' ? 'Refunded' : r.detail,
+      })),
+    [card.rows],
+  );
+  // Reveal needs Face ID first; the view shows the overlay while this is set.
+  const [revealPending, setRevealPending] = useState(false);
 
   // Add money / Withdraw flow: ONE mode-switched sheet + Face ID confirm +
   // local balance/activity bookkeeping (deltaCents = net adds − withdrawals).
@@ -161,6 +188,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const showFullAurora = cardView === 'intro' || cardView === 'creating';
   const cardCentered = isIssuance; // centered for intro/creating/ready; top for closed/home
   const isTap = tapPhase !== 'idle'; // tap-to-pay sub-flow over the card-home screen
+  const isDeclined = tapPhase === 'declined';
 
   // Simulated card creation: auto-advance creating -> ready (and mark issued).
   useEffect(() => {
@@ -188,21 +216,58 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     if (tapPhase !== 'done') return;
     const t = window.setTimeout(() => {
       const tx = pendingTapTx.current; // the merchant picked at tap start
+      const rowId = `tap-${Date.now()}`;
       setTapPhase('idle');
       // The card charge comes out of the cash balance, landing with the row.
       setDeltaCents((c) => c - parseCents(tx.amount));
       setSpendBars((b) => [...b, parseCents(tx.amount)]);
-      onTapToPay?.(parseCents(tx.amount), tx.title);
+      onTapToPay?.(parseCents(tx.amount), tx.title, rowId);
       window.clearTimeout(insertTimer.current);
       insertTimer.current = window.setTimeout(() => {
-        setTransactions((prev) => [
-          { ...tx, id: `tap-${Date.now()}`, timestamp: Date.now() },
-          ...prev,
-        ]);
+        card.recordAuthorization({
+          ...tx,
+          id: rowId,
+          timestamp: Date.now(),
+          cents: parseCents(tx.amount),
+        });
       }, TAP_INSERT_DELAY_MS);
     }, TAP_DONE_MS);
     return () => window.clearTimeout(t);
   }, [tapPhase]);
+
+  // Declined: hold the reason on screen, then resolve back to card-home with no
+  // charge and no row. The decline itself is logged when the phase flips.
+  useEffect(() => {
+    if (tapPhase !== 'declined') return;
+    const t = window.setTimeout(() => {
+      setTapPhase('idle');
+      card.setLastDecline(null);
+    }, TAP_DECLINED_MS);
+    return () => window.clearTimeout(t);
+  }, [tapPhase]);
+
+  /** Face ID passed during tap-to-pay: the terminal approves or declines. */
+  const finishTapAuth = () => {
+    const tx = pendingTapTx.current;
+    const reason = card.declineReasonFor(parseCents(tx.amount));
+    if (reason) {
+      card.setLastDecline(reason);
+      setTapPhase('declined');
+      onTapDeclined?.(reason, parseCents(tx.amount), tx.title);
+      return;
+    }
+    setTapPhase('done');
+  };
+
+  /** Reveal details: Face ID first, then the details sheet. */
+  const startReveal = () => {
+    if (card.closed) return;
+    setRevealPending(true);
+  };
+  const finishRevealAuth = () => {
+    setRevealPending(false);
+    card.reveal();
+  };
   useEffect(() => () => window.clearTimeout(insertTimer.current), []);
 
   const openCard = () => setCardView(issued ? 'home' : 'intro');
@@ -299,13 +364,44 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
           setCardView('home');
           break;
         case 'reveal':
-        case 'wallet':
-        case 'freeze':
-        case 'limits':
-        case 'refund':
-        case 'close':
-          // Not built yet — land on the card home so the jump isn't a dead end.
           setCardView('home');
+          window.setTimeout(startReveal, ENTRY_HOME_SETTLE_MS);
+          break;
+        case 'wallet':
+          setCardView('home');
+          window.setTimeout(card.startAddToWallet, ENTRY_HOME_SETTLE_MS);
+          break;
+        case 'freeze':
+          setCardView('home');
+          window.setTimeout(() => card.setFrozen(!card.frozen), ENTRY_HOME_SETTLE_MS);
+          break;
+        case 'limits':
+          setCardView('home');
+          window.setTimeout(() => card.setSheet('limits'), ENTRY_HOME_SETTLE_MS);
+          break;
+        case 'refund':
+          setCardView('home');
+          window.setTimeout(() => {
+            // Nothing to refund yet: provision a settled purchase (state only,
+            // like the other fast-forwards) so the flow has something to act on.
+            let target = card.rows[0];
+            if (!target) {
+              const seed = TAP_MERCHANTS[0];
+              target = {
+                ...seed,
+                id: `seed-${Date.now()}`,
+                timestamp: Date.now(),
+                cents: parseCents(seed.amount),
+                status: 'SETTLED',
+              };
+              card.seedSettledRow(target);
+            }
+            card.openTransaction(target.id);
+          }, ENTRY_HOME_SETTLE_MS);
+          break;
+        case 'close':
+          setCardView('home');
+          window.setTimeout(() => card.setSheet('close'), ENTRY_HOME_SETTLE_MS);
           break;
       }
     };
@@ -331,6 +427,8 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     // Already on a clean home screen — open the target right away, no detour.
     const awayFromHome =
       cardView !== 'closed' ||
+      card.sheet !== 'none' ||
+      revealPending ||
       sheetOpen ||
       sheetConfirming ||
       sendReceiveOpen ||
@@ -361,6 +459,8 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     setSheetConfirming(false);
     setSendReceiveOpen(false);
     setTapPhase('idle');
+    card.closeSheet();
+    setRevealPending(false);
     setCardView('closed');
     const t = window.setTimeout(openTarget, ENTRY_HOME_SETTLE_MS);
     return () => window.clearTimeout(t);
@@ -499,12 +599,19 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     weeklySpentCents,
     homeActivity,
     apyPercent: EARNINGS_APY_PERCENT,
+    // Card controls (freeze / close / limits / reveal / wallet / transactions)
+    card,
+    revealPending,
+    startReveal,
+    finishRevealAuth,
+    finishTapAuth,
     // Derived view flags
     isOpen,
     isIssuance,
     showFullAurora,
     cardCentered,
     isTap,
+    isDeclined,
     // Handlers
     openSheet,
     startSend,

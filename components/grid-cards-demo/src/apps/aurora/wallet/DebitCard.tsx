@@ -27,6 +27,12 @@ interface DebitCardProps {
   bordered?: boolean;
   /** A created card: morph the label to "Debit card" and reveal the number. */
   issued?: boolean;
+  /** Card state visuals (card hub). */
+  frozen?: boolean;
+  closed?: boolean;
+  inWallet?: boolean;
+  /** A purchase just bounced — shake the card. */
+  declined?: boolean;
 }
 
 /** Figma 2143:36184 — debit card behind the wallet sheet. */
@@ -36,6 +42,10 @@ export function DebitCard({
   showNumber = true,
   bordered = false,
   issued = false,
+  frozen = false,
+  closed = false,
+  inWallet = false,
+  declined = false,
 }: DebitCardProps) {
   const reduceMotion = useReducedMotion();
   const [hovered, setHovered] = useState(false);
@@ -85,9 +95,17 @@ export function DebitCard({
       className={clsx(styles.cardShell, bordered && styles.cardShellFlat)}
       initial={false}
       animate={
-        opening || !interactive ? false : hovered ? { y: HOVER_LIFT } : { y: 0 }
+        declined
+          ? { x: [0, -10, 9, -6, 4, 0], y: 0 }
+          : opening || !interactive
+            ? false
+            : hovered
+              ? { y: HOVER_LIFT }
+              : { y: 0 }
       }
-      transition={motionTransition(easeOutOvershoot, LIFT_DURATION)}
+      transition={
+        declined ? { duration: 0.5, ease: 'easeOut' } : motionTransition(easeOutOvershoot, LIFT_DURATION)
+      }
     >
       <button
         type="button"
@@ -97,6 +115,8 @@ export function DebitCard({
           styles.card,
           !interactive && styles.cardStatic,
           customizable && styles[`finish-${design.finish}`],
+          frozen && styles.cardFrozen,
+          closed && styles.cardClosed,
         )}
         aria-label="View debit card"
         disabled={!interactive}
@@ -148,6 +168,13 @@ export function DebitCard({
           </div>
         </div>
         {customizable && <span className={styles.finishLayer} aria-hidden />}
+        {/* Frost creeps in over the face when the card is frozen. */}
+        <span className={clsx(styles.frost, frozen && styles.frostOn)} aria-hidden />
+        {(frozen || closed || inWallet) && (
+          <span className={clsx(styles.stateChip, closed && styles.stateChipClosed)}>
+            {closed ? 'Closed' : frozen ? 'Frozen' : 'In Apple Wallet'}
+          </span>
+        )}
         {bordered && cardClip.path && (
           <svg
             className={styles.borderRing}

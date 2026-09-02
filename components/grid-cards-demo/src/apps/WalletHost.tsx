@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { ExternalAccountInput, ReceivePaymentInfo, TransferDest } from '@/data/apiCalls';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import { useMoneySheet, useWalletHome } from '@/apps/shared/wallet';
-import type { WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
+import type { UseWalletHomeOptions, WalletEntry, WalletTransferMode } from '@/apps/shared/wallet';
 import type { SkinWalletScreen } from './types';
 import styles from './WalletHost.module.scss';
 
@@ -39,7 +39,9 @@ export interface WalletHostProps {
   onLinkExternalAccount?: (input: ExternalAccountInput, label: string) => void;
   onTransferExecute?: (mode: WalletTransferMode, cents: number) => void;
   onCardIssued?: () => void;
-  onTapToPay?: (cents: number, merchant: string) => void;
+  onTapToPay?: UseWalletHomeOptions['onTapToPay'];
+  onTapDeclined?: UseWalletHomeOptions['onTapDeclined'];
+  cardOptions?: UseWalletHomeOptions['card'];
   onReceivePayment?: (info: ReceivePaymentInfo) => void;
 }
 
@@ -63,6 +65,8 @@ export function WalletHost({
   onTransferExecute,
   onCardIssued,
   onTapToPay,
+  onTapDeclined,
+  cardOptions,
   onReceivePayment,
 }: WalletHostProps) {
   const reduceMotion = useReducedMotion();
@@ -73,6 +77,8 @@ export function WalletHost({
     transferSuccessScreen: walletOptions?.transferSuccessScreen,
     onTransferExecute,
     onTapToPay,
+    onTapDeclined,
+    card: cardOptions,
     onReceivePayment,
   });
   // The skin this host MOUNTED with — any other id means the user switched

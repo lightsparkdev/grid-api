@@ -25,6 +25,17 @@ export {
   toastUsd,
 } from './activity';
 export { useWalletHome, type UseWalletHomeOptions, type WalletHome } from './useWalletHome';
+export {
+  useCardControls,
+  type CardControls,
+  type CardLifecycle,
+  type CardSheet,
+  type CardTransactionRow,
+  type DeclineReason,
+  type SpendLimits,
+  type TransactionStatus,
+  type WalletAddPhase,
+} from './useCardControls';
 export { useMoneySheet, type MoneySheet, type UseMoneySheetOptions } from './useMoneySheet';
 export {
   MODES,

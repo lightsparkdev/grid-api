@@ -66,6 +66,8 @@ export function DemoPhone({
             walletOptions={skin.walletOptions}
             onCardIssued={phoneProps.onCardIssued}
             onTapToPay={phoneProps.onTapToPay}
+            onTapDeclined={phoneProps.onTapDeclined}
+            cardOptions={phoneProps.cardOptions}
           />
         </AppShell>
       </BrandProvider>

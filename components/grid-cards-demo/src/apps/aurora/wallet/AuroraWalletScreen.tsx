@@ -26,6 +26,13 @@ import { WalletActions } from './WalletActions';
 import { WalletInsightCards } from './WalletInsightCards';
 import { WalletSheet } from './WalletSheet';
 import { useBrand } from '@/apps/shared/brand/BrandContext';
+import {
+  CardDetailsSheet,
+  CloseCardSheet,
+  LimitsSheet,
+  TransactionSheet,
+  WalletAddSheet,
+} from './CardSheets';
 import styles from './AuroraWalletScreen.module.scss';
 
 // Re-exported for back-compat: these types now live with the headless logic.
@@ -92,6 +99,12 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
     showFullAurora,
     cardCentered,
     isTap,
+    isDeclined,
+    card,
+    revealPending,
+    startReveal,
+    finishRevealAuth,
+    finishTapAuth,
     openSheet,
     startSend,
     startReceive,
@@ -115,10 +128,11 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
   const overlayContent = (
     <>
       <FaceIdAuth
-        active={tapPhase === 'auth' || sheetConfirming}
+        active={tapPhase === 'auth' || sheetConfirming || revealPending}
         onDone={() => {
           if (sheetConfirming) finishTransfer();
-          else setTapPhase('done');
+          else if (revealPending) finishRevealAuth();
+          else finishTapAuth();
         }}
       />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
@@ -261,6 +275,10 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
                   bordered={showFullAurora}
                   showNumber={!showFullAurora}
                   issued={issued}
+                  frozen={card.frozen}
+                  closed={card.closed}
+                  inWallet={card.inWallet}
+                  declined={isDeclined}
                 />
               </motion.div>
             </motion.div>
@@ -360,7 +378,9 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
             >
               <CardHomeContent
                 transactions={transactions}
+                card={card}
                 onTapToPay={startTapToPay}
+                onReveal={startReveal}
               />
             </motion.div>
           )}
@@ -372,7 +392,10 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
               animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
             >
-              <TapToPayStatus phase={tapPhase === 'idle' ? 'hold' : tapPhase} />
+              <TapToPayStatus
+                phase={tapPhase === 'idle' ? 'hold' : tapPhase}
+                declineReason={card.lastDecline}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -398,6 +421,13 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
         onReceive={handleReceivePayment}
         onConfirm={confirmTransfer}
       />
+
+      {/* Card hub sheets — details, Apple Wallet, limits, transaction, close. */}
+      <CardDetailsSheet card={card} />
+      <WalletAddSheet card={card} />
+      <LimitsSheet card={card} />
+      <TransactionSheet card={card} />
+      <CloseCardSheet card={card} />
 
       {screenOverlay}
     </div>

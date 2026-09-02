@@ -51,3 +51,159 @@
   font-weight: 590;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
 }
+
+/* ── Action row: Freeze · Details · Wallet (the consumer card-hub pattern). ── */
+.actionRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 8px 16px 0;
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 8px 10px;
+  border: 0;
+  border-radius: 20px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-quaternary, rgba(120, 120, 128, 0.08));
+  color: var(--ios-label-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 180ms ease, color 180ms ease, opacity 180ms ease;
+  @include shadow.glass-button-press-scale(1.03);
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.actionOn {
+  background: var(--app-tint, var(--ios-tint));
+  color: #ffffff;
+}
+
+.actionIcon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+
+  path {
+    stroke-width: 1.8;
+  }
+}
+
+.actionLabel {
+  @include ios.ios-text-caption-1;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-caption-1-opsz);
+}
+
+/* ── Controls list ───────────────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 16px 4px;
+  border-radius: 20px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-bg-secondary);
+  overflow: hidden;
+}
+
+.controlRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 12px 14px 12px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--ios-label-primary);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  & + & {
+    border-top: 0.5px solid var(--ios-separator);
+  }
+
+  &:active {
+    background: var(--ios-fill-quaternary, rgba(120, 120, 128, 0.08));
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.controlRowDanger .controlIcon {
+  color: #ff453a;
+}
+
+.controlIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-quaternary, rgba(120, 120, 128, 0.08));
+  color: var(--ios-label-primary);
+}
+
+.controlText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.controlTitle {
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+.controlSub {
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--ios-label-tertiary);
+}
+
+/* Daily cap gauge — fills left→right as the day's spend approaches the cap. */
+.gauge {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 6px;
+  border-radius: 2px;
+  background: var(--ios-fill-tertiary);
+  overflow: hidden;
+}
+
+.gaugeFill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--app-tint, var(--ios-tint));
+  transform-origin: left center;
+  transition: transform 600ms cubic-bezier(0.19, 1, 0.22, 1);
+}

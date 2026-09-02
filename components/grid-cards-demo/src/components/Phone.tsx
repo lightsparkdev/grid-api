@@ -1,7 +1,7 @@
 import type { Persona, PhoneState } from '@/data/flow';
 import type { ActionId, WalletState } from '@/data/actions';
 import type { CardDesign } from '@/data/design';
-import type { WalletEntry } from '@/apps/shared/wallet';
+import type { UseWalletHomeOptions, WalletEntry } from '@/apps/shared/wallet';
 
 /**
  * The demo phone's prop contract (AppPanel → DemoPhone). The live UI is the
@@ -20,5 +20,7 @@ export interface PhoneProps {
   walletEntry?: WalletEntry;
   /** Wallet events bubbled up so the demo logs the matching Grid calls. */
   onCardIssued?: () => void;
-  onTapToPay?: (cents: number, merchant: string) => void;
+  onTapToPay?: UseWalletHomeOptions['onTapToPay'];
+  onTapDeclined?: UseWalletHomeOptions['onTapDeclined'];
+  cardOptions?: UseWalletHomeOptions['card'];
 }

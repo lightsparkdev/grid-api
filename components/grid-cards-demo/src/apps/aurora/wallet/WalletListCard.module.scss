@@ -207,3 +207,19 @@
   color: var(--ios-label-secondary);
   text-wrap: balance; // ...then balance those auto-wrapped lines evenly
 }
+
+/* Tappable row (card-home transactions): unstyled button that lets the row
+   render as-is and gives a light press state. */
+.rowButton {
+  all: unset;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 120ms ease;
+
+  &:active {
+    background: var(--ios-fill-quaternary, rgba(120, 120, 128, 0.08));
+  }
+}

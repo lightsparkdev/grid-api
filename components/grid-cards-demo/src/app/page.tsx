@@ -137,6 +137,8 @@ export default function Page() {
             walletEntry={logic.walletEntry}
             onCardIssued={logic.onCardIssued}
             onTapToPay={logic.onTapToPay}
+            onTapDeclined={logic.onTapDeclined}
+            cardOptions={logic.cardOptions}
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />

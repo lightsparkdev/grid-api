@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Persona, ApiCall } from '@/data/flow';
 import {
   ACTIONS,
@@ -12,16 +12,32 @@ import {
   type WalletState,
 } from '@/data/actions';
 import { USE_CASES, type UseCaseId } from '@/data/configure';
-import { cardCalls, tapCalls } from '@/data/cardApiCalls';
+import {
+  cardCalls,
+  clearingCalls,
+  closeRejectedCall,
+  declineCalls,
+  limitsCalls,
+  newSpendRef,
+  refundCalls,
+  revealCalls,
+  stateChangeCalls,
+  tapCalls,
+  walletBrandingCalls,
+  type CardSpendLimits,
+  type SpendRef,
+} from '@/data/cardApiCalls';
 import { initialDesign, type CardDesign } from '@/data/design';
 import type { Entry } from '@/components/ApiPanel/types';
-import type { WalletEntry } from '@/apps/shared/wallet';
+import type { UseWalletHomeOptions, WalletEntry } from '@/apps/shared/wallet';
 
 // Every flow fast-forwards a funded account so spend works from a cold start.
 const FAST_FORWARD_FUND_CENTS = 500_000;
 // Matches CREATING_MS in apps/shared/wallet/useWalletHome: the activation
 // webhook arrives as the card flips from "creating" to "ready" on the phone.
 const CARD_ACTIVE_DELAY_MS = 2700;
+// A state-change webhook lands a beat after its PATCH so the rows arrive 1-by-1.
+const WEBHOOK_DELAY_MS = 650;
 // Wallet flows that don't need a card to exist first. Every other flow
 // (spend, reveal, freeze, …) fast-forwards an issued card.
 const WALLET_ONLY_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
@@ -30,6 +46,21 @@ const WALLET_ONLY_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
   'receive',
   'withdraw',
 ]);
+
+const GROUP_LABEL: Record<ActionId, string> = {
+  add: 'Add money',
+  send: 'Send payment',
+  receive: 'Receive payment',
+  withdraw: 'Withdraw',
+  card: 'Issue a card',
+  tap: 'Spend',
+  reveal: 'Reveal details',
+  wallet: 'Add to wallet',
+  freeze: 'Freeze',
+  limits: 'Limits',
+  refund: 'Refund',
+  close: 'Close',
+};
 
 let groupSeq = 0;
 function newGroupId() {
@@ -56,6 +87,9 @@ export function useCardsDemoLogic() {
   const updateDesign = useCallback((patch: Partial<CardDesign>) => {
     setDesign((d) => ({ ...d, ...patch }));
   }, []);
+  // The latest design, readable from callbacks without re-binding them.
+  const designRef = useRef(design);
+  designRef.current = design;
 
   const [wallet, setWallet] = useState<WalletState>(initialWallet);
   const [completed, setCompleted] = useState<CompletedFlows>(initialCompleted);
@@ -63,6 +97,11 @@ export function useCardsDemoLogic() {
   const [walletEntry, setWalletEntry] = useState<WalletEntry | undefined>(undefined);
   // Remounts the phone app on reset so the wallet brain starts clean.
   const [session, setSession] = useState(0);
+  // The card's current caps, mirrored so later PATCH responses show them.
+  const limitsRef = useRef<CardSpendLimits>({});
+  // Each purchase keeps one CardTransaction id across auth → clearing → return,
+  // and the group it logged under so the clearing lands in the same group.
+  const spendRefs = useRef(new Map<string, { ref: SpendRef; gid: string }>());
 
   // Pending delayed pushes (webhooks that land after an on-phone animation);
   // cleared on reset so a late push can't re-add a row to a wiped panel.
@@ -99,28 +138,101 @@ export function useCardsDemoLogic() {
     [pushCalls],
   );
 
+  /** A request now, its webhook a beat later, in one group. */
+  const pushWithWebhook = useCallback(
+    (calls: ApiCall[], label: string, delayMs = WEBHOOK_DELAY_MS) => {
+      const gid = newGroupId();
+      const [first, ...rest] = calls;
+      pushCalls([first], label, gid);
+      if (rest.length) pushLater(rest, label, gid, delayMs);
+      return gid;
+    },
+    [pushCalls, pushLater],
+  );
+
+  const markDone = useCallback((id: keyof CompletedFlows) => {
+    setCompleted((c) => (c[id] ? c : { ...c, [id]: true }));
+  }, []);
+
   const onCardIssued = useCallback(() => {
     // POST /cards lands now (card is PROCESSING); CARD.STATE_CHANGE lands when
     // the on-phone issuance animation finishes and the card is ACTIVE.
-    const gid = newGroupId();
-    const [createCall, ...activationCalls] = cardCalls();
-    pushCalls([createCall], 'Issue a card', gid);
-    pushLater(activationCalls, 'Issue a card', gid, CARD_ACTIVE_DELAY_MS);
+    pushWithWebhook(cardCalls(limitsRef.current), GROUP_LABEL.card, CARD_ACTIVE_DELAY_MS);
     setWallet((w) => ({ ...w, hasCard: true }));
-    setCompleted((c) => ({ ...c, card: true }));
-  }, [pushCalls, pushLater]);
+    markDone('card');
+  }, [pushWithWebhook, markDone]);
 
-  const onTapToPay = useCallback(
-    (cents: number, merchant: string) => {
-      pushCalls(tapCalls(merchant, cents), 'Spend');
+  const onTapToPay = useCallback<NonNullable<UseWalletHomeOptions['onTapToPay']>>(
+    (cents, merchant, rowId) => {
+      const ref = newSpendRef(merchant, cents);
+      const gid = pushWithWebhook(tapCalls(ref), GROUP_LABEL.tap);
+      spendRefs.current.set(rowId, { ref, gid });
       setWallet((w) => ({
         ...w,
         cardActivated: true,
         balanceCents: Math.max(0, w.balanceCents - cents),
       }));
-      setCompleted((c) => ({ ...c, tap: true }));
+      markDone('tap');
     },
-    [pushCalls],
+    [pushWithWebhook, markDone],
+  );
+
+  const onTapDeclined = useCallback<NonNullable<UseWalletHomeOptions['onTapDeclined']>>(
+    (reason, cents, merchant) => {
+      pushCalls(declineCalls(reason, merchant, cents), GROUP_LABEL.tap);
+      // A decline proves the control that caused it.
+      if (reason === 'CARD_PAUSED') markDone('freeze');
+      if (reason === 'OVER_PER_TXN_LIMIT' || reason === 'OVER_DAILY_LIMIT') markDone('limits');
+    },
+    [pushCalls, markDone],
+  );
+
+  const cardOptions = useMemo<NonNullable<UseWalletHomeOptions['card']>>(
+    () => ({
+      onStateChange: (state) => {
+        const label = state === 'CLOSED' ? GROUP_LABEL.close : GROUP_LABEL.freeze;
+        pushWithWebhook(stateChangeCalls(state, limitsRef.current), label);
+        markDone(state === 'CLOSED' ? 'close' : 'freeze');
+      },
+      onCloseRejected: () => pushCalls([closeRejectedCall()], GROUP_LABEL.close),
+      onLimitsChange: (limits) => {
+        limitsRef.current = {
+          maxSpendPerTransaction: limits.perTransactionCents,
+          maxSpendPerDay: limits.perDayCents,
+        };
+        pushCalls(limitsCalls(limitsRef.current), GROUP_LABEL.limits);
+        markDone('limits');
+      },
+      onReveal: () => {
+        pushCalls(revealCalls(), GROUP_LABEL.reveal);
+        markDone('reveal');
+      },
+      onAddToWallet: () => {
+        const d = designRef.current;
+        pushCalls(walletBrandingCalls(d.programName, d.logoUrl), GROUP_LABEL.wallet);
+        markDone('wallet');
+      },
+      onSettle: (row) => {
+        const known = spendRefs.current.get(row.id);
+        const ref = known?.ref ?? newSpendRef(row.title, row.cents);
+        // The clearing joins the purchase's own group so auth → settle reads as
+        // one lifecycle; the webhook lands a beat after the simulate.
+        const gid = known?.gid ?? newGroupId();
+        const [simulate, webhook] = clearingCalls(ref);
+        pushCalls([simulate], GROUP_LABEL.tap, gid);
+        pushLater([webhook], GROUP_LABEL.tap, gid, WEBHOOK_DELAY_MS);
+        if (!known) spendRefs.current.set(row.id, { ref, gid });
+      },
+      onRefund: (row) => {
+        const known = spendRefs.current.get(row.id);
+        const ref = known?.ref ?? newSpendRef(row.title, row.cents);
+        if (!known) spendRefs.current.set(row.id, { ref, gid: newGroupId() });
+        pushWithWebhook(refundCalls(ref), GROUP_LABEL.refund);
+        setWallet((w) => ({ ...w, balanceCents: w.balanceCents + row.cents }));
+        markDone('refund');
+      },
+    }),
+    [pushCalls, pushLater, pushWithWebhook, markDone],
   );
 
   const handleAction = useCallback(
@@ -155,6 +267,8 @@ export function useCardsDemoLogic() {
   const reset = useCallback(() => {
     pendingTimers.current.forEach((t) => clearTimeout(t));
     pendingTimers.current.clear();
+    spendRefs.current.clear();
+    limitsRef.current = {};
     setWallet(initialWallet);
     setCompleted(initialCompleted);
     setEntries([]);
@@ -178,5 +292,7 @@ export function useCardsDemoLogic() {
     reset,
     onCardIssued,
     onTapToPay,
+    onTapDeclined,
+    cardOptions,
   };
 }

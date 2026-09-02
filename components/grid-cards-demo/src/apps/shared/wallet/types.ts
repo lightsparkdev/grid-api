@@ -4,7 +4,7 @@
 export type CardView = 'closed' | 'intro' | 'creating' | 'ready' | 'home';
 
 /** Tap-to-pay sub-flow phase over the card-home screen. */
-export type TapPhase = 'idle' | 'hold' | 'auth' | 'done';
+export type TapPhase = 'idle' | 'hold' | 'auth' | 'done' | 'declined';
 
 /** The money movements the wallet reports up so the demo can log API calls. */
 export type WalletTransferMode = 'add' | 'withdraw' | 'send';

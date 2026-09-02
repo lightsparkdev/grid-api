@@ -46,6 +46,8 @@ interface WalletListCardProps {
   grow?: boolean;
   /** Round (vs squircle) skeleton avatar placeholder — the send recipient list. */
   roundGraphic?: boolean;
+  /** Rows become buttons (card-home transactions open a detail sheet). */
+  onItemClick?: (id: string) => void;
 }
 
 /**
@@ -61,7 +63,21 @@ export function WalletListCard({
   items,
   grow = false,
   roundGraphic = false,
+  onItemClick,
 }: WalletListCardProps) {
+  const renderItem = (item: WalletListItemData, time: string) =>
+    onItemClick ? (
+      <button
+        type="button"
+        className={styles.rowButton}
+        onClick={() => onItemClick(item.id)}
+        aria-label={`${item.title}, ${item.amount}`}
+      >
+        <WalletListItem {...item} time={time} />
+      </button>
+    ) : (
+      <WalletListItem {...item} time={time} />
+    );
   const reduceMotion = useReducedMotion();
   const hasItems = !!items && items.length > 0;
   // Live "Just now" → "1m ago" → … labels; re-sampled every 30s.
@@ -178,10 +194,10 @@ export function WalletListCard({
                       animate={{ y: 0 }}
                       transition={motionTransition(undefined, INSERT_DURATION_S)}
                     >
-                      <WalletListItem {...item} time={relativeTime(item.timestamp, now)} />
+                      {renderItem(item, relativeTime(item.timestamp, now))}
                     </motion.div>
                   ) : (
-                    <WalletListItem {...item} time={relativeTime(item.timestamp, now)} />
+                    renderItem(item, relativeTime(item.timestamp, now))
                   )}
                 </motion.div>
               );

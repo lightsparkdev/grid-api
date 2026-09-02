@@ -135,14 +135,12 @@ export const ACTIONS: ActionDef[] = [
     available: () => true,
     done: (c) => c.tap,
   },
-  // Card flows not built yet: listed so the picker shows the full set, but
-  // disabled until each lands (see APPROACH.md sequencing).
   {
     id: 'reveal',
     label: 'Reveal details',
     desc: 'Show the card number, expiry, and CVV',
     icon: 'reveal',
-    available: () => false,
+    available: () => true,
     done: (c) => c.reveal,
   },
   {
@@ -150,7 +148,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Add to wallet',
     desc: 'Provision to Apple Wallet',
     icon: 'wallet',
-    available: () => false,
+    available: () => true,
     done: (c) => c.wallet,
   },
   {
@@ -158,7 +156,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Freeze',
     desc: 'Pause the card',
     icon: 'freeze',
-    available: () => false,
+    available: () => true,
     done: (c) => c.freeze,
   },
   {
@@ -166,7 +164,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Limits',
     desc: 'Set per-transaction and daily caps',
     icon: 'limits',
-    available: () => false,
+    available: () => true,
     done: (c) => c.limits,
   },
   {
@@ -174,7 +172,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Refund',
     desc: 'Merchant returns a purchase',
     icon: 'refund',
-    available: () => false,
+    available: () => true,
     done: (c) => c.refund,
   },
   {
@@ -182,7 +180,7 @@ export const ACTIONS: ActionDef[] = [
     label: 'Close',
     desc: 'Close the card',
     icon: 'close',
-    available: () => false,
+    available: () => true,
     done: (c) => c.close,
   },
 ];

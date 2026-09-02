@@ -2,11 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
+import type { DeclineReason } from '@/apps/shared/wallet/useCardControls';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import styles from './TapToPayStatus.module.scss';
 
-export type TapPhase = 'hold' | 'auth' | 'done';
+export type TapPhase = 'hold' | 'auth' | 'done' | 'declined';
 
 // The check draws left-to-right once the Done ring appears (the glyph/label swap
 // itself is instant — no crossfade).
@@ -68,16 +69,62 @@ function DoneCheckGlyph({ animate }: { animate: boolean }) {
  * shared across skins so it behaves identically everywhere. Figma 2143:41178 /
  * 2143:41197. (Each skin positions it in its own card-detail layout.)
  */
-export function TapToPayStatus({ phase }: { phase: TapPhase }) {
+const DECLINE_LABEL: Record<DeclineReason, string> = {
+  CARD_PAUSED: 'Card frozen',
+  CARD_CLOSED: 'Card closed',
+  OVER_PER_TXN_LIMIT: 'Over purchase limit',
+  OVER_DAILY_LIMIT: 'Over daily limit',
+};
+
+/** Ring + cross, drawn like the Done check but in the system red. */
+function DeclinedGlyph({ animate }: { animate: boolean }) {
+  return (
+    <svg className={styles.checkGlyph} viewBox="0 0 64 64" fill="none" aria-hidden>
+      <path
+        d="M32 0C49.6731 0 64 14.3269 64 32C64 49.6731 49.6731 64 32 64C14.3269 64 0 49.6731 0 32C0 14.3269 14.3269 0 32 0ZM32 3.59961C16.3151 3.59961 3.59961 16.3151 3.59961 32C3.59961 47.6849 16.3151 60.4004 32 60.4004C47.6849 60.4004 60.4004 47.6849 60.4004 32C60.4004 16.3151 47.6849 3.59961 32 3.59961Z"
+        fill="#FF453A"
+      />
+      <motion.path
+        d="M22 22L42 42M42 22L22 42"
+        stroke="#FF453A"
+        strokeWidth="3.6"
+        strokeLinecap="round"
+        initial={animate ? { pathLength: 0 } : false}
+        animate={{ pathLength: 1 }}
+        transition={DRAW}
+      />
+    </svg>
+  );
+}
+
+export function TapToPayStatus({
+  phase,
+  declineReason,
+}: {
+  phase: TapPhase;
+  declineReason?: DeclineReason | null;
+}) {
   const reduceMotion = useReducedMotion();
   const done = phase === 'done';
+  const declined = phase === 'declined';
 
   return (
     <div className={styles.root}>
       <div className={styles.glyph}>
-        {done ? <DoneCheckGlyph animate={!reduceMotion} /> : <HoldNearReaderVideo />}
+        {declined ? (
+          <DeclinedGlyph animate={!reduceMotion} />
+        ) : done ? (
+          <DoneCheckGlyph animate={!reduceMotion} />
+        ) : (
+          <HoldNearReaderVideo />
+        )}
       </div>
-      <p className={styles.label}>{done ? 'Done' : 'Hold Near Reader'}</p>
+      <p className={styles.label}>
+        {declined ? 'Declined' : done ? 'Done' : 'Hold Near Reader'}
+      </p>
+      {declined && declineReason ? (
+        <p className={styles.reason}>{DECLINE_LABEL[declineReason]}</p>
+      ) : null}
     </div>
   );
 }
