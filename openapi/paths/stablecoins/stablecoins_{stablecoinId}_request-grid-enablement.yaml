@@ -1,0 +1,55 @@
+parameters:
+  - name: stablecoinId
+    in: path
+    description: System-generated stablecoin identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Request Grid enablement for a stablecoin
+  description: |
+    Ask Lightspark to approve a registered stablecoin as a Grid settlement currency. Grid enablement is a reviewed workflow rather than a self-service switch, so this endpoint only records the request: it moves `gridOperationsStatus` from `NOT_ENABLED` to `PENDING_APPROVAL` and returns the updated stablecoin. Lightspark drives the remaining `ENABLING` and `ENABLED` steps.
+
+    The request is idempotent. Repeating it while the stablecoin is already `PENDING_APPROVAL` succeeds and changes nothing. A stablecoin in any other Grid operations status cannot be requested, and returns `409`.
+  operationId: requestStablecoinGridEnablement
+  tags:
+    - Stablecoins
+  security:
+    - BasicAuth: []
+  responses:
+    '200':
+      description: Grid enablement requested
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/stablecoins/Stablecoin.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden. The caller may not request Grid enablement for this stablecoin.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Stablecoin not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: The stablecoin is not in a Grid operations status that can be requested for enablement.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
