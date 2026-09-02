@@ -319,6 +319,16 @@ export const currencies: FiatCurrency[] = [
     examplePerson: { fullName: 'Fatima Al Mansoori', nationality: 'AE' },
   },
   {
+    code: 'ILS',
+    name: 'Israeli New Shekel',
+    countryCode: 'il',
+    accountType: 'ILS_ACCOUNT',
+    accountLabel: 'IBAN',
+    instantRails: [],
+    allRails: ['BANK_TRANSFER'],
+    examplePerson: { fullName: 'Noa Levi', nationality: 'IL' },
+  },
+  {
     code: 'BDT',
     name: 'Bangladeshi Taka',
     countryCode: 'bd',

@@ -279,6 +279,14 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     ],
     beneficiaryRequired: true,
   },
+  ILS_ACCOUNT: {
+    accountType: 'ILS_ACCOUNT',
+    fields: [
+      { name: 'iban', example: 'IL620108000000099999999', description: 'Israeli IBAN (23 characters, starts with IL)' },
+      { name: 'bankName', example: 'Bank Leumi' },
+    ],
+    beneficiaryRequired: true,
+  },
   BWP_ACCOUNT: {
     accountType: 'BWP_ACCOUNT',
     fields: [
