@@ -12038,9 +12038,9 @@ webhooks:
 
         ### Event types
 
-        - `SWEEP.FAILED` — Fired when the funds do not reach the rule's destination. `reason` says why, and `canonicalAccountId` is the account holder's own account in the same currency the funds were moved to instead — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. A failed sweep that also created an outgoing payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on `sendTransactionId` rather than counting the failure twice.
+        - `SWEEP.FAILED` — Fired when the funds do not reach the rule's destination. `reason` says why, and `canonicalAccountId` is the account holder's own account in the same currency the funds were moved to instead — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. A failed sweep that also created an outgoing payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on `transactionId` rather than counting the failure twice.
 
-        Delivery is at-least-once, so the same failure can arrive more than once with different webhook ids. Deduplicate on `incomingTransactionId`.
+        Delivery is at-least-once, so the same failure can arrive more than once with different webhook ids. Deduplicate on `transactionId`.
       operationId: sweepWebhook
       tags:
         - Webhooks
@@ -12069,8 +12069,7 @@ webhooks:
                         name: United States Dollar
                         symbol: $
                         decimals: 2
-                    incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000010
-                    sendTransactionId: null
+                    transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000010
                     reason: BELOW_MINIMUM
                     canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
               executionFailed:
@@ -12089,8 +12088,7 @@ webhooks:
                         name: United States Dollar
                         symbol: $
                         decimals: 2
-                    incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000012
-                    sendTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000013
+                    transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000013
                     reason: EXECUTION_FAILED
                     canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
       responses:
@@ -27542,7 +27540,7 @@ components:
         - sourceAccountId
         - destinationAccountId
         - amount
-        - incomingTransactionId
+        - transactionId
         - reason
         - canonicalAccountId
       properties:
@@ -27558,16 +27556,10 @@ components:
           allOf:
             - $ref: '#/components/schemas/CurrencyAmount'
           description: The amount that could not be swept.
-        incomingTransactionId:
+        transactionId:
           type: string
-          description: The transaction that brought the funds into the rule-based account. Delivery of this event is at-least-once, so deduplicate on this value.
+          description: The operation covering both the deposit into the rule-based account and the sweep out of it. Created when the deposit settles, so it is always present. Delivery of this event is at-least-once, so deduplicate on this value, and use it to correlate this event with the `OUTGOING_PAYMENT.FAILED` event for the same sweep rather than counting the failure twice.
           example: Transaction:019542f5-b3e7-1d02-0000-000000000010
-        sendTransactionId:
-          type:
-            - string
-            - 'null'
-          description: The operation covering both the deposit into the rule-based account and the sweep out of it, present once the sweep got far enough to create one. Null when the sweep was never attempted. Use it to correlate this event with the `OUTGOING_PAYMENT.FAILED` event for the same sweep rather than counting the failure twice.
-          example: Transaction:019542f5-b3e7-1d02-0000-000000000011
         reason:
           allOf:
             - $ref: '#/components/schemas/SweepFailureReason'

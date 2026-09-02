@@ -39,11 +39,11 @@ post:
     the customer's, or the platform's for a platform-owned rule-based account. A
     rule-based account never holds a balance. A failed sweep that also created an outgoing
     payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on
-    `sendTransactionId` rather than counting the failure twice.
+    `transactionId` rather than counting the failure twice.
 
 
     Delivery is at-least-once, so the same failure can arrive more than once
-    with different webhook ids. Deduplicate on `incomingTransactionId`.
+    with different webhook ids. Deduplicate on `transactionId`.
   operationId: sweepWebhook
   tags:
     - Webhooks
@@ -72,8 +72,7 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
-                incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000010
-                sendTransactionId: null
+                transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000010
                 reason: BELOW_MINIMUM
                 canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
           executionFailed:
@@ -92,8 +91,7 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
-                incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000012
-                sendTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000013
+                transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000013
                 reason: EXECUTION_FAILED
                 canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
   responses:
