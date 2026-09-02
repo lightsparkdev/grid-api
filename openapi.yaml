@@ -12470,10 +12470,12 @@ components:
           items:
             $ref: '#/components/schemas/FeeConfigOneOf'
           description: |
-            Merge-by-key upsert of platform fee configs, keyed by
-            `(feeType, sourceCurrency)`. Setting variable and fixed fees to 0 for
-            an existing fee config deactivates it. Only `sourceCurrency: USD` is
-            accepted today. Omit this field to leave fee configs unchanged.
+            Merge-by-key upsert of platform fee configs. A cross-currency config is
+            keyed by `(feeType, sourceCurrency)` and a rail config by
+            `(feeType, rail, direction, originator)`. Setting variable and fixed fees
+            to 0 for an existing config deactivates it. Cross-currency configs only
+            accept `sourceCurrency: USD` today. Omit this field to leave fee configs
+            unchanged.
     FieldConstraint:
       type: object
       description: Machine-readable validator hint accompanying a 400 `INVALID_INPUT` error. Consumers use it to drive form UI (input types, dropdowns, masking, length limits) and to pre-validate the field client-side before re-submitting. Fields are additive.
