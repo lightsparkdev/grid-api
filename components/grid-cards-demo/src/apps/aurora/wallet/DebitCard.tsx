@@ -5,6 +5,7 @@ import { useId, useState } from 'react';
 import { motion, useAnimate, useReducedMotion } from 'motion/react';
 import { TextMorph } from 'torph/react';
 import { AuroraBackground } from '@/apps/aurora/aurora-fx';
+import { useBrand } from '@/apps/shared/brand/BrandContext';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { cubicBezierCss, easeOutOvershoot, easeOutSwift, motionTransition } from '@/lib/easing';
 import styles from './DebitCard.module.scss';
@@ -44,6 +45,12 @@ export function DebitCard({
     radiusVar: '--corner-radius-debit-card-squircle',
   });
   const borderGradientId = `debit-card-border-${useId().replace(/:/g, '')}`;
+  // "Your brand": the card wears the design (name, logo, finish) over the
+  // brand-tinted aurora. Aurora proper keeps its own copy.
+  const { design, customizable } = useBrand();
+  const programName = design.programName.trim() || 'Your brand';
+  const labelDefault = customizable ? `Get your ${programName} card` : LABEL_DEFAULT;
+  const labelOpen = customizable ? programName : LABEL_OPEN;
 
   const handleClick = async () => {
     if (!interactive || !onOpen || opening) return;
@@ -86,7 +93,11 @@ export function DebitCard({
         type="button"
         ref={cardClip.ref}
         style={cardClip.style}
-        className={clsx(styles.card, !interactive && styles.cardStatic)}
+        className={clsx(
+          styles.card,
+          !interactive && styles.cardStatic,
+          customizable && styles[`finish-${design.finish}`],
+        )}
         aria-label="View debit card"
         disabled={!interactive}
         onClick={handleClick}
@@ -104,9 +115,14 @@ export function DebitCard({
             duration={LIFT_DURATION * 1000}
             ease={cubicBezierCss(easeOutSwift)}
           >
-            {showOffer ? LABEL_DEFAULT : LABEL_OPEN}
+            {showOffer ? labelDefault : labelOpen}
           </TextMorph>
-          <span className={styles.secondary}>Spend anywhere</span>
+          {customizable && design.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className={styles.logo} src={design.logoUrl} alt="" aria-hidden draggable={false} />
+          ) : (
+            <span className={styles.secondary}>{customizable ? 'VIRTUAL' : 'Spend anywhere'}</span>
+          )}
         </div>
         <div className={styles.bottom}>
           <span
@@ -131,6 +147,7 @@ export function DebitCard({
             />
           </div>
         </div>
+        {customizable && <span className={styles.finishLayer} aria-hidden />}
         {bordered && cardClip.path && (
           <svg
             className={styles.borderRing}

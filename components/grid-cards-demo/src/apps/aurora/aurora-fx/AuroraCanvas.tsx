@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import { observeTheme } from '@/lib/dotGridColors';
+import { AURORA_PALETTE_EVENT } from '@/apps/shared/brand/brandPalette';
 import {
   AURORA_COMMON_GLSL,
   auroraClock,
@@ -209,11 +210,14 @@ export function AuroraCanvas({ showRadialGradient, fieldId, className }: AuroraC
     canvas.addEventListener('webglcontextlost', onLost, false);
     canvas.addEventListener('webglcontextrestored', onRestored, false);
 
-    const stopTheme = observeTheme(() => {
+    const refreshPalette = () => {
       palette = readAuroraPalette(canvas);
       staticDirty = true;
       wake();
-    });
+    };
+    const stopTheme = observeTheme(refreshPalette);
+    // The customizable skin retints the field live (see brandPalette.ts).
+    document.addEventListener(AURORA_PALETTE_EVENT, refreshPalette);
 
     let ro: ResizeObserver | null = null;
     if (initGL()) {
@@ -241,6 +245,7 @@ export function AuroraCanvas({ showRadialGradient, fieldId, className }: AuroraC
       cancelAnimationFrame(raf);
       ro?.disconnect();
       stopTheme();
+      document.removeEventListener(AURORA_PALETTE_EVENT, refreshPalette);
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('resize', onResize);
       reduceMq.removeEventListener?.('change', onReduceChange);

@@ -25,6 +25,7 @@ import { BalanceHero } from './BalanceHero';
 import { WalletActions } from './WalletActions';
 import { WalletInsightCards } from './WalletInsightCards';
 import { WalletSheet } from './WalletSheet';
+import { useBrand } from '@/apps/shared/brand/BrandContext';
 import styles from './AuroraWalletScreen.module.scss';
 
 // Re-exported for back-compat: these types now live with the headless logic.
@@ -61,6 +62,8 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
+  const brand = useBrand();
+  const appName = brand.customizable ? brand.design.programName.trim() || 'Your brand' : 'Aurora';
 
   const {
     cardView,
@@ -167,7 +170,7 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
               exit={HEADER_HIDDEN}
               transition={HEADER_TRANSITION}
             >
-              <h1 className={styles.title}>Aurora</h1>
+              <h1 className={styles.title}>{appName}</h1>
               <GlassSymbolButton
                 aria-label="Settings"
                 size={40}

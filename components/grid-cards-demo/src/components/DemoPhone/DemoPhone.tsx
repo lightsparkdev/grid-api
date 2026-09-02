@@ -1,11 +1,12 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import type { PhoneProps } from '@/components/Phone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { WalletHost } from '@/apps/WalletHost';
 import { AppShell } from '@/apps/shared/AppShell';
 import { BrandProvider } from '@/apps/shared/brand/BrandContext';
+import { AURORA_PALETTE_EVENT, brandAuroraVars } from '@/apps/shared/brand/brandPalette';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
 import { getAppSkin } from '@/apps/skins';
 
@@ -34,8 +35,17 @@ export function DemoPhone({
     ? ({
         '--brand-color': design.color,
         '--brand-color-end': design.colorEnd ?? design.color,
+        ...brandAuroraVars(design.color, design.colorEnd),
       } as CSSProperties)
     : undefined;
+
+  // Live aurora canvases only re-read their palette on theme flip; poke them
+  // when the brand color changes (after the style above has been committed).
+  useEffect(() => {
+    if (!customizable) return;
+    const id = requestAnimationFrame(() => document.dispatchEvent(new Event(AURORA_PALETTE_EVENT)));
+    return () => cancelAnimationFrame(id);
+  }, [customizable, design.color, design.colorEnd]);
 
   return (
     <OverlayGlassProvider value={overlayGlass ?? DEFAULT_OVERLAY_GLASS}>
