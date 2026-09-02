@@ -33,7 +33,7 @@ properties:
   feeConfigs:
     type: array
     items:
-      $ref: ./FeeConfig.yaml
+      $ref: ./FeeConfigOneOf.yaml
     description: |
       Merge-by-key upsert of platform fee configs, keyed by
       `(feeType, sourceCurrency)`. Setting variable and fixed fees to 0 for

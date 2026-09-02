@@ -12175,11 +12175,14 @@ components:
       type: string
       enum:
         - CROSS_CURRENCY_TRANSACTION
+        - RAIL
       description: |
         The kind of activity this fee applies to.
 
         - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
           (source currency differs from destination currency).
+        - `RAIL` — fee charged on a payout that goes out over a payment rail, whatever
+          currency it started in.
       example: CROSS_CURRENCY_TRANSACTION
     FixedFee:
       type: object
@@ -12198,9 +12201,9 @@ components:
           type: string
           description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
           example: USD
-    FeeConfig:
+    CrossCurrencyFeeConfig:
       type: object
-      description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
+      description: A fee you charge on cross-currency transactions. There can be at most one for a given source currency, and it applies to every cross-currency transaction that starts in it.
       properties:
         feeType:
           $ref: '#/components/schemas/FeeType'
@@ -12221,6 +12224,81 @@ components:
         - sourceCurrency
         - variableFeeBps
         - fixedFee
+    PaymentRail:
+      type: string
+      enum:
+        - ACH
+        - ACH_COLOMBIA
+        - BANK_TRANSFER
+        - BRE_B
+        - CIPS
+        - FAST
+        - FASTER_PAYMENTS
+        - FEDNOW
+        - INSTAPAY
+        - MOBILE_MONEY
+        - NEFT
+        - PAYNOW
+        - PESONET
+        - PIX
+        - RTGS
+        - RTP
+        - SEPA
+        - SEPA_INSTANT
+        - SPEI
+        - SWIFT
+        - UNIONPAY
+        - UPI
+        - WIRE
+      description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
+      example: ACH
+    RailFeeConfig:
+      type: object
+      description: A fee you charge for sending a payout over a rail. There can be at most one for a given rail, direction and originator. It applies on top of any cross-currency fee.
+      properties:
+        feeType:
+          $ref: '#/components/schemas/FeeType'
+        rail:
+          $ref: '#/components/schemas/PaymentRail'
+          description: The rail the payout goes out over. `ACH`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
+        direction:
+          type: string
+          enum:
+            - IN
+            - OUT
+          description: Whether the money is coming in or going out. Only `OUT` is accepted today.
+          example: OUT
+        originator:
+          type: string
+          enum:
+            - GRID
+            - EXTERNAL
+          description: Who starts the movement. An ACH debit Grid starts pulls money in; one the other side starts pushes it out, and the two are priced differently.
+          example: GRID
+        variableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
+          example: 30
+        fixedFee:
+          $ref: '#/components/schemas/FixedFee'
+      required:
+        - feeType
+        - rail
+        - direction
+        - originator
+        - variableFeeBps
+        - fixedFee
+    FeeConfigOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/CrossCurrencyFeeConfig'
+        - $ref: '#/components/schemas/RailFeeConfig'
+      discriminator:
+        propertyName: feeType
+        mapping:
+          CROSS_CURRENCY_TRANSACTION: '#/components/schemas/CrossCurrencyFeeConfig'
+          RAIL: '#/components/schemas/RailFeeConfig'
     PlatformConfig:
       type: object
       properties:
@@ -12273,7 +12351,7 @@ components:
         feeConfigs:
           type: array
           items:
-            $ref: '#/components/schemas/FeeConfig'
+            $ref: '#/components/schemas/FeeConfigOneOf'
           description: |
             Platform-collected fees that should be added on top of
             Grid-collected fees. Contains every currently-active fee config
@@ -12390,7 +12468,7 @@ components:
         feeConfigs:
           type: array
           items:
-            $ref: '#/components/schemas/FeeConfig'
+            $ref: '#/components/schemas/FeeConfigOneOf'
           description: |
             Merge-by-key upsert of platform fee configs, keyed by
             `(feeType, sourceCurrency)`. Setting variable and fixed fees to 0 for
@@ -12607,34 +12685,6 @@ components:
           description: Number of decimal places for the currency
           minimum: 0
           example: 2
-    PaymentRail:
-      type: string
-      enum:
-        - ACH
-        - ACH_COLOMBIA
-        - BANK_TRANSFER
-        - BRE_B
-        - CIPS
-        - FAST
-        - FASTER_PAYMENTS
-        - FEDNOW
-        - INSTAPAY
-        - MOBILE_MONEY
-        - NEFT
-        - PAYNOW
-        - PESONET
-        - PIX
-        - RTGS
-        - RTP
-        - SEPA
-        - SEPA_INSTANT
-        - SPEI
-        - SWIFT
-        - UNIONPAY
-        - UPI
-        - WIRE
-      description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
-      example: ACH
     ExchangeRateFees:
       type: object
       description: Fees associated with an exchange rate

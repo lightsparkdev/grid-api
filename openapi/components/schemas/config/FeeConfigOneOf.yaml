@@ -1,0 +1,8 @@
+oneOf:
+  - $ref: ./CrossCurrencyFeeConfig.yaml
+  - $ref: ./RailFeeConfig.yaml
+discriminator:
+  propertyName: feeType
+  mapping:
+    CROSS_CURRENCY_TRANSACTION: ./CrossCurrencyFeeConfig.yaml
+    RAIL: ./RailFeeConfig.yaml
