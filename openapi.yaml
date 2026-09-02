@@ -12017,102 +12017,6 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
-  sweep:
-    post:
-      summary: Sweep webhook
-      description: |
-        Webhook that is called when a payment settles into a rule-based internal account but cannot be swept to the destination configured on the account's rule.
-
-        This endpoint should be implemented by clients of the Grid API.
-
-        ### Authentication
-
-        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
-        To verify the signature:
-        1. Get the Grid public key provided to you during integration
-        2. Decode the base64 signature from the header
-        3. Create a SHA-256 hash of the request body
-        4. Verify the signature using the public key and the hash
-
-        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
-
-        ### Event types
-
-        - `SWEEP.FAILED` — Fired when the funds do not reach the rule's destination. `reason` says why, and `canonicalAccountId` is the account holder's own account in the same currency the funds were moved to instead — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. A failed sweep that also created an outgoing payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on `transactionId` rather than counting the failure twice.
-
-        Delivery is at-least-once, so the same failure can arrive more than once with different webhook ids. Deduplicate on `transactionId`.
-      operationId: sweepWebhook
-      tags:
-        - Webhooks
-      security:
-        - WebhookSignature: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SweepWebhook'
-            examples:
-              movedToCanonicalAccount:
-                summary: The amount was below what the corridor carries, so it was moved to the account holder's own account
-                value:
-                  id: Webhook:019542f5-b3e7-1d02-0000-000000000050
-                  type: SWEEP.FAILED
-                  timestamp: '2026-05-09T10:00:00Z'
-                  data:
-                    sourceAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
-                    destinationAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                    amount:
-                      amount: 250
-                      currency:
-                        code: USD
-                        name: United States Dollar
-                        symbol: $
-                        decimals: 2
-                    transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000010
-                    reason: BELOW_MINIMUM
-                    canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
-              executionFailed:
-                summary: The sweep was sent but did not go through, so the funds were moved to the account holder's own account
-                value:
-                  id: Webhook:019542f5-b3e7-1d02-0000-000000000051
-                  type: SWEEP.FAILED
-                  timestamp: '2026-05-09T10:05:00Z'
-                  data:
-                    sourceAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
-                    destinationAccountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-                    amount:
-                      amount: 12550
-                      currency:
-                        code: USD
-                        name: United States Dollar
-                        symbol: $
-                        decimals: 2
-                    transactionId: Transaction:019542f5-b3e7-1d02-0000-000000000013
-                    reason: EXECUTION_FAILED
-                    canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
-      responses:
-        '200':
-          description: |
-            Webhook received successfully
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized - Signature validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '409':
-          description: Conflict - Webhook has already been processed (duplicate id)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
 components:
   securitySchemes:
     BasicAuth:
@@ -23397,6 +23301,24 @@ components:
         - COMPLIANCE_REJECTED
         - COLLECTION_FAILED
       description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
+    SweepFailureReason:
+      type: string
+      enum:
+        - BELOW_MINIMUM
+        - ABOVE_MAXIMUM
+        - NO_ELIGIBLE_RAIL
+        - QUOTE_FAILED
+        - EXECUTION_FAILED
+      description: |
+        Why the payment could not be swept to the rule's destination.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `BELOW_MINIMUM` | The amount is below the smallest amount the corridor to the destination can carry. |
+        | `ABOVE_MAXIMUM` | The amount is above the largest amount the corridor to the destination can carry. |
+        | `NO_ELIGIBLE_RAIL` | No payment rail available to the destination could carry the sweep. |
+        | `QUOTE_FAILED` | Grid could not price the sweep to the destination. |
+        | `EXECUTION_FAILED` | The sweep was priced but the resulting payment did not go through. |
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -23427,6 +23349,13 @@ components:
             failureReason:
               $ref: '#/components/schemas/IncomingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
+            sweepFailureReason:
+              allOf:
+                - $ref: '#/components/schemas/SweepFailureReason'
+              description: Set when this payment settled into a rule-based account but was not swept to the destination of the account's rule. The deposit itself succeeded, so the transaction still completes; this says why the destination was not paid. Omitted for any other account.
+            sweepCanonicalAccountId:
+              type: string
+              description: The account holder's own account in the same currency the funds were moved to when a sweep could not be completed — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. Present whenever `sweepFailureReason` is.
     OutgoingTransactionStatus:
       type: string
       enum:
@@ -27124,7 +27053,6 @@ components:
         - CARD_TRANSACTION.EXCEPTION
         - WALLET_OPERATION.COMPLETED
         - WALLET_OPERATION.FAILED
-        - SWEEP.FAILED
         - TEST
       description: Type of webhook event in OBJECT.EVENT dot-notation. The part before the dot identifies the resource, the part after identifies the event. This lets consumers route purely on type without inspecting data.status.
     BaseWebhook:
@@ -27513,74 +27441,6 @@ components:
               enum:
                 - WALLET_OPERATION.COMPLETED
                 - WALLET_OPERATION.FAILED
-    SweepFailureReason:
-      type: string
-      enum:
-        - BELOW_MINIMUM
-        - ABOVE_MAXIMUM
-        - NO_ELIGIBLE_RAIL
-        - QUOTE_FAILED
-        - EXECUTION_FAILED
-      description: |
-        Why the payment could not be swept to the rule's destination.
-
-        | Reason | Description |
-        |--------|-------------|
-        | `BELOW_MINIMUM` | The amount is below the smallest amount the corridor to the destination can carry. |
-        | `ABOVE_MAXIMUM` | The amount is above the largest amount the corridor to the destination can carry. |
-        | `NO_ELIGIBLE_RAIL` | No payment rail available to the destination could carry the sweep. |
-        | `QUOTE_FAILED` | Grid could not price the sweep to the destination. |
-        | `EXECUTION_FAILED` | The sweep was priced but the resulting payment did not go through. |
-    SweepFailure:
-      title: Sweep Failure
-      type: object
-      description: A payment that settled into a rule-based account but was not swept to the destination of the account's rule.
-      required:
-        - sourceAccountId
-        - destinationAccountId
-        - amount
-        - transactionId
-        - reason
-        - canonicalAccountId
-      properties:
-        sourceAccountId:
-          type: string
-          description: The rule-based internal account the payment settled into.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000005
-        destinationAccountId:
-          type: string
-          description: The destination configured on the account's rule, which the funds did not reach.
-          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
-        amount:
-          allOf:
-            - $ref: '#/components/schemas/CurrencyAmount'
-          description: The amount that could not be swept.
-        transactionId:
-          type: string
-          description: The operation covering both the deposit into the rule-based account and the sweep out of it. Created when the deposit settles, so it is always present. Delivery of this event is at-least-once, so deduplicate on this value, and use it to correlate this event with the `OUTGOING_PAYMENT.FAILED` event for the same sweep rather than counting the failure twice.
-          example: Transaction:019542f5-b3e7-1d02-0000-000000000010
-        reason:
-          allOf:
-            - $ref: '#/components/schemas/SweepFailureReason'
-          description: Why the sweep could not be completed.
-          example: BELOW_MINIMUM
-        canonicalAccountId:
-          type: string
-          description: The account holder's own account in the same currency that the funds were moved to — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance, so a sweep that cannot reach its destination always lands the funds here.
-          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
-    SweepWebhook:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          required:
-            - data
-          properties:
-            data:
-              $ref: '#/components/schemas/SweepFailure'
-            type:
-              type: string
-              enum:
-                - SWEEP.FAILED
   requestBodies:
     DocumentUploadRequestBody:
       required: true
