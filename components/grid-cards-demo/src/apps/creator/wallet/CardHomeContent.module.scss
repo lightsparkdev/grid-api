@@ -1,0 +1,67 @@
+/* Tap to pay sits directly under the card. */
+.walletBtnWrap {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 8px 16px;
+}
+
+/* Tap-to-pay pill: solid black on light (white text), inverted on dark. Icon on the
+   RIGHT (row-reverse), 2px label/icon gap, 24/20 left/right padding. The opaque fill
+   means the floating card's drop shadow (just below it in the z-stack) passes UNDER
+   the pill instead of showing through. */
+.tapBtn {
+  flex-direction: row-reverse;
+  gap: 2px;
+  padding: 14px 20px 14px 24px;
+  background-color: #1c1c1e;
+  background-image: none;
+  color: #ffffff;
+  --content-area-hover: rgba(255, 255, 255, 0.12);
+  --content-area-active: rgba(255, 255, 255, 0.18);
+
+  :global([data-theme='dark']) & {
+    background-color: #ffffff;
+    color: #1c1c1e;
+    --content-area-hover: rgba(0, 0, 0, 0.06);
+    --content-area-active: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* NFC "tap to pay" glyph (matches the flows panel's tap icon). margin auto centers
+   the 20px glyph inside ContentAreaButton's 24px flex icon span (which otherwise
+   top-left-aligns it, reading as "too high"). */
+.walletIcon {
+  display: block;
+  flex-shrink: 0;
+  margin: auto;
+
+  /* central-icons bake stroke-width onto each <path>; override to a 2px weight. */
+  path {
+    stroke-width: 2;
+  }
+}
+
+/* Transactions label — the Glitch home activity tab-header row (single static tab,
+   no active underline indicator). Mirrors .activityTabs / .activityTab on the home. */
+.tabHeader {
+  flex-shrink: 0;
+  display: flex;
+  gap: 24px;
+  padding: 16px 24px 8px;
+}
+
+.tab {
+  font-family: var(--ios-font-family);
+  font-size: 15px;
+  font-weight: 590;
+  letter-spacing: -0.23px;
+  color: var(--app-text-primary);
+}
+
+/* Reveal wrapper for the transactions list — keeps the section's grow/scroll flex. */
+.listReveal {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}

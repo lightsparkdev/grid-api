@@ -1,0 +1,9 @@
+/* "Your brand" skin — Aurora's screens under a caller-supplied tint. The
+   playground's design controls set --brand-color on the phone root; until
+   they exist the tint falls back to Aurora blue. */
+@mixin tokens {
+  &[data-app='custom'] {
+    --ios-font-family: var(--font-family-sf-pro);
+    --app-tint: var(--brand-color, #0083c3);
+  }
+}

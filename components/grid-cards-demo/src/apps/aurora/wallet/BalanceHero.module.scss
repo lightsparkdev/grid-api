@@ -1,0 +1,41 @@
+@use '../../shared/typography/ios-type-mixins' as ios;
+
+/* Figma 90:13445 — Hero */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 32px 24px 48px;
+  color: var(--ios-label-primary);
+  word-break: break-word;
+}
+
+/* Footnote/Emphasized */
+.label {
+  margin: 0;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
+}
+
+.amount {
+  @include ios.ios-text-wallet-balance;
+  @include ios.ios-type-rounded;
+  @include ios.ios-type-rounded-bold(var(--ios-type-wallet-balance-opsz));
+  /* NumericText reserves a slim 0.08em vertical pad for its glyph travel; cancel
+     it so the label → amount gap stays at the Figma 4px. */
+  margin: -0.08em 0;
+}
+
+.whole,
+.decimals {
+  font-variant-numeric: normal;
+}
+
+.whole {
+  color: var(--ios-label-primary);
+}
+
+.decimals {
+  color: var(--ios-label-secondary);
+}

@@ -1,0 +1,44 @@
+/* Dark surface revealed behind the scaled card (and behind the status bar, which
+   then flips its glyphs white via the tone sampler). Sits below the stage; the
+   stage covers it at rest, so it only shows once the card scales back. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #000;
+}
+
+/* The scaled card. Structural only — skins add their own bg + status-bar padding
+   via the passed className. Scales from the top center so the top edge drops to a
+   gap below the status bar; corners round to the screen radius while presented.
+   overflow:hidden clips the inset card to those rounded corners (the outer screen
+   is already clipped by AppShell, so this never adds a visible clip at rest). */
+.stage {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-origin: top center;
+  corner-shape: var(--corner-shape);
+  /* border-radius is set inline by PresentationStage (the `radius` prop) and
+     toggled statically — NOT transitioned. Animating it would re-rasterize this
+     full-screen layer every frame; keeping it static lets the scale stay a pure
+     GPU transform. corner-shape above smooths whatever radius is applied. */
+}
+
+/* Dark-mode lift veil (see the `darkLift` prop) — DARK MODE ONLY via the
+   theme gate; the same prop value is a no-op in light mode. */
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  pointer-events: none;
+
+  :global([data-theme='dark']) & {
+    display: block;
+  }
+}

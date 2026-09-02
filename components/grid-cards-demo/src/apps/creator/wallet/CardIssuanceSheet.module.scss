@@ -1,0 +1,131 @@
+/* ── Card-issuance sheet shell ────────────────────────────────────────────────
+   Tall stacked sheet (Figma 2528:21062). Top stops ~72px down so the receded
+   card behind it peeks ~10px (the stacked-sheet effect, matching the money
+   sheets). The toolbar height + card slot place the slot where the foreground
+   card sits (top ~126), so the floating card lands exactly over the slot. */
+.flow {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--app-screen-height, 874px) - 72px);
+  min-height: 0;
+  /* Round the top corners to the sheet's 24px radius so the gradient + speed-line
+     burst are clipped to the sheet's squircle (FrostPanel only clips its own frost
+     layer — children render un-clipped, so the fill would poke into the square
+     corner otherwise). isolate so the burst's screen blend stays contained to the
+     gradient and doesn't leak onto the receded wallet behind the sheet. */
+  border-radius: 24px 24px 0 0;
+  corner-shape: var(--corner-shape);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Burst states (intro/creating) — white content on the brand-purple burst; the
+   CTA is a white pill with a brand-purple label. */
+.flowBurst {
+  color: #fff;
+  --ios-label-primary: #ffffff;
+  --ios-label-secondary: rgba(255, 255, 255, 0.78);
+  --p-fill: #ffffff;
+  --p-fg: var(--app-tint);
+}
+
+/* Created state — the burst warps out to a clean wallet-surface screen: theme
+   label colors, a brand-purple CTA. (Dark mode flips the label tones below.) */
+.flowReady {
+  color: var(--ios-label-primary);
+  --ios-label-primary: #1c1c1e;
+  --ios-label-secondary: rgba(60, 60, 67, 0.6);
+  --p-fill: var(--app-tint);
+  --p-fg: #ffffff;
+
+  :global([data-theme='dark']) & {
+    --ios-label-primary: #efeff1;
+    --ios-label-secondary: rgba(235, 235, 245, 0.6);
+  }
+}
+
+/* Surface that fades in as the burst flies out (created state). Above the purple
+   .bg + below the burst, so the burst warps out OVER the settling base. Uses the
+   wallet surface (theme-aware) so it matches the card-home it morphs into. */
+.readyBg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--wallet-bg);
+  pointer-events: none;
+}
+
+/* ── Backdrop ─────────────────────────────────────────────────────────────────
+   Turbo-style hero behind the floating card (Figma 2528:21062 vibe): a brand
+   light→dark vertical gradient with a procedural chroma-aberrated radial speed-
+   line burst over it. Both sit below the chrome (z 0/1); content is z 2. */
+
+/* Brand light→dark, going down. Extra stops near the ends approximate a bezier
+   ramp (eased, not a flat linear blend). Sampled from the reference image. */
+.bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    #b291ff 0%,
+    #a87dff 16%,
+    #9a5cff 36%,
+    #9147ff 56%,
+    #8136e8 80%,
+    #6f29d4 100%
+  );
+}
+
+/* Speed-line burst layer. Clips the rotating/breathing burst to the sheet.
+   isolate = the three R/G/B channels combine among THEMSELVES first (clean white
+   core + colored fringes, no green skew); mix-blend screen then lets that finished
+   burst LIGHTEN the purple rather than wash over it (source-over looked muddy). */
+.speedLines {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  isolation: isolate;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* True alpha mask (not a color fill): fade the rays themselves to transparent over
+   the bottom content area, so the real .bg gradient shows through cleanly behind
+   the copy. Toggled on only when copy is present (intro/ready) — gone while the
+   card centers/creates so the rays come back at full strength. */
+.speedLinesMasked {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 74%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 74%);
+}
+
+/* X at top 16 / left 16 — same inset as the money sheets' toolbar
+   (AddMoneySheet: 16px top + 40 button + 10px bottom, 16px sides). */
+.toolbar {
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+  display: flex;
+  padding: 16px 16px 10px;
+}
+
+/* Copy + CTA anchored at the bottom (the floating card sits centered above). */
+.content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 0;
+}
+
+/* Bottom copy/CTA block. Fades in/out with the copy; the speed-line alpha mask
+   (.speedLinesMasked) clears the rays behind it. */
+.contentBlock {
+  position: relative;
+  width: 100%;
+}
