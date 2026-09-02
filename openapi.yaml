@@ -2095,21 +2095,22 @@ paths:
     post:
       summary: Create an internal account
       description: |
-        Create a rule-based internal account for an existing customer.
+        Create a rule-based internal account.
 
-        A rule-based account is an additional account number for a customer that
-        already holds an account in the same currency. It carries a routing rule:
-        every payment that settles into it is attributed to that account number and
-        then swept to the rule's destination, so you can issue one number per
-        payer and reconcile incoming payments without matching on remittance text.
+        A rule-based account is an additional account number for an account holder
+        that already holds an account in the same currency. It carries a routing
+        rule: every payment that settles into it is attributed to that account
+        number and then swept to the rule's destination, so you can issue one number
+        per payer and reconcile incoming payments without matching on remittance
+        text.
 
         Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
         `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
-        automatically when a customer is created or approved.
+        automatically when an account holder is created or approved.
 
         The response carries the account's own `fundingPaymentInstructions` — the
         routable number payers send to. Rule-based accounts are currently available
-        in `USD` for individual customers, and must be enabled for your platform
+        in `USD`, for individual customers, and must be enabled for your platform
         before this endpoint accepts requests.
 
         Sandbox platforms can create rule-based accounts and exercise the whole
@@ -2182,7 +2183,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalAccount'
         '400':
-          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the customer has no account in that currency yet, when the destination cannot accept the requested payment rail, and for general invalid parameters.
+          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the account holder has no account in that currency yet, when the destination cannot accept the requested payment rail, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -12037,7 +12038,7 @@ webhooks:
 
         ### Event types
 
-        - `SWEEP.FAILED` — Fired when the funds do not reach the rule's destination. `reason` says why, and `canonicalAccountId` is the customer's account in the same currency the funds were moved to instead: a rule-based account never holds a balance. A failed sweep that also created an outgoing payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on `sendTransactionId` rather than counting the failure twice.
+        - `SWEEP.FAILED` — Fired when the funds do not reach the rule's destination. `reason` says why, and `canonicalAccountId` is the account holder's own account in the same currency the funds were moved to instead — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. A failed sweep that also created an outgoing payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on `sendTransactionId` rather than counting the failure twice.
 
         Delivery is at-least-once, so the same failure can arrive more than once with different webhook ids. Deduplicate on `incomingTransactionId`.
       operationId: sweepWebhook
@@ -12053,7 +12054,7 @@ webhooks:
               $ref: '#/components/schemas/SweepWebhook'
             examples:
               movedToCanonicalAccount:
-                summary: The amount was below what the corridor carries, so it was moved to the customer's account
+                summary: The amount was below what the corridor carries, so it was moved to the account holder's own account
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000050
                   type: SWEEP.FAILED
@@ -12073,7 +12074,7 @@ webhooks:
                     reason: BELOW_MINIMUM
                     canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
               executionFailed:
-                summary: The sweep was sent but did not go through, so the funds were moved to the customer's account
+                summary: The sweep was sent but did not go through, so the funds were moved to the account holder's own account
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000051
                   type: SWEEP.FAILED
@@ -14985,7 +14986,7 @@ components:
         - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
         - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
         - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
-        - `RULE_BASED`: An additional account number for an existing customer, with a routing rule attached, so incoming payments can be attributed to a specific payer and swept automatically. Created with `POST /internal-accounts`.
+        - `RULE_BASED`: An additional account number for an existing account holder, with a routing rule attached, so incoming payments can be attributed to a specific payer and swept automatically. Created with `POST /internal-accounts`.
     SweepRuleDestinationRequest:
       title: Sweep Rule Destination Request
       type: object
@@ -15060,7 +15061,7 @@ components:
       properties:
         customerId:
           type: string
-          description: The customer the account is created for. The customer must already have a verified account in the same currency, which is where funds land when a sweep cannot be completed.
+          description: 'The customer the account is created for. The customer must already have a verified account in the same currency, which is where funds land when a sweep cannot be completed. Required today: platform-owned rule-based accounts are not yet available.'
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         type:
           allOf:
@@ -27574,7 +27575,7 @@ components:
           example: BELOW_MINIMUM
         canonicalAccountId:
           type: string
-          description: The customer's account in the same currency that the funds were moved to. A rule-based account never holds a balance, so a sweep that cannot reach its destination always lands the funds here.
+          description: The account holder's own account in the same currency that the funds were moved to — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance, so a sweep that cannot reach its destination always lands the funds here.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
     SweepWebhook:
       allOf:

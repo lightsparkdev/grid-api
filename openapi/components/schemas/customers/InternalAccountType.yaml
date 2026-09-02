@@ -19,7 +19,7 @@ description: >-
   customer. Outbound transfers require a session signature produced by the
   customer's device — see the Embedded Wallets guide.
 
-  - `RULE_BASED`: An additional account number for an existing customer, with a
-  routing rule attached, so incoming payments can be attributed to a specific
-  payer and swept automatically. Created with
+  - `RULE_BASED`: An additional account number for an existing account holder,
+  with a routing rule attached, so incoming payments can be attributed to a
+  specific payer and swept automatically. Created with
   `POST /internal-accounts`.

@@ -1,21 +1,22 @@
 post:
   summary: Create an internal account
   description: |
-    Create a rule-based internal account for an existing customer.
+    Create a rule-based internal account.
 
-    A rule-based account is an additional account number for a customer that
-    already holds an account in the same currency. It carries a routing rule:
-    every payment that settles into it is attributed to that account number and
-    then swept to the rule's destination, so you can issue one number per
-    payer and reconcile incoming payments without matching on remittance text.
+    A rule-based account is an additional account number for an account holder
+    that already holds an account in the same currency. It carries a routing
+    rule: every payment that settles into it is attributed to that account
+    number and then swept to the rule's destination, so you can issue one number
+    per payer and reconcile incoming payments without matching on remittance
+    text.
 
     Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
     `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
-    automatically when a customer is created or approved.
+    automatically when an account holder is created or approved.
 
     The response carries the account's own `fundingPaymentInstructions` — the
     routable number payers send to. Rule-based accounts are currently available
-    in `USD` for individual customers, and must be enabled for your platform
+    in `USD`, for individual customers, and must be enabled for your platform
     before this endpoint accepts requests.
 
     Sandbox platforms can create rule-based accounts and exercise the whole
@@ -97,7 +98,7 @@ post:
       description: >-
         Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule`
         is missing, when the currency is not supported for rule-based accounts,
-        when the customer has no account in that currency yet, when the
+        when the account holder has no account in that currency yet, when the
         destination cannot accept the requested payment rail, and for general
         invalid parameters.
       content:
