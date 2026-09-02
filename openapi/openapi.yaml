@@ -187,6 +187,8 @@ paths:
     $ref: paths/customers/customers_external_accounts_{externalAccountId}_untrust.yaml
   /customers/external-accounts/{externalAccountId}/untrust/confirm:
     $ref: paths/customers/customers_external_accounts_{externalAccountId}_untrust_confirm.yaml
+  /internal-accounts:
+    $ref: paths/internal_accounts.yaml
   /customers/internal-accounts:
     $ref: paths/customers/customers_internal_accounts.yaml
   /platform/internal-accounts:

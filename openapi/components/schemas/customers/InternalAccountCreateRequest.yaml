@@ -1,7 +1,7 @@
 title: Internal Account Create Request
 type: object
 description: >-
-  Request body for `POST /customers/internal-accounts`. Only `RULE_BASED`
+  Request body for `POST /internal-accounts`. Only `RULE_BASED`
   accounts can be created directly, and they always carry a `sweepRule`.
 additionalProperties: false
 required:
