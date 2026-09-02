@@ -10,22 +10,13 @@ import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
 import { Toast } from '@/apps/shared/Toast';
 import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
+import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
+import { useBrand } from '@/apps/shared/brand/BrandContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import type { SkinWalletScreenProps } from '@/apps/types';
-import { AddMoneySheet, formatUsdCents } from './AddMoneySheet';
 import { CardHomeContent } from './CardHomeContent';
 import { CreatingCaption, IntroContent, ReadyContent } from './CardIssuanceContent';
-import { DebitCard } from './DebitCard';
-import { SendReceiveSheet } from './SendReceiveSheet';
-import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
-import { WalletCardDetailHeader } from './WalletCardDetailHeader';
-import { WalletListSection } from './WalletListSection';
-import { BalanceHero } from './BalanceHero';
-import { WalletActions } from './WalletActions';
-import { WalletInsightCards } from './WalletInsightCards';
-import { WalletSheet } from './WalletSheet';
-import { useBrand } from '@/apps/shared/brand/BrandContext';
 import {
   CardDetailsSheet,
   CloseCardSheet,
@@ -33,39 +24,36 @@ import {
   TransactionSheet,
   WalletAddSheet,
 } from './CardSheets';
+import { DebitCard } from './DebitCard';
 import styles from './AuroraWalletScreen.module.scss';
 
 // Re-exported for back-compat: these types now live with the headless logic.
 export type { WalletEntry, WalletEntryTarget, WalletTransferMode } from '@/apps/shared/wallet';
 
-const SHEET_DURATION = 0.4;
 const HEADER_DURATION = 0.2;
 /** Issuance card is the home card scaled to Figma 338 / 370. */
 const CARD_ISSUANCE_SCALE = 338 / 370;
-const SHEET_OFFSCREEN = 'calc(100% + 224px)';
 const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
 
 const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
-/* The transition is staggered so it doesn't all fire at once: the card carries +
-   the sheet slides away first, the aurora fades in just behind them, and the copy
-   resolves last. */
-const SHEET_SLIDE = motionTransition(easeOutSnappy, SHEET_DURATION);
 const CARD_TRANSITION = motionTransition(easeOutSnappy, 0.5);
 const AURORA_IN = motionTransition(easeOutQuick, 0.5, { delay: 0.15 });
 const AURORA_OUT = motionTransition(easeOutQuick, 0.3);
-const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.3 });
+const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.2 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
-
-const HEADER_HIDDEN = { opacity: 0, filter: 'blur(10px)' };
+const CONTENT_HIDDEN = { opacity: 0, filter: 'blur(8px)' };
+const CONTENT_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
+const HEADER_HIDDEN = { opacity: 0, filter: 'blur(8px)' };
 const HEADER_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
-const CONTENT_HIDDEN = { opacity: 0, y: 12, filter: 'blur(8px)' };
-const CONTENT_VISIBLE = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
-/** Aurora wallet home + debit card issuance flow (Figma Bitcoin 2026). The
- *  view layer — the wallet + money-sheet brains arrive as props (hosted above
- *  the skin so their state survives skin switches). */
+/**
+ * Aurora card screen — the root of the app. There is no wallet home around it:
+ * the phone boots to the issuance intro when no card exists and to the card hub
+ * once one does. The wallet brain arrives as a prop (hosted above the skin so
+ * its state survives skin switches).
+ */
 export function AuroraWalletScreen(props: SkinWalletScreenProps) {
-  const { entrance = false, home, money, onCardIssued } = props;
+  const { entrance = false, home, onCardIssued } = props;
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
@@ -77,24 +65,10 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
     setCardView,
     issued,
     tapPhase,
-    setTapPhase,
     transactions,
-    sheetMode,
-    sheetOpen,
-    setSheetOpen,
-    sheetConfirming,
-    sendReceiveOpen,
-    setSendReceiveOpen,
     toast,
     setToast,
     availableCents,
-    earningsTodayCents,
-    earningsMonthCents,
-    weeklyBars,
-    weeklySpentCents,
-    homeActivity,
-    apyPercent,
-    isOpen,
     isIssuance,
     showFullAurora,
     cardCentered,
@@ -105,33 +79,22 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
     startReveal,
     finishRevealAuth,
     finishTapAuth,
-    openSheet,
-    startSend,
-    startReceive,
-    openCard,
     startTapToPay,
-    finishTransfer,
-    confirmTransfer,
-    handleReceivePayment,
   } = home;
 
-  // Sign-in entrance: card → balance → actions → insights reveal in once on
-  // mount (the issuance stagger language); the Activity card's own skeleton
-  // reveal carries the list. `entrance` off spreads a no-op (rest pose).
+  // Entrance: the card, then the hub content reveal in once on mount.
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
 
   // Face ID + the glass toast render in AppShell's overlay layer (above the
-  // status bar) so the blur frosts the status bar and the toast can slide in
-  // over everything; falls back to an in-screen layer when rendered outside an
-  // AppShell. Face ID is shared by tap-to-pay and the money sheet.
+  // status bar) so the blur frosts the status bar. Face ID gates tap-to-pay
+  // and the details reveal.
   const overlayContent = (
     <>
       <FaceIdAuth
-        active={tapPhase === 'auth' || sheetConfirming || revealPending}
+        active={tapPhase === 'auth' || revealPending}
         onDone={() => {
-          if (sheetConfirming) finishTransfer();
-          else if (revealPending) finishRevealAuth();
+          if (revealPending) finishRevealAuth();
           else finishTapAuth();
         }}
       />
@@ -144,11 +107,11 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
     <div className={styles.faceIdLayer}>{overlayContent}</div>
   );
 
+  const showHeader = !showFullAurora && !isTap;
+
   return (
     <div className={styles.root}>
-      {/* Full-screen aurora behind everything (incl. the header) during issuance.
-          It simply fades in / out (no scale), with a tall auth-style fade so the
-          bottom content reads on the solid wallet background. */}
+      {/* Full-screen aurora behind everything (incl. the header) during issuance. */}
       <AnimatePresence>
         {showFullAurora && (
           <motion.div
@@ -173,9 +136,11 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
         )}
       </AnimatePresence>
 
-      <header className={clsx(styles.header, !isOpen && styles.headerHome)}>
+      {/* App header: brand title + settings. Hidden over the issuance aurora
+          and during tap-to-pay. */}
+      <header className={clsx(styles.header, styles.headerHome)}>
         <AnimatePresence initial={false}>
-          {!isOpen ? (
+          {showHeader && (
             <motion.div
               key="home-header"
               className={styles.headerInner}
@@ -194,50 +159,14 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
                 <SfSymbol name="gearshape.fill" size={17} />
               </GlassSymbolButton>
             </motion.div>
-          ) : isTap ? null : (
-            <motion.div
-              key="detail-header"
-              className={styles.headerInner}
-              initial={reduceMotion ? false : HEADER_HIDDEN}
-              animate={HEADER_VISIBLE}
-              exit={HEADER_HIDDEN}
-              transition={HEADER_TRANSITION}
-            >
-              <WalletCardDetailHeader
-                onClose={() => setCardView('closed')}
-                showActions={cardView === 'home'}
-                closeOnAurora={showFullAurora}
-              />
-            </motion.div>
           )}
         </AnimatePresence>
       </header>
 
-      {/* Scroll-edge: content that runs under the status bar is progressively
-          blurred + faded into the bg so it never clashes with the status-bar
-          glyphs (and the fixed gear/title/card are covered cleanly). Three
-          stacked blur layers ramp the radius from 0 (bottom) to full (top) so
-          there's no hard cutoff; a bg-color tint sits on top to resolve the very
-          edge into the wallet bg. */}
-      {!isOpen && !isTap && (
-        <div className={styles.topFade} aria-hidden>
-          <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
-          <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
-          <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />
-          <div className={styles.fadeTint} />
-        </div>
-      )}
-
       {/* The whole body lifts as one transform during tap-to-pay (card + content
-          together) so nothing desyncs — collapsing the header instead reflowed
-          everything up while only the card animated, which read as a jump. */}
+          together) so nothing desyncs. */}
       <motion.div
-        className={clsx(
-          styles.body,
-          !isOpen && styles.bodyHome,
-          isOpen && styles.bodyOpen,
-          isTap && styles.bodyTap,
-        )}
+        className={clsx(styles.body, styles.bodyOpen, isTap && styles.bodyTap)}
         initial={false}
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={CARD_TRANSITION}
@@ -251,10 +180,6 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
             cardView === 'creating' && styles.cardAreaCreating,
           )}
         >
-          {/* layout is OFF during tap-to-pay: the body is transform-lifted then, and
-              a re-render mid-lift (e.g. Face ID mounting at the 'auth' flip) makes
-              the layout measurement see the shifted position and "correct" it — a
-              visible card jump. The card never changes slots during tap anyway. */}
           <motion.div
             layout={!reduceMotion && !isTap}
             className={styles.cardCarry}
@@ -266,12 +191,9 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
               animate={{ scale: isIssuance ? CARD_ISSUANCE_SCALE : 1 }}
               transition={CARD_TRANSITION}
             >
-              {/* Entrance wrapper — separate from the scale wrapper so the
-                  reveal never fights the issuance scale animation. */}
               <motion.div {...enter(0)}>
                 <DebitCard
-                  interactive={!isOpen}
-                  onOpen={openCard}
+                  interactive={false}
                   bordered={showFullAurora}
                   showNumber={!showFullAurora}
                   issued={issued}
@@ -286,58 +208,8 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
           {cardView === 'creating' && <CreatingCaption />}
         </div>
 
-        {/* Wallet sheet — always mounted; translates straight down out of the way
-            when the card opens (no fade). It drops out of the flex flow while open
-            so the card can carry to the centered slot without the sheet competing
-            for height (which made the card jump when it un-mounted). */}
-        <motion.div
-          className={clsx(styles.sheetWrap, isOpen && styles.sheetWrapOpen)}
-          initial={false}
-          animate={{ y: isOpen ? SHEET_OFFSCREEN : 0 }}
-          transition={SHEET_SLIDE}
-        >
-          <WalletSheet dismissed={isOpen}>
-            <motion.div {...enter(1)}>
-              <BalanceHero balance={formatUsdCents(availableCents)} />
-            </motion.div>
-            <motion.div {...enter(2)}>
-              <WalletActions
-                onAdd={() => openSheet('add')}
-                onWithdraw={() => openSheet('withdraw')}
-                onSend={() => setSendReceiveOpen(true)}
-              />
-            </motion.div>
-            <motion.div {...enter(3)}>
-              <WalletInsightCards
-                weeklyBars={weeklyBars}
-                weeklySpentCents={weeklySpentCents}
-                earningsTodayCents={earningsTodayCents}
-                earningsMonthCents={earningsMonthCents}
-                apyPercent={apyPercent}
-              />
-            </motion.div>
-            <WalletListSection
-              title="Activity"
-              emptyTitle="Nothing here, yet"
-              emptySub={
-                <>
-                  Fund your account to start
-                  <br />
-                  using your wallet
-                </>
-              }
-              cta={{ label: 'Add money', onClick: () => openSheet('add') }}
-              items={homeActivity}
-              concentricBottom
-              grow
-            />
-          </WalletSheet>
-        </motion.div>
-
-        {/* Issuance / card-home content below the card. popLayout (not "wait") so an
-            exiting block leaves the flex flow immediately instead of holding its
-            height for the 0.2s exit — otherwise its delayed unmount snaps the
-            centered card down (the intro → creating "jump"). */}
+        {/* Issuance / card-hub content below the card. popLayout so an exiting
+            block leaves the flex flow immediately. */}
         <AnimatePresence mode="popLayout" initial={false}>
           {cardView === 'intro' && (
             <motion.div
@@ -376,12 +248,15 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
               animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
             >
-              <CardHomeContent
-                transactions={transactions}
-                card={card}
-                onTapToPay={startTapToPay}
-                onReveal={startReveal}
-              />
+              <motion.div {...enter(1)} className={styles.homeScroll}>
+                <CardHomeContent
+                  transactions={transactions}
+                  card={card}
+                  availableCents={availableCents}
+                  onTapToPay={startTapToPay}
+                  onReveal={startReveal}
+                />
+              </motion.div>
             </motion.div>
           )}
           {isTap && (
@@ -400,27 +275,6 @@ export function AuroraWalletScreen(props: SkinWalletScreenProps) {
           )}
         </AnimatePresence>
       </motion.div>
-
-      {/* Send or receive chooser — Send chains into the money sheet below
-          (rendered first so the rising money sheet stacks over its exit). */}
-      <SendReceiveSheet
-        open={sendReceiveOpen}
-        onDismiss={() => setSendReceiveOpen(false)}
-        onSend={startSend}
-        onReceive={startReceive}
-      />
-
-      {/* Add money / Withdraw / Send — one mode-switched sheet; Confirm hands
-          off to the Face ID overlay. The brain (step machine, banks, FX + the
-          quote/save callbacks) is the lifted `money` — this face just renders it. */}
-      <AddMoneySheet
-        m={money}
-        open={sheetOpen}
-        mode={sheetMode}
-        confirming={sheetConfirming}
-        onReceive={handleReceivePayment}
-        onConfirm={confirmTransfer}
-      />
 
       {/* Card hub sheets — details, Apple Wallet, limits, transaction, close. */}
       <CardDetailsSheet card={card} />

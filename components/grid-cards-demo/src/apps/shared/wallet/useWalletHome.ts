@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReceivePaymentInfo } from '@/data/apiCalls';
+import { FUNDING_SOURCE_CENTS } from '@/data/actions';
 import type { ToastData } from '@/apps/shared/Toast';
 import { formatUsdCents, truncateAddress } from './format';
 import {
@@ -94,7 +95,7 @@ export interface UseWalletHomeOptions {
  */
 export function useWalletHome(options: UseWalletHomeOptions = {}) {
   const {
-    balance = '$0.00',
+    balance = formatUsdCents(FUNDING_SOURCE_CENTS),
     entrance = false,
     entry,
     transferSuccessScreen = false,
@@ -109,7 +110,10 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
   // lifecycle) — the hub's brain, composed here so skins read one surface.
   const card = useCardControls(cardOptions);
 
-  const [cardView, setCardView] = useState<CardView>('closed');
+  // The card screen is the app's root: boot to the issuance intro, or to the
+  // hub when a card was provisioned (fast-forward). 'closed' is legacy for
+  // skins that still wrap the card in a wallet home.
+  const [cardView, setCardView] = useState<CardView>(entry?.provision?.issued ? 'home' : 'intro');
   const [issued, setIssued] = useState(false);
   const [tapPhase, setTapPhase] = useState<TapPhase>('idle');
   // Card transactions are the control brain's rows, labelled by lifecycle.
@@ -426,7 +430,7 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
 
     // Already on a clean home screen — open the target right away, no detour.
     const awayFromHome =
-      cardView !== 'closed' ||
+      (cardView !== 'closed' && cardView !== 'home' && cardView !== 'intro') ||
       card.sheet !== 'none' ||
       revealPending ||
       sheetOpen ||
@@ -461,7 +465,8 @@ export function useWalletHome(options: UseWalletHomeOptions = {}) {
     setTapPhase('idle');
     card.closeSheet();
     setRevealPending(false);
-    setCardView('closed');
+    // "Home" is the hub once a card exists, else the issuance intro.
+    setCardView(issued || entry.provision?.issued ? 'home' : 'intro');
     const t = window.setTimeout(openTarget, ENTRY_HOME_SETTLE_MS);
     return () => window.clearTimeout(t);
   }, [entry]);

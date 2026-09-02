@@ -19,7 +19,7 @@ interface SkeletonGroup {
 
 const SKELETON_GROUPS: SkeletonGroup[] = [
   {
-    label: 'Sign in',
+    label: 'Issue a card',
     entries: [
       {
         titleWidth: '46%',
@@ -38,7 +38,7 @@ const SKELETON_GROUPS: SkeletonGroup[] = [
     ],
   },
   {
-    label: 'Add money',
+    label: 'Reveal details',
     entries: [
       {
         titleWidth: '38%',
@@ -84,7 +84,7 @@ const SKELETON_GROUPS: SkeletonGroup[] = [
     ],
   },
   {
-    label: 'Send payment',
+    label: 'Spend',
     entries: [
       {
         titleWidth: '36%',

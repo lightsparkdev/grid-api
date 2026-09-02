@@ -337,3 +337,24 @@
   z-index: 50;
   pointer-events: none;
 }
+
+/* The hub scrolls under the pinned card. */
+.homeScroll {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-bottom: 16px;
+
+  /* Blocks keep their height; the list below them grows and the column scrolls. */
+  & > * {
+    flex-shrink: 0;
+  }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

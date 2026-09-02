@@ -8,6 +8,7 @@ import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke
 import { IconGauge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGauge';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconChevronRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChevronRight';
+import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
 import type { CardControls, WalletListItemData } from '@/apps/shared/wallet';
 import { formatUsdCents } from '@/apps/shared/wallet';
 import { WalletListSection } from './WalletListSection';
@@ -17,6 +18,8 @@ interface CardHomeContentProps {
   /** Card-home transactions; the empty state shows when there are none. */
   transactions?: WalletListItemData[];
   card: CardControls;
+  /** Balance of the card's first funding source, cents. */
+  availableCents: number;
   /** Start the tap-to-pay flow. */
   onTapToPay?: () => void;
   /** Reveal details (Face ID first). */
@@ -35,7 +38,13 @@ function limitsSummary(card: CardControls): string {
 
 /** Card-home body: action row (Freeze / Details / Wallet), Tap to pay, the
  *  controls list, then the transactions list. */
-export function CardHomeContent({ transactions, card, onTapToPay, onReveal }: CardHomeContentProps) {
+export function CardHomeContent({
+  transactions,
+  card,
+  availableCents,
+  onTapToPay,
+  onReveal,
+}: CardHomeContentProps) {
   const { frozen, closed, inWallet, limits } = card;
   const dailyPct =
     limits.perDayCents !== null
@@ -44,6 +53,17 @@ export function CardHomeContent({ transactions, card, onTapToPay, onReveal }: Ca
 
   return (
     <>
+      {/* The one line of wallet left: the card's first funding source. */}
+      <div className={styles.funding}>
+        <span className={styles.fundingIcon} aria-hidden>
+          <IconBank size={14} />
+        </span>
+        <span className={styles.fundingLabel}>Spend from</span>
+        <span className={styles.fundingSource}>Checking •••• 2502</span>
+        <span className={styles.fundingDot} aria-hidden>·</span>
+        <span className={styles.fundingBalance}>{formatUsdCents(availableCents)}</span>
+      </div>
+
       <div className={styles.actionRow} role="group" aria-label="Card actions">
         <button
           type="button"

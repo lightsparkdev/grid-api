@@ -207,3 +207,37 @@
   transform-origin: left center;
   transition: transform 600ms cubic-bezier(0.19, 1, 0.22, 1);
 }
+
+/* ── Funding line under the card ────────────────────────────────────────── */
+.funding {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 24px 0;
+  @include ios.ios-text-footnote;
+  color: var(--ios-label-secondary);
+  white-space: nowrap;
+}
+
+.fundingIcon {
+  display: grid;
+  place-items: center;
+  color: var(--ios-label-tertiary);
+}
+
+.fundingLabel {
+  color: var(--ios-label-tertiary);
+}
+
+.fundingSource {
+  font-weight: 590;
+  color: var(--ios-label-primary);
+}
+
+.fundingDot {
+  color: var(--ios-label-quaternary);
+}
+
+.fundingBalance {
+  font-variant-numeric: tabular-nums;
+}

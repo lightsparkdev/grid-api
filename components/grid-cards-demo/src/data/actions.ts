@@ -13,10 +13,15 @@ export interface WalletState {
   activity: Tx[];
 }
 
+/** Opening balance of the card's funding source (Checking •••• 2502), cents. */
+export const FUNDING_SOURCE_CENTS = 500_000;
+
 export const initialWallet: WalletState = {
   // No sign-in in the Cards playground: the cardholder is already onboarded.
   created: true,
-  balanceCents: 0,
+  // The card's funding source (Checking •••• 2502) starts funded; there is no
+  // Add money in the Cards playground.
+  balanceCents: FUNDING_SOURCE_CENTS,
   hasCard: false,
   cardActivated: false,
   activity: [],
