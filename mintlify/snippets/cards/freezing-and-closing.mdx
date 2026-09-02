@@ -142,8 +142,10 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
 
 Supply a positive integer to set the limit (in the smallest unit of the
 card's currency) or `null` to clear it. Omitting the field leaves the
-current limit unchanged. `maxSpendPerTransaction` cannot be supplied
-alongside `state: CLOSED`.
+current limit unchanged. If the platform config sets
+`cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card
+and platform values without replacing the card-specific value.
+`maxSpendPerTransaction` cannot be supplied alongside `state: CLOSED`.
 
 ## Sandbox behavior
 
