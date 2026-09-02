@@ -25,7 +25,7 @@ curl -X POST "$GRID_BASE_URL/cards" \
 | `platformCardId` | No | Your own identifier. System-generated when omitted, mirroring `platformCustomerId`. |
 | `form` | Yes | `VIRTUAL` in v1. `PHYSICAL` will be added later. |
 | `fundingSources` | Yes | Ordered array of `InternalAccount` ids. Each must belong to the cardholder and share one card-eligible currency. The first entry is tried first by Authorization Decisioning. |
-| `maxSpendPerTransaction` | No | Largest amount a single card transaction may authorize, in the smallest unit of the card's currency. Omit for no limit. Supported only for card programs where Grid makes the authorization decision. |
+| `maxSpendPerTransaction` | No | Largest amount a single card transaction may authorize, in the smallest unit of the card's currency. Omit for no card-specific cap. If the platform config sets `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card and platform values. Supported only for card programs where Grid makes the authorization decision. |
 
 The card's `currency` is derived from the funding sources at issue time
 and surfaces on the returned `Card` resource — all bound sources share
