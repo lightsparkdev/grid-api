@@ -18,6 +18,12 @@ post:
     in `USD` for individual customers, and must be enabled for your platform
     before this endpoint accepts requests.
 
+    Sandbox platforms can create rule-based accounts and exercise the whole
+    flow. The account number is generated locally rather than issued by a
+    partner bank, and `POST /sandbox/internal-accounts/{accountId}/fund` stands
+    in for a settled deposit — funding the account triggers its sweep just as a
+    real deposit would.
+
     Creating an account mints a new account number that cannot be reversed, so
     an `Idempotency-Key` header is required. A retry carrying the same key
     returns the account created by the first request with a `200` instead of a
