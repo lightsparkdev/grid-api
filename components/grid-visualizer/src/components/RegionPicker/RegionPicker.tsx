@@ -30,6 +30,7 @@ const REGION_NAMES: Record<string, string> = {
   MWK: 'Malawi',
   ZMW: 'Zambia',
   CNY: 'China',
+  ILS: 'Israel',
   HKD: 'Hong Kong',
   IDR: 'Indonesia',
   KRW: 'South Korea',
