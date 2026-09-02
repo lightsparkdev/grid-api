@@ -14,7 +14,8 @@ export interface WalletState {
 }
 
 export const initialWallet: WalletState = {
-  created: false,
+  // No sign-in in the Cards playground: the cardholder is already onboarded.
+  created: true,
   balanceCents: 0,
   hasCard: false,
   cardActivated: false,
@@ -22,10 +23,8 @@ export const initialWallet: WalletState = {
 };
 
 /** Sticky "done at least once" markers for the sidebar flow checkmarks. Kept
- *  separate from WalletState (the live-session mirror, which resets when you
- *  replay "Sign in") so the checks survive that replay — only Reset clears them. */
+ *  separate from WalletState (the live-session mirror); only Reset clears them. */
 export interface CompletedFlows {
-  signIn: boolean;
   add: boolean;
   send: boolean;
   receive: boolean;
@@ -41,7 +40,6 @@ export interface CompletedFlows {
 }
 
 export const initialCompleted: CompletedFlows = {
-  signIn: false,
   add: false,
   send: false,
   receive: false,
@@ -64,7 +62,6 @@ export function fmt(cents: number): string {
 }
 
 export type ActionId =
-  | 'create'
   | 'add'
   | 'send'
   | 'receive'
@@ -88,17 +85,8 @@ export interface ActionDef {
 }
 
 export const ACTIONS: ActionDef[] = [
-  {
-    id: 'create',
-    label: 'Sign in',
-    desc: 'Log in to your Global Account',
-    icon: 'wallet',
-    // Always available — re-running it replays the sign-in flow.
-    available: () => true,
-    done: (c) => c.signIn,
-  },
   // Every flow is always reachable — clicking one fast-forwards whatever setup
-  // it needs (sign in, funds, a card), so the demo isn't a linear track.
+  // it needs (funds, a card), so the demo isn't a linear track.
   {
     id: 'add',
     label: 'Add money',
@@ -201,9 +189,6 @@ export const ACTIONS: ActionDef[] = [
 
 /** Resolve the phone view for a settled wallet state. */
 export function phoneFromState(s: WalletState): PhoneState {
-  if (!s.created) {
-    return { screen: 'auth', balance: '$0.00', hasCard: false, cardActivated: false, activity: [] };
-  }
   return {
     screen: s.hasCard ? 'card' : 'wallet',
     balance: fmt(s.balanceCents),

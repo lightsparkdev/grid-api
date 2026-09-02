@@ -6,18 +6,16 @@
    Google) are real, the calls here are representative.
    ============================================================ */
 
-import type { ApiCall, AuthMethod } from './flow';
+import type { ApiCall } from './flow';
 
 // Realistic placeholder ids (same formats the sandbox returns).
 const ACCOUNT = 'InternalAccount:019e8f48-1135-438c-0000-8b9d28990463';
-const AUTH_METHOD = 'AuthMethod:019e8f48-11a8-0dca-0000-947363f18d5a';
 const BANK = 'ExternalAccount:019e8f4a-781d-7e0c-0000-a0d9afbf1314';
 const CRYPTO = 'ExternalAccount:019e8f4a-9b2e-71f4-0000-3c5e7a2b9f08';
 const CUSTOMER = 'Customer:019e8f47-2a3d-1d02-0000-6b1f0c4e2a91';
 const QUOTE = 'Quote:019e8f49-3c8f-5246-0000-4d75f9a6d1d1';
 const TXN = 'Transaction:019e8f49-3ca4-b78f-0000-1d3e9a411168';
 const WEBHOOK = 'Webhook:019e8f49-7b3e-1d02-0000-9a4c2e7f1d05';
-const PUBKEY = '04f45f2a22c908b9ce09a7150e514afd24627c401c38a4afc164e1ea783ad…';
 
 /** A linked external account to create — a bank (account fields + beneficiary)
  *  or a crypto wallet (just the address). Built by the sheet from the saved
@@ -72,108 +70,6 @@ export function externalAccountCreateCall(input: ExternalAccountInput): ApiCall 
     status: '201 Created',
     note: `Linked ${input.bankName} (${input.currency}) — returns an ExternalAccount id.`,
   };
-}
-
-/** OTP request (challenge) — fires the moment the phone/email is submitted. */
-export function otpRequestCall(method: 'email_otp' | 'sms', contact?: string): ApiCall {
-  const where =
-    method === 'sms' ? `by SMS to ${contact || 'your phone'}` : `to ${contact || 'your email'}`;
-  return {
-    method: 'POST',
-    path: `/auth/credentials/${AUTH_METHOD}/challenge`,
-    title: 'Request OTP',
-    reqBody: {},
-    status: '200 OK',
-    note: `One-time code sent ${where}.`,
-  };
-}
-
-function otpVerifyRequestBody(method: 'email_otp' | 'sms'): Record<string, unknown> {
-  return {
-    type: method === 'sms' ? 'SMS_OTP' : 'EMAIL_OTP',
-    encryptedOtpBundle: '<HPKE encrypted OTP bundle>',
-  };
-}
-
-/** OTP verify — first leg after the code is submitted. */
-export function otpVerifyCall(method: 'email_otp' | 'sms'): ApiCall {
-  return {
-    method: 'POST',
-    path: `/auth/credentials/${AUTH_METHOD}/verify`,
-    title: 'Verify OTP',
-    reqBody: otpVerifyRequestBody(method),
-    status: '202 Accepted',
-    note: 'Returns a verificationToken to sign with the TEK keypair.',
-  };
-}
-
-/** OTP verify — signed retry that issues the auth session. */
-export function otpSessionIssueCall(method: 'email_otp' | 'sms'): ApiCall {
-  return {
-    method: 'POST',
-    path: `/auth/credentials/${AUTH_METHOD}/verify`,
-    title: 'Issue auth session',
-    headers: {
-      'Grid-Wallet-Signature': '<TEK signature>',
-      'Request-Id': '<requestId>',
-    },
-    reqBody: otpVerifyRequestBody(method),
-    status: '200 OK',
-    note: 'Signed retry issues the session; the TEK private key is the session signing key.',
-  };
-}
-
-export function otpVerifyCalls(method: 'email_otp' | 'sms'): ApiCall[] {
-  return [otpVerifyCall(method), otpSessionIssueCall(method)];
-}
-
-/** Passkey challenge — fires when the passkey ceremony starts. */
-export function passkeyChallengeCall(): ApiCall {
-  return {
-    method: 'POST',
-    path: `/auth/credentials/${AUTH_METHOD}/challenge`,
-    title: 'Start passkey challenge',
-    reqBody: { clientPublicKey: PUBKEY },
-    status: '200 OK',
-    note: 'Returns a WebAuthn challenge + requestId.',
-  };
-}
-
-/** Passkey verify — fires after the assertion (Face ID) completes. */
-export function passkeyVerifyCall(): ApiCall {
-  return {
-    method: 'POST',
-    path: `/auth/credentials/${AUTH_METHOD}/verify`,
-    title: 'Verify passkey',
-    headers: { 'Request-Id': '<requestId>' },
-    reqBody: { type: 'PASSKEY', assertion: '<webauthn assertion>' },
-    status: '200 OK',
-    note: 'Assertion verified; encryptedSessionSigningKey returned.',
-  };
-}
-
-/** OAuth verify — fires after the provider returns an id_token. */
-export function oauthVerifyCall(method: 'oauth' | 'apple'): ApiCall {
-  return {
-    method: 'POST',
-    path: `/auth/credentials/${AUTH_METHOD}/verify`,
-    title: 'Verify OAuth token',
-    reqBody: {
-      type: 'OAUTH',
-      oidcToken: method === 'apple' ? '<Apple id_token>' : '<Google id_token>',
-      clientPublicKey: PUBKEY,
-    },
-    status: '200 OK',
-    note: 'Fresh OIDC token verified; encryptedSessionSigningKey returned.',
-  };
-}
-
-/** Full sign-in sequence for a method — used for the fast-forward setup group. */
-export function signInCalls(method: AuthMethod, contact?: string): ApiCall[] {
-  if (method === 'email_otp') return [otpRequestCall('email_otp', contact), ...otpVerifyCalls('email_otp')];
-  if (method === 'sms') return [otpRequestCall('sms', contact), ...otpVerifyCalls('sms')];
-  if (method === 'passkey') return [passkeyChallengeCall(), passkeyVerifyCall()];
-  return [oauthVerifyCall(method)];
 }
 
 export type TransferMode = 'add' | 'withdraw' | 'send';

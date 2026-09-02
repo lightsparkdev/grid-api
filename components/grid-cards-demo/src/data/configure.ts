@@ -1,4 +1,4 @@
-import type { Persona, AuthMethod } from './flow';
+import type { Persona } from './flow';
 
 export type UseCaseId =
   | 'custom'
@@ -81,27 +81,6 @@ export const USE_CASES: UseCaseOption[] = [
   },
 ];
 
-export interface AuthMethodOption {
-  id: AuthMethod;
-  label: string;
-  /** Shorter label for narrow configure column (768px–1799px). */
-  compactLabel?: string;
-  enabled: boolean;
-}
-
-export const AUTH_METHODS: AuthMethodOption[] = [
-  { id: 'email_otp', label: 'Email', enabled: true },
-  { id: 'sms', label: 'SMS', enabled: true },
-  { id: 'oauth', label: 'Google', enabled: true },
-  { id: 'apple', label: 'Apple', enabled: true },
-  { id: 'passkey', label: 'Passkey', enabled: true },
-];
-
 export function useCaseIdFromPersona(persona: Persona): UseCaseId {
   return persona;
-}
-
-/** First selected method in picker order — used for sign-in demo flow. */
-export function primaryAuthMethod(methods: AuthMethod[]): AuthMethod {
-  return AUTH_METHODS.find((a) => methods.includes(a.id))?.id ?? 'oauth';
 }

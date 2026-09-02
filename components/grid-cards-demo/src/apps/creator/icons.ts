@@ -20,7 +20,6 @@ import { IconUserKey } from '@central-icons-react/round-outlined-radius-0-stroke
 import { IconVideoClip } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconVideoClip';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-0-stroke-2/IconWallet1';
 import { IconWallet1 as IconWallet1Filled } from '@central-icons-react/round-filled-radius-0-stroke-2/IconWallet1';
-import type { AuthMethod } from '@/data/flow';
 
 export {
   IconAnalytics,
@@ -48,10 +47,3 @@ export {
 
 export type CreatorIcon = typeof IconEmail1;
 
-export const CREATOR_AUTH_METHOD_ICONS: Record<AuthMethod, CreatorIcon> = {
-  oauth: IconGoogle,
-  passkey: IconUserKey,
-  apple: IconApple,
-  email_otp: IconEmail1,
-  sms: IconPhone,
-};

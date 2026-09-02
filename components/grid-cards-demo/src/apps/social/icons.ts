@@ -26,7 +26,6 @@ import { IconDollar as IconDollarFilled } from '@central-icons-react/round-fille
 // Debit-card home (header "more" + Tap to pay).
 import { IconDotGrid1x3Horizontal } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconDotGrid1x3Horizontal';
 import { IconNfc1 } from '@central-icons-react/round-outlined-radius-2-stroke-2/IconNfc1';
-import type { AuthMethod } from '@/data/flow';
 
 export {
   IconGoogle,
@@ -60,10 +59,3 @@ export type SocialIcon = typeof IconEmail1;
 
 /** Auth-method → glyph. The three circle CTAs (Google/Apple/Email), the phone
  *  pill (sms → Call), and the "Login with username" footer (passkey → @). */
-export const SOCIAL_AUTH_METHOD_ICONS: Record<AuthMethod, SocialIcon> = {
-  oauth: IconGoogle,
-  apple: IconApple,
-  email_otp: IconEmail1,
-  sms: IconCall,
-  passkey: IconPasskeys,
-};

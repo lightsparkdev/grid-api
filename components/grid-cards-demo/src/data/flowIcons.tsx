@@ -1,4 +1,3 @@
-import { IconArrowBoxRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowBoxRight';
 import { IconPaperPlaneTopRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPaperPlaneTopRight';
 import { IconArrowInbox } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowInbox';
 import { IconQrCode } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconQrCode';
@@ -13,11 +12,10 @@ import { IconArrowUndoUp } from '@central-icons-react/round-outlined-radius-3-st
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { ACTIONS, type ActionId } from './actions';
 
-export type FlowIconCmp = typeof IconArrowBoxRight;
+export type FlowIconCmp = typeof IconCreditCardAdd;
 
 /** Shared with FlowPicker + API feed section dividers. */
 export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
-  create: IconArrowBoxRight,
   add: IconArrowInbox,
   send: IconPaperPlaneTopRight,
   receive: IconQrCode,
@@ -34,7 +32,6 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
 
 /** One palette pair per grid row. */
 export const FLOW_ICON_COLORS: Record<ActionId, string> = {
-  create: '#34C759',
   add: '#34C759',
   withdraw: 'var(--icon-success)',
   send: 'var(--color-sky-500)',

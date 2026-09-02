@@ -35,6 +35,9 @@ interface AppShellProps {
   screenTone?: 'default' | 'light';
   /** App skin — drives data-app, font family, and per-app tokens. */
   appSkin?: AppSkinId;
+  /** Extra inline style on the screen root — the playground sets the
+   *  `--brand-*` tokens here for the customizable skin. */
+  screenStyle?: CSSProperties;
 }
 
 /**
@@ -51,6 +54,7 @@ export function AppShell({
   screenOverlay,
   screenTone = 'default',
   appSkin = 'aurora',
+  screenStyle,
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
   const { ready: stageBootReady, bootOpacity, realignLens } = usePhoneBoot();
@@ -277,8 +281,9 @@ export function AppShell({
             ref={screenRef}
             className={`${styles.screen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
             data-app={appSkin}
-            style={
-              externalGlass
+            style={{
+              ...screenStyle,
+              ...(externalGlass
                 ? {
                     // border-radius MUST be 0: clipPath below is the sole corner
                     // shaper. A non-zero radius clips the screen to a *circle* on
@@ -292,8 +297,8 @@ export function AppShell({
                     // hugging the screen edge). Inherits via the cascade.
                     ['--screen-corner-radius' as string]: `${glassConfig.radius - SCREEN_INSET}px`,
                   }
-                : undefined
-            }
+                : undefined),
+            }}
           >
             <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
             {/* Always present so it can double as the portal target for overlays

@@ -4,20 +4,19 @@ import { IconArrowRotateCounterClockwise } from '@central-icons-react/round-outl
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { UseCasePicker } from '@/components/UseCasePicker/UseCasePicker';
-import { AuthMethodPicker } from '@/components/AuthMethodPicker/AuthMethodPicker';
+import { DesignPicker } from '@/components/DesignPicker/DesignPicker';
 import { FlowPicker } from '@/components/FlowPicker/FlowPicker';
-import type { AuthMethod } from '@/data/flow';
 import type { UseCaseId } from '@/data/configure';
+import type { CardDesign } from '@/data/design';
 import type { ActionId, WalletState } from '@/data/actions';
 import styles from './ConfigurePanel.module.scss';
 
-export interface ConfigurePanelProps {
+interface ConfigurePanelProps {
   useCase: UseCaseId;
   setUseCase: (id: UseCaseId) => void;
-  methods: AuthMethod[];
-  onToggleMethod: (m: AuthMethod) => void;
+  design: CardDesign;
+  onDesignChange: (patch: Partial<CardDesign>) => void;
   wallet: WalletState;
-  running: boolean;
   onAction: (id: ActionId) => void;
   onReset: () => void;
 }
@@ -25,54 +24,43 @@ export interface ConfigurePanelProps {
 export function ConfigurePanel({
   useCase,
   setUseCase,
-  methods,
-  onToggleMethod,
+  design,
+  onDesignChange,
   wallet,
-  running,
   onAction,
   onReset,
 }: ConfigurePanelProps) {
-  // Only the fintech (Aurora) app is built today, so selecting a use case just
-  // highlights it — the phone stays on Aurora. A "coming soon" treatment for the
-  // others can hook in here later.
   return (
     <aside className={styles.panel}>
       <div className={styles.body}>
+        <PlaygroundIntro />
         <div className={styles.content}>
-          <PlaygroundIntro />
-
-          <section className={styles.section}>
+          <div className={styles.section}>
             <SectionDivider label="Select platform" />
             <UseCasePicker selected={useCase} onSelect={setUseCase} />
-          </section>
+          </div>
 
-          <section className={styles.section}>
+          {/* Only "Your brand" is customizable; the showcase skins keep their
+              own art direction, so the controls go inert under them. */}
+          <div className={styles.section}>
+            <SectionDivider label="Design your card" />
+            <DesignPicker design={design} onChange={onDesignChange} locked={useCase !== 'custom'} />
+          </div>
+
+          <div className={styles.section}>
             <SectionDivider
               label="Explore flows"
               action={
-                wallet.created ? (
-                  <button
-                    type="button"
-                    className={styles.resetBtn}
-                    onClick={onReset}
-                    disabled={running}
-                  >
-                    <IconArrowRotateCounterClockwise size={12} aria-hidden />
+                wallet.hasCard ? (
+                  <button type="button" className={styles.resetBtn} onClick={onReset}>
+                    <IconArrowRotateCounterClockwise size={12} />
                     Reset
                   </button>
                 ) : null
               }
             />
-            <FlowPicker wallet={wallet} running={running} onAction={onAction} />
-          </section>
-
-          <section className={styles.section}>
-            <SectionDivider label="Configure auth" />
-            {/* Never disabled: the auth screens render live from `methods`, and
-                an in-flight sign-in has already committed its method — toggling
-                mid-flow just updates the CTA list behind the overlay. */}
-            <AuthMethodPicker methods={methods} onToggle={onToggleMethod} />
-          </section>
+            <FlowPicker wallet={wallet} onAction={onAction} />
+          </div>
         </div>
       </div>
     </aside>
