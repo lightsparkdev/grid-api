@@ -47,6 +47,7 @@ properties:
     type: integer
     format: int64
     minimum: 1
+    maximum: 9007199254740991
     description: >-
       Optional card-specific cap on a single transaction, in the smallest unit
       of the card currency derived from its funding sources. Omit this field
@@ -60,6 +61,7 @@ properties:
     type: integer
     format: int64
     minimum: 1
+    maximum: 9007199254740991
     description: >-
       Optional card-specific cap on cumulative new spend during one UTC
       calendar day, in the smallest unit of the card currency derived from its

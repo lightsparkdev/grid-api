@@ -6,6 +6,7 @@ properties:
       - type: integer
         format: int64
         minimum: 1
+        maximum: 9007199254740991
       - type: 'null'
     description: >-
       Platform-level cap on a single transaction for every card whose
@@ -20,6 +21,7 @@ properties:
       - type: integer
         format: int64
         minimum: 1
+        maximum: 9007199254740991
       - type: 'null'
     description: >-
       Platform-level cap on cumulative new spend during one UTC calendar day

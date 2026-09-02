@@ -68,6 +68,7 @@ properties:
       - type: integer
         format: int64
         minimum: 1
+        maximum: 9007199254740991
       - type: 'null'
     description: >-
       Card-specific cap on a single transaction, in the smallest unit of the
@@ -81,6 +82,7 @@ properties:
       - type: integer
         format: int64
         minimum: 1
+        maximum: 9007199254740991
       - type: 'null'
     description: >-
       Card-specific cap on cumulative new spend during one UTC calendar day,

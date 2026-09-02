@@ -12102,6 +12102,7 @@ components:
             - type: integer
               format: int64
               minimum: 1
+              maximum: 9007199254740991
             - type: 'null'
           description: Platform-level cap on a single transaction for every card whose authorization decisions are made by Grid. The value is interpreted in the smallest unit of each card's currency. Grid enforces the lower of this cap and the card's configured `maxSpendPerTransaction`; null means no platform-level cap. The cap applies to existing cards and to cards issued later. Provider-decided card programs are unaffected.
           example: 10000
@@ -12110,6 +12111,7 @@ components:
             - type: integer
               format: int64
               minimum: 1
+              maximum: 9007199254740991
             - type: 'null'
           description: Platform-level cap on cumulative new spend during one UTC calendar day for every card whose authorization decisions are made by Grid. The value is interpreted in the smallest unit of each card's currency. Grid enforces the lower of this cap and the card's configured `maxSpendPerDay`; null means no platform-level daily cap. The window resets at 00:00 UTC. Refunds, reversals, and authorization expiries do not restore capacity during the day. The cap applies to existing cards and cards issued later. Provider-decided card programs are unaffected.
           example: 50000
@@ -25643,6 +25645,7 @@ components:
             - type: integer
               format: int64
               minimum: 1
+              maximum: 9007199254740991
             - type: 'null'
           description: Card-specific cap on a single transaction, in the smallest unit of the card's `currency`. Null means the card has no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values without replacing this configured value. A transaction for exactly the effective limit is allowed.
           example: 5000
@@ -25651,6 +25654,7 @@ components:
             - type: integer
               format: int64
               minimum: 1
+              maximum: 9007199254740991
             - type: 'null'
           description: Card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's `currency`. The window resets at 00:00 UTC. Null means the card has no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values without replacing this configured value. Refunds, reversals, and authorization expiries do not restore capacity during the day. Spend exactly equal to the effective limit is allowed.
           example: 25000
@@ -25734,12 +25738,14 @@ components:
           type: integer
           format: int64
           minimum: 1
+          maximum: 9007199254740991
           description: Optional card-specific cap on a single transaction, in the smallest unit of the card currency derived from its funding sources. Omit this field for no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Supported only for card programs whose authorization decisions are made by Grid. A transaction for exactly the effective limit is allowed.
           example: 5000
         maxSpendPerDay:
           type: integer
           format: int64
           minimum: 1
+          maximum: 9007199254740991
           description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding sources. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Supported only for card programs whose authorization decisions are made by Grid. Spend exactly equal to the effective limit is allowed.
           example: 25000
     CardUpdateRequest:
@@ -25768,6 +25774,7 @@ components:
             - type: integer
               format: int64
               minimum: 1
+              maximum: 9007199254740991
             - type: 'null'
           description: 'Replacement card-specific per-transaction cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Supported only for card programs whose authorization decisions are made by Grid. Cannot be supplied alongside `state: CLOSED`.'
           example: 10000
@@ -25776,6 +25783,7 @@ components:
             - type: integer
               format: int64
               minimum: 1
+              maximum: 9007199254740991
             - type: 'null'
           description: 'Replacement card-specific UTC-calendar-day cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. Refunds, reversals, and authorization expiries do not restore capacity during the day. Supported only for card programs whose authorization decisions are made by Grid. Cannot be supplied alongside `state: CLOSED`.'
           example: 25000
