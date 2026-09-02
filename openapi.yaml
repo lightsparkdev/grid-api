@@ -8429,6 +8429,8 @@ paths:
 
         If any funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
+        A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` state do not count toward the limit.
+
         New cards start in `state: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on each state transition, including the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
       operationId: createCard
       tags:
@@ -8471,6 +8473,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict. Returned with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the `Idempotency-Key` was already used for a different card request. Closing a card frees its slot; contact Lightspark to raise the limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -13817,6 +13825,7 @@ components:
             | INVALID_STATE_TRANSITION | The requested card `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
             | CARD_ALREADY_CLOSED | `state: CLOSED` was requested for a card that is already `CLOSED` |
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
+            | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
@@ -13831,6 +13840,7 @@ components:
             - INVALID_STATE_TRANSITION
             - CARD_ALREADY_CLOSED
             - CARD_NOT_MUTABLE
+            - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - CONFLICT
         message:
