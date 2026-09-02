@@ -22,4 +22,4 @@ description: >-
   - `RULE_BASED`: An additional account number for an existing customer, with a
   routing rule attached, so incoming payments can be attributed to a specific
   payer and forwarded automatically. Created with
-  `POST /customers/internal-accounts`.
+  `POST /internal-accounts`.

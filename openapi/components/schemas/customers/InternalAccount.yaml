@@ -32,6 +32,19 @@ properties:
     description: Payment instructions for funding the account
     items:
       $ref: ../common/PaymentInstructions.yaml
+  label:
+    type: string
+    maxLength: 255
+    description: >-
+      The platform-supplied label recorded when the account was created. Null
+      for accounts that carry none.
+    example: invoice-4417
+  sweepRule:
+    allOf:
+      - $ref: SweepRule.yaml
+    description: >-
+      The routing rule attached to this account. Null for accounts that carry
+      no rule, which is every account other than a `RULE_BASED` one.
   privateEnabled:
     type: boolean
     description: >-

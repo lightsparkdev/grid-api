@@ -1,0 +1,18 @@
+title: Sweep Rule Destination
+type: object
+description: >-
+  Where a rule-based account's credits are forwarded.
+required:
+  - accountId
+properties:
+  accountId:
+    type: string
+    description: The account that receives the forwarded funds.
+    example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+  paymentRail:
+    allOf:
+      - $ref: ../common/PaymentRail.yaml
+    description: >-
+      The rail each forward is sent over. Null when a rail is selected
+      automatically per forward, in which case none is resolved ahead of time.
+    example: ACH

@@ -1,0 +1,52 @@
+title: Sweep Rule
+type: object
+description: >-
+  The routing rule attached to a rule-based account. Returned on the account
+  rather than as a resource of its own, because the rule has no lifecycle apart
+  from the account.
+required:
+  - destination
+properties:
+  destination:
+    allOf:
+      - $ref: SweepRuleDestination.yaml
+    description: Where funds that settle into this account are forwarded.
+  minimumAmount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The smallest balance the corridor to the destination can carry,
+      denominated in this account's own currency. A settled balance below it is
+      not forwarded. Zero means no floor applies, which is the case for a
+      same-currency internal destination: that movement is a book transfer with
+      no rail, fee, or conversion to justify one. This is current configuration
+      rather than a moving estimate — it changes only when the platform's or
+      Grid's configuration changes, so there is nothing to re-poll.
+  maximumAmount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      The largest balance the corridor to the destination can carry. Null means
+      no ceiling applies. A settled balance above it is not forwarded.
+  purposeOfPayment:
+    allOf:
+      - $ref: ../quotes/PurposeOfPayment.yaml
+    description: The purpose of payment applied to each forward.
+    example: SELF
+  description:
+    type: string
+    description: >-
+      Free-form description recorded on each forward. Not delivered to the
+      recipient.
+    example: Rent forwarding
+  remittanceInformation:
+    type: string
+    description: >-
+      Free-form information that travels with each forward to the recipient.
+    example: Unit 4B March
+  platformFeeOverride:
+    allOf:
+      - $ref: ../quotes/PlatformFeeOverride.yaml
+    description: >-
+      Fee terms applied to every forward this rule drives. Null when the
+      platform's configured fees apply.
