@@ -116,8 +116,6 @@ export default function Page() {
       <ThemeSync />
       <div className={styles.configCol}>
         <ConfigurePanel
-          useCase={logic.useCase}
-          setUseCase={logic.setUseCase}
           design={logic.design}
           onDesignChange={logic.updateDesign}
           wallet={logic.wallet}
@@ -128,12 +126,8 @@ export default function Page() {
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
           <AppPanel
-            persona={logic.persona}
             design={logic.design}
             session={logic.session}
-            wallet={logic.wallet}
-            phone={logic.phone}
-            onAction={logic.handleAction}
             walletEntry={logic.walletEntry}
             onCardIssued={logic.onCardIssued}
             onTapToPay={logic.onTapToPay}

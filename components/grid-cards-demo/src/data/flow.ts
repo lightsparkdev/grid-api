@@ -1,47 +1,8 @@
-/* ============================================================
-   Core types + Grid API call shapes for the playground.
-   The demo is action-driven (like the flow builder): the user
-   picks a skin, designs the card, then freely triggers card
-   actions on the app.
-   ============================================================ */
-
-export type Persona =
-  | 'custom'
-  | 'fintech'
-  | 'social'
-  | 'marketplace'
-  | 'creator'
-  | 'ondemand'
-  | 'messaging';
+/* Core types + Grid API call shapes for the playground. The demo is
+   action-driven: design the card, then freely trigger card actions on the app. */
 
 /** Full API base for cURL — version lives here, not in operation paths. */
 export const GRID_API_BASE_URL = 'https://api.lightspark.com/grid/2025-10-13';
-
-export type ScreenId =
-  | 'wallet'
-  | 'addmoney'
-  | 'send'
-  | 'withdraw'
-  | 'card'
-  | 'card-reveal'
-  | 'tap';
-
-export interface Tx {
-  kind: 'bank' | 'card' | 'coffee' | 'send';
-  name: string;
-  sub: string;
-  amount: string;
-  positive?: boolean;
-}
-
-export interface PhoneState {
-  screen: ScreenId;
-  balance: string;
-  hasCard: boolean;
-  cardActivated: boolean;
-  activity: Tx[];
-  note?: string;
-}
 
 export interface ApiCall {
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE';

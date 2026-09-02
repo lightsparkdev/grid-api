@@ -10,9 +10,9 @@ Accounts playground) and shares its chrome, design system, and embed contract:
 - `motion` for transitions
 - Config panel, glass phone stage, and API panel laid out identically to the wallet demo
 
-A visitor picks a platform skin ("Your brand" is the default and the only customizable one),
-then drives card flows on the phone: issue, reveal, add to Apple Wallet, spend, freeze,
-limits, refund, close. The API panel shows the Grid calls and webhooks for each flow, with
+A visitor designs a card (name, color, finish, logo) and drives card flows on the phone:
+issue, reveal, add to Apple Wallet, spend, freeze, limits, refund, close. There is one
+generic app UI; the design tints it. There are no platform skins and no sign-in. The API panel shows the Grid calls and webhooks for each flow, with
 request and response bodies that follow the OpenAPI schemas in
 `openapi/components/schemas/cards/`.
 
@@ -29,12 +29,6 @@ npm run dev          # fixed port: http://localhost:4002
 The port is pinned to 4002 (4000 is the wallet demo) so the docs page can embed the local app
 while you preview the docs with `make mint`. The docs page targets `localhost:4002` when served
 locally.
-
-Google and Apple sign-in use real hosted popups. Apple's return URL defaults to
-`https://grid-cards-demo.vercel.app/`; override with `NEXT_PUBLIC_GOOGLE_CLIENT_ID`,
-`NEXT_PUBLIC_APPLE_CLIENT_ID`, and `NEXT_PUBLIC_APPLE_REDIRECT_URI` if the provider
-configuration changes. For local Apple testing, follow the `dev:apple` setup in
-`components/grid-wallet-demo/README.md` with the hostname `grid-cards-demo-local.lightspark.com`.
 
 ## Deploy
 
@@ -54,14 +48,13 @@ triggers a build if it touches this directory. The docs page iframes the deploye
 ## Scope
 
 Scripted happy path, like the wallet demo. It does not call a live sandbox. Virtual cards only;
-physical cards and PIN are not in the API yet. Card flows other than issue and spend are
-listed in the picker but disabled until they land.
+physical cards and PIN are not in the API yet.
 
 ## Chrome files shared with the wallet demo
 
 Keep these byte-identical to `components/grid-wallet-demo` so fixes port with `cp`:
 `src/app/page.tsx`, `src/app/page.module.scss`, `src/lib/layout.ts`,
 `src/styles/breakpoints.scss`, `src/components/{ConfigurePanel,AppPanel,ApiPanel,PanelHeader,
-ColumnResizeHandle,DotGridCanvas,SectionDivider,UseCasePicker,liquid-glass,glass-gl}`,
+ColumnResizeHandle,DotGridCanvas,SectionDivider,liquid-glass,glass-gl}`,
 `src/components/ThemeSync.tsx`, `src/hooks/{useTheme,useThemeMode,useColumnResize}.ts`,
 `src/lib/{groupApiEntries.ts,easing.ts}`.

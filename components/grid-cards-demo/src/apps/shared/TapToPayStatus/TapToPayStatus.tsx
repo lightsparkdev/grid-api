@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import type { DeclineReason } from '@/apps/shared/wallet/useCardControls';
+import type { DeclineReason } from '@/apps/shared/card/useCardControls';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, motionTransition } from '@/lib/easing';
 import styles from './TapToPayStatus.module.scss';

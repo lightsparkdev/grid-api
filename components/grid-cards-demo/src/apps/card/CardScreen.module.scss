@@ -1,0 +1,136 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Clear the iOS status bar — screenBody underlaps it (see AppShell). */
+  padding-top: 62px;
+  background: var(--wallet-bg);
+
+  /* Figma DS.screenBackground — off-white, a hair below the #fff cards. */
+  --wallet-bg: #f9f9f9;
+  /* Header strip height — the body underlaps it by this much. */
+  --wallet-header-height: 56px;
+
+  :global([data-theme='dark']) & {
+    /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
+    --wallet-bg: #111111;
+  }
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  height: var(--wallet-header-height);
+  padding: 8px 24px;
+  box-sizing: border-box;
+}
+
+.headerInner {
+  position: absolute;
+  inset: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: auto;
+}
+
+/* Figma 90:13587 — Title3/Emphasized. */
+.title {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  @include ios.ios-text-title-3;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  color: var(--ios-label-primary);
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+
+.body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Underlap the header strip so the card's top drop-shadow bleed paints
+     unclipped. */
+  margin-top: calc(-1 * var(--wallet-header-height));
+  padding-top: var(--wallet-header-height);
+}
+
+/* Tap-to-pay lifts the body over the (still-present) header; raising it above the
+   header layer hides the header buttons as they fade rather than ghosting them. */
+.bodyTap {
+  z-index: 3;
+}
+
+/* Card slot — pinned at the top; the hub scrolls beneath it. */
+.cardArea {
+  flex-shrink: 0;
+  padding: 8px 16px 8px;
+}
+
+/* Hub content below the card. */
+.homeContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+/* The hub scrolls under the pinned card. */
+.homeScroll {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-bottom: 16px;
+
+  /* Blocks keep their height; the list below them grows and the column scrolls. */
+  & > * {
+    flex-shrink: 0;
+  }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Tap-to-pay reader status — fills below the raised card; glyph + label sit just
+   beneath it (Figma 2143:41178 section pt 50). */
+.tapStatus {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  width: 100%;
+  padding-top: 50px;
+}
+
+/* Face ID (Dynamic Island) overlay — above the screen, click-through. */
+.faceIdLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}

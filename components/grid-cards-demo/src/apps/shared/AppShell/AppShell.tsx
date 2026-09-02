@@ -5,7 +5,6 @@ import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useAdaptiveStatusBarTone } from './useAdaptiveStatusBarTone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
-import type { AppSkinId } from '@/apps/skins';
 import {
   APP_SHELL_OUTER_HEIGHT,
   APP_SHELL_OUTER_WIDTH,
@@ -33,8 +32,6 @@ interface AppShellProps {
   screenOverlay?: ReactNode;
   /** Light status bar icons/time on dark or colored backgrounds. */
   screenTone?: 'default' | 'light';
-  /** App skin — drives data-app, font family, and per-app tokens. */
-  appSkin?: AppSkinId;
   /** Extra inline style on the screen root — the playground sets the
    *  `--brand-*` tokens here for the customizable skin. */
   screenStyle?: CSSProperties;
@@ -53,7 +50,6 @@ export function AppShell({
   children,
   screenOverlay,
   screenTone = 'default',
-  appSkin = 'aurora',
   screenStyle,
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
@@ -280,7 +276,6 @@ export function AppShell({
           <div
             ref={screenRef}
             className={`${styles.screen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
-            data-app={appSkin}
             style={{
               ...screenStyle,
               ...(externalGlass

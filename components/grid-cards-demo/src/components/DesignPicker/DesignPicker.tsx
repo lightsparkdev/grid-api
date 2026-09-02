@@ -12,7 +12,6 @@ interface DesignPickerProps {
   onChange: (patch: Partial<CardDesign>) => void;
   /** The active skin has its own art direction — show the controls muted and
    *  inert so the section still reads as "this is where design lives". */
-  locked?: boolean;
 }
 
 const MAX_NAME = 18;
@@ -25,7 +24,7 @@ function swatchStyle(color: string, colorEnd?: string) {
   };
 }
 
-export function DesignPicker({ design, onChange, locked = false }: DesignPickerProps) {
+export function DesignPicker({ design, onChange }: DesignPickerProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const objectUrl = useRef<string | null>(null);
 
@@ -57,7 +56,7 @@ export function DesignPicker({ design, onChange, locked = false }: DesignPickerP
   );
 
   return (
-    <div className={clsx(styles.group, locked && styles.locked)} aria-disabled={locked || undefined}>
+    <div className={styles.group}>
       <div className={styles.row}>
         <span className={styles.rowLabel}>Name</span>
         <input
@@ -65,7 +64,6 @@ export function DesignPicker({ design, onChange, locked = false }: DesignPickerP
           className={styles.nameInput}
           value={design.programName}
           maxLength={MAX_NAME}
-          disabled={locked}
           placeholder="Your brand"
           aria-label="Program name"
           onChange={(e) => onChange({ programName: e.target.value })}
@@ -83,7 +81,6 @@ export function DesignPicker({ design, onChange, locked = false }: DesignPickerP
               aria-checked={activeSwatch?.id === s.id}
               aria-label={s.label}
               title={s.label}
-              disabled={locked}
               className={clsx(styles.swatch, activeSwatch?.id === s.id && styles.swatchActive)}
               style={swatchStyle(s.color, s.colorEnd)}
               onClick={() => onChange({ color: s.color, colorEnd: s.colorEnd })}
@@ -98,7 +95,6 @@ export function DesignPicker({ design, onChange, locked = false }: DesignPickerP
               type="color"
               className={styles.colorInput}
               value={design.color}
-              disabled={locked}
               aria-label="Custom color"
               onChange={(e) => onChange({ color: e.target.value, colorEnd: undefined })}
             />
@@ -116,7 +112,6 @@ export function DesignPicker({ design, onChange, locked = false }: DesignPickerP
               type="button"
               role="radio"
               aria-checked={design.finish === f.id}
-              disabled={locked}
               className={clsx(styles.segment, design.finish === f.id && styles.segmentActive)}
               onClick={() => onChange({ finish: f.id as CardFinish })}
             >
@@ -135,7 +130,7 @@ export function DesignPicker({ design, onChange, locked = false }: DesignPickerP
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={design.logoUrl} alt="" />
               </span>
-              <button type="button" className={styles.logoClear} disabled={locked} onClick={clearLogo}>
+              <button type="button" className={styles.logoClear} onClick={clearLogo}>
                 <IconCrossSmall size={14} />
                 Remove
               </button>
@@ -144,7 +139,6 @@ export function DesignPicker({ design, onChange, locked = false }: DesignPickerP
             <button
               type="button"
               className={styles.logoUpload}
-              disabled={locked}
               onClick={() => fileRef.current?.click()}
             >
               <IconArrowUpSquare size={16} />

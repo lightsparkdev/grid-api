@@ -1,10 +1,3 @@
-@use '../../aurora/skin' as aurora-skin;
-@use '../../creator/skin' as creator-skin;
-@use '../../social/skin' as social-skin;
-@use '../../marketplace/skin' as marketplace-skin;
-@use '../../ondemand/skin' as ondemand-skin;
-@use '../../messaging/skin' as messaging-skin;
-@use '../../custom/skin' as custom-skin;
 @use '../colors/ios-colors' as ios-colors;
 @use '../colors/app-colors' as app-colors;
 
@@ -122,13 +115,8 @@
   @include ios-colors.tokens;
   @include app-colors.tokens;
 
-  @include aurora-skin.tokens;
-  @include custom-skin.tokens;
-  @include creator-skin.tokens;
-  @include social-skin.tokens;
-  @include marketplace-skin.tokens;
-  @include ondemand-skin.tokens;
-  @include messaging-skin.tokens;
+  /* The app tint follows the card design (DemoPhone sets --brand-color). */
+  --app-tint: var(--brand-color, #0083c3);
 }
 
 .screenToneLight {

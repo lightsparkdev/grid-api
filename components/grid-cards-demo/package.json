@@ -5,16 +5,10 @@
   "description": "Interactive Grid Cards playground, embedded in the Grid docs.",
   "scripts": {
     "dev": "next dev -p 4002",
-    "dev:apple": "next dev -p 4002 -H grid-cards-demo-local.lightspark.com --experimental-https --experimental-https-key ./certs/apple-local-key.pem --experimental-https-cert ./certs/apple-local.pem",
     "build": "next build",
     "start": "next start -p 4002",
     "lint": "next lint",
-    "export-sf-symbols": "node scripts/export-sf-symbols.mjs --sync-paths",
-    "fetch:flags": "node scripts/fetch-flags.mjs",
-    "gen:bank-fields": "node scripts/generate-bank-fields.mjs",
-    "verify:bank-fields": "node scripts/generate-bank-fields.mjs && git diff --exit-code -- src/data/bankAccountFields.generated.ts",
-    "verify:bank-data": "tsx scripts/verify-bank-data.ts",
-    "verify:bank": "npm run verify:bank-fields && npm run verify:bank-data"
+    "export-sf-symbols": "node scripts/export-sf-symbols.mjs --sync-paths"
   },
   "dependencies": {
     "@central-icons-react/round-filled-radius-0-stroke-2": "^1.1.267",

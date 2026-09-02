@@ -1,17 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Persona, ApiCall } from '@/data/flow';
+import type { ApiCall } from '@/data/flow';
 import {
   ACTIONS,
   initialCompleted,
   initialWallet,
-  phoneFromState,
   type ActionId,
   type CompletedFlows,
   type WalletState,
 } from '@/data/actions';
-import { USE_CASES, type UseCaseId } from '@/data/configure';
 import {
   cardCalls,
   clearingCalls,
@@ -29,29 +27,14 @@ import {
 } from '@/data/cardApiCalls';
 import { initialDesign, type CardDesign } from '@/data/design';
 import type { Entry } from '@/components/ApiPanel/types';
-import type { UseWalletHomeOptions, WalletEntry } from '@/apps/shared/wallet';
+import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
 
-// Every flow fast-forwards a funded account so spend works from a cold start.
-const FAST_FORWARD_FUND_CENTS = 500_000;
-// Matches CREATING_MS in apps/shared/wallet/useWalletHome: the activation
-// webhook arrives as the card flips from "creating" to "ready" on the phone.
+// Matches ISSUE_MS in apps/shared/card/useCardHome: the activation webhook
+// arrives as the card's chip flips from PROCESSING to ACTIVE on the phone.
 const CARD_ACTIVE_DELAY_MS = 2700;
 // A state-change webhook lands a beat after its PATCH so the rows arrive 1-by-1.
 const WEBHOOK_DELAY_MS = 650;
-// Wallet flows that don't need a card to exist first. Every other flow
-// (spend, reveal, freeze, …) fast-forwards an issued card.
-const WALLET_ONLY_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
-  'add',
-  'send',
-  'receive',
-  'withdraw',
-]);
-
 const GROUP_LABEL: Record<ActionId, string> = {
-  add: 'Add money',
-  send: 'Send payment',
-  receive: 'Receive payment',
-  withdraw: 'Withdraw',
   card: 'Issue a card',
   tap: 'Spend',
   reveal: 'Reveal details',
@@ -69,20 +52,12 @@ function newGroupId() {
 }
 
 /**
- * The Cards playground brain: config (skin + card design), the wallet mirror
- * the phone renders from, the API-call log, and the flow jumps. There is no
- * sign-in — the cardholder is a Customer the platform already onboarded, so
- * the phone boots straight into the app.
+ * The Cards playground brain: the card design, the wallet mirror the phone
+ * renders from, the API-call log, and the flow jumps. There is no sign-in — the
+ * cardholder is a Customer the platform already onboarded, so the phone boots
+ * straight into the app.
  */
 export function useCardsDemoLogic() {
-  const [persona, setPersona] = useState<Persona>('custom');
-  const [useCase, setUseCaseState] = useState<UseCaseId>('custom');
-  const setUseCase = useCallback((id: UseCaseId) => {
-    setUseCaseState(id);
-    const next = USE_CASES.find((u) => u.id === id)?.persona;
-    if (next) setPersona(next);
-  }, []);
-
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   const updateDesign = useCallback((patch: Partial<CardDesign>) => {
     setDesign((d) => ({ ...d, ...patch }));
@@ -162,7 +137,7 @@ export function useCardsDemoLogic() {
     markDone('card');
   }, [pushWithWebhook, markDone]);
 
-  const onTapToPay = useCallback<NonNullable<UseWalletHomeOptions['onTapToPay']>>(
+  const onTapToPay = useCallback<NonNullable<UseCardHomeOptions['onTapToPay']>>(
     (cents, merchant, rowId) => {
       const ref = newSpendRef(merchant, cents);
       const gid = pushWithWebhook(tapCalls(ref), GROUP_LABEL.tap);
@@ -177,7 +152,7 @@ export function useCardsDemoLogic() {
     [pushWithWebhook, markDone],
   );
 
-  const onTapDeclined = useCallback<NonNullable<UseWalletHomeOptions['onTapDeclined']>>(
+  const onTapDeclined = useCallback<NonNullable<UseCardHomeOptions['onTapDeclined']>>(
     (reason, cents, merchant) => {
       pushCalls(declineCalls(reason, merchant, cents), GROUP_LABEL.tap);
       // A decline proves the control that caused it.
@@ -187,7 +162,7 @@ export function useCardsDemoLogic() {
     [pushCalls, markDone],
   );
 
-  const cardOptions = useMemo<NonNullable<UseWalletHomeOptions['card']>>(
+  const cardOptions = useMemo<NonNullable<UseCardHomeOptions['card']>>(
     () => ({
       onStateChange: (state) => {
         const label = state === 'CLOSED' ? GROUP_LABEL.close : GROUP_LABEL.freeze;
@@ -238,26 +213,15 @@ export function useCardsDemoLogic() {
   const handleAction = useCallback(
     (id: ActionId) => {
       if (!ACTIONS.find((a) => a.id === id)?.available(wallet)) return;
-      // Fast-forward: silently satisfy whatever this flow needs (funds, a card)
-      // so it works from any starting point. STATE only — no API calls are
-      // logged for the provisioning and it earns no checkmark. Each flow logs
-      // only its own calls when the user actually runs it.
-      let next = wallet;
-      const provision: { issued?: boolean; fundCents?: number } = {};
-      if (next.balanceCents <= 0) {
-        next = { ...next, balanceCents: FAST_FORWARD_FUND_CENTS };
-        provision.fundCents = FAST_FORWARD_FUND_CENTS;
-      }
-      const needsCard = id !== 'card' && !WALLET_ONLY_ACTIONS.has(id);
-      if (needsCard && !next.hasCard) {
-        next = { ...next, hasCard: true };
-        provision.issued = true;
-      }
-      if (next !== wallet) setWallet(next);
+      // Fast-forward: every flow but Issue needs a card, so silently provision
+      // one from any starting point. STATE only — no API calls are logged for
+      // the provisioning and it earns no checkmark. Each flow logs only its own
+      // calls when the user actually runs it.
+      const needsCard = id !== 'card' && !wallet.hasCard;
+      if (needsCard) setWallet({ ...wallet, hasCard: true });
       setWalletEntry({
         nonce: Date.now(),
-        provision:
-          provision.issued || provision.fundCents !== undefined ? provision : undefined,
+        provision: needsCard ? { issued: true } : undefined,
         open: id,
       });
     },
@@ -277,9 +241,6 @@ export function useCardsDemoLogic() {
   }, []);
 
   return {
-    persona,
-    useCase,
-    setUseCase,
     design,
     updateDesign,
     wallet,
@@ -287,7 +248,6 @@ export function useCardsDemoLogic() {
     entries,
     walletEntry,
     session,
-    phone: phoneFromState(wallet),
     handleAction,
     reset,
     onCardIssued,

@@ -1,39 +1,24 @@
 /* Action-driven playground model. The user freely triggers actions on the
-   card; each produces a short on-phone sequence + Grid API calls. The wallet
-   actions (add/send/receive/withdraw) stay in the model because the skins'
-   shared brain still drives them; the Cards picker doesn't expose them. */
+   card; each produces a short on-phone sequence + Grid API calls. */
 
-import type { PhoneState, Tx } from './flow';
-
+/** The demo's mirror of the cardholder's state (the phone brain owns the live
+ *  UI state; this gates the sidebar). */
 export interface WalletState {
-  created: boolean;
-  balanceCents: number;
   hasCard: boolean;
-  cardActivated: boolean;
-  activity: Tx[];
+  balanceCents: number;
 }
 
 /** Opening balance of the card's funding source (Checking •••• 2502), cents. */
 export const FUNDING_SOURCE_CENTS = 500_000;
 
 export const initialWallet: WalletState = {
-  // No sign-in in the Cards playground: the cardholder is already onboarded.
-  created: true,
-  // The card's funding source (Checking •••• 2502) starts funded; there is no
-  // Add money in the Cards playground.
-  balanceCents: FUNDING_SOURCE_CENTS,
   hasCard: false,
-  cardActivated: false,
-  activity: [],
+  balanceCents: FUNDING_SOURCE_CENTS,
 };
 
 /** Sticky "done at least once" markers for the sidebar flow checkmarks. Kept
  *  separate from WalletState (the live-session mirror); only Reset clears them. */
 export interface CompletedFlows {
-  add: boolean;
-  send: boolean;
-  receive: boolean;
-  withdraw: boolean;
   card: boolean;
   tap: boolean;
   reveal: boolean;
@@ -45,10 +30,6 @@ export interface CompletedFlows {
 }
 
 export const initialCompleted: CompletedFlows = {
-  add: false,
-  send: false,
-  receive: false,
-  withdraw: false,
   card: false,
   tap: false,
   reveal: false,
@@ -59,18 +40,7 @@ export const initialCompleted: CompletedFlows = {
   close: false,
 };
 
-export function fmt(cents: number): string {
-  return (
-    '$' +
-    (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  );
-}
-
 export type ActionId =
-  | 'add'
-  | 'send'
-  | 'receive'
-  | 'withdraw'
   | 'card'
   | 'tap'
   | 'reveal'
@@ -90,40 +60,8 @@ export interface ActionDef {
 }
 
 export const ACTIONS: ActionDef[] = [
-  // Every flow is always reachable — clicking one fast-forwards whatever setup
-  // it needs (funds, a card), so the demo isn't a linear track.
-  {
-    id: 'add',
-    label: 'Add money',
-    desc: 'Fund from a linked bank',
-    icon: 'plus',
-    available: () => true,
-    done: (c) => c.add,
-  },
-  {
-    id: 'send',
-    label: 'Send payment',
-    desc: 'Pay another account',
-    icon: 'send',
-    available: () => true,
-    done: (c) => c.send,
-  },
-  {
-    id: 'receive',
-    label: 'Receive payment',
-    desc: 'Get paid into your account',
-    icon: 'receive',
-    available: () => true,
-    done: (c) => c.receive,
-  },
-  {
-    id: 'withdraw',
-    label: 'Withdraw',
-    desc: 'Cash out to a bank',
-    icon: 'bank',
-    available: () => true,
-    done: (c) => c.withdraw,
-  },
+  // Every flow is always reachable — clicking one fast-forwards a card if
+  // needed, so the demo isn't a linear track.
   {
     id: 'card',
     label: 'Issue a card',
@@ -189,14 +127,3 @@ export const ACTIONS: ActionDef[] = [
     done: (c) => c.close,
   },
 ];
-
-/** Resolve the phone view for a settled wallet state. */
-export function phoneFromState(s: WalletState): PhoneState {
-  return {
-    screen: s.hasCard ? 'card' : 'wallet',
-    balance: fmt(s.balanceCents),
-    hasCard: s.hasCard,
-    cardActivated: s.cardActivated,
-    activity: s.activity,
-  };
-}

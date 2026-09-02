@@ -1,1 +1,0 @@
-export { SocialWalletScreen } from './SocialWalletScreen';
