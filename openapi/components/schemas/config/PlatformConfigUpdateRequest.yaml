@@ -27,7 +27,7 @@ properties:
     $ref: ./CardConfig.yaml
     description: >-
       Update platform-level card settings. Fields omitted from the nested
-      object are left unchanged. For `maxSpendPerTransaction`, supply null to
+      object are left unchanged. For either spending limit, supply null to
       clear the platform cap or a positive integer to set it. Omit this field
       at the top level to leave all card settings unchanged.
   feeConfigs:

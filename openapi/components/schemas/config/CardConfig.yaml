@@ -6,6 +6,7 @@ properties:
       - type: integer
         format: int64
         minimum: 1
+        maximum: 9007199254740991
       - type: 'null'
     description: >-
       Platform-level cap on a single transaction for every card whose
@@ -15,3 +16,20 @@ properties:
       no platform-level cap. The cap applies to existing cards and to cards
       issued later. Provider-decided card programs are unaffected.
     example: 10000
+  maxSpendPerDay:
+    anyOf:
+      - type: integer
+        format: int64
+        minimum: 1
+        maximum: 9007199254740991
+      - type: 'null'
+    description: >-
+      Platform-level cap on cumulative new spend during one UTC calendar day
+      for every card whose authorization decisions are made by Grid. The value
+      is interpreted in the smallest unit of each card's currency. Grid
+      enforces the lower of this cap and the card's configured
+      `maxSpendPerDay`; null means no platform-level daily cap. The window
+      resets at 00:00 UTC. Refunds, reversals, and authorization expiries do not
+      restore capacity during the day. The cap applies to existing cards and
+      cards issued later. Provider-decided card programs are unaffected.
+    example: 50000

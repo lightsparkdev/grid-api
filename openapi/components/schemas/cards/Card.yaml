@@ -6,6 +6,7 @@ required:
   - form
   - fundingSources
   - maxSpendPerTransaction
+  - maxSpendPerDay
   - createdAt
   - updatedAt
 properties:
@@ -67,6 +68,7 @@ properties:
       - type: integer
         format: int64
         minimum: 1
+        maximum: 9007199254740991
       - type: 'null'
     description: >-
       Card-specific cap on a single transaction, in the smallest unit of the
@@ -75,6 +77,22 @@ properties:
       enforces the lower of the two values without replacing this configured
       value. A transaction for exactly the effective limit is allowed.
     example: 5000
+  maxSpendPerDay:
+    anyOf:
+      - type: integer
+        format: int64
+        minimum: 1
+        maximum: 9007199254740991
+      - type: 'null'
+    description: >-
+      Card-specific cap on cumulative new spend during one UTC calendar day,
+      in the smallest unit of the card's `currency`. The window resets at
+      00:00 UTC. Null means the card has no card-specific daily cap. When the
+      platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
+      the lower of the two values without replacing this configured value.
+      Refunds, reversals, and authorization expiries do not restore capacity
+      during the day. Spend exactly equal to the effective limit is allowed.
+    example: 25000
   currency:
     type: string
     description: >-
