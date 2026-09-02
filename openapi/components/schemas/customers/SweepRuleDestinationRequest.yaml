@@ -1,7 +1,7 @@
 title: Sweep Rule Destination Request
 type: object
 description: >-
-  The account a rule-based account forwards its incoming payments to.
+  The account a rule-based account sweeps its incoming payments to.
 additionalProperties: false
 required:
   - accountId
@@ -9,17 +9,17 @@ properties:
   accountId:
     type: string
     description: >-
-      Reference to the account that receives the forwarded funds. May be an
+      Reference to the account that receives the swept funds. May be an
       external account or another internal account, but never a `RULE_BASED`
-      internal account — that account's own rule would forward the funds on
+      internal account — that account's own rule would sweep the funds on
       again. The destination may be denominated in a different currency, in
-      which case the forward is converted at the prevailing rate.
+      which case the sweep is converted at the prevailing rate.
     example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
   paymentRail:
     description: >-
-      The payment rail to use when forwarding to an external account. Must be
+      The payment rail to use when sweeping to an external account. Must be
       one of the rails supported by the destination account. If omitted, a rail
-      is selected automatically for each forward. Not accepted when the
+      is selected automatically for each sweep. Not accepted when the
       destination is an internal account, which settles without a payment rail.
     allOf:
       - $ref: ../common/PaymentRail.yaml

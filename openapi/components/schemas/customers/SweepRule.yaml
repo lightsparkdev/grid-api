@@ -10,14 +10,14 @@ properties:
   destination:
     allOf:
       - $ref: SweepRuleDestination.yaml
-    description: Where funds that settle into this account are forwarded.
+    description: Where funds that settle into this account are swept.
   minimumAmount:
     allOf:
       - $ref: ../common/CurrencyAmount.yaml
     description: >-
       The smallest balance the corridor to the destination can carry,
       denominated in this account's own currency. A settled balance below it is
-      not forwarded. Zero means no floor applies, which is the case for a
+      not swept. Zero means no floor applies, which is the case for a
       same-currency internal destination: that movement is a book transfer with
       no rail, fee, or conversion to justify one. This is current configuration
       rather than a moving estimate — it changes only when the platform's or
@@ -27,26 +27,26 @@ properties:
       - $ref: ../common/CurrencyAmount.yaml
     description: >-
       The largest balance the corridor to the destination can carry. Null means
-      no ceiling applies. A settled balance above it is not forwarded.
+      no ceiling applies. A settled balance above it is not swept.
   purposeOfPayment:
     allOf:
       - $ref: ../quotes/PurposeOfPayment.yaml
-    description: The purpose of payment applied to each forward.
+    description: The purpose of payment applied to each sweep.
     example: SELF
   description:
     type: string
     description: >-
-      Free-form description recorded on each forward. Not delivered to the
+      Free-form description recorded on each sweep. Not delivered to the
       recipient.
-    example: Rent forwarding
+    example: Rent sweep
   remittanceInformation:
     type: string
     description: >-
-      Free-form information that travels with each forward to the recipient.
+      Free-form information that travels with each sweep to the recipient.
     example: Unit 4B March
   platformFeeOverride:
     allOf:
       - $ref: ../quotes/PlatformFeeOverride.yaml
     description: >-
-      Fee terms applied to every forward this rule drives. Null when the
+      Fee terms applied to every sweep this rule drives. Null when the
       platform's configured fees apply.

@@ -6,12 +6,12 @@ enum:
   - QUOTE_FAILED
   - EXECUTION_FAILED
 description: |
-  Why the payment could not be forwarded to the rule's destination.
+  Why the payment could not be swept to the rule's destination.
 
   | Reason | Description |
   |--------|-------------|
   | `BELOW_MINIMUM` | The amount is below the smallest amount the corridor to the destination can carry. |
   | `ABOVE_MAXIMUM` | The amount is above the largest amount the corridor to the destination can carry. |
-  | `NO_ELIGIBLE_RAIL` | No payment rail available to the destination could carry the forward. |
-  | `QUOTE_FAILED` | Grid could not price the forward to the destination. |
-  | `EXECUTION_FAILED` | The forward was priced but the resulting payment did not go through. |
+  | `NO_ELIGIBLE_RAIL` | No payment rail available to the destination could carry the sweep. |
+  | `QUOTE_FAILED` | Grid could not price the sweep to the destination. |
+  | `EXECUTION_FAILED` | The sweep was priced but the resulting payment did not go through. |

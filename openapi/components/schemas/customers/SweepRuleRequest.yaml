@@ -2,7 +2,7 @@ title: Sweep Rule Request
 type: object
 description: >-
   The routing rule attached to a rule-based account. Every payment that settles
-  into the account is forwarded to the rule's destination, carrying the payment
+  into the account is swept to the rule's destination, carrying the payment
   metadata configured here.
 additionalProperties: false
 required:
@@ -11,26 +11,26 @@ properties:
   destination:
     allOf:
       - $ref: ./SweepRuleDestinationRequest.yaml
-    description: Where funds that settle into this account are forwarded.
+    description: Where funds that settle into this account are swept.
   purposeOfPayment:
     allOf:
       - $ref: ../quotes/PurposeOfPayment.yaml
     description: >-
-      The purpose of payment applied to each forward. Required by some
+      The purpose of payment applied to each sweep. Required by some
       destination geographies.
     example: SELF
   description:
     type: string
     maxLength: 255
     description: >-
-      Free-form description recorded on each forward. Not delivered to the
+      Free-form description recorded on each sweep. Not delivered to the
       recipient; use `remittanceInformation` for that.
-    example: Rent forwarding
+    example: Rent sweep
   remittanceInformation:
     type: string
     maxLength: 1024
     description: >-
-      Free-form information that travels with each forward to the recipient.
+      Free-form information that travels with each sweep to the recipient.
       The field this populates depends on the payment rail: for ACH it
       populates the Addenda record, for FedNow and RTP it populates the
       remittanceInformation field, and for wires it populates the OBI

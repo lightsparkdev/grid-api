@@ -6,7 +6,7 @@ post:
     A rule-based account is an additional account number for a customer that
     already holds an account in the same currency. It carries a routing rule:
     every payment that settles into it is attributed to that account number and
-    then forwarded to the rule's destination, so you can issue one number per
+    then swept to the rule's destination, so you can issue one number per
     payer and reconcile incoming payments without matching on remittance text.
 
     Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
@@ -17,6 +17,12 @@ post:
     routable number payers send to. Rule-based accounts are currently available
     in `USD` for individual customers, and must be enabled for your platform
     before this endpoint accepts requests.
+
+    Sandbox platforms can create rule-based accounts and exercise the whole
+    flow. The account number is generated locally rather than issued by a
+    partner bank, and `POST /sandbox/internal-accounts/{accountId}/fund` stands
+    in for a settled deposit — funding the account triggers its sweep just as a
+    real deposit would.
 
     Creating an account mints a new account number that cannot be reversed, so
     an `Idempotency-Key` header is required. A retry carrying the same key
@@ -58,7 +64,7 @@ post:
                   accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
                   paymentRail: ACH
                 purposeOfPayment: SELF
-                description: Rent forwarding
+                description: Rent sweep
                 remittanceInformation: Unit 4B March
           internalDestination:
             summary: Forward every payment to another internal account

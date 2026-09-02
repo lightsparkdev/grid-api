@@ -2100,7 +2100,7 @@ paths:
         A rule-based account is an additional account number for a customer that
         already holds an account in the same currency. It carries a routing rule:
         every payment that settles into it is attributed to that account number and
-        then forwarded to the rule's destination, so you can issue one number per
+        then swept to the rule's destination, so you can issue one number per
         payer and reconcile incoming payments without matching on remittance text.
 
         Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
@@ -2111,6 +2111,12 @@ paths:
         routable number payers send to. Rule-based accounts are currently available
         in `USD` for individual customers, and must be enabled for your platform
         before this endpoint accepts requests.
+
+        Sandbox platforms can create rule-based accounts and exercise the whole
+        flow. The account number is generated locally rather than issued by a
+        partner bank, and `POST /sandbox/internal-accounts/{accountId}/fund` stands
+        in for a settled deposit — funding the account triggers its sweep just as a
+        real deposit would.
 
         Creating an account mints a new account number that cannot be reversed, so
         an `Idempotency-Key` header is required. A retry carrying the same key
@@ -2150,7 +2156,7 @@ paths:
                       accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
                       paymentRail: ACH
                     purposeOfPayment: SELF
-                    description: Rent forwarding
+                    description: Rent sweep
                     remittanceInformation: Unit 4B March
               internalDestination:
                 summary: Forward every payment to another internal account
@@ -12014,7 +12020,7 @@ webhooks:
     post:
       summary: Sweep webhook
       description: |
-        Webhook that is called when a payment settles into a rule-based internal account but cannot be forwarded to the destination configured on the account's rule.
+        Webhook that is called when a payment settles into a rule-based internal account but cannot be swept to the destination configured on the account's rule.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -12031,7 +12037,7 @@ webhooks:
 
         ### Event types
 
-        - `SWEEP.FAILED` — Fired when the funds do not reach the rule's destination. `reason` says why, and `outcome` says where the funds ended up: moved to the customer's account in the same currency, or still held in the rule-based account. A failed forward that also created an outgoing payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on `sendTransactionId` rather than counting the failure twice.
+        - `SWEEP.FAILED` — Fired when the funds do not reach the rule's destination. `reason` says why, and `canonicalAccountId` is the customer's account in the same currency the funds were moved to instead: a rule-based account never holds a balance. A failed sweep that also created an outgoing payment fires `OUTGOING_PAYMENT.FAILED` as well; correlate the two on `sendTransactionId` rather than counting the failure twice.
 
         Delivery is at-least-once, so the same failure can arrive more than once with different webhook ids. Deduplicate on `incomingTransactionId`.
       operationId: sweepWebhook
@@ -12065,10 +12071,9 @@ webhooks:
                     incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000010
                     sendTransactionId: null
                     reason: BELOW_MINIMUM
-                    outcome: MOVED_TO_CANONICAL_ACCOUNT
                     canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
-              heldInRuleBasedAccount:
-                summary: The forward was sent but did not go through, and the funds stayed put
+              executionFailed:
+                summary: The sweep was sent but did not go through, so the funds were moved to the customer's account
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000051
                   type: SWEEP.FAILED
@@ -12086,8 +12091,7 @@ webhooks:
                     incomingTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000012
                     sendTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000013
                     reason: EXECUTION_FAILED
-                    outcome: HELD_IN_RULE_BASED_ACCOUNT
-                    canonicalAccountId: null
+                    canonicalAccountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
       responses:
         '200':
           description: |
@@ -14981,21 +14985,21 @@ components:
         - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
         - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
         - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
-        - `RULE_BASED`: An additional account number for an existing customer, with a routing rule attached, so incoming payments can be attributed to a specific payer and forwarded automatically. Created with `POST /internal-accounts`.
+        - `RULE_BASED`: An additional account number for an existing customer, with a routing rule attached, so incoming payments can be attributed to a specific payer and swept automatically. Created with `POST /internal-accounts`.
     SweepRuleDestinationRequest:
       title: Sweep Rule Destination Request
       type: object
-      description: The account a rule-based account forwards its incoming payments to.
+      description: The account a rule-based account sweeps its incoming payments to.
       additionalProperties: false
       required:
         - accountId
       properties:
         accountId:
           type: string
-          description: Reference to the account that receives the forwarded funds. May be an external account or another internal account, but never a `RULE_BASED` internal account — that account's own rule would forward the funds on again. The destination may be denominated in a different currency, in which case the forward is converted at the prevailing rate.
+          description: Reference to the account that receives the swept funds. May be an external account or another internal account, but never a `RULE_BASED` internal account — that account's own rule would sweep the funds on again. The destination may be denominated in a different currency, in which case the sweep is converted at the prevailing rate.
           example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
         paymentRail:
-          description: The payment rail to use when forwarding to an external account. Must be one of the rails supported by the destination account. If omitted, a rail is selected automatically for each forward. Not accepted when the destination is an internal account, which settles without a payment rail.
+          description: The payment rail to use when sweeping to an external account. Must be one of the rails supported by the destination account. If omitted, a rail is selected automatically for each sweep. Not accepted when the destination is an internal account, which settles without a payment rail.
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
     PurposeOfPayment:
@@ -15019,7 +15023,7 @@ components:
     SweepRuleRequest:
       title: Sweep Rule Request
       type: object
-      description: The routing rule attached to a rule-based account. Every payment that settles into the account is forwarded to the rule's destination, carrying the payment metadata configured here.
+      description: The routing rule attached to a rule-based account. Every payment that settles into the account is swept to the rule's destination, carrying the payment metadata configured here.
       additionalProperties: false
       required:
         - destination
@@ -15027,21 +15031,21 @@ components:
         destination:
           allOf:
             - $ref: '#/components/schemas/SweepRuleDestinationRequest'
-          description: Where funds that settle into this account are forwarded.
+          description: Where funds that settle into this account are swept.
         purposeOfPayment:
           allOf:
             - $ref: '#/components/schemas/PurposeOfPayment'
-          description: The purpose of payment applied to each forward. Required by some destination geographies.
+          description: The purpose of payment applied to each sweep. Required by some destination geographies.
           example: SELF
         description:
           type: string
           maxLength: 255
-          description: Free-form description recorded on each forward. Not delivered to the recipient; use `remittanceInformation` for that.
-          example: Rent forwarding
+          description: Free-form description recorded on each sweep. Not delivered to the recipient; use `remittanceInformation` for that.
+          example: Rent sweep
         remittanceInformation:
           type: string
           maxLength: 1024
-          description: 'Free-form information that travels with each forward to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information. Only printable ASCII characters are accepted, because the underlying rails carry nothing else.'
+          description: 'Free-form information that travels with each sweep to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information. Only printable ASCII characters are accepted, because the underlying rails carry nothing else.'
           example: Unit 4B March
     InternalAccountCreateRequest:
       title: Internal Account Create Request
@@ -15056,7 +15060,7 @@ components:
       properties:
         customerId:
           type: string
-          description: The customer the account is created for. The customer must already have a verified account in the same currency, which is where funds land when a forward cannot be completed.
+          description: The customer the account is created for. The customer must already have a verified account in the same currency, which is where funds land when a sweep cannot be completed.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         type:
           allOf:
@@ -17829,18 +17833,18 @@ components:
     SweepRuleDestination:
       title: Sweep Rule Destination
       type: object
-      description: Where a rule-based account's credits are forwarded.
+      description: Where a rule-based account's credits are swept.
       required:
         - accountId
       properties:
         accountId:
           type: string
-          description: The account that receives the forwarded funds.
+          description: The account that receives the swept funds.
           example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
         paymentRail:
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
-          description: The rail each forward is sent over. Null when a rail is selected automatically per forward, in which case none is resolved ahead of time.
+          description: The rail each sweep is sent over. Null when a rail is selected automatically per sweep, in which case none is resolved ahead of time.
           example: ACH
     PlatformFeeOverride:
       type: object
@@ -17873,32 +17877,32 @@ components:
         destination:
           allOf:
             - $ref: '#/components/schemas/SweepRuleDestination'
-          description: Where funds that settle into this account are forwarded.
+          description: Where funds that settle into this account are swept.
         minimumAmount:
           allOf:
             - $ref: '#/components/schemas/CurrencyAmount'
-          description: 'The smallest balance the corridor to the destination can carry, denominated in this account''s own currency. A settled balance below it is not forwarded. Zero means no floor applies, which is the case for a same-currency internal destination: that movement is a book transfer with no rail, fee, or conversion to justify one. This is current configuration rather than a moving estimate — it changes only when the platform''s or Grid''s configuration changes, so there is nothing to re-poll.'
+          description: 'The smallest balance the corridor to the destination can carry, denominated in this account''s own currency. A settled balance below it is not swept. Zero means no floor applies, which is the case for a same-currency internal destination: that movement is a book transfer with no rail, fee, or conversion to justify one. This is current configuration rather than a moving estimate — it changes only when the platform''s or Grid''s configuration changes, so there is nothing to re-poll.'
         maximumAmount:
           allOf:
             - $ref: '#/components/schemas/CurrencyAmount'
-          description: The largest balance the corridor to the destination can carry. Null means no ceiling applies. A settled balance above it is not forwarded.
+          description: The largest balance the corridor to the destination can carry. Null means no ceiling applies. A settled balance above it is not swept.
         purposeOfPayment:
           allOf:
             - $ref: '#/components/schemas/PurposeOfPayment'
-          description: The purpose of payment applied to each forward.
+          description: The purpose of payment applied to each sweep.
           example: SELF
         description:
           type: string
-          description: Free-form description recorded on each forward. Not delivered to the recipient.
-          example: Rent forwarding
+          description: Free-form description recorded on each sweep. Not delivered to the recipient.
+          example: Rent sweep
         remittanceInformation:
           type: string
-          description: Free-form information that travels with each forward to the recipient.
+          description: Free-form information that travels with each sweep to the recipient.
           example: Unit 4B March
         platformFeeOverride:
           allOf:
             - $ref: '#/components/schemas/PlatformFeeOverride'
-          description: Fee terms applied to every forward this rule drives. Null when the platform's configured fees apply.
+          description: Fee terms applied to every sweep this rule drives. Null when the platform's configured fees apply.
     InternalAccount:
       type: object
       required:
@@ -27520,38 +27524,26 @@ components:
         - QUOTE_FAILED
         - EXECUTION_FAILED
       description: |
-        Why the payment could not be forwarded to the rule's destination.
+        Why the payment could not be swept to the rule's destination.
 
         | Reason | Description |
         |--------|-------------|
         | `BELOW_MINIMUM` | The amount is below the smallest amount the corridor to the destination can carry. |
         | `ABOVE_MAXIMUM` | The amount is above the largest amount the corridor to the destination can carry. |
-        | `NO_ELIGIBLE_RAIL` | No payment rail available to the destination could carry the forward. |
-        | `QUOTE_FAILED` | Grid could not price the forward to the destination. |
-        | `EXECUTION_FAILED` | The forward was priced but the resulting payment did not go through. |
-    SweepFailureOutcome:
-      type: string
-      enum:
-        - MOVED_TO_CANONICAL_ACCOUNT
-        - HELD_IN_RULE_BASED_ACCOUNT
-      description: |
-        Where the funds ended up after the forward failed.
-
-        | Outcome | Description |
-        |---------|-------------|
-        | `MOVED_TO_CANONICAL_ACCOUNT` | The funds were moved to the customer's account in the same currency, identified by `canonicalAccountId`. |
-        | `HELD_IN_RULE_BASED_ACCOUNT` | The funds remain in the rule-based account. Grid retries the move when the next payment settles into the account. |
+        | `NO_ELIGIBLE_RAIL` | No payment rail available to the destination could carry the sweep. |
+        | `QUOTE_FAILED` | Grid could not price the sweep to the destination. |
+        | `EXECUTION_FAILED` | The sweep was priced but the resulting payment did not go through. |
     SweepFailure:
       title: Sweep Failure
       type: object
-      description: A payment that settled into a rule-based account but did not reach the destination of the account's rule.
+      description: A payment that settled into a rule-based account but was not swept to the destination of the account's rule.
       required:
         - sourceAccountId
         - destinationAccountId
         - amount
         - incomingTransactionId
         - reason
-        - outcome
+        - canonicalAccountId
       properties:
         sourceAccountId:
           type: string
@@ -27564,7 +27556,7 @@ components:
         amount:
           allOf:
             - $ref: '#/components/schemas/CurrencyAmount'
-          description: The amount that could not be forwarded.
+          description: The amount that could not be swept.
         incomingTransactionId:
           type: string
           description: The transaction that brought the funds into the rule-based account. Delivery of this event is at-least-once, so deduplicate on this value.
@@ -27573,23 +27565,16 @@ components:
           type:
             - string
             - 'null'
-          description: The outgoing transaction created for the forward, when the forward got far enough to create one. Null when the forward was never attempted. Use it to correlate this event with the `OUTGOING_PAYMENT.FAILED` event for the same forward rather than counting the failure twice.
+          description: The operation covering both the deposit into the rule-based account and the sweep out of it, present once the sweep got far enough to create one. Null when the sweep was never attempted. Use it to correlate this event with the `OUTGOING_PAYMENT.FAILED` event for the same sweep rather than counting the failure twice.
           example: Transaction:019542f5-b3e7-1d02-0000-000000000011
         reason:
           allOf:
             - $ref: '#/components/schemas/SweepFailureReason'
-          description: Why the forward could not be completed.
+          description: Why the sweep could not be completed.
           example: BELOW_MINIMUM
-        outcome:
-          allOf:
-            - $ref: '#/components/schemas/SweepFailureOutcome'
-          description: Where the funds ended up.
-          example: MOVED_TO_CANONICAL_ACCOUNT
         canonicalAccountId:
-          type:
-            - string
-            - 'null'
-          description: The customer's account in the same currency that the funds were moved to. Null when `outcome` is `HELD_IN_RULE_BASED_ACCOUNT`.
+          type: string
+          description: The customer's account in the same currency that the funds were moved to. A rule-based account never holds a balance, so a sweep that cannot reach its destination always lands the funds here.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
     SweepWebhook:
       allOf:

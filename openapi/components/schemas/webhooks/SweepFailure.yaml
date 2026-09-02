@@ -1,7 +1,7 @@
 title: Sweep Failure
 type: object
 description: >-
-  A payment that settled into a rule-based account but did not reach the
+  A payment that settled into a rule-based account but was not swept to the
   destination of the account's rule.
 required:
   - sourceAccountId
@@ -9,7 +9,7 @@ required:
   - amount
   - incomingTransactionId
   - reason
-  - outcome
+  - canonicalAccountId
 properties:
   sourceAccountId:
     type: string
@@ -24,7 +24,7 @@ properties:
   amount:
     allOf:
       - $ref: ../common/CurrencyAmount.yaml
-    description: The amount that could not be forwarded.
+    description: The amount that could not be swept.
   incomingTransactionId:
     type: string
     description: >-
@@ -36,26 +36,21 @@ properties:
       - string
       - 'null'
     description: >-
-      The outgoing transaction created for the forward, when the forward got
-      far enough to create one. Null when the forward was never attempted. Use
-      it to correlate this event with the `OUTGOING_PAYMENT.FAILED` event for
-      the same forward rather than counting the failure twice.
+      The operation covering both the deposit into the rule-based account and
+      the sweep out of it, present once the sweep got far enough to create one.
+      Null when the sweep was never attempted. Use it to correlate this event
+      with the `OUTGOING_PAYMENT.FAILED` event for the same sweep rather than
+      counting the failure twice.
     example: Transaction:019542f5-b3e7-1d02-0000-000000000011
   reason:
     allOf:
       - $ref: ./SweepFailureReason.yaml
-    description: Why the forward could not be completed.
+    description: Why the sweep could not be completed.
     example: BELOW_MINIMUM
-  outcome:
-    allOf:
-      - $ref: ./SweepFailureOutcome.yaml
-    description: Where the funds ended up.
-    example: MOVED_TO_CANONICAL_ACCOUNT
   canonicalAccountId:
-    type:
-      - string
-      - 'null'
+    type: string
     description: >-
       The customer's account in the same currency that the funds were moved to.
-      Null when `outcome` is `HELD_IN_RULE_BASED_ACCOUNT`.
+      A rule-based account never holds a balance, so a sweep that cannot reach
+      its destination always lands the funds here.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000006
