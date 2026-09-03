@@ -208,8 +208,8 @@ function paintChip(ctx: CanvasRenderingContext2D) {
 export interface FrontState {
   design: CardDesign;
   logo: HTMLImageElement | null;
-  /** ACTIVE: the last 4 shows. */
-  issued: boolean;
+  /** How far the last 4 has faded in (0 before ACTIVE, 1 once it has). */
+  lastFour: number;
   frozen: boolean;
   closed: boolean;
 }
@@ -239,11 +239,15 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets:
 
   paintChip(ctx);
 
-  // Last 4 at x 56, baseline 915 (bottom edge of the cap-trimmed line).
-  if (s.issued) {
+  // Last 4 at x 56, baseline 915 (bottom edge of the cap-trimmed line). It
+  // fades in when the card goes ACTIVE.
+  if (s.lastFour > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, s.lastFour);
     ctx.fillStyle = INK;
     ctx.font = `400 ${F(57)}px ${FONT}`;
     ctx.fillText(`•••• ${PAN_GROUPS[PAN_GROUPS.length - 1]}`, F(56), F(915));
+    ctx.restore();
   }
 
   paintLockup(ctx, assets);

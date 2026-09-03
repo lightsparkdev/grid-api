@@ -26,6 +26,10 @@ export interface CardMeshState {
   shown: number;
 }
 
+/** The last 4 fades in on ACTIVE: this long, in this many repaints. */
+const LAST4_FADE_MS = 450;
+const LAST4_FADE_STEPS = 6;
+
 /** Per-finish material constants beyond the maps. */
 const FINISH: Record<
   CardFinish,
@@ -146,6 +150,35 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       invalidate();
     }, [assets, finish, materials, invalidate]);
 
+    // The last 4 fades in over LAST4_FADE_MS when the card goes ACTIVE (a few
+    // repaints); it is simply there or not otherwise.
+    const [lastFour, setLastFour] = useState(state.issued ? 1 : 0);
+    const wasIssued = useRef(state.issued);
+    useEffect(() => {
+      if (!state.issued) {
+        wasIssued.current = false;
+        setLastFour(0);
+        return;
+      }
+      if (wasIssued.current) return;
+      wasIssued.current = true;
+      const t0 = performance.now();
+      let raf = 0;
+      let lastStep = -1;
+      const tick = (now: number) => {
+        const u = Math.min(1, (now - t0) / LAST4_FADE_MS);
+        const step = Math.floor(u * LAST4_FADE_STEPS);
+        if (step !== lastStep) {
+          lastStep = step;
+          setLastFour(step / LAST4_FADE_STEPS);
+        }
+        if (u < 1) raf = requestAnimationFrame(tick);
+        else setLastFour(1);
+      };
+      raf = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(raf);
+    }, [state.issued]);
+
     // Front print.
     const ready = useRef(false);
     const logoImg = logo.url === state.design.logoUrl ? logo.img : null;
@@ -153,7 +186,7 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       if (!assets) return;
       paintFront(
         frontCanvas.getContext('2d')!,
-        { design: state.design, logo: logoImg, issued: state.issued, frozen: state.frozen, closed: state.closed },
+        { design: state.design, logo: logoImg, lastFour, frozen: state.frozen, closed: state.closed },
         assets,
       );
       frontMap.needsUpdate = true;
@@ -162,7 +195,7 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
         ready.current = true;
         onReady?.();
       }
-    }, [assets, state.design, logoImg, state.issued, state.frozen, state.closed, frontCanvas, frontMap, invalidate, onReady]);
+    }, [assets, state.design, logoImg, lastFour, state.frozen, state.closed, frontCanvas, frontMap, invalidate, onReady]);
 
     // Back print.
     useEffect(() => {

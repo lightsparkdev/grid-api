@@ -33,7 +33,7 @@ const ROLL_STEP_MS = 140;
 // Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
 const EXPOSURE_LIGHT = 1.05;
-const EXPOSURE_DARK = 0.7;
+const EXPOSURE_DARK = 0.85;
 
 function easeInOutCubic(p: number) {
   return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
