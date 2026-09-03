@@ -1,10 +1,10 @@
 /**
  * The card's intro: a blueprint of the card draws itself on the stage
  * (registration ticks, the squircle outline, dimensions, the chip and brand
- * skeleton), then a scan line sweeps left to right and prints the real card in
- * its place. The blueprint is an SVG in card px riding in the card's hit box;
- * the print is a clipping plane on the mesh whose x follows the scan. Both are
- * stepped from the stage's frame loop off one clock so they never drift apart.
+ * skeleton), then the blueprint dissolves as the real card comes into focus
+ * behind it. The blueprint is an SVG in card px riding in the card's hit box;
+ * the card is the stage canvas, blurred and faded in. Both are stepped from
+ * the stage's frame loop off one clock so they never drift apart.
  *
  * Geometry is the Figma spec (1536-wide artboard) through `fig()`, so the
  * skeleton lands exactly where the face painter puts the chip and the brand.
@@ -93,8 +93,6 @@ export const INTRO_GEOMETRY = {
   /** Label sizes, card px. */
   fontDim: fig(28),
   fontSmall: fig(24),
-  /** The scan travels the whole overlay, so the ticks and dims wipe with the card. */
-  scan: { from: -INTRO_PAD, to: W + INTRO_PAD },
 };
 
 /* ── Timeline (seconds) ───────────────────────────────────────────────────── */
@@ -137,26 +135,22 @@ const CUES: Record<string, Cue> = {
   'brand-text': { kind: 'fade', at: 2.1, dur: 0.3 },
 };
 
-/** The print: the scan line's sweep. */
-const SCAN_AT = 2.55;
-const SCAN_DUR = 0.9;
-/** The scan line lingers and fades once it has crossed. */
-const SCAN_TAIL = 0.15;
-export const INTRO_END = SCAN_AT + SCAN_DUR + SCAN_TAIL;
+/** The reveal: the blueprint dissolves while the card comes into focus. */
+const REVEAL_AT = 2.55;
+const BLUEPRINT_OUT = 0.6;
+const CARD_IN = 1.0;
+/** Where the card starts, stage px of blur. */
+const CARD_BLUR = 16;
+export const INTRO_END = REVEAL_AT + CARD_IN;
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 const easeInOutCubic = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
 const easeOutCubic = (p: number) => 1 - Math.pow(1 - p, 3);
 
-/**
- * The scan's x in card px at `t`, or null before the print starts. Past the
- * end it sits beyond the overlay's right edge (everything printed).
- */
-export function introScanX(t: number): number | null {
-  if (t < SCAN_AT) return null;
-  const u = easeInOutCubic(clamp01((t - SCAN_AT) / SCAN_DUR));
-  const { from, to } = INTRO_GEOMETRY.scan;
-  return from + (to - from) * u;
+/** The card's look at `t`: hidden until the reveal, then fading in as the blur clears. */
+export function introCard(t: number): { opacity: number; blur: number } {
+  const u = clamp01((t - REVEAL_AT) / CARD_IN);
+  return { opacity: easeOutCubic(u), blur: CARD_BLUR * (1 - easeInOutCubic(u)) };
 }
 
 const cache = new WeakMap<Element, Map<string, SVGElement>>();
@@ -171,8 +165,9 @@ function elements(root: Element): Map<string, SVGElement> {
   return m;
 }
 
-/** Pose every blueprint element for time `t`. */
-export function stepIntro(root: Element, t: number) {
+/** Pose every blueprint element for time `t`. `root` is the overlay itself. */
+export function stepIntro(root: HTMLElement | SVGElement, t: number) {
+  root.style.opacity = String(1 - easeInOutCubic(clamp01((t - REVEAL_AT) / BLUEPRINT_OUT)));
   const els = elements(root);
   for (const [key, cue] of Object.entries(CUES)) {
     const el = els.get(key);
@@ -184,26 +179,6 @@ export function stepIntro(root: Element, t: number) {
     } else {
       const peak = Number(el.dataset.opacity ?? '1');
       el.style.opacity = String(peak * easeOutCubic(u));
-    }
-  }
-  const scanX = introScanX(t);
-  const clip = els.get('clip');
-  const scan = els.get('scan');
-  const { from, to } = INTRO_GEOMETRY.scan;
-  if (clip) {
-    const x = scanX ?? from;
-    clip.setAttribute('x', f(x));
-    clip.setAttribute('width', f(Math.max(0, to - x)));
-  }
-  if (scan) {
-    if (scanX === null) {
-      scan.style.opacity = '0';
-    } else {
-      const u = (t - SCAN_AT) / SCAN_DUR;
-      const fadeIn = clamp01(u / 0.08);
-      const fadeOut = 1 - clamp01((t - (SCAN_AT + SCAN_DUR)) / SCAN_TAIL);
-      scan.style.opacity = String(Math.min(fadeIn, fadeOut));
-      scan.setAttribute('transform', `translate(${f(scanX)} 0)`);
     }
   }
 }

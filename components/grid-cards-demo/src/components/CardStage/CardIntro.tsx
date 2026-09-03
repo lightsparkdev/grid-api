@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useId } from 'react';
+import { forwardRef } from 'react';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { INTRO_GEOMETRY as G, INTRO_PAD } from './introTimeline';
@@ -10,42 +10,25 @@ import styles from './CardStage.module.scss';
 const MAIN = 1;
 const CONSTRUCTION = 0.75;
 const FINE = 0.5;
-/** The scan line's trailing glow, card px. */
-const GLOW_W = 12;
 
 const DRAW = { pathLength: 1, strokeDasharray: 1, style: { strokeDashoffset: 1, opacity: 0 } } as const;
 const FADE = { style: { opacity: 0 } } as const;
 
 /**
  * The blueprint, laid out in card px inside the card's hit box. Every element
- * that animates carries `data-intro`; `stepIntro` poses them per frame. The
- * whole drawing sits under a clip that the scan line drags to the right, so
- * the blueprint disappears exactly where the real card has printed.
+ * that animates carries `data-intro`; `stepIntro` poses them per frame and
+ * fades the whole drawing out as the card comes into focus beneath it.
  */
 export const CardIntro = forwardRef<SVGSVGElement, { brand: string }>(function CardIntro({ brand }, ref) {
-  const id = useId();
-  const clipId = `${id}-clip`;
-  const glowId = `${id}-glow`;
-  const overlayH = CARD_H + INTRO_PAD * 2;
   return (
     <svg
       ref={ref}
       className={styles.blueprint}
       viewBox={G.viewBox}
-      style={{ inset: -INTRO_PAD, width: CARD_W + INTRO_PAD * 2, height: overlayH }}
+      style={{ inset: -INTRO_PAD, width: CARD_W + INTRO_PAD * 2, height: CARD_H + INTRO_PAD * 2 }}
       aria-hidden
     >
-      <defs>
-        <clipPath id={clipId}>
-          <rect data-intro="clip" x={G.scan.from} y={-INTRO_PAD} width={G.scan.to - G.scan.from} height={overlayH} />
-        </clipPath>
-        <linearGradient id={glowId} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="var(--card-scan)" stopOpacity="0" />
-          <stop offset="1" stopColor="var(--card-scan)" stopOpacity="0.28" />
-        </linearGradient>
-      </defs>
-
-      <g clipPath={`url(#${clipId})`} fill="none" stroke="var(--card-blueprint)" strokeLinecap="round" strokeLinejoin="round">
+      <g fill="none" stroke="var(--card-blueprint)" strokeLinecap="round" strokeLinejoin="round">
         {/* Registration */}
         {G.ticks.map((d, i) => (
           <path key={i} data-intro={`tick-${i}`} d={d} strokeWidth={CONSTRUCTION} {...DRAW} />
@@ -125,12 +108,6 @@ export const CardIntro = forwardRef<SVGSVGElement, { brand: string }>(function C
         >
           {brand}
         </text>
-      </g>
-
-      {/* The scan line: rides at the print's edge, glow trailing over the printed side. */}
-      <g data-intro="scan" style={{ opacity: 0 }}>
-        <rect x={-GLOW_W} y={-INTRO_PAD} width={GLOW_W} height={overlayH} fill={`url(#${glowId})`} />
-        <line x1={0} y1={-INTRO_PAD} x2={0} y2={CARD_H + INTRO_PAD} stroke="var(--card-scan)" strokeWidth={0.9} />
       </g>
     </svg>
   );

@@ -32,15 +32,9 @@
   touch-action: none;
   user-select: none;
   --pill-opacity: 1;
-  /* Blueprint ink: blue lines on the light stage, lighter on the dark one;
-     the scan line is the brightest thing on the stage either way. */
-  --card-blueprint: #2f6fee;
-  --card-scan: #2f6fee;
-
-  :global([data-theme='dark']) & {
-    --card-blueprint: #6ea8ff;
-    --card-scan: #ffffff;
-  }
+  /* Blueprint ink: the tertiary text grey (gray-400 light, gray-600 dark), a
+     step above the dot grid in either theme. */
+  --card-blueprint: var(--text-tertiary);
 }
 
 /* The intro's blueprint: card px around the hit box, scaled with it. */

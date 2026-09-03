@@ -15,7 +15,7 @@ import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type CardMeshState } from './card3d/CardMesh';
 import { CardMotion } from './cardMotion';
 import { CardIntro } from './CardIntro';
-import { INTRO_END, introScanX, stepIntro } from './introTimeline';
+import { INTRO_END, introCard, stepIntro } from './introTimeline';
 import styles from './CardStage.module.scss';
 
 /** Largest the card gets on stage, relative to its size in the phone. */
@@ -54,18 +54,15 @@ interface Intro {
   /** Seconds since the blueprint started drawing; -1 until the card is ready. */
   t: number;
   done: boolean;
-  /** Clips the mesh to the printed side of the scan; constant is world x. */
-  plane: THREE.Plane;
   overlay: React.RefObject<SVGSVGElement>;
+  /** The stage canvas, blurred and faded in behind the dissolving blueprint. */
+  canvas: React.RefObject<HTMLCanvasElement>;
   onDone: () => void;
   /** Run it again from the top (dev: `__cardStage.intro.replay()`). */
   replay: () => void;
   /** Dev: freeze the clock (set `t`, then `paused = true`) to pose a frame. */
   paused: boolean;
 }
-
-/** Nothing of the card shows until the scan starts. */
-const CLIP_ALL = -1e6;
 
 interface CardStageProps {
   design: CardDesign;
@@ -98,11 +95,11 @@ export function CardStage({ design, home }: CardStageProps) {
   const phoneUp = bootProgress > 0;
 
   // The intro plays once, when the card first appears: the blueprint draws,
-  // then the scan prints the card. Until it's done the card is held flat and
-  // the pointer is off.
+  // then dissolves as the card comes into focus. Until it's done the card is
+  // held flat and the pointer is off.
   const [introDone, setIntroDone] = useState(false);
   const overlayRef = useRef<SVGSVGElement>(null);
-  const introPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(-1, 0, 0), CLIP_ALL), []);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const live = useRef<Live>({
     t: 0,
@@ -111,15 +108,14 @@ export function CardStage({ design, home }: CardStageProps) {
     intro: {
       t: -1,
       done: false,
-      plane: introPlane,
       overlay: overlayRef,
+      canvas: canvasRef,
       onDone: () => setIntroDone(true),
       paused: false,
       replay: () => {
         const { intro } = live.current;
         intro.t = 0;
         intro.done = false;
-        intro.plane.constant = CLIP_ALL;
         setIntroDone(false);
       },
     },
@@ -196,6 +192,7 @@ export function CardStage({ design, home }: CardStageProps) {
   return (
     <div ref={rootRef} className={styles.root}>
       <Canvas
+        ref={canvasRef}
         className={styles.canvas}
         dpr={[1, 2]}
         frameloop="always"
@@ -203,7 +200,6 @@ export function CardStage({ design, home }: CardStageProps) {
         camera={{ position: [0, 0, CAMERA_Z], near: 200, far: 6000 }}
         onCreated={({ gl }) => {
           gl.toneMapping = NEUTRAL_TONE_MAPPING;
-          gl.localClippingEnabled = true;
         }}
       >
         <StageCamera dark={dark} />
@@ -215,7 +211,6 @@ export function CardStage({ design, home }: CardStageProps) {
           live={live}
           motion={motion}
           state={{ design, issued, frozen: card.frozen, closed: card.closed, shown }}
-          clip={introDone ? null : introPlane}
         />
       </Canvas>
 
@@ -266,11 +261,10 @@ interface CardRigProps {
   live: React.MutableRefObject<Live>;
   motion: CardMotion;
   state: CardMeshState;
-  clip: THREE.Plane | null;
 }
 
 /** Drives the mesh and the DOM hit box every frame. */
-function CardRig({ rootRef, hitRef, live, motion, state, clip }: CardRigProps) {
+function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
   // Carrier takes position and scale; the card inside it takes the spin.
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
@@ -333,16 +327,25 @@ function CardRig({ rootRef, hitRef, live, motion, state, clip }: CardRigProps) {
     c.position.set(x + pose.dx * s - size.width / 2, size.height / 2 - (y + bob), 0);
     c.scale.setScalar(s);
 
-    // The intro: step the blueprint and drag the print's clip across the card
-    // off one clock. A flow starting mid-intro (or reduced motion) ends it now.
-    if (!intro.done && intro.t >= 0) {
-      if (!intro.paused) intro.t += dt;
+    // The intro: step the blueprint and bring the card's canvas into focus off
+    // one clock. The canvas is hidden from the first frame (before the card is
+    // ready, t is -1). A flow starting mid-intro (or reduced motion) ends it now.
+    if (!intro.done) {
+      if (intro.t >= 0 && !intro.paused) intro.t += dt;
       if (t > 0 || live.current.reduceMotion) intro.t = INTRO_END;
-      const scanX = introScanX(intro.t);
-      intro.plane.constant = scanX === null ? CLIP_ALL : c.position.x - (CARD_W / 2) * s + scanX * s;
       if (intro.overlay.current) stepIntro(intro.overlay.current, intro.t);
+      const canvas = intro.canvas.current;
+      const look = introCard(intro.t);
+      if (canvas) {
+        canvas.style.opacity = String(look.opacity);
+        canvas.style.filter = look.blur > 0.05 ? `blur(${look.blur.toFixed(2)}px)` : '';
+      }
       if (intro.t >= INTRO_END) {
         intro.done = true;
+        if (canvas) {
+          canvas.style.opacity = '';
+          canvas.style.filter = '';
+        }
         intro.onDone();
       }
     }
@@ -370,7 +373,7 @@ function CardRig({ rootRef, hitRef, live, motion, state, clip }: CardRigProps) {
 
   return (
     <group ref={carrier}>
-      <CardMesh ref={group} state={state} onReady={onReady} clip={clip} />
+      <CardMesh ref={group} state={state} onReady={onReady} />
     </group>
   );
 }
