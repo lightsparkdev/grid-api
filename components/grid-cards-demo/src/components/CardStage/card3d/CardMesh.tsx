@@ -4,7 +4,6 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
-import { brandStops } from '@/apps/shared/brand/brandPalette';
 import { materialOf, stockOf, type CardDesign } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { foilStudioTexture } from './CardEnv';
@@ -250,10 +249,10 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
     invalidate();
   }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, materials, invalidate]);
 
-  // Edge: the construction's layers, the printed skins in the card's deep tone
-  // (or the stock's own face when nothing is printed).
+  // Edge: the construction's layers, the printed skins in the print color (or
+  // the stock's own face when nothing is printed).
   const stock = stockOf(state.design);
-  const edgeSkin = state.design.color ? brandStops(state.design.color).deep : stock.face;
+  const edgeSkin = state.design.color ?? stock.face;
   const edgeCore = stock.core;
   const edgeTex = useRef<{ albedo: THREE.Texture; orm: THREE.Texture } | null>(null);
   useEffect(() => {

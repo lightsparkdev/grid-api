@@ -234,6 +234,13 @@ function beadblastRoughness(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
 
 /* ── Edge ─────────────────────────────────────────────────────────────────── */
 
+/** `a` toward `b` by `t`, both #rrggbb. */
+function mixHex(a: string, b: string, t: number): string {
+  const ch = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const c = [0, 1, 2].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t));
+  return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
 /** Strip height in texels; the edge is only a few px tall on screen. */
 const EDGE_H = 256;
 
@@ -256,6 +263,7 @@ export function bakeEdge(material: CardMaterial, coreColor: string, skinColor: s
   const a = albedo.getContext('2d')!;
   const o = ormStrip.getContext('2d')!;
   type Layer = { frac: number; color: string; rough: number; metal: number };
+  const overlay = mixHex(skinColor, '#ffffff', 0.18);
   const layers: Layer[] =
     material === 'metal'
       ? [
@@ -264,11 +272,13 @@ export function bakeEdge(material: CardMaterial, coreColor: string, skinColor: s
           { frac: 0.09, color: '#1a1a1e', rough: 0.55, metal: 0 },
         ]
       : [
-          { frac: 0.05, color: '#f4f4f6', rough: 0.4, metal: 0 },
+          // The clear overlay shows the print through it, a shade lighter and
+          // glossier; painted white it read as a keyline around a dark card.
+          { frac: 0.05, color: overlay, rough: 0.3, metal: 0 },
           { frac: 0.1, color: skinColor, rough: 0.5, metal: 0 },
           { frac: 0.7, color: coreColor, rough: 0.55, metal: 0 },
           { frac: 0.1, color: skinColor, rough: 0.5, metal: 0 },
-          { frac: 0.05, color: '#f4f4f6', rough: 0.4, metal: 0 },
+          { frac: 0.05, color: overlay, rough: 0.3, metal: 0 },
         ];
   let y = 0;
   for (const l of layers) {
