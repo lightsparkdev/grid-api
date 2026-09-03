@@ -23,10 +23,23 @@ const FONT = `"${CARD_FONT_FAMILY}"`;
 
 /* ── Spec geometry shared with the surface maps ───────────────────────────── */
 
-export const CHIP = { x: F(152), y: F(324), w: F(236), r: F(236) * (19.5 / 151) };
-/** Z card chip geometry (viewBox 151 × 101), scaled to the zone width. */
+/**
+ * The contact module. This is a dual-interface card (contactless indicator on
+ * the back), and dual-interface modules are the small 6-contact kind, 11 ×
+ * 8.3 mm (Infineon S-MFC8.6 / coil-on-module S-COM8.4); the big 13 × 11.8 mm
+ * 8-contact module is the contact-only kind. ISO/IEC 7816-2 fixes only the
+ * contact positions: left column 10.25–12.25 mm from the left edge, right
+ * column 17.87–19.87, so the module is centered at x 15.06 mm; rows C1–C3 put
+ * its center at about y 22.8 mm. At 17.94 px/mm on the spec artboard that is
+ * a 197 × 149 module at (172, 334).
+ */
+const CHIP_W = F(197);
+export const CHIP_H = F(149);
+export const CHIP = { x: F(172), y: F(334), w: CHIP_W, r: CHIP_W * (19.5 / 151) };
+/** Z card chip geometry (viewBox 151 × 101), fitted to the module: a little
+ *  taller than drawn, as 6-contact pads are. */
 export const CHIP_SCALE = CHIP.w / 151;
-export const CHIP_H = 101 * CHIP_SCALE;
+export const CHIP_SCALE_Y = CHIP_H / 101;
 export const CHIP_CONTACTS = {
   xs: [8.5, 83.5332],
   ys: [8.5, 37.8633, 67.2266],
@@ -144,11 +157,12 @@ export function chipPlatePath(ctx: CanvasRenderingContext2D) {
 
 /** The 2 × 3 contact outlines in texels (one path). */
 export function chipContactsPath(ctx: CanvasRenderingContext2D) {
-  const s = CHIP_SCALE;
+  const sx = CHIP_SCALE;
+  const sy = CHIP_SCALE_Y;
   ctx.beginPath();
   for (const cx of CHIP_CONTACTS.xs) {
     for (const cy of CHIP_CONTACTS.ys) {
-      ctx.roundRect(CHIP.x + cx * s, CHIP.y + cy * s, CHIP_CONTACTS.w * s, CHIP_CONTACTS.h * s, CHIP_CONTACTS.r * s);
+      ctx.roundRect(CHIP.x + cx * sx, CHIP.y + cy * sy, CHIP_CONTACTS.w * sx, CHIP_CONTACTS.h * sy, CHIP_CONTACTS.r * sx);
     }
   }
 }
