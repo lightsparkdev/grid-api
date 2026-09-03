@@ -1,5 +1,6 @@
 type: object
-description: Fields shared by every platform fee config.
+description: >-
+  A platform-configured fee collected by Grid and settled to the platform internal account. These fields are shared by every platform fee config.
 properties:
   feeType:
     $ref: ./FeeType.yaml

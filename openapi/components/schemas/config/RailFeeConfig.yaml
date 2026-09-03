@@ -8,7 +8,7 @@ allOf:
       rail:
         $ref: ../common/PaymentRail.yaml
         description: >-
-          The rail the payout goes out over. `ACH`, `RTP`, `FEDNOW` and `WIRE` are
+          The rail used in the transaction. `ACH`, `RTP`, `FEDNOW` and `WIRE` are
           accepted today; other rails return a `NOT_IMPLEMENTED` error.
       direction:
         type: string
@@ -33,6 +33,6 @@ allOf:
       - direction
       - originator
 description: >-
-  A fee charged when a payment uses the specified rail. There can be at most one for
+  A fee charged when a transaction uses the specified rail. There can be at most one for
   a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT,
-  originator: GRID will charge a fee on all outgoing ACH payments.
+  originator: GRID will charge a fee on all outgoing ACH transactions.

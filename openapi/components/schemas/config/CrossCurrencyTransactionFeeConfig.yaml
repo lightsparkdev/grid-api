@@ -14,4 +14,4 @@ allOf:
     required:
       - sourceCurrency
 description: >-
-  A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
+  A fee charged for a cross-currency transaction. There can be at most one cross-currency transaction fee config for a given source currency. The fee will apply to all cross-currency transactions that originate in the source currency.

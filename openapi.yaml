@@ -12203,7 +12203,7 @@ components:
           example: USD
     FeeConfig:
       type: object
-      description: Fields shared by every platform fee config.
+      description: A platform-configured fee collected by Grid and settled to the platform internal account. These fields are shared by every platform fee config.
       properties:
         feeType:
           $ref: '#/components/schemas/FeeType'
@@ -12233,7 +12233,7 @@ components:
               example: USD
           required:
             - sourceCurrency
-      description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
+      description: A fee charged for a cross-currency transaction. There can be at most one cross-currency transaction fee config for a given source currency. The fee will apply to all cross-currency transactions that originate in the source currency.
     PaymentRail:
       type: string
       enum:
@@ -12272,7 +12272,7 @@ components:
                 - RAIL
             rail:
               $ref: '#/components/schemas/PaymentRail'
-              description: The rail the payout goes out over. `ACH`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
+              description: The rail used in the transaction. `ACH`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
             direction:
               type: string
               enum:
@@ -12291,7 +12291,7 @@ components:
             - rail
             - direction
             - originator
-      description: 'A fee charged when a payment uses the specified rail. There can be at most one for a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT, originator: GRID will charge a fee on all outgoing ACH payments.'
+      description: 'A fee charged when a transaction uses the specified rail. There can be at most one for a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT, originator: GRID will charge a fee on all outgoing ACH transactions.'
     FeeConfigOneOf:
       oneOf:
         - $ref: '#/components/schemas/CrossCurrencyTransactionFeeConfig'
