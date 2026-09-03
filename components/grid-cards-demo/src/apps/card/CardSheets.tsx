@@ -15,7 +15,14 @@ import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { GlassSymbolButton, headerGlassBrightness, SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
-import { formatUsdCents, type CardControls, type SpendLimits } from '@/apps/shared/card';
+import {
+  CARD_CVV,
+  CARD_EXP,
+  formatUsdCents,
+  PAN_GROUPS,
+  type CardControls,
+  type SpendLimits,
+} from '@/apps/shared/card';
 import NumericText from '@/components/NumericText';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
@@ -68,9 +75,8 @@ function SheetShell({ open, onDismiss, icon, title, sub, children, tone = 'defau
 
 /* ── Details (PAN reveal) ─────────────────────────────────────────────────── */
 
-const PAN_GROUPS = ['4242', '7715', '3306', '8972'];
-const EXP = '06/30';
-const CVV = '317';
+const EXP = CARD_EXP;
+const CVV = CARD_CVV;
 
 function CopyField({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
   const [copied, setCopied] = useState(false);

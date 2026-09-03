@@ -1,0 +1,159 @@
+/**
+ * The card's pose on the stage: cursor tilt, drag-to-spin with inertia, the
+ * reveal flip, the idle bob, and the decline shake. Pure state and math,
+ * stepped once per frame by the stage. Angles are degrees in three.js terms:
+ * positive rotation.y turns the right edge away, positive rotation.x turns
+ * the top edge toward the viewer.
+ */
+
+/** Cursor tilt, degrees at the card's edge. */
+export const TILT_DEG = 9;
+/** Drag: degrees of spin per pixel of pointer travel. */
+const DRAG_DEG_PER_PX = 0.55;
+/** The pitch a drag can reach before it stops following the pointer. */
+const PITCH_LIMIT = 50;
+/** Spring that settles the spin onto a face (per second, per degree). */
+const SPIN_K = 120;
+const SPIN_C = 18;
+/** Cursor tilt smoothing rate (1/s). */
+const TILT_RATE = 14;
+/** How far a fling is projected when picking the face to settle on (s), and
+ *  the fastest release the spring is asked to catch (deg/s). */
+const FLING_LOOKAHEAD = 0.28;
+const MAX_FLING = 1600;
+const BOB_PERIOD = 5.2;
+const BOB_AMPLITUDE = 7;
+const SHAKE_S = 0.5;
+
+export interface Pose {
+  rotX: number;
+  rotY: number;
+  /** Bob and shake offsets, card px. */
+  dx: number;
+  dy: number;
+}
+
+export class CardMotion {
+  // Cursor tilt: target from the pointer, current eased toward it.
+  private tiltTX = 0;
+  private tiltTY = 0;
+  private tiltX = 0;
+  private tiltY = 0;
+  // Free rotation: the spin (y) and pitch (x) with velocities.
+  private spinY = 0;
+  private spinVY = 0;
+  private pitch = 0;
+  private pitchV = 0;
+  private dragging = false;
+  private lastDragT = 0;
+  private dragVY = 0;
+  /** After a drag the card may rest on either face. */
+  private restAny = false;
+  /** Where the spin settles; re-picked on release and when the wants change. */
+  private targetY = 0;
+  private lastWantBack = false;
+  private lastHold = false;
+  private time = 0;
+  private shakeAt = -1;
+
+  /** Pointer over the card, -0.5..0.5 in each axis. */
+  setTilt(px: number, py: number) {
+    if (this.dragging) return;
+    this.tiltTY = px * TILT_DEG * 2;
+    this.tiltTX = py * TILT_DEG * 2;
+  }
+
+  clearTilt() {
+    this.tiltTX = 0;
+    this.tiltTY = 0;
+  }
+
+  beginDrag(now: number) {
+    this.dragging = true;
+    this.clearTilt();
+    this.lastDragT = now;
+    this.dragVY = 0;
+  }
+
+  /** Pointer travel since the last event, in stage px. */
+  drag(dxPx: number, dyPx: number, now: number) {
+    if (!this.dragging) return;
+    const dt = Math.max(0.001, (now - this.lastDragT) / 1000);
+    this.lastDragT = now;
+    const dyDeg = dxPx * DRAG_DEG_PER_PX;
+    this.spinY += dyDeg;
+    this.pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, this.pitch + dyPx * DRAG_DEG_PER_PX * 0.6));
+    // Smoothed release velocity.
+    this.dragVY = this.dragVY * 0.6 + (dyDeg / dt) * 0.4;
+  }
+
+  endDrag() {
+    if (!this.dragging) return;
+    this.dragging = false;
+    this.spinVY = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVY));
+    this.pitchV = 0;
+    this.restAny = true;
+    // Settle on whichever face the fling is headed for.
+    this.targetY = this.pickTarget(this.spinY + this.spinVY * FLING_LOOKAHEAD, this.lastWantBack, this.lastHold);
+  }
+
+  /** The face to settle on: the reveal wants the back; a free card after a
+   *  drag takes whichever is nearer; otherwise the front. */
+  private pickTarget(from: number, wantBack: boolean, hold: boolean): number {
+    if (wantBack) return nearestWithParity(from, 1);
+    if (this.restAny && !hold) return nearestWithParity(from, 0, 180);
+    return nearestWithParity(from, 0);
+  }
+
+  get isDragging() {
+    return this.dragging;
+  }
+
+  /** A purchase bounced: shake now. */
+  shake() {
+    this.shakeAt = this.time;
+  }
+
+  /**
+   * Advance one frame. `wantBack` (the reveal) turns the card to its back;
+   * `hold` (the phone is up) parks it front-up and still.
+   */
+  step(dt: number, opts: { wantBack: boolean; hold: boolean; reduceMotion: boolean }): Pose {
+    this.time += dt;
+    if (opts.hold) this.clearTilt();
+    const k = 1 - Math.exp(-dt * TILT_RATE);
+    this.tiltX += (this.tiltTX - this.tiltX) * k;
+    this.tiltY += (this.tiltTY - this.tiltY) * k;
+
+    if (opts.wantBack !== this.lastWantBack || opts.hold !== this.lastHold) {
+      if (opts.hold || opts.wantBack) this.restAny = false;
+      this.lastWantBack = opts.wantBack;
+      this.lastHold = opts.hold;
+      if (!this.dragging) this.targetY = this.pickTarget(this.spinY, opts.wantBack, opts.hold);
+    }
+
+    if (!this.dragging) {
+      this.spinVY += (SPIN_K * (this.targetY - this.spinY) - SPIN_C * this.spinVY) * dt;
+      this.spinY += this.spinVY * dt;
+      this.pitchV += (SPIN_K * (0 - this.pitch) - SPIN_C * this.pitchV) * dt;
+      this.pitch += this.pitchV * dt;
+    }
+
+    const floating = !opts.hold && !opts.reduceMotion;
+    const dy = floating ? BOB_AMPLITUDE * Math.sin((this.time / BOB_PERIOD) * Math.PI * 2) : 0;
+    let dx = 0;
+    if (this.shakeAt >= 0) {
+      const u = (this.time - this.shakeAt) / SHAKE_S;
+      if (u < 1) dx = 12 * Math.sin(u * Math.PI * 3) * (1 - u);
+      else this.shakeAt = -1;
+    }
+    return { rotX: this.tiltX + this.pitch, rotY: this.tiltY + this.spinY, dx, dy };
+  }
+}
+
+/** Nearest angle to `a` that is `parity` × 180 modulo `period` (360 = a fixed
+ *  face, 180 = either face). */
+function nearestWithParity(a: number, parity: 0 | 1, period = 360): number {
+  const offset = parity * 180;
+  return Math.round((a - offset) / period) * period + offset;
+}

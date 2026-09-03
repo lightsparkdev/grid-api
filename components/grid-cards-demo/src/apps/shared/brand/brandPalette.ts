@@ -32,16 +32,27 @@ function hsl(h: number, s: number, l: number): string {
   return `hsl(${Math.round(h)} ${Math.round(clamp(s) * 100)}% ${Math.round(clamp(l) * 100)}%)`;
 }
 
-/** `--brand-color` plus a lighter and a deeper stop for the card face gradient
- *  (and `--brand-color-end` for two-tone swatches). Returns only `--brand-color`
- *  for an unparseable color. */
-export function brandVars(color: string, colorEnd?: string): CSSProperties {
+/** The brand color with a lighter and a deeper stop for the card face
+ *  gradient. Falls back to the color itself for an unparseable value. */
+export function brandStops(color: string, colorEnd?: string): { color: string; light: string; deep: string } {
   const a = hexToHsl(color);
-  const vars: Record<string, string> = { '--brand-color': color, '--brand-color-end': colorEnd ?? color };
-  if (a) {
-    const b = (colorEnd && hexToHsl(colorEnd)) || a;
-    vars['--brand-color-light'] = hsl(b.h, b.s, Math.min(0.92, b.l + 0.18));
-    vars['--brand-color-deep'] = hsl(a.h, Math.min(1, a.s * 1.05), Math.max(0.06, a.l - 0.2));
-  }
-  return vars as CSSProperties;
+  if (!a) return { color, light: color, deep: color };
+  const b = (colorEnd && hexToHsl(colorEnd)) || a;
+  return {
+    color,
+    light: hsl(b.h, b.s, Math.min(0.92, b.l + 0.18)),
+    deep: hsl(a.h, Math.min(1, a.s * 1.05), Math.max(0.06, a.l - 0.2)),
+  };
+}
+
+/** `--brand-color` plus the light and deep stops (and `--brand-color-end` for
+ *  two-tone swatches), for the phone chrome. */
+export function brandVars(color: string, colorEnd?: string): CSSProperties {
+  const s = brandStops(color, colorEnd);
+  return {
+    '--brand-color': color,
+    '--brand-color-end': colorEnd ?? color,
+    '--brand-color-light': s.light,
+    '--brand-color-deep': s.deep,
+  } as CSSProperties;
 }

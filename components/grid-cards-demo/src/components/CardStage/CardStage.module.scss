@@ -1,70 +1,77 @@
+@use '../../apps/shared/typography/ios-type-mixins' as ios;
+
 /* Overlays the whole dot-grid stage; sits above the phone so the card can fly
-   over it. Click-through except for the card. */
+   over it. Click-through except for the card's hit box. */
 .root {
   position: absolute;
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  /* The card face reads the iOS type tokens like it does inside the phone. */
   --ios-font-family: var(--font-family-sf-pro);
 }
 
-/* The card — its transform is set per frame from CardStage. It is laid out at
-   the card's intrinsic size and scaled, so the face never reflows. */
-.card {
+/* The three.js canvas: transparent, the whole stage. */
+.canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+}
+
+/* Rides with the mesh (transform set per frame): pointer input for tilt and
+   drag-to-spin, the state pill, the accessible name. Laid out at the card's
+   intrinsic size and scaled, like the mesh. */
+.hit {
   position: absolute;
   top: 0;
   left: 0;
   transform-origin: center center;
   will-change: transform;
-  perspective: 1100px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  --pill-opacity: 1;
 }
 
-/* Idle hover: a slow bob so the card reads as floating. */
-.float {
-  width: 100%;
-  height: 100%;
-  animation: bob 5.2s ease-in-out infinite;
+.hitDragging {
+  cursor: grabbing;
 }
 
-.floatStill {
-  animation: none;
-}
-
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-7px);
-  }
-}
-
-/* Tilt + flip live on one 3D transform; both faces sit in it. */
-.tilt {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-}
-
-.front,
-.backFace {
+.srOnly {
   position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-.backFace {
-  transform: rotateY(180deg);
-  /* Same shadow as the front (DebitCard's shell), mirrored with the face. */
-  border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
-  box-shadow: calc(var(--shadow-x, 3px) * -1) var(--shadow-y, 8px) 24px rgba(0, 0, 0, 0.2);
-
-  :global([data-theme='dark']) & {
-    box-shadow: calc(var(--shadow-x, 3px) * -1) var(--shadow-y, 8px) 24px rgba(0, 0, 0, 0.5);
-  }
+/* Small status pill, top-center of the front. */
+.pill {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+  @include ios.ios-text-caption-2;
+  font-weight: 590;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: var(--pill-opacity);
+  transition: opacity 160ms linear;
+  pointer-events: none;
 }
 
+.pillClosed {
+  background: rgba(255, 69, 58, 0.85);
+}
+
+.pillProcessing {
+  background: rgba(255, 255, 255, 0.22);
+}
