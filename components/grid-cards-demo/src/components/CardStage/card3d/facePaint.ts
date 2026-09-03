@@ -1,9 +1,9 @@
 /**
  * Paints the card's two faces (the albedo maps) from the design and the
  * cardholder data. Layout follows the Figma card spec (1536-wide artboard):
- * the front carries the brand (name top-left, logo top-right), the chip in
- * the physical front's zone, and the last 4 bottom-left; the back is
- * visa-card-back-spec-v1-premium (133:273), where the Visa mark lives.
+ * the front carries only the brand and the chip (the physical front spec,
+ * "chip only"); the back follows the Thales print sample (1:116) and carries
+ * the name, number, expiry, code, and the Visa mark.
  */
 
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
@@ -395,8 +395,6 @@ export interface FrontState {
   logo: HTMLImageElement | null;
   /** Uploaded card art, if any. */
   art: HTMLImageElement | null;
-  /** How far the personalization has printed (0 before ACTIVE, 1 once it has). */
-  personalized: number;
   frozen: boolean;
   closed: boolean;
 }
@@ -430,19 +428,8 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   }
 
   paintChip(ctx);
-
-  // Last 4 at x 56, baseline 915 (bottom edge of the cap-trimmed line). It
-  // prints when the card goes ACTIVE.
-  if (s.personalized > 0) {
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, s.personalized) * (ink === '#ffffff' ? 0.55 : 0.75);
-    ctx.fillStyle = ink;
-    ctx.font = `400 ${F(57)}px ${FONT}`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.textAlign = 'left';
-    ctx.fillText(`•••• ${PAN_GROUPS[PAN_GROUPS.length - 1]}`, F(56), F(915));
-    ctx.restore();
-  }
+  // The front carries nothing personal: the number, name, and codes are all
+  // on the back, as the Figma physical front spec ("chip only") has it.
 
   paintState(ctx, s.frozen, s.closed);
 }

@@ -309,7 +309,6 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       design: state.design,
       logo,
       art,
-      personalized,
       frozen: state.frozen,
       closed: state.closed,
     });
@@ -324,7 +323,6 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
     state.design,
     logo,
     art,
-    personalized,
     state.frozen,
     state.closed,
     frontCanvas,
