@@ -2312,7 +2312,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued with a sweep rule.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -8304,7 +8304,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued with a sweep rule.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -23299,14 +23299,12 @@ components:
         - QUOTE_EXECUTION_FAILED
         - COMPLIANCE_REJECTED
         - COLLECTION_FAILED
-        - SWEEP_BELOW_MINIMUM
-        - SWEEP_ABOVE_MAXIMUM
+        - SWEEP_AMOUNT_OUT_OF_RANGE
         - SWEEP_NO_ELIGIBLE_RAIL
         - SWEEP_QUOTE_FAILED
-        - SWEEP_EXECUTION_FAILED
       description: |-
         Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
-        A payment that settled into a rule-based account but could not be swept to the destination of the account's rule fails with one of the `SWEEP_*` reasons. A rule-based account never holds a balance, so the funds are moved to the account holder's own account in the same currency. SWEEP_BELOW_MINIMUM and SWEEP_ABOVE_MAXIMUM mean the balance was outside the band the corridor to the destination can carry. SWEEP_NO_ELIGIBLE_RAIL means no payment rail available to the destination could carry it. SWEEP_QUOTE_FAILED means Grid could not price it, and SWEEP_EXECUTION_FAILED that it was priced but the resulting payment did not go through.
+        A payment that settled into a rule-based account but could not be swept to the destination of the account's rule fails with one of the `SWEEP_*` reasons. A rule-based account never holds a balance, so the funds are moved to the account holder's own account in the same currency. SWEEP_AMOUNT_OUT_OF_RANGE means the amount was outside the band the corridor to the destination can carry — the rule's minimumAmount and maximumAmount give the current band. SWEEP_NO_ELIGIBLE_RAIL means no payment rail available to the destination could carry it, and SWEEP_QUOTE_FAILED that Grid could not price it. A sweep that was priced and then failed on the way to settlement reports QUOTE_EXECUTION_FAILED, the same as any other payment.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -23418,11 +23416,9 @@ components:
         - COMPLIANCE_REJECTED
         - LIGHTNING_PAYMENT_FAILED
         - COUNTERPARTY_POST_TX_FAILED
-        - SWEEP_BELOW_MINIMUM
-        - SWEEP_ABOVE_MAXIMUM
+        - SWEEP_AMOUNT_OUT_OF_RANGE
         - SWEEP_NO_ELIGIBLE_RAIL
         - SWEEP_QUOTE_FAILED
-        - SWEEP_EXECUTION_FAILED
       description: |
         Reason for failure of an outgoing transaction. This is used to provide more
         context on why a transaction failed. If the transaction is not in a failed
@@ -23454,11 +23450,9 @@ components:
         | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
         | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
         | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
-        | `SWEEP_BELOW_MINIMUM` | The payment settled into a rule-based account but was below the smallest amount the corridor to the rule's destination can carry |
-        | `SWEEP_ABOVE_MAXIMUM` | The payment settled into a rule-based account but was above the largest amount the corridor to the rule's destination can carry |
+        | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum. The rule's `minimumAmount` and `maximumAmount` give the current band |
         | `SWEEP_NO_ELIGIBLE_RAIL` | No payment rail available to the rule's destination could carry the sweep |
-        | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination |
-        | `SWEEP_EXECUTION_FAILED` | The sweep was priced but the resulting payment did not go through |
+        | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination. A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payout |
 
         The `SWEEP_*` reasons apply to a payment that settled into a rule-based
         account and could not be swept onward. A rule-based account never holds a
