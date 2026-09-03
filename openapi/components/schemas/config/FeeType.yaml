@@ -5,8 +5,7 @@ enum:
 description: |
   The kind of activity this fee applies to.
 
-  - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
-    (source currency differs from destination currency).
-  - `RAIL` — fee charged on a payout that goes out over a payment rail, whatever
-    currency it started in.
+  - `CROSS_CURRENCY_TRANSACTION` — a fee charged on transactions where the sending
+    currency differs from the receiving currency
+  - `RAIL` — a fee charged on any transaction that uses the specified payment rail
 example: CROSS_CURRENCY_TRANSACTION
