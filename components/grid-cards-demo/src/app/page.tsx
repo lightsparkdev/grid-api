@@ -126,6 +126,9 @@ export default function Page() {
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
           <AppPanel
+            stage={logic.stage}
+            cardState={logic.cardState}
+            onIssue={() => logic.handleAction('card')}
             design={logic.design}
             session={logic.session}
             walletEntry={logic.walletEntry}

@@ -64,7 +64,7 @@ export function CardScreen({ entrance = false, home }: CardScreenProps) {
     startTapToPay,
   } = home;
 
-  // Entrance: the card, then the hub content reveal in once on mount.
+  // Entrance: the hub content reveals in once on mount (the card arrives from the stage).
   const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
   const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
 
@@ -126,7 +126,8 @@ export function CardScreen({ entrance = false, home }: CardScreenProps) {
         transition={BODY_TRANSITION}
       >
         <div className={styles.cardArea}>
-          <motion.div {...enter(0)}>
+          {/* The stage card lands exactly here (CardStage measures this slot). */}
+          <div data-card-slot>
             <DebitCard
               issued={issued}
               issuing={issuing}
@@ -135,7 +136,7 @@ export function CardScreen({ entrance = false, home }: CardScreenProps) {
               inWallet={card.inWallet}
               declined={isDeclined}
             />
-          </motion.div>
+          </div>
         </div>
 
         {/* Hub content below the card, or the tap-to-pay reader status. popLayout

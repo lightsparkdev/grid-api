@@ -57,7 +57,16 @@ function newGroupId() {
  * cardholder is a Customer the platform already onboarded, so the phone boots
  * straight into the app.
  */
+/** Where the card is: on the bare stage being designed, or inside the phone. */
+export type Stage = 'design' | 'phone';
+
+/** The card's issuance state as the demo sees it (mirrors the phone brain so the
+ *  stage card can wear the same chip while it flies into the phone). */
+export type StageCardState = 'none' | 'processing' | 'active';
+
 export function useCardsDemoLogic() {
+  const [stage, setStage] = useState<Stage>('design');
+  const [cardState, setCardState] = useState<StageCardState>('none');
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   const updateDesign = useCallback((patch: Partial<CardDesign>) => {
     setDesign((d) => ({ ...d, ...patch }));
@@ -131,9 +140,15 @@ export function useCardsDemoLogic() {
 
   const onCardIssued = useCallback(() => {
     // POST /cards lands now (card is PROCESSING); CARD.STATE_CHANGE lands when
-    // the on-phone issuance animation finishes and the card is ACTIVE.
+    // the phone brain flips the card to ACTIVE.
     pushWithWebhook(cardCalls(limitsRef.current), GROUP_LABEL.card, CARD_ACTIVE_DELAY_MS);
     setWallet((w) => ({ ...w, hasCard: true }));
+    setCardState('processing');
+    const timer = setTimeout(() => {
+      pendingTimers.current.delete(timer);
+      setCardState('active');
+    }, CARD_ACTIVE_DELAY_MS);
+    pendingTimers.current.add(timer);
     markDone('card');
   }, [pushWithWebhook, markDone]);
 
@@ -142,11 +157,7 @@ export function useCardsDemoLogic() {
       const ref = newSpendRef(merchant, cents);
       const gid = pushWithWebhook(tapCalls(ref), GROUP_LABEL.tap);
       spendRefs.current.set(rowId, { ref, gid });
-      setWallet((w) => ({
-        ...w,
-        cardActivated: true,
-        balanceCents: Math.max(0, w.balanceCents - cents),
-      }));
+      setWallet((w) => ({ ...w, balanceCents: Math.max(0, w.balanceCents - cents) }));
       markDone('tap');
     },
     [pushWithWebhook, markDone],
@@ -216,9 +227,13 @@ export function useCardsDemoLogic() {
       // Fast-forward: every flow but Issue needs a card, so silently provision
       // one from any starting point. STATE only — no API calls are logged for
       // the provisioning and it earns no checkmark. Each flow logs only its own
-      // calls when the user actually runs it.
+      // calls when the user actually runs it. Any flow brings the phone in.
       const needsCard = id !== 'card' && !wallet.hasCard;
-      if (needsCard) setWallet({ ...wallet, hasCard: true });
+      if (needsCard) {
+        setWallet({ ...wallet, hasCard: true });
+        setCardState('active');
+      }
+      setStage('phone');
       setWalletEntry({
         nonce: Date.now(),
         provision: needsCard ? { issued: true } : undefined,
@@ -234,6 +249,8 @@ export function useCardsDemoLogic() {
     spendRefs.current.clear();
     limitsRef.current = {};
     setWallet(initialWallet);
+    setCardState('none');
+    setStage('design');
     setCompleted(initialCompleted);
     setEntries([]);
     setWalletEntry(undefined);
@@ -241,6 +258,8 @@ export function useCardsDemoLogic() {
   }, []);
 
   return {
+    stage,
+    cardState,
     design,
     updateDesign,
     wallet,
