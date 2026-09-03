@@ -119,6 +119,7 @@ export default function Page() {
           design={logic.design}
           onDesignChange={logic.updateDesign}
           wallet={logic.wallet}
+          running={logic.running}
           onAction={onConfigureAction}
           onReset={logic.reset}
         />

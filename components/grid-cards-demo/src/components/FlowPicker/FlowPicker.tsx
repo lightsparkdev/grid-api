@@ -30,16 +30,17 @@ const GRID_LABELS: Partial<Record<ActionId, string>> = {
 
 interface FlowPickerProps {
   wallet: WalletState;
+  running: boolean;
   onAction: (id: ActionId) => void;
 }
 
-export function FlowPicker({ wallet, onAction }: FlowPickerProps) {
+export function FlowPicker({ wallet, running, onAction }: FlowPickerProps) {
   const actions = GRID_ORDER.map((id) => ACTIONS.find((a) => a.id === id)!);
   return (
     <div className={styles.group}>
       {actions.map((action) => {
         const Icon = FLOW_ICONS[action.id];
-        const enabled = action.available(wallet);
+        const enabled = action.available(wallet) && !running;
 
         return (
           <button

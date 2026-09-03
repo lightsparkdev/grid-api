@@ -13,6 +13,7 @@ interface ConfigurePanelProps {
   design: CardDesign;
   onDesignChange: (patch: Partial<CardDesign>) => void;
   wallet: WalletState;
+  running: boolean;
   onAction: (id: ActionId) => void;
   onReset: () => void;
 }
@@ -21,6 +22,7 @@ export function ConfigurePanel({
   design,
   onDesignChange,
   wallet,
+  running,
   onAction,
   onReset,
 }: ConfigurePanelProps) {
@@ -40,14 +42,19 @@ export function ConfigurePanel({
               label="Explore flows"
               action={
                 wallet.hasCard ? (
-                  <button type="button" className={styles.resetBtn} onClick={onReset}>
-                    <IconArrowRotateCounterClockwise size={12} />
+                  <button
+                    type="button"
+                    className={styles.resetBtn}
+                    onClick={onReset}
+                    disabled={running}
+                  >
+                    <IconArrowRotateCounterClockwise size={12} aria-hidden />
                     Reset
                   </button>
                 ) : null
               }
             />
-            <FlowPicker wallet={wallet} onAction={onAction} />
+            <FlowPicker wallet={wallet} running={running} onAction={onAction} />
           </section>
         </div>
       </div>

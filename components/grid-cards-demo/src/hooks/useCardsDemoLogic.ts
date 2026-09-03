@@ -255,6 +255,8 @@ export function useCardsDemoLogic() {
 
   return {
     activeFlow,
+    // A flow is playing out on the phone; the panel holds tiles and Reset.
+    running: activeFlow !== null,
     design,
     updateDesign,
     wallet,
