@@ -39,7 +39,7 @@ export function DemoPhone({
           showGlassOutline={showGlassOutline}
           glassDemoBg={glassDemoBg}
           externalGlass={externalGlass}
-          screenStyle={brandVars(brandColorOf(design).color, brandColorOf(design).colorEnd)}
+          screenStyle={brandVars(brandColorOf(design))}
         >
           <div className={styles.flow}>
             <CardScreen home={home} />

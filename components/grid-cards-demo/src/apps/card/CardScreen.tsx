@@ -63,7 +63,7 @@ export function CardScreen({ home }: CardScreenProps) {
   } = home;
 
   // App icon for push notifications — a brand-tinted rounded square.
-  const brandColor = brandColorOf(design).color;
+  const brandColor = brandColorOf(design);
   const appIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 76"><rect width="76" height="76" rx="17" fill="${brandColor}"/><rect x="18" y="26" width="40" height="26" rx="5" fill="rgba(255,255,255,0.92)"/><rect x="18" y="33" width="40" height="5" fill="${brandColor}" opacity="0.55"/></svg>`,
   )}`;

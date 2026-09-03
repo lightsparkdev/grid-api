@@ -6,7 +6,7 @@
  * design's colors never touch them.
  */
 
-import { isBare, stockOf, type CardDesign, type CardFinish, type CardMaterial } from '@/data/design';
+import { isBare, materialOf, type CardDesign, type CardFinish, type CardMaterial } from '@/data/design';
 import {
   chipContactsPath,
   chipPlatePath,
@@ -38,15 +38,15 @@ export interface SurfaceMaps {
  *  alloy is `bare`. Material itself only changes the edge and thickness. */
 export type Surface = `${'print' | 'bare'}-${CardFinish}`;
 export const surfaceOf = (design: Pick<CardDesign, 'stock' | 'color' | 'finish'>): Surface =>
-  `${isBare(design) && stockOf(design).metal ? 'bare' : 'print'}-${design.finish}`;
+  `${isBare(design) && materialOf(design) === 'metal' ? 'bare' : 'print'}-${design.finish}`;
 
 /** Field roughness and metalness per surface: soft-touch and laminated print,
- *  brushed and polished metal. */
+  *  beadblast and polished metal. */
 const FIELD: Record<Surface, { rough: number; metal: number }> = {
   'print-matte': { rough: 0.62, metal: 0 },
   'print-gloss': { rough: 0.45, metal: 0 },
-  'bare-matte': { rough: 0.32, metal: 0.85 },
-  'bare-gloss': { rough: 0.12, metal: 0.9 },
+  'bare-matte': { rough: 0.7, metal: 1 },
+  'bare-gloss': { rough: 0.12, metal: 1 },
 };
 
 const orm = (rough: number, metal: number) => `rgb(0, ${Math.round(rough * 255)}, ${Math.round(metal * 255)})`;
@@ -69,6 +69,7 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
   const f = FIELD[surface];
   ctx.fillStyle = orm(f.rough, f.metal);
   ctx.fillRect(0, 0, TEX_W, TEX_H);
+  if (surface === 'bare-matte') beadblastRoughness(ctx, assets);
   if (side === 'back') {
     ctx.fillStyle = orm(0.78, 0);
     ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
@@ -103,27 +104,16 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
   ctx.fillStyle = '#808080';
   ctx.fillRect(0, 0, MAP_W, MAP_H);
 
-  // Surface grain, in map pixels. Polished metal is smooth.
-  if (surface !== 'bare-gloss') {
+  // Print grain, in map pixels: fine isotropic grain, finer under a gloss
+  // laminate. Bare metal gets none here: polished is smooth, and beadblast
+  // comes from the grain tiles when the normal is composed.
+  if (surface === 'print-matte' || surface === 'print-gloss') {
     const img = ctx.getImageData(0, 0, MAP_W, MAP_H);
     const d = img.data;
-    if (surface === 'bare-matte') {
-      // Brushed: each row carries its own streak, with a little per-pixel break.
-      for (let y = 0; y < MAP_H; y++) {
-        const row = (Math.random() - 0.5) * 14;
-        for (let x = 0; x < MAP_W; x++) {
-          const i = (y * MAP_W + x) * 4;
-          const v = 128 + row + (Math.random() - 0.5) * 5;
-          d[i] = d[i + 1] = d[i + 2] = v;
-        }
-      }
-    } else {
-      // Print: fine isotropic grain, finer under a gloss laminate.
-      const amp = surface === 'print-gloss' ? 5 : 8;
-      for (let i = 0; i < d.length; i += 4) {
-        const v = 128 + (Math.random() - 0.5) * amp;
-        d[i] = d[i + 1] = d[i + 2] = v;
-      }
+    const amp = surface === 'print-gloss' ? 5 : 8;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = 128 + (Math.random() - 0.5) * amp;
+      d[i] = d[i + 1] = d[i + 2] = v;
     }
     ctx.putImageData(img, 0, 0);
   }
@@ -197,6 +187,49 @@ function heightToNormal(height: HTMLCanvasElement, strength: number): HTMLCanvas
   const c = makeCanvas(w, h);
   c.getContext('2d')!.putImageData(out, 0, 0);
   return c;
+}
+
+/* ── Beadblast (the Z card's metal) ───────────────────────────────────────── */
+
+/**
+ * The bare matte metal is the Z card's beadblast: its grain tiles (height
+ * ±13 per texel, ±9 per 5-texel cluster, Sobel'd; roughness 0.70 ± 0.08)
+ * pattern-filled at the Z card's texel density, with this card's structure
+ * (chip plate, stripe, foil) laid over it wherever the height field departs
+ * from flat, since a stamped or laminated part has no grain.
+ */
+function beadblastNormal(structureHeight: HTMLCanvasElement, assets: FaceAssets): HTMLCanvasElement {
+  const c = makeCanvas(TEX_W, TEX_H);
+  const ctx = c.getContext('2d')!;
+  ctx.fillStyle = ctx.createPattern(assets.grainNormal, 'repeat')!;
+  ctx.fillRect(0, 0, TEX_W, TEX_H);
+  const structure = heightToNormal(structureHeight, 2.2);
+  const w = structure.width;
+  const h = structure.height;
+  const sctx = structure.getContext('2d')!;
+  const n = sctx.getImageData(0, 0, w, h);
+  const height = structureHeight.getContext('2d')!.getImageData(0, 0, w, h).data;
+  for (let i = 0; i < n.data.length; i += 4) {
+    n.data[i + 3] = Math.abs(height[i] - 128) > 1 ? 255 : 0;
+  }
+  sctx.putImageData(n, 0, 0);
+  ctx.drawImage(structure, 0, 0, TEX_W, TEX_H);
+  return c;
+}
+
+/** Roughness grain from the tile into the G channel, metalness 1 in B. */
+function beadblastRoughness(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
+  const grain = makeCanvas(TEX_W, TEX_H);
+  const g = grain.getContext('2d')!;
+  g.fillStyle = g.createPattern(assets.grainRough, 'repeat')!;
+  g.fillRect(0, 0, TEX_W, TEX_H);
+  const img = g.getImageData(0, 0, TEX_W, TEX_H);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = 0;
+    d[i + 2] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
 }
 
 /* ── Edge ─────────────────────────────────────────────────────────────────── */
@@ -290,9 +323,10 @@ export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets:
   const key = `${surface}|${side}`;
   let maps = surfaceCache.get(key);
   if (!maps) {
+    const height = bakeHeight(surface, side, assets);
     maps = {
       orm: bakeOrm(surface, side, assets),
-      normal: heightToNormal(bakeHeight(surface, side, assets), surface === 'bare-matte' ? 2.2 : 1.6),
+      normal: surface === 'bare-matte' ? beadblastNormal(height, assets) : heightToNormal(height, 1.6),
     };
     surfaceCache.set(key, maps);
   }

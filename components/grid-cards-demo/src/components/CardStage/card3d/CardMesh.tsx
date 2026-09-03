@@ -1,17 +1,12 @@
-"use client";
+'use client';
 
-import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import * as THREE from "three";
-import { CARD_H, CARD_W } from "@/apps/card/cardMetrics";
-import { brandStops } from "@/apps/shared/brand/brandPalette";
-import { isBare, stockOf, type CardDesign } from "@/data/design";
-import {
-  createCardGeometry,
-  MAT_BACK,
-  MAT_EDGE,
-  MAT_FRONT,
-} from "./cardGeometry";
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import * as THREE from 'three';
+import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
+import { brandStops } from '@/apps/shared/brand/brandPalette';
+import { isBare, materialOf, stockOf, type CardDesign } from '@/data/design';
+import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import {
   K,
   loadFaceAssets,
@@ -27,14 +22,8 @@ import {
   TEX_H,
   TEX_W,
   type FaceAssets,
-} from "./facePaint";
-import {
-  bakeEdge,
-  decorateOrm,
-  getSurfaceMaps,
-  surfaceOf,
-  type Surface,
-} from "./surfaceMaps";
+} from './facePaint';
+import { bakeEdge, decorateOrm, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -50,14 +39,11 @@ const PRINT_MS = 450;
 const PRINT_STEPS = 6;
 
 /** Per-surface material constants beyond the maps: the coat and the relief. */
-const SURFACE: Record<
-  Surface,
-  { clearcoat: number; clearcoatRoughness: number; normalScale: number }
-> = {
-  "print-matte": { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.6 },
-  "print-gloss": { clearcoat: 1, clearcoatRoughness: 0.08, normalScale: 0.35 },
-  "bare-matte": { clearcoat: 0, clearcoatRoughness: 0, normalScale: 1.4 },
-  "bare-gloss": { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.4 },
+const SURFACE: Record<Surface, { clearcoat: number; clearcoatRoughness: number; normalScale: number }> = {
+  'print-matte': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.6 },
+  'print-gloss': { clearcoat: 1, clearcoatRoughness: 0.08, normalScale: 0.35 },
+  'bare-matte': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 1.6 },
+  'bare-gloss': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.4 },
 };
 
 /** The image at `url` once loaded; null while loading, on failure, or with no url. */
@@ -82,10 +68,7 @@ function useLoadedImage(url: string | null): HTMLImageElement | null {
   return state.url === url ? state.img : null;
 }
 
-function canvasTexture(
-  c: HTMLCanvasElement,
-  srgb = false,
-): THREE.CanvasTexture {
+function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture {
   const t = new THREE.CanvasTexture(c);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
@@ -106,15 +89,7 @@ function canvasTexture(
  */
 const FOIL = { roughness: 0.15, envMapIntensity: 1.5 };
 
-function FoilMark({
-  assets,
-  backZ,
-  visible,
-}: {
-  assets: FaceAssets;
-  backZ: number;
-  visible: boolean;
-}) {
+function FoilMark({ assets, backZ, visible }: { assets: FaceAssets; backZ: number; visible: boolean }) {
   const scene = useThree((s) => s.scene);
   const material = useMemo(() => {
     const m = new THREE.MeshPhysicalMaterial({
@@ -149,12 +124,7 @@ function FoilMark({
   const cx = -((LOCKUP.x + LOCKUP.w / 2) / TEX_W - 0.5) * CARD_W;
   const cy = (0.5 - (LOCKUP.y + LOCKUP.h / 2) / TEX_H) * CARD_H;
   return (
-    <mesh
-      position={[cx, cy, backZ - 0.08]}
-      rotation={[0, Math.PI, 0]}
-      material={material}
-      visible={visible}
-    >
+    <mesh position={[cx, cy, backZ - 0.08]} rotation={[0, Math.PI, 0]} material={material} visible={visible}>
       <planeGeometry args={[w, h]} />
     </mesh>
   );
@@ -166,17 +136,14 @@ function FoilMark({
  * metalness, relief, foil) comes from the per-finish bakes. The parent group
  * is positioned and rotated by the stage.
  */
-export const CardMesh = forwardRef<
-  THREE.Group,
-  { state: CardMeshState; onReady?: () => void }
->(function CardMesh({ state, onReady }, ref) {
+export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?: () => void }>(function CardMesh(
+  { state, onReady },
+  ref,
+) {
   const invalidate = useThree((s) => s.invalidate);
   // Thickness follows the material, so the slab is rebuilt when it changes.
-  const cardMaterial = state.design.material;
-  const geometry = useMemo(
-    () => createCardGeometry(cardMaterial),
-    [cardMaterial],
-  );
+  const cardMaterial = materialOf(state.design);
+  const geometry = useMemo(() => createCardGeometry(cardMaterial), [cardMaterial]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   // The back face's plane (the bevel makes the slab deeper than its depth).
   const backZ = useMemo(() => {
@@ -190,16 +157,13 @@ export const CardMesh = forwardRef<
   // One canvas per face for the life of the mesh; repaints upload in place.
   const frontCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
   const backCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
-  const frontMap = useMemo(
-    () => canvasTexture(frontCanvas, true),
-    [frontCanvas],
-  );
+  const frontMap = useMemo(() => canvasTexture(frontCanvas, true), [frontCanvas]);
   const backMap = useMemo(() => canvasTexture(backCanvas, true), [backCanvas]);
 
   const materials = useMemo(() => {
     const face = () =>
       new THREE.MeshPhysicalMaterial({
-        color: "#ffffff",
+        color: '#ffffff',
         metalness: 1,
         roughness: 1,
       });
@@ -208,7 +172,7 @@ export const CardMesh = forwardRef<
     mats[MAT_FRONT] = face();
     // The edge reads its layers from a strip (albedo + roughness/metalness).
     mats[MAT_EDGE] = new THREE.MeshPhysicalMaterial({
-      color: "#ffffff",
+      color: '#ffffff',
       metalness: 1,
       roughness: 1,
     });
@@ -222,9 +186,7 @@ export const CardMesh = forwardRef<
   }, []);
 
   // Surface textures are cached per surface and face for the session.
-  const surfaceTex = useRef(
-    new Map<string, { orm: THREE.Texture; normal: THREE.Texture }>(),
-  );
+  const surfaceTex = useRef(new Map<string, { orm: THREE.Texture; normal: THREE.Texture }>());
 
   // Surface: print or bare metal, matte or gloss, on both faces.
   const surface = surfaceOf(state.design);
@@ -232,8 +194,8 @@ export const CardMesh = forwardRef<
     if (!assets) return;
     const c = SURFACE[surface];
     for (const [side, idx] of [
-      ["front", MAT_FRONT],
-      ["back", MAT_BACK],
+      ['front', MAT_FRONT],
+      ['back', MAT_BACK],
     ] as const) {
       const key = `${surface}|${side}`;
       let t = surfaceTex.current.get(key);
@@ -265,8 +227,8 @@ export const CardMesh = forwardRef<
     if (!base) return;
     decoTex.current?.dispose();
     decoTex.current = null;
-    const brandT = logoTreatment === "print" ? null : logoTreatment;
-    const artT = art && artTreatment === "spotGloss";
+    const brandT = logoTreatment === 'print' ? null : logoTreatment;
+    const artT = art && artTreatment === 'spotGloss';
     if (!brandT && !artT) {
       front.roughnessMap = base.orm;
       front.metalnessMap = base.orm;
@@ -285,28 +247,14 @@ export const CardMesh = forwardRef<
     }
     front.needsUpdate = true;
     invalidate();
-  }, [
-    assets,
-    surface,
-    state.design,
-    logoTreatment,
-    artTreatment,
-    logo,
-    art,
-    materials,
-    invalidate,
-  ]);
+  }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, materials, invalidate]);
 
   // Edge: the construction's layers, the printed skins in the card's deep tone
   // (or the stock's own face when nothing is printed).
   const stock = stockOf(state.design);
-  const edgeSkin = state.design.color
-    ? brandStops(state.design.color, state.design.colorEnd).deep
-    : stock.face;
+  const edgeSkin = state.design.color ? brandStops(state.design.color).deep : stock.face;
   const edgeCore = stock.core;
-  const edgeTex = useRef<{ albedo: THREE.Texture; orm: THREE.Texture } | null>(
-    null,
-  );
+  const edgeTex = useRef<{ albedo: THREE.Texture; orm: THREE.Texture } | null>(null);
   useEffect(() => {
     const strips = bakeEdge(cardMaterial, edgeCore, edgeSkin);
     edgeTex.current?.albedo.dispose();
@@ -356,7 +304,7 @@ export const CardMesh = forwardRef<
   const ready = useRef(false);
   useEffect(() => {
     if (!assets) return;
-    paintFront(frontCanvas.getContext("2d")!, {
+    paintFront(frontCanvas.getContext('2d')!, {
       design: state.design,
       logo,
       art,
@@ -388,7 +336,7 @@ export const CardMesh = forwardRef<
   useEffect(() => {
     if (!assets) return;
     paintBack(
-      backCanvas.getContext("2d")!,
+      backCanvas.getContext('2d')!,
       {
         design: state.design,
         personalized,
@@ -400,17 +348,7 @@ export const CardMesh = forwardRef<
     );
     backMap.needsUpdate = true;
     invalidate();
-  }, [
-    assets,
-    state.design,
-    personalized,
-    state.shown,
-    state.frozen,
-    state.closed,
-    backCanvas,
-    backMap,
-    invalidate,
-  ]);
+  }, [assets, state.design, personalized, state.shown, state.frozen, state.closed, backCanvas, backMap, invalidate]);
 
   useEffect(
     () => () => {
@@ -430,18 +368,8 @@ export const CardMesh = forwardRef<
 
   return (
     <group ref={ref}>
-      <mesh
-        geometry={geometry}
-        material={materials}
-        visible={assets !== null}
-      />
-      {assets && (
-        <FoilMark
-          assets={assets}
-          backZ={backZ}
-          visible={!isBare(state.design)}
-        />
-      )}
+      <mesh geometry={geometry} material={materials} visible={assets !== null} />
+      {assets && <FoilMark assets={assets} backZ={backZ} visible={!isBare(state.design)} />}
     </group>
   );
 });

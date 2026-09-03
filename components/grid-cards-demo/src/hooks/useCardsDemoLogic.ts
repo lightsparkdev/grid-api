@@ -25,7 +25,7 @@ import {
   type CardSpendLimits,
   type SpendRef,
 } from '@/data/cardApiCalls';
-import { initialDesign, stocksFor, type CardDesign } from '@/data/design';
+import { initialDesign, type CardDesign } from '@/data/design';
 import type { Entry } from '@/components/ApiPanel/types';
 import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
 
@@ -65,13 +65,7 @@ export function useCardsDemoLogic() {
   const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   const updateDesign = useCallback((patch: Partial<CardDesign>) => {
-    setDesign((d) => {
-      const next = { ...d, ...patch };
-      // Each material has its own stocks; switching material takes the first.
-      const stocks = stocksFor(next.material);
-      if (!stocks.some((s) => s.id === next.stock)) next.stock = stocks[0].id;
-      return next;
-    });
+    setDesign((d) => ({ ...d, ...patch }));
   }, []);
   // The latest design, readable from callbacks without re-binding them.
   const designRef = useRef(design);

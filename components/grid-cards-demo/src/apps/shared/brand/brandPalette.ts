@@ -34,24 +34,21 @@ function hsl(h: number, s: number, l: number): string {
 
 /** The brand color with a lighter and a deeper stop for the card face
  *  gradient. Falls back to the color itself for an unparseable value. */
-export function brandStops(color: string, colorEnd?: string): { color: string; light: string; deep: string } {
+export function brandStops(color: string): { color: string; light: string; deep: string } {
   const a = hexToHsl(color);
   if (!a) return { color, light: color, deep: color };
-  const b = (colorEnd && hexToHsl(colorEnd)) || a;
   return {
     color,
-    light: hsl(b.h, b.s, Math.min(0.92, b.l + 0.18)),
+    light: hsl(a.h, a.s, Math.min(0.92, a.l + 0.18)),
     deep: hsl(a.h, Math.min(1, a.s * 1.05), Math.max(0.06, a.l - 0.2)),
   };
 }
 
-/** `--brand-color` plus the light and deep stops (and `--brand-color-end` for
- *  two-tone swatches), for the phone chrome. */
-export function brandVars(color: string, colorEnd?: string): CSSProperties {
-  const s = brandStops(color, colorEnd);
+/** `--brand-color` plus the light and deep stops, for the phone chrome. */
+export function brandVars(color: string): CSSProperties {
+  const s = brandStops(color);
   return {
     '--brand-color': color,
-    '--brand-color-end': colorEnd ?? color,
     '--brand-color-light': s.light,
     '--brand-color-deep': s.deep,
   } as CSSProperties;

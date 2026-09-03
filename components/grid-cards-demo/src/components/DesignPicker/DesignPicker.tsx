@@ -1,22 +1,21 @@
-"use client";
+'use client';
 
-import clsx from "clsx";
-import { useEffect, useRef, type ChangeEvent, type CSSProperties } from "react";
-import { IconCrossSmall } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall";
-import { IconPlusSmall } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall";
-import { IconArrowUpSquare } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare";
+import clsx from 'clsx';
+import { useEffect, useRef, type ChangeEvent, type CSSProperties } from 'react';
+import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
+import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
+import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
 import {
   ART_TREATMENTS,
   brandColorOf,
   DESIGN_SWATCHES,
   FINISHES,
   LOGO_TREATMENTS,
-  MATERIALS,
+  STOCKS,
   stockOf,
-  stocksFor,
   type CardDesign,
-} from "@/data/design";
-import styles from "./DesignPicker.module.scss";
+} from '@/data/design';
+import styles from './DesignPicker.module.scss';
 
 interface DesignPickerProps {
   design: CardDesign;
@@ -26,13 +25,12 @@ interface DesignPickerProps {
 const MAX_NAME = 18;
 const MAX_CARDHOLDER = 24;
 
-function swatchStyle(color: string, colorEnd?: string) {
-  return {
-    background: colorEnd
-      ? `linear-gradient(135deg, ${color} 0%, ${colorEnd} 100%)`
-      : color,
-  };
+function swatchStyle(color: string) {
+  return { background: color };
 }
+
+/** The steel swatch: a sheen, so it reads as metal beside the plastics. */
+const STEEL_SWATCH = { background: 'linear-gradient(135deg, #e4e4e6 0%, #aaaaae 55%, #d6d6d9 100%)' };
 
 /** A row of text choices divided by hairlines (Material, Finish, treatments). */
 function Choices<T extends string>({
@@ -50,21 +48,14 @@ function Choices<T extends string>({
   dense?: boolean;
 }) {
   return (
-    <div
-      className={clsx(styles.segments, dense && styles.segmentsDense)}
-      role="radiogroup"
-      aria-label={label}
-    >
+    <div className={clsx(styles.segments, dense && styles.segmentsDense)} role="radiogroup" aria-label={label}>
       {options.map((o) => (
         <button
           key={o.id}
           type="button"
           role="radio"
           aria-checked={value === o.id}
-          className={clsx(
-            styles.segment,
-            value === o.id && styles.segmentActive,
-          )}
+          className={clsx(styles.segment, value === o.id && styles.segmentActive)}
           onClick={() => onChange(o.id)}
         >
           {o.label}
@@ -105,7 +96,7 @@ function UploadRow({
     const next = URL.createObjectURL(file);
     objectUrl.current = next;
     onPick(next);
-    e.target.value = "";
+    e.target.value = '';
   };
 
   const clear = () => {
@@ -128,42 +119,24 @@ function UploadRow({
           </button>
         </>
       ) : (
-        <button
-          type="button"
-          className={styles.logoUpload}
-          onClick={() => fileRef.current?.click()}
-        >
+        <button type="button" className={styles.logoUpload} onClick={() => fileRef.current?.click()}>
           <IconArrowUpSquare size={16} aria-hidden />
           {label}
         </button>
       )}
-      <input
-        ref={fileRef}
-        type="file"
-        accept={accept}
-        className={styles.fileInput}
-        onChange={onPicked}
-        tabIndex={-1}
-      />
+      <input ref={fileRef} type="file" accept={accept} className={styles.fileInput} onChange={onPicked} tabIndex={-1} />
     </div>
   );
 }
 
 /**
  * The Design section, in the order a card is made: the card itself (material,
- * stock, finish), what is printed on it (color or none, art, logo, and their
+ * finish), what is printed on it (color or none, art, logo, and their
  * decoration), and the details that go on it (program, cardholder).
  */
 export function DesignPicker({ design, onChange }: DesignPickerProps) {
-  const stocks = stocksFor(design.material);
   const stock = stockOf(design);
-  const activeSwatch = design.color
-    ? DESIGN_SWATCHES.find(
-        (s) =>
-          s.color === design.color &&
-          (s.colorEnd ?? s.color) === (design.colorEnd ?? design.color),
-      )
-    : undefined;
+  const activeSwatch = design.color ? DESIGN_SWATCHES.find((s) => s.color === design.color) : undefined;
   const custom = design.color !== null && !activeSwatch;
   const brand = brandColorOf(design);
 
@@ -172,40 +145,22 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
       <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Material</span>
-          <Choices
-            label="Card material"
-            value={design.material}
-            options={MATERIALS}
-            onChange={(material) => onChange({ material })}
-          />
-        </div>
-        {stocks.length > 1 && (
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Stock</span>
-            <div
-              className={styles.swatches}
-              role="radiogroup"
-              aria-label="Card stock"
-            >
-              {stocks.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={stock.id === s.id}
-                  aria-label={s.label}
-                  title={s.label}
-                  className={clsx(
-                    styles.swatch,
-                    stock.id === s.id && styles.swatchActive,
-                  )}
-                  style={swatchStyle(s.face, s.metal ? s.core : undefined)}
-                  onClick={() => onChange({ stock: s.id })}
-                />
-              ))}
-            </div>
+          <div className={styles.swatches} role="radiogroup" aria-label="Card material">
+            {STOCKS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="radio"
+                aria-checked={stock.id === s.id}
+                aria-label={s.label}
+                title={s.label}
+                className={clsx(styles.swatch, stock.id === s.id && styles.swatchActive)}
+                style={s.material === 'metal' ? STEEL_SWATCH : swatchStyle(s.face)}
+                onClick={() => onChange({ stock: s.id })}
+              />
+            ))}
           </div>
-        )}
+        </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Finish</span>
           <Choices
@@ -220,24 +175,16 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
       <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Color</span>
-          <div
-            className={styles.swatches}
-            role="radiogroup"
-            aria-label="Print color"
-          >
+          <div className={styles.swatches} role="radiogroup" aria-label="Print color">
             <button
               type="button"
               role="radio"
               aria-checked={design.color === null}
               aria-label="None"
-              title={`None (bare ${stock.label.toLowerCase()} ${design.material})`}
-              className={clsx(
-                styles.swatch,
-                styles.swatchNone,
-                design.color === null && styles.swatchActive,
-              )}
+              title={`None (bare ${stock.label.toLowerCase()})`}
+              className={clsx(styles.swatch, styles.swatchNone, design.color === null && styles.swatchActive)}
               style={swatchStyle(stock.face)}
-              onClick={() => onChange({ color: null, colorEnd: undefined })}
+              onClick={() => onChange({ color: null })}
             />
             {DESIGN_SWATCHES.map((s) => (
               <button
@@ -247,35 +194,22 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
                 aria-checked={activeSwatch?.id === s.id}
                 aria-label={s.label}
                 title={s.label}
-                className={clsx(
-                  styles.swatch,
-                  activeSwatch?.id === s.id && styles.swatchActive,
-                )}
-                style={swatchStyle(s.color, s.colorEnd)}
-                onClick={() =>
-                  onChange({ color: s.color, colorEnd: s.colorEnd })
-                }
+                className={clsx(styles.swatch, activeSwatch?.id === s.id && styles.swatchActive)}
+                style={swatchStyle(s.color)}
+                onClick={() => onChange({ color: s.color })}
               />
             ))}
             <label
-              className={clsx(
-                styles.swatch,
-                styles.swatchCustom,
-                custom && styles.swatchActive,
-              )}
+              className={clsx(styles.swatch, styles.swatchCustom, custom && styles.swatchActive)}
               title="Custom color"
-              style={
-                custom ? swatchStyle(design.color!, design.colorEnd) : undefined
-              }
+              style={custom ? swatchStyle(design.color!) : undefined}
             >
               <input
                 type="color"
                 className={styles.colorInput}
-                value={design.color ?? brand.color}
+                value={design.color ?? brand}
                 aria-label="Custom color"
-                onChange={(e) =>
-                  onChange({ color: e.target.value, colorEnd: undefined })
-                }
+                onChange={(e) => onChange({ color: e.target.value })}
               />
               {!custom ? <IconPlusSmall size={16} aria-hidden /> : null}
             </label>
@@ -307,7 +241,7 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
             url={design.logoUrl}
             accept="image/svg+xml,image/png,image/webp"
             label="Upload SVG or PNG"
-            previewStyle={swatchStyle(brand.color, brand.colorEnd)}
+            previewStyle={swatchStyle(brand)}
             onPick={(url) => onChange({ logoUrl: url })}
           />
         </div>
