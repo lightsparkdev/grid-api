@@ -23323,7 +23323,7 @@ components:
               $ref: '#/components/schemas/TransactionSourceOneOf'
             receivedAmount:
               $ref: '#/components/schemas/CurrencyAmount'
-              description: 'Amount received in the recipient''s currency. Always present, except on a rule-based account sweep that was never priced: that transaction is created when the deposit settles, so a sweep failing before its quote locks a rate has no received amount to report.'
+              description: Amount received in the recipient's currency. This is only absent for rule-based account sweeps if the sweep couldn't be quoted. It's always present otherwise.
             fees:
               type: integer
               format: int64
