@@ -1,6 +1,9 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 @use '../../styles/breakpoints' as *;
 
-/* Same tile surface as the other pickers (UseCasePicker / FlowPicker). */
+/* Same tile surface as the other pickers (UseCasePicker / FlowPicker). Every
+   piece of text in the tile is the `label` style the flow tiles use: row
+   labels in secondary, values in primary. */
 .group {
   corner-shape: var(--corner-shape);
   --tile-bg: var(--surface-base);
@@ -31,7 +34,8 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  min-height: 52px;
+  /* Same height as a flow tile (24px icon + md padding). */
+  min-height: 56px;
   padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: var(--stroke-xs) solid var(--border-primary);
 
@@ -41,23 +45,18 @@
 }
 
 .rowLabel {
-  flex: 0 0 52px;
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-xs);
-  line-height: var(--font-leading-18);
-  color: var(--text-tertiary);
+  @include label;
+  flex: 0 0 56px;
+  color: var(--text-secondary);
   font-feature-settings: 'salt' 1;
 }
 
 .nameInput {
   all: unset;
   box-sizing: border-box;
+  @include label;
   flex: 1;
   min-width: 0;
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--font-leading-20);
   color: var(--text-primary);
   font-feature-settings: 'salt' 1;
   text-align: right;
@@ -110,11 +109,17 @@
   display: grid;
   place-items: center;
   background: var(--tile-bg);
-  color: var(--text-tertiary);
-  font-size: 14px;
-  line-height: 1;
+  color: var(--text-secondary);
   border: var(--stroke-xs) dashed var(--border-primary);
   box-shadow: none;
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
 }
 
 .colorInput {
@@ -134,12 +139,11 @@
 .segment {
   all: unset;
   box-sizing: border-box;
-  padding: 4px 10px;
+  @include label;
+  padding: var(--spacing-3xs) var(--spacing-xs);
   border-radius: var(--corner-radius-sm);
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-xs);
-  line-height: var(--font-leading-18);
   color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
   cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease;
 
@@ -171,15 +175,18 @@
 .logoClear {
   all: unset;
   box-sizing: border-box;
+  @include label;
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-3xs);
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-xs);
-  line-height: var(--font-leading-18);
   color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
   cursor: pointer;
   transition: color 120ms ease;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
 
   @media (hover: hover) {
     &:hover:not(:disabled) {

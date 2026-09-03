@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import { useEffect, useRef, type ChangeEvent } from 'react';
 import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
+import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
 import { DESIGN_SWATCHES, FINISHES, type CardDesign, type CardFinish } from '@/data/design';
 import styles from './DesignPicker.module.scss';
@@ -10,8 +11,6 @@ import styles from './DesignPicker.module.scss';
 interface DesignPickerProps {
   design: CardDesign;
   onChange: (patch: Partial<CardDesign>) => void;
-  /** The active skin has its own art direction — show the controls muted and
-   *  inert so the section still reads as "this is where design lives". */
 }
 
 const MAX_NAME = 18;
@@ -98,7 +97,7 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
               aria-label="Custom color"
               onChange={(e) => onChange({ color: e.target.value, colorEnd: undefined })}
             />
-            {activeSwatch ? <span aria-hidden>+</span> : null}
+            {activeSwatch ? <IconPlusSmall size={16} aria-hidden /> : null}
           </label>
         </div>
       </div>
@@ -131,7 +130,7 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
                 <img src={design.logoUrl} alt="" />
               </span>
               <button type="button" className={styles.logoClear} onClick={clearLogo}>
-                <IconCrossSmall size={14} />
+                <IconCrossSmall size={16} aria-hidden />
                 Remove
               </button>
             </>
@@ -141,7 +140,7 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
               className={styles.logoUpload}
               onClick={() => fileRef.current?.click()}
             >
-              <IconArrowUpSquare size={16} />
+              <IconArrowUpSquare size={16} aria-hidden />
               Upload SVG or PNG
             </button>
           )}
