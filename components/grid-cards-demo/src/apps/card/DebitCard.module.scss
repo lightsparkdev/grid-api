@@ -2,16 +2,17 @@
 
 /* Figma 2143:40916 — shadow on shell; filter: drop-shadow breaks sheet stacking.
    No fill/overflow here: the inner button's clip-path is the only shape, so the
-   shell can't leak a mismatched-squircle edge. Radius is kept for the shadow. */
+   shell can't leak a mismatched-squircle edge. Radius is kept for the shadow.
+   The shadow falls away from the studio key (--shadow-x/y from the stage). */
 .cardShell {
   width: 100%;
   border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
   corner-shape: var(--corner-shape);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-x, 3px) var(--shadow-y, 8px) 24px rgba(0, 0, 0, 0.2);
 
   /* Black shadow over the dark base needs more weight to read. */
   :global([data-theme='dark']) & {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-x, 3px) var(--shadow-y, 8px) 24px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -36,17 +37,10 @@
   text-align: left;
 }
 
-/* The face: the brand color with a soft light sweep top-left and depth
-   bottom-right. Stops come from brandVars() on the phone root. */
-.face {
-  position: absolute;
-  inset: 0;
+/* The surface (CardMaterial) sits under the copy. */
+.material {
   z-index: 0;
-  background:
-    radial-gradient(120% 100% at 0% 0%, var(--brand-color-light, #4db3e8) 0%, transparent 55%),
-    radial-gradient(110% 90% at 100% 100%, var(--brand-color-deep, #005882) 0%, transparent 60%),
-    var(--brand-color, #0083c3);
-  transition: background 0.4s ease, filter 0.6s ease;
+  transition: filter 0.6s ease;
 }
 
 .top,
@@ -115,56 +109,12 @@
   height: 20px;
 }
 
-/* ── Finishes ──────────────────────────────────────────────────────────────
-   Surface treatments layered over the brand face. The finish layer sits under
-   the copy (z 1) and over the face (z 0). */
 .logo {
   display: block;
   max-width: 96px;
   max-height: 28px;
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
-}
-
-.finishLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  transition: opacity 0.4s ease, background 0.4s ease;
-}
-
-/* Matte: soft vignette, no gloss. */
-.finish-matte .finishLayer {
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.06), transparent 60%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.18) 100%);
-}
-
-/* Metal: brushed stripes + a diagonal specular band. */
-.finish-metal .finishLayer {
-  background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.28) 46%, rgba(255, 255, 255, 0.06) 52%, rgba(255, 255, 255, 0) 70%),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, rgba(0, 0, 0, 0.05) 1px 2px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.22));
-  mix-blend-mode: normal;
-}
-
-.finish-metal .face {
-  filter: saturate(0.55) contrast(1.05);
-}
-
-/* Glass: frosted translucent skin with a hairline inner highlight. */
-.finish-glass .finishLayer {
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0.22));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(6px) saturate(1.2);
-  -webkit-backdrop-filter: blur(6px) saturate(1.2);
-}
-
-.finish-glass .face {
-  filter: blur(6px);
 }
 
 /* ── Card state (card hub) ──────────────────────────────────────────────── */
@@ -192,9 +142,8 @@
   transform: scale(1);
 }
 
-.cardFrozen .face {
+.cardFrozen .material {
   filter: saturate(0.35) brightness(1.1);
-  transition: filter 0.6s ease;
 }
 
 .cardFrozen .primary,
@@ -207,7 +156,7 @@
   transition: filter 0.6s ease;
 }
 
-.cardClosed .face {
+.cardClosed .material {
   opacity: 0.5;
 }
 

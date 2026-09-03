@@ -64,26 +64,13 @@
 
 .backFace {
   transform: rotateY(180deg);
-  /* Same shadow as the front (DebitCard's shell). */
+  /* Same shadow as the front (DebitCard's shell), mirrored with the face. */
   border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: calc(var(--shadow-x, 3px) * -1) var(--shadow-y, 8px) 24px rgba(0, 0, 0, 0.2);
 
   :global([data-theme='dark']) & {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: calc(var(--shadow-x, 3px) * -1) var(--shadow-y, 8px) 24px rgba(0, 0, 0, 0.5);
   }
-}
-
-/* Cursor-following light on the front face. Clipped to the card by the same
-   squircle as DebitCard (it sits inside the clipped button's shell box). */
-.specular {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
-  corner-shape: var(--corner-shape);
-  overflow: hidden;
 }
 
 /* ── Caption ─────────────────────────────────────────────────────────────── */

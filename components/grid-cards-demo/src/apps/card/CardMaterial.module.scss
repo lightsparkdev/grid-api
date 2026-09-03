@@ -1,0 +1,209 @@
+/* The card surface. Layers read the lighting variables written per frame by
+   CardStage (cardLighting.ts). The fallbacks are the rest pose under the
+   studio key, so a face rendered without a stage is still lit. */
+.material {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  isolation: isolate;
+  overflow: hidden;
+
+  --spec-x: 75px;
+  --spec-y: -54px;
+  --spec-r: 1;
+  --spec-a: 0.9;
+  --diffuse: 0.95;
+  --env-x: 50%;
+  --env-y: 50%;
+  --fresnel: 0;
+  --lx: -0.54;
+  --ly: -0.84;
+
+  /* Material constants; the finishes below override them. */
+  --shade-k: 0.5; /* how dark the face goes as N·L falls */
+  --env-a: 0.16; /* environment reflection strength */
+  --spec-w: 260px; /* highlight lobe size at spec-r 1 */
+  --spec-h: 220px;
+  --spec-core: 0.22; /* highlight peak alpha */
+  --grain-a: 0.18; /* grain sparkle inside the highlight */
+  --grain-size: 128px;
+  --brushed-a: 0;
+  --rim-a: 0.35;
+
+  > span {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+}
+
+/* Base: the brand color, lighter toward the top-left where the key sits,
+   deeper toward the bottom-right. Stops come from brandVars(). */
+.base {
+  z-index: 0;
+  background:
+    radial-gradient(120% 100% at 0% 0%, var(--brand-color-light, #4db3e8) 0%, transparent 55%),
+    radial-gradient(110% 90% at 100% 100%, var(--brand-color-deep, #005882) 0%, transparent 60%),
+    var(--brand-color, #0083c3);
+  transition: background 0.4s ease, filter 0.6s ease;
+}
+
+.back .base {
+  background:
+    radial-gradient(120% 100% at 100% 0%, var(--brand-color, #0083c3) 0%, transparent 55%),
+    var(--brand-color-deep, #005882);
+}
+
+/* Lambert: the face darkens as it turns from the key. */
+.shade {
+  z-index: 1;
+  background: rgb(0 0 0 / calc((1 - var(--diffuse)) * var(--shade-k)));
+}
+
+/* Brushed metal: anisotropic streaks across the whole face, faint on their
+   own; the highlight and the environment ride on top of them. */
+.brushed {
+  z-index: 2;
+  background: url('/assets/card/brushed.svg') 0 0 / 512px 128px repeat;
+  mix-blend-mode: overlay;
+  opacity: var(--brushed-a);
+}
+
+/* Environment: a vertical studio (bright ceiling and softbox, graphite floor)
+   sampled at the reflected view direction. The image is oversized so a tilt
+   slides a different band of it across the face. Grazing angles reflect more
+   (Fresnel), so the layer strengthens as the card turns edge-on. */
+.env {
+  z-index: 3;
+  background-image: linear-gradient(
+    180deg,
+    #8a8a8e 0%,
+    #d9d9dc 22%,
+    #ffffff 30%,
+    #e6e6e9 36%,
+    #8f8f93 46%,
+    #4a4a4e 58%,
+    #2a2a2e 74%,
+    #1c1c20 100%
+  );
+  background-size: 260% 260%;
+  background-position: var(--env-x) var(--env-y);
+  mix-blend-mode: overlay;
+  opacity: calc(var(--env-a) + var(--fresnel) * 0.9);
+}
+
+/* The key light's mirror highlight: a lobe centered where the solve put it,
+   sized by the finish's roughness and the light's distance. */
+.spec {
+  z-index: 4;
+  background: radial-gradient(
+    ellipse calc(var(--spec-r) * var(--spec-w)) calc(var(--spec-r) * var(--spec-h)) at var(--spec-x) var(--spec-y),
+    rgb(255 255 255 / var(--spec-core)) 0%,
+    rgb(255 255 255 / calc(var(--spec-core) * 0.45)) 32%,
+    rgb(255 255 255 / calc(var(--spec-core) * 0.12)) 60%,
+    transparent 100%
+  );
+  mix-blend-mode: screen;
+  opacity: var(--spec-a);
+}
+
+/* Grain that only shows inside the highlight, where a real surface's
+   micro-facets catch the key. */
+.grain {
+  z-index: 5;
+  background: url('/assets/card/grain.svg') 0 0 / var(--grain-size) var(--grain-size) repeat;
+  mask-image: radial-gradient(
+    ellipse calc(var(--spec-r) * var(--spec-w) * 1.3) calc(var(--spec-r) * var(--spec-h) * 1.3) at var(--spec-x) var(--spec-y),
+    #000 0%,
+    rgb(0 0 0 / 0.5) 45%,
+    transparent 100%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse calc(var(--spec-r) * var(--spec-w) * 1.3) calc(var(--spec-r) * var(--spec-h) * 1.3) at var(--spec-x) var(--spec-y),
+    #000 0%,
+    rgb(0 0 0 / 0.5) 45%,
+    transparent 100%
+  );
+  mix-blend-mode: hard-light;
+  opacity: calc(var(--grain-a) * var(--spec-a));
+}
+
+/* Rim: the edge facing the key catches a hairline of light. */
+.rim {
+  z-index: 6;
+  box-shadow: inset calc(var(--lx) * -1px) calc(var(--ly) * -1px) 1px rgb(255 255 255 / var(--rim-a));
+}
+
+/* ── Finishes ─────────────────────────────────────────────────────────────── */
+
+/* Matte PVC: broad soft highlight, little environment, fine grain. */
+.finish-matte {
+  --shade-k: 0.5;
+  --env-a: 0.14;
+  --spec-w: 300px;
+  --spec-h: 240px;
+  --spec-core: 0.2;
+  --grain-a: 0.16;
+  --grain-size: 96px;
+  --rim-a: 0.3;
+}
+
+/* Brushed metal: anisotropic lobe stretched along the brushing, strong
+   environment, coarse sparkle, streaks. The color desaturates toward alloy. */
+.finish-metal {
+  --shade-k: 0.7;
+  --env-a: 0.55;
+  --spec-w: 420px;
+  --spec-h: 120px;
+  --spec-core: 0.5;
+  --grain-a: 0.55;
+  --grain-size: 160px;
+  --brushed-a: 0.45;
+  --rim-a: 0.6;
+}
+
+.finish-metal .base {
+  filter: saturate(0.6) contrast(1.05);
+}
+
+/* Gloss (clear coat over the color): a tight bright core inside a soft haze,
+   sharp environment, no grain. */
+.finish-glass {
+  --shade-k: 0.35;
+  --env-a: 0.4;
+  --spec-w: 150px;
+  --spec-h: 130px;
+  --spec-core: 0.85;
+  --grain-a: 0;
+  --rim-a: 0.7;
+}
+
+.finish-glass .spec {
+  background:
+    radial-gradient(
+      ellipse calc(var(--spec-r) * 44px) calc(var(--spec-r) * 38px) at var(--spec-x) var(--spec-y),
+      rgb(255 255 255 / 0.95) 0%,
+      rgb(255 255 255 / 0.4) 40%,
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse calc(var(--spec-r) * 320px) calc(var(--spec-r) * 260px) at var(--spec-x) var(--spec-y),
+      rgb(255 255 255 / 0.22) 0%,
+      rgb(255 255 255 / 0.06) 50%,
+      transparent 100%
+    );
+}
+
+.finish-glass .env {
+  background-image: linear-gradient(
+    180deg,
+    #9a9a9e 0%,
+    #f2f2f4 24%,
+    #ffffff 29%,
+    #f2f2f4 33%,
+    #8f8f93 44%,
+    #3a3a3e 58%,
+    #202024 100%
+  );
+}

@@ -17,15 +17,6 @@
   --ios-font-family: var(--font-family-sf-pro);
 }
 
-.face {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background:
-    radial-gradient(120% 100% at 100% 0%, var(--brand-color, #0083c3) 0%, transparent 55%),
-    var(--brand-color-deep, #005882);
-}
-
 /* A quiet magstripe band — the tell that this is the back. */
 .stripe {
   position: absolute;

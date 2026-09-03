@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import NumericText from '@/components/NumericText';
 import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
+import { CardMaterial } from './CardMaterial';
 import styles from './CardBack.module.scss';
 
 /** The details the processor's embed would render (`POST /cards/{id}/reveal`). */
@@ -40,7 +41,7 @@ export function CardBack({ revealed }: CardBackProps) {
 
   return (
     <div ref={clip.ref} style={clip.style} className={styles.back} aria-hidden>
-      <span className={styles.face} />
+      <CardMaterial finish={design.finish} side="back" />
       <span className={styles.stripe} />
       <div className={styles.body}>
         <span className={styles.pan}>

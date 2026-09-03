@@ -6,6 +6,7 @@ import { TextMorph } from 'torph/react';
 import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { cubicBezierCss, easeOutSwift } from '@/lib/easing';
+import { CardMaterial } from './CardMaterial';
 import styles from './DebitCard.module.scss';
 
 const LABEL_MORPH_MS = 280;
@@ -59,16 +60,11 @@ export function DebitCard({
       <div
         ref={cardClip.ref}
         style={cardClip.style}
-        className={clsx(
-          styles.card,
-          styles[`finish-${design.finish}`],
-          frozen && styles.cardFrozen,
-          closed && styles.cardClosed,
-        )}
+        className={clsx(styles.card, frozen && styles.cardFrozen, closed && styles.cardClosed)}
         role="img"
         aria-label={`${programName} card`}
       >
-        <span className={styles.face} aria-hidden />
+        <CardMaterial finish={design.finish} side="front" className={styles.material} />
         <div className={styles.top}>
           <TextMorph
             as="span"
@@ -104,7 +100,6 @@ export function DebitCard({
             />
           </div>
         </div>
-        <span className={styles.finishLayer} aria-hidden />
         {/* Frost creeps in over the face when the card is frozen. */}
         <span className={clsx(styles.frost, frozen && styles.frostOn)} aria-hidden />
         {chip && (

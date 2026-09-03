@@ -12,11 +12,10 @@ import { formatUsdCents, type CardHome } from '@/apps/shared/card';
 import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { FUNDING_SOURCE_CENTS } from '@/data/actions';
 import type { CardDesign } from '@/data/design';
+import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
+import { applyFaceLight, SHADOW_OFFSET, solveFaceLight } from './cardLighting';
 import styles from './CardStage.module.scss';
 
-/** The card's intrinsic size — the phone screen (402) minus its 16px gutters. */
-export const CARD_W = 370;
-export const CARD_H = 232;
 /** Largest the card gets on stage, relative to its size in the phone. */
 const MAX_SCALE = 1.4;
 const MIN_SCALE = 0.55;
@@ -59,12 +58,25 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
   const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const frontRef = useRef<HTMLDivElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
 
   const { issued, issuing, card, isDeclined } = home;
   const revealed = card.sheet === 'details';
   const phoneUp = bootProgress > 0;
 
-  // ── Position loop ──────────────────────────────────────────────────────────
+  // ── Cursor tilt + flip ─────────────────────────────────────────────────────
+  const rotateX = useMotionValue(0);
+  const rotateY = useMotionValue(0);
+  const tiltX = useSpring(rotateX, TILT_SPRING);
+  const tiltY = useSpring(rotateY, TILT_SPRING);
+  const flip = useSpring(revealed ? 180 : 0, FLIP_SPRING);
+  useEffect(() => {
+    flip.set(revealed ? 180 : 0);
+  }, [revealed, flip]);
+  const rotateYTotal = useTransform([tiltY, flip], ([a, b]) => (a as number) + (b as number));
+
+  // ── Position + lighting loop ───────────────────────────────────────────────
   // Live inputs for the rAF loop without re-subscribing it.
   const live = useRef({ t: 0 });
   live.current.t = easeInOutCubic(bootProgress);
@@ -80,6 +92,10 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
       const root = rootRef.current;
       const cardEl = cardRef.current;
       if (!root || !cardEl) return;
+      // Light both faces for the pose the tilt element is showing this frame.
+      const pose = { rotateX: tiltX.get(), rotateY: rotateYTotal.get() };
+      if (frontRef.current) applyFaceLight(frontRef.current, solveFaceLight(pose, 'front'));
+      if (backRef.current) applyFaceLight(backRef.current, solveFaceLight(pose, 'back'));
       const r = root.getBoundingClientRect();
       const z = r;
       // Rest position: centered on the stage, scaled to fit it.
@@ -117,25 +133,9 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+    // The motion values are stable for the component's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // ── Cursor tilt + specular ─────────────────────────────────────────────────
-  const rotateX = useMotionValue(0);
-  const rotateY = useMotionValue(0);
-  const tiltX = useSpring(rotateX, TILT_SPRING);
-  const tiltY = useSpring(rotateY, TILT_SPRING);
-  const flip = useSpring(revealed ? 180 : 0, FLIP_SPRING);
-  useEffect(() => {
-    flip.set(revealed ? 180 : 0);
-  }, [revealed, flip]);
-  const rotateYTotal = useTransform([tiltY, flip], ([a, b]) => (a as number) + (b as number));
-  const glowX = useMotionValue(50);
-  const glowY = useMotionValue(30);
-  const specular = useTransform(
-    [glowX, glowY],
-    ([gx, gy]) =>
-      `radial-gradient(60% 80% at ${gx}% ${gy}%, rgba(255,255,255,0.28), rgba(255,255,255,0.06) 40%, transparent 70%)`,
-  );
 
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     if (reduceMotion || live.current.t > 0) return;
@@ -144,14 +144,10 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
     const py = (e.clientY - b.top) / b.height - 0.5;
     rotateY.set(px * TILT_DEG * 2);
     rotateX.set(-py * TILT_DEG * 2);
-    glowX.set(50 + px * 60);
-    glowY.set(30 + py * 60);
   };
   const onPointerLeave = () => {
     rotateX.set(0);
     rotateY.set(0);
-    glowX.set(50);
-    glowY.set(30);
   };
 
   // ── Caption ────────────────────────────────────────────────────────────────
@@ -168,7 +164,15 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
       : null;
 
   return (
-    <div ref={rootRef} className={styles.root} style={brandVars(design.color, design.colorEnd)}>
+    <div
+      ref={rootRef}
+      className={styles.root}
+      style={{
+        ...brandVars(design.color, design.colorEnd),
+        ['--shadow-x' as string]: `${SHADOW_OFFSET.x.toFixed(1)}px`,
+        ['--shadow-y' as string]: `${SHADOW_OFFSET.y.toFixed(1)}px`,
+      }}
+    >
       <BrandProvider value={design}>
         {/* The card: positioned per frame (outer), floats (mid), tilts + flips (inner). */}
         <div
@@ -185,7 +189,7 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
               animate={isDeclined ? { x: [0, -12, 10, -7, 4, 0] } : { x: 0 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              <div className={styles.front}>
+              <div ref={frontRef} className={styles.front}>
                 <DebitCard
                   issued={issued}
                   issuing={issuing}
@@ -193,9 +197,8 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
                   closed={card.closed}
                   inWallet={card.inWallet}
                 />
-                <motion.span className={styles.specular} style={{ background: specular }} aria-hidden />
               </div>
-              <div className={styles.backFace}>
+              <div ref={backRef} className={styles.backFace}>
                 <CardBack revealed={revealed && card.revealed} />
               </div>
             </motion.div>
