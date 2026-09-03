@@ -7,6 +7,7 @@ import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { cubicBezierCss, easeOutSwift } from '@/lib/easing';
 import { CardMaterial } from './CardMaterial';
+import { Chip } from './Chip';
 import styles from './DebitCard.module.scss';
 
 const LABEL_MORPH_MS = 280;
@@ -81,6 +82,7 @@ export function DebitCard({
             <span className={styles.secondary}>VIRTUAL</span>
           )}
         </div>
+        <Chip />
         <div className={styles.bottom}>
           <span
             className={clsx(styles.primary, styles.cardNumber, !issued && styles.cardNumberHidden)}

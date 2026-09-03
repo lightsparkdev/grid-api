@@ -100,8 +100,10 @@
   background: radial-gradient(
     ellipse calc(var(--spec-r) * var(--spec-w)) calc(var(--spec-r) * var(--spec-h)) at var(--spec-x) var(--spec-y),
     rgb(255 255 255 / var(--spec-core)) 0%,
-    rgb(255 255 255 / calc(var(--spec-core) * 0.45)) 32%,
-    rgb(255 255 255 / calc(var(--spec-core) * 0.12)) 60%,
+    rgb(255 255 255 / calc(var(--spec-core) * 0.6)) 22%,
+    rgb(255 255 255 / calc(var(--spec-core) * 0.25)) 48%,
+    rgb(255 255 255 / calc(var(--spec-core) * 0.07)) 72%,
+    rgb(255 255 255 / calc(var(--spec-core) * 0.015)) 88%,
     transparent 100%
   );
   mix-blend-mode: screen;
@@ -190,7 +192,9 @@
     radial-gradient(
       ellipse calc(var(--spec-r) * 320px) calc(var(--spec-r) * 260px) at var(--spec-x) var(--spec-y),
       rgb(255 255 255 / 0.22) 0%,
-      rgb(255 255 255 / 0.06) 50%,
+      rgb(255 255 255 / 0.1) 30%,
+      rgb(255 255 255 / 0.035) 60%,
+      rgb(255 255 255 / 0.008) 85%,
       transparent 100%
     );
 }

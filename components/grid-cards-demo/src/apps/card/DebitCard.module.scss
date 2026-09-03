@@ -1,4 +1,5 @@
 @use '../shared/typography/ios-type-mixins' as ios;
+@use './card-units' as *;
 
 /* Figma 2143:40916 — shadow on shell; filter: drop-shadow breaks sheet stacking.
    No fill/overflow here: the inner button's clip-path is the only shape, so the
@@ -26,7 +27,8 @@
   width: 100%;
   height: 232px;
   margin: 0;
-  padding: 20px 24px 24px;
+  /* Figma card spec insets: 54 px top and bottom, 56 px sides. */
+  padding: fig(54) fig(56);
   border: 0;
   /* clip-path via useSquircleClip — border-radius must stay 0 (see fill-button). */
   border-radius: 0;
