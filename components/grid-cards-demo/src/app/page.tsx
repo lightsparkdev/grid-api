@@ -118,6 +118,8 @@ export default function Page() {
         <ConfigurePanel
           design={logic.design}
           onDesignChange={logic.updateDesign}
+          preset={logic.preset}
+          onPresetSelect={logic.selectPreset}
           wallet={logic.wallet}
           running={logic.running}
           onAction={onConfigureAction}

@@ -67,6 +67,15 @@
   width: 100%;
 }
 
+/* The platform tiles stack over the Design groups at the groups' own gap, so
+   they read as the section's first group. */
+.designGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
 /* Reset control, right-aligned in the Explore flows divider. Matches the section
    label exactly (type + tertiary color, no padding) so it never changes the
    divider height. */

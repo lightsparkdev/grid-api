@@ -4,14 +4,18 @@ import { IconArrowRotateCounterClockwise } from '@central-icons-react/round-outl
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { DesignPicker } from '@/components/DesignPicker/DesignPicker';
+import { PresetPicker } from '@/components/PresetPicker/PresetPicker';
 import { FlowPicker } from '@/components/FlowPicker/FlowPicker';
 import { initialDesign, type CardDesign } from '@/data/design';
+import type { PresetId } from '@/data/presets';
 import type { ActionId, WalletState } from '@/data/actions';
 import styles from './ConfigurePanel.module.scss';
 
 interface ConfigurePanelProps {
   design: CardDesign;
   onDesignChange: (patch: Partial<CardDesign>) => void;
+  preset: PresetId;
+  onPresetSelect: (id: PresetId) => void;
   wallet: WalletState;
   running: boolean;
   onAction: (id: ActionId) => void;
@@ -26,6 +30,8 @@ function isDirty(design: CardDesign): boolean {
 export function ConfigurePanel({
   design,
   onDesignChange,
+  preset,
+  onPresetSelect,
   wallet,
   running,
   onAction,
@@ -49,7 +55,11 @@ export function ConfigurePanel({
                 ) : null
               }
             />
-            <DesignPicker design={design} onChange={onDesignChange} />
+            {/* The platform tiles are the Design section's first group. */}
+            <div className={styles.designGroups}>
+              <PresetPicker selected={preset} onSelect={onPresetSelect} />
+              <DesignPicker design={design} onChange={onDesignChange} />
+            </div>
           </section>
 
           <section className={styles.section}>

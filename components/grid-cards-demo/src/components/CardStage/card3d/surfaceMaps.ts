@@ -338,37 +338,37 @@ export function decorateOrm(
 }
 
 /**
- * Relief for an etched brand: the mask cut into the face about 0.1 mm,
- * with a bevel about 0.25 mm wide, laid over the front's normal map wherever
- * the height departs from flat (the same composition as the beadblast's
- * structure).
+ * Relief for an etched brand: the mask cut into the face, with a bevel about
+ * 0.12 mm wide, laid over the front's normal map wherever the height departs
+ * from flat (the same composition as the beadblast's structure). Built at
+ * texel size, not map size: the wordmark's strokes are only a few texels
+ * wide, and a bevel wider than a stroke smooths the whole mark away.
  */
 export function decorateNormal(base: HTMLCanvasElement, brandMask: HTMLCanvasElement): HTMLCanvasElement {
-  const w = base.width;
-  const h = base.height;
-  const c = makeCanvas(w, h);
+  const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
-  ctx.drawImage(base, 0, 0);
-  // Height in map pixels: flat mid-gray, the mark darker (lower), edges
+  ctx.drawImage(base, 0, 0, TEX_W, TEX_H);
+  // Height in texels: flat mid-gray, the mark's floor black, the edge
   // softened over the bevel.
-  const height = makeCanvas(w, h);
+  const height = makeCanvas(TEX_W, TEX_H);
   const hc = height.getContext('2d')!;
   hc.fillStyle = '#808080';
-  hc.fillRect(0, 0, w, h);
-  const bevel = (0.25 * 17.94 * K * w) / TEX_W;
+  hc.fillRect(0, 0, TEX_W, TEX_H);
+  const bevel = 0.12 * 17.94 * K;
   hc.filter = `blur(${bevel / 2}px)`;
   const m = makeCanvas(brandMask.width, brandMask.height);
   const mc = m.getContext('2d')!;
   mc.drawImage(brandMask, 0, 0);
   mc.globalCompositeOperation = 'source-in';
-  mc.fillStyle = '#4a4a4a';
+  mc.fillStyle = '#000000';
   mc.fillRect(0, 0, m.width, m.height);
-  hc.drawImage(m, 0, 0, w, h);
+  hc.drawImage(m, 0, 0, TEX_W, TEX_H);
   hc.filter = 'none';
-  const structure = heightToNormal(height, 3.4);
+  // Half a unit of height over the bevel's width, to a slope near 45°.
+  const structure = heightToNormal(height, bevel * 0.9);
   const sctx = structure.getContext('2d')!;
-  const n = sctx.getImageData(0, 0, w, h);
-  const hd = hc.getImageData(0, 0, w, h).data;
+  const n = sctx.getImageData(0, 0, TEX_W, TEX_H);
+  const hd = hc.getImageData(0, 0, TEX_W, TEX_H).data;
   for (let i = 0; i < n.data.length; i += 4) {
     n.data[i + 3] = Math.abs(hd[i] - 128) > 1 ? 255 : 0;
   }
