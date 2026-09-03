@@ -1,10 +1,10 @@
 /**
  * The card's intro: a blueprint of the card draws itself on the stage
  * (registration ticks, the squircle outline, dimensions, the chip and brand
- * skeleton), then the blueprint dissolves as the real card comes into focus
- * behind it. The blueprint is an SVG in card px riding in the card's hit box;
- * the card is the stage canvas, blurred and faded in. Both are stepped from
- * the stage's frame loop off one clock so they never drift apart.
+ * skeleton), then the blueprint blurs and fades out as the real card blurs
+ * and fades in behind it. The blueprint is an SVG in card px riding in the
+ * card's hit box; the card is the stage canvas. Both are stepped from the
+ * stage's frame loop off one clock so they never drift apart.
  *
  * Geometry is the Figma spec (1536-wide artboard) through `fig()`, so the
  * skeleton lands exactly where the face painter puts the chip and the brand.
@@ -135,12 +135,15 @@ const CUES: Record<string, Cue> = {
   'brand-text': { kind: 'fade', at: 2.1, dur: 0.3 },
 };
 
-/** The reveal: the blueprint dissolves while the card comes into focus. */
+/** The reveal: the blueprint blurs out while the card blurs in. */
 const REVEAL_AT = 2.55;
-const BLUEPRINT_OUT = 0.6;
+const BLUEPRINT_OUT = 0.8;
 const CARD_IN = 1.0;
 /** Where the card starts, stage px of blur. */
 const CARD_BLUR = 16;
+/** Where the blueprint ends, card px of blur (it scales with the hit box, so
+ *  this lands near the card's 16 stage px at the desktop scale). */
+const BLUEPRINT_BLUR = 12;
 export const INTRO_END = REVEAL_AT + CARD_IN;
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
@@ -167,7 +170,9 @@ function elements(root: Element): Map<string, SVGElement> {
 
 /** Pose every blueprint element for time `t`. `root` is the overlay itself. */
 export function stepIntro(root: HTMLElement | SVGElement, t: number) {
-  root.style.opacity = String(1 - easeInOutCubic(clamp01((t - REVEAL_AT) / BLUEPRINT_OUT)));
+  const out = easeInOutCubic(clamp01((t - REVEAL_AT) / BLUEPRINT_OUT));
+  root.style.opacity = String(1 - out);
+  root.style.filter = out > 0 ? `blur(${(BLUEPRINT_BLUR * out).toFixed(2)}px)` : '';
   const els = elements(root);
   for (const [key, cue] of Object.entries(CUES)) {
     const el = els.get(key);

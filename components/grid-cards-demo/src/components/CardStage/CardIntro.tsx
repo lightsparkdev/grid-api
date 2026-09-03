@@ -17,7 +17,7 @@ const FADE = { style: { opacity: 0 } } as const;
 /**
  * The blueprint, laid out in card px inside the card's hit box. Every element
  * that animates carries `data-intro`; `stepIntro` poses them per frame and
- * fades the whole drawing out as the card comes into focus beneath it.
+ * blurs and fades the whole drawing out as the card comes into focus beneath it.
  */
 export const CardIntro = forwardRef<SVGSVGElement, { brand: string }>(function CardIntro({ brand }, ref) {
   return (
