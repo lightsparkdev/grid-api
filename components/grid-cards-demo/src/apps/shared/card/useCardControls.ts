@@ -219,14 +219,25 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setSheet('transaction');
   }, []);
 
+  /** Merchant returns the purchase `id`; the row flips to REFUNDED after a beat.
+   *  Reads the row at fire time (functional update) so delayed callers can't
+   *  act on a stale list. */
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+  const refundRow = useCallback(
+    (id: string) => {
+      later(() => {
+        const row = rowsRef.current.find((r) => r.id === id);
+        if (!row || row.status === 'REFUNDED') return;
+        setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'REFUNDED' } : r)));
+        onRefund?.({ ...row, status: 'REFUNDED' });
+      }, REFUND_MS);
+    },
+    [later, onRefund],
+  );
   const refundSelected = useCallback(() => {
-    const row = rows.find((r) => r.id === selectedRowId);
-    if (!row || row.status === 'REFUNDED') return;
-    later(() => {
-      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: 'REFUNDED' } : r)));
-      onRefund?.({ ...row, status: 'REFUNDED' });
-    }, REFUND_MS);
-  }, [rows, selectedRowId, later, onRefund]);
+    if (selectedRowId) refundRow(selectedRowId);
+  }, [selectedRowId, refundRow]);
 
   const closeSheet = useCallback(() => {
     setSheet('none');
@@ -260,6 +271,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     recordAuthorization,
     seedSettledRow,
     openTransaction,
+    refundRow,
     refundSelected,
   };
 }

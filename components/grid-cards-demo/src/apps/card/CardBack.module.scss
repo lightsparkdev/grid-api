@@ -1,0 +1,94 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Same footprint as DebitCard (370 × 232, squircle clip). Deeper tone of the
+   brand so the flip reads as "the other side of the same card". */
+.back {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  height: 232px;
+  padding: 20px 24px 18px;
+  border-radius: 0;
+  overflow: hidden;
+  color: #ffffff;
+  --ios-font-family: var(--font-family-sf-pro);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(120% 100% at 100% 0%, var(--brand-color, #0083c3) 0%, transparent 55%),
+    var(--brand-color-deep, #005882);
+}
+
+/* A quiet magstripe band — the tell that this is the back. */
+.stripe {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pan {
+  display: flex;
+  gap: 14px;
+  font-family: var(--ios-font-family);
+  font-size: 22px;
+  line-height: 26px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.panGroup {
+  display: inline-block;
+  min-width: 4ch;
+}
+
+.row {
+  display: flex;
+  gap: 24px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  @include ios.ios-text-caption-2;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.value {
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  font-variant-numeric: tabular-nums;
+}
+
+.footer {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  @include ios.ios-text-caption-2;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}

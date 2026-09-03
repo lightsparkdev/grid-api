@@ -1,36 +1,88 @@
 'use client';
 
+import clsx from 'clsx';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
-import type { PhoneProps } from '@/components/Phone';
 import { CardStage } from '@/components/CardStage/CardStage';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { DEFAULT_OVERLAY_GLASS } from '@/apps/shared/glass';
-import type { Stage, StageCardState } from '@/hooks/useCardsDemoLogic';
+import { useCardHome, type UseCardHomeOptions, type WalletEntry } from '@/apps/shared/card';
+import type { ActionId } from '@/data/actions';
+import type { CardDesign } from '@/data/design';
 import styles from './AppPanel.module.scss';
 
-interface AppPanelProps extends PhoneProps {
-  stage: Stage;
-  cardState: StageCardState;
+export interface AppPanelProps {
+  design: CardDesign;
+  /** Bumped on reset; remounts the brain so everything starts clean. */
+  session: number;
+  /** The flow the phone is up for; null = bare card stage. */
+  activeFlow: ActionId | null;
+  /** The last flow that brought the phone in (survives the dismiss). */
+  phoneFlow: ActionId | null;
   /** Issue tapped on the bare-card stage. */
   onIssue: () => void;
+  /** Jump command for the brain (sidebar → provision + run a flow). */
+  walletEntry?: WalletEntry;
+  onCardIssued?: () => void;
+  onTapToPay?: UseCardHomeOptions['onTapToPay'];
+  onTapDeclined?: UseCardHomeOptions['onTapDeclined'];
+  cardOptions?: UseCardHomeOptions['card'];
+  onSettled?: () => void;
 }
 
-/** The stage: the bare card while designing, the phone once a card is issued. */
-export function AppPanel({ stage, cardState, onIssue, ...phone }: AppPanelProps) {
+/** The stage: the card, always; the cardholder's phone slides in for a flow. */
+export function AppPanel({ session, ...props }: AppPanelProps) {
+  // Keyed on the session so Reset remounts the brain with fresh state.
+  return <StageHost key={session} {...props} />;
+}
+
+function StageHost({
+  design,
+  activeFlow,
+  phoneFlow,
+  onIssue,
+  walletEntry,
+  onCardIssued,
+  onTapToPay,
+  onTapDeclined,
+  cardOptions,
+  onSettled,
+}: Omit<AppPanelProps, 'session'>) {
+  const home = useCardHome({
+    entry: walletEntry,
+    onCardIssued,
+    onTapToPay,
+    onTapDeclined,
+    card: cardOptions,
+    onSettled,
+  });
+  const phoneVisible = activeFlow !== null;
+  // Issue is the one flow where the card goes INTO the phone, so the phone
+  // takes the whole stage; every other flow puts the phone beside the card.
+  const dive = phoneFlow === 'card';
+
   return (
     <section className={styles.panel}>
       <div className={styles.body}>
         <div className={styles.phoneStage}>
-          <DotGridCanvas glassConfig={PHONE_SHELL_GLASS} phoneVisible={stage === 'phone'}>
-            <DemoPhone
-              {...phone}
-              glassConfig={PHONE_SHELL_GLASS}
-              overlayGlass={DEFAULT_OVERLAY_GLASS}
-              glassDemoBg
-              externalGlass
-            />
-            <CardStage design={phone.design} cardState={cardState} onIssue={onIssue} />
+          <DotGridCanvas glassConfig={PHONE_SHELL_GLASS} phoneVisible={phoneVisible}>
+            <div
+              className={clsx(styles.zones, phoneVisible && styles.zonesPhone, phoneVisible && dive && styles.zonesDive)}
+            >
+              {/* Where the stage card rests (CardStage measures this). */}
+              <div className={styles.cardZone} data-card-zone />
+              <div className={styles.phoneZone}>
+                <DemoPhone
+                  design={design}
+                  home={home}
+                  glassConfig={PHONE_SHELL_GLASS}
+                  overlayGlass={DEFAULT_OVERLAY_GLASS}
+                  glassDemoBg
+                  externalGlass
+                />
+              </div>
+            </div>
+            <CardStage design={design} home={home} dive={dive} onIssue={onIssue} />
           </DotGridCanvas>
         </div>
       </div>

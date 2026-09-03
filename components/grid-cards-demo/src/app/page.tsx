@@ -126,8 +126,8 @@ export default function Page() {
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
           <AppPanel
-            stage={logic.stage}
-            cardState={logic.cardState}
+            activeFlow={logic.activeFlow}
+            phoneFlow={logic.phoneFlow}
             onIssue={() => logic.handleAction('card')}
             design={logic.design}
             session={logic.session}
@@ -136,6 +136,7 @@ export default function Page() {
             onTapToPay={logic.onTapToPay}
             onTapDeclined={logic.onTapDeclined}
             cardOptions={logic.cardOptions}
+            onSettled={logic.onSettled}
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />

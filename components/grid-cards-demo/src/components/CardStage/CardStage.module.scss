@@ -9,33 +9,100 @@
   pointer-events: none;
   /* The card face reads the iOS type tokens like it does inside the phone. */
   --ios-font-family: var(--font-family-sf-pro);
+  /* Where the card is (set per frame) — the caption hangs off it. */
+  --card-x: 50%;
+  --card-bottom: 50%;
 }
 
-/* Centered column: the card's stage slot (an invisible anchor the flying card
-   is measured against), then the caption and CTA beneath it. */
-.layout {
+/* The card — its transform is set per frame from CardStage. It is laid out at
+   the card's intrinsic size and scaled, so the face never reflows. */
+.card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: center center;
+  will-change: transform;
+  perspective: 1100px;
+}
+
+/* Idle hover: a slow bob so the card reads as floating. */
+.float {
+  width: 100%;
+  height: 100%;
+  animation: bob 5.2s ease-in-out infinite;
+}
+
+.floatStill {
+  animation: none;
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+/* Tilt + flip live on one 3D transform; both faces sit in it. */
+.tilt {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.front,
+.backFace {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 40px;
-  padding: 24px;
-  transition: opacity 120ms linear;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-.anchor {
-  flex-shrink: 0;
+.backFace {
+  transform: rotateY(180deg);
+  /* Same shadow as the front (DebitCard's shell). */
+  border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  :global([data-theme='dark']) & {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
 }
 
-.copy {
+/* Cursor-following light on the front face. Clipped to the card by the same
+   squircle as DebitCard (it sits inside the clipped button's shell box). */
+.specular {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  border-radius: calc(var(--figma-corner-radius-debit-card, 13px) * var(--corner-superellipse-scale, 1.2));
+  corner-shape: var(--corner-shape);
+  overflow: hidden;
+}
+
+/* ── Caption ─────────────────────────────────────────────────────────────── */
+
+.caption {
+  position: absolute;
+  left: var(--card-x);
+  top: var(--card-bottom);
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-xs);
-  max-width: 400px;
+  width: max-content;
+  max-width: min(420px, 90vw);
+  padding-top: 32px;
   text-align: center;
+  pointer-events: auto;
+  transition: opacity 160ms linear;
 }
 
 .title {
@@ -94,22 +161,54 @@
 
   &:disabled {
     cursor: default;
+    opacity: 0.5;
   }
 }
 
-/* The flying card — its transform is set per frame from CardStage. It is laid
-   out at the card's intrinsic size and scaled, so the face never reflows. */
-.card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: center center;
-  will-change: transform;
-  perspective: 900px;
+/* Status line once a card exists: state dot, funding source, balance, limits. */
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  line-height: var(--font-leading-18);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1;
 }
 
-.tilt {
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
+.statusState {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.statusSep {
+  color: var(--text-tertiary);
+}
+
+.statusNum {
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34c759;
+}
+
+.dotProcessing {
+  background: #ff9f0a;
+}
+
+.dotFrozen {
+  background: #0a84ff;
+}
+
+.dotClosed {
+  background: #ff453a;
 }

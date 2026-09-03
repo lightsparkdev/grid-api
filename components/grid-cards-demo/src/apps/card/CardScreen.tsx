@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
-import { useStaggerReveal } from '@/apps/shared/useStaggerReveal';
+import { GlassNotification } from '@/apps/shared/GlassNotification';
 import { Toast } from '@/apps/shared/Toast';
 import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
@@ -40,11 +40,12 @@ const CONTENT_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
  * the funding line, actions, controls, and transactions; tap-to-pay lifts the
  * card under the status bar. The brain arrives as a prop (hosted above).
  */
-export function CardScreen({ entrance = false, home }: CardScreenProps) {
+export function CardScreen({ home }: CardScreenProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
-  const appName = programNameOf(useBrand());
+  const design = useBrand();
+  const appName = programNameOf(design);
 
   const {
     issued,
@@ -58,15 +59,15 @@ export function CardScreen({ entrance = false, home }: CardScreenProps) {
     isDeclined,
     card,
     revealPending,
-    startReveal,
     finishRevealAuth,
     finishTapAuth,
-    startTapToPay,
+    notice,
   } = home;
 
-  // Entrance: the hub content reveals in once on mount (the card arrives from the stage).
-  const reveal = useStaggerReveal({ baseDelay: 0.05, stagger: 0.07 });
-  const enter = (index: number) => (entrance ? reveal(index) : { initial: false as const });
+  // App icon for push notifications — a brand-tinted rounded square.
+  const appIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 76"><rect width="76" height="76" rx="17" fill="${design.color}"/><rect x="18" y="26" width="40" height="26" rx="5" fill="rgba(255,255,255,0.92)"/><rect x="18" y="33" width="40" height="5" fill="${design.color}" opacity="0.55"/></svg>`,
+  )}`;
 
   // Face ID + the glass toast render in AppShell's overlay layer (above the
   // status bar) so the blur frosts the status bar. Face ID gates tap-to-pay
@@ -81,6 +82,13 @@ export function CardScreen({ entrance = false, home }: CardScreenProps) {
         }}
       />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
+      <GlassNotification
+        show={notice !== null}
+        icon={appIcon}
+        title={notice?.title ?? ''}
+        body={notice?.body ?? ''}
+        bodyLines={2}
+      />
     </>
   );
   const screenOverlay = overlayEl ? (
@@ -150,15 +158,9 @@ export function CardScreen({ entrance = false, home }: CardScreenProps) {
               animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
             >
-              <motion.div {...enter(1)} className={styles.homeScroll}>
-                <CardHomeContent
-                  transactions={transactions}
-                  card={card}
-                  availableCents={availableCents}
-                  onTapToPay={startTapToPay}
-                  onReveal={startReveal}
-                />
-              </motion.div>
+              <div className={styles.homeScroll}>
+                <CardHomeContent transactions={transactions} card={card} availableCents={availableCents} />
+              </div>
             </motion.div>
           )}
           {isTap && (

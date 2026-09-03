@@ -1,14 +1,19 @@
 'use client';
 
-import type { PhoneProps } from '@/components/Phone';
 import type { GlassConfig } from '@/components/liquid-glass';
-import { CardHost } from '@/apps/CardHost';
+import { CardScreen } from '@/apps/card';
 import { AppShell } from '@/apps/shared/AppShell';
 import { BrandProvider } from '@/apps/shared/brand/BrandContext';
 import { brandVars } from '@/apps/shared/brand/brandPalette';
+import type { CardHome } from '@/apps/shared/card';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
+import type { CardDesign } from '@/data/design';
+import styles from './DemoPhone.module.scss';
 
-interface DemoPhoneProps extends PhoneProps {
+interface DemoPhoneProps {
+  design: CardDesign;
+  /** The card brain, hosted above so the stage card renders from the same state. */
+  home: CardHome;
   glassConfig?: GlassConfig;
   overlayGlass?: OverlayGlassPresets;
   showGlassOutline?: boolean;
@@ -16,17 +21,16 @@ interface DemoPhoneProps extends PhoneProps {
   externalGlass?: boolean;
 }
 
-/** Demo phone — the card app inside the shared glass shell, tinted by the design. */
+/** The cardholder's phone — the card app inside the shared glass shell, tinted by the design. */
 export function DemoPhone({
+  design,
+  home,
   glassConfig,
   overlayGlass,
   showGlassOutline,
   glassDemoBg,
   externalGlass,
-  ...phoneProps
 }: DemoPhoneProps) {
-  const { design } = phoneProps;
-
   return (
     <OverlayGlassProvider value={overlayGlass ?? DEFAULT_OVERLAY_GLASS}>
       <BrandProvider value={design}>
@@ -37,14 +41,9 @@ export function DemoPhone({
           externalGlass={externalGlass}
           screenStyle={brandVars(design.color, design.colorEnd)}
         >
-          <CardHost
-            key={phoneProps.session}
-            entry={phoneProps.walletEntry}
-            onCardIssued={phoneProps.onCardIssued}
-            onTapToPay={phoneProps.onTapToPay}
-            onTapDeclined={phoneProps.onTapDeclined}
-            cardOptions={phoneProps.cardOptions}
-          />
+          <div className={styles.flow}>
+            <CardScreen home={home} />
+          </div>
         </AppShell>
       </BrandProvider>
     </OverlayGlassProvider>

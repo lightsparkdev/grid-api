@@ -57,16 +57,15 @@ function newGroupId() {
  * cardholder is a Customer the platform already onboarded, so the phone boots
  * straight into the app.
  */
-/** Where the card is: on the bare stage being designed, or inside the phone. */
-export type Stage = 'design' | 'phone';
-
-/** The card's issuance state as the demo sees it (mirrors the phone brain so the
- *  stage card can wear the same chip while it flies into the phone). */
-export type StageCardState = 'none' | 'processing' | 'active';
+/** The phone stays up this long after a flow settles, then dismisses. */
+const PHONE_DISMISS_HOLD_MS = 600;
 
 export function useCardsDemoLogic() {
-  const [stage, setStage] = useState<Stage>('design');
-  const [cardState, setCardState] = useState<StageCardState>('none');
+  // The flow the phone is up for; null = bare card stage. `phoneFlow` remembers
+  // the last one through the dismiss so the stage can finish its choreography
+  // (the Issue flight back out of the phone).
+  const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
+  const [phoneFlow, setPhoneFlow] = useState<ActionId | null>(null);
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   const updateDesign = useCallback((patch: Partial<CardDesign>) => {
     setDesign((d) => ({ ...d, ...patch }));
@@ -143,12 +142,6 @@ export function useCardsDemoLogic() {
     // the phone brain flips the card to ACTIVE.
     pushWithWebhook(cardCalls(limitsRef.current), GROUP_LABEL.card, CARD_ACTIVE_DELAY_MS);
     setWallet((w) => ({ ...w, hasCard: true }));
-    setCardState('processing');
-    const timer = setTimeout(() => {
-      pendingTimers.current.delete(timer);
-      setCardState('active');
-    }, CARD_ACTIVE_DELAY_MS);
-    pendingTimers.current.add(timer);
     markDone('card');
   }, [pushWithWebhook, markDone]);
 
@@ -229,11 +222,10 @@ export function useCardsDemoLogic() {
       // the provisioning and it earns no checkmark. Each flow logs only its own
       // calls when the user actually runs it. Any flow brings the phone in.
       const needsCard = id !== 'card' && !wallet.hasCard;
-      if (needsCard) {
-        setWallet({ ...wallet, hasCard: true });
-        setCardState('active');
-      }
-      setStage('phone');
+      if (needsCard) setWallet({ ...wallet, hasCard: true });
+      clearTimeout(dismissTimer.current);
+      setActiveFlow(id);
+      setPhoneFlow(id);
       setWalletEntry({
         nonce: Date.now(),
         provision: needsCard ? { issued: true } : undefined,
@@ -243,14 +235,23 @@ export function useCardsDemoLogic() {
     [wallet],
   );
 
+  // The phone brain reports the flow has played out; hold a beat, then dismiss.
+  const dismissTimer = useRef<ReturnType<typeof setTimeout>>();
+  const onSettled = useCallback(() => {
+    clearTimeout(dismissTimer.current);
+    dismissTimer.current = setTimeout(() => setActiveFlow(null), PHONE_DISMISS_HOLD_MS);
+  }, []);
+  useEffect(() => () => clearTimeout(dismissTimer.current), []);
+
   const reset = useCallback(() => {
     pendingTimers.current.forEach((t) => clearTimeout(t));
     pendingTimers.current.clear();
+    clearTimeout(dismissTimer.current);
     spendRefs.current.clear();
     limitsRef.current = {};
     setWallet(initialWallet);
-    setCardState('none');
-    setStage('design');
+    setActiveFlow(null);
+    setPhoneFlow(null);
     setCompleted(initialCompleted);
     setEntries([]);
     setWalletEntry(undefined);
@@ -258,8 +259,8 @@ export function useCardsDemoLogic() {
   }, []);
 
   return {
-    stage,
-    cardState,
+    activeFlow,
+    phoneFlow,
     design,
     updateDesign,
     wallet,
@@ -273,5 +274,6 @@ export function useCardsDemoLogic() {
     onTapToPay,
     onTapDeclined,
     cardOptions,
+    onSettled,
   };
 }
