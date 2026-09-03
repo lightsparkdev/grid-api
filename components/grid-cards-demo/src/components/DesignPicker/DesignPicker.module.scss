@@ -150,14 +150,11 @@
 }
 
 /* Material and Finish: plain text choices in the flow tile's type, divided by
-   a hairline like the API panel's Request / Response tabs. No track. */
+   a short hairline the height of the text. No track. */
 .segments {
   display: flex;
-  align-items: stretch;
-  /* Full row height, through the row's vertical padding, so the divider
-     between options bleeds top to bottom. */
-  align-self: stretch;
-  margin: calc(-1 * var(--spacing-sm)) 0 calc(-1 * var(--spacing-sm)) auto;
+  align-items: center;
+  margin-left: auto;
 }
 
 .segment {
@@ -166,6 +163,7 @@
   @include label;
   display: flex;
   align-items: center;
+  line-height: 1;
   padding: 0 var(--spacing-sm);
   color: var(--text-tertiary);
   white-space: nowrap;

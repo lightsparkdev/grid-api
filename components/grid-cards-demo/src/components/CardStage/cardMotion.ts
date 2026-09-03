@@ -1,16 +1,24 @@
 /**
- * The card's pose on the stage: cursor tilt, drag-to-spin with inertia, the
+ * The card's pose on the stage: cursor tilt, drag-to-turn with inertia, the
  * reveal flip, the idle bob, and the decline shake. Pure state and math,
- * stepped once per frame by the stage. Angles are degrees in three.js terms:
- * positive rotation.y turns the right edge away, positive rotation.x turns
- * the top edge toward the viewer.
+ * stepped once per frame by the stage.
+ *
+ * The pose is a quaternion, and a drag is a trackball: pointer travel turns
+ * the card about the *screen* axes from whatever pose it is in, so the card
+ * always follows the cursor. (With Euler angles the inner axis turns with the
+ * outer one, so a flopped card spun the wrong way.) On release the card
+ * settles, by a spring on the rotation error, onto the nearest right-side-up
+ * face: front or back. A flop over the long edge therefore tumbles through
+ * and comes back readable; the back is reached by turning over the short
+ * edge, as a card is.
  */
+import { Quaternion, Vector3 } from 'three';
 
 /** Cursor tilt, degrees at the card's edge. */
 export const TILT_DEG = 9;
-/** Drag: degrees of spin per pixel of pointer travel. */
+/** Drag: degrees of turn per pixel of pointer travel. */
 const DRAG_DEG_PER_PX = 0.55;
-/** Spring that settles the spin onto a face (per second, per degree). */
+/** Spring that settles the turn onto a face (per second, per degree). */
 const SPIN_K = 120;
 const SPIN_C = 18;
 /** Cursor tilt smoothing rate (1/s). */
@@ -23,38 +31,47 @@ const BOB_PERIOD = 5.2;
 const BOB_AMPLITUDE = 7;
 const SHAKE_S = 0.5;
 
+const X = new Vector3(1, 0, 0);
+const Y = new Vector3(0, 1, 0);
+const Z = new Vector3(0, 0, 1);
+const FRONT = new Quaternion();
+const BACK = new Quaternion().setFromAxisAngle(Y, Math.PI);
+
 export interface Pose {
-  rotX: number;
-  rotY: number;
+  /** Orientation, world frame, with the cursor tilt applied. */
+  quat: Quaternion;
+  /** How much of the front faces the viewer, -1..1 (the front normal's z). */
+  facing: number;
   /** Bob and shake offsets, card px. */
   dx: number;
   dy: number;
 }
 
 export class CardMotion {
-  // Cursor tilt: target from the pointer, current eased toward it.
+  // Cursor tilt: target from the pointer, current eased toward it (degrees).
   private tiltTX = 0;
   private tiltTY = 0;
   private tiltX = 0;
   private tiltY = 0;
-  // Free rotation: the spin (y) and pitch (x) with velocities.
-  private spinY = 0;
-  private spinVY = 0;
-  private pitch = 0;
-  private pitchV = 0;
+  // Free rotation: the pose and its angular velocity (world axis × deg/s).
+  private q = new Quaternion();
+  private w = new Vector3();
   private dragging = false;
   private lastDragT = 0;
-  private dragVY = 0;
-  private dragVX = 0;
+  private dragW = new Vector3();
   /** After a drag the card may rest on either face. */
   private restAny = false;
-  /** Where the spin and pitch settle; re-picked on release and when the wants change. */
-  private targetY = 0;
-  private targetX = 0;
+  /** Where the turn settles; re-picked on release and when the wants change. */
+  private target = FRONT.clone();
   private lastWantBack = false;
   private lastHold = false;
   private time = 0;
   private shakeAt = -1;
+
+  // Scratch.
+  private readonly out = new Quaternion();
+  private readonly dq = new Quaternion();
+  private readonly n = new Vector3();
 
   /** Pointer over the card, -0.5..0.5 in each axis. */
   setTilt(px: number, py: number) {
@@ -72,8 +89,7 @@ export class CardMotion {
     this.dragging = true;
     this.clearTilt();
     this.lastDragT = now;
-    this.dragVY = 0;
-    this.dragVX = 0;
+    this.dragW.set(0, 0, 0);
   }
 
   /** Pointer travel since the last event, in stage px. */
@@ -81,34 +97,42 @@ export class CardMotion {
     if (!this.dragging) return;
     const dt = Math.max(0.001, (now - this.lastDragT) / 1000);
     this.lastDragT = now;
-    // Drag right spins the card about its short axis; drag down flops it
-    // about its long axis. Both run free.
-    const dyDeg = dxPx * DRAG_DEG_PER_PX;
-    const dxDeg = dyPx * DRAG_DEG_PER_PX;
-    this.spinY += dyDeg;
-    this.pitch += dxDeg;
-    // Smoothed release velocities.
-    this.dragVY = this.dragVY * 0.6 + (dyDeg / dt) * 0.4;
-    this.dragVX = this.dragVX * 0.6 + (dxDeg / dt) * 0.4;
+    // Drag right turns the card about the screen's vertical; drag down about
+    // its horizontal. Screen axes, so the card follows the cursor whatever
+    // way it is facing.
+    const turnY = dxPx * DRAG_DEG_PER_PX;
+    const turnX = dyPx * DRAG_DEG_PER_PX;
+    this.turn(Y, turnY);
+    this.turn(X, turnX);
+    // Smoothed release velocity.
+    this.dragW.multiplyScalar(0.6).addScaledVector(Y, (turnY / dt) * 0.4).addScaledVector(X, (turnX / dt) * 0.4);
   }
 
   endDrag() {
     if (!this.dragging) return;
     this.dragging = false;
-    this.spinVY = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVY));
-    this.pitchV = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVX));
+    this.w.copy(this.dragW);
+    const speed = this.w.length();
+    if (speed > MAX_FLING) this.w.multiplyScalar(MAX_FLING / speed);
     this.restAny = true;
-    // Settle on whichever face each fling is headed for.
-    this.targetY = this.pickTarget(this.spinY + this.spinVY * FLING_LOOKAHEAD, this.lastWantBack, this.lastHold);
-    this.targetX = nearestWithParity(this.pitch + this.pitchV * FLING_LOOKAHEAD, 0, 180);
+    // Settle on whichever face the fling is headed for.
+    const ahead = this.out.copy(this.q);
+    rotate(ahead, this.n.copy(this.w).multiplyScalar(FLING_LOOKAHEAD), this.dq);
+    this.target = this.pickTarget(ahead, this.lastWantBack, this.lastHold);
+  }
+
+  /** Turn the pose about a world axis by `deg`. */
+  private turn(axis: Vector3, deg: number) {
+    this.dq.setFromAxisAngle(axis, (deg * Math.PI) / 180);
+    this.q.premultiply(this.dq).normalize();
   }
 
   /** The face to settle on: the reveal wants the back; a free card after a
-   *  drag takes whichever is nearer; otherwise the front. */
-  private pickTarget(from: number, wantBack: boolean, hold: boolean): number {
-    if (wantBack) return nearestWithParity(from, 1);
-    if (this.restAny && !hold) return nearestWithParity(from, 0, 180);
-    return nearestWithParity(from, 0);
+   *  drag takes whichever is nearer; otherwise the front. Both right-side-up. */
+  private pickTarget(from: Quaternion, wantBack: boolean, hold: boolean): Quaternion {
+    if (wantBack) return BACK;
+    if (this.restAny && !hold) return from.angleTo(BACK) < from.angleTo(FRONT) ? BACK : FRONT;
+    return FRONT;
   }
 
   get isDragging() {
@@ -135,18 +159,15 @@ export class CardMotion {
       if (opts.hold || opts.wantBack) this.restAny = false;
       this.lastWantBack = opts.wantBack;
       this.lastHold = opts.hold;
-      if (!this.dragging) {
-        this.targetY = this.pickTarget(this.spinY, opts.wantBack, opts.hold);
-        // Flows read the card by its spin, so a flopped card rights itself first.
-        this.targetX = nearestWithParity(this.pitch, 0);
-      }
+      if (!this.dragging) this.target = this.pickTarget(this.q, opts.wantBack, opts.hold);
     }
 
     if (!this.dragging) {
-      this.spinVY += (SPIN_K * (this.targetY - this.spinY) - SPIN_C * this.spinVY) * dt;
-      this.spinY += this.spinVY * dt;
-      this.pitchV += (SPIN_K * (this.targetX - this.pitch) - SPIN_C * this.pitchV) * dt;
-      this.pitch += this.pitchV * dt;
+      // Spring on the rotation error (world axis × degrees), the same law as
+      // a scalar spring per axis.
+      const err = errorVector(this.target, this.q, this.dq, this.n);
+      this.w.addScaledVector(err, SPIN_K * dt).addScaledVector(this.w, -SPIN_C * dt);
+      rotate(this.q, this.n.copy(this.w).multiplyScalar(dt), this.dq);
     }
 
     const floating = !opts.hold && !opts.reduceMotion;
@@ -157,13 +178,34 @@ export class CardMotion {
       if (u < 1) dx = 12 * Math.sin(u * Math.PI * 3) * (1 - u);
       else this.shakeAt = -1;
     }
-    return { rotX: this.tiltX + this.pitch, rotY: this.tiltY + this.spinY, dx, dy };
+
+    // The tilt rides on top, about the screen axes too.
+    const out = this.out.copy(this.q);
+    this.dq.setFromAxisAngle(Y, (this.tiltY * Math.PI) / 180);
+    out.premultiply(this.dq);
+    this.dq.setFromAxisAngle(X, (this.tiltX * Math.PI) / 180);
+    out.premultiply(this.dq);
+    const facing = this.n.copy(Z).applyQuaternion(out).z;
+    return { quat: out, facing, dx, dy };
   }
 }
 
-/** Nearest angle to `a` that is `parity` × 180 modulo `period` (360 = a fixed
- *  face, 180 = either face). */
-function nearestWithParity(a: number, parity: 0 | 1, period = 360): number {
-  const offset = parity * 180;
-  return Math.round((a - offset) / period) * period + offset;
+/** Rotate `q` (in place) by the world-frame rotation vector `v` (axis × degrees). */
+function rotate(q: Quaternion, v: Vector3, scratch: Quaternion) {
+  const deg = v.length();
+  if (deg < 1e-9) return;
+  scratch.setFromAxisAngle(v.divideScalar(deg), (deg * Math.PI) / 180);
+  q.premultiply(scratch).normalize();
+}
+
+/** The shortest world-frame rotation taking `q` to `target`, as axis × degrees. */
+function errorVector(target: Quaternion, q: Quaternion, scratch: Quaternion, out: Vector3): Vector3 {
+  // e = target · q⁻¹, on the near side of the double cover.
+  scratch.copy(q).invert().premultiply(target);
+  if (scratch.w < 0) scratch.set(-scratch.x, -scratch.y, -scratch.z, -scratch.w);
+  const half = Math.acos(Math.min(1, scratch.w));
+  const s = Math.sin(half);
+  if (s < 1e-6) return out.set(0, 0, 0);
+  const deg = (2 * half * 180) / Math.PI;
+  return out.set(scratch.x, scratch.y, scratch.z).multiplyScalar(deg / s);
 }

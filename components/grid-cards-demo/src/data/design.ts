@@ -29,12 +29,19 @@ export interface CardStock {
   ink: 'light' | 'dark';
 }
 
+/* Plastic is pigmented PVC core; metal is stainless, either PVD-coated or bare.
+   Each shows at the edge and under a "None" print. */
 export const STOCKS: CardStock[] = [
   { id: 'white', label: 'White', materials: ['plastic'], face: '#f1f1ef', core: '#ececef', metal: false, ink: 'dark' },
+  { id: 'ivory', label: 'Ivory', materials: ['plastic'], face: '#ebe3d2', core: '#e6ddc9', metal: false, ink: 'dark' },
+  { id: 'gray', label: 'Gray', materials: ['plastic'], face: '#8d8d92', core: '#8a8a90', metal: false, ink: 'light' },
+  { id: 'navy', label: 'Navy', materials: ['plastic'], face: '#1b2a4a', core: '#1f2f52', metal: false, ink: 'light' },
   { id: 'black', label: 'Black', materials: ['plastic'], face: '#17171a', core: '#1c1c20', metal: false, ink: 'light' },
   { id: 'steel', label: 'Steel', materials: ['metal'], face: '#a4a4a7', core: '#cfcfd3', metal: true, ink: 'dark' },
+  { id: 'gunmetal', label: 'Gunmetal', materials: ['metal'], face: '#5c5e64', core: '#6a6c72', metal: true, ink: 'light' },
   { id: 'blackPvd', label: 'Black', materials: ['metal'], face: '#2a2a2e', core: '#3a3a3e', metal: true, ink: 'light' },
   { id: 'gold', label: 'Gold', materials: ['metal'], face: '#b8965a', core: '#cfae6e', metal: true, ink: 'dark' },
+  { id: 'roseGold', label: 'Rose gold', materials: ['metal'], face: '#b98a78', core: '#cda08e', metal: true, ink: 'dark' },
 ];
 
 export function stockOf(design: Pick<CardDesign, 'stock'>): CardStock {

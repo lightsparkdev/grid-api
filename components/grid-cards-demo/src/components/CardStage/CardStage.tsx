@@ -265,15 +265,13 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
     // Stage px → scene: origin at the stage center, y up.
     c.position.set(x + pose.dx * s - size.width / 2, size.height / 2 - (y + bob), 0);
     c.scale.setScalar(s);
-    g.rotation.set(THREE.MathUtils.degToRad(pose.rotX), THREE.MathUtils.degToRad(pose.rotY), 0);
+    g.quaternion.copy(pose.quat);
 
     const hit = hitRef.current;
     if (hit) {
       hit.style.transform = `translate(${x + pose.dx * s - CARD_W / 2}px, ${y + bob - CARD_H / 2}px) scale(${s})`;
-      // The pill belongs to the front; hide it while the back is showing (by
-      // spin or by flop).
-      const facing = Math.cos(THREE.MathUtils.degToRad(pose.rotY)) * Math.cos(THREE.MathUtils.degToRad(pose.rotX));
-      hit.style.setProperty('--pill-opacity', facing > 0.3 ? '1' : '0');
+      // The pill belongs to the front; hide it while the back is showing.
+      hit.style.setProperty('--pill-opacity', pose.facing > 0.3 ? '1' : '0');
     }
   });
 

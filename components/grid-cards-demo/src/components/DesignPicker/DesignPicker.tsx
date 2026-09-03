@@ -156,7 +156,21 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Stock</span>
-          <Choices label="Card stock" value={stock.id} options={stocks} onChange={(id) => onChange({ stock: id })} />
+          <div className={styles.swatches} role="radiogroup" aria-label="Card stock">
+            {stocks.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="radio"
+                aria-checked={stock.id === s.id}
+                aria-label={s.label}
+                title={s.label}
+                className={clsx(styles.swatch, stock.id === s.id && styles.swatchActive)}
+                style={swatchStyle(s.face, s.metal ? s.core : undefined)}
+                onClick={() => onChange({ stock: s.id })}
+              />
+            ))}
+          </div>
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Finish</span>
