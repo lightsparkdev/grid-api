@@ -8,6 +8,7 @@ import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { cubicBezierCss, easeOutSwift } from '@/lib/easing';
 import { CardMaterial } from './CardMaterial';
 import { Chip } from './Chip';
+import { VisaFoil } from './VisaFoil';
 import styles from './DebitCard.module.scss';
 
 const LABEL_MORPH_MS = 280;
@@ -89,19 +90,8 @@ export function DebitCard({
           >
             •••• 8972
           </span>
-          <div className={styles.brand}>
-            <span className={styles.secondary}>DEBIT</span>
-            <img
-              className={styles.visa}
-              src="/assets/VisaLogo.svg"
-              alt=""
-              width={62}
-              height={20}
-              aria-hidden
-              draggable={false}
-            />
-          </div>
         </div>
+        <VisaFoil />
         {/* Frost creeps in over the face when the card is frozen. */}
         <span className={clsx(styles.frost, frozen && styles.frostOn)} aria-hidden />
         {chip && (

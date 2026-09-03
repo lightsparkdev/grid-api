@@ -60,8 +60,7 @@
 }
 
 .primary,
-.secondary,
-.brand {
+.secondary {
   @include ios.ios-text-footnote;
   font-weight: 590;
   font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-footnote-opsz);
@@ -96,19 +95,6 @@
 .top .secondary {
   flex: 1 1 0;
   min-width: 0;
-}
-
-.brand {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.visa {
-  display: block;
-  width: 61.856px;
-  height: 20px;
 }
 
 .logo {
