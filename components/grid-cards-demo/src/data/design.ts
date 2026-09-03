@@ -1,24 +1,26 @@
-/* The "Design your card" state. Only the `custom` skin ("Your brand") reads it;
-   the six showcase skins keep their own art direction. */
+/* The "Design your card" state. */
 
 /** What the card is made of: a laminated PVC card, or a metal sheet with thin
- *  laminated skins. Sets the thickness, the edge layers, and how color sits
- *  on the surface (pigment or tinted alloy). */
+ *  laminated skins. Sets the thickness and the edge layers. */
 export type CardMaterial = 'plastic' | 'metal';
-/** The surface coat: matte (soft-touch plastic, brushed metal) or gloss
- *  (laminated plastic, polished metal). */
+/** The surface coat: matte (soft-touch print, brushed metal) or gloss
+ *  (laminated print, polished metal). */
 export type CardFinish = 'matte' | 'gloss';
 
 export interface CardDesign {
   /** Program name printed on the card and used as the app's brand. */
   programName: string;
-  /** Card background. A single color or a two-stop gradient. */
+  /** Card background. A single color or a two-stop gradient. On a metal card,
+   *  `NATURAL_METAL` means no print at all: bare metal shows. */
   color: string;
   colorEnd?: string;
   material: CardMaterial;
   finish: CardFinish;
   /** Object URL (or data URL) of an uploaded logo. Null = wordmark only. */
   logoUrl: string | null;
+  /** Object URL (or data URL) of uploaded card art, drawn across the front
+   *  behind everything else. Null = the color. */
+  backgroundUrl: string | null;
 }
 
 export interface DesignSwatch {
@@ -26,9 +28,16 @@ export interface DesignSwatch {
   label: string;
   color: string;
   colorEnd?: string;
+  /** Only offered for these materials (default: all). */
+  materials?: CardMaterial[];
 }
 
+/** Bare metal: a metal card with no printed layer, so the alloy shows. Picked
+ *  by its swatch; the painter recognizes the color. */
+export const NATURAL_METAL = { color: '#cfcfd2', colorEnd: '#a9a9ad' };
+
 export const DESIGN_SWATCHES: DesignSwatch[] = [
+  { id: 'natural', label: 'Natural', ...NATURAL_METAL, materials: ['metal'] },
   { id: 'ink', label: 'Ink', color: '#151517', colorEnd: '#2b2b30' },
   { id: 'ocean', label: 'Ocean', color: '#0b3d91', colorEnd: '#0083c3' },
   { id: 'forest', label: 'Forest', color: '#0c3b2e', colorEnd: '#1f7a5a' },
@@ -36,6 +45,11 @@ export const DESIGN_SWATCHES: DesignSwatch[] = [
   { id: 'lilac', label: 'Lilac', color: '#5b3fb8', colorEnd: '#9b7bff' },
   { id: 'sand', label: 'Sand', color: '#d9c7a8', colorEnd: '#f1e6d2' },
 ];
+
+/** Whether the design shows bare metal (no print) rather than a printed face. */
+export function isBareMetal(design: Pick<CardDesign, 'material' | 'color'>): boolean {
+  return design.material === 'metal' && design.color.toLowerCase() === NATURAL_METAL.color;
+}
 
 export const MATERIALS: Array<{ id: CardMaterial; label: string }> = [
   { id: 'plastic', label: 'Plastic' },
@@ -49,9 +63,10 @@ export const FINISHES: Array<{ id: CardFinish; label: string }> = [
 
 export const initialDesign: CardDesign = {
   programName: 'Your brand',
-  color: DESIGN_SWATCHES[1].color,
-  colorEnd: DESIGN_SWATCHES[1].colorEnd,
+  color: DESIGN_SWATCHES[2].color,
+  colorEnd: DESIGN_SWATCHES[2].colorEnd,
   material: 'plastic',
   finish: 'matte',
   logoUrl: null,
+  backgroundUrl: null,
 };

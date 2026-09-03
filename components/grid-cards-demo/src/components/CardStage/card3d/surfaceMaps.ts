@@ -6,7 +6,7 @@
  * design's colors never touch them.
  */
 
-import type { CardFinish, CardMaterial } from '@/data/design';
+import { isBareMetal, type CardDesign, type CardFinish, type CardMaterial } from '@/data/design';
 import {
   chipContactsPath,
   chipPlatePath,
@@ -31,17 +31,20 @@ export interface SurfaceMaps {
   normal: HTMLCanvasElement;
 }
 
-/** A material and finish together name a surface. */
-export type Surface = `${CardMaterial}-${CardFinish}`;
-export const surfaceOf = (material: CardMaterial, finish: CardFinish): Surface => `${material}-${finish}`;
+/** What the face is made of, with its finish. A printed face (PVC card, or a
+ *  metal card's printed laminate) is `print`; a metal card with no print is
+ *  `bare`. Material itself only changes the edge and thickness. */
+export type Surface = `${'print' | 'bare'}-${CardFinish}`;
+export const surfaceOf = (design: Pick<CardDesign, 'material' | 'color' | 'finish'>): Surface =>
+  `${isBareMetal(design) ? 'bare' : 'print'}-${design.finish}`;
 
-/** Field roughness and metalness per surface: soft-touch and laminated PVC,
+/** Field roughness and metalness per surface: soft-touch and laminated print,
  *  brushed and polished metal. */
 const FIELD: Record<Surface, { rough: number; metal: number }> = {
-  'plastic-matte': { rough: 0.62, metal: 0 },
-  'plastic-gloss': { rough: 0.45, metal: 0 },
-  'metal-matte': { rough: 0.32, metal: 0.85 },
-  'metal-gloss': { rough: 0.12, metal: 0.9 },
+  'print-matte': { rough: 0.62, metal: 0 },
+  'print-gloss': { rough: 0.45, metal: 0 },
+  'bare-matte': { rough: 0.32, metal: 0.85 },
+  'bare-gloss': { rough: 0.12, metal: 0.9 },
 };
 
 const orm = (rough: number, metal: number) => `rgb(0, ${Math.round(rough * 255)}, ${Math.round(metal * 255)})`;
@@ -79,9 +82,10 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
     return c;
   }
   // Back: the product identifier is printed silver ink (flat, a little
-  // metallic); the Visa mark is stamped silver foil (near mirror).
+  // metallic); the Visa mark is stamped silver foil (metal with a soft,
+  // brushed sheen rather than a mirror).
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.5, 0.55), [0, LOCKUP_SPLIT]);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.18, 1), [LOCKUP_SPLIT, 1]);
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.3, 1), [LOCKUP_SPLIT, 1]);
   return c;
 }
 
@@ -94,10 +98,10 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
   ctx.fillRect(0, 0, MAP_W, MAP_H);
 
   // Surface grain, in map pixels. Polished metal is smooth.
-  if (surface !== 'metal-gloss') {
+  if (surface !== 'bare-gloss') {
     const img = ctx.getImageData(0, 0, MAP_W, MAP_H);
     const d = img.data;
-    if (surface === 'metal-matte') {
+    if (surface === 'bare-matte') {
       // Brushed: each row carries its own streak, with a little per-pixel break.
       for (let y = 0; y < MAP_H; y++) {
         const row = (Math.random() - 0.5) * 14;
@@ -108,8 +112,8 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
         }
       }
     } else {
-      // PVC: fine isotropic grain, finer under a gloss laminate.
-      const amp = surface === 'plastic-gloss' ? 5 : 8;
+      // Print: fine isotropic grain, finer under a gloss laminate.
+      const amp = surface === 'print-gloss' ? 5 : 8;
       for (let i = 0; i < d.length; i += 4) {
         const v = 128 + (Math.random() - 0.5) * amp;
         d[i] = d[i + 1] = d[i + 2] = v;
@@ -147,10 +151,27 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.fillRect(0, STRIPE.y * S, MAP_W, STRIPE.h * S);
   }
   if (side === 'back') {
-    // The foil is stamped flat: no grain under the lockup.
-    ctx.setTransform(S, 0, 0, S, 0, 0);
-    drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#808080');
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // The foil is hot-stamped: it sits a hair proud of the face, with a fine
+    // diagonal brush in the metal that gives it a directional sheen instead
+    // of a flat mirror.
+    const foil = makeCanvas(MAP_W, MAP_H);
+    const fctx = foil.getContext('2d')!;
+    fctx.fillStyle = '#8a8a8a';
+    fctx.fillRect(0, 0, MAP_W, MAP_H);
+    fctx.save();
+    fctx.translate(MAP_W / 2, MAP_H / 2);
+    fctx.rotate(-Math.PI / 4);
+    for (let y = -MAP_W; y < MAP_W; y += 2) {
+      fctx.fillStyle = `rgb(${138 + Math.round((Math.random() - 0.5) * 10)} 0 0)`;
+      fctx.fillRect(-MAP_W, y, MAP_W * 2, 1);
+    }
+    fctx.restore();
+    // Keep the foil only inside the lockup: mask by the artwork.
+    fctx.globalCompositeOperation = 'destination-in';
+    fctx.setTransform(S, 0, 0, S, 0, 0);
+    drawTinted(fctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#fff');
+    fctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(foil, 0, 0);
   }
   return c;
 }
@@ -244,7 +265,7 @@ export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets:
   if (!maps) {
     maps = {
       orm: bakeOrm(surface, side, assets),
-      normal: heightToNormal(bakeHeight(surface, side, assets), surface === 'metal-matte' ? 2.2 : 1.6),
+      normal: heightToNormal(bakeHeight(surface, side, assets), surface === 'bare-matte' ? 2.2 : 1.6),
     };
     surfaceCache.set(key, maps);
   }

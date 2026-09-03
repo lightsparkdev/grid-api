@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useRef, type ChangeEvent } from 'react';
+import { useEffect, useRef, type ChangeEvent, type CSSProperties } from 'react';
 import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
@@ -23,7 +23,20 @@ function swatchStyle(color: string, colorEnd?: string) {
   };
 }
 
-export function DesignPicker({ design, onChange }: DesignPickerProps) {
+/** One image upload: a preview with Remove once picked, an Upload button until then. */
+function UploadRow({
+  url,
+  accept,
+  label,
+  previewStyle,
+  onPick,
+}: {
+  url: string | null;
+  accept: string;
+  label: string;
+  previewStyle?: CSSProperties;
+  onPick: (url: string | null) => void;
+}) {
   const fileRef = useRef<HTMLInputElement>(null);
   const objectUrl = useRef<string | null>(null);
 
@@ -34,23 +47,50 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
     };
   }, []);
 
-  const onLogoPicked = (e: ChangeEvent<HTMLInputElement>) => {
+  const onPicked = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
-    const url = URL.createObjectURL(file);
-    objectUrl.current = url;
-    onChange({ logoUrl: url });
+    const next = URL.createObjectURL(file);
+    objectUrl.current = next;
+    onPick(next);
     e.target.value = '';
   };
 
-  const clearLogo = () => {
+  const clear = () => {
     if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
     objectUrl.current = null;
-    onChange({ logoUrl: null });
+    onPick(null);
   };
 
-  const activeSwatch = DESIGN_SWATCHES.find(
+  return (
+    <div className={styles.logoRow}>
+      {url ? (
+        <>
+          <span className={styles.logoPreview} style={previewStyle}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt="" />
+          </span>
+          <button type="button" className={styles.logoClear} onClick={clear}>
+            <IconCrossSmall size={16} aria-hidden />
+            Remove
+          </button>
+        </>
+      ) : (
+        <button type="button" className={styles.logoUpload} onClick={() => fileRef.current?.click()}>
+          <IconArrowUpSquare size={16} aria-hidden />
+          {label}
+        </button>
+      )}
+      <input ref={fileRef} type="file" accept={accept} className={styles.fileInput} onChange={onPicked} tabIndex={-1} />
+    </div>
+  );
+}
+
+export function DesignPicker({ design, onChange }: DesignPickerProps) {
+  // Bare metal ("Natural") is only a choice for a metal card.
+  const swatches = DESIGN_SWATCHES.filter((s) => !s.materials || s.materials.includes(design.material));
+  const activeSwatch = swatches.find(
     (s) => s.color === design.color && (s.colorEnd ?? s.color) === (design.colorEnd ?? design.color),
   );
 
@@ -70,9 +110,27 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
       </div>
 
       <div className={styles.row}>
+        <span className={styles.rowLabel}>Material</span>
+        <div className={styles.segments} role="radiogroup" aria-label="Card material">
+          {MATERIALS.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              role="radio"
+              aria-checked={design.material === m.id}
+              className={clsx(styles.segment, design.material === m.id && styles.segmentActive)}
+              onClick={() => onChange({ material: m.id })}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.row}>
         <span className={styles.rowLabel}>Color</span>
         <div className={styles.swatches} role="radiogroup" aria-label="Card color">
-          {DESIGN_SWATCHES.map((s) => (
+          {swatches.map((s) => (
             <button
               key={s.id}
               type="button"
@@ -103,24 +161,6 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
       </div>
 
       <div className={styles.row}>
-        <span className={styles.rowLabel}>Material</span>
-        <div className={styles.segments} role="radiogroup" aria-label="Card material">
-          {MATERIALS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              role="radio"
-              aria-checked={design.material === m.id}
-              className={clsx(styles.segment, design.material === m.id && styles.segmentActive)}
-              onClick={() => onChange({ material: m.id })}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.row}>
         <span className={styles.rowLabel}>Finish</span>
         <div className={styles.segments} role="radiogroup" aria-label="Card finish">
           {FINISHES.map((f) => (
@@ -140,37 +180,23 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
 
       <div className={styles.row}>
         <span className={styles.rowLabel}>Logo</span>
-        <div className={styles.logoRow}>
-          {design.logoUrl ? (
-            <>
-              <span className={styles.logoPreview} style={swatchStyle(design.color, design.colorEnd)}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={design.logoUrl} alt="" />
-              </span>
-              <button type="button" className={styles.logoClear} onClick={clearLogo}>
-                <IconCrossSmall size={16} aria-hidden />
-                Remove
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className={styles.logoUpload}
-              onClick={() => fileRef.current?.click()}
-            >
-              <IconArrowUpSquare size={16} aria-hidden />
-              Upload SVG or PNG
-            </button>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/svg+xml,image/png,image/webp"
-            className={styles.fileInput}
-            onChange={onLogoPicked}
-            tabIndex={-1}
-          />
-        </div>
+        <UploadRow
+          url={design.logoUrl}
+          accept="image/svg+xml,image/png,image/webp"
+          label="Upload SVG or PNG"
+          previewStyle={swatchStyle(design.color, design.colorEnd)}
+          onPick={(url) => onChange({ logoUrl: url })}
+        />
+      </div>
+
+      <div className={styles.row}>
+        <span className={styles.rowLabel}>Art</span>
+        <UploadRow
+          url={design.backgroundUrl}
+          accept="image/png,image/jpeg,image/webp"
+          label="Upload card art"
+          onPick={(url) => onChange({ backgroundUrl: url })}
+        />
       </div>
     </div>
   );

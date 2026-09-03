@@ -37,11 +37,30 @@ const SURFACE: Record<
   Surface,
   { clearcoat: number; clearcoatRoughness: number; envMapIntensity: number; normalScale: number }
 > = {
-  'plastic-matte': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 0.9, normalScale: 0.6 },
-  'plastic-gloss': { clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.55, normalScale: 0.35 },
-  'metal-matte': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.35, normalScale: 1.4 },
-  'metal-gloss': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.2, normalScale: 0.4 },
+  'print-matte': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 0.9, normalScale: 0.6 },
+  'print-gloss': { clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.55, normalScale: 0.35 },
+  'bare-matte': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.35, normalScale: 1.4 },
+  'bare-gloss': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.2, normalScale: 0.4 },
 };
+
+/** The image at `url` once loaded; null while loading, on failure, or with no url. */
+function useLoadedImage(url: string | null): HTMLImageElement | null {
+  const [state, setState] = useState<{ url: string | null; img: HTMLImageElement | null }>({ url: null, img: null });
+  useEffect(() => {
+    if (!url) {
+      setState({ url: null, img: null });
+      return;
+    }
+    let alive = true;
+    loadImage(url).then((img) => {
+      if (alive) setState({ url, img });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [url]);
+  return state.url === url ? state.img : null;
+}
 
 function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture {
   const t = new THREE.CanvasTexture(c);
@@ -66,7 +85,8 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
     const geometry = useMemo(() => createCardGeometry(cardMaterial), [cardMaterial]);
     useEffect(() => () => geometry.dispose(), [geometry]);
     const [assets, setAssets] = useState<FaceAssets | null>(null);
-    const [logo, setLogo] = useState<{ url: string | null; img: HTMLImageElement | null }>({ url: null, img: null });
+    const logo = useLoadedImage(state.design.logoUrl);
+    const art = useLoadedImage(state.design.backgroundUrl);
 
     // One canvas per face for the life of the mesh; repaints upload in place.
     const frontCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
@@ -93,24 +113,8 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
     // Surface textures are cached per surface and face for the session.
     const surfaceTex = useRef(new Map<string, { orm: THREE.Texture; normal: THREE.Texture }>());
 
-    // The uploaded logo, if any.
-    useEffect(() => {
-      const url = state.design.logoUrl;
-      if (!url) {
-        setLogo({ url: null, img: null });
-        return;
-      }
-      let alive = true;
-      loadImage(url).then((img) => {
-        if (alive) setLogo({ url, img });
-      });
-      return () => {
-        alive = false;
-      };
-    }, [state.design.logoUrl]);
-
-    // Surface: material- and finish-dependent maps and constants on both faces.
-    const surface = surfaceOf(state.design.material, state.design.finish);
+    // Surface: print or bare metal, matte or gloss, on both faces.
+    const surface = surfaceOf(state.design);
     useEffect(() => {
       if (!assets) return;
       const c = SURFACE[surface];
@@ -188,12 +192,12 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
 
     // Front print.
     const ready = useRef(false);
-    const logoImg = logo.url === state.design.logoUrl ? logo.img : null;
     useEffect(() => {
       if (!assets) return;
       paintFront(frontCanvas.getContext('2d')!, {
         design: state.design,
-        logo: logoImg,
+        logo,
+        art,
         lastFour,
         frozen: state.frozen,
         closed: state.closed,
@@ -204,7 +208,7 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
         ready.current = true;
         onReady?.();
       }
-    }, [assets, state.design, logoImg, lastFour, state.frozen, state.closed, frontCanvas, frontMap, invalidate, onReady]);
+    }, [assets, state.design, logo, art, lastFour, state.frozen, state.closed, frontCanvas, frontMap, invalidate, onReady]);
 
     // Back print.
     useEffect(() => {

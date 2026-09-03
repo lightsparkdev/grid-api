@@ -71,15 +71,16 @@
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: var(--spacing-2xs);
+  /* Eight swatches (Natural through the custom picker) fit on one line. */
+  gap: var(--spacing-3xs);
 }
 
 .swatch {
   all: unset;
   box-sizing: border-box;
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   cursor: pointer;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
@@ -129,23 +130,43 @@
   cursor: pointer;
 }
 
+/* Tab selector, ported from the flow builder's CodePanel audience toggle
+   (cURL / AI agent): a bordered, recessed track holding label-sm tabs; the
+   active tab lifts onto a base-surface card with its own hairline border.
+   Origin here predates --surface-elevated, so fall back to the exact colors
+   the flow builder resolves to (#FAFAF9 light / #111111 dark). */
 .segments {
-  flex: 1;
+  --segments-track: var(--surface-elevated, var(--surface-panel));
   display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-3xs);
+  align-items: center;
+  gap: var(--spacing-4xs);
+  margin-left: auto;
+  padding: var(--spacing-3xs);
+  background: var(--segments-track);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: var(--corner-radius-md);
+
+  :global([data-theme='dark']) & {
+    --segments-track: var(--surface-elevated, var(--surface-secondary));
+  }
 }
 
 .segment {
   all: unset;
   box-sizing: border-box;
-  @include label;
-  padding: var(--spacing-3xs) var(--spacing-xs);
-  border-radius: var(--corner-radius-sm);
+  @include label-sm;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--spacing-xs);
+  /* Transparent hairline so the active border doesn't shift the label. */
+  border: var(--stroke-xs) solid transparent;
+  border-radius: var(--corner-radius-xs);
   color: var(--text-secondary);
+  white-space: nowrap;
   font-feature-settings: 'salt' 1;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 
   @media (hover: hover) {
     &:hover:not(:disabled) {
@@ -155,12 +176,9 @@
 }
 
 .segmentActive {
-  background: var(--color-alpha-black-06, rgba(0, 0, 0, 0.06));
+  background: var(--surface-base);
+  border-color: var(--border-tertiary);
   color: var(--text-primary);
-
-  :global([data-theme='dark']) & {
-    background: var(--color-alpha-white-08, rgba(255, 255, 255, 0.08));
-  }
 }
 
 .logoRow {

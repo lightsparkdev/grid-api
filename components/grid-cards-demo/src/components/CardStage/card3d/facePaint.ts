@@ -9,7 +9,8 @@
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
 import { CARD_CVV, CARD_EXP, CARDHOLDER, PAN_GROUPS } from '@/apps/shared/card/cardholder';
 import { brandStops } from '@/apps/shared/brand/brandPalette';
-import type { CardDesign } from '@/data/design';
+import { isBareMetal, type CardDesign } from '@/data/design';
+import { CARD_FONT_FAMILY, loadCardFont } from './cardFont';
 
 export const TEX_W = 2048;
 export const TEX_H = Math.round((TEX_W * CARD_H) / CARD_W);
@@ -18,7 +19,8 @@ export const K = TEX_W / CARD_W;
 /** Figma spec px → texels. */
 export const F = (px: number) => fig(px) * K;
 
-const FONT = '"Suisse Intl"';
+const FONT = `"${CARD_FONT_FAMILY}"`;
+/** The masked last 4 on the front sits quieter than the brand. */
 const INK = 'rgba(255, 255, 255, 0.55)';
 
 /* ── Spec geometry shared with the surface maps ───────────────────────────── */
@@ -61,12 +63,7 @@ export function loadFaceAssets(): Promise<FaceAssets> {
     assetsPromise = Promise.all([
       loadImage('/assets/card/visa-debit-lockup.svg'),
       loadImage('/assets/card/contactless.svg'),
-      typeof document !== 'undefined' && 'fonts' in document
-        ? Promise.all([
-            document.fonts.load(`500 ${F(57)}px ${FONT}`),
-            document.fonts.load(`400 ${F(57)}px ${FONT}`),
-          ]).catch(() => undefined)
-        : Promise.resolve(undefined),
+      loadCardFont().catch(() => undefined),
     ]).then(([lockup, contactless]) => {
       if (!lockup || !contactless) throw new Error('card face assets missing');
       return { lockup, contactless };
@@ -134,9 +131,31 @@ export function chipContactsPath(ctx: CanvasRenderingContext2D) {
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
 
-/** The brand color with a light sweep top-left and depth bottom-right (the
- *  same stops brandVars() gave the DOM face). `deepFirst` for the back. */
-function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst: boolean) {
+/** Draw `img` covering the whole face (object-fit: cover, centered). */
+function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
+  const r = Math.max(TEX_W / img.width, TEX_H / img.height);
+  const w = img.width * r;
+  const h = img.height * r;
+  ctx.drawImage(img, (TEX_W - w) / 2, (TEX_H - h) / 2, w, h);
+}
+
+/**
+ * The face's ground. Bare metal is the alloy itself, a near-neutral silver
+ * whose shading comes from the studio. A printed face is the brand color with
+ * a light sweep top-left and depth bottom-right (`deepFirst` for the back), or
+ * the uploaded art on the front.
+ */
+function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst: boolean, art: HTMLImageElement | null) {
+  if (isBareMetal(design)) {
+    // Titanium gray; the studio does the rest.
+    ctx.fillStyle = '#a4a4a7';
+    ctx.fillRect(0, 0, TEX_W, TEX_H);
+    return;
+  }
+  if (art && !deepFirst) {
+    drawCover(ctx, art);
+    return;
+  }
   const { color, light, deep } = brandStops(design.color, design.colorEnd);
   ctx.fillStyle = deepFirst ? deep : color;
   ctx.fillRect(0, 0, TEX_W, TEX_H);
@@ -152,17 +171,6 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst:
   } else {
     radial(0, 0, TEX_W * 1.2, light, 0.55);
     radial(TEX_W, TEX_H, TEX_W * 1.1, deep, 0.6);
-  }
-  if (design.material === 'metal') {
-    // Alloy: a metal's albedo is its reflectance, so pull the saturation down
-    // and lift it toward silver or the reflections go black.
-    ctx.globalCompositeOperation = 'saturation';
-    ctx.fillStyle = 'rgba(128,128,128,0.45)';
-    ctx.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.globalCompositeOperation = 'screen';
-    ctx.fillStyle = 'rgba(190,196,206,0.32)';
-    ctx.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.globalCompositeOperation = 'source-over';
   }
 }
 
@@ -193,9 +201,13 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
  *  Standards, January 2026: "silver foil PVBM, printed silver product
  *  identifier"). The surface maps make the mark a mirror and the identifier
  *  flat. */
-function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#c6c7cc', [0, LOCKUP_SPLIT]);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#e2e2e6', [LOCKUP_SPLIT, 1]);
+function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, bare: boolean) {
+  // Silver foil would vanish on bare metal; the standards allow a black foil
+  // PVBM with a black printed identifier, which is what metal cards use.
+  const identifier = bare ? '#2a2a2e' : '#c6c7cc';
+  const mark = bare ? '#1c1c20' : '#d4d4d8';
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, mark, [LOCKUP_SPLIT, 1]);
 }
 
 /** Silver (nickel-plated) contact module; the material makes it metal. */
@@ -222,33 +234,45 @@ function paintChip(ctx: CanvasRenderingContext2D) {
 export interface FrontState {
   design: CardDesign;
   logo: HTMLImageElement | null;
+  /** Uploaded card art, if any. */
+  art: HTMLImageElement | null;
   /** How far the last 4 has faded in (0 before ACTIVE, 1 once it has). */
   lastFour: number;
   frozen: boolean;
   closed: boolean;
 }
 
+/** Brand placement from the Thales print sample (Figma vgVxXUAcCwNUKjX1xdDIFl,
+ *  1:97): on the chip's row, right-aligned to the chip's own inset (152), the
+ *  logo 90 tall and up to 410 wide, centered on the chip's height. */
+const BRAND_RIGHT = TEX_W - F(152);
+const BRAND_CENTER_Y = CHIP.y + CHIP_H / 2;
+const BRAND_LOGO_H = F(90);
+const BRAND_LOGO_MAX_W = F(410);
+const BRAND_TEXT_PX = F(96);
+
 export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, s.design, false);
+  paintBase(ctx, s.design, false, s.art);
+  const bare = isBareMetal(s.design);
+  const ink = bare ? '#26262b' : '#ffffff';
 
-  // Program name at (56, 54), 57 px medium, white.
-  const name = s.design.programName.trim() || 'Your brand';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `500 ${F(57)}px ${FONT}`;
-  ctx.textBaseline = 'alphabetic';
-  ctx.textAlign = 'left';
-  ctx.fillText(name, F(56), F(54) + F(41));
-
-  // Logo top-right (max 398 × 116 spec px), contained.
+  // Brand: the logo when uploaded, else the program name as a wordmark.
   if (s.logo) {
-    const maxW = F(398);
-    const maxH = F(116);
-    const r = Math.min(maxW / s.logo.width, maxH / s.logo.height);
+    const r = Math.min(BRAND_LOGO_MAX_W / s.logo.width, BRAND_LOGO_H / s.logo.height);
     const w = s.logo.width * r;
     const h = s.logo.height * r;
-    ctx.drawImage(s.logo, TEX_W - F(56) - w, F(54) + (F(57) - h) / 2, w, h);
+    ctx.drawImage(s.logo, BRAND_RIGHT - w, BRAND_CENTER_Y - h / 2, w, h);
+  } else {
+    const name = s.design.programName.trim() || 'Your brand';
+    ctx.fillStyle = ink;
+    ctx.font = `500 ${BRAND_TEXT_PX}px ${FONT}`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'right';
+    // Center the cap height (about 0.7 em) on the chip's row.
+    ctx.fillText(name, BRAND_RIGHT, BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35);
+    ctx.textAlign = 'left';
   }
 
   paintChip(ctx);
@@ -258,8 +282,10 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   if (s.lastFour > 0) {
     ctx.save();
     ctx.globalAlpha = Math.min(1, s.lastFour);
-    ctx.fillStyle = INK;
+    ctx.fillStyle = bare ? 'rgba(38, 38, 43, 0.75)' : INK;
     ctx.font = `400 ${F(57)}px ${FONT}`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
     ctx.fillText(`•••• ${PAN_GROUPS[PAN_GROUPS.length - 1]}`, F(56), F(915));
     ctx.restore();
   }
@@ -278,16 +304,18 @@ export interface BackState {
 export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: FaceAssets) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, s.design, true);
+  paintBase(ctx, s.design, true, null);
+  const bare = isBareMetal(s.design);
+  const ink = bare ? '#26262b' : '#ffffff';
 
-  // Mag stripe.
+  // Mag stripe, bleeding to the top edge (Thales sample 1:116).
   ctx.fillStyle = '#242426';
-  ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
+  ctx.fillRect(0, 0, TEX_W, STRIPE.y + STRIPE.h);
 
   // Contactless indicator: right-aligned at 54, 90 tall.
   const ch = F(90);
   const cw = ch * (67.3435 / 90);
-  drawTinted(ctx, assets.contactless, TEX_W - F(54) - cw, F(470), cw, ch, '#ffffff');
+  drawTinted(ctx, assets.contactless, TEX_W - F(54) - cw, F(470), cw, ch, ink);
 
   // Account block at (56, 476): name, PAN, EXP / CVV, on 41 px lines 32 apart.
   const x = F(56);
@@ -297,11 +325,10 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
   ctx.font = `400 ${F(57)}px ${FONT}`;
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = ink;
   ctx.fillText(CARDHOLDER, x, y);
 
   y += line + gap;
-  ctx.fillStyle = INK;
   const groupW = ctx.measureText('0000').width;
   const groupGap = F(57) * 0.28;
   const last = PAN_GROUPS.length - 1;
@@ -333,7 +360,7 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.fillText('1-855-516-0103   lightspark.com/help', x, F(876) + F(16));
   ctx.fillText('Issued by Lead Bank', x, F(876) + F(16) + F(26));
 
-  paintLockup(ctx, assets);
+  paintLockup(ctx, assets, bare);
   paintState(ctx, s.frozen, s.closed);
 }
 

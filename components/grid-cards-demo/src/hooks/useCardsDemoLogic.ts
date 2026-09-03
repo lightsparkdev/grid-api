@@ -25,7 +25,7 @@ import {
   type CardSpendLimits,
   type SpendRef,
 } from '@/data/cardApiCalls';
-import { initialDesign, type CardDesign } from '@/data/design';
+import { initialDesign, isBareMetal, type CardDesign } from '@/data/design';
 import type { Entry } from '@/components/ApiPanel/types';
 import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
 
@@ -65,7 +65,15 @@ export function useCardsDemoLogic() {
   const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   const updateDesign = useCallback((patch: Partial<CardDesign>) => {
-    setDesign((d) => ({ ...d, ...patch }));
+    setDesign((d) => {
+      const next = { ...d, ...patch };
+      // Bare metal is a metal-only color; a plastic card falls back to the default.
+      if (next.material === 'plastic' && isBareMetal({ material: 'metal', color: next.color })) {
+        next.color = initialDesign.color;
+        next.colorEnd = initialDesign.colorEnd;
+      }
+      return next;
+    });
   }, []);
   // The latest design, readable from callbacks without re-binding them.
   const designRef = useRef(design);

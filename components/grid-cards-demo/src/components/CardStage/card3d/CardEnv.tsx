@@ -28,20 +28,22 @@ interface Light {
 
 const LIGHTS: Light[] = [
   // Key: above and a little left, in front. The sheen line on the face.
-  { dir: [-0.35, 0.65, 0.7], radius: 0.32, intensity: 2.4, color: [1, 0.995, 0.98] },
-  // Fill: behind the camera, broad and soft, so a head-on face reflects bright.
-  { dir: [0.15, 0.1, 1], radius: 0.55, intensity: 1.35, color: [1, 1, 1] },
+  { dir: [-0.35, 0.65, 0.7], radius: 0.28, intensity: 2.8, color: [1, 0.995, 0.98] },
+  // Fill: behind the camera and off to the upper right, so a head-on face
+  // shows it as a soft band across one side rather than a wash over all of it.
+  { dir: [0.45, 0.32, 1], radius: 0.34, intensity: 2.0, color: [1, 1, 1] },
 ];
 
-/** Sphere gradient by elevation: floor graphite → ceiling near white. */
+/** Sphere gradient by elevation: floor graphite → ceiling light gray. The room
+ *  itself stays under white so gloss and metal read their color between the
+ *  lights instead of mirroring a white wall everywhere. */
 function base(y: number): [number, number, number] {
-  // y in -1..1; the Z card's stops: 0 → #444342, 0.4 → #939291, 0.68 → #e2e1df, 1 → #fcfcfb.
   const t = (y + 1) / 2;
   const stops: Array<[number, [number, number, number]]> = [
-    [0, [0.267, 0.263, 0.259]],
-    [0.4, [0.576, 0.573, 0.569]],
-    [0.68, [0.886, 0.882, 0.875]],
-    [1, [0.988, 0.988, 0.984]],
+    [0, [0.16, 0.158, 0.155]],
+    [0.4, [0.36, 0.358, 0.355]],
+    [0.68, [0.6, 0.598, 0.592]],
+    [1, [0.72, 0.72, 0.715]],
   ];
   for (let i = 1; i < stops.length; i++) {
     if (t <= stops[i][0]) {
