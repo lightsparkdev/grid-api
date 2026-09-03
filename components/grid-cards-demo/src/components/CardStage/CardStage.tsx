@@ -265,7 +265,13 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
     // Stage px → scene: origin at the stage center, y up.
     c.position.set(x + pose.dx * s - size.width / 2, size.height / 2 - (y + bob), 0);
     c.scale.setScalar(s);
-    g.quaternion.copy(pose.quat);
+    // Euler XYZ: Rx(pitch) · Ry(spin) · Rz(roll), the roll innermost so it
+    // turns the faces about the card's own normal.
+    g.rotation.set(
+      THREE.MathUtils.degToRad(pose.rotX),
+      THREE.MathUtils.degToRad(pose.rotY),
+      THREE.MathUtils.degToRad(pose.rotZ),
+    );
 
     const hit = hitRef.current;
     if (hit) {
