@@ -70,11 +70,7 @@ allOf:
         description: Details about the rate and fees for the transaction.
       failureReason:
         $ref: ./OutgoingTransactionFailureReason.yaml
-        description: >-
-          If the transaction failed, this field provides the reason for failure.
-          A payment that settled into a rule-based account but could not be
-          swept to the rule's destination fails here too, with one of the
-          `SWEEP_*` reasons.
+        description: If the transaction failed, this field provides the reason for failure.
       paymentRail:
         anyOf:
           - $ref: ../common/PaymentRail.yaml
