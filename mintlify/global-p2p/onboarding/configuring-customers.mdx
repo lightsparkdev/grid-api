@@ -5,6 +5,8 @@ icon: "/images/icons/people.svg"
 "og:image": "/images/og/og-global-p2p.png"
 ---
 import KycWebhooks from '/snippets/kyc/kyc-webhooks.mdx'
+import VerificationWebhooks from '/snippets/kyc/verification-webhooks.mdx'
+import CustomerDataRequirements from '/snippets/kyc/customer-data-requirements.mdx'
 import CustomerTypes from '/snippets/creating-customers/customer-types.mdx'
 import OnboardingModel from '/snippets/creating-customers/onboarding-model.mdx'
 import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
@@ -21,16 +23,6 @@ The only required field for all customers is `customerType` (`INDIVIDUAL` or `BU
 If using sending and receiving to just-in-time UMA addresses, you'll also need to specify the bank account information
 
 ## Creating Customers
-
-<AccordionGroup>
-    <Accordion title="Regulated Platforms" icon="">
-        <KycRegulated />
-    </Accordion>
-    <Accordion title="Unregulated Platforms" icon="">
-        <KycUnregulated />
-    </Accordion>
-</AccordionGroup>
-
 
 ### Individual customers
 
@@ -58,6 +50,18 @@ When creating or updating customers, the `customerType` field must be specified 
 <Tip>
 There can be multiple customers with the same platformCustomerId but different UMA addresses. This is useful if you want to track multiple UMA addresses and/or bank accounts for the same customer in your platform.
 </Tip>
+
+## What to Collect
+
+<CustomerDataRequirements />
+
+## Regulated Platforms
+
+<KycRegulated />
+
+## Unregulated Platforms
+
+<KycUnregulated />
 
 ## Customer Creation Process
 
@@ -191,9 +195,13 @@ Response:
 4. After the user is redirected back to your app, they can continue with account setup until KYC review is complete.
 5. Track the decision via the `CUSTOMER.KYC_APPROVED` / `CUSTOMER.KYC_REJECTED` webhook (use the `CUSTOMER.KYB_*` siblings for business customers), or poll `GET /customers/{customerId}` and inspect `kycStatus`. On `APPROVED`, the customer is ready to transact and you can unlock funding.
 
-### Handling KYC/KYB Webhooks
+## Handling KYC/KYB Webhooks
 
 <KycWebhooks />
+
+### Handling Verification Issues
+
+<VerificationWebhooks />
 
 ## Customer management
 
