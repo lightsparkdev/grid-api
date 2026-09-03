@@ -32,6 +32,29 @@
   touch-action: none;
   user-select: none;
   --pill-opacity: 1;
+  /* Blueprint ink: blue lines on the light stage, lighter on the dark one;
+     the scan line is the brightest thing on the stage either way. */
+  --card-blueprint: #2f6fee;
+  --card-scan: #2f6fee;
+
+  :global([data-theme='dark']) & {
+    --card-blueprint: #6ea8ff;
+    --card-scan: #ffffff;
+  }
+}
+
+/* The intro's blueprint: card px around the hit box, scaled with it. */
+.blueprint {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.blueprintLabel {
+  font-family: var(--font-family-mono);
+  fill: var(--card-blueprint);
+  stroke: none;
+  letter-spacing: 0.02em;
 }
 
 .hitDragging {

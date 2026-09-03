@@ -136,10 +136,17 @@ function FoilMark({ assets, backZ, visible }: { assets: FaceAssets; backZ: numbe
  * metalness, relief, foil) comes from the per-finish bakes. The parent group
  * is positioned and rotated by the stage.
  */
-export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?: () => void }>(function CardMesh(
-  { state, onReady },
-  ref,
-) {
+interface CardMeshProps {
+  state: CardMeshState;
+  /** Fires once, when the front has first been painted. */
+  onReady?: () => void;
+  /** A world-space plane the card is clipped to while set (the intro's print
+   *  sweeps it across the card). Mutate its constant; the reference is what
+   *  the materials hold. */
+  clip?: THREE.Plane | null;
+}
+
+export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh({ state, onReady, clip = null }, ref) {
   const invalidate = useThree((s) => s.invalidate);
   // Thickness follows the material, so the slab is rebuilt when it changes.
   const cardMaterial = materialOf(state.design);
@@ -184,6 +191,15 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
   useEffect(() => {
     loadFaceAssets().then(setAssets);
   }, []);
+
+  // Clip (the intro's print): the same plane on every part of the slab.
+  useEffect(() => {
+    for (const m of materials) {
+      m.clippingPlanes = clip ? [clip] : null;
+      m.needsUpdate = true;
+    }
+    invalidate();
+  }, [clip, materials, invalidate]);
 
   // Surface textures are cached per surface and face for the session.
   const surfaceTex = useRef(new Map<string, { orm: THREE.Texture; normal: THREE.Texture }>());
