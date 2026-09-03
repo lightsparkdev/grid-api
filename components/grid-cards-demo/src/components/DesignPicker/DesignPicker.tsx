@@ -5,7 +5,7 @@ import { useEffect, useRef, type ChangeEvent } from 'react';
 import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
-import { DESIGN_SWATCHES, FINISHES, type CardDesign, type CardFinish } from '@/data/design';
+import { DESIGN_SWATCHES, FINISHES, MATERIALS, type CardDesign } from '@/data/design';
 import styles from './DesignPicker.module.scss';
 
 interface DesignPickerProps {
@@ -103,6 +103,24 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
       </div>
 
       <div className={styles.row}>
+        <span className={styles.rowLabel}>Material</span>
+        <div className={styles.segments} role="radiogroup" aria-label="Card material">
+          {MATERIALS.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              role="radio"
+              aria-checked={design.material === m.id}
+              className={clsx(styles.segment, design.material === m.id && styles.segmentActive)}
+              onClick={() => onChange({ material: m.id })}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.row}>
         <span className={styles.rowLabel}>Finish</span>
         <div className={styles.segments} role="radiogroup" aria-label="Card finish">
           {FINISHES.map((f) => (
@@ -112,7 +130,7 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
               role="radio"
               aria-checked={design.finish === f.id}
               className={clsx(styles.segment, design.finish === f.id && styles.segmentActive)}
-              onClick={() => onChange({ finish: f.id as CardFinish })}
+              onClick={() => onChange({ finish: f.id })}
             >
               {f.label}
             </button>

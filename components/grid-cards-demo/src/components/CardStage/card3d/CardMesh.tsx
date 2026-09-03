@@ -3,7 +3,8 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { CardDesign, CardFinish } from '@/data/design';
+import { brandStops } from '@/apps/shared/brand/brandPalette';
+import type { CardDesign } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import {
   loadFaceAssets,
@@ -15,7 +16,7 @@ import {
   TEX_W,
   type FaceAssets,
 } from './facePaint';
-import { getFoilMaps, getSurfaceMaps } from './surfaceMaps';
+import { bakeEdge, getFoilMaps, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -30,14 +31,16 @@ export interface CardMeshState {
 const LAST4_FADE_MS = 450;
 const LAST4_FADE_STEPS = 6;
 
-/** Per-finish material constants beyond the maps. */
-const FINISH: Record<
-  CardFinish,
-  { clearcoat: number; clearcoatRoughness: number; envMapIntensity: number; normalScale: number; edge: string; edgeMetal: number; edgeRough: number }
+/** Per-surface material constants beyond the maps: the coat and how much
+ *  studio the face reflects. */
+const SURFACE: Record<
+  Surface,
+  { clearcoat: number; clearcoatRoughness: number; envMapIntensity: number; normalScale: number }
 > = {
-  matte: { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 0.9, normalScale: 0.6, edge: '#e9e9ec', edgeMetal: 0, edgeRough: 0.55 },
-  metal: { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.35, normalScale: 1.4, edge: '#d4d4d8', edgeMetal: 1, edgeRough: 0.18 },
-  glass: { clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.55, normalScale: 0.35, edge: '#e9e9ec', edgeMetal: 0, edgeRough: 0.5 },
+  'plastic-matte': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 0.9, normalScale: 0.6 },
+  'plastic-gloss': { clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.55, normalScale: 0.35 },
+  'metal-matte': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.35, normalScale: 1.4 },
+  'metal-gloss': { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.2, normalScale: 0.4 },
 };
 
 function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture {
@@ -58,7 +61,10 @@ function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture 
 export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?: () => void }>(
   function CardMesh({ state, onReady }, ref) {
     const invalidate = useThree((s) => s.invalidate);
-    const geometry = useMemo(() => createCardGeometry(), []);
+    // Thickness follows the material, so the slab is rebuilt when it changes.
+    const cardMaterial = state.design.material;
+    const geometry = useMemo(() => createCardGeometry(cardMaterial), [cardMaterial]);
+    useEffect(() => () => geometry.dispose(), [geometry]);
     const [assets, setAssets] = useState<FaceAssets | null>(null);
     const [logo, setLogo] = useState<{ url: string | null; img: HTMLImageElement | null }>({ url: null, img: null });
 
@@ -81,7 +87,8 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       const mats: THREE.MeshPhysicalMaterial[] = [];
       mats[MAT_BACK] = face();
       mats[MAT_FRONT] = face();
-      mats[MAT_EDGE] = new THREE.MeshPhysicalMaterial({ color: '#e9e9ec', roughness: 0.55 });
+      // The edge reads its layers from a strip (albedo + roughness/metalness).
+      mats[MAT_EDGE] = new THREE.MeshPhysicalMaterial({ color: '#ffffff', metalness: 1, roughness: 1 });
       mats[MAT_BACK].map = backMap;
       mats[MAT_FRONT].map = frontMap;
       return mats;
@@ -111,23 +118,23 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       };
     }, [state.design.logoUrl]);
 
-    // Surface: finish-dependent maps and constants on both faces and the edge.
-    const finish = state.design.finish;
+    // Surface: material- and finish-dependent maps and constants on both faces.
+    const surface = surfaceOf(state.design.material, state.design.finish);
     useEffect(() => {
       if (!assets) return;
       if (!foilTex.current) {
         const f = getFoilMaps(assets);
         foilTex.current = { mask: canvasTexture(f.mask), thickness: canvasTexture(f.thickness) };
       }
-      const c = FINISH[finish];
+      const c = SURFACE[surface];
       for (const [side, idx] of [
         ['front', MAT_FRONT],
         ['back', MAT_BACK],
       ] as const) {
-        const key = `${finish}|${side}`;
+        const key = `${surface}|${side}`;
         let t = surfaceTex.current.get(key);
         if (!t) {
-          const m = getSurfaceMaps(finish, side, assets);
+          const m = getSurfaceMaps(surface, side, assets);
           t = { orm: canvasTexture(m.orm), normal: canvasTexture(m.normal) };
           surfaceTex.current.set(key, t);
         }
@@ -143,12 +150,27 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
         mat.envMapIntensity = c.envMapIntensity;
         mat.needsUpdate = true;
       }
-      const edge = materials[MAT_EDGE];
-      edge.color.set(c.edge);
-      edge.metalness = c.edgeMetal;
-      edge.roughness = c.edgeRough;
       invalidate();
-    }, [assets, finish, materials, invalidate]);
+    }, [assets, surface, materials, invalidate]);
+
+    // Edge: the construction's layers, the printed skins in the card's deep tone.
+    const edgeSkin = brandStops(state.design.color, state.design.colorEnd).deep;
+    const edgeTex = useRef<{ albedo: THREE.Texture; orm: THREE.Texture } | null>(null);
+    useEffect(() => {
+      const strips = bakeEdge(cardMaterial, edgeSkin);
+      edgeTex.current?.albedo.dispose();
+      edgeTex.current?.orm.dispose();
+      const albedo = canvasTexture(strips.albedo, true);
+      const orm = canvasTexture(strips.orm);
+      edgeTex.current = { albedo, orm };
+      const edge = materials[MAT_EDGE];
+      edge.map = albedo;
+      edge.roughnessMap = orm;
+      edge.metalnessMap = orm;
+      edge.envMapIntensity = cardMaterial === 'metal' ? 1.3 : 0.9;
+      edge.needsUpdate = true;
+      invalidate();
+    }, [cardMaterial, edgeSkin, materials, invalidate]);
 
     // The last 4 fades in over LAST4_FADE_MS when the card goes ACTIVE (a few
     // repaints); it is simply there or not otherwise.
@@ -220,9 +242,10 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
         });
         foilTex.current?.mask.dispose();
         foilTex.current?.thickness.dispose();
-        geometry.dispose();
+        edgeTex.current?.albedo.dispose();
+        edgeTex.current?.orm.dispose();
       },
-      [materials, frontMap, backMap, geometry],
+      [materials, frontMap, backMap],
     );
 
     return (

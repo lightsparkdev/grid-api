@@ -1,48 +1,109 @@
 'use client';
 
-import { Environment, GradientTexture, Lightformer } from '@react-three/drei';
+import { useEffect, useMemo } from 'react';
+import { Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
 /**
- * The studio the card sits in, carried over from the wallet demo's Z card: a
- * big inverted sphere with a vertical gradient (bright cool ceiling, graphite
- * floor) so a metal face reads as silver with a smooth top-to-bottom falloff,
- * a soft key above the camera for the sheen line, and a broad bright panel
- * behind the camera so a head-on face mirrors something bright. Baked once.
+ * The studio the card sits in, as one HDR equirectangular map: a vertical
+ * gradient (bright cool ceiling, graphite floor) with two soft lights painted
+ * into it, a key above-left-front and a broad fill behind the camera. Painting
+ * the lights into the map (rather than placing panel meshes) keeps every edge
+ * in the environment smooth; a panel's hard edge reflects as a hard line
+ * across a flat card. Float pixels so the lights can exceed white.
  */
+
+const ENV_W = 1024;
+const ENV_H = 512;
+
+interface Light {
+  /** Direction the light sits in, world space (the card faces +Z, camera at +Z). */
+  dir: [number, number, number];
+  /** Angular radius, radians, of the soft disc. */
+  radius: number;
+  /** Radiance at the center (1 = white). */
+  intensity: number;
+  color: [number, number, number];
+}
+
+const LIGHTS: Light[] = [
+  // Key: above and a little left, in front. The sheen line on the face.
+  { dir: [-0.35, 0.65, 0.7], radius: 0.32, intensity: 2.4, color: [1, 0.995, 0.98] },
+  // Fill: behind the camera, broad and soft, so a head-on face reflects bright.
+  { dir: [0.15, 0.1, 1], radius: 0.55, intensity: 1.35, color: [1, 1, 1] },
+];
+
+/** Sphere gradient by elevation: floor graphite → ceiling near white. */
+function base(y: number): [number, number, number] {
+  // y in -1..1; the Z card's stops: 0 → #444342, 0.4 → #939291, 0.68 → #e2e1df, 1 → #fcfcfb.
+  const t = (y + 1) / 2;
+  const stops: Array<[number, [number, number, number]]> = [
+    [0, [0.267, 0.263, 0.259]],
+    [0.4, [0.576, 0.573, 0.569]],
+    [0.68, [0.886, 0.882, 0.875]],
+    [1, [0.988, 0.988, 0.984]],
+  ];
+  for (let i = 1; i < stops.length; i++) {
+    if (t <= stops[i][0]) {
+      const [t0, c0] = stops[i - 1];
+      const [t1, c1] = stops[i];
+      const k = (t - t0) / (t1 - t0);
+      return [c0[0] + (c1[0] - c0[0]) * k, c0[1] + (c1[1] - c0[1]) * k, c0[2] + (c1[2] - c0[2]) * k];
+    }
+  }
+  return stops[stops.length - 1][1];
+}
+
+function studioTexture(): THREE.DataTexture {
+  const data = new Float32Array(ENV_W * ENV_H * 4);
+  const lights = LIGHTS.map((l) => {
+    const n = Math.hypot(...l.dir);
+    return { ...l, dir: l.dir.map((c) => c / n) as [number, number, number] };
+  });
+  for (let j = 0; j < ENV_H; j++) {
+    // v runs bottom (-π/2) to top (+π/2); a DataTexture's row 0 is v = 0.
+    const v = (j + 0.5) / ENV_H;
+    const lat = (v - 0.5) * Math.PI;
+    for (let i = 0; i < ENV_W; i++) {
+      // three's equirect: u = atan2(z, x) / 2π + 0.5.
+      const u = (i + 0.5) / ENV_W;
+      const lon = (u - 0.5) * Math.PI * 2;
+      const x = Math.cos(lat) * Math.cos(lon);
+      const z = Math.cos(lat) * Math.sin(lon);
+      const y = Math.sin(lat);
+      const [r, g, b] = base(y);
+      let R = r;
+      let G = g;
+      let B = b;
+      for (const l of lights) {
+        const cos = x * l.dir[0] + y * l.dir[1] + z * l.dir[2];
+        const ang = Math.acos(Math.max(-1, Math.min(1, cos)));
+        // Soft disc: full inside half the radius, smooth falloff to the rim.
+        const k = 1 - Math.min(1, Math.max(0, (ang - l.radius * 0.45) / (l.radius * 0.55)));
+        const w = k * k * (3 - 2 * k) * l.intensity;
+        R += w * l.color[0];
+        G += w * l.color[1];
+        B += w * l.color[2];
+      }
+      const o = (j * ENV_W + i) * 4;
+      data[o] = R;
+      data[o + 1] = G;
+      data[o + 2] = B;
+      data[o + 3] = 1;
+    }
+  }
+  const t = new THREE.DataTexture(data, ENV_W, ENV_H, THREE.RGBAFormat, THREE.FloatType);
+  t.mapping = THREE.EquirectangularReflectionMapping;
+  t.colorSpace = THREE.LinearSRGBColorSpace;
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearFilter;
+  t.generateMipmaps = false;
+  t.needsUpdate = true;
+  return t;
+}
+
 export function CardEnv() {
-  return (
-    <Environment resolution={512} frames={1} background={false}>
-      <mesh scale={60}>
-        <sphereGeometry args={[1, 64, 64]} />
-        <meshBasicMaterial side={THREE.BackSide} toneMapped={false}>
-          <GradientTexture
-            attach="map"
-            stops={[0, 0.4, 0.68, 1]}
-            colors={['#444342', '#939291', '#e2e1df', '#fcfcfb']}
-          />
-        </meshBasicMaterial>
-      </mesh>
-      {/* Key: above and a little left, in front. The face's highlight. */}
-      <Lightformer
-        form="rect"
-        intensity={1.1}
-        color="#fbfaf8"
-        position={[-3, 6, 10]}
-        scale={[12, 5, 1]}
-        target={[0, 0, 0]}
-      />
-      {/* Broad fill behind the camera so head-on faces (and the foil, a
-          mirror) reflect something bright. Kept near unit radiance: a matte
-          face is lit by this, and brighter washes its color out. */}
-      <Lightformer
-        form="rect"
-        intensity={1.2}
-        color="#ffffff"
-        position={[3, 1, 12]}
-        scale={[12, 9, 1]}
-        target={[0, 0, 0]}
-      />
-    </Environment>
-  );
+  const map = useMemo(() => studioTexture(), []);
+  useEffect(() => () => map.dispose(), [map]);
+  return <Environment map={map} background={false} />;
 }

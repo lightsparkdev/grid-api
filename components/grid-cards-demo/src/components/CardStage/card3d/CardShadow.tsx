@@ -11,8 +11,15 @@ const BLUR = 22;
 const PAD = BLUR * 2;
 /** Offset from the card, card px: the key sits above-left, so the shadow falls down-right. */
 export const SHADOW_OFFSET = { x: 5, y: -12 };
-/** How far behind the card the shadow plane sits (px). */
-export const SHADOW_Z = -50;
+/** How far behind the card the shadow plane sits (px). Past the card's reach
+ *  when it spins (half its width at the largest stage scale), or the plane
+ *  would cut through the turned card and tint the part behind it. */
+export const SHADOW_Z = -330;
+/** The camera distance the stage uses; the plane is scaled up by its extra
+ *  depth so it projects at the card's size. */
+const CAMERA_Z = 2000;
+export const SHADOW_DEPTH_SCALE = (CAMERA_Z - SHADOW_Z) / CAMERA_Z;
+const DEPTH_SCALE = SHADOW_DEPTH_SCALE;
 
 function shadowTexture(): THREE.CanvasTexture {
   const w = CARD_W + PAD * 2;
@@ -55,7 +62,12 @@ export const CardShadow = forwardRef<THREE.Mesh>(function CardShadow(_, ref) {
     [material, texture],
   );
   return (
-    <mesh ref={ref} material={material} position={[SHADOW_OFFSET.x, SHADOW_OFFSET.y, SHADOW_Z]}>
+    <mesh
+      ref={ref}
+      material={material}
+      position={[SHADOW_OFFSET.x * DEPTH_SCALE, SHADOW_OFFSET.y * DEPTH_SCALE, SHADOW_Z]}
+      scale={DEPTH_SCALE}
+    >
       <planeGeometry args={[CARD_W + PAD * 2, CARD_H + PAD * 2]} />
     </mesh>
   );

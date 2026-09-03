@@ -13,7 +13,7 @@ import { useThemeMode } from '@/hooks/useThemeMode';
 import type { CardDesign } from '@/data/design';
 import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type CardMeshState } from './card3d/CardMesh';
-import { CardShadow } from './card3d/CardShadow';
+import { CardShadow, SHADOW_DEPTH_SCALE } from './card3d/CardShadow';
 import { CardMotion } from './cardMotion';
 import styles from './CardStage.module.scss';
 
@@ -278,7 +278,7 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
     const sh = shadow.current;
     if (sh) {
       (sh.material as THREE.MeshBasicMaterial).opacity = (live.current.dark ? 0.5 : 0.24) * (0.35 + 0.65 * facing) * (1 - 0.45 * t);
-      sh.scale.setScalar(1 - 0.12 * t);
+      sh.scale.setScalar(SHADOW_DEPTH_SCALE * (1 - 0.12 * t));
     }
 
     const hit = hitRef.current;

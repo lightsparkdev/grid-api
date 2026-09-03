@@ -7,7 +7,7 @@
  * design's colors never touch them.
  */
 
-import type { CardFinish } from '@/data/design';
+import type { CardFinish, CardMaterial } from '@/data/design';
 import {
   chipContactsPath,
   chipPlatePath,
@@ -38,11 +38,17 @@ export interface FoilMaps {
   thickness: HTMLCanvasElement;
 }
 
-/** Field values per finish: roughness, metalness, relief grain. */
-const FIELD: Record<CardFinish, { rough: number; metal: number }> = {
-  matte: { rough: 0.62, metal: 0 },
-  metal: { rough: 0.3, metal: 0.85 },
-  glass: { rough: 0.5, metal: 0 },
+/** A material and finish together name a surface. */
+export type Surface = `${CardMaterial}-${CardFinish}`;
+export const surfaceOf = (material: CardMaterial, finish: CardFinish): Surface => `${material}-${finish}`;
+
+/** Field roughness and metalness per surface: soft-touch and laminated PVC,
+ *  brushed and polished metal. */
+const FIELD: Record<Surface, { rough: number; metal: number }> = {
+  'plastic-matte': { rough: 0.62, metal: 0 },
+  'plastic-gloss': { rough: 0.45, metal: 0 },
+  'metal-matte': { rough: 0.32, metal: 0.85 },
+  'metal-gloss': { rough: 0.12, metal: 0.9 },
 };
 
 const orm = (rough: number, metal: number) => `rgb(0, ${Math.round(rough * 255)}, ${Math.round(metal * 255)})`;
@@ -59,10 +65,10 @@ function texelSpace(c: HTMLCanvasElement): CanvasRenderingContext2D {
 
 /** Full texel resolution: the foil's edges must land exactly where the albedo
  *  paints them, or a half-texel of "metal" leaks around each letter. */
-function bakeOrm(finish: CardFinish, side: 'front' | 'back', assets: FaceAssets): HTMLCanvasElement {
+function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = texelSpace(c);
-  const f = FIELD[finish];
+  const f = FIELD[surface];
   ctx.fillStyle = orm(f.rough, f.metal);
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   if (side === 'back') {
@@ -85,17 +91,17 @@ function bakeOrm(finish: CardFinish, side: 'front' | 'back', assets: FaceAssets)
 
 /* ── Relief ───────────────────────────────────────────────────────────────── */
 
-function bakeHeight(finish: CardFinish, side: 'front' | 'back', assets: FaceAssets): HTMLCanvasElement {
+function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets): HTMLCanvasElement {
   const c = makeCanvas(MAP_W, MAP_H);
   const ctx = c.getContext('2d')!;
   ctx.fillStyle = '#808080';
   ctx.fillRect(0, 0, MAP_W, MAP_H);
 
-  // Surface grain, in map pixels.
-  if (finish !== 'glass') {
+  // Surface grain, in map pixels. Polished metal is smooth.
+  if (surface !== 'metal-gloss') {
     const img = ctx.getImageData(0, 0, MAP_W, MAP_H);
     const d = img.data;
-    if (finish === 'metal') {
+    if (surface === 'metal-matte') {
       // Brushed: each row carries its own streak, with a little per-pixel break.
       for (let y = 0; y < MAP_H; y++) {
         const row = (Math.random() - 0.5) * 14;
@@ -106,9 +112,10 @@ function bakeHeight(finish: CardFinish, side: 'front' | 'back', assets: FaceAsse
         }
       }
     } else {
-      // Matte PVC: fine isotropic grain.
+      // PVC: fine isotropic grain, finer under a gloss laminate.
+      const amp = surface === 'plastic-gloss' ? 5 : 8;
       for (let i = 0; i < d.length; i += 4) {
-        const v = 128 + (Math.random() - 0.5) * 8;
+        const v = 128 + (Math.random() - 0.5) * amp;
         d[i] = d[i + 1] = d[i + 2] = v;
       }
     }
@@ -201,18 +208,68 @@ function bakeFoil(assets: FaceAssets): FoilMaps {
   return { mask, thickness };
 }
 
+/* ── Edge ─────────────────────────────────────────────────────────────────── */
+
+/** Strip height in texels; the edge is only a few px tall on screen. */
+const EDGE_H = 256;
+
+export interface EdgeMaps {
+  albedo: HTMLCanvasElement;
+  /** G = roughness, B = metalness. */
+  orm: HTMLCanvasElement;
+}
+
+/**
+ * The card's layers seen edge-on, front at the top of the strip (v = 1) and
+ * back at the bottom. A PVC card is a white core between two printed skins
+ * under clear overlay; a metal card is an alloy sheet between two thin dark
+ * laminated skins (the back one carries the stripe and antenna). Skins are a
+ * little thicker than life so they still read at a few px tall.
+ */
+export function bakeEdge(material: CardMaterial, skinColor: string): EdgeMaps {
+  const albedo = makeCanvas(2, EDGE_H);
+  const ormStrip = makeCanvas(2, EDGE_H);
+  const a = albedo.getContext('2d')!;
+  const o = ormStrip.getContext('2d')!;
+  type Layer = { frac: number; color: string; rough: number; metal: number };
+  const layers: Layer[] =
+    material === 'metal'
+      ? [
+          { frac: 0.09, color: '#1a1a1e', rough: 0.55, metal: 0 },
+          { frac: 0.82, color: '#cfcfd3', rough: 0.35, metal: 1 },
+          { frac: 0.09, color: '#1a1a1e', rough: 0.55, metal: 0 },
+        ]
+      : [
+          { frac: 0.05, color: '#f4f4f6', rough: 0.4, metal: 0 },
+          { frac: 0.1, color: skinColor, rough: 0.5, metal: 0 },
+          { frac: 0.7, color: '#ececef', rough: 0.55, metal: 0 },
+          { frac: 0.1, color: skinColor, rough: 0.5, metal: 0 },
+          { frac: 0.05, color: '#f4f4f6', rough: 0.4, metal: 0 },
+        ];
+  let y = 0;
+  for (const l of layers) {
+    const h = Math.round(l.frac * EDGE_H);
+    a.fillStyle = l.color;
+    a.fillRect(0, y, 2, h);
+    o.fillStyle = orm(l.rough, l.metal);
+    o.fillRect(0, y, 2, h);
+    y += h;
+  }
+  return { albedo, orm: ormStrip };
+}
+
 /* ── Cache ────────────────────────────────────────────────────────────────── */
 
 const surfaceCache = new Map<string, SurfaceMaps>();
 let foilCache: FoilMaps | null = null;
 
-export function getSurfaceMaps(finish: CardFinish, side: 'front' | 'back', assets: FaceAssets): SurfaceMaps {
-  const key = `${finish}|${side}`;
+export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets: FaceAssets): SurfaceMaps {
+  const key = `${surface}|${side}`;
   let maps = surfaceCache.get(key);
   if (!maps) {
     maps = {
-      orm: bakeOrm(finish, side, assets),
-      normal: heightToNormal(bakeHeight(finish, side, assets), finish === 'metal' ? 2.2 : 1.6),
+      orm: bakeOrm(surface, side, assets),
+      normal: heightToNormal(bakeHeight(surface, side, assets), surface === 'metal-matte' ? 2.2 : 1.6),
     };
     surfaceCache.set(key, maps);
   }

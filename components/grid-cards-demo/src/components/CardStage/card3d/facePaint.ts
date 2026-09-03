@@ -145,7 +145,7 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst:
     radial(0, 0, TEX_W * 1.2, light, 0.55);
     radial(TEX_W, TEX_H, TEX_W * 1.1, deep, 0.6);
   }
-  if (design.finish === 'metal') {
+  if (design.material === 'metal') {
     // Alloy: a metal's albedo is its reflectance, so pull the saturation down
     // and lift it toward silver or the reflections go black.
     ctx.globalCompositeOperation = 'saturation';
