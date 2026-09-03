@@ -1,4 +1,6 @@
-/* The "Design your card" state. */
+/* The "Design your card" state, structured the way a card is made: a core
+   (material and stock), a coat (finish), a print (color or art, logo), and
+   decoration on the print (spot gloss, foil). */
 
 /** What the card is made of: a laminated PVC card, or a metal sheet with thin
  *  laminated skins. Sets the thickness and the edge layers. */
@@ -6,21 +8,64 @@ export type CardMaterial = 'plastic' | 'metal';
 /** The surface coat: matte (soft-touch print, brushed metal) or gloss
  *  (laminated print, polished metal). */
 export type CardFinish = 'matte' | 'gloss';
+/** Decoration applied over a printed element. Spot gloss is a clear
+ *  high-gloss varnish (reads on a matte card); foil is hot-stamped metal. */
+export type LogoTreatment = 'print' | 'spotGloss' | 'foilSilver' | 'foilGold';
+export type ArtTreatment = 'print' | 'spotGloss';
+
+/** The core itself: PVC in white or black, or an alloy. Shows at the edge,
+ *  and on the face wherever nothing is printed. */
+export interface CardStock {
+  id: string;
+  label: string;
+  materials: CardMaterial[];
+  /** Face reflectance of the bare stock. */
+  face: string;
+  /** Edge (core) color. */
+  core: string;
+  /** Bare stock is metal (reflective) rather than pigment. */
+  metal: boolean;
+  /** Ink that reads on the bare stock. */
+  ink: 'light' | 'dark';
+}
+
+export const STOCKS: CardStock[] = [
+  { id: 'white', label: 'White', materials: ['plastic'], face: '#f1f1ef', core: '#ececef', metal: false, ink: 'dark' },
+  { id: 'black', label: 'Black', materials: ['plastic'], face: '#17171a', core: '#1c1c20', metal: false, ink: 'light' },
+  { id: 'steel', label: 'Steel', materials: ['metal'], face: '#a4a4a7', core: '#cfcfd3', metal: true, ink: 'dark' },
+  { id: 'blackPvd', label: 'Black', materials: ['metal'], face: '#2a2a2e', core: '#3a3a3e', metal: true, ink: 'light' },
+  { id: 'gold', label: 'Gold', materials: ['metal'], face: '#b8965a', core: '#cfae6e', metal: true, ink: 'dark' },
+];
+
+export function stockOf(design: Pick<CardDesign, 'stock'>): CardStock {
+  return STOCKS.find((s) => s.id === design.stock) ?? STOCKS[0];
+}
+
+/** The stocks a material comes in. */
+export function stocksFor(material: CardMaterial): CardStock[] {
+  return STOCKS.filter((s) => s.materials.includes(material));
+}
 
 export interface CardDesign {
   /** Program name printed on the card and used as the app's brand. */
   programName: string;
-  /** Card background. A single color or a two-stop gradient. On a metal card,
-   *  `NATURAL_METAL` means no print at all: bare metal shows. */
-  color: string;
-  colorEnd?: string;
+  /** The cardholder, printed on the back. */
+  cardholderName: string;
   material: CardMaterial;
+  /** A `STOCKS` id valid for `material`. */
+  stock: string;
   finish: CardFinish;
+  /** Printed color, a single color or a two-stop gradient. Null = no print:
+   *  the bare stock shows. */
+  color: string | null;
+  colorEnd?: string;
   /** Object URL (or data URL) of an uploaded logo. Null = wordmark only. */
   logoUrl: string | null;
+  logoTreatment: LogoTreatment;
   /** Object URL (or data URL) of uploaded card art, drawn across the front
-   *  behind everything else. Null = the color. */
+   *  behind everything else. Null = the color (or the bare stock). */
   backgroundUrl: string | null;
+  artTreatment: ArtTreatment;
 }
 
 export interface DesignSwatch {
@@ -28,16 +73,9 @@ export interface DesignSwatch {
   label: string;
   color: string;
   colorEnd?: string;
-  /** Only offered for these materials (default: all). */
-  materials?: CardMaterial[];
 }
 
-/** Bare metal: a metal card with no printed layer, so the alloy shows. Picked
- *  by its swatch; the painter recognizes the color. */
-export const NATURAL_METAL = { color: '#cfcfd2', colorEnd: '#a9a9ad' };
-
 export const DESIGN_SWATCHES: DesignSwatch[] = [
-  { id: 'natural', label: 'Natural', ...NATURAL_METAL, materials: ['metal'] },
   { id: 'ink', label: 'Ink', color: '#151517', colorEnd: '#2b2b30' },
   { id: 'ocean', label: 'Ocean', color: '#0b3d91', colorEnd: '#0083c3' },
   { id: 'forest', label: 'Forest', color: '#0c3b2e', colorEnd: '#1f7a5a' },
@@ -46,9 +84,19 @@ export const DESIGN_SWATCHES: DesignSwatch[] = [
   { id: 'sand', label: 'Sand', color: '#d9c7a8', colorEnd: '#f1e6d2' },
 ];
 
-/** Whether the design shows bare metal (no print) rather than a printed face. */
-export function isBareMetal(design: Pick<CardDesign, 'material' | 'color'>): boolean {
-  return design.material === 'metal' && design.color.toLowerCase() === NATURAL_METAL.color;
+/** No print: the bare stock shows on the face. */
+export function isBare(design: Pick<CardDesign, 'color'>): boolean {
+  return design.color === null;
+}
+
+/** The color the app's chrome takes from the card: the print, or the stock. */
+export function brandColorOf(design: Pick<CardDesign, 'color' | 'colorEnd' | 'stock'>): {
+  color: string;
+  colorEnd?: string;
+} {
+  if (design.color) return { color: design.color, colorEnd: design.colorEnd };
+  const s = stockOf(design);
+  return { color: s.face };
 }
 
 export const MATERIALS: Array<{ id: CardMaterial; label: string }> = [
@@ -61,12 +109,28 @@ export const FINISHES: Array<{ id: CardFinish; label: string }> = [
   { id: 'gloss', label: 'Gloss' },
 ];
 
+export const LOGO_TREATMENTS: Array<{ id: LogoTreatment; label: string }> = [
+  { id: 'print', label: 'Print' },
+  { id: 'spotGloss', label: 'Gloss' },
+  { id: 'foilSilver', label: 'Silver' },
+  { id: 'foilGold', label: 'Gold' },
+];
+
+export const ART_TREATMENTS: Array<{ id: ArtTreatment; label: string }> = [
+  { id: 'print', label: 'Print' },
+  { id: 'spotGloss', label: 'Gloss' },
+];
+
 export const initialDesign: CardDesign = {
   programName: 'Your brand',
-  color: DESIGN_SWATCHES[2].color,
-  colorEnd: DESIGN_SWATCHES[2].colorEnd,
+  cardholderName: 'Alex Rivera',
   material: 'plastic',
+  stock: 'white',
   finish: 'matte',
+  color: DESIGN_SWATCHES[1].color,
+  colorEnd: DESIGN_SWATCHES[1].colorEnd,
   logoUrl: null,
+  logoTreatment: 'print',
   backgroundUrl: null,
+  artTreatment: 'print',
 };

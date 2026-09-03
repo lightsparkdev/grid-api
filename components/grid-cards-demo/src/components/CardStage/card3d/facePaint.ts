@@ -7,9 +7,9 @@
  */
 
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
-import { CARD_CVV, CARD_EXP, CARDHOLDER, PAN_GROUPS } from '@/apps/shared/card/cardholder';
+import { CARD_CVV, CARD_EXP, PAN_GROUPS } from '@/apps/shared/card/cardholder';
 import { brandStops } from '@/apps/shared/brand/brandPalette';
-import { isBareMetal, type CardDesign } from '@/data/design';
+import { isBare, stockOf, type CardDesign } from '@/data/design';
 import { CARD_FONT_FAMILY, loadCardFont } from './cardFont';
 
 export const TEX_W = 2048;
@@ -20,8 +20,6 @@ export const K = TEX_W / CARD_W;
 export const F = (px: number) => fig(px) * K;
 
 const FONT = `"${CARD_FONT_FAMILY}"`;
-/** The masked last 4 on the front sits quieter than the brand. */
-const INK = 'rgba(255, 255, 255, 0.55)';
 
 /* ── Spec geometry shared with the surface maps ───────────────────────────── */
 
@@ -166,23 +164,22 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
 }
 
 /**
- * The face's ground. Bare metal is the alloy itself, a near-neutral silver
- * whose shading comes from the studio. A printed face is the brand color with
- * a light sweep top-left and depth bottom-right (`deepFirst` for the back), or
- * the uploaded art on the front.
+ * The face's ground. With no print, the bare stock shows: PVC in its own
+ * color, or the alloy, whose shading comes from the studio. A printed face is
+ * the color with a light sweep top-left and depth bottom-right (`deepFirst`
+ * for the back), or the uploaded art on the front.
  */
 function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst: boolean, art: HTMLImageElement | null) {
-  if (isBareMetal(design)) {
-    // Titanium gray; the studio does the rest.
-    ctx.fillStyle = '#a4a4a7';
-    ctx.fillRect(0, 0, TEX_W, TEX_H);
-    return;
-  }
   if (art && !deepFirst) {
     drawCover(ctx, art);
     return;
   }
-  const { color, light, deep } = brandStops(design.color, design.colorEnd);
+  if (isBare(design)) {
+    ctx.fillStyle = stockOf(design).face;
+    ctx.fillRect(0, 0, TEX_W, TEX_H);
+    return;
+  }
+  const { color, light, deep } = brandStops(design.color!, design.colorEnd);
   ctx.fillStyle = deepFirst ? deep : color;
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   const radial = (cx: number, cy: number, r: number, from: string, toStop: number) => {
@@ -200,7 +197,14 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst:
   }
 }
 
-/** Frozen: desaturate and haze. Closed: grey out and darken. */
+/** Ink that reads on the face: white on print and on dark stock, near-black
+ *  on light stock. Art is treated as dark. */
+export function inkFor(design: CardDesign, art: HTMLImageElement | null): string {
+  if (art) return '#ffffff';
+  if (isBare(design) && stockOf(design).ink === 'dark') return '#26262b';
+  return '#ffffff';
+}
+
 function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: boolean) {
   if (closed) {
     ctx.globalCompositeOperation = 'saturation';
@@ -267,17 +271,6 @@ function paintChip(ctx: CanvasRenderingContext2D) {
 
 /* ── Faces ────────────────────────────────────────────────────────────────── */
 
-export interface FrontState {
-  design: CardDesign;
-  logo: HTMLImageElement | null;
-  /** Uploaded card art, if any. */
-  art: HTMLImageElement | null;
-  /** How far the last 4 has faded in (0 before ACTIVE, 1 once it has). */
-  lastFour: number;
-  frozen: boolean;
-  closed: boolean;
-}
-
 /** Brand placement from the Thales print sample (Figma vgVxXUAcCwNUKjX1xdDIFl,
  *  1:97): on the chip's row, right-aligned to the chip's own inset (152), the
  *  logo 90 tall and up to 410 wide, centered on the chip's height. */
@@ -288,38 +281,113 @@ const BRAND_LOGO_MAX_W = F(410);
 const BRAND_TEXT_PX = F(72);
 const BRAND_TEXT_WEIGHT = 430;
 
-export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, s.design, false, s.art);
-  const bare = isBareMetal(s.design);
-  const ink = bare ? '#26262b' : '#ffffff';
+/** Where the logo lands, in texels. */
+function logoRect(logo: HTMLImageElement) {
+  const r = Math.min(BRAND_LOGO_MAX_W / logo.width, BRAND_LOGO_H / logo.height);
+  const w = logo.width * r;
+  const h = logo.height * r;
+  return { x: BRAND_RIGHT - w, y: BRAND_CENTER_Y - h / 2, w, h };
+}
 
-  // Brand: the logo when uploaded, else the program name as a wordmark.
-  if (s.logo) {
-    const r = Math.min(BRAND_LOGO_MAX_W / s.logo.width, BRAND_LOGO_H / s.logo.height);
-    const w = s.logo.width * r;
-    const h = s.logo.height * r;
-    ctx.drawImage(s.logo, BRAND_RIGHT - w, BRAND_CENTER_Y - h / 2, w, h);
+/**
+ * The brand's shape in white on a transparent canvas: the logo's alpha, or the
+ * program name as a wordmark. Both the albedo (for foil) and the surface maps
+ * (for spot gloss and foil) are cut from this.
+ */
+export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null): HTMLCanvasElement {
+  const c = makeCanvas(TEX_W, TEX_H);
+  const ctx = c.getContext('2d')!;
+  if (logo) {
+    const r = logoRect(logo);
+    ctx.drawImage(logo, r.x, r.y, r.w, r.h);
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, TEX_W, TEX_H);
   } else {
-    const name = s.design.programName.trim() || 'Your brand';
-    ctx.fillStyle = ink;
+    ctx.fillStyle = '#fff';
     ctx.font = `${BRAND_TEXT_WEIGHT} ${BRAND_TEXT_PX}px ${FONT}`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'right';
     // Center the cap height (about 0.7 em) on the chip's row.
-    ctx.fillText(name, BRAND_RIGHT, BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35);
+    ctx.fillText(design.programName.trim() || 'Your brand', BRAND_RIGHT, BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35);
+  }
+  return c;
+}
+
+/** The art's alpha as a mask (cover-fit), for spot gloss over art. */
+export function paintArtMask(art: HTMLImageElement): HTMLCanvasElement {
+  const c = makeCanvas(TEX_W, TEX_H);
+  const ctx = c.getContext('2d')!;
+  drawCover(ctx, art);
+  ctx.globalCompositeOperation = 'source-in';
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, TEX_W, TEX_H);
+  return c;
+}
+
+/** Foil reflectance for a hot-stamped logo, silver or gold, with the
+ *  bright-to-dark run a foil shows at one angle. */
+function foilGradient(ctx: CanvasRenderingContext2D, kind: 'foilSilver' | 'foilGold'): CanvasGradient {
+  const g = ctx.createLinearGradient(0, 0, TEX_W, TEX_H);
+  if (kind === 'foilGold') {
+    g.addColorStop(0, '#f6e3a8');
+    g.addColorStop(0.55, '#d9b86a');
+    g.addColorStop(1, '#a8823a');
+  } else {
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.55, '#f2f2f5');
+    g.addColorStop(1, '#d9d9de');
+  }
+  return g;
+}
+
+export interface FrontState {
+  design: CardDesign;
+  logo: HTMLImageElement | null;
+  /** Uploaded card art, if any. */
+  art: HTMLImageElement | null;
+  /** How far the personalization has printed (0 before ACTIVE, 1 once it has). */
+  personalized: number;
+  frozen: boolean;
+  closed: boolean;
+}
+
+export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  paintBase(ctx, s.design, false, s.art);
+  const ink = inkFor(s.design, s.art);
+
+  // Brand: the logo as uploaded, or the wordmark in ink; a foil treatment
+  // replaces either with the foil's reflectance in the same shape.
+  const t = s.design.logoTreatment;
+  if (t === 'foilSilver' || t === 'foilGold') {
+    const mask = paintBrandMask(s.design, s.logo);
+    const m = mask.getContext('2d')!;
+    m.globalCompositeOperation = 'source-in';
+    m.fillStyle = foilGradient(m, t);
+    m.fillRect(0, 0, TEX_W, TEX_H);
+    ctx.drawImage(mask, 0, 0);
+  } else if (s.logo) {
+    const r = logoRect(s.logo);
+    ctx.drawImage(s.logo, r.x, r.y, r.w, r.h);
+  } else {
+    ctx.fillStyle = ink;
+    ctx.font = `${BRAND_TEXT_WEIGHT} ${BRAND_TEXT_PX}px ${FONT}`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'right';
+    ctx.fillText(s.design.programName.trim() || 'Your brand', BRAND_RIGHT, BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35);
     ctx.textAlign = 'left';
   }
 
   paintChip(ctx);
 
   // Last 4 at x 56, baseline 915 (bottom edge of the cap-trimmed line). It
-  // fades in when the card goes ACTIVE.
-  if (s.lastFour > 0) {
+  // prints when the card goes ACTIVE.
+  if (s.personalized > 0) {
     ctx.save();
-    ctx.globalAlpha = Math.min(1, s.lastFour);
-    ctx.fillStyle = bare ? 'rgba(38, 38, 43, 0.75)' : INK;
+    ctx.globalAlpha = Math.min(1, s.personalized) * (ink === '#ffffff' ? 0.55 : 0.75);
+    ctx.fillStyle = ink;
     ctx.font = `400 ${F(57)}px ${FONT}`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
@@ -332,6 +400,8 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
 
 export interface BackState {
   design: CardDesign;
+  /** How far the personalization has printed (0 before ACTIVE, 1 once it has). */
+  personalized: number;
   /** PAN groups revealed so far (0..4); 5 = expiry and CVV too. */
   shown: number;
   frozen: boolean;
@@ -342,8 +412,8 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
   paintBase(ctx, s.design, true, null);
-  const bare = isBareMetal(s.design);
-  const ink = bare ? '#26262b' : '#ffffff';
+  const ink = inkFor(s.design, null);
+  const bare = isBare(s.design) && stockOf(s.design).metal;
 
   // Mag stripe, bleeding to the top edge (Thales sample 1:116).
   ctx.fillStyle = '#242426';
@@ -355,6 +425,8 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   drawTinted(ctx, assets.contactless, TEX_W - F(54) - cw, F(470), cw, ch, ink);
 
   // Account block at (56, 476): name, PAN, EXP / CVV, on 41 px lines 32 apart.
+  // The name is the cardholder's as designed; the account data prints when the
+  // card goes ACTIVE and stays masked until Reveal.
   const x = F(56);
   const line = F(41);
   const gap = F(32);
@@ -363,45 +435,49 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.textAlign = 'left';
   ctx.font = `400 ${F(57)}px ${FONT}`;
   ctx.fillStyle = ink;
-  ctx.fillText(CARDHOLDER, x, y);
+  ctx.fillText(s.design.cardholderName.trim() || 'Cardholder name', x, y);
 
-  y += line + gap;
-  const groupW = ctx.measureText('0000').width;
-  const groupGap = F(57) * 0.28;
-  const last = PAN_GROUPS.length - 1;
-  PAN_GROUPS.forEach((g, i) => {
-    const gx = x + i * (groupW + groupGap);
-    if (i < s.shown || i === last) ctx.fillText(g, gx, y);
-    else dots(ctx, 4, gx, y, groupW);
-  });
+  if (s.personalized > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, s.personalized);
+    y += line + gap;
+    const groupW = ctx.measureText('0000').width;
+    const groupGap = F(57) * 0.28;
+    const last = PAN_GROUPS.length - 1;
+    PAN_GROUPS.forEach((g, i) => {
+      const gx = x + i * (groupW + groupGap);
+      if (i < s.shown || i === last) ctx.fillText(g, gx, y);
+      else dots(ctx, 4, gx, y, groupW);
+    });
 
-  y += line + gap;
-  const tail = s.shown > PAN_GROUPS.length;
-  ctx.fillText('EXP ', x, y);
-  let cx = x + ctx.measureText('EXP ').width;
-  if (tail) ctx.fillText(CARD_EXP, cx, y);
-  else {
-    const dw = ctx.measureText('00').width;
-    dots(ctx, 2, cx, y, dw);
-    ctx.fillText('/', cx + dw, y);
-    dots(ctx, 2, cx + dw + ctx.measureText('/').width, y, dw);
+    y += line + gap;
+    const tail = s.shown > PAN_GROUPS.length;
+    ctx.fillText('EXP ', x, y);
+    let cx = x + ctx.measureText('EXP ').width;
+    if (tail) ctx.fillText(CARD_EXP, cx, y);
+    else {
+      const dw = ctx.measureText('00').width;
+      dots(ctx, 2, cx, y, dw);
+      ctx.fillText('/', cx + dw, y);
+      dots(ctx, 2, cx + dw + ctx.measureText('/').width, y, dw);
+    }
+    cx = x + ctx.measureText('EXP 11/27').width + F(64);
+    ctx.fillText('CVV ', cx, y);
+    cx += ctx.measureText('CVV ').width;
+    if (tail) ctx.fillText(CARD_CVV, cx, y);
+    else dots(ctx, 3, cx, y, ctx.measureText('000').width);
+    ctx.restore();
   }
-  cx = x + ctx.measureText('EXP 11/27').width + F(64);
-  ctx.fillText('CVV ', cx, y);
-  cx += ctx.measureText('CVV ').width;
-  if (tail) ctx.fillText(CARD_CVV, cx, y);
-  else dots(ctx, 3, cx, y, ctx.measureText('000').width);
 
   // Fine print at (56, 876), 22 px.
   ctx.font = `400 ${F(22)}px ${FONT}`;
   ctx.fillText('1-855-516-0103   lightspark.com/help', x, F(876) + F(16));
   ctx.fillText('Issued by Lead Bank', x, F(876) + F(16) + F(26));
 
-  paintLockup(ctx, assets, bare);
+  paintLockup(ctx, assets, bare || ink !== '#ffffff');
   paintState(ctx, s.frozen, s.closed);
 }
 
-/** Masking bullets spaced like the digits they stand in for. */
 function dots(ctx: CanvasRenderingContext2D, n: number, x: number, baseline: number, width: number) {
   const step = width / n;
   const r = F(57) * 0.09;

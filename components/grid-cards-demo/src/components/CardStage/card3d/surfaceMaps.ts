@@ -6,7 +6,7 @@
  * design's colors never touch them.
  */
 
-import { isBareMetal, type CardDesign, type CardFinish, type CardMaterial } from '@/data/design';
+import { isBare, stockOf, type CardDesign, type CardFinish, type CardMaterial } from '@/data/design';
 import {
   chipContactsPath,
   chipPlatePath,
@@ -34,11 +34,11 @@ export interface SurfaceMaps {
 }
 
 /** What the face is made of, with its finish. A printed face (PVC card, or a
- *  metal card's printed laminate) is `print`; a metal card with no print is
- *  `bare`. Material itself only changes the edge and thickness. */
+ *  metal card's printed laminate) is `print`, and so is bare PVC stock; bare
+ *  alloy is `bare`. Material itself only changes the edge and thickness. */
 export type Surface = `${'print' | 'bare'}-${CardFinish}`;
-export const surfaceOf = (design: Pick<CardDesign, 'material' | 'color' | 'finish'>): Surface =>
-  `${isBareMetal(design) ? 'bare' : 'print'}-${design.finish}`;
+export const surfaceOf = (design: Pick<CardDesign, 'stock' | 'color' | 'finish'>): Surface =>
+  `${isBare(design) && stockOf(design).metal ? 'bare' : 'print'}-${design.finish}`;
 
 /** Field roughness and metalness per surface: soft-touch and laminated print,
  *  brushed and polished metal. */
@@ -215,7 +215,7 @@ export interface EdgeMaps {
  * laminated skins (the back one carries the stripe and antenna). Skins are a
  * little thicker than life so they still read at a few px tall.
  */
-export function bakeEdge(material: CardMaterial, skinColor: string): EdgeMaps {
+export function bakeEdge(material: CardMaterial, coreColor: string, skinColor: string): EdgeMaps {
   const albedo = makeCanvas(2, EDGE_H);
   const ormStrip = makeCanvas(2, EDGE_H);
   const a = albedo.getContext('2d')!;
@@ -225,13 +225,13 @@ export function bakeEdge(material: CardMaterial, skinColor: string): EdgeMaps {
     material === 'metal'
       ? [
           { frac: 0.09, color: '#1a1a1e', rough: 0.55, metal: 0 },
-          { frac: 0.82, color: '#cfcfd3', rough: 0.35, metal: 1 },
+          { frac: 0.82, color: coreColor, rough: 0.35, metal: 1 },
           { frac: 0.09, color: '#1a1a1e', rough: 0.55, metal: 0 },
         ]
       : [
           { frac: 0.05, color: '#f4f4f6', rough: 0.4, metal: 0 },
           { frac: 0.1, color: skinColor, rough: 0.5, metal: 0 },
-          { frac: 0.7, color: '#ececef', rough: 0.55, metal: 0 },
+          { frac: 0.7, color: coreColor, rough: 0.55, metal: 0 },
           { frac: 0.1, color: skinColor, rough: 0.5, metal: 0 },
           { frac: 0.05, color: '#f4f4f6', rough: 0.4, metal: 0 },
         ];
@@ -245,6 +245,39 @@ export function bakeEdge(material: CardMaterial, skinColor: string): EdgeMaps {
     y += h;
   }
   return { albedo, orm: ormStrip };
+}
+
+/* ── Decoration ───────────────────────────────────────────────────────────── */
+
+/**
+ * Spot gloss and foil change the surface where the brand (and the art) sit,
+ * so they are laid over the cached front map per design: a copy of the base
+ * roughness/metalness with the masks stamped in. Spot gloss is a clear
+ * high-gloss varnish; foil is hot-stamped mirror metal.
+ */
+export function decorateOrm(
+  base: HTMLCanvasElement,
+  brandMask: HTMLCanvasElement | null,
+  brandTreatment: 'spotGloss' | 'foilSilver' | 'foilGold' | null,
+  artMask: HTMLCanvasElement | null,
+): HTMLCanvasElement {
+  const c = makeCanvas(base.width, base.height);
+  const ctx = c.getContext('2d')!;
+  ctx.drawImage(base, 0, 0);
+  const stamp = (mask: HTMLCanvasElement, fill: string) => {
+    const m = makeCanvas(mask.width, mask.height);
+    const mc = m.getContext('2d')!;
+    mc.drawImage(mask, 0, 0);
+    mc.globalCompositeOperation = 'source-in';
+    mc.fillStyle = fill;
+    mc.fillRect(0, 0, m.width, m.height);
+    ctx.drawImage(m, 0, 0, c.width, c.height);
+  };
+  if (artMask) stamp(artMask, orm(0.06, 0));
+  if (brandMask && brandTreatment) {
+    stamp(brandMask, brandTreatment === 'spotGloss' ? orm(0.06, 0) : orm(0.05, 1));
+  }
+  return c;
 }
 
 /* ── Cache ────────────────────────────────────────────────────────────────── */

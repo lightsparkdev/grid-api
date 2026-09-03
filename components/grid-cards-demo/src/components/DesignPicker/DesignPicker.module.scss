@@ -4,6 +4,13 @@
 /* Same tile surface as the other pickers (UseCasePicker / FlowPicker). Every
    piece of text in the tile is the `label` style the flow tiles use: row
    labels in secondary, values in primary. */
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
 .group {
   corner-shape: var(--corner-shape);
   --tile-bg: var(--surface-base);
@@ -106,6 +113,18 @@
   border-color: var(--text-primary);
 }
 
+/* No print: the bare stock, struck through. */
+.swatchNone::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--text-tertiary);
+  transform: rotate(45deg);
+}
+
 .swatchCustom {
   display: grid;
   place-items: center;
@@ -130,11 +149,6 @@
   cursor: pointer;
 }
 
-/* Tab selector, ported from the flow builder's CodePanel audience toggle
-   (cURL / AI agent): a bordered, recessed track holding label-sm tabs; the
-   active tab lifts onto a base-surface card with its own hairline border.
-   Origin here predates --surface-elevated, so fall back to the exact colors
-   the flow builder resolves to (#FAFAF9 light / #111111 dark). */
 /* Material and Finish: plain text choices in the flow tile's type, divided by
    a hairline like the API panel's Request / Response tabs. No track. */
 .segments {
@@ -176,6 +190,10 @@
 
 .segmentActive {
   color: var(--text-primary);
+}
+
+.segmentsDense .segment {
+  padding: 0 var(--spacing-xs);
 }
 
 .logoRow {

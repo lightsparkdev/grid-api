@@ -7,7 +7,7 @@ import { BrandProvider } from '@/apps/shared/brand/BrandContext';
 import { brandVars } from '@/apps/shared/brand/brandPalette';
 import type { CardHome } from '@/apps/shared/card';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
-import type { CardDesign } from '@/data/design';
+import { brandColorOf, type CardDesign } from '@/data/design';
 import styles from './DemoPhone.module.scss';
 
 interface DemoPhoneProps {
@@ -39,7 +39,7 @@ export function DemoPhone({
           showGlassOutline={showGlassOutline}
           glassDemoBg={glassDemoBg}
           externalGlass={externalGlass}
-          screenStyle={brandVars(design.color, design.colorEnd)}
+          screenStyle={brandVars(brandColorOf(design).color, brandColorOf(design).colorEnd)}
         >
           <div className={styles.flow}>
             <CardScreen home={home} />

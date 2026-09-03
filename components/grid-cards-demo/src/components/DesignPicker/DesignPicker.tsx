@@ -5,7 +5,17 @@ import { useEffect, useRef, type ChangeEvent, type CSSProperties } from 'react';
 import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
-import { DESIGN_SWATCHES, FINISHES, MATERIALS, type CardDesign } from '@/data/design';
+import {
+  ART_TREATMENTS,
+  brandColorOf,
+  DESIGN_SWATCHES,
+  FINISHES,
+  LOGO_TREATMENTS,
+  MATERIALS,
+  stockOf,
+  stocksFor,
+  type CardDesign,
+} from '@/data/design';
 import styles from './DesignPicker.module.scss';
 
 interface DesignPickerProps {
@@ -14,6 +24,7 @@ interface DesignPickerProps {
 }
 
 const MAX_NAME = 18;
+const MAX_CARDHOLDER = 24;
 
 function swatchStyle(color: string, colorEnd?: string) {
   return {
@@ -21,6 +32,39 @@ function swatchStyle(color: string, colorEnd?: string) {
       ? `linear-gradient(135deg, ${color} 0%, ${colorEnd} 100%)`
       : color,
   };
+}
+
+/** A row of text choices divided by hairlines (Material, Finish, treatments). */
+function Choices<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  dense = false,
+}: {
+  label: string;
+  value: T;
+  options: ReadonlyArray<{ id: T; label: string }>;
+  onChange: (id: T) => void;
+  /** Tighter padding for rows with four options. */
+  dense?: boolean;
+}) {
+  return (
+    <div className={clsx(styles.segments, dense && styles.segmentsDense)} role="radiogroup" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          role="radio"
+          aria-checked={value === o.id}
+          className={clsx(styles.segment, value === o.id && styles.segmentActive)}
+          onClick={() => onChange(o.id)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /** One image upload: a preview with Remove once picked, an Upload button until then. */
@@ -87,116 +131,149 @@ function UploadRow({
   );
 }
 
+/**
+ * The Design section, in the order a card is made: the card itself (material,
+ * stock, finish), what is printed on it (color or none, art, logo, and their
+ * decoration), and the details that go on it (program, cardholder).
+ */
 export function DesignPicker({ design, onChange }: DesignPickerProps) {
-  // Bare metal ("Natural") is only a choice for a metal card.
-  const swatches = DESIGN_SWATCHES.filter((s) => !s.materials || s.materials.includes(design.material));
-  const activeSwatch = swatches.find(
-    (s) => s.color === design.color && (s.colorEnd ?? s.color) === (design.colorEnd ?? design.color),
-  );
+  const stocks = stocksFor(design.material);
+  const stock = stockOf(design);
+  const activeSwatch = design.color
+    ? DESIGN_SWATCHES.find(
+        (s) => s.color === design.color && (s.colorEnd ?? s.color) === (design.colorEnd ?? design.color),
+      )
+    : undefined;
+  const custom = design.color !== null && !activeSwatch;
+  const brand = brandColorOf(design);
 
   return (
-    <div className={styles.group}>
-      <div className={styles.row}>
-        <span className={styles.rowLabel}>Name</span>
-        <input
-          type="text"
-          className={styles.nameInput}
-          value={design.programName}
-          maxLength={MAX_NAME}
-          placeholder="Your brand"
-          aria-label="Program name"
-          onChange={(e) => onChange({ programName: e.target.value })}
-        />
-      </div>
-
-      <div className={styles.row}>
-        <span className={styles.rowLabel}>Material</span>
-        <div className={styles.segments} role="radiogroup" aria-label="Card material">
-          {MATERIALS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              role="radio"
-              aria-checked={design.material === m.id}
-              className={clsx(styles.segment, design.material === m.id && styles.segmentActive)}
-              onClick={() => onChange({ material: m.id })}
-            >
-              {m.label}
-            </button>
-          ))}
+    <div className={styles.groups}>
+      <div className={styles.group}>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Material</span>
+          <Choices label="Card material" value={design.material} options={MATERIALS} onChange={(material) => onChange({ material })} />
+        </div>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Stock</span>
+          <Choices label="Card stock" value={stock.id} options={stocks} onChange={(id) => onChange({ stock: id })} />
+        </div>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Finish</span>
+          <Choices label="Card finish" value={design.finish} options={FINISHES} onChange={(finish) => onChange({ finish })} />
         </div>
       </div>
 
-      <div className={styles.row}>
-        <span className={styles.rowLabel}>Color</span>
-        <div className={styles.swatches} role="radiogroup" aria-label="Card color">
-          {swatches.map((s) => (
+      <div className={styles.group}>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Color</span>
+          <div className={styles.swatches} role="radiogroup" aria-label="Print color">
             <button
-              key={s.id}
               type="button"
               role="radio"
-              aria-checked={activeSwatch?.id === s.id}
-              aria-label={s.label}
-              title={s.label}
-              className={clsx(styles.swatch, activeSwatch?.id === s.id && styles.swatchActive)}
-              style={swatchStyle(s.color, s.colorEnd)}
-              onClick={() => onChange({ color: s.color, colorEnd: s.colorEnd })}
+              aria-checked={design.color === null}
+              aria-label="None"
+              title={`None (bare ${stock.label.toLowerCase()} ${design.material})`}
+              className={clsx(styles.swatch, styles.swatchNone, design.color === null && styles.swatchActive)}
+              style={swatchStyle(stock.face)}
+              onClick={() => onChange({ color: null, colorEnd: undefined })}
             />
-          ))}
-          <label
-            className={clsx(styles.swatch, styles.swatchCustom, !activeSwatch && styles.swatchActive)}
-            title="Custom color"
-            style={!activeSwatch ? swatchStyle(design.color, design.colorEnd) : undefined}
-          >
-            <input
-              type="color"
-              className={styles.colorInput}
-              value={design.color}
-              aria-label="Custom color"
-              onChange={(e) => onChange({ color: e.target.value, colorEnd: undefined })}
-            />
-            {activeSwatch ? <IconPlusSmall size={16} aria-hidden /> : null}
-          </label>
-        </div>
-      </div>
-
-      <div className={styles.row}>
-        <span className={styles.rowLabel}>Finish</span>
-        <div className={styles.segments} role="radiogroup" aria-label="Card finish">
-          {FINISHES.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              role="radio"
-              aria-checked={design.finish === f.id}
-              className={clsx(styles.segment, design.finish === f.id && styles.segmentActive)}
-              onClick={() => onChange({ finish: f.id })}
+            {DESIGN_SWATCHES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="radio"
+                aria-checked={activeSwatch?.id === s.id}
+                aria-label={s.label}
+                title={s.label}
+                className={clsx(styles.swatch, activeSwatch?.id === s.id && styles.swatchActive)}
+                style={swatchStyle(s.color, s.colorEnd)}
+                onClick={() => onChange({ color: s.color, colorEnd: s.colorEnd })}
+              />
+            ))}
+            <label
+              className={clsx(styles.swatch, styles.swatchCustom, custom && styles.swatchActive)}
+              title="Custom color"
+              style={custom ? swatchStyle(design.color!, design.colorEnd) : undefined}
             >
-              {f.label}
-            </button>
-          ))}
+              <input
+                type="color"
+                className={styles.colorInput}
+                value={design.color ?? brand.color}
+                aria-label="Custom color"
+                onChange={(e) => onChange({ color: e.target.value, colorEnd: undefined })}
+              />
+              {!custom ? <IconPlusSmall size={16} aria-hidden /> : null}
+            </label>
+          </div>
+        </div>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Art</span>
+          <UploadRow
+            url={design.backgroundUrl}
+            accept="image/png,image/jpeg,image/webp"
+            label="Upload card art"
+            onPick={(url) => onChange({ backgroundUrl: url })}
+          />
+        </div>
+        {design.backgroundUrl && (
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Art effect</span>
+            <Choices
+              label="Art effect"
+              value={design.artTreatment}
+              options={ART_TREATMENTS}
+              onChange={(artTreatment) => onChange({ artTreatment })}
+            />
+          </div>
+        )}
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Logo</span>
+          <UploadRow
+            url={design.logoUrl}
+            accept="image/svg+xml,image/png,image/webp"
+            label="Upload SVG or PNG"
+            previewStyle={swatchStyle(brand.color, brand.colorEnd)}
+            onPick={(url) => onChange({ logoUrl: url })}
+          />
+        </div>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Effect</span>
+          <Choices
+            label="Logo effect"
+            value={design.logoTreatment}
+            options={LOGO_TREATMENTS}
+            onChange={(logoTreatment) => onChange({ logoTreatment })}
+            dense
+          />
         </div>
       </div>
 
-      <div className={styles.row}>
-        <span className={styles.rowLabel}>Logo</span>
-        <UploadRow
-          url={design.logoUrl}
-          accept="image/svg+xml,image/png,image/webp"
-          label="Upload SVG or PNG"
-          previewStyle={swatchStyle(design.color, design.colorEnd)}
-          onPick={(url) => onChange({ logoUrl: url })}
-        />
-      </div>
-
-      <div className={styles.row}>
-        <span className={styles.rowLabel}>Art</span>
-        <UploadRow
-          url={design.backgroundUrl}
-          accept="image/png,image/jpeg,image/webp"
-          label="Upload card art"
-          onPick={(url) => onChange({ backgroundUrl: url })}
-        />
+      <div className={styles.group}>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Program</span>
+          <input
+            type="text"
+            className={styles.nameInput}
+            value={design.programName}
+            maxLength={MAX_NAME}
+            placeholder="Your brand"
+            aria-label="Program name"
+            onChange={(e) => onChange({ programName: e.target.value })}
+          />
+        </div>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Cardholder</span>
+          <input
+            type="text"
+            className={styles.nameInput}
+            value={design.cardholderName}
+            maxLength={MAX_CARDHOLDER}
+            placeholder="Cardholder name"
+            aria-label="Cardholder name"
+            onChange={(e) => onChange({ cardholderName: e.target.value })}
+          />
+        </div>
       </div>
     </div>
   );

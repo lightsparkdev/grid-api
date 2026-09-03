@@ -11,6 +11,7 @@ import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
 import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
+import { brandColorOf } from '@/data/design';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import type { CardScreenProps } from '@/apps/types';
@@ -62,8 +63,9 @@ export function CardScreen({ home }: CardScreenProps) {
   } = home;
 
   // App icon for push notifications — a brand-tinted rounded square.
+  const brandColor = brandColorOf(design).color;
   const appIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 76"><rect width="76" height="76" rx="17" fill="${design.color}"/><rect x="18" y="26" width="40" height="26" rx="5" fill="rgba(255,255,255,0.92)"/><rect x="18" y="33" width="40" height="5" fill="${design.color}" opacity="0.55"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 76"><rect width="76" height="76" rx="17" fill="${brandColor}"/><rect x="18" y="26" width="40" height="26" rx="5" fill="rgba(255,255,255,0.92)"/><rect x="18" y="33" width="40" height="5" fill="${brandColor}" opacity="0.55"/></svg>`,
   )}`;
 
   // Face ID + the glass toast render in AppShell's overlay layer (above the

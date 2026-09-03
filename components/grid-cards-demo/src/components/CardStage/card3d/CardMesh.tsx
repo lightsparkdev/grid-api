@@ -4,19 +4,21 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { brandStops } from '@/apps/shared/brand/brandPalette';
-import type { CardDesign } from '@/data/design';
+import { stockOf, type CardDesign } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import {
   loadFaceAssets,
   loadImage,
   makeCanvas,
+  paintArtMask,
   paintBack,
+  paintBrandMask,
   paintFront,
   TEX_H,
   TEX_W,
   type FaceAssets,
 } from './facePaint';
-import { bakeEdge, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
+import { bakeEdge, decorateOrm, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -27,9 +29,9 @@ export interface CardMeshState {
   shown: number;
 }
 
-/** The last 4 fades in on ACTIVE: this long, in this many repaints. */
-const LAST4_FADE_MS = 450;
-const LAST4_FADE_STEPS = 6;
+/** Personalization prints on ACTIVE: this long, in this many repaints. */
+const PRINT_MS = 450;
+const PRINT_STEPS = 6;
 
 /** Per-surface material constants beyond the maps: the coat and how much
  *  studio the face reflects. */
@@ -142,11 +144,47 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       invalidate();
     }, [assets, surface, materials, invalidate]);
 
-    // Edge: the construction's layers, the printed skins in the card's deep tone.
-    const edgeSkin = brandStops(state.design.color, state.design.colorEnd).deep;
+    // Decoration: spot gloss or foil on the brand, spot gloss on the art, laid
+    // over the front's cached map per design.
+    const { logoTreatment, artTreatment } = state.design;
+    const decoTex = useRef<THREE.Texture | null>(null);
+    useEffect(() => {
+      if (!assets) return;
+      const front = materials[MAT_FRONT];
+      const base = surfaceTex.current.get(`${surface}|front`);
+      if (!base) return;
+      decoTex.current?.dispose();
+      decoTex.current = null;
+      const brandT = logoTreatment === 'print' ? null : logoTreatment;
+      const artT = art && artTreatment === 'spotGloss';
+      if (!brandT && !artT) {
+        front.roughnessMap = base.orm;
+        front.metalnessMap = base.orm;
+      } else {
+        const decorated = canvasTexture(
+          decorateOrm(
+            base.orm.image as HTMLCanvasElement,
+            brandT ? paintBrandMask(state.design, logo) : null,
+            brandT,
+            artT && art ? paintArtMask(art) : null,
+          ),
+        );
+        decoTex.current = decorated;
+        front.roughnessMap = decorated;
+        front.metalnessMap = decorated;
+      }
+      front.needsUpdate = true;
+      invalidate();
+    }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, materials, invalidate]);
+
+    // Edge: the construction's layers, the printed skins in the card's deep tone
+    // (or the stock's own face when nothing is printed).
+    const stock = stockOf(state.design);
+    const edgeSkin = state.design.color ? brandStops(state.design.color, state.design.colorEnd).deep : stock.face;
+    const edgeCore = stock.core;
     const edgeTex = useRef<{ albedo: THREE.Texture; orm: THREE.Texture } | null>(null);
     useEffect(() => {
-      const strips = bakeEdge(cardMaterial, edgeSkin);
+      const strips = bakeEdge(cardMaterial, edgeCore, edgeSkin);
       edgeTex.current?.albedo.dispose();
       edgeTex.current?.orm.dispose();
       const albedo = canvasTexture(strips.albedo, true);
@@ -159,16 +197,17 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       edge.envMapIntensity = cardMaterial === 'metal' ? 1.3 : 0.9;
       edge.needsUpdate = true;
       invalidate();
-    }, [cardMaterial, edgeSkin, materials, invalidate]);
+    }, [cardMaterial, edgeCore, edgeSkin, materials, invalidate]);
 
-    // The last 4 fades in over LAST4_FADE_MS when the card goes ACTIVE (a few
-    // repaints); it is simply there or not otherwise.
-    const [lastFour, setLastFour] = useState(state.issued ? 1 : 0);
+    // Personalization (last 4 on the front, account data on the back) prints
+    // over PRINT_MS when the card goes ACTIVE (a few repaints); it is simply
+    // there or not otherwise.
+    const [personalized, setPersonalized] = useState(state.issued ? 1 : 0);
     const wasIssued = useRef(state.issued);
     useEffect(() => {
       if (!state.issued) {
         wasIssued.current = false;
-        setLastFour(0);
+        setPersonalized(0);
         return;
       }
       if (wasIssued.current) return;
@@ -177,14 +216,14 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       let raf = 0;
       let lastStep = -1;
       const tick = (now: number) => {
-        const u = Math.min(1, (now - t0) / LAST4_FADE_MS);
-        const step = Math.floor(u * LAST4_FADE_STEPS);
+        const u = Math.min(1, (now - t0) / PRINT_MS);
+        const step = Math.floor(u * PRINT_STEPS);
         if (step !== lastStep) {
           lastStep = step;
-          setLastFour(step / LAST4_FADE_STEPS);
+          setPersonalized(step / PRINT_STEPS);
         }
         if (u < 1) raf = requestAnimationFrame(tick);
-        else setLastFour(1);
+        else setPersonalized(1);
       };
       raf = requestAnimationFrame(tick);
       return () => cancelAnimationFrame(raf);
@@ -198,7 +237,7 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
         design: state.design,
         logo,
         art,
-        lastFour,
+        personalized,
         frozen: state.frozen,
         closed: state.closed,
       });
@@ -208,19 +247,19 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
         ready.current = true;
         onReady?.();
       }
-    }, [assets, state.design, logo, art, lastFour, state.frozen, state.closed, frontCanvas, frontMap, invalidate, onReady]);
+    }, [assets, state.design, logo, art, personalized, state.frozen, state.closed, frontCanvas, frontMap, invalidate, onReady]);
 
     // Back print.
     useEffect(() => {
       if (!assets) return;
       paintBack(
         backCanvas.getContext('2d')!,
-        { design: state.design, shown: state.shown, frozen: state.frozen, closed: state.closed },
+        { design: state.design, personalized, shown: state.shown, frozen: state.frozen, closed: state.closed },
         assets,
       );
       backMap.needsUpdate = true;
       invalidate();
-    }, [assets, state.design, state.shown, state.frozen, state.closed, backCanvas, backMap, invalidate]);
+    }, [assets, state.design, personalized, state.shown, state.frozen, state.closed, backCanvas, backMap, invalidate]);
 
     useEffect(
       () => () => {
@@ -231,6 +270,7 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
           t.orm.dispose();
           t.normal.dispose();
         });
+        decoTex.current?.dispose();
         edgeTex.current?.albedo.dispose();
         edgeTex.current?.orm.dispose();
       },
