@@ -10,6 +10,11 @@ enum:
   - QUOTE_EXECUTION_FAILED
   - COMPLIANCE_REJECTED
   - COLLECTION_FAILED
+  - SWEEP_BELOW_MINIMUM
+  - SWEEP_ABOVE_MAXIMUM
+  - SWEEP_NO_ELIGIBLE_RAIL
+  - SWEEP_QUOTE_FAILED
+  - SWEEP_EXECUTION_FAILED
 description: >-
   Reason for failure of an incoming transaction. This is used to provide more
   context on why a transaction failed. If the transaction is not in a failed
@@ -20,3 +25,13 @@ description: >-
   information, on either the collection provider's side or Grid's. Failed
   collections are returned to the sender per the collection provider's
   process.
+
+  A payment that settled into a rule-based account but could not be swept to the
+  destination of the account's rule fails with one of the `SWEEP_*` reasons. A
+  rule-based account never holds a balance, so the funds are moved to the account
+  holder's own account in the same currency. SWEEP_BELOW_MINIMUM and
+  SWEEP_ABOVE_MAXIMUM mean the balance was outside the band the corridor to the
+  destination can carry. SWEEP_NO_ELIGIBLE_RAIL means no payment rail available
+  to the destination could carry it. SWEEP_QUOTE_FAILED means Grid could not
+  price it, and SWEEP_EXECUTION_FAILED that it was priced but the resulting
+  payment did not go through.

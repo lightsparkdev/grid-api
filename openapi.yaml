@@ -23299,25 +23299,14 @@ components:
         - QUOTE_EXECUTION_FAILED
         - COMPLIANCE_REJECTED
         - COLLECTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
-    SweepFailureReason:
-      type: string
-      enum:
-        - BELOW_MINIMUM
-        - ABOVE_MAXIMUM
-        - NO_ELIGIBLE_RAIL
-        - QUOTE_FAILED
-        - EXECUTION_FAILED
-      description: |
-        Why the payment could not be swept to the rule's destination.
-
-        | Reason | Description |
-        |--------|-------------|
-        | `BELOW_MINIMUM` | The amount is below the smallest amount the corridor to the destination can carry. |
-        | `ABOVE_MAXIMUM` | The amount is above the largest amount the corridor to the destination can carry. |
-        | `NO_ELIGIBLE_RAIL` | No payment rail available to the destination could carry the sweep. |
-        | `QUOTE_FAILED` | Grid could not price the sweep to the destination. |
-        | `EXECUTION_FAILED` | The sweep was priced but the resulting payment did not go through. |
+        - SWEEP_BELOW_MINIMUM
+        - SWEEP_ABOVE_MAXIMUM
+        - SWEEP_NO_ELIGIBLE_RAIL
+        - SWEEP_QUOTE_FAILED
+        - SWEEP_EXECUTION_FAILED
+      description: |-
+        Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
+        A payment that settled into a rule-based account but could not be swept to the destination of the account's rule fails with one of the `SWEEP_*` reasons. A rule-based account never holds a balance, so the funds are moved to the account holder's own account in the same currency. SWEEP_BELOW_MINIMUM and SWEEP_ABOVE_MAXIMUM mean the balance was outside the band the corridor to the destination can carry. SWEEP_NO_ELIGIBLE_RAIL means no payment rail available to the destination could carry it. SWEEP_QUOTE_FAILED means Grid could not price it, and SWEEP_EXECUTION_FAILED that it was priced but the resulting payment did not go through.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -23334,7 +23323,7 @@ components:
               $ref: '#/components/schemas/TransactionSourceOneOf'
             receivedAmount:
               $ref: '#/components/schemas/CurrencyAmount'
-              description: Amount received in the recipient's currency. Absent until the amount is priced — a payment swept out of a rule-based account is created when the deposit settles, before its quote locks a rate.
+              description: 'Amount received in the recipient''s currency. Always present, except on a rule-based account sweep that was never priced: that transaction is created when the deposit settles, so a sweep failing before its quote locks a rate has no received amount to report.'
             fees:
               type: integer
               format: int64
@@ -23346,19 +23335,7 @@ components:
               description: Included for all transactions except those with "CREATED" status
             failureReason:
               $ref: '#/components/schemas/IncomingTransactionFailureReason'
-              description: If the transaction failed, this field provides the reason for failure. Set only when `status` is `FAILED`. A rule-based account whose sweep was refused is not a failure of this transaction — see `sweepFailureReason`.
-            sweepFailureReason:
-              allOf:
-                - $ref: '#/components/schemas/SweepFailureReason'
-              description: |-
-                Why the onward sweep did not reach the rule's destination, when this payment settled into a rule-based account.
-
-                Distinct from `failureReason`, and never set at the same time: the two describe different events and are told apart by `status`. This transaction **succeeded** — the deposit landed and `status` is `COMPLETED`; only the sweep out of the account was refused, and the funds are in `sweepCanonicalAccountId`. `failureReason` appears only when `status` is `FAILED`, meaning the payment itself did not credit.
-
-                Omitted for any account that is not rule-based.
-            sweepCanonicalAccountId:
-              type: string
-              description: The account holder's own account in the same currency the funds were moved to when a sweep could not be completed — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. Present whenever `sweepFailureReason` is.
+              description: If the transaction failed, this field provides the reason for failure. A payment that settled into a rule-based account but could not be swept to the rule's destination fails here too, with one of the `SWEEP_*` reasons.
     OutgoingTransactionStatus:
       type: string
       enum:
@@ -23441,6 +23418,11 @@ components:
         - COMPLIANCE_REJECTED
         - LIGHTNING_PAYMENT_FAILED
         - COUNTERPARTY_POST_TX_FAILED
+        - SWEEP_BELOW_MINIMUM
+        - SWEEP_ABOVE_MAXIMUM
+        - SWEEP_NO_ELIGIBLE_RAIL
+        - SWEEP_QUOTE_FAILED
+        - SWEEP_EXECUTION_FAILED
       description: |
         Reason for failure of an outgoing transaction. This is used to provide more
         context on why a transaction failed. If the transaction is not in a failed
@@ -23472,6 +23454,16 @@ components:
         | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
         | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
         | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
+        | `SWEEP_BELOW_MINIMUM` | The payment settled into a rule-based account but was below the smallest amount the corridor to the rule's destination can carry |
+        | `SWEEP_ABOVE_MAXIMUM` | The payment settled into a rule-based account but was above the largest amount the corridor to the rule's destination can carry |
+        | `SWEEP_NO_ELIGIBLE_RAIL` | No payment rail available to the rule's destination could carry the sweep |
+        | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination |
+        | `SWEEP_EXECUTION_FAILED` | The sweep was priced but the resulting payment did not go through |
+
+        The `SWEEP_*` reasons apply to a payment that settled into a rule-based
+        account and could not be swept onward. A rule-based account never holds a
+        balance, so the funds are moved to the account holder's own account in the
+        same currency.
     RailSelectionMode:
       type: string
       enum:
@@ -23544,19 +23536,7 @@ components:
               description: Details about the rate and fees for the transaction.
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
-              description: If the transaction failed, this field provides the reason for failure. Set only when `status` is `FAILED`. A rule-based account whose sweep was refused is not a failure of this transaction — see `sweepFailureReason`.
-            sweepFailureReason:
-              allOf:
-                - $ref: '#/components/schemas/SweepFailureReason'
-              description: |-
-                Why the onward sweep did not reach the rule's destination, when this payment settled into a rule-based account.
-
-                Distinct from `failureReason`, and never set at the same time: the two describe different events and are told apart by `status`. This transaction **succeeded** — the deposit landed and `status` is `COMPLETED`; only the sweep out of the account was refused, and the funds are in `sweepCanonicalAccountId`. `failureReason` appears only when `status` is `FAILED`, meaning the payment itself did not credit.
-
-                Omitted for any account that is not rule-based.
-            sweepCanonicalAccountId:
-              type: string
-              description: The account holder's own account in the same currency the funds were moved to when a sweep could not be completed — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. Present whenever `sweepFailureReason` is.
+              description: If the transaction failed, this field provides the reason for failure. A payment that settled into a rule-based account but could not be swept to the rule's destination fails here too, with one of the `SWEEP_*` reasons.
             paymentRail:
               anyOf:
                 - $ref: '#/components/schemas/PaymentRail'
