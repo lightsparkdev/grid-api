@@ -13,7 +13,6 @@ enum:
   - LIGHTNING_PAYMENT_FAILED
   - COUNTERPARTY_POST_TX_FAILED
   - SWEEP_AMOUNT_OUT_OF_RANGE
-  - SWEEP_NO_ELIGIBLE_RAIL
   - SWEEP_QUOTE_FAILED
 description: |
   Reason for failure of an outgoing transaction. This is used to provide more
@@ -41,13 +40,12 @@ description: |
   | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
   | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
   | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
-  | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency isn't supported for that account |
+  | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency or payment rail isn't supported for that account. A sweep whose rule names a rail the destination cannot accept reports this |
   | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
   | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
   | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
   | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
   | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum. The rule's `minimumAmount` and `maximumAmount` give the current band |
-  | `SWEEP_NO_ELIGIBLE_RAIL` | No payment rail available to the rule's destination could carry the sweep |
   | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination. A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payout |
 
   The `SWEEP_*` reasons apply to a payment that settled into a rule-based
