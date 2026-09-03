@@ -2091,6 +2091,133 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /internal-accounts:
+    post:
+      summary: Create an internal account
+      description: |
+        Create a rule-based internal account.
+
+        A rule-based account is an additional account number for an account holder
+        that already holds an account in the same currency. It carries a routing
+        rule: every payment that settles into it is attributed to that account
+        number and then swept to the rule's destination, so you can issue one number
+        per payer and reconcile incoming payments without matching on remittance
+        text.
+
+        Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
+        `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
+        automatically when an account holder is created or approved.
+
+        The response carries the account's own `fundingPaymentInstructions` — the
+        routable number payers send to. Rule-based accounts are currently available
+        in `USD`, for individual customers, and must be enabled for your platform
+        before this endpoint accepts requests.
+
+        Sandbox platforms can create rule-based accounts and exercise the whole
+        flow. The account number is generated locally rather than issued by a
+        partner bank, and `POST /sandbox/internal-accounts/{accountId}/fund` stands
+        in for a settled deposit — funding the account triggers its sweep just as a
+        real deposit would.
+
+        Creating an account mints a new account number that cannot be reversed, so
+        an `Idempotency-Key` header is required. A retry carrying the same key
+        returns the account created by the first request with a `200` instead of a
+        `201`; reusing a key for a materially different account is rejected with
+        `409`.
+      operationId: createInternalAccount
+      tags:
+        - Internal Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: |
+            A unique identifier for the request. Required, because creating the account mints an account number that cannot be reversed. Retries must carry the same key.
+          required: true
+          schema:
+            type: string
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalAccountCreateRequest'
+            examples:
+              externalDestination:
+                summary: Forward every payment to an external account over ACH
+                value:
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  type: RULE_BASED
+                  currency: USD
+                  label: invoice-4417
+                  sweepRule:
+                    destination:
+                      accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                      paymentRail: ACH
+                    purposeOfPayment: SELF
+                    description: Rent sweep
+                    remittanceInformation: Unit 4B March
+              internalDestination:
+                summary: Forward every payment to another internal account
+                value:
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  type: RULE_BASED
+                  currency: USD
+                  label: payer-northwind
+                  sweepRule:
+                    destination:
+                      accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      responses:
+        '200':
+          description: The `Idempotency-Key` was already used to create this account. The account created by the first request is returned unchanged.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '201':
+          description: Internal account created. `fundingPaymentInstructions` carries the account's own number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '400':
+          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the account holder has no account in that currency yet, when the destination cannot accept the requested payment rail, and for general invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - rule-based accounts are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer or destination account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - the `Idempotency-Key` was already used to create a different account, or the account for this key is still being provisioned. Retry with the same key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/internal-accounts:
     get:
       summary: List Customer internal accounts
@@ -2120,7 +2247,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued for a customer.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -2185,7 +2312,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued with a sweep rule.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -8177,7 +8304,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued with a sweep rule.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -14754,12 +14881,106 @@ components:
         - INTERNAL_FIAT
         - INTERNAL_CRYPTO
         - EMBEDDED_WALLET
+        - RULE_BASED
       description: |-
         Classification of an internal account.
 
         - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
         - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
         - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
+        - `RULE_BASED`: An additional account number for an existing account holder, with a routing rule attached, so incoming payments can be attributed to a specific payer and swept automatically. Created with `POST /internal-accounts`.
+    SweepRuleDestinationRequest:
+      title: Sweep Rule Destination Request
+      type: object
+      description: The account a rule-based account sweeps its incoming payments to.
+      additionalProperties: false
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: Reference to the account that receives the swept funds. May be an external account or another internal account, but never a `RULE_BASED` internal account — that account's own rule would sweep the funds on again. The destination may be denominated in a different currency, in which case the sweep is converted at the prevailing rate.
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        paymentRail:
+          description: The payment rail to use when sweeping to an external account. Must be one of the rails supported by the destination account. If omitted, a rail is selected automatically for each sweep. Not accepted when the destination is an internal account, which settles without a payment rail.
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+    PurposeOfPayment:
+      type: string
+      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
+      enum:
+        - GIFT
+        - SELF
+        - GOODS_OR_SERVICES
+        - EDUCATION
+        - HEALTH_OR_MEDICAL
+        - REAL_ESTATE_PURCHASE
+        - TAX_PAYMENT
+        - LOAN_PAYMENT
+        - UTILITY_BILL
+        - DONATION
+        - TRAVEL
+        - FAMILY_SUPPORT
+        - SALARY_PAYMENT
+        - OTHER
+    SweepRuleRequest:
+      title: Sweep Rule Request
+      type: object
+      description: The routing rule attached to a rule-based account. Every payment that settles into the account is swept to the rule's destination, carrying the payment metadata configured here.
+      additionalProperties: false
+      required:
+        - destination
+      properties:
+        destination:
+          allOf:
+            - $ref: '#/components/schemas/SweepRuleDestinationRequest'
+          description: Where funds that settle into this account are swept.
+        purposeOfPayment:
+          allOf:
+            - $ref: '#/components/schemas/PurposeOfPayment'
+          description: The purpose of payment applied to each sweep. Required by some destination geographies.
+          example: SELF
+        description:
+          type: string
+          maxLength: 255
+          description: Free-form description recorded on each sweep. Not delivered to the recipient; use `remittanceInformation` for that.
+          example: Rent sweep
+        remittanceInformation:
+          type: string
+          maxLength: 1024
+          description: 'Free-form information that travels with each sweep to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information. Only printable ASCII characters are accepted, because the underlying rails carry nothing else.'
+          example: Unit 4B March
+    InternalAccountCreateRequest:
+      title: Internal Account Create Request
+      type: object
+      description: Request body for `POST /internal-accounts`. Only `RULE_BASED` accounts can be created today, and they are rejected without a `sweepRule` — the type and its rule are created together or not at all.
+      additionalProperties: false
+      required:
+        - type
+        - currency
+      properties:
+        customerId:
+          type: string
+          description: The customer the account is created for. Omit it to create a platform-owned account. The account holder must already have a verified account in the same currency, which is where funds land when a sweep cannot be completed. Platform-owned rule-based accounts are not available yet, so omitting this is currently rejected.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        type:
+          allOf:
+            - $ref: '#/components/schemas/InternalAccountType'
+          description: Must be `RULE_BASED`. `INTERNAL_FIAT`, `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned automatically when a customer is created or approved, so they cannot be created through this endpoint.
+          example: RULE_BASED
+        currency:
+          type: string
+          description: Currency code the account is denominated in (ISO 4217). Rule-based accounts are currently available in `USD` only.
+          example: USD
+        label:
+          type: string
+          maxLength: 255
+          description: Your own name for the account, echoed back on reads. Useful for identifying which payer the account was issued for.
+          example: invoice-4417
+        sweepRule:
+          allOf:
+            - $ref: '#/components/schemas/SweepRuleRequest'
+          description: 'The routing rule for the account. Required when `type` is `RULE_BASED`, which is the only type this endpoint creates today: a rule-based account with no rule has no meaning, so the two are written together.'
     InternalAccountStatus:
       title: Internal Account Status
       type: string
@@ -17510,6 +17731,79 @@ components:
               SWIFT_ACCOUNT: '#/components/schemas/PaymentSwiftAccountInfo'
               CNY_ACCOUNT: '#/components/schemas/PaymentCnyAccountInfo'
               ILS_ACCOUNT: '#/components/schemas/PaymentIlsAccountInfo'
+    SweepRuleDestination:
+      title: Sweep Rule Destination
+      type: object
+      description: Where a rule-based account's credits are swept.
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: The account that receives the swept funds.
+          example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        paymentRail:
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+          description: The rail each sweep is sent over. Null when a rail is selected automatically per sweep, in which case none is resolved ahead of time.
+          example: ACH
+    PlatformFeeOverride:
+      type: object
+      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
+      required:
+        - platformFixedFee
+        - platformVariableFeeBps
+      properties:
+        platformFixedFee:
+          $ref: '#/components/schemas/FixedFee'
+          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
+        platformVariableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
+          example: 30
+      example:
+        platformFixedFee:
+          amount: 50
+          currency: USD
+        platformVariableFeeBps: 30
+    SweepRule:
+      title: Sweep Rule
+      type: object
+      description: The routing rule attached to a rule-based account. Returned on the account rather than as a resource of its own, because the rule has no lifecycle apart from the account.
+      required:
+        - destination
+      properties:
+        destination:
+          allOf:
+            - $ref: '#/components/schemas/SweepRuleDestination'
+          description: Where funds that settle into this account are swept.
+        minimumAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: '**In this rule-based account''s currency, not the destination''s.** The smallest balance the corridor to the destination can carry; a settled balance below it is not swept. Zero means no floor, which is the case for a same-currency internal destination — a book transfer with no rail, fee or conversion to justify one. Configuration rather than a moving estimate, so there is nothing to re-poll.'
+        maximumAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: '**In this rule-based account''s currency, not the destination''s.** The largest balance the corridor to the destination can carry; a settled balance above it is not swept. Null means no ceiling.'
+        purposeOfPayment:
+          allOf:
+            - $ref: '#/components/schemas/PurposeOfPayment'
+          description: The purpose of payment applied to each sweep.
+          example: SELF
+        description:
+          type: string
+          description: Free-form description recorded on each sweep. Not delivered to the recipient.
+          example: Rent sweep
+        remittanceInformation:
+          type: string
+          description: Free-form information that travels with each sweep to the recipient.
+          example: Unit 4B March
+        platformFeeOverride:
+          allOf:
+            - $ref: '#/components/schemas/PlatformFeeOverride'
+          description: Fee terms applied to every sweep this rule drives. Null when the platform's configured fees apply.
     InternalAccount:
       type: object
       required:
@@ -17545,6 +17839,15 @@ components:
           description: Payment instructions for funding the account
           items:
             $ref: '#/components/schemas/PaymentInstructions'
+        label:
+          type: string
+          maxLength: 255
+          description: The platform-supplied label recorded when the account was created. Null for accounts that carry none.
+          example: invoice-4417
+        sweepRule:
+          allOf:
+            - $ref: '#/components/schemas/SweepRule'
+          description: The routing rule attached to this account. Null for accounts that carry no rule, which is every account other than a `RULE_BASED` one.
         privateEnabled:
           type: boolean
           description: Whether wallet privacy is enabled for the Embedded Wallet. Only present for `EMBEDDED_WALLET` internal accounts.
@@ -17559,6 +17862,41 @@ components:
           format: date-time
           description: Timestamp when the internal account was last updated
           example: '2025-10-03T12:30:00Z'
+    Error403:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 403
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+            - END_USER_TERMS_NOT_ACCEPTED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     InternalAccountListResponse:
       type: object
       required:
@@ -22961,7 +23299,11 @@ components:
         - QUOTE_EXECUTION_FAILED
         - COMPLIANCE_REJECTED
         - COLLECTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
+        - SWEEP_AMOUNT_OUT_OF_RANGE
+        - SWEEP_QUOTE_FAILED
+      description: |-
+        Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
+        A payment that settled into a rule-based account but could not be swept to the destination of the account's rule fails with one of the `SWEEP_*` reasons. A rule-based account never holds a balance, so the funds are moved to the account holder's own account in the same currency. SWEEP_AMOUNT_OUT_OF_RANGE means the amount was outside the band the corridor to the destination can carry — the rule's minimumAmount and maximumAmount give the current band — and SWEEP_QUOTE_FAILED that Grid could not price it. A sweep that was priced and then failed on the way to settlement reports QUOTE_EXECUTION_FAILED, the same as any other payment.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -22969,7 +23311,6 @@ components:
         - type: object
           required:
             - type
-            - receivedAmount
           properties:
             type:
               type: string
@@ -22979,7 +23320,7 @@ components:
               $ref: '#/components/schemas/TransactionSourceOneOf'
             receivedAmount:
               $ref: '#/components/schemas/CurrencyAmount'
-              description: Amount received in the recipient's currency
+              description: Amount received in the recipient's currency. This is only absent for rule-based account sweeps if the sweep couldn't be quoted. It's always present otherwise.
             fees:
               type: integer
               format: int64
@@ -23074,6 +23415,8 @@ components:
         - COMPLIANCE_REJECTED
         - LIGHTNING_PAYMENT_FAILED
         - COUNTERPARTY_POST_TX_FAILED
+        - SWEEP_AMOUNT_OUT_OF_RANGE
+        - SWEEP_QUOTE_FAILED
       description: |
         Reason for failure of an outgoing transaction. This is used to provide more
         context on why a transaction failed. If the transaction is not in a failed
@@ -23100,11 +23443,18 @@ components:
         | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
         | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
         | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
-        | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency isn't supported for that account |
+        | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency or payment rail isn't supported for that account. A sweep whose rule names a rail the destination cannot accept reports this |
         | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
         | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
         | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
         | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
+        | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum. The rule's `minimumAmount` and `maximumAmount` give the current band |
+        | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination. A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payout |
+
+        The `SWEEP_*` reasons apply to a payment that settled into a rule-based
+        account and could not be swept onward. A rule-based account never holds a
+        balance, so the funds are moved to the account holder's own account in the
+        same currency.
     RailSelectionMode:
       type: string
       enum:
@@ -23398,24 +23748,6 @@ components:
           description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
-    PurposeOfPayment:
-      type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
-      enum:
-        - GIFT
-        - SELF
-        - GOODS_OR_SERVICES
-        - EDUCATION
-        - HEALTH_OR_MEDICAL
-        - REAL_ESTATE_PURCHASE
-        - TAX_PAYMENT
-        - LOAN_PAYMENT
-        - UTILITY_BILL
-        - DONATION
-        - TRAVEL
-        - FAMILY_SUPPORT
-        - SALARY_PAYMENT
-        - OTHER
     TransferOutRequest:
       type: object
       required:
@@ -23812,27 +24144,6 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
-    PlatformFeeOverride:
-      type: object
-      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
-      required:
-        - platformFixedFee
-        - platformVariableFeeBps
-      properties:
-        platformFixedFee:
-          $ref: '#/components/schemas/FixedFee'
-          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
-        platformVariableFeeBps:
-          type: integer
-          minimum: 0
-          maximum: 10000
-          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
-          example: 30
-      example:
-        platformFixedFee:
-          amount: 50
-          currency: USD
-        platformVariableFeeBps: 30
     QuoteRequest:
       type: object
       required:
@@ -23892,41 +24203,6 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
-    Error403:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 403
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-            - END_USER_TERMS_NOT_ACCEPTED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.

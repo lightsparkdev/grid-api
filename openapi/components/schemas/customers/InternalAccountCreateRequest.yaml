@@ -1,0 +1,48 @@
+title: Internal Account Create Request
+type: object
+description: >-
+  Request body for `POST /internal-accounts`. Only `RULE_BASED` accounts can be
+  created today, and they are rejected without a `sweepRule` — the type and its
+  rule are created together or not at all.
+additionalProperties: false
+required:
+  - type
+  - currency
+properties:
+  customerId:
+    type: string
+    description: >-
+      The customer the account is created for. Omit it to create a
+      platform-owned account. The account holder must already have a verified
+      account in the same currency, which is where funds land when a sweep
+      cannot be completed. Platform-owned rule-based accounts are not available
+      yet, so omitting this is currently rejected.
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+  type:
+    allOf:
+      - $ref: ./InternalAccountType.yaml
+    description: >-
+      Must be `RULE_BASED`. `INTERNAL_FIAT`, `INTERNAL_CRYPTO`, and
+      `EMBEDDED_WALLET` accounts are provisioned automatically when a customer
+      is created or approved, so they cannot be created through this endpoint.
+    example: RULE_BASED
+  currency:
+    type: string
+    description: >-
+      Currency code the account is denominated in (ISO 4217). Rule-based
+      accounts are currently available in `USD` only.
+    example: USD
+  label:
+    type: string
+    maxLength: 255
+    description: >-
+      Your own name for the account, echoed back on reads. Useful for
+      identifying which payer the account was issued for.
+    example: invoice-4417
+  sweepRule:
+    allOf:
+      - $ref: ./SweepRuleRequest.yaml
+    description: >-
+      The routing rule for the account. Required when `type` is `RULE_BASED`,
+      which is the only type this endpoint creates today: a rule-based account
+      with no rule has no meaning, so the two are written together.

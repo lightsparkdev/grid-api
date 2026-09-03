@@ -1,0 +1,52 @@
+title: Sweep Rule
+type: object
+description: >-
+  The routing rule attached to a rule-based account. Returned on the account
+  rather than as a resource of its own, because the rule has no lifecycle apart
+  from the account.
+required:
+  - destination
+properties:
+  destination:
+    allOf:
+      - $ref: SweepRuleDestination.yaml
+    description: Where funds that settle into this account are swept.
+  minimumAmount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      **In this rule-based account's currency, not the destination's.** The
+      smallest balance the corridor to the destination can carry; a settled
+      balance below it is not swept. Zero means no floor, which is the case for
+      a same-currency internal destination — a book transfer with no rail, fee
+      or conversion to justify one. Configuration rather than a moving
+      estimate, so there is nothing to re-poll.
+  maximumAmount:
+    allOf:
+      - $ref: ../common/CurrencyAmount.yaml
+    description: >-
+      **In this rule-based account's currency, not the destination's.** The
+      largest balance the corridor to the destination can carry; a settled
+      balance above it is not swept. Null means no ceiling.
+  purposeOfPayment:
+    allOf:
+      - $ref: ../quotes/PurposeOfPayment.yaml
+    description: The purpose of payment applied to each sweep.
+    example: SELF
+  description:
+    type: string
+    description: >-
+      Free-form description recorded on each sweep. Not delivered to the
+      recipient.
+    example: Rent sweep
+  remittanceInformation:
+    type: string
+    description: >-
+      Free-form information that travels with each sweep to the recipient.
+    example: Unit 4B March
+  platformFeeOverride:
+    allOf:
+      - $ref: ../quotes/PlatformFeeOverride.yaml
+    description: >-
+      Fee terms applied to every sweep this rule drives. Null when the
+      platform's configured fees apply.

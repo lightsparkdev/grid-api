@@ -4,7 +4,6 @@ allOf:
   - type: object
     required:
       - type
-      - receivedAmount
     properties:
       type:
         type: string
@@ -14,7 +13,10 @@ allOf:
         $ref: ./TransactionSourceOneOf.yaml
       receivedAmount:
         $ref: ../common/CurrencyAmount.yaml
-        description: Amount received in the recipient's currency
+        description: >-
+          Amount received in the recipient's currency. This is only absent for
+          rule-based account sweeps if the sweep couldn't be quoted. It's always
+          present otherwise.
       fees:
         type: integer
         format: int64
