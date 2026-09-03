@@ -463,7 +463,18 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   // Brand: the logo as uploaded, or the wordmark in ink; a foil treatment
   // replaces either with the foil's reflectance in the same shape.
   const t = s.design.logoTreatment;
-  if (t === 'foilSilver' || t === 'foilGold') {
+  if (t === 'etch') {
+    // A blind mark: no ink. On bare metal the die's floor is polished and
+    // reads brighter (the Z card's basin); on a print it is the print.
+    if (isBare(s.design) && materialOf(s.design) === 'metal') {
+      const mask = paintBrandMask(s.design, s.logo);
+      const m = mask.getContext('2d')!;
+      m.globalCompositeOperation = 'source-in';
+      m.fillStyle = '#e6e5e4';
+      m.fillRect(0, 0, TEX_W, TEX_H);
+      ctx.drawImage(mask, 0, 0);
+    }
+  } else if (t === 'foilSilver' || t === 'foilGold') {
     const mask = paintBrandMask(s.design, s.logo);
     const m = mask.getContext('2d')!;
     m.globalCompositeOperation = 'source-in';

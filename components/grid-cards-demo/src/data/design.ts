@@ -8,9 +8,11 @@ export type CardMaterial = 'plastic' | 'metal';
 /** The surface coat: matte (soft-touch print, brushed metal) or gloss
  *  (laminated print, polished metal). */
 export type CardFinish = 'matte' | 'gloss';
-/** Decoration applied over a printed element. Spot gloss is a clear
- *  high-gloss varnish (reads on a matte card); foil is hot-stamped metal. */
-export type LogoTreatment = 'print' | 'spotGloss' | 'foilSilver' | 'foilGold';
+/** How the brand mark is applied. Ink is printed; spot gloss is a clear
+ *  high-gloss varnish (reads on a matte card); foil is hot-stamped metal;
+ *  etch is cut into the card (engraved on metal, debossed on plastic), a blind mark read by
+ *  its relief. */
+export type LogoTreatment = 'print' | 'spotGloss' | 'foilSilver' | 'foilGold' | 'etch';
 export type ArtTreatment = 'print' | 'spotGloss';
 
 /** The card body under the print: PVC core in white or black, or stainless
@@ -104,14 +106,15 @@ export const FINISHES: Array<{ id: CardFinish; label: string }> = [
 ];
 
 export const LOGO_TREATMENTS: Array<{ id: LogoTreatment; label: string }> = [
-  { id: 'print', label: 'Print' },
+  { id: 'print', label: 'Ink' },
   { id: 'spotGloss', label: 'Gloss' },
   { id: 'foilSilver', label: 'Silver' },
   { id: 'foilGold', label: 'Gold' },
+  { id: 'etch', label: 'Etch' },
 ];
 
 export const ART_TREATMENTS: Array<{ id: ArtTreatment; label: string }> = [
-  { id: 'print', label: 'Print' },
+  { id: 'print', label: 'Ink' },
   { id: 'spotGloss', label: 'Gloss' },
 ];
 
@@ -120,7 +123,7 @@ export const initialDesign: CardDesign = {
   cardholderName: '',
   material: 'plastic',
   finish: 'matte',
-  color: DESIGN_SWATCHES[1].color,
+  color: DESIGN_SWATCHES[0].color,
   logoUrl: null,
   logoTreatment: 'print',
   backgroundUrl: null,

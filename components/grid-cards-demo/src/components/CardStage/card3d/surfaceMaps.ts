@@ -303,8 +303,10 @@ export function bakeEdge(material: CardMaterial, coreColor: string, skinColor: s
 export function decorateOrm(
   base: HTMLCanvasElement,
   brandMask: HTMLCanvasElement | null,
-  brandTreatment: 'spotGloss' | 'foilSilver' | 'foilGold' | null,
+  brandTreatment: 'spotGloss' | 'foilSilver' | 'foilGold' | 'etch' | null,
   artMask: HTMLCanvasElement | null,
+  /** Whether the face is bare metal: an etched mark is polished there. */
+  bareMetal = false,
 ): HTMLCanvasElement {
   const c = makeCanvas(base.width, base.height);
   const ctx = c.getContext('2d')!;
@@ -320,8 +322,58 @@ export function decorateOrm(
   };
   if (artMask) stamp(artMask, orm(0.06, 0));
   if (brandMask && brandTreatment) {
-    stamp(brandMask, brandTreatment === 'spotGloss' ? orm(0.06, 0) : orm(0.05, 1));
+    const fill =
+      brandTreatment === 'spotGloss'
+        ? orm(0.06, 0)
+        : brandTreatment === 'etch'
+          ? // The die's floor: polished on metal (the Z card's basin), a
+            // smoother print on plastic.
+            bareMetal
+            ? orm(0.2, 1)
+            : orm(0.3, 0)
+          : orm(0.05, 1);
+    stamp(brandMask, fill);
   }
+  return c;
+}
+
+/**
+ * Relief for an etched brand: the mask cut into the face about 0.1 mm,
+ * with a bevel about 0.25 mm wide, laid over the front's normal map wherever
+ * the height departs from flat (the same composition as the beadblast's
+ * structure).
+ */
+export function decorateNormal(base: HTMLCanvasElement, brandMask: HTMLCanvasElement): HTMLCanvasElement {
+  const w = base.width;
+  const h = base.height;
+  const c = makeCanvas(w, h);
+  const ctx = c.getContext('2d')!;
+  ctx.drawImage(base, 0, 0);
+  // Height in map pixels: flat mid-gray, the mark darker (lower), edges
+  // softened over the bevel.
+  const height = makeCanvas(w, h);
+  const hc = height.getContext('2d')!;
+  hc.fillStyle = '#808080';
+  hc.fillRect(0, 0, w, h);
+  const bevel = (0.25 * 17.94 * K * w) / TEX_W;
+  hc.filter = `blur(${bevel / 2}px)`;
+  const m = makeCanvas(brandMask.width, brandMask.height);
+  const mc = m.getContext('2d')!;
+  mc.drawImage(brandMask, 0, 0);
+  mc.globalCompositeOperation = 'source-in';
+  mc.fillStyle = '#4a4a4a';
+  mc.fillRect(0, 0, m.width, m.height);
+  hc.drawImage(m, 0, 0, w, h);
+  hc.filter = 'none';
+  const structure = heightToNormal(height, 2.6);
+  const sctx = structure.getContext('2d')!;
+  const n = sctx.getImageData(0, 0, w, h);
+  const hd = hc.getImageData(0, 0, w, h).data;
+  for (let i = 0; i < n.data.length; i += 4) {
+    n.data[i + 3] = Math.abs(hd[i] - 128) > 1 ? 255 : 0;
+  }
+  sctx.putImageData(n, 0, 0);
+  ctx.drawImage(structure, 0, 0);
   return c;
 }
 

@@ -136,9 +136,9 @@ function UploadRow({
 
 /**
  * The Design section, in the order a card is made. Card: material, finish,
- * color (the core under a print is chosen to match it, not offered). Brand:
- * program name, logo, and their finish once there is something to finish.
- * Art: upload, and its finish once uploaded. Cardholder: the visitor's own.
+ * and the print (a color, or none, or art; the core under a print is chosen
+ * to match it, not offered). Brand: the name and logo, and how the mark is
+ * applied once there is one. Name: the cardholder's.
  */
 export function DesignPicker({ design, onChange }: DesignPickerProps) {
   const stock = stockOf(design);
@@ -179,12 +179,11 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
               type="button"
               role="radio"
               aria-checked={design.color === null}
+              aria-label="None"
               title={`No print: bare ${stock.label.toLowerCase()}`}
-              className={clsx(styles.segment, styles.swatchNone, design.color === null && styles.segmentActive)}
+              className={clsx(styles.swatch, styles.swatchNone, design.color === null && styles.swatchActive)}
               onClick={() => onChange({ color: null })}
-            >
-              None
-            </button>
+            />
             {DESIGN_SWATCHES.map((s) => (
               <button
                 key={s.id}
@@ -214,47 +213,6 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
             </label>
           </div>
         </div>
-      </div>
-
-      <div className={styles.group}>
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Program</span>
-          <input
-            type="text"
-            className={styles.nameInput}
-            value={design.programName}
-            maxLength={MAX_NAME}
-            placeholder="Your brand"
-            aria-label="Program name"
-            onChange={(e) => onChange({ programName: e.target.value })}
-          />
-        </div>
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Logo</span>
-          <UploadRow
-            url={design.logoUrl}
-            accept="image/svg+xml,image/png,image/webp"
-            label="Upload SVG or PNG"
-            previewStyle={swatchStyle(brand)}
-            onPick={(url) => onChange({ logoUrl: url })}
-          />
-        </div>
-        {hasBrand && (
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>{design.logoUrl ? 'Logo finish' : 'Wordmark'}</span>
-            <Choices
-              label="Logo finish"
-              value={design.logoTreatment}
-              options={LOGO_TREATMENTS}
-              onChange={(logoTreatment) => onChange({ logoTreatment })}
-              disabled={noSpotGloss}
-              dense
-            />
-          </div>
-        )}
-      </div>
-
-      <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Art</span>
           <UploadRow
@@ -280,13 +238,51 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
 
       <div className={styles.group}>
         <div className={styles.row}>
-          <span className={styles.rowLabel}>Cardholder</span>
+          <span className={styles.rowLabel}>Brand</span>
+          <input
+            type="text"
+            className={styles.nameInput}
+            value={design.programName}
+            maxLength={MAX_NAME}
+            placeholder="Your brand"
+            aria-label="Brand name"
+            onChange={(e) => onChange({ programName: e.target.value })}
+          />
+        </div>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Logo</span>
+          <UploadRow
+            url={design.logoUrl}
+            accept="image/svg+xml,image/png,image/webp"
+            label="Upload SVG or PNG"
+            previewStyle={swatchStyle(brand)}
+            onPick={(url) => onChange({ logoUrl: url })}
+          />
+        </div>
+        {hasBrand && (
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Finish</span>
+            <Choices
+              label="Brand finish"
+              value={design.logoTreatment}
+              options={LOGO_TREATMENTS}
+              onChange={(logoTreatment) => onChange({ logoTreatment })}
+              disabled={noSpotGloss}
+              dense
+            />
+          </div>
+        )}
+      </div>
+
+      <div className={styles.group}>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Name</span>
           <input
             type="text"
             className={styles.nameInput}
             value={design.cardholderName}
             maxLength={MAX_CARDHOLDER}
-            placeholder="Cardholder name"
+            placeholder="Your name"
             aria-label="Cardholder name"
             onChange={(e) => onChange({ cardholderName: e.target.value })}
           />

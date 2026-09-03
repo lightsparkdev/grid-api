@@ -25,7 +25,7 @@ import {
   TEX_W,
   type FaceAssets,
 } from './facePaint';
-import { bakeEdge, decorateOrm, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
+import { bakeEdge, decorateNormal, decorateOrm, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -218,19 +218,21 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     invalidate();
   }, [assets, surface, materials, invalidate]);
 
-  // Decoration: spot gloss or foil on the brand, spot gloss on the art, laid
-  // over the front's cached map per design.
+  // Decoration: spot gloss, foil, or etch on the brand, spot gloss on the
+  // art, laid over the front's cached maps per design.
   const { logoTreatment, artTreatment } = state.design;
-  const decoTex = useRef<THREE.Texture | null>(null);
+  const decoTex = useRef<{ orm: THREE.Texture | null; normal: THREE.Texture | null }>({ orm: null, normal: null });
   useEffect(() => {
     if (!assets) return;
     const front = materials[MAT_FRONT];
     const base = surfaceTex.current.get(`${surface}|front`);
     if (!base) return;
-    decoTex.current?.dispose();
-    decoTex.current = null;
+    decoTex.current.orm?.dispose();
+    decoTex.current.normal?.dispose();
+    decoTex.current = { orm: null, normal: null };
     const brandT = logoTreatment === 'print' ? null : logoTreatment;
     const artT = art && artTreatment === 'spotGloss';
+    const brandMask = brandT ? paintBrandMask(state.design, logo) : null;
     if (!brandT && !artT) {
       front.roughnessMap = base.orm;
       front.metalnessMap = base.orm;
@@ -238,14 +240,22 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       const decorated = canvasTexture(
         decorateOrm(
           base.orm.image as HTMLCanvasElement,
-          brandT ? paintBrandMask(state.design, logo) : null,
+          brandMask,
           brandT,
           artT && art ? paintArtMask(art) : null,
+          surface.startsWith('bare'),
         ),
       );
-      decoTex.current = decorated;
+      decoTex.current.orm = decorated;
       front.roughnessMap = decorated;
       front.metalnessMap = decorated;
+    }
+    if (brandT === 'etch' && brandMask) {
+      const relief = canvasTexture(decorateNormal(base.normal.image as HTMLCanvasElement, brandMask));
+      decoTex.current.normal = relief;
+      front.normalMap = relief;
+    } else {
+      front.normalMap = base.normal;
     }
     front.needsUpdate = true;
     invalidate();
@@ -359,7 +369,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
         t.orm.dispose();
         t.normal.dispose();
       });
-      decoTex.current?.dispose();
+      decoTex.current.orm?.dispose();
+      decoTex.current.normal?.dispose();
       edgeTex.current?.albedo.dispose();
       edgeTex.current?.orm.dispose();
     },

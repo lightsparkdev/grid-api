@@ -114,9 +114,22 @@
   border-color: var(--text-primary);
 }
 
-/* No print: a word among the swatches, in the choice style. */
-.swatches .swatchNone {
-  padding: 0 var(--spacing-2xs) 0 0;
+/* No print: an empty circle with a diagonal through it. */
+.swatchNone {
+  background: var(--tile-bg);
+  box-shadow: inset 0 0 0 1px var(--border-primary);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--text-tertiary);
+    transform: rotate(45deg);
+  }
 }
 
 .swatchCustom {
@@ -191,7 +204,7 @@
 }
 
 .segmentsDense .segment {
-  padding: 0 var(--spacing-xs);
+  padding: 0 6px;
 }
 
 .logoRow {
