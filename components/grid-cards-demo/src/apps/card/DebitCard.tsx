@@ -76,11 +76,9 @@ export function DebitCard({
           >
             {programName}
           </TextMorph>
-          {design.logoUrl ? (
+          {design.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img className={styles.logo} src={design.logoUrl} alt="" aria-hidden draggable={false} />
-          ) : (
-            <span className={styles.secondary}>VIRTUAL</span>
           )}
         </div>
         <Chip />

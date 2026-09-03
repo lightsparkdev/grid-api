@@ -16,8 +16,6 @@ export interface AppPanelProps {
   session: number;
   /** The flow the phone is up for; null = the card floats alone. */
   activeFlow: ActionId | null;
-  /** Issue tapped on the bare-card stage. */
-  onIssue: () => void;
   /** Jump command for the brain (sidebar → provision + run a flow). */
   walletEntry?: WalletEntry;
   onCardIssued?: () => void;
@@ -36,7 +34,6 @@ export function AppPanel({ session, ...props }: AppPanelProps) {
 function StageHost({
   design,
   activeFlow,
-  onIssue,
   walletEntry,
   onCardIssued,
   onTapToPay,
@@ -69,7 +66,7 @@ function StageHost({
               glassDemoBg
               externalGlass
             />
-            <CardStage design={design} home={home} onIssue={onIssue} />
+            <CardStage design={design} home={home} />
           </DotGridCanvas>
         </div>
       </div>

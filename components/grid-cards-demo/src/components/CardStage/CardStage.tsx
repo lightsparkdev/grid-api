@@ -3,14 +3,12 @@
 import clsx from 'clsx';
 import { useEffect, useRef, type PointerEvent } from 'react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react';
-import { IconCreditCardAdd } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCreditCardAdd';
 import { CardBack } from '@/apps/card/CardBack';
 import { DebitCard } from '@/apps/card/DebitCard';
 import { BrandProvider } from '@/apps/shared/brand/BrandContext';
 import { brandVars } from '@/apps/shared/brand/brandPalette';
-import { formatUsdCents, type CardHome } from '@/apps/shared/card';
+import type { CardHome } from '@/apps/shared/card';
 import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
-import { FUNDING_SOURCE_CENTS } from '@/data/actions';
 import type { CardDesign } from '@/data/design';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
 import { applyFaceLight, SHADOW_OFFSET, solveFaceLight } from './cardLighting';
@@ -19,9 +17,9 @@ import styles from './CardStage.module.scss';
 /** Largest the card gets on stage, relative to its size in the phone. */
 const MAX_SCALE = 1.4;
 const MIN_SCALE = 0.55;
-/** Stage margin around the card, and room below it for the caption. */
+/** Stage margin around the card. */
 const GUTTER_X = 28;
-const GUTTER_Y = 180;
+const GUTTER_Y = 120;
 /** Cursor tilt, degrees. */
 const TILT_DEG = 9;
 /** Glide time constant toward the rest position (seconds). */
@@ -37,8 +35,6 @@ function easeInOutCubic(p: number) {
 interface CardStageProps {
   design: CardDesign;
   home: CardHome;
-  /** Issue tapped on the stage. */
-  onIssue: () => void;
 }
 
 /**
@@ -53,7 +49,7 @@ interface CardStageProps {
  * `[data-card-slot]` on the phone's boot curve. It is the only card: the slot is
  * an empty box, so nothing ever swaps or unmounts.
  */
-export function CardStage({ design, home, onIssue }: CardStageProps) {
+export function CardStage({ design, home }: CardStageProps) {
   const { bootProgress } = usePhoneBoot();
   const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -101,7 +97,7 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
       // Rest position: centered on the stage, scaled to fit it.
       const rest = {
         x: z.left + z.width / 2 - r.left,
-        y: z.top + z.height / 2 - r.top - 24,
+        y: z.top + z.height / 2 - r.top,
         s: Math.max(
           MIN_SCALE,
           Math.min(MAX_SCALE, (z.width - GUTTER_X * 2) / CARD_W, (z.height - GUTTER_Y) / CARD_H),
@@ -127,9 +123,6 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
         }
       }
       cardEl.style.transform = `translate(${x - CARD_W / 2}px, ${y - CARD_H / 2}px) scale(${s})`;
-      // The caption follows the card.
-      root.style.setProperty('--card-x', `${x}px`);
-      root.style.setProperty('--card-bottom', `${y + (CARD_H / 2) * s}px`);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -149,19 +142,6 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
     rotateX.set(0);
     rotateY.set(0);
   };
-
-  // ── Caption ────────────────────────────────────────────────────────────────
-  const state = card.closed ? 'Closed' : card.frozen ? 'Frozen' : issuing ? 'Processing' : 'Active';
-  const limits = card.limits;
-  const limitsText =
-    limits.perTransactionCents !== null || limits.perDayCents !== null
-      ? [
-          limits.perTransactionCents !== null ? `${formatUsdCents(limits.perTransactionCents)} per purchase` : null,
-          limits.perDayCents !== null ? `${formatUsdCents(limits.perDayCents)} per day` : null,
-        ]
-          .filter(Boolean)
-          .join(' · ')
-      : null;
 
   return (
     <div
@@ -203,44 +183,6 @@ export function CardStage({ design, home, onIssue }: CardStageProps) {
               </div>
             </motion.div>
           </div>
-        </div>
-
-        {/* Caption under the floating card: the offer before a card exists, the
-            card's state once it does. Gone while the card is in the phone. */}
-        <div className={styles.caption} style={{ opacity: phoneUp ? 0 : 1 }}>
-          {!issued && !issuing ? (
-            <>
-              <p className={styles.title}>Design your card</p>
-              <p className={styles.sub}>
-                Pick a color, finish, and logo, then issue it. Every flow you run acts on this card.
-              </p>
-              <button type="button" className={styles.issue} onClick={onIssue} disabled={phoneUp}>
-                <IconCreditCardAdd size={16} />
-                Issue card
-              </button>
-            </>
-          ) : (
-            <p className={styles.status}>
-              <span className={clsx(styles.dot, styles[`dot${state}`])} aria-hidden />
-              <span className={styles.statusState}>{state}</span>
-              <span className={styles.statusSep} aria-hidden>
-                ·
-              </span>
-              <span>Spend from Checking •••• 2502</span>
-              <span className={styles.statusSep} aria-hidden>
-                ·
-              </span>
-              <span className={styles.statusNum}>{formatUsdCents(home.availableCents ?? FUNDING_SOURCE_CENTS)}</span>
-              {limitsText && (
-                <>
-                  <span className={styles.statusSep} aria-hidden>
-                    ·
-                  </span>
-                  <span>{limitsText}</span>
-                </>
-              )}
-            </p>
-          )}
         </div>
       </BrandProvider>
     </div>

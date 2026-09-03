@@ -128,7 +128,6 @@ export default function Page() {
         <div className={styles.appCol}>
           <AppPanel
             activeFlow={logic.activeFlow}
-            onIssue={() => logic.handleAction('card')}
             design={logic.design}
             session={logic.session}
             walletEntry={logic.walletEntry}
