@@ -252,23 +252,26 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
  *  Standards, January 2026: "silver foil PVBM, printed silver product
  *  identifier"). The surface maps make the mark a mirror and the identifier
  *  flat. */
-function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, bare: boolean) {
-  // Silver foil would vanish on bare metal; the standards allow a black foil
-  // PVBM with a black printed identifier, which is what metal cards use.
-  const identifier = bare ? '#2a2a2e' : '#cfd0d5';
-  // Mirror foil: near-white reflectance (the studio does the shading), with a
-  // faint bright-to-dark run across the mark so it reads as foil in a still.
-  const mark = bare
-    ? '#1c1c20'
-    : (t: CanvasRenderingContext2D, w: number, h: number) => {
-        const g = t.createLinearGradient(0, h * LOCKUP_SPLIT, w, h);
-        g.addColorStop(0, '#ffffff');
-        g.addColorStop(0.55, '#f2f2f5');
-        g.addColorStop(1, '#d9d9de');
-        return g;
-      };
+/** Silver foil would vanish on bare metal or a light bare stock; the standards
+ *  allow a black foil PVBM with a black printed identifier, which is what
+ *  metal cards use. */
+export function foilIsBlack(design: CardDesign): boolean {
+  return (isBare(design) && materialOf(design) === 'metal') || inkFor(design, null) !== '#ffffff';
+}
+
+function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: boolean) {
+  const identifier = black ? '#2a2a2e' : '#cfd0d5';
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, mark, [LOCKUP_SPLIT, 1]);
+  if (black) {
+    drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#1c1c20', [LOCKUP_SPLIT, 1]);
+    return;
+  }
+  // Silver foil: a dark keyline runs FOIL_CARRIER outside the mark (the
+  // stamped film's edge, as on a real card), and the mark itself is the foil
+  // layer (`FoilMark`), which sits over this. Under it, paint the foil's tone
+  // so its anti-aliased edge blends.
+  drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#101013', FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#d8d8dc', [LOCKUP_SPLIT, 1]);
 }
 
 /** The Visa mark's shape alone (the foil band of the lockup), white on
@@ -289,8 +292,8 @@ export function paintFoilAlbedo(): HTMLCanvasElement {
   const ctx = c.getContext('2d')!;
   const g = ctx.createLinearGradient(0, h * LOCKUP_SPLIT, w, h);
   g.addColorStop(0, '#ffffff');
-  g.addColorStop(0.55, '#f4f4f6');
-  g.addColorStop(1, '#dcdce0');
+  g.addColorStop(0.5, '#eeeef1');
+  g.addColorStop(1, '#b4b4bb');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
   return c;
@@ -459,7 +462,6 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.globalCompositeOperation = 'source-over';
   paintBase(ctx, s.design, true, null);
   const ink = inkFor(s.design, null);
-  const bare = isBare(s.design) && materialOf(s.design) === 'metal';
 
   // Mag stripe, bleeding to the top edge (Thales sample 1:116).
   ctx.fillStyle = '#242426';
@@ -481,7 +483,12 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.textAlign = 'left';
   ctx.font = `400 ${F(57)}px ${FONT}`;
   ctx.fillStyle = ink;
-  ctx.fillText(s.design.cardholderName.trim() || 'Cardholder name', x, y);
+  // Until the visitor types a name the line reads as a specimen's does.
+  const name = s.design.cardholderName.trim();
+  ctx.save();
+  if (!name) ctx.globalAlpha = 0.55;
+  ctx.fillText(name || 'Cardholder name', x, y);
+  ctx.restore();
 
   if (s.personalized > 0) {
     ctx.save();
@@ -520,7 +527,7 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.fillText('1-855-516-0103   lightspark.com/help', x, F(876) + F(16));
   ctx.fillText('Issued by Lead Bank', x, F(876) + F(16) + F(26));
 
-  paintLockup(ctx, assets, bare || ink !== '#ffffff');
+  paintLockup(ctx, assets, foilIsBlack(s.design));
   paintState(ctx, s.frozen, s.closed);
 }
 

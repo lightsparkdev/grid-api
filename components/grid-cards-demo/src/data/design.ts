@@ -108,7 +108,7 @@ export const ART_TREATMENTS: Array<{ id: ArtTreatment; label: string }> = [
 
 export const initialDesign: CardDesign = {
   programName: 'Your brand',
-  cardholderName: 'Alex Rivera',
+  cardholderName: '',
   stock: 'white',
   finish: 'matte',
   color: DESIGN_SWATCHES[1].color,

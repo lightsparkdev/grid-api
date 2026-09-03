@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
 import { brandStops } from '@/apps/shared/brand/brandPalette';
-import { isBare, materialOf, stockOf, type CardDesign } from '@/data/design';
+import { materialOf, stockOf, type CardDesign } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import {
   K,
@@ -16,6 +16,7 @@ import {
   paintArtMask,
   paintBack,
   paintBrandMask,
+  foilIsBlack,
   paintFoilAlbedo,
   paintFront,
   paintLockupMask,
@@ -87,7 +88,7 @@ function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture 
  * environment it uses the scene's intensity), so the studio is assigned here.
  * On bare metal the mark is black foil, painted into the face instead.
  */
-const FOIL = { roughness: 0.15, envMapIntensity: 1.5 };
+const FOIL = { roughness: 0.1, envMapIntensity: 2.6 };
 
 function FoilMark({ assets, backZ, visible }: { assets: FaceAssets; backZ: number; visible: boolean }) {
   const scene = useThree((s) => s.scene);
@@ -369,7 +370,7 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
   return (
     <group ref={ref}>
       <mesh geometry={geometry} material={materials} visible={assets !== null} />
-      {assets && <FoilMark assets={assets} backZ={backZ} visible={!isBare(state.design)} />}
+      {assets && <FoilMark assets={assets} backZ={backZ} visible={!foilIsBlack(state.design)} />}
     </group>
   );
 });
