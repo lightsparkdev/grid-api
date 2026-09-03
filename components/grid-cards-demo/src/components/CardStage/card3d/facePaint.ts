@@ -185,20 +185,21 @@ function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#e4e4e8');
 }
 
+/** Silver (nickel-plated) contact module; the material makes it metal. */
 function paintChip(ctx: CanvasRenderingContext2D) {
   const g = ctx.createLinearGradient(CHIP.x, CHIP.y, CHIP.x + CHIP.w, CHIP.y + CHIP_H);
-  g.addColorStop(0, '#d9b872');
-  g.addColorStop(0.5, '#f0dca4');
-  g.addColorStop(1, '#c9a35a');
+  g.addColorStop(0, '#c9cacf');
+  g.addColorStop(0.5, '#e9eaee');
+  g.addColorStop(1, '#b9bbc1');
   ctx.fillStyle = g;
   chipPlatePath(ctx);
   ctx.fill();
   ctx.lineWidth = 1.1 * K;
-  ctx.strokeStyle = 'rgba(80, 55, 15, 0.7)';
+  ctx.strokeStyle = 'rgba(40, 42, 48, 0.7)';
   chipContactsPath(ctx);
   ctx.stroke();
   ctx.lineWidth = 0.8 * K;
-  ctx.strokeStyle = 'rgba(60, 40, 10, 0.55)';
+  ctx.strokeStyle = 'rgba(30, 32, 38, 0.55)';
   chipPlatePath(ctx);
   ctx.stroke();
 }

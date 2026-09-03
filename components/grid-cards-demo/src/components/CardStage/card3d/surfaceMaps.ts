@@ -75,7 +75,7 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
     ctx.fillStyle = orm(0.78, 0);
     ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
   } else {
-    // Gold plating: polished metal; the grooves are rougher.
+    // Silver plating: polished metal; the grooves are rougher.
     ctx.fillStyle = orm(0.22, 1);
     chipPlatePath(ctx);
     ctx.fill();
