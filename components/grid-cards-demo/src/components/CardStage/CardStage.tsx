@@ -270,8 +270,10 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
     const hit = hitRef.current;
     if (hit) {
       hit.style.transform = `translate(${x + pose.dx * s - CARD_W / 2}px, ${y + bob - CARD_H / 2}px) scale(${s})`;
-      // The pill belongs to the front; hide it while the back is showing.
-      hit.style.setProperty('--pill-opacity', Math.cos(THREE.MathUtils.degToRad(pose.rotY)) > 0.3 ? '1' : '0');
+      // The pill belongs to the front; hide it while the back is showing (by
+      // spin or by flop).
+      const facing = Math.cos(THREE.MathUtils.degToRad(pose.rotY)) * Math.cos(THREE.MathUtils.degToRad(pose.rotX));
+      hit.style.setProperty('--pill-opacity', facing > 0.3 ? '1' : '0');
     }
   });
 

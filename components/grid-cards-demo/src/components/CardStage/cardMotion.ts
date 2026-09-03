@@ -10,8 +10,6 @@
 export const TILT_DEG = 9;
 /** Drag: degrees of spin per pixel of pointer travel. */
 const DRAG_DEG_PER_PX = 0.55;
-/** The pitch a drag can reach before it stops following the pointer. */
-const PITCH_LIMIT = 50;
 /** Spring that settles the spin onto a face (per second, per degree). */
 const SPIN_K = 120;
 const SPIN_C = 18;
@@ -47,10 +45,12 @@ export class CardMotion {
   private dragging = false;
   private lastDragT = 0;
   private dragVY = 0;
+  private dragVX = 0;
   /** After a drag the card may rest on either face. */
   private restAny = false;
-  /** Where the spin settles; re-picked on release and when the wants change. */
+  /** Where the spin and pitch settle; re-picked on release and when the wants change. */
   private targetY = 0;
+  private targetX = 0;
   private lastWantBack = false;
   private lastHold = false;
   private time = 0;
@@ -73,6 +73,7 @@ export class CardMotion {
     this.clearTilt();
     this.lastDragT = now;
     this.dragVY = 0;
+    this.dragVX = 0;
   }
 
   /** Pointer travel since the last event, in stage px. */
@@ -80,21 +81,26 @@ export class CardMotion {
     if (!this.dragging) return;
     const dt = Math.max(0.001, (now - this.lastDragT) / 1000);
     this.lastDragT = now;
+    // Drag right spins the card about its short axis; drag down flops it
+    // about its long axis. Both run free.
     const dyDeg = dxPx * DRAG_DEG_PER_PX;
+    const dxDeg = dyPx * DRAG_DEG_PER_PX;
     this.spinY += dyDeg;
-    this.pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, this.pitch + dyPx * DRAG_DEG_PER_PX * 0.6));
-    // Smoothed release velocity.
+    this.pitch += dxDeg;
+    // Smoothed release velocities.
     this.dragVY = this.dragVY * 0.6 + (dyDeg / dt) * 0.4;
+    this.dragVX = this.dragVX * 0.6 + (dxDeg / dt) * 0.4;
   }
 
   endDrag() {
     if (!this.dragging) return;
     this.dragging = false;
     this.spinVY = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVY));
-    this.pitchV = 0;
+    this.pitchV = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVX));
     this.restAny = true;
-    // Settle on whichever face the fling is headed for.
+    // Settle on whichever face each fling is headed for.
     this.targetY = this.pickTarget(this.spinY + this.spinVY * FLING_LOOKAHEAD, this.lastWantBack, this.lastHold);
+    this.targetX = nearestWithParity(this.pitch + this.pitchV * FLING_LOOKAHEAD, 0, 180);
   }
 
   /** The face to settle on: the reveal wants the back; a free card after a
@@ -129,13 +135,17 @@ export class CardMotion {
       if (opts.hold || opts.wantBack) this.restAny = false;
       this.lastWantBack = opts.wantBack;
       this.lastHold = opts.hold;
-      if (!this.dragging) this.targetY = this.pickTarget(this.spinY, opts.wantBack, opts.hold);
+      if (!this.dragging) {
+        this.targetY = this.pickTarget(this.spinY, opts.wantBack, opts.hold);
+        // Flows read the card by its spin, so a flopped card rights itself first.
+        this.targetX = nearestWithParity(this.pitch, 0);
+      }
     }
 
     if (!this.dragging) {
       this.spinVY += (SPIN_K * (this.targetY - this.spinY) - SPIN_C * this.spinVY) * dt;
       this.spinY += this.spinVY * dt;
-      this.pitchV += (SPIN_K * (0 - this.pitch) - SPIN_C * this.pitchV) * dt;
+      this.pitchV += (SPIN_K * (this.targetX - this.pitch) - SPIN_C * this.pitchV) * dt;
       this.pitch += this.pitchV * dt;
     }
 

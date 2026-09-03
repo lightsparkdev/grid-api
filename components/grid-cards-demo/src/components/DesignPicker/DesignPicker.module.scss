@@ -139,8 +139,11 @@
    a hairline like the API panel's Request / Response tabs. No track. */
 .segments {
   display: flex;
-  align-items: center;
-  margin-left: auto;
+  align-items: stretch;
+  /* Full row height, through the row's vertical padding, so the divider
+     between options bleeds top to bottom. */
+  align-self: stretch;
+  margin: calc(-1 * var(--spacing-sm)) 0 calc(-1 * var(--spacing-sm)) auto;
 }
 
 .segment {
@@ -149,8 +152,7 @@
   @include label;
   display: flex;
   align-items: center;
-  height: 24px;
-  padding: 0 var(--spacing-xs);
+  padding: 0 var(--spacing-sm);
   color: var(--text-tertiary);
   white-space: nowrap;
   font-feature-settings: 'salt' 1;
