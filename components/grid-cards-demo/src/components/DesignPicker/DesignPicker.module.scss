@@ -135,38 +135,35 @@
    active tab lifts onto a base-surface card with its own hairline border.
    Origin here predates --surface-elevated, so fall back to the exact colors
    the flow builder resolves to (#FAFAF9 light / #111111 dark). */
+/* Material and Finish: plain text choices in the flow tile's type, divided by
+   a hairline like the API panel's Request / Response tabs. No track. */
 .segments {
-  --segments-track: var(--surface-elevated, var(--surface-panel));
   display: flex;
   align-items: center;
-  gap: var(--spacing-4xs);
   margin-left: auto;
-  padding: var(--spacing-3xs);
-  background: var(--segments-track);
-  border: var(--stroke-xs) solid var(--border-tertiary);
-  border-radius: var(--corner-radius-md);
-
-  :global([data-theme='dark']) & {
-    --segments-track: var(--surface-elevated, var(--surface-secondary));
-  }
 }
 
 .segment {
   all: unset;
   box-sizing: border-box;
-  @include label-sm;
+  @include label;
   display: flex;
   align-items: center;
   height: 24px;
   padding: 0 var(--spacing-xs);
-  /* Transparent hairline so the active border doesn't shift the label. */
-  border: var(--stroke-xs) solid transparent;
-  border-radius: var(--corner-radius-xs);
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   white-space: nowrap;
   font-feature-settings: 'salt' 1;
   cursor: pointer;
-  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+  transition: color 150ms ease;
+
+  & + & {
+    border-left: var(--stroke-xs) solid var(--border-tertiary);
+  }
+
+  &:last-child {
+    padding-right: 0;
+  }
 
   @media (hover: hover) {
     &:hover:not(:disabled) {
@@ -176,8 +173,6 @@
 }
 
 .segmentActive {
-  background: var(--surface-base);
-  border-color: var(--border-tertiary);
   color: var(--text-primary);
 }
 
