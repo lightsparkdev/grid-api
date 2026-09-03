@@ -75,10 +75,12 @@
   z-index: 3;
 }
 
-/* Card slot — pinned at the top; the hub scrolls beneath it. */
+/* Card slot — pinned at the top; the hub scrolls beneath it. The top margin
+   clears a dropped-in notification capsule (NOTIFICATION_TOP_PX 64 + 78 tall),
+   since the parked card paints above the phone's overlays. */
 .cardArea {
   flex-shrink: 0;
-  padding: 8px 16px 8px;
+  padding: 26px 16px 8px;
 }
 
 /* The card's footprint (DebitCard is 232 tall at the screen width minus gutters). */
@@ -87,30 +89,6 @@
   height: 232px;
 }
 
-/* When the card is on the stage, the phone shows a one-line summary instead. */
-.cardSummary {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex-shrink: 0;
-  margin: 4px 16px 8px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  corner-shape: var(--corner-shape);
-  background: var(--ios-bg-secondary);
-}
-
-.cardSummaryTitle {
-  @include ios.ios-text-subheadline;
-  font-weight: 590;
-  color: var(--ios-label-primary);
-}
-
-.cardSummarySub {
-  @include ios.ios-text-footnote;
-  color: var(--ios-label-secondary);
-  font-variant-numeric: tabular-nums;
-}
 
 /* Hub content below the card. */
 .homeContent {

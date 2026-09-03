@@ -39,7 +39,7 @@ const CONTENT_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
  * the funding line, actions, controls, and transactions; tap-to-pay lifts the
  * card under the status bar. The brain arrives as a prop (hosted above).
  */
-export function CardScreen({ home, cardOnPhone = false }: CardScreenProps) {
+export function CardScreen({ home }: CardScreenProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
@@ -130,22 +130,11 @@ export function CardScreen({ home, cardOnPhone = false }: CardScreenProps) {
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={BODY_TRANSITION}
       >
-        {cardOnPhone ? (
-          <div className={styles.cardArea}>
-            {/* An empty slot: THE card (the one on the stage, never a copy) flies
-                in and parks exactly here. CardStage measures this box. */}
-            <div data-card-slot className={styles.cardSlot} />
-          </div>
-        ) : (
-          /* The card itself is on the stage; the phone just names it. */
-          <div className={styles.cardSummary}>
-            <span className={styles.cardSummaryTitle}>{appName} debit</span>
-            <span className={styles.cardSummarySub}>
-              {issued ? '•••• 8972' : 'Not issued'}
-              {card.closed ? ' · Closed' : card.frozen ? ' · Frozen' : card.inWallet ? ' · In Apple Wallet' : ''}
-            </span>
-          </div>
-        )}
+        <div className={styles.cardArea}>
+          {/* An empty slot: THE card (the one on the stage, never a copy) flies
+              in and parks exactly here. CardStage measures this box. */}
+          <div data-card-slot className={styles.cardSlot} />
+        </div>
 
         {/* Hub content below the card, or the tap-to-pay reader status. popLayout
             so an exiting block leaves the flex flow immediately. */}

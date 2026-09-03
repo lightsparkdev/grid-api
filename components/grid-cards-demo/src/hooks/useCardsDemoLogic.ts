@@ -61,11 +61,8 @@ function newGroupId() {
 const PHONE_DISMISS_HOLD_MS = 600;
 
 export function useCardsDemoLogic() {
-  // The flow the phone is up for; null = bare card stage. `phoneFlow` remembers
-  // the last one through the dismiss so the stage can finish its choreography
-  // (the Issue flight back out of the phone).
+  // The flow the phone is up for; null = the card floats alone.
   const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
-  const [phoneFlow, setPhoneFlow] = useState<ActionId | null>(null);
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   const updateDesign = useCallback((patch: Partial<CardDesign>) => {
     setDesign((d) => ({ ...d, ...patch }));
@@ -225,7 +222,6 @@ export function useCardsDemoLogic() {
       if (needsCard) setWallet({ ...wallet, hasCard: true });
       clearTimeout(dismissTimer.current);
       setActiveFlow(id);
-      setPhoneFlow(id);
       setWalletEntry({
         nonce: Date.now(),
         provision: needsCard ? { issued: true } : undefined,
@@ -251,7 +247,6 @@ export function useCardsDemoLogic() {
     limitsRef.current = {};
     setWallet(initialWallet);
     setActiveFlow(null);
-    setPhoneFlow(null);
     setCompleted(initialCompleted);
     setEntries([]);
     setWalletEntry(undefined);
@@ -260,7 +255,6 @@ export function useCardsDemoLogic() {
 
   return {
     activeFlow,
-    phoneFlow,
     design,
     updateDesign,
     wallet,

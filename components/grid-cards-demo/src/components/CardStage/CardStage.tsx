@@ -38,24 +38,23 @@ function easeInOutCubic(p: number) {
 interface CardStageProps {
   design: CardDesign;
   home: CardHome;
-  /** The phone is up for Issue: the card flies into its slot instead of resting beside it. */
-  dive: boolean;
   /** Issue tapped on the stage. */
   onIssue: () => void;
 }
 
 /**
- * The card, always. It floats in its zone of the stage and reacts to the
- * cursor; flows act on it (frost, flip, shake, chips) while the phone slides in
- * beside it to show the cardholder's side.
+ * The card, always. Two states: floating alone on the stage (cursor tilt, idle
+ * bob), or parked in the phone. Every flow brings the phone in and the card
+ * flies into its slot; flows act on it there (frost, flip, shake, chips) while
+ * the phone shows the cardholder's side; the phone leaves and the card floats
+ * back out.
  *
- * Position is imperative, per frame: the card glides toward the center of
- * `[data-card-zone]` (which snaps when the phone comes and goes), and during
- * Issue it interpolates from there into the phone's `[data-card-slot]` on the
- * phone's boot curve and parks there. It is the only card: the phone's slot is
+ * Position is imperative, per frame: the rest point is the stage center; while
+ * the phone is up the card interpolates toward the live rect of the phone's
+ * `[data-card-slot]` on the phone's boot curve. It is the only card: the slot is
  * an empty box, so nothing ever swaps or unmounts.
  */
-export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
+export function CardStage({ design, home, onIssue }: CardStageProps) {
   const { bootProgress } = usePhoneBoot();
   const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -67,9 +66,8 @@ export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
 
   // ── Position loop ──────────────────────────────────────────────────────────
   // Live inputs for the rAF loop without re-subscribing it.
-  const live = useRef({ dive, t: 0 });
-  live.current.dive = dive;
-  live.current.t = dive ? easeInOutCubic(bootProgress) : 0;
+  const live = useRef({ t: 0 });
+  live.current.t = easeInOutCubic(bootProgress);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
 
   useEffect(() => {
@@ -82,10 +80,9 @@ export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
       const root = rootRef.current;
       const cardEl = cardRef.current;
       if (!root || !cardEl) return;
-      const zone = root.ownerDocument.querySelector<HTMLElement>('[data-card-zone]');
       const r = root.getBoundingClientRect();
-      const z = (zone ?? root).getBoundingClientRect();
-      // Rest position: centered in the card zone, scaled to fit it.
+      const z = r;
+      // Rest position: centered on the stage, scaled to fit it.
       const rest = {
         x: z.left + z.width / 2 - r.left,
         y: z.top + z.height / 2 - r.top - 24,
@@ -94,7 +91,6 @@ export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
           Math.min(MAX_SCALE, (z.width - GUTTER_X * 2) / CARD_W, (z.height - GUTTER_Y) / CARD_H),
         ),
       };
-      if (z.width < 8) rest.s = MIN_SCALE; // zone collapsed (dive): keep a sane scale
       // Glide toward rest (exponential approach), snapping on the first frame.
       const k = pos.current ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
       const p = pos.current ?? { ...rest };
@@ -102,7 +98,7 @@ export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
       p.y += (rest.y - p.y) * k;
       p.s += (rest.s - p.s) * k;
       pos.current = p;
-      // Dive: interpolate toward the phone's live card slot.
+      // Phone up: interpolate toward the phone's live card slot and park there.
       let { x, y, s } = p;
       const { t } = live.current;
       if (t > 0) {
@@ -178,7 +174,7 @@ export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
         <div
           ref={cardRef}
           className={styles.card}
-          style={{ width: CARD_W, height: CARD_H, pointerEvents: phoneUp && dive ? 'none' : 'auto' }}
+          style={{ width: CARD_W, height: CARD_H, pointerEvents: phoneUp ? 'none' : 'auto' }}
           onPointerMove={onPointerMove}
           onPointerLeave={onPointerLeave}
         >
@@ -206,9 +202,9 @@ export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
           </div>
         </div>
 
-        {/* Caption under the card: the offer before a card exists, the card's
-            state once it does. Follows the card's position. */}
-        <div className={styles.caption} style={{ opacity: dive && phoneUp ? 0 : 1 }}>
+        {/* Caption under the floating card: the offer before a card exists, the
+            card's state once it does. Gone while the card is in the phone. */}
+        <div className={styles.caption} style={{ opacity: phoneUp ? 0 : 1 }}>
           {!issued && !issuing ? (
             <>
               <p className={styles.title}>Design your card</p>
