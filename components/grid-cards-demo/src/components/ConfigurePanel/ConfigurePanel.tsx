@@ -27,14 +27,15 @@ export function ConfigurePanel({
   return (
     <aside className={styles.panel}>
       <div className={styles.body}>
-        <PlaygroundIntro />
         <div className={styles.content}>
-          <div className={styles.section}>
+          <PlaygroundIntro />
+
+          <section className={styles.section}>
             <SectionDivider label="Design your card" />
             <DesignPicker design={design} onChange={onDesignChange} />
-          </div>
+          </section>
 
-          <div className={styles.section}>
+          <section className={styles.section}>
             <SectionDivider
               label="Explore flows"
               action={
@@ -47,7 +48,7 @@ export function ConfigurePanel({
               }
             />
             <FlowPicker wallet={wallet} onAction={onAction} />
-          </div>
+          </section>
         </div>
       </div>
     </aside>
