@@ -14953,12 +14953,11 @@ components:
     InternalAccountCreateRequest:
       title: Internal Account Create Request
       type: object
-      description: Request body for `POST /internal-accounts`. Only `RULE_BASED` accounts can be created directly, and they always carry a `sweepRule`.
+      description: Request body for `POST /internal-accounts`. Only `RULE_BASED` accounts can be created today, and they are rejected without a `sweepRule` — the type and its rule are created together or not at all.
       additionalProperties: false
       required:
         - type
         - currency
-        - sweepRule
       properties:
         customerId:
           type: string
@@ -14981,7 +14980,7 @@ components:
         sweepRule:
           allOf:
             - $ref: '#/components/schemas/SweepRuleRequest'
-          description: The routing rule for the account. Required when `type` is `RULE_BASED`.
+          description: 'The routing rule for the account. Required when `type` is `RULE_BASED`, which is the only type this endpoint creates today: a rule-based account with no rule has no meaning, so the two are written together.'
     InternalAccountStatus:
       title: Internal Account Status
       type: string
@@ -17783,11 +17782,11 @@ components:
         minimumAmount:
           allOf:
             - $ref: '#/components/schemas/CurrencyAmount'
-          description: 'The smallest balance the corridor to the destination can carry, denominated in this account''s own currency. A settled balance below it is not swept. Zero means no floor applies, which is the case for a same-currency internal destination: that movement is a book transfer with no rail, fee, or conversion to justify one. This is current configuration rather than a moving estimate — it changes only when the platform''s or Grid''s configuration changes, so there is nothing to re-poll.'
+          description: '**In this rule-based account''s currency, not the destination''s.** The smallest balance the corridor to the destination can carry; a settled balance below it is not swept. Zero means no floor, which is the case for a same-currency internal destination — a book transfer with no rail, fee or conversion to justify one. Configuration rather than a moving estimate, so there is nothing to re-poll.'
         maximumAmount:
           allOf:
             - $ref: '#/components/schemas/CurrencyAmount'
-          description: The largest balance the corridor to the destination can carry. Null means no ceiling applies. A settled balance above it is not swept.
+          description: '**In this rule-based account''s currency, not the destination''s.** The largest balance the corridor to the destination can carry; a settled balance above it is not swept. Null means no ceiling.'
         purposeOfPayment:
           allOf:
             - $ref: '#/components/schemas/PurposeOfPayment'

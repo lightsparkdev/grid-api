@@ -1,13 +1,13 @@
 title: Internal Account Create Request
 type: object
 description: >-
-  Request body for `POST /internal-accounts`. Only `RULE_BASED`
-  accounts can be created directly, and they always carry a `sweepRule`.
+  Request body for `POST /internal-accounts`. Only `RULE_BASED` accounts can be
+  created today, and they are rejected without a `sweepRule` — the type and its
+  rule are created together or not at all.
 additionalProperties: false
 required:
   - type
   - currency
-  - sweepRule
 properties:
   customerId:
     type: string
@@ -43,4 +43,6 @@ properties:
     allOf:
       - $ref: ./SweepRuleRequest.yaml
     description: >-
-      The routing rule for the account. Required when `type` is `RULE_BASED`.
+      The routing rule for the account. Required when `type` is `RULE_BASED`,
+      which is the only type this endpoint creates today: a rule-based account
+      with no rule has no meaning, so the two are written together.

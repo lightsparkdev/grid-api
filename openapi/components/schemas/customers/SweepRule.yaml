@@ -15,19 +15,19 @@ properties:
     allOf:
       - $ref: ../common/CurrencyAmount.yaml
     description: >-
-      The smallest balance the corridor to the destination can carry,
-      denominated in this account's own currency. A settled balance below it is
-      not swept. Zero means no floor applies, which is the case for a
-      same-currency internal destination: that movement is a book transfer with
-      no rail, fee, or conversion to justify one. This is current configuration
-      rather than a moving estimate — it changes only when the platform's or
-      Grid's configuration changes, so there is nothing to re-poll.
+      **In this rule-based account's currency, not the destination's.** The
+      smallest balance the corridor to the destination can carry; a settled
+      balance below it is not swept. Zero means no floor, which is the case for
+      a same-currency internal destination — a book transfer with no rail, fee
+      or conversion to justify one. Configuration rather than a moving
+      estimate, so there is nothing to re-poll.
   maximumAmount:
     allOf:
       - $ref: ../common/CurrencyAmount.yaml
     description: >-
-      The largest balance the corridor to the destination can carry. Null means
-      no ceiling applies. A settled balance above it is not swept.
+      **In this rule-based account's currency, not the destination's.** The
+      largest balance the corridor to the destination can carry; a settled
+      balance above it is not swept. Null means no ceiling.
   purposeOfPayment:
     allOf:
       - $ref: ../quotes/PurposeOfPayment.yaml
