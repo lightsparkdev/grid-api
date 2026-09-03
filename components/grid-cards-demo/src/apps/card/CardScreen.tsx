@@ -11,7 +11,6 @@ import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
 import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
-import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import type { CardScreenProps } from '@/apps/types';
@@ -23,7 +22,6 @@ import {
   TransactionSheet,
   WalletAddSheet,
 } from './CardSheets';
-import { DebitCard } from './DebitCard';
 import styles from './CardScreen.module.scss';
 
 const HEADER_DURATION = 0.2;
@@ -43,9 +41,6 @@ const CONTENT_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
  */
 export function CardScreen({ home, cardOnPhone = false }: CardScreenProps) {
   const reduceMotion = useReducedMotion();
-  // The stage card flies into the slot on the phone's boot curve; the phone's
-  // own copy shows only once it has landed (never two cards at once).
-  const landed = usePhoneBoot().bootProgress >= 1;
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
   const design = useBrand();
@@ -53,14 +48,12 @@ export function CardScreen({ home, cardOnPhone = false }: CardScreenProps) {
 
   const {
     issued,
-    issuing,
     tapPhase,
     transactions,
     toast,
     setToast,
     availableCents,
     isTap,
-    isDeclined,
     card,
     revealPending,
     finishRevealAuth,
@@ -139,17 +132,9 @@ export function CardScreen({ home, cardOnPhone = false }: CardScreenProps) {
       >
         {cardOnPhone ? (
           <div className={styles.cardArea}>
-            {/* The stage card lands exactly here (CardStage measures this slot). */}
-            <div data-card-slot style={{ opacity: landed ? 1 : 0 }}>
-              <DebitCard
-                issued={issued}
-                issuing={issuing}
-                frozen={card.frozen}
-                closed={card.closed}
-                inWallet={card.inWallet}
-                declined={isDeclined}
-              />
-            </div>
+            {/* An empty slot: THE card (the one on the stage, never a copy) flies
+                in and parks exactly here. CardStage measures this box. */}
+            <div data-card-slot className={styles.cardSlot} />
           </div>
         ) : (
           /* The card itself is on the stage; the phone just names it. */

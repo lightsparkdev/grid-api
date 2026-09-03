@@ -52,8 +52,8 @@ interface CardStageProps {
  * Position is imperative, per frame: the card glides toward the center of
  * `[data-card-zone]` (which snaps when the phone comes and goes), and during
  * Issue it interpolates from there into the phone's `[data-card-slot]` on the
- * phone's boot curve. At the end of that flight it hides; the identical card in
- * the phone is underneath.
+ * phone's boot curve and parks there. It is the only card: the phone's slot is
+ * an empty box, so nothing ever swaps or unmounts.
  */
 export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
   const { bootProgress } = usePhoneBoot();
@@ -115,7 +115,6 @@ export function CardStage({ design, home, dive, onIssue }: CardStageProps) {
         }
       }
       cardEl.style.transform = `translate(${x - CARD_W / 2}px, ${y - CARD_H / 2}px) scale(${s})`;
-      cardEl.style.visibility = t >= 1 ? 'hidden' : 'visible';
       // The caption follows the card.
       root.style.setProperty('--card-x', `${x}px`);
       root.style.setProperty('--card-bottom', `${y + (CARD_H / 2) * s}px`);

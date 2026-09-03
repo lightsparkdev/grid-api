@@ -81,6 +81,12 @@
   padding: 8px 16px 8px;
 }
 
+/* The card's footprint (DebitCard is 232 tall at the screen width minus gutters). */
+.cardSlot {
+  width: 100%;
+  height: 232px;
+}
+
 /* When the card is on the stage, the phone shows a one-line summary instead. */
 .cardSummary {
   display: flex;
