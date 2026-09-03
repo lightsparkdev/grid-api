@@ -23326,7 +23326,6 @@ components:
         - type: object
           required:
             - type
-            - receivedAmount
           properties:
             type:
               type: string
@@ -23336,7 +23335,7 @@ components:
               $ref: '#/components/schemas/TransactionSourceOneOf'
             receivedAmount:
               $ref: '#/components/schemas/CurrencyAmount'
-              description: Amount received in the recipient's currency
+              description: Amount received in the recipient's currency. Absent until the amount is priced — a payment swept out of a rule-based account is created when the deposit settles, before its quote locks a rate.
             fees:
               type: integer
               format: int64
@@ -23542,6 +23541,13 @@ components:
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
               description: If the transaction failed, this field provides the reason for failure.
+            sweepFailureReason:
+              allOf:
+                - $ref: '#/components/schemas/SweepFailureReason'
+              description: Set when this payment settled into a rule-based account but was not swept to the destination of the account's rule. The deposit itself succeeded, so the transaction still completes; this says why the destination was not paid. Omitted for any other account.
+            sweepCanonicalAccountId:
+              type: string
+              description: The account holder's own account in the same currency the funds were moved to when a sweep could not be completed — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. Present whenever `sweepFailureReason` is.
             paymentRail:
               anyOf:
                 - $ref: '#/components/schemas/PaymentRail'

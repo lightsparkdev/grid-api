@@ -4,7 +4,6 @@ allOf:
   - type: object
     required:
       - type
-      - receivedAmount
     properties:
       type:
         type: string
@@ -14,7 +13,10 @@ allOf:
         $ref: ./TransactionSourceOneOf.yaml
       receivedAmount:
         $ref: ../common/CurrencyAmount.yaml
-        description: Amount received in the recipient's currency
+        description: >-
+          Amount received in the recipient's currency. Absent until the amount
+          is priced — a payment swept out of a rule-based account is created
+          when the deposit settles, before its quote locks a rate.
       fees:
         type: integer
         format: int64

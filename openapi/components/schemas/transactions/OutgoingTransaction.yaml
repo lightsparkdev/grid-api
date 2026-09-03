@@ -71,6 +71,22 @@ allOf:
       failureReason:
         $ref: ./OutgoingTransactionFailureReason.yaml
         description: If the transaction failed, this field provides the reason for failure.
+      sweepFailureReason:
+        allOf:
+          - $ref: ./SweepFailureReason.yaml
+        description: >-
+          Set when this payment settled into a rule-based account but was not
+          swept to the destination of the account's rule. The deposit itself
+          succeeded, so the transaction still completes; this says why the
+          destination was not paid. Omitted for any other account.
+      sweepCanonicalAccountId:
+        type: string
+        description: >-
+          The account holder's own account in the same currency the funds were
+          moved to when a sweep could not be completed — the customer's, or the
+          platform's for a platform-owned rule-based account. A rule-based
+          account never holds a balance. Present whenever
+          `sweepFailureReason` is.
       paymentRail:
         anyOf:
           - $ref: ../common/PaymentRail.yaml
