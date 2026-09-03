@@ -268,7 +268,6 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
               options={LOGO_TREATMENTS}
               onChange={(logoTreatment) => onChange({ logoTreatment })}
               disabled={noSpotGloss}
-              dense
             />
           </div>
         )}

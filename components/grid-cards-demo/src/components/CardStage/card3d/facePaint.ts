@@ -431,18 +431,28 @@ export function paintArtMask(art: HTMLImageElement): HTMLCanvasElement {
 
 /** Foil reflectance for a hot-stamped logo, silver or gold, with the
  *  bright-to-dark run a foil shows at one angle. */
-function foilGradient(ctx: CanvasRenderingContext2D, kind: 'foilSilver' | 'foilGold'): CanvasGradient {
+/** Silver foil reflectance for a hot-stamped logo, with the bright-to-dark
+ *  run a foil shows at one angle. */
+function foilGradient(ctx: CanvasRenderingContext2D): CanvasGradient {
   const g = ctx.createLinearGradient(0, 0, TEX_W, TEX_H);
-  if (kind === 'foilGold') {
-    g.addColorStop(0, '#f6e3a8');
-    g.addColorStop(0.55, '#d9b86a');
-    g.addColorStop(1, '#a8823a');
-  } else {
-    g.addColorStop(0, '#ffffff');
-    g.addColorStop(0.55, '#f2f2f5');
-    g.addColorStop(1, '#d9d9de');
-  }
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(0.55, '#f2f2f5');
+  g.addColorStop(1, '#d9d9de');
   return g;
+}
+
+/** The floor of an etched mark. On metal it is the steel itself, through any
+ *  laminate; on plastic the pressed print, a shade off the color (lighter on
+ *  a dark print, darker on a light one) so a blind mark reads head-on. */
+function etchFloor(design: CardDesign): string {
+  if (materialOf(design) === 'metal') return '#dcdbda';
+  const base = design.color ?? stockOf(design).face;
+  const c = (i: number) => parseInt(base.slice(1 + i * 2, 3 + i * 2), 16);
+  const lum = (0.2126 * c(0) + 0.7152 * c(1) + 0.0722 * c(2)) / 255;
+  const toward = lum < 0.5 ? 255 : 0;
+  const t = 0.22;
+  const mix = [0, 1, 2].map((i) => Math.round(c(i) + (toward - c(i)) * t));
+  return `#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
 export interface FrontState {
@@ -464,21 +474,17 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   // replaces either with the foil's reflectance in the same shape.
   const t = s.design.logoTreatment;
   if (t === 'etch') {
-    // A blind mark: no ink. On bare metal the die's floor is polished and
-    // reads brighter (the Z card's basin); on a print it is the print.
-    if (isBare(s.design) && materialOf(s.design) === 'metal') {
-      const mask = paintBrandMask(s.design, s.logo);
-      const m = mask.getContext('2d')!;
-      m.globalCompositeOperation = 'source-in';
-      m.fillStyle = '#e6e5e4';
-      m.fillRect(0, 0, TEX_W, TEX_H);
-      ctx.drawImage(mask, 0, 0);
-    }
-  } else if (t === 'foilSilver' || t === 'foilGold') {
     const mask = paintBrandMask(s.design, s.logo);
     const m = mask.getContext('2d')!;
     m.globalCompositeOperation = 'source-in';
-    m.fillStyle = foilGradient(m, t);
+    m.fillStyle = etchFloor(s.design);
+    m.fillRect(0, 0, TEX_W, TEX_H);
+    ctx.drawImage(mask, 0, 0);
+  } else if (t === 'foil') {
+    const mask = paintBrandMask(s.design, s.logo);
+    const m = mask.getContext('2d')!;
+    m.globalCompositeOperation = 'source-in';
+    m.fillStyle = foilGradient(m);
     m.fillRect(0, 0, TEX_W, TEX_H);
     ctx.drawImage(mask, 0, 0);
   } else if (s.logo) {

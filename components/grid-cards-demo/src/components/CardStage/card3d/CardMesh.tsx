@@ -243,7 +243,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
           brandMask,
           brandT,
           artT && art ? paintArtMask(art) : null,
-          surface.startsWith('bare'),
+          cardMaterial === 'metal',
         ),
       );
       decoTex.current.orm = decorated;

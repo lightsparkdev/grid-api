@@ -9,10 +9,10 @@ export type CardMaterial = 'plastic' | 'metal';
  *  (laminated print, polished metal). */
 export type CardFinish = 'matte' | 'gloss';
 /** How the brand mark is applied. Ink is printed; spot gloss is a clear
- *  high-gloss varnish (reads on a matte card); foil is hot-stamped metal;
- *  etch is cut into the card (engraved on metal, debossed on plastic), a blind mark read by
- *  its relief. */
-export type LogoTreatment = 'print' | 'spotGloss' | 'foilSilver' | 'foilGold' | 'etch';
+ *  high-gloss varnish (reads on a matte card); foil is hot-stamped silver;
+ *  etch is cut into the card: through to the steel on metal, a blind deboss
+ *  on plastic. */
+export type LogoTreatment = 'print' | 'spotGloss' | 'foil' | 'etch';
 export type ArtTreatment = 'print' | 'spotGloss';
 
 /** The card body under the print: PVC core in white or black, or stainless
@@ -108,8 +108,7 @@ export const FINISHES: Array<{ id: CardFinish; label: string }> = [
 export const LOGO_TREATMENTS: Array<{ id: LogoTreatment; label: string }> = [
   { id: 'print', label: 'Ink' },
   { id: 'spotGloss', label: 'Gloss' },
-  { id: 'foilSilver', label: 'Silver' },
-  { id: 'foilGold', label: 'Gold' },
+  { id: 'foil', label: 'Foil' },
   { id: 'etch', label: 'Etch' },
 ];
 

@@ -303,10 +303,10 @@ export function bakeEdge(material: CardMaterial, coreColor: string, skinColor: s
 export function decorateOrm(
   base: HTMLCanvasElement,
   brandMask: HTMLCanvasElement | null,
-  brandTreatment: 'spotGloss' | 'foilSilver' | 'foilGold' | 'etch' | null,
+  brandTreatment: 'spotGloss' | 'foil' | 'etch' | null,
   artMask: HTMLCanvasElement | null,
-  /** Whether the face is bare metal: an etched mark is polished there. */
-  bareMetal = false,
+  /** Whether the card is metal: an etched mark reaches the steel there. */
+  metal = false,
 ): HTMLCanvasElement {
   const c = makeCanvas(base.width, base.height);
   const ctx = c.getContext('2d')!;
@@ -326,11 +326,11 @@ export function decorateOrm(
       brandTreatment === 'spotGloss'
         ? orm(0.06, 0)
         : brandTreatment === 'etch'
-          ? // The die's floor: polished on metal (the Z card's basin), a
-            // smoother print on plastic.
-            bareMetal
+          ? // The cut's floor: on metal it is the steel, through any laminate,
+            // polished (the Z card's basin); on plastic a pressed, smoother print.
+            metal
             ? orm(0.2, 1)
-            : orm(0.3, 0)
+            : orm(0.22, 0)
           : orm(0.05, 1);
     stamp(brandMask, fill);
   }
@@ -365,7 +365,7 @@ export function decorateNormal(base: HTMLCanvasElement, brandMask: HTMLCanvasEle
   mc.fillRect(0, 0, m.width, m.height);
   hc.drawImage(m, 0, 0, w, h);
   hc.filter = 'none';
-  const structure = heightToNormal(height, 2.6);
+  const structure = heightToNormal(height, 3.4);
   const sctx = structure.getContext('2d')!;
   const n = sctx.getImageData(0, 0, w, h);
   const hd = hc.getImageData(0, 0, w, h).data;
