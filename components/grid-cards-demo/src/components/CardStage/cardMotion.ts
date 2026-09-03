@@ -30,6 +30,9 @@ const FLING_LOOKAHEAD = 0.28;
 const MAX_FLING = 1600;
 const BOB_PERIOD = 5.2;
 const BOB_AMPLITUDE = 7;
+/** The bob eases in from rest over about this long (s) when the card is let
+ *  go, so it never snaps to the phase its clock happens to be at. */
+const BOB_RISE_TAU = 0.6;
 const SHAKE_S = 0.5;
 
 export interface Pose {
@@ -72,6 +75,8 @@ export class CardMotion {
   private lastWantBack = false;
   private lastHold = false;
   private time = 0;
+  /** Bob envelope, 0..1: 0 while held, rising toward 1 once floating. */
+  private bobEnv = 0;
   private shakeAt = -1;
 
   /** Pointer over the card, -0.5..0.5 in each axis. */
@@ -169,7 +174,8 @@ export class CardMotion {
     }
 
     const floating = !opts.hold && !opts.reduceMotion;
-    const dy = floating ? BOB_AMPLITUDE * Math.sin((this.time / BOB_PERIOD) * Math.PI * 2) : 0;
+    this.bobEnv = floating ? this.bobEnv + (1 - this.bobEnv) * (1 - Math.exp(-dt / BOB_RISE_TAU)) : 0;
+    const dy = this.bobEnv * BOB_AMPLITUDE * Math.sin((this.time / BOB_PERIOD) * Math.PI * 2);
     let dx = 0;
     if (this.shakeAt >= 0) {
       const u = (this.time - this.shakeAt) / SHAKE_S;
