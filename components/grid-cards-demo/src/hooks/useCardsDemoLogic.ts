@@ -65,7 +65,15 @@ export function useCardsDemoLogic() {
   const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   const updateDesign = useCallback((patch: Partial<CardDesign>) => {
-    setDesign((d) => ({ ...d, ...patch }));
+    setDesign((d) => {
+      const next = { ...d, ...patch };
+      // Spot gloss has nothing to contrast against on a gloss card.
+      if (next.finish === 'gloss') {
+        if (next.logoTreatment === 'spotGloss') next.logoTreatment = 'print';
+        if (next.artTreatment === 'spotGloss') next.artTreatment = 'print';
+      }
+      return next;
+    });
   }, []);
   // The latest design, readable from callbacks without re-binding them.
   const designRef = useRef(design);

@@ -11,7 +11,7 @@ import {
   DESIGN_SWATCHES,
   FINISHES,
   LOGO_TREATMENTS,
-  STOCKS,
+  MATERIALS,
   stockOf,
   type CardDesign,
 } from '@/data/design';
@@ -29,9 +29,6 @@ function swatchStyle(color: string) {
   return { background: color };
 }
 
-/** The steel swatch: a sheen, so it reads as metal beside the plastics. */
-const STEEL_SWATCH = { background: 'linear-gradient(135deg, #e4e4e6 0%, #aaaaae 55%, #d6d6d9 100%)' };
-
 /** A row of text choices divided by hairlines (Material, Finish, treatments). */
 function Choices<T extends string>({
   label,
@@ -39,6 +36,7 @@ function Choices<T extends string>({
   options,
   onChange,
   dense = false,
+  disabled,
 }: {
   label: string;
   value: T;
@@ -46,21 +44,28 @@ function Choices<T extends string>({
   onChange: (id: T) => void;
   /** Tighter padding for rows with four options. */
   dense?: boolean;
+  /** Options that would do nothing right now, with the reason (a title). */
+  disabled?: Partial<Record<T, string>>;
 }) {
   return (
     <div className={clsx(styles.segments, dense && styles.segmentsDense)} role="radiogroup" aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          role="radio"
-          aria-checked={value === o.id}
-          className={clsx(styles.segment, value === o.id && styles.segmentActive)}
-          onClick={() => onChange(o.id)}
-        >
-          {o.label}
-        </button>
-      ))}
+      {options.map((o) => {
+        const why = disabled?.[o.id];
+        return (
+          <button
+            key={o.id}
+            type="button"
+            role="radio"
+            aria-checked={value === o.id}
+            className={clsx(styles.segment, value === o.id && styles.segmentActive)}
+            disabled={!!why}
+            title={why}
+            onClick={() => onChange(o.id)}
+          >
+            {o.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -130,36 +135,33 @@ function UploadRow({
 }
 
 /**
- * The Design section, in the order a card is made: the card itself (material,
- * finish), what is printed on it (color or none, art, logo, and their
- * decoration), and the details that go on it (program, cardholder).
+ * The Design section, in the order a card is made. Card: material, finish,
+ * color (the core under a print is chosen to match it, not offered). Brand:
+ * program name, logo, and their finish once there is something to finish.
+ * Art: upload, and its finish once uploaded. Cardholder: the visitor's own.
  */
 export function DesignPicker({ design, onChange }: DesignPickerProps) {
   const stock = stockOf(design);
   const activeSwatch = design.color ? DESIGN_SWATCHES.find((s) => s.color === design.color) : undefined;
   const custom = design.color !== null && !activeSwatch;
   const brand = brandColorOf(design);
+  const hasBrand = design.logoUrl !== null || design.programName.trim() !== '';
+  // Spot gloss is a clear varnish that reads against a matte coat; on a gloss
+  // card it is invisible.
+  const glossy = design.finish === 'gloss';
+  const noSpotGloss = glossy ? ({ spotGloss: 'Spot gloss needs a matte card' } as const) : undefined;
 
   return (
     <div className={styles.groups}>
       <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Material</span>
-          <div className={styles.swatches} role="radiogroup" aria-label="Card material">
-            {STOCKS.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                role="radio"
-                aria-checked={stock.id === s.id}
-                aria-label={s.label}
-                title={s.label}
-                className={clsx(styles.swatch, stock.id === s.id && styles.swatchActive)}
-                style={s.material === 'metal' ? STEEL_SWATCH : swatchStyle(s.face)}
-                onClick={() => onChange({ stock: s.id })}
-              />
-            ))}
-          </div>
+          <Choices
+            label="Card material"
+            value={design.material}
+            options={MATERIALS}
+            onChange={(material) => onChange({ material })}
+          />
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Finish</span>
@@ -170,22 +172,19 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
             onChange={(finish) => onChange({ finish })}
           />
         </div>
-      </div>
-
-      <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Color</span>
-          <div className={styles.swatches} role="radiogroup" aria-label="Print color">
+          <div className={styles.swatches} role="radiogroup" aria-label="Card color">
             <button
               type="button"
               role="radio"
               aria-checked={design.color === null}
-              aria-label="None"
-              title={`None (bare ${stock.label.toLowerCase()})`}
-              className={clsx(styles.swatch, styles.swatchNone, design.color === null && styles.swatchActive)}
-              style={swatchStyle(stock.face)}
+              title={`No print: bare ${stock.label.toLowerCase()}`}
+              className={clsx(styles.segment, styles.swatchNone, design.color === null && styles.segmentActive)}
               onClick={() => onChange({ color: null })}
-            />
+            >
+              None
+            </button>
             {DESIGN_SWATCHES.map((s) => (
               <button
                 key={s.id}
@@ -215,46 +214,6 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
             </label>
           </div>
         </div>
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Art</span>
-          <UploadRow
-            url={design.backgroundUrl}
-            accept="image/png,image/jpeg,image/webp"
-            label="Upload card art"
-            onPick={(url) => onChange({ backgroundUrl: url })}
-          />
-        </div>
-        {design.backgroundUrl && (
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Art effect</span>
-            <Choices
-              label="Art effect"
-              value={design.artTreatment}
-              options={ART_TREATMENTS}
-              onChange={(artTreatment) => onChange({ artTreatment })}
-            />
-          </div>
-        )}
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Logo</span>
-          <UploadRow
-            url={design.logoUrl}
-            accept="image/svg+xml,image/png,image/webp"
-            label="Upload SVG or PNG"
-            previewStyle={swatchStyle(brand)}
-            onPick={(url) => onChange({ logoUrl: url })}
-          />
-        </div>
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Effect</span>
-          <Choices
-            label="Logo effect"
-            value={design.logoTreatment}
-            options={LOGO_TREATMENTS}
-            onChange={(logoTreatment) => onChange({ logoTreatment })}
-            dense
-          />
-        </div>
       </div>
 
       <div className={styles.group}>
@@ -270,6 +229,56 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
             onChange={(e) => onChange({ programName: e.target.value })}
           />
         </div>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Logo</span>
+          <UploadRow
+            url={design.logoUrl}
+            accept="image/svg+xml,image/png,image/webp"
+            label="Upload SVG or PNG"
+            previewStyle={swatchStyle(brand)}
+            onPick={(url) => onChange({ logoUrl: url })}
+          />
+        </div>
+        {hasBrand && (
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>{design.logoUrl ? 'Logo finish' : 'Wordmark'}</span>
+            <Choices
+              label="Logo finish"
+              value={design.logoTreatment}
+              options={LOGO_TREATMENTS}
+              onChange={(logoTreatment) => onChange({ logoTreatment })}
+              disabled={noSpotGloss}
+              dense
+            />
+          </div>
+        )}
+      </div>
+
+      <div className={styles.group}>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Art</span>
+          <UploadRow
+            url={design.backgroundUrl}
+            accept="image/png,image/jpeg,image/webp"
+            label="Upload card art"
+            onPick={(url) => onChange({ backgroundUrl: url })}
+          />
+        </div>
+        {design.backgroundUrl && (
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Art finish</span>
+            <Choices
+              label="Art finish"
+              value={design.artTreatment}
+              options={ART_TREATMENTS}
+              onChange={(artTreatment) => onChange({ artTreatment })}
+              disabled={noSpotGloss}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Cardholder</span>
           <input

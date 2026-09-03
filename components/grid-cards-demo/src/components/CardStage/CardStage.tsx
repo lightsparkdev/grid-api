@@ -163,10 +163,13 @@ export function CardStage({ design, home }: CardStageProps) {
     const b = e.currentTarget.getBoundingClientRect();
     motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
   };
+  // Nothing says the card can be turned; say it once, until the first drag.
+  const [dragged, setDragged] = useState(false);
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (live.current.t > 0 || e.button !== 0) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    setDragged(true);
     motion.beginDrag(e.timeStamp);
     e.currentTarget.classList.add(styles.hitDragging);
   };
@@ -234,6 +237,9 @@ export function CardStage({ design, home }: CardStageProps) {
             {pill}
           </span>
         )}
+        <span className={clsx(styles.hint, (dragged || !introDone || phoneUp) && styles.hintGone)} aria-hidden>
+          Drag to turn it over
+        </span>
       </div>
     </div>
   );

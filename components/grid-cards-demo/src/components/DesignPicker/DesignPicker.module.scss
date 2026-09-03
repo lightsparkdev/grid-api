@@ -78,7 +78,8 @@
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
-  /* Eight swatches (Natural through the custom picker) fit on one line. */
+  align-items: center;
+  /* None, six colors, and the custom picker fit on one line at the tile's width. */
   gap: var(--spacing-3xs);
 }
 
@@ -113,16 +114,9 @@
   border-color: var(--text-primary);
 }
 
-/* No print: the bare stock, struck through. */
-.swatchNone::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: -3px;
-  bottom: -3px;
-  width: 1px;
-  background: var(--text-tertiary);
-  transform: rotate(45deg);
+/* No print: a word among the swatches, in the choice style. */
+.swatches .swatchNone {
+  padding: 0 var(--spacing-2xs) 0 0;
 }
 
 .swatchCustom {
@@ -177,6 +171,12 @@
 
   &:last-child {
     padding-right: 0;
+  }
+
+  &:disabled {
+    color: var(--text-quaternary, var(--text-tertiary));
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   @media (hover: hover) {

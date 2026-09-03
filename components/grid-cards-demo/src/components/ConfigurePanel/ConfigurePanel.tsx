@@ -5,7 +5,7 @@ import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { DesignPicker } from '@/components/DesignPicker/DesignPicker';
 import { FlowPicker } from '@/components/FlowPicker/FlowPicker';
-import type { CardDesign } from '@/data/design';
+import { initialDesign, type CardDesign } from '@/data/design';
 import type { ActionId, WalletState } from '@/data/actions';
 import styles from './ConfigurePanel.module.scss';
 
@@ -16,6 +16,11 @@ interface ConfigurePanelProps {
   running: boolean;
   onAction: (id: ActionId) => void;
   onReset: () => void;
+}
+
+/** Anything changed from the starting design. */
+function isDirty(design: CardDesign): boolean {
+  return (Object.keys(initialDesign) as Array<keyof CardDesign>).some((k) => design[k] !== initialDesign[k]);
 }
 
 export function ConfigurePanel({
@@ -33,7 +38,17 @@ export function ConfigurePanel({
           <PlaygroundIntro />
 
           <section className={styles.section}>
-            <SectionDivider label="Design your card" />
+            <SectionDivider
+              label="Design your card"
+              action={
+                isDirty(design) ? (
+                  <button type="button" className={styles.resetBtn} onClick={() => onDesignChange(initialDesign)}>
+                    <IconArrowRotateCounterClockwise size={12} aria-hidden />
+                    Reset
+                  </button>
+                ) : null
+              }
+            />
             <DesignPicker design={design} onChange={onDesignChange} />
           </section>
 

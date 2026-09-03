@@ -37,7 +37,7 @@ export interface SurfaceMaps {
  *  metal card's printed laminate) is `print`, and so is bare PVC stock; bare
  *  alloy is `bare`. Material itself only changes the edge and thickness. */
 export type Surface = `${'print' | 'bare'}-${CardFinish}`;
-export const surfaceOf = (design: Pick<CardDesign, 'stock' | 'color' | 'finish'>): Surface =>
+export const surfaceOf = (design: Pick<CardDesign, 'material' | 'color' | 'finish'>): Surface =>
   `${isBare(design) && materialOf(design) === 'metal' ? 'bare' : 'print'}-${design.finish}`;
 
 /** Field roughness and metalness per surface: soft-touch and laminated print,
