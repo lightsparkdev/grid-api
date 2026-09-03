@@ -1,9 +1,8 @@
 /**
- * The card's material maps, per finish and per face. These describe the
- * surface, not the print: how rough and how metallic each region is (one
- * texture: roughness in G, metalness in B), the relief (normal map from a
- * height field), and where the holographic foil is and how thick its film is
- * (iridescence mask and thickness). Baked once per variant and cached; the
+ * The card's material maps, per surface (material and finish) and per face.
+ * These describe the surface, not the print: how rough and how metallic each
+ * region is (one texture: roughness in G, metalness in B) and the relief
+ * (normal map from a height field). Baked once per variant and cached; the
  * design's colors never touch them.
  */
 
@@ -14,6 +13,7 @@ import {
   drawTinted,
   K,
   LOCKUP,
+  LOCKUP_SPLIT,
   makeCanvas,
   STRIPE,
   TEX_H,
@@ -29,13 +29,6 @@ export interface SurfaceMaps {
   /** G = roughness, B = metalness. */
   orm: HTMLCanvasElement;
   normal: HTMLCanvasElement;
-}
-
-export interface FoilMaps {
-  /** R = iridescence strength (the lockup shape). */
-  mask: HTMLCanvasElement;
-  /** G = film thickness across the lockup, so the hue varies across it. */
-  thickness: HTMLCanvasElement;
 }
 
 /** A material and finish together name a surface. */
@@ -83,9 +76,12 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
     ctx.lineWidth = 1.1 * K;
     chipContactsPath(ctx);
     ctx.stroke();
+    return c;
   }
-  // Foil: a mirror.
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.08, 1));
+  // Back: the product identifier is printed silver ink (flat, a little
+  // metallic); the Visa mark is stamped silver foil (near mirror).
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.5, 0.55), [0, LOCKUP_SPLIT]);
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.18, 1), [LOCKUP_SPLIT, 1]);
   return c;
 }
 
@@ -150,10 +146,12 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.fillStyle = '#848484';
     ctx.fillRect(0, STRIPE.y * S, MAP_W, STRIPE.h * S);
   }
-  // The foil is stamped flat: no grain under the lockup.
-  ctx.setTransform(S, 0, 0, S, 0, 0);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#808080');
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (side === 'back') {
+    // The foil is stamped flat: no grain under the lockup.
+    ctx.setTransform(S, 0, 0, S, 0, 0);
+    drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#808080');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
   return c;
 }
 
@@ -184,28 +182,6 @@ function heightToNormal(height: HTMLCanvasElement, strength: number): HTMLCanvas
   const c = makeCanvas(w, h);
   c.getContext('2d')!.putImageData(out, 0, 0);
   return c;
-}
-
-/* ── Foil ─────────────────────────────────────────────────────────────────── */
-
-function bakeFoil(assets: FaceAssets): FoilMaps {
-  // Full texel resolution, like the ORM: the mask's edges match the print.
-  const mask = makeCanvas(TEX_W, TEX_H);
-  let ctx = texelSpace(mask);
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, TEX_W, TEX_H);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#fff');
-
-  // Film thickness runs diagonally across the lockup so the whole spectrum is
-  // on it at once and slides as the card turns.
-  const thickness = makeCanvas(MAP_W, MAP_H);
-  ctx = texelSpace(thickness);
-  const g = ctx.createLinearGradient(LOCKUP.x, LOCKUP.y + LOCKUP.h, LOCKUP.x + LOCKUP.w, LOCKUP.y);
-  g.addColorStop(0, '#000000');
-  g.addColorStop(1, '#ffffff');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, TEX_W, TEX_H);
-  return { mask, thickness };
 }
 
 /* ── Edge ─────────────────────────────────────────────────────────────────── */
@@ -261,7 +237,6 @@ export function bakeEdge(material: CardMaterial, skinColor: string): EdgeMaps {
 /* ── Cache ────────────────────────────────────────────────────────────────── */
 
 const surfaceCache = new Map<string, SurfaceMaps>();
-let foilCache: FoilMaps | null = null;
 
 export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets: FaceAssets): SurfaceMaps {
   const key = `${surface}|${side}`;
@@ -274,9 +249,4 @@ export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets:
     surfaceCache.set(key, maps);
   }
   return maps;
-}
-
-export function getFoilMaps(assets: FaceAssets): FoilMaps {
-  if (!foilCache) foilCache = bakeFoil(assets);
-  return foilCache;
 }

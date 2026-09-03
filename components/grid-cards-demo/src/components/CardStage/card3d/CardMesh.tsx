@@ -16,7 +16,7 @@ import {
   TEX_W,
   type FaceAssets,
 } from './facePaint';
-import { bakeEdge, getFoilMaps, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
+import { bakeEdge, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -75,15 +75,7 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
     const backMap = useMemo(() => canvasTexture(backCanvas, true), [backCanvas]);
 
     const materials = useMemo(() => {
-      const face = () =>
-        new THREE.MeshPhysicalMaterial({
-          color: '#ffffff',
-          metalness: 1,
-          roughness: 1,
-          iridescence: 1,
-          iridescenceIOR: 1.7,
-          iridescenceThicknessRange: [120, 760],
-        });
+      const face = () => new THREE.MeshPhysicalMaterial({ color: '#ffffff', metalness: 1, roughness: 1 });
       const mats: THREE.MeshPhysicalMaterial[] = [];
       mats[MAT_BACK] = face();
       mats[MAT_FRONT] = face();
@@ -98,9 +90,8 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
       loadFaceAssets().then(setAssets);
     }, []);
 
-    // Surface textures are cached per finish and face for the session.
+    // Surface textures are cached per surface and face for the session.
     const surfaceTex = useRef(new Map<string, { orm: THREE.Texture; normal: THREE.Texture }>());
-    const foilTex = useRef<{ mask: THREE.Texture; thickness: THREE.Texture } | null>(null);
 
     // The uploaded logo, if any.
     useEffect(() => {
@@ -122,10 +113,6 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
     const surface = surfaceOf(state.design.material, state.design.finish);
     useEffect(() => {
       if (!assets) return;
-      if (!foilTex.current) {
-        const f = getFoilMaps(assets);
-        foilTex.current = { mask: canvasTexture(f.mask), thickness: canvasTexture(f.thickness) };
-      }
       const c = SURFACE[surface];
       for (const [side, idx] of [
         ['front', MAT_FRONT],
@@ -143,8 +130,6 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
         mat.metalnessMap = t.orm;
         mat.normalMap = t.normal;
         mat.normalScale.set(c.normalScale, c.normalScale);
-        mat.iridescenceMap = foilTex.current.mask;
-        mat.iridescenceThicknessMap = foilTex.current.thickness;
         mat.clearcoat = c.clearcoat;
         mat.clearcoatRoughness = c.clearcoatRoughness;
         mat.envMapIntensity = c.envMapIntensity;
@@ -206,11 +191,13 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
     const logoImg = logo.url === state.design.logoUrl ? logo.img : null;
     useEffect(() => {
       if (!assets) return;
-      paintFront(
-        frontCanvas.getContext('2d')!,
-        { design: state.design, logo: logoImg, lastFour, frozen: state.frozen, closed: state.closed },
-        assets,
-      );
+      paintFront(frontCanvas.getContext('2d')!, {
+        design: state.design,
+        logo: logoImg,
+        lastFour,
+        frozen: state.frozen,
+        closed: state.closed,
+      });
       frontMap.needsUpdate = true;
       invalidate();
       if (!ready.current) {
@@ -240,8 +227,6 @@ export const CardMesh = forwardRef<THREE.Group, { state: CardMeshState; onReady?
           t.orm.dispose();
           t.normal.dispose();
         });
-        foilTex.current?.mask.dispose();
-        foilTex.current?.thickness.dispose();
         edgeTex.current?.albedo.dispose();
         edgeTex.current?.orm.dispose();
       },

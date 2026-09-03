@@ -1,9 +1,9 @@
 /**
  * Paints the card's two faces (the albedo maps) from the design and the
  * cardholder data. Layout follows the Figma card spec (1536-wide artboard):
- * the front from the in-app virtual card (name top-left, last 4 bottom-left,
- * lockup bottom-right) plus the physical front's chip zone; the back from
- * visa-card-back-spec-v1-premium (133:273).
+ * the front carries the brand (name top-left, logo top-right), the chip in
+ * the physical front's zone, and the last 4 bottom-left; the back is
+ * visa-card-back-spec-v1-premium (133:273), where the Visa mark lives.
  */
 
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
@@ -84,7 +84,9 @@ export function makeCanvas(w: number, h: number): HTMLCanvasElement {
   return c;
 }
 
-/** Draw `img` scaled into `w × h`, filled with `color` (alpha from the image). */
+/** Draw `img` scaled into `w × h`, filled with `color` (alpha from the image).
+ *  `band` limits the draw to a vertical slice of the image, as fractions of
+ *  its height, so one artwork can carry two materials. */
 export function drawTinted(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -93,6 +95,7 @@ export function drawTinted(
   w: number,
   h: number,
   color: string,
+  band: [number, number] = [0, 1],
 ) {
   const c = makeCanvas(Math.ceil(w), Math.ceil(h));
   const t = c.getContext('2d')!;
@@ -100,8 +103,13 @@ export function drawTinted(
   t.globalCompositeOperation = 'source-in';
   t.fillStyle = color;
   t.fillRect(0, 0, c.width, c.height);
-  ctx.drawImage(c, x, y);
+  const y0 = Math.round(h * band[0]);
+  const y1 = Math.round(h * band[1]);
+  ctx.drawImage(c, 0, y0, c.width, y1 - y0, x, y + y0, c.width, y1 - y0);
 }
+
+/** The lockup artwork is DEBIT (top) over VISA (bottom); the split between them. */
+export const LOCKUP_SPLIT = 0.36;
 
 function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -180,9 +188,14 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
 
 /* ── Foil + chip albedo ───────────────────────────────────────────────────── */
 
+/** The Premium Visa Brand Mark in silver foil, with the DEBIT product
+ *  identifier printed in silver ink above it (Visa Physical Card Brand
+ *  Standards, January 2026: "silver foil PVBM, printed silver product
+ *  identifier"). The surface maps make the mark a mirror and the identifier
+ *  flat. */
 function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
-  // Silver foil reflectance; the material makes it metal and iridescent.
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#e4e4e8');
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#c6c7cc', [0, LOCKUP_SPLIT]);
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#e2e2e6', [LOCKUP_SPLIT, 1]);
 }
 
 /** Silver (nickel-plated) contact module; the material makes it metal. */
@@ -215,7 +228,7 @@ export interface FrontState {
   closed: boolean;
 }
 
-export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets: FaceAssets) {
+export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
   paintBase(ctx, s.design, false);
@@ -251,7 +264,6 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets:
     ctx.restore();
   }
 
-  paintLockup(ctx, assets);
   paintState(ctx, s.frozen, s.closed);
 }
 
