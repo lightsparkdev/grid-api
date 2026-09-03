@@ -32,8 +32,8 @@ const FINISH: Record<
   { clearcoat: number; clearcoatRoughness: number; envMapIntensity: number; normalScale: number; edge: string; edgeMetal: number; edgeRough: number }
 > = {
   matte: { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 0.9, normalScale: 0.6, edge: '#e9e9ec', edgeMetal: 0, edgeRough: 0.55 },
-  metal: { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.1, normalScale: 1.4, edge: '#d4d4d8', edgeMetal: 1, edgeRough: 0.18 },
-  glass: { clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1, normalScale: 0.35, edge: '#e9e9ec', edgeMetal: 0, edgeRough: 0.5 },
+  metal: { clearcoat: 0, clearcoatRoughness: 0, envMapIntensity: 1.35, normalScale: 1.4, edge: '#d4d4d8', edgeMetal: 1, edgeRough: 0.18 },
+  glass: { clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.55, normalScale: 0.35, edge: '#e9e9ec', edgeMetal: 0, edgeRough: 0.5 },
 };
 
 function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture {

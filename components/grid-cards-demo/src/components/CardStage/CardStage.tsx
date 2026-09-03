@@ -157,8 +157,7 @@ export function CardStage({ design, home }: CardStageProps) {
       >
         <StageCamera dark={dark} />
         <CardEnv />
-        <ambientLight intensity={0.12} color="#cdd6e4" />
-        <directionalLight position={[2, 5, 6]} intensity={0.35} color="#eef2f8" />
+        <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
         <CardRig
           rootRef={rootRef}
           hitRef={hitRef}

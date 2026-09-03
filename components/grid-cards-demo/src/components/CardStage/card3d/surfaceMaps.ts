@@ -41,22 +41,26 @@ export interface FoilMaps {
 /** Field values per finish: roughness, metalness, relief grain. */
 const FIELD: Record<CardFinish, { rough: number; metal: number }> = {
   matte: { rough: 0.62, metal: 0 },
-  metal: { rough: 0.36, metal: 0.92 },
+  metal: { rough: 0.3, metal: 0.85 },
   glass: { rough: 0.5, metal: 0 },
 };
 
 const orm = (rough: number, metal: number) => `rgb(0, ${Math.round(rough * 255)}, ${Math.round(metal * 255)})`;
 
+/** A context on `c` that takes texel (2048-wide) coordinates whatever its size. */
 function texelSpace(c: HTMLCanvasElement): CanvasRenderingContext2D {
   const ctx = c.getContext('2d')!;
-  ctx.setTransform(S, 0, 0, S, 0, 0);
+  const k = c.width / TEX_W;
+  ctx.setTransform(k, 0, 0, k, 0, 0);
   return ctx;
 }
 
 /* ── Roughness / metalness ────────────────────────────────────────────────── */
 
+/** Full texel resolution: the foil's edges must land exactly where the albedo
+ *  paints them, or a half-texel of "metal" leaks around each letter. */
 function bakeOrm(finish: CardFinish, side: 'front' | 'back', assets: FaceAssets): HTMLCanvasElement {
-  const c = makeCanvas(MAP_W, MAP_H);
+  const c = makeCanvas(TEX_W, TEX_H);
   const ctx = texelSpace(c);
   const f = FIELD[finish];
   ctx.fillStyle = orm(f.rough, f.metal);
@@ -178,9 +182,9 @@ function heightToNormal(height: HTMLCanvasElement, strength: number): HTMLCanvas
 /* ── Foil ─────────────────────────────────────────────────────────────────── */
 
 function bakeFoil(assets: FaceAssets): FoilMaps {
-  // Full texel resolution: the mask's letter edges would speckle at map size.
+  // Full texel resolution, like the ORM: the mask's edges match the print.
   const mask = makeCanvas(TEX_W, TEX_H);
-  let ctx = mask.getContext('2d')!;
+  let ctx = texelSpace(mask);
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#fff');

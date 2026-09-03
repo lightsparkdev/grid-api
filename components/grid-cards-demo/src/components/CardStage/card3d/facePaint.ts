@@ -146,9 +146,13 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst:
     radial(TEX_W, TEX_H, TEX_W * 1.1, deep, 0.6);
   }
   if (design.finish === 'metal') {
-    // Alloy: pull the saturation down so the color reads as tinted metal.
+    // Alloy: a metal's albedo is its reflectance, so pull the saturation down
+    // and lift it toward silver or the reflections go black.
     ctx.globalCompositeOperation = 'saturation';
     ctx.fillStyle = 'rgba(128,128,128,0.45)';
+    ctx.fillRect(0, 0, TEX_W, TEX_H);
+    ctx.globalCompositeOperation = 'screen';
+    ctx.fillStyle = 'rgba(190,196,206,0.32)';
     ctx.fillRect(0, 0, TEX_W, TEX_H);
     ctx.globalCompositeOperation = 'source-over';
   }
@@ -178,7 +182,7 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
 
 function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
   // Silver foil reflectance; the material makes it metal and iridescent.
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#d2d2d6');
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#e4e4e8');
 }
 
 function paintChip(ctx: CanvasRenderingContext2D) {

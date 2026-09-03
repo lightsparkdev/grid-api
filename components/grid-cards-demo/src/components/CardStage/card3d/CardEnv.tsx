@@ -26,29 +26,21 @@ export function CardEnv() {
       {/* Key: above and a little left, in front. The face's highlight. */}
       <Lightformer
         form="rect"
-        intensity={1.6}
+        intensity={1.1}
         color="#fbfaf8"
         position={[-3, 6, 10]}
         scale={[12, 5, 1]}
         target={[0, 0, 0]}
       />
-      {/* Broad fill behind the camera so head-on faces are not dark. */}
+      {/* Broad fill behind the camera so head-on faces (and the foil, a
+          mirror) reflect something bright. Kept near unit radiance: a matte
+          face is lit by this, and brighter washes its color out. */}
       <Lightformer
         form="rect"
-        intensity={2.4}
+        intensity={1.2}
         color="#ffffff"
         position={[3, 1, 12]}
         scale={[12, 9, 1]}
-        target={[0, 0, 0]}
-      />
-      {/* A dark stripe just in front of the fill: the moving reflection line
-          across polished parts as the card turns. */}
-      <Lightformer
-        form="rect"
-        intensity={1}
-        color="#151515"
-        position={[3, 0.4, 11.4]}
-        scale={[16, 1.8, 1]}
         target={[0, 0, 0]}
       />
     </Environment>
