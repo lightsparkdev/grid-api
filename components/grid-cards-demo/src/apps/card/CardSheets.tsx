@@ -19,7 +19,6 @@ import { formatUsdCents, type CardControls, type SpendLimits } from '@/apps/shar
 import NumericText from '@/components/NumericText';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import { DebitCard } from './DebitCard';
 import styles from './CardSheets.module.scss';
 
 /* ── Shared shell (the SendReceiveSheet dress: icon tile + glass X, title, sub) ── */
@@ -175,12 +174,13 @@ export function WalletAddSheet({ card }: { card: CardControls }) {
       }
     >
       <div className={styles.walletBody}>
-        {/* The card slides into a pass stack as it's added. */}
+        {/* The Wallet pass slides into the stack as it's added. The card itself
+            is on the stage — this is its pass, not a second card. */}
         <div className={styles.passStack} aria-hidden>
           <span className={clsx(styles.pass, styles.passBack)} />
           <span className={clsx(styles.pass, styles.passMid)} />
           <motion.div
-            className={styles.passCard}
+            className={clsx(styles.pass, styles.passFront)}
             initial={false}
             animate={
               phase === 'done'
@@ -191,7 +191,10 @@ export function WalletAddSheet({ card }: { card: CardControls }) {
             }
             transition={reduceMotion ? { duration: 0 } : motionTransition(easeOutSnappy, 0.6)}
           >
-            <DebitCard issued />
+            <span className={styles.passName}>{name}</span>
+            <span className={styles.passPay}>
+              <span className={styles.appleMark}></span> Pay
+            </span>
           </motion.div>
         </div>
 

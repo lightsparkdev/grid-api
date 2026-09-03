@@ -202,10 +202,41 @@
   opacity: 0.8;
 }
 
-.passCard {
-  position: absolute;
-  inset: 16px 0 auto;
+.passStack {
+  height: 176px;
+}
+
+.pass {
+  height: 156px;
+}
+
+/* The pass front: brand-tinted, name + Apple Pay mark. Deliberately not the card. */
+.passFront {
+  top: 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16px 18px;
   transform-origin: 50% 100%;
+  background:
+    radial-gradient(120% 100% at 0% 0%, var(--brand-color-light, #4db3e8) 0%, transparent 55%),
+    var(--brand-color, #0083c3);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.passName {
+  @include ios.ios-text-subheadline;
+  font-weight: 590;
+}
+
+.passPay {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  @include ios.ios-text-footnote;
+  font-weight: 590;
+  opacity: 0.9;
 }
 
 .walletActions {

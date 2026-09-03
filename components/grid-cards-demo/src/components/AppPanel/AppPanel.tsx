@@ -75,6 +75,7 @@ function StageHost({
                 <DemoPhone
                   design={design}
                   home={home}
+                  cardOnPhone={dive}
                   glassConfig={PHONE_SHELL_GLASS}
                   overlayGlass={DEFAULT_OVERLAY_GLASS}
                   glassDemoBg

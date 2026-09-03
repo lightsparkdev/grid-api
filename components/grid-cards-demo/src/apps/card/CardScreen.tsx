@@ -11,6 +11,7 @@ import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
 import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
+import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import type { CardScreenProps } from '@/apps/types';
@@ -40,8 +41,11 @@ const CONTENT_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
  * the funding line, actions, controls, and transactions; tap-to-pay lifts the
  * card under the status bar. The brain arrives as a prop (hosted above).
  */
-export function CardScreen({ home }: CardScreenProps) {
+export function CardScreen({ home, cardOnPhone = false }: CardScreenProps) {
   const reduceMotion = useReducedMotion();
+  // The stage card flies into the slot on the phone's boot curve; the phone's
+  // own copy shows only once it has landed (never two cards at once).
+  const landed = usePhoneBoot().bootProgress >= 1;
   const theme = useThemeMode();
   const overlayEl = useScreenOverlay();
   const design = useBrand();
@@ -133,19 +137,30 @@ export function CardScreen({ home }: CardScreenProps) {
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={BODY_TRANSITION}
       >
-        <div className={styles.cardArea}>
-          {/* The stage card lands exactly here (CardStage measures this slot). */}
-          <div data-card-slot>
-            <DebitCard
-              issued={issued}
-              issuing={issuing}
-              frozen={card.frozen}
-              closed={card.closed}
-              inWallet={card.inWallet}
-              declined={isDeclined}
-            />
+        {cardOnPhone ? (
+          <div className={styles.cardArea}>
+            {/* The stage card lands exactly here (CardStage measures this slot). */}
+            <div data-card-slot style={{ opacity: landed ? 1 : 0 }}>
+              <DebitCard
+                issued={issued}
+                issuing={issuing}
+                frozen={card.frozen}
+                closed={card.closed}
+                inWallet={card.inWallet}
+                declined={isDeclined}
+              />
+            </div>
           </div>
-        </div>
+        ) : (
+          /* The card itself is on the stage; the phone just names it. */
+          <div className={styles.cardSummary}>
+            <span className={styles.cardSummaryTitle}>{appName} debit</span>
+            <span className={styles.cardSummarySub}>
+              {issued ? '•••• 8972' : 'Not issued'}
+              {card.closed ? ' · Closed' : card.frozen ? ' · Frozen' : card.inWallet ? ' · In Apple Wallet' : ''}
+            </span>
+          </div>
+        )}
 
         {/* Hub content below the card, or the tap-to-pay reader status. popLayout
             so an exiting block leaves the flex flow immediately. */}

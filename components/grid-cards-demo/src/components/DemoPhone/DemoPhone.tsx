@@ -14,6 +14,8 @@ interface DemoPhoneProps {
   design: CardDesign;
   /** The card brain, hosted above so the stage card renders from the same state. */
   home: CardHome;
+  /** The card is in the phone (Issue flow). */
+  cardOnPhone?: boolean;
   glassConfig?: GlassConfig;
   overlayGlass?: OverlayGlassPresets;
   showGlassOutline?: boolean;
@@ -25,6 +27,7 @@ interface DemoPhoneProps {
 export function DemoPhone({
   design,
   home,
+  cardOnPhone,
   glassConfig,
   overlayGlass,
   showGlassOutline,
@@ -42,7 +45,7 @@ export function DemoPhone({
           screenStyle={brandVars(design.color, design.colorEnd)}
         >
           <div className={styles.flow}>
-            <CardScreen home={home} />
+            <CardScreen home={home} cardOnPhone={cardOnPhone} />
           </div>
         </AppShell>
       </BrandProvider>
