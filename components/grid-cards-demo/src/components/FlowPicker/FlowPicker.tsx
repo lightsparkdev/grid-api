@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { ACTIONS, type ActionId, type WalletState } from '@/data/actions';
-import { FLOW_ICONS, FLOW_ICON_COLORS } from '@/data/flowIcons';
+import { FLOW_ICONS } from '@/data/flowIcons';
 import styles from './FlowPicker.module.scss';
 
 // 2-col grid (matches the auth picker): four card-flow pairs. There's no Sign
@@ -49,7 +49,7 @@ export function FlowPicker({ wallet, onAction }: FlowPickerProps) {
             onClick={() => enabled && onAction(action.id)}
             disabled={!enabled}
           >
-            <span className={styles.optionIcon} style={{ color: FLOW_ICON_COLORS[action.id] }}>
+            <span className={styles.optionIcon}>
               <Icon size={24} />
             </span>
             <span className={styles.optionLabel}>{GRID_LABELS[action.id]}</span>
