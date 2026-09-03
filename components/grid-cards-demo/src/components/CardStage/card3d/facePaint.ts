@@ -6,11 +6,11 @@
  * visa-card-back-spec-v1-premium (133:273), where the Visa mark lives.
  */
 
-import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
-import { CARD_CVV, CARD_EXP, PAN_GROUPS } from '@/apps/shared/card/cardholder';
-import { brandStops } from '@/apps/shared/brand/brandPalette';
-import { isBare, stockOf, type CardDesign } from '@/data/design';
-import { CARD_FONT_FAMILY, loadCardFont } from './cardFont';
+import { CARD_H, CARD_W, fig } from "@/apps/card/cardMetrics";
+import { CARD_CVV, CARD_EXP, PAN_GROUPS } from "@/apps/shared/card/cardholder";
+import { brandStops } from "@/apps/shared/brand/brandPalette";
+import { isBare, stockOf, type CardDesign } from "@/data/design";
+import { CARD_FONT_FAMILY, loadCardFont } from "./cardFont";
 
 export const TEX_W = 2048;
 export const TEX_H = Math.round((TEX_W * CARD_H) / CARD_W);
@@ -35,7 +35,12 @@ const FONT = `"${CARD_FONT_FAMILY}"`;
  */
 const CHIP_W = F(197);
 export const CHIP_H = F(149);
-export const CHIP = { x: F(172), y: F(334), w: CHIP_W, r: CHIP_W * (19.5 / 151) };
+export const CHIP = {
+  x: F(172),
+  y: F(334),
+  w: CHIP_W,
+  r: CHIP_W * (19.5 / 151),
+};
 /** Z card chip geometry (viewBox 151 × 101), fitted to the module: a little
  *  taller than drawn, as 6-contact pads are. */
 export const CHIP_SCALE = CHIP.w / 151;
@@ -49,7 +54,12 @@ export const CHIP_CONTACTS = {
 };
 const LOCKUP_W = F(339);
 const LOCKUP_H = F(211.067);
-export const LOCKUP = { w: LOCKUP_W, h: LOCKUP_H, x: TEX_W - F(54) - LOCKUP_W, y: TEX_H - F(54) - LOCKUP_H };
+export const LOCKUP = {
+  w: LOCKUP_W,
+  h: LOCKUP_H,
+  x: TEX_W - F(54) - LOCKUP_W,
+  y: TEX_H - F(54) - LOCKUP_H,
+};
 /** The mag stripe bleeds from the top edge to 300 (72 of bleed plus the 228 stripe). */
 export const STRIPE = { y: 0, h: F(300) };
 
@@ -73,11 +83,11 @@ let assetsPromise: Promise<FaceAssets> | null = null;
 export function loadFaceAssets(): Promise<FaceAssets> {
   if (!assetsPromise) {
     assetsPromise = Promise.all([
-      loadImage('/assets/card/visa-debit-lockup.svg'),
-      loadImage('/assets/card/contactless.svg'),
+      loadImage("/assets/card/visa-debit-lockup.svg"),
+      loadImage("/assets/card/contactless.svg"),
       loadCardFont().catch(() => undefined),
     ]).then(([lockup, contactless]) => {
-      if (!lockup || !contactless) throw new Error('card face assets missing');
+      if (!lockup || !contactless) throw new Error("card face assets missing");
       return { lockup, contactless };
     });
   }
@@ -87,7 +97,7 @@ export function loadFaceAssets(): Promise<FaceAssets> {
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
 export function makeCanvas(w: number, h: number): HTMLCanvasElement {
-  const c = document.createElement('canvas');
+  const c = document.createElement("canvas");
   c.width = w;
   c.height = h;
   return c;
@@ -103,14 +113,20 @@ export function drawTinted(
   y: number,
   w: number,
   h: number,
-  color: string | ((t: CanvasRenderingContext2D, w: number, h: number) => string | CanvasGradient),
+  color:
+    | string
+    | ((
+        t: CanvasRenderingContext2D,
+        w: number,
+        h: number,
+      ) => string | CanvasGradient),
   band: [number, number] = [0, 1],
 ) {
   const c = makeCanvas(Math.ceil(w), Math.ceil(h));
-  const t = c.getContext('2d')!;
+  const t = c.getContext("2d")!;
   t.drawImage(img, 0, 0, w, h);
-  t.globalCompositeOperation = 'source-in';
-  t.fillStyle = typeof color === 'function' ? color(t, w, h) : color;
+  t.globalCompositeOperation = "source-in";
+  t.fillStyle = typeof color === "function" ? color(t, w, h) : color;
   t.fillRect(0, 0, c.width, c.height);
   const y0 = Math.round(h * band[0]);
   const y1 = Math.round(h * band[1]);
@@ -136,16 +152,32 @@ export function drawDilated(
   const steps = 16;
   for (let i = 0; i < steps; i++) {
     const a = (i / steps) * Math.PI * 2;
-    drawTinted(ctx, img, x + Math.cos(a) * radius, y + Math.sin(a) * radius, w, h, color, band);
+    drawTinted(
+      ctx,
+      img,
+      x + Math.cos(a) * radius,
+      y + Math.sin(a) * radius,
+      w,
+      h,
+      color,
+      band,
+    );
   }
   drawTinted(ctx, img, x, y, w, h, color, band);
 }
 
 /** The foil's carrier: a clear layer around the mark, this far outside it
- *  (spec px; about 0.9 mm), where the stamp laid the film. */
-export const FOIL_CARRIER = F(16);
+ *  (0.65 mm in spec px), where the stamp laid the film. */
+export const FOIL_CARRIER = F(0.65 * 17.94);
 
-function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+function roundRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
 }
@@ -162,7 +194,13 @@ export function chipContactsPath(ctx: CanvasRenderingContext2D) {
   ctx.beginPath();
   for (const cx of CHIP_CONTACTS.xs) {
     for (const cy of CHIP_CONTACTS.ys) {
-      ctx.roundRect(CHIP.x + cx * sx, CHIP.y + cy * sy, CHIP_CONTACTS.w * sx, CHIP_CONTACTS.h * sy, CHIP_CONTACTS.r * sx);
+      ctx.roundRect(
+        CHIP.x + cx * sx,
+        CHIP.y + cy * sy,
+        CHIP_CONTACTS.w * sx,
+        CHIP_CONTACTS.h * sy,
+        CHIP_CONTACTS.r * sx,
+      );
     }
   }
 }
@@ -183,7 +221,12 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
  * the color with a light sweep top-left and depth bottom-right (`deepFirst`
  * for the back), or the uploaded art on the front.
  */
-function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst: boolean, art: HTMLImageElement | null) {
+function paintBase(
+  ctx: CanvasRenderingContext2D,
+  design: CardDesign,
+  deepFirst: boolean,
+  art: HTMLImageElement | null,
+) {
   if (art && !deepFirst) {
     drawCover(ctx, art);
     return;
@@ -196,10 +239,16 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst:
   const { color, light, deep } = brandStops(design.color!, design.colorEnd);
   ctx.fillStyle = deepFirst ? deep : color;
   ctx.fillRect(0, 0, TEX_W, TEX_H);
-  const radial = (cx: number, cy: number, r: number, from: string, toStop: number) => {
+  const radial = (
+    cx: number,
+    cy: number,
+    r: number,
+    from: string,
+    toStop: number,
+  ) => {
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
     g.addColorStop(0, from);
-    g.addColorStop(toStop, 'rgba(0,0,0,0)');
+    g.addColorStop(toStop, "rgba(0,0,0,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, TEX_W, TEX_H);
   };
@@ -213,27 +262,34 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, deepFirst:
 
 /** Ink that reads on the face: white on print and on dark stock, near-black
  *  on light stock. Art is treated as dark. */
-export function inkFor(design: CardDesign, art: HTMLImageElement | null): string {
-  if (art) return '#ffffff';
-  if (isBare(design) && stockOf(design).ink === 'dark') return '#26262b';
-  return '#ffffff';
+export function inkFor(
+  design: CardDesign,
+  art: HTMLImageElement | null,
+): string {
+  if (art) return "#ffffff";
+  if (isBare(design) && stockOf(design).ink === "dark") return "#26262b";
+  return "#ffffff";
 }
 
-function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: boolean) {
+function paintState(
+  ctx: CanvasRenderingContext2D,
+  frozen: boolean,
+  closed: boolean,
+) {
   if (closed) {
-    ctx.globalCompositeOperation = 'saturation';
-    ctx.fillStyle = '#808080';
+    ctx.globalCompositeOperation = "saturation";
+    ctx.fillStyle = "#808080";
     ctx.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalCompositeOperation = "source-over";
   } else if (frozen) {
-    ctx.globalCompositeOperation = 'saturation';
-    ctx.fillStyle = 'rgba(128,128,128,0.7)';
+    ctx.globalCompositeOperation = "saturation";
+    ctx.fillStyle = "rgba(128,128,128,0.7)";
     ctx.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(235,245,255,0.42)';
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "rgba(235,245,255,0.42)";
     ctx.fillRect(0, 0, TEX_W, TEX_H);
   }
 }
@@ -245,40 +301,89 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
  *  Standards, January 2026: "silver foil PVBM, printed silver product
  *  identifier"). The surface maps make the mark a mirror and the identifier
  *  flat. */
-function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, bare: boolean) {
+function paintLockup(
+  ctx: CanvasRenderingContext2D,
+  assets: FaceAssets,
+  bare: boolean,
+) {
   // Silver foil would vanish on bare metal; the standards allow a black foil
   // PVBM with a black printed identifier, which is what metal cards use.
-  const identifier = bare ? '#2a2a2e' : '#cfd0d5';
+  const identifier = bare ? "#2a2a2e" : "#cfd0d5";
   // Mirror foil: near-white reflectance (the studio does the shading), with a
   // faint bright-to-dark run across the mark so it reads as foil in a still.
   const mark = bare
-    ? '#1c1c20'
+    ? "#1c1c20"
     : (t: CanvasRenderingContext2D, w: number, h: number) => {
         const g = t.createLinearGradient(0, h * LOCKUP_SPLIT, w, h);
-        g.addColorStop(0, '#ffffff');
-        g.addColorStop(0.55, '#f2f2f5');
-        g.addColorStop(1, '#d9d9de');
+        g.addColorStop(0, "#ffffff");
+        g.addColorStop(0.55, "#f2f2f5");
+        g.addColorStop(1, "#d9d9de");
         return g;
       };
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, mark, [LOCKUP_SPLIT, 1]);
+  drawTinted(
+    ctx,
+    assets.lockup,
+    LOCKUP.x,
+    LOCKUP.y,
+    LOCKUP.w,
+    LOCKUP.h,
+    identifier,
+    [0, LOCKUP_SPLIT],
+  );
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, mark, [
+    LOCKUP_SPLIT,
+    1,
+  ]);
+}
+
+/** The Visa mark's shape alone (the foil band of the lockup), white on
+ *  transparent at texel size, for the foil layer's alpha. */
+export function paintLockupMask(assets: FaceAssets): HTMLCanvasElement {
+  const c = makeCanvas(Math.ceil(LOCKUP.w), Math.ceil(LOCKUP.h));
+  const ctx = c.getContext("2d")!;
+  drawTinted(ctx, assets.lockup, 0, 0, LOCKUP.w, LOCKUP.h, "#ffffff", [
+    LOCKUP_SPLIT,
+    1,
+  ]);
+  return c;
+}
+
+/** The foil's reflectance: near white, with the bright-to-dark run a foil
+ *  shows at one angle. */
+export function paintFoilAlbedo(): HTMLCanvasElement {
+  const w = Math.ceil(LOCKUP.w);
+  const h = Math.ceil(LOCKUP.h);
+  const c = makeCanvas(w, h);
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, h * LOCKUP_SPLIT, w, h);
+  g.addColorStop(0, "#ffffff");
+  g.addColorStop(0.55, "#f4f4f6");
+  g.addColorStop(1, "#dcdce0");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  return c;
 }
 
 /** Silver (nickel-plated) contact module; the material makes it metal. */
 function paintChip(ctx: CanvasRenderingContext2D) {
-  const g = ctx.createLinearGradient(CHIP.x, CHIP.y, CHIP.x + CHIP.w, CHIP.y + CHIP_H);
-  g.addColorStop(0, '#c9cacf');
-  g.addColorStop(0.5, '#e9eaee');
-  g.addColorStop(1, '#b9bbc1');
+  const g = ctx.createLinearGradient(
+    CHIP.x,
+    CHIP.y,
+    CHIP.x + CHIP.w,
+    CHIP.y + CHIP_H,
+  );
+  g.addColorStop(0, "#c9cacf");
+  g.addColorStop(0.5, "#e9eaee");
+  g.addColorStop(1, "#b9bbc1");
   ctx.fillStyle = g;
   chipPlatePath(ctx);
   ctx.fill();
   ctx.lineWidth = 1.1 * K;
-  ctx.strokeStyle = 'rgba(40, 42, 48, 0.7)';
+  ctx.strokeStyle = "rgba(40, 42, 48, 0.7)";
   chipContactsPath(ctx);
   ctx.stroke();
   ctx.lineWidth = 0.8 * K;
-  ctx.strokeStyle = 'rgba(30, 32, 38, 0.55)';
+  ctx.strokeStyle = "rgba(30, 32, 38, 0.55)";
   chipPlatePath(ctx);
   ctx.stroke();
 }
@@ -308,22 +413,29 @@ function logoRect(logo: HTMLImageElement) {
  * program name as a wordmark. Both the albedo (for foil) and the surface maps
  * (for spot gloss and foil) are cut from this.
  */
-export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null): HTMLCanvasElement {
+export function paintBrandMask(
+  design: CardDesign,
+  logo: HTMLImageElement | null,
+): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
-  const ctx = c.getContext('2d')!;
+  const ctx = c.getContext("2d")!;
   if (logo) {
     const r = logoRect(logo);
     ctx.drawImage(logo, r.x, r.y, r.w, r.h);
-    ctx.globalCompositeOperation = 'source-in';
-    ctx.fillStyle = '#fff';
+    ctx.globalCompositeOperation = "source-in";
+    ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, TEX_W, TEX_H);
   } else {
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = "#fff";
     ctx.font = `${BRAND_TEXT_WEIGHT} ${BRAND_TEXT_PX}px ${FONT}`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.textAlign = 'right';
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "right";
     // Center the cap height (about 0.7 em) on the chip's row.
-    ctx.fillText(design.programName.trim() || 'Your brand', BRAND_RIGHT, BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35);
+    ctx.fillText(
+      design.programName.trim() || "Your brand",
+      BRAND_RIGHT,
+      BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35,
+    );
   }
   return c;
 }
@@ -331,26 +443,29 @@ export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null
 /** The art's alpha as a mask (cover-fit), for spot gloss over art. */
 export function paintArtMask(art: HTMLImageElement): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
-  const ctx = c.getContext('2d')!;
+  const ctx = c.getContext("2d")!;
   drawCover(ctx, art);
-  ctx.globalCompositeOperation = 'source-in';
-  ctx.fillStyle = '#fff';
+  ctx.globalCompositeOperation = "source-in";
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   return c;
 }
 
 /** Foil reflectance for a hot-stamped logo, silver or gold, with the
  *  bright-to-dark run a foil shows at one angle. */
-function foilGradient(ctx: CanvasRenderingContext2D, kind: 'foilSilver' | 'foilGold'): CanvasGradient {
+function foilGradient(
+  ctx: CanvasRenderingContext2D,
+  kind: "foilSilver" | "foilGold",
+): CanvasGradient {
   const g = ctx.createLinearGradient(0, 0, TEX_W, TEX_H);
-  if (kind === 'foilGold') {
-    g.addColorStop(0, '#f6e3a8');
-    g.addColorStop(0.55, '#d9b86a');
-    g.addColorStop(1, '#a8823a');
+  if (kind === "foilGold") {
+    g.addColorStop(0, "#f6e3a8");
+    g.addColorStop(0.55, "#d9b86a");
+    g.addColorStop(1, "#a8823a");
   } else {
-    g.addColorStop(0, '#ffffff');
-    g.addColorStop(0.55, '#f2f2f5');
-    g.addColorStop(1, '#d9d9de');
+    g.addColorStop(0, "#ffffff");
+    g.addColorStop(0.55, "#f2f2f5");
+    g.addColorStop(1, "#d9d9de");
   }
   return g;
 }
@@ -368,17 +483,17 @@ export interface FrontState {
 
 export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalCompositeOperation = "source-over";
   paintBase(ctx, s.design, false, s.art);
   const ink = inkFor(s.design, s.art);
 
   // Brand: the logo as uploaded, or the wordmark in ink; a foil treatment
   // replaces either with the foil's reflectance in the same shape.
   const t = s.design.logoTreatment;
-  if (t === 'foilSilver' || t === 'foilGold') {
+  if (t === "foilSilver" || t === "foilGold") {
     const mask = paintBrandMask(s.design, s.logo);
-    const m = mask.getContext('2d')!;
-    m.globalCompositeOperation = 'source-in';
+    const m = mask.getContext("2d")!;
+    m.globalCompositeOperation = "source-in";
     m.fillStyle = foilGradient(m, t);
     m.fillRect(0, 0, TEX_W, TEX_H);
     ctx.drawImage(mask, 0, 0);
@@ -388,10 +503,14 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   } else {
     ctx.fillStyle = ink;
     ctx.font = `${BRAND_TEXT_WEIGHT} ${BRAND_TEXT_PX}px ${FONT}`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.textAlign = 'right';
-    ctx.fillText(s.design.programName.trim() || 'Your brand', BRAND_RIGHT, BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35);
-    ctx.textAlign = 'left';
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "right";
+    ctx.fillText(
+      s.design.programName.trim() || "Your brand",
+      BRAND_RIGHT,
+      BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35,
+    );
+    ctx.textAlign = "left";
   }
 
   paintChip(ctx);
@@ -400,11 +519,12 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   // prints when the card goes ACTIVE.
   if (s.personalized > 0) {
     ctx.save();
-    ctx.globalAlpha = Math.min(1, s.personalized) * (ink === '#ffffff' ? 0.55 : 0.75);
+    ctx.globalAlpha =
+      Math.min(1, s.personalized) * (ink === "#ffffff" ? 0.55 : 0.75);
     ctx.fillStyle = ink;
     ctx.font = `400 ${F(57)}px ${FONT}`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.textAlign = 'left';
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
     ctx.fillText(`•••• ${PAN_GROUPS[PAN_GROUPS.length - 1]}`, F(56), F(915));
     ctx.restore();
   }
@@ -422,15 +542,19 @@ export interface BackState {
   closed: boolean;
 }
 
-export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: FaceAssets) {
+export function paintBack(
+  ctx: CanvasRenderingContext2D,
+  s: BackState,
+  assets: FaceAssets,
+) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalCompositeOperation = "source-over";
   paintBase(ctx, s.design, true, null);
   const ink = inkFor(s.design, null);
   const bare = isBare(s.design) && stockOf(s.design).metal;
 
   // Mag stripe, bleeding to the top edge (Thales sample 1:116).
-  ctx.fillStyle = '#242426';
+  ctx.fillStyle = "#242426";
   ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
 
   // Contactless indicator: right-aligned at 54, 90 tall.
@@ -445,17 +569,17 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   const line = F(41);
   const gap = F(32);
   let y = F(476) + line;
-  ctx.textBaseline = 'alphabetic';
-  ctx.textAlign = 'left';
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
   ctx.font = `400 ${F(57)}px ${FONT}`;
   ctx.fillStyle = ink;
-  ctx.fillText(s.design.cardholderName.trim() || 'Cardholder name', x, y);
+  ctx.fillText(s.design.cardholderName.trim() || "Cardholder name", x, y);
 
   if (s.personalized > 0) {
     ctx.save();
     ctx.globalAlpha = Math.min(1, s.personalized);
     y += line + gap;
-    const groupW = ctx.measureText('0000').width;
+    const groupW = ctx.measureText("0000").width;
     const groupGap = F(57) * 0.28;
     const last = PAN_GROUPS.length - 1;
     PAN_GROUPS.forEach((g, i) => {
@@ -466,36 +590,43 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
 
     y += line + gap;
     const tail = s.shown > PAN_GROUPS.length;
-    ctx.fillText('EXP ', x, y);
-    let cx = x + ctx.measureText('EXP ').width;
+    ctx.fillText("EXP ", x, y);
+    let cx = x + ctx.measureText("EXP ").width;
     if (tail) ctx.fillText(CARD_EXP, cx, y);
     else {
-      const dw = ctx.measureText('00').width;
+      const dw = ctx.measureText("00").width;
       dots(ctx, 2, cx, y, dw);
-      ctx.fillText('/', cx + dw, y);
-      dots(ctx, 2, cx + dw + ctx.measureText('/').width, y, dw);
+      ctx.fillText("/", cx + dw, y);
+      dots(ctx, 2, cx + dw + ctx.measureText("/").width, y, dw);
     }
-    cx = x + ctx.measureText('EXP 11/27').width + F(64);
-    ctx.fillText('CVV ', cx, y);
-    cx += ctx.measureText('CVV ').width;
+    cx = x + ctx.measureText("EXP 11/27").width + F(64);
+    ctx.fillText("CVV ", cx, y);
+    cx += ctx.measureText("CVV ").width;
     if (tail) ctx.fillText(CARD_CVV, cx, y);
-    else dots(ctx, 3, cx, y, ctx.measureText('000').width);
+    else dots(ctx, 3, cx, y, ctx.measureText("000").width);
     ctx.restore();
   }
 
   // Fine print at (56, 876), 22 px.
   ctx.font = `400 ${F(22)}px ${FONT}`;
-  ctx.fillText('1-855-516-0103   lightspark.com/help', x, F(876) + F(16));
-  ctx.fillText('Issued by Lead Bank', x, F(876) + F(16) + F(26));
+  ctx.fillText("1-855-516-0103   lightspark.com/help", x, F(876) + F(16));
+  ctx.fillText("Issued by Lead Bank", x, F(876) + F(16) + F(26));
 
-  paintLockup(ctx, assets, bare || ink !== '#ffffff');
+  paintLockup(ctx, assets, bare || ink !== "#ffffff");
   paintState(ctx, s.frozen, s.closed);
 }
 
-function dots(ctx: CanvasRenderingContext2D, n: number, x: number, baseline: number, width: number) {
+function dots(
+  ctx: CanvasRenderingContext2D,
+  n: number,
+  x: number,
+  baseline: number,
+  width: number,
+) {
   const step = width / n;
   const r = F(57) * 0.09;
   ctx.beginPath();
-  for (let i = 0; i < n; i++) ctx.arc(x + step * (i + 0.5), baseline - F(57) * 0.26, r, 0, Math.PI * 2);
+  for (let i = 0; i < n; i++)
+    ctx.arc(x + step * (i + 0.5), baseline - F(57) * 0.26, r, 0, Math.PI * 2);
   ctx.fill();
 }

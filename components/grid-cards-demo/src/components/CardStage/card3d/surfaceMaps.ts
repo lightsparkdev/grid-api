@@ -85,11 +85,13 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
   }
   // Back: the product identifier is printed silver ink (flat, a little
   // metallic). The Visa mark is hot-stamped foil: a clear carrier film laid
-  // slightly outside the mark's geometry (glossy, not metal), and the mirror
-  // metal inside it.
+  // slightly outside the mark's geometry (glossy, not metal), and the metal
+  // inside it. The foil is satin rather than a mirror: a mirror seen head-on
+  // shows the graphite of the empty room behind the camera, while a satin
+  // lobe gathers the studio lights and reads as lit silver from any angle.
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.5, 0.55), [0, LOCKUP_SPLIT]);
-  drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.12, 0), FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.04, 1), [LOCKUP_SPLIT, 1]);
+  drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.08, 0), FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.3, 1), [LOCKUP_SPLIT, 1]);
   return c;
 }
 
