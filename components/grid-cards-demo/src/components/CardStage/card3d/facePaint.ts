@@ -249,7 +249,8 @@ const BRAND_RIGHT = TEX_W - F(152);
 const BRAND_CENTER_Y = CHIP.y + CHIP_H / 2;
 const BRAND_LOGO_H = F(90);
 const BRAND_LOGO_MAX_W = F(410);
-const BRAND_TEXT_PX = F(96);
+const BRAND_TEXT_PX = F(72);
+const BRAND_TEXT_WEIGHT = 430;
 
 export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -267,7 +268,7 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   } else {
     const name = s.design.programName.trim() || 'Your brand';
     ctx.fillStyle = ink;
-    ctx.font = `500 ${BRAND_TEXT_PX}px ${FONT}`;
+    ctx.font = `${BRAND_TEXT_WEIGHT} ${BRAND_TEXT_PX}px ${FONT}`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'right';
     // Center the cap height (about 0.7 em) on the chip's row.
