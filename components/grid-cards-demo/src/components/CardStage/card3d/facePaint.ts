@@ -109,6 +109,31 @@ export function drawTinted(
 /** The lockup artwork is DEBIT (top) over VISA (bottom); the split between them. */
 export const LOCKUP_SPLIT = 0.36;
 
+/** Draw `img`'s alpha grown outward by `radius` (in the destination's units),
+ *  filled with `color`: the union of the shape shifted around a circle. */
+export function drawDilated(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  color: string,
+  radius: number,
+  band: [number, number] = [0, 1],
+) {
+  const steps = 16;
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    drawTinted(ctx, img, x + Math.cos(a) * radius, y + Math.sin(a) * radius, w, h, color, band);
+  }
+  drawTinted(ctx, img, x, y, w, h, color, band);
+}
+
+/** The foil's carrier: a clear layer around the mark, this far outside it
+ *  (spec px; about 0.9 mm), where the stamp laid the film. */
+export const FOIL_CARRIER = F(16);
+
 function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
@@ -206,16 +231,15 @@ function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, bare: bo
   // Silver foil would vanish on bare metal; the standards allow a black foil
   // PVBM with a black printed identifier, which is what metal cards use.
   const identifier = bare ? '#2a2a2e' : '#cfd0d5';
-  // Foil reflectance runs bright to dark across the mark (the sheen a
-  // brushed foil shows at any one angle), the way Visa draws the PVBM.
+  // Mirror foil: near-white reflectance (the studio does the shading), with a
+  // faint bright-to-dark run across the mark so it reads as foil in a still.
   const mark = bare
     ? '#1c1c20'
     : (t: CanvasRenderingContext2D, w: number, h: number) => {
         const g = t.createLinearGradient(0, h * LOCKUP_SPLIT, w, h);
-        g.addColorStop(0, '#f4f4f7');
-        g.addColorStop(0.45, '#dcdce1');
-        g.addColorStop(0.7, '#aeaeb5');
-        g.addColorStop(1, '#d8d8dd');
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.55, '#f2f2f5');
+        g.addColorStop(1, '#d9d9de');
         return g;
       };
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);

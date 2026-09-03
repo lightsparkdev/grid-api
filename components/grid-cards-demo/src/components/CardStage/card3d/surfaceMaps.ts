@@ -10,7 +10,9 @@ import { isBareMetal, type CardDesign, type CardFinish, type CardMaterial } from
 import {
   chipContactsPath,
   chipPlatePath,
+  drawDilated,
   drawTinted,
+  FOIL_CARRIER,
   K,
   LOCKUP,
   LOCKUP_SPLIT,
@@ -82,10 +84,12 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
     return c;
   }
   // Back: the product identifier is printed silver ink (flat, a little
-  // metallic); the Visa mark is stamped silver foil (metal with a soft,
-  // brushed sheen rather than a mirror).
+  // metallic). The Visa mark is hot-stamped foil: a clear carrier film laid
+  // slightly outside the mark's geometry (glossy, not metal), and the mirror
+  // metal inside it.
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.5, 0.55), [0, LOCKUP_SPLIT]);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.22, 1), [LOCKUP_SPLIT, 1]);
+  drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.12, 0), FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.04, 1), [LOCKUP_SPLIT, 1]);
   return c;
 }
 
@@ -151,27 +155,15 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.fillRect(0, STRIPE.y * S, MAP_W, STRIPE.h * S);
   }
   if (side === 'back') {
-    // The foil is hot-stamped: it sits a hair proud of the face, with a fine
-    // diagonal brush in the metal that gives it a directional sheen instead
-    // of a flat mirror.
-    const foil = makeCanvas(MAP_W, MAP_H);
-    const fctx = foil.getContext('2d')!;
-    fctx.fillStyle = '#8e8e8e';
-    fctx.fillRect(0, 0, MAP_W, MAP_H);
-    fctx.save();
-    fctx.translate(MAP_W / 2, MAP_H / 2);
-    fctx.rotate(-Math.PI / 4);
-    for (let y = -MAP_W; y < MAP_W; y += 2) {
-      fctx.fillStyle = `rgb(${142 + Math.round((Math.random() - 0.5) * 8)} 0 0)`;
-      fctx.fillRect(-MAP_W, y, MAP_W * 2, 1);
-    }
-    fctx.restore();
-    // Keep the foil only inside the lockup: mask by the artwork.
-    fctx.globalCompositeOperation = 'destination-in';
-    fctx.setTransform(S, 0, 0, S, 0, 0);
-    drawTinted(fctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#fff');
-    fctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(foil, 0, 0);
+    // Hot-stamped foil is a film laid on the face: the clear carrier sits a
+    // hair proud, following the mark's geometry about a millimeter out, and
+    // the metal on top of that. Both steps catch light at their edges. The
+    // foil itself is flat (a mirror), so no grain under the lockup.
+    ctx.setTransform(S, 0, 0, S, 0, 0);
+    drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#8a8a8a', FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
+    drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#929292', [LOCKUP_SPLIT, 1]);
+    drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#808080', [0, LOCKUP_SPLIT]);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
   return c;
 }
