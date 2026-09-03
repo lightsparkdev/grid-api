@@ -24,6 +24,12 @@ post:
     transactions.
 
 
+    A platform may be limited to a maximum number of live cards. Once that
+    limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED`
+    until a card is closed or Lightspark raises the limit. Cards in `CLOSED`
+    state do not count toward the limit.
+
+
     New cards start in `state: "PROCESSING"` while the card issuer
     provisions the card. The `card.state_change` webhook fires on each state
     transition, including the transition to `ACTIVE` (or to `CLOSED` with
@@ -78,6 +84,17 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CARD_LIMIT_REACHED` when the platform has
+        reached the maximum number of live cards it may hold, and with
+        `CONFLICT` when the `Idempotency-Key` was already used for a
+        different card request. Closing a card frees its slot; contact
+        Lightspark to raise the limit.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:
