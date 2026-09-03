@@ -23346,11 +23346,16 @@ components:
               description: Included for all transactions except those with "CREATED" status
             failureReason:
               $ref: '#/components/schemas/IncomingTransactionFailureReason'
-              description: If the transaction failed, this field provides the reason for failure.
+              description: If the transaction failed, this field provides the reason for failure. Set only when `status` is `FAILED`. A rule-based account whose sweep was refused is not a failure of this transaction — see `sweepFailureReason`.
             sweepFailureReason:
               allOf:
                 - $ref: '#/components/schemas/SweepFailureReason'
-              description: Set when this payment settled into a rule-based account but was not swept to the destination of the account's rule. The deposit itself succeeded, so the transaction still completes; this says why the destination was not paid. Omitted for any other account.
+              description: |-
+                Why the onward sweep did not reach the rule's destination, when this payment settled into a rule-based account.
+
+                Distinct from `failureReason`, and never set at the same time: the two describe different events and are told apart by `status`. This transaction **succeeded** — the deposit landed and `status` is `COMPLETED`; only the sweep out of the account was refused, and the funds are in `sweepCanonicalAccountId`. `failureReason` appears only when `status` is `FAILED`, meaning the payment itself did not credit.
+
+                Omitted for any account that is not rule-based.
             sweepCanonicalAccountId:
               type: string
               description: The account holder's own account in the same currency the funds were moved to when a sweep could not be completed — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. Present whenever `sweepFailureReason` is.
@@ -23539,11 +23544,16 @@ components:
               description: Details about the rate and fees for the transaction.
             failureReason:
               $ref: '#/components/schemas/OutgoingTransactionFailureReason'
-              description: If the transaction failed, this field provides the reason for failure.
+              description: If the transaction failed, this field provides the reason for failure. Set only when `status` is `FAILED`. A rule-based account whose sweep was refused is not a failure of this transaction — see `sweepFailureReason`.
             sweepFailureReason:
               allOf:
                 - $ref: '#/components/schemas/SweepFailureReason'
-              description: Set when this payment settled into a rule-based account but was not swept to the destination of the account's rule. The deposit itself succeeded, so the transaction still completes; this says why the destination was not paid. Omitted for any other account.
+              description: |-
+                Why the onward sweep did not reach the rule's destination, when this payment settled into a rule-based account.
+
+                Distinct from `failureReason`, and never set at the same time: the two describe different events and are told apart by `status`. This transaction **succeeded** — the deposit landed and `status` is `COMPLETED`; only the sweep out of the account was refused, and the funds are in `sweepCanonicalAccountId`. `failureReason` appears only when `status` is `FAILED`, meaning the payment itself did not credit.
+
+                Omitted for any account that is not rule-based.
             sweepCanonicalAccountId:
               type: string
               description: The account holder's own account in the same currency the funds were moved to when a sweep could not be completed — the customer's, or the platform's for a platform-owned rule-based account. A rule-based account never holds a balance. Present whenever `sweepFailureReason` is.
