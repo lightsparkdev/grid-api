@@ -15,10 +15,10 @@ post:
     deposit does in production: the balance is swept to the rule's
     destination and the account is left at zero. A balance outside the corridor
     band moves to the account holder's own account in the same currency
-    instead, and the transaction fails with either
-    `failureReason: SWEEP_BELOW_MINIMUM` or `SWEEP_ABOVE_MAXIMUM` — fund a
-    rule-based account with a very small amount to rehearse that path. Either
-    way the rule-based account is left at zero; it never holds a balance.
+    instead, and the transaction fails with
+    `failureReason: SWEEP_AMOUNT_OUT_OF_RANGE` — fund a rule-based account with
+    a very small amount to rehearse that path. Either way the rule-based account
+    is left at zero; it never holds a balance.
 
     Sandbox simulates the API contract and the routing decision, not the
     banking rails. The quote, the corridor bounds, the destination checks and
