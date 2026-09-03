@@ -13,6 +13,7 @@ import { useThemeMode } from '@/hooks/useThemeMode';
 import type { CardDesign } from '@/data/design';
 import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type CardMeshState } from './card3d/CardMesh';
+import { CardShadow } from './card3d/CardShadow';
 import { CardMotion } from './cardMotion';
 import styles from './CardStage.module.scss';
 
@@ -44,6 +45,7 @@ interface Live {
   t: number;
   wantBack: boolean;
   reduceMotion: boolean;
+  dark: boolean;
 }
 
 interface CardStageProps {
@@ -76,10 +78,11 @@ export function CardStage({ design, home }: CardStageProps) {
   const revealed = card.sheet === 'details';
   const phoneUp = bootProgress > 0;
 
-  const live = useRef<Live>({ t: 0, wantBack: false, reduceMotion });
+  const live = useRef<Live>({ t: 0, wantBack: false, reduceMotion, dark });
   live.current.t = easeInOutCubic(bootProgress);
   live.current.wantBack = revealed;
   live.current.reduceMotion = reduceMotion;
+  live.current.dark = dark;
 
   // Decline: shake once per bounce.
   useEffect(() => {
@@ -212,9 +215,13 @@ interface CardRigProps {
   state: CardMeshState;
 }
 
-/** Drives the mesh (and the DOM hit box) every frame. */
+/** Drives the mesh, its shadow, and the DOM hit box every frame. */
 function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
+  // Carrier takes position and scale; the card inside it takes the spin, so
+  // the shadow (also in the carrier) follows the card without turning.
+  const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
+  const shadow = useRef<THREE.Mesh>(null);
   const size = useThree((s) => s.size);
   const get = useThree((s) => s.get);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
@@ -227,8 +234,9 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
 
   useFrame((_, delta) => {
     const g = group.current;
+    const c = carrier.current;
     const root = rootRef.current;
-    if (!g || !root) return;
+    if (!g || !c || !root) return;
     const dt = Math.min(0.05, delta);
     const r = root.getBoundingClientRect();
     // Rest position: centered on the stage, scaled to fit it.
@@ -260,18 +268,31 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
     const pose = motion.step(dt, { wantBack: live.current.wantBack, hold: t > 0, reduceMotion: live.current.reduceMotion });
     const bob = pose.dy * (1 - t);
     // Stage px → scene: origin at the stage center, y up.
-    g.position.set(x + pose.dx * s - size.width / 2, size.height / 2 - (y + bob), 0);
-    g.scale.setScalar(s);
+    c.position.set(x + pose.dx * s - size.width / 2, size.height / 2 - (y + bob), 0);
+    c.scale.setScalar(s);
     g.rotation.set(THREE.MathUtils.degToRad(pose.rotX), THREE.MathUtils.degToRad(pose.rotY), 0);
+
+    // Shadow: fainter as the card turns edge-on, and tighter once it is parked
+    // in the phone (the slot is close behind it).
+    const facing = Math.abs(Math.cos(THREE.MathUtils.degToRad(pose.rotY))) * Math.abs(Math.cos(THREE.MathUtils.degToRad(pose.rotX)));
+    const sh = shadow.current;
+    if (sh) {
+      (sh.material as THREE.MeshBasicMaterial).opacity = (live.current.dark ? 0.5 : 0.24) * (0.35 + 0.65 * facing) * (1 - 0.45 * t);
+      sh.scale.setScalar(1 - 0.12 * t);
+    }
 
     const hit = hitRef.current;
     if (hit) {
       hit.style.transform = `translate(${x + pose.dx * s - CARD_W / 2}px, ${y + bob - CARD_H / 2}px) scale(${s})`;
       // The pill belongs to the front; hide it while the back is showing.
-      const facing = Math.cos(THREE.MathUtils.degToRad(pose.rotY));
-      hit.style.setProperty('--pill-opacity', facing > 0.3 ? '1' : '0');
+      hit.style.setProperty('--pill-opacity', Math.cos(THREE.MathUtils.degToRad(pose.rotY)) > 0.3 ? '1' : '0');
     }
   });
 
-  return <CardMesh ref={group} state={state} />;
+  return (
+    <group ref={carrier}>
+      <CardShadow ref={shadow} />
+      <CardMesh ref={group} state={state} />
+    </group>
+  );
 }
