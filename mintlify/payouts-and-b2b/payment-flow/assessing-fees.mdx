@@ -39,12 +39,10 @@ billed for it separately. Which side absorbs it depends on `lockedCurrencySide`:
 
 Fees are configured per **fee type**, which identifies the activity being charged:
 
-- `CROSS_CURRENCY_TRANSACTION` — a transfer where the sending currency differs from the
-  receiving currency.
-- `RAIL` — a payout that goes out over a payment rail, whatever currency it started in.
+- `CROSS_CURRENCY_TRANSACTION` — a fee charged on transactions where the sending currency differs from the receiving currency
+- `RAIL` — a fee charged on any transaction that uses this payment rail
 
-The two stack. A cross-currency payout that goes out over ACH can carry both, and you are
-paid for each.
+Both fee types may apply to the same transaction, e.g. a cross-currency payment that goes out over ACH. Your platform will receive the sum of all applied fees.
 
 <Info>
 **Current limits.** Cross-currency fees are supported for a **USD** sending currency

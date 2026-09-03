@@ -12201,16 +12201,12 @@ components:
           type: string
           description: Three-letter currency code (ISO 4217) the fixed fee is denominated in. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
           example: USD
-    CrossCurrencyFeeConfig:
+    FeeConfig:
       type: object
-      description: A fee you charge on cross-currency transactions. There can be at most one for a given source currency, and it applies to every cross-currency transaction that starts in it.
+      description: Fields shared by every platform fee config.
       properties:
         feeType:
           $ref: '#/components/schemas/FeeType'
-        sourceCurrency:
-          type: string
-          description: Currency code of the sending side this fee applies to. Only `USD` is accepted today; other currencies return a `NOT_IMPLEMENTED` error.
-          example: USD
         variableFeeBps:
           type: integer
           minimum: 0
@@ -12221,9 +12217,23 @@ components:
           $ref: '#/components/schemas/FixedFee'
       required:
         - feeType
-        - sourceCurrency
         - variableFeeBps
         - fixedFee
+    CrossCurrencyTransactionFeeConfig:
+      allOf:
+        - $ref: '#/components/schemas/FeeConfig'
+        - type: object
+          properties:
+            feeType:
+              enum:
+                - CROSS_CURRENCY_TRANSACTION
+            sourceCurrency:
+              type: string
+              description: Currency code of the sending side this fee applies to. Only `USD` is accepted today; other currencies return a `NOT_IMPLEMENTED` error.
+              example: USD
+          required:
+            - sourceCurrency
+      description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
     PaymentRail:
       type: string
       enum:
@@ -12253,51 +12263,43 @@ components:
       description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
       example: ACH
     RailFeeConfig:
-      type: object
-      description: A fee you charge for sending a payout over a rail. There can be at most one for a given rail, direction and originator. It applies on top of any cross-currency fee.
-      properties:
-        feeType:
-          $ref: '#/components/schemas/FeeType'
-        rail:
-          $ref: '#/components/schemas/PaymentRail'
-          description: The rail the payout goes out over. `ACH`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
-        direction:
-          type: string
-          enum:
-            - IN
-            - OUT
-          description: Whether the money is coming in or going out. Only `OUT` is accepted today.
-          example: OUT
-        originator:
-          type: string
-          enum:
-            - GRID
-            - EXTERNAL
-          description: Who starts the movement. An ACH debit Grid starts pulls money in; one the other side starts pushes it out, and the two are priced differently.
-          example: GRID
-        variableFeeBps:
-          type: integer
-          minimum: 0
-          maximum: 10000
-          description: Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
-          example: 30
-        fixedFee:
-          $ref: '#/components/schemas/FixedFee'
-      required:
-        - feeType
-        - rail
-        - direction
-        - originator
-        - variableFeeBps
-        - fixedFee
+      allOf:
+        - $ref: '#/components/schemas/FeeConfig'
+        - type: object
+          properties:
+            feeType:
+              enum:
+                - RAIL
+            rail:
+              $ref: '#/components/schemas/PaymentRail'
+              description: The rail the payout goes out over. `ACH`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
+            direction:
+              type: string
+              enum:
+                - IN
+                - OUT
+              description: Whether the money is coming in or going out, relative to Grid. Only `OUT` is accepted today.
+              example: OUT
+            originator:
+              type: string
+              enum:
+                - GRID
+                - EXTERNAL
+              description: Who originated the movement over the rail. An ACH OUT where Grid is the originator means Grid is pushing out the funds, while an ACH OUT with an EXTERNAL originator indicates Grid received an ACH pull request from an external source.
+              example: GRID
+          required:
+            - rail
+            - direction
+            - originator
+      description: 'A fee charged when a payment uses the specified rail. There can be at most one for a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT, originator: GRID will charge a fee on all outgoing ACH payments.'
     FeeConfigOneOf:
       oneOf:
-        - $ref: '#/components/schemas/CrossCurrencyFeeConfig'
+        - $ref: '#/components/schemas/CrossCurrencyTransactionFeeConfig'
         - $ref: '#/components/schemas/RailFeeConfig'
       discriminator:
         propertyName: feeType
         mapping:
-          CROSS_CURRENCY_TRANSACTION: '#/components/schemas/CrossCurrencyFeeConfig'
+          CROSS_CURRENCY_TRANSACTION: '#/components/schemas/CrossCurrencyTransactionFeeConfig'
           RAIL: '#/components/schemas/RailFeeConfig'
     PlatformConfig:
       type: object
@@ -12470,12 +12472,11 @@ components:
           items:
             $ref: '#/components/schemas/FeeConfigOneOf'
           description: |
-            Merge-by-key upsert of platform fee configs. A cross-currency config is
-            keyed by `(feeType, sourceCurrency)` and a rail config by
+            Merge-by-key upsert of platform fee configs. A cross-currency transaction
+            fee config is keyed by `(feeType, sourceCurrency)` and a rail fee config by
             `(feeType, rail, direction, originator)`. Setting variable and fixed fees
-            to 0 for an existing config deactivates it. Cross-currency configs only
-            accept `sourceCurrency: USD` today. Omit this field to leave fee configs
-            unchanged.
+            to 0 for an existing config deactivates it. Omit this field to leave fee
+            configs unchanged.
     FieldConstraint:
       type: object
       description: Machine-readable validator hint accompanying a 400 `INVALID_INPUT` error. Consumers use it to drive form UI (input types, dropdowns, masking, length limits) and to pre-validate the field client-side before re-submitting. Fields are additive.

@@ -1,46 +1,38 @@
-type: object
+allOf:
+  - $ref: ./FeeConfig.yaml
+  - type: object
+    properties:
+      feeType:
+        enum:
+          - RAIL
+      rail:
+        $ref: ../common/PaymentRail.yaml
+        description: >-
+          The rail the payout goes out over. `ACH`, `RTP`, `FEDNOW` and `WIRE` are
+          accepted today; other rails return a `NOT_IMPLEMENTED` error.
+      direction:
+        type: string
+        enum:
+          - IN
+          - OUT
+        description: >-
+          Whether the money is coming in or going out, relative to Grid. Only `OUT` is accepted today.
+        example: OUT
+      originator:
+        type: string
+        enum:
+          - GRID
+          - EXTERNAL
+        description: >-
+          Who originated the movement over the rail. An ACH OUT where Grid is the originator means Grid is
+          pushing out the funds, while an ACH OUT with an EXTERNAL originator indicates Grid received an
+          ACH pull request from an external source.
+        example: GRID
+    required:
+      - rail
+      - direction
+      - originator
 description: >-
-  A fee you charge for sending a payout over a rail. There can be at most one for
-  a given rail, direction and originator. It applies on top of any cross-currency
-  fee.
-properties:
-  feeType:
-    $ref: ./FeeType.yaml
-  rail:
-    $ref: ../common/PaymentRail.yaml
-    description: >-
-      The rail the payout goes out over. `ACH`, `RTP`, `FEDNOW` and `WIRE` are
-      accepted today; other rails return a `NOT_IMPLEMENTED` error.
-  direction:
-    type: string
-    enum:
-      - IN
-      - OUT
-    description: >-
-      Whether the money is coming in or going out. Only `OUT` is accepted today.
-    example: OUT
-  originator:
-    type: string
-    enum:
-      - GRID
-      - EXTERNAL
-    description: >-
-      Who starts the movement. An ACH debit Grid starts pulls money in; one the
-      other side starts pushes it out, and the two are priced differently.
-    example: GRID
-  variableFeeBps:
-    type: integer
-    minimum: 0
-    maximum: 10000
-    description: >-
-      Variable fee in basis points (1 bps = 0.01%) to apply to a transaction's source-currency amount.
-    example: 30
-  fixedFee:
-    $ref: ./FixedFee.yaml
-required:
-  - feeType
-  - rail
-  - direction
-  - originator
-  - variableFeeBps
-  - fixedFee
+  A fee charged when a payment uses the specified rail. There can be at most one for
+  a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT,
+  originator: GRID will charge a fee on all outgoing ACH payments.
