@@ -1,12 +1,13 @@
 'use client';
 
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
 import { brandStops } from '@/apps/shared/brand/brandPalette';
 import { materialOf, stockOf, type CardDesign } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
+import { foilStudioTexture } from './CardEnv';
 import {
   K,
   loadFaceAssets,
@@ -18,6 +19,7 @@ import {
   paintBrandMask,
   foilIsBlack,
   paintFoilAlbedo,
+  paintFoilNormal,
   paintFront,
   paintLockupMask,
   TEX_H,
@@ -80,18 +82,18 @@ function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture 
 
 /**
  * The Visa mark's silver foil, as the layer it is: a film stamped onto the
- * back, a hair proud of the face, with its own material. It is satin (not a
- * mirror) so it gathers the studio lights and reads as lit silver head-on
- * rather than the graphite of the room behind the camera, and it takes the
- * studio brighter than the face does. Three only honors a material's own
- * `envMapIntensity` when the map is set on the material (with the scene's
- * environment it uses the scene's intensity), so the studio is assigned here.
- * On bare metal the mark is black foil, painted into the face instead.
+ * back, a hair proud of the face, with its own material. It is a mirror, and
+ * a mirror is only as interesting as what it reflects, so it has its own
+ * environment (`foilStudioTexture`: panels and a window with edges) rather
+ * than the card's shapeless studio, which in a mirror is flat gray. Its
+ * normal map carries the letters' bevel and a faint waviness that bends the
+ * reflections. A material's `envMapIntensity` is only honored when the map
+ * is set on the material itself, which it is here. On bare metal or a light
+ * bare stock the mark is black foil, painted into the face instead.
  */
-const FOIL = { roughness: 0.1, envMapIntensity: 2.6 };
+const FOIL = { roughness: 0.04, envMapIntensity: 1.1, normalScale: 1 };
 
 function FoilMark({ assets, backZ, visible }: { assets: FaceAssets; backZ: number; visible: boolean }) {
-  const scene = useThree((s) => s.scene);
   const material = useMemo(() => {
     const m = new THREE.MeshPhysicalMaterial({
       metalness: 1,
@@ -100,21 +102,19 @@ function FoilMark({ assets, backZ, visible }: { assets: FaceAssets; backZ: numbe
     });
     m.map = canvasTexture(paintFoilAlbedo(), true);
     m.alphaMap = canvasTexture(paintLockupMask(assets));
+    m.normalMap = canvasTexture(paintFoilNormal(assets));
+    m.normalScale.set(FOIL.normalScale, FOIL.normalScale);
+    m.envMap = foilStudioTexture();
     m.envMapIntensity = FOIL.envMapIntensity;
     m.depthWrite = false;
     return m;
   }, [assets]);
-  useFrame(() => {
-    const env = scene.environment;
-    if (env && material.envMap !== env) {
-      material.envMap = env;
-      material.needsUpdate = true;
-    }
-  });
   useEffect(
     () => () => {
       material.map?.dispose();
       material.alphaMap?.dispose();
+      material.normalMap?.dispose();
+      material.envMap?.dispose();
       material.dispose();
     },
     [material],

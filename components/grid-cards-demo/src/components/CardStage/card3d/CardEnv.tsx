@@ -104,6 +104,91 @@ function studioTexture(): THREE.DataTexture {
   return t;
 }
 
+/**
+ * The room the foil reflects. A mirror shows the shapes of what is around it,
+ * and the card's studio is deliberately shapeless (soft discs on a gradient,
+ * so a flat face shows no hard lines), which in a mirror reads as flat gray.
+ * The foil layer has its own environment map, so it gets a room with things
+ * in it: softbox panels and a window with edges, over a dark floor. Hard
+ * edges are fine on letters a few millimeters tall; they are what make it
+ * read as foil.
+ */
+interface Panel {
+  /** Center longitude and latitude, radians (lon 0 = +X, π/2 = +Z, the camera). */
+  lon: number;
+  lat: number;
+  /** Half extents, radians. */
+  w: number;
+  h: number;
+  intensity: number;
+  color: [number, number, number];
+}
+
+const FOIL_PANELS: Panel[] = [
+  // Key softbox, above left in front.
+  { lon: Math.PI * 0.62, lat: 0.62, w: 0.42, h: 0.26, intensity: 2.6, color: [1, 0.99, 0.97] },
+  // Window behind the camera, a little up and right: the band across a
+  // head-on mark.
+  { lon: Math.PI * 0.44, lat: 0.2, w: 0.3, h: 0.36, intensity: 1.3, color: [0.97, 0.98, 1] },
+  // Strip light low right, so the bottom of the letters catches something.
+  { lon: Math.PI * 0.3, lat: -0.3, w: 0.5, h: 0.06, intensity: 2.0, color: [1, 1, 1] },
+  // Panel right, for a card turned to the right.
+  { lon: Math.PI * 0.12, lat: 0.35, w: 0.22, h: 0.3, intensity: 1.6, color: [1, 1, 1] },
+  // Fill card far left, for a card turned to the left.
+  { lon: Math.PI * 0.85, lat: 0.1, w: 0.18, h: 0.4, intensity: 1.4, color: [1, 1, 1] },
+  // Ceiling strips, for a card pitched up.
+  { lon: Math.PI * 0.5, lat: 1.05, w: 1.2, h: 0.05, intensity: 1.8, color: [1, 1, 1] },
+  { lon: Math.PI * 0.5, lat: 1.3, w: 1.6, h: 0.05, intensity: 1.8, color: [1, 1, 1] },
+];
+
+function foilBase(y: number): number {
+  // A lit room: mid floor to light ceiling, so the foil never goes dark
+  // between the panels; the panels stand out as brighter shapes.
+  const t = (y + 1) / 2;
+  return 0.22 + 0.45 * t;
+}
+
+export function foilStudioTexture(): THREE.DataTexture {
+  const w = 512;
+  const h = 256;
+  const data = new Float32Array(w * h * 4);
+  const soft = 0.02;
+  for (let j = 0; j < h; j++) {
+    const lat = ((j + 0.5) / h - 0.5) * Math.PI;
+    for (let i = 0; i < w; i++) {
+      const lon = ((i + 0.5) / w - 0.5) * Math.PI * 2;
+      const b = foilBase(Math.sin(lat));
+      let R = b;
+      let G = b;
+      let B = b;
+      for (const p of FOIL_PANELS) {
+        // Wrap the longitude difference.
+        let dl = lon - p.lon;
+        dl = Math.atan2(Math.sin(dl), Math.cos(dl));
+        const ex = 1 - Math.min(1, Math.max(0, (Math.abs(dl) * Math.cos(lat) - p.w) / soft));
+        const ey = 1 - Math.min(1, Math.max(0, (Math.abs(lat - p.lat) - p.h) / soft));
+        const k = ex * ey * p.intensity;
+        R += k * p.color[0];
+        G += k * p.color[1];
+        B += k * p.color[2];
+      }
+      const o = (j * w + i) * 4;
+      data[o] = R;
+      data[o + 1] = G;
+      data[o + 2] = B;
+      data[o + 3] = 1;
+    }
+  }
+  const t = new THREE.DataTexture(data, w, h, THREE.RGBAFormat, THREE.FloatType);
+  t.mapping = THREE.EquirectangularReflectionMapping;
+  t.colorSpace = THREE.LinearSRGBColorSpace;
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearFilter;
+  t.generateMipmaps = false;
+  t.needsUpdate = true;
+  return t;
+}
+
 export function CardEnv() {
   const map = useMemo(() => studioTexture(), []);
   useEffect(() => () => map.dispose(), [map]);

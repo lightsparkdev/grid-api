@@ -266,11 +266,10 @@ function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: b
     drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#1c1c20', [LOCKUP_SPLIT, 1]);
     return;
   }
-  // Silver foil: a dark keyline runs FOIL_CARRIER outside the mark (the
-  // stamped film's edge, as on a real card), and the mark itself is the foil
-  // layer (`FoilMark`), which sits over this. Under it, paint the foil's tone
+  // Silver foil: the mark itself is the foil layer (`FoilMark`), which sits
+  // over this; the clear carrier film around it is in the surface maps only
+  // (glossy, a hair proud), not in the print. Under the foil, paint its tone
   // so its anti-aliased edge blends.
-  drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#101013', FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#d8d8dc', [LOCKUP_SPLIT, 1]);
 }
 
@@ -283,19 +282,75 @@ export function paintLockupMask(assets: FaceAssets): HTMLCanvasElement {
   return c;
 }
 
-/** The foil's reflectance: near white, with the bright-to-dark run a foil
- *  shows at one angle. */
+/** The foil's reflectance: silver, even; its room does the shading. */
 export function paintFoilAlbedo(): HTMLCanvasElement {
   const w = Math.ceil(LOCKUP.w);
   const h = Math.ceil(LOCKUP.h);
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d')!;
-  const g = ctx.createLinearGradient(0, h * LOCKUP_SPLIT, w, h);
-  g.addColorStop(0, '#ffffff');
-  g.addColorStop(0.5, '#eeeef1');
-  g.addColorStop(1, '#b4b4bb');
-  ctx.fillStyle = g;
+  ctx.fillStyle = '#f4f4f6';
   ctx.fillRect(0, 0, w, h);
+  return c;
+}
+
+/**
+ * The foil's relief, as a tangent-space normal map at texel size: a bevel
+ * about 0.15 mm wide where the stamped letters step down to the card, and a
+ * faint low-frequency waviness across their faces (the film never lies
+ * perfectly flat), which is what bends a reflection and makes it read as
+ * foil rather than chrome.
+ */
+export function paintFoilNormal(assets: FaceAssets): HTMLCanvasElement {
+  const w = Math.ceil(LOCKUP.w);
+  const h = Math.ceil(LOCKUP.h);
+  const bevel = F(0.15 * 17.94);
+  // Height: the mark, edges softened over the bevel's width.
+  const height = makeCanvas(w, h);
+  const hc = height.getContext('2d')!;
+  hc.fillStyle = '#000000';
+  hc.fillRect(0, 0, w, h);
+  hc.filter = `blur(${bevel / 2}px)`;
+  drawTinted(hc, assets.lockup, 0, 0, LOCKUP.w, LOCKUP.h, '#ffffff', [LOCKUP_SPLIT, 1]);
+  hc.filter = 'none';
+  // Waviness: a few broad, shallow bumps.
+  hc.globalCompositeOperation = 'lighter';
+  let seed = 7;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 9; i++) {
+    const cx = rand() * w;
+    const cy = h * LOCKUP_SPLIT + rand() * h * (1 - LOCKUP_SPLIT);
+    const r = (0.12 + rand() * 0.14) * w;
+    const g = hc.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, 'rgba(255,255,255,0.05)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    hc.fillStyle = g;
+    hc.fillRect(0, 0, w, h);
+  }
+  hc.globalCompositeOperation = 'source-over';
+
+  // Sobel to a normal; canvas y runs down while v runs up.
+  const src = hc.getImageData(0, 0, w, h).data;
+  const out = new ImageData(w, h);
+  const at = (x: number, y: number) => {
+    const cx = x < 0 ? 0 : x >= w ? w - 1 : x;
+    const cy = y < 0 ? 0 : y >= h ? h - 1 : y;
+    return src[(cy * w + cx) * 4] / 255;
+  };
+  const strength = 3;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const dx = (at(x - 1, y) - at(x + 1, y)) * strength;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+      const len = Math.hypot(dx, dy, 1);
+      const i = (y * w + x) * 4;
+      out.data[i] = ((dx / len) * 0.5 + 0.5) * 255;
+      out.data[i + 1] = ((dy / len) * 0.5 + 0.5) * 255;
+      out.data[i + 2] = ((1 / len) * 0.5 + 0.5) * 255;
+      out.data[i + 3] = 255;
+    }
+  }
+  const c = makeCanvas(w, h);
+  c.getContext('2d')!.putImageData(out, 0, 0);
   return c;
 }
 
