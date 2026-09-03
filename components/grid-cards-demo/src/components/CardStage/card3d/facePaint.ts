@@ -39,7 +39,8 @@ export const CHIP_CONTACTS = {
 const LOCKUP_W = F(339);
 const LOCKUP_H = F(211.067);
 export const LOCKUP = { w: LOCKUP_W, h: LOCKUP_H, x: TEX_W - F(54) - LOCKUP_W, y: TEX_H - F(54) - LOCKUP_H };
-export const STRIPE = { y: F(72), h: F(228) };
+/** The mag stripe bleeds from the top edge to 300 (72 of bleed plus the 228 stripe). */
+export const STRIPE = { y: 0, h: F(300) };
 
 /* ── Assets ───────────────────────────────────────────────────────────────── */
 
@@ -91,14 +92,14 @@ export function drawTinted(
   y: number,
   w: number,
   h: number,
-  color: string,
+  color: string | ((t: CanvasRenderingContext2D, w: number, h: number) => string | CanvasGradient),
   band: [number, number] = [0, 1],
 ) {
   const c = makeCanvas(Math.ceil(w), Math.ceil(h));
   const t = c.getContext('2d')!;
   t.drawImage(img, 0, 0, w, h);
   t.globalCompositeOperation = 'source-in';
-  t.fillStyle = color;
+  t.fillStyle = typeof color === 'function' ? color(t, w, h) : color;
   t.fillRect(0, 0, c.width, c.height);
   const y0 = Math.round(h * band[0]);
   const y1 = Math.round(h * band[1]);
@@ -204,8 +205,19 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
 function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, bare: boolean) {
   // Silver foil would vanish on bare metal; the standards allow a black foil
   // PVBM with a black printed identifier, which is what metal cards use.
-  const identifier = bare ? '#2a2a2e' : '#c6c7cc';
-  const mark = bare ? '#1c1c20' : '#d4d4d8';
+  const identifier = bare ? '#2a2a2e' : '#cfd0d5';
+  // Foil reflectance runs bright to dark across the mark (the sheen a
+  // brushed foil shows at any one angle), the way Visa draws the PVBM.
+  const mark = bare
+    ? '#1c1c20'
+    : (t: CanvasRenderingContext2D, w: number, h: number) => {
+        const g = t.createLinearGradient(0, h * LOCKUP_SPLIT, w, h);
+        g.addColorStop(0, '#f4f4f7');
+        g.addColorStop(0.45, '#dcdce1');
+        g.addColorStop(0.7, '#aeaeb5');
+        g.addColorStop(1, '#d8d8dd');
+        return g;
+      };
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, mark, [LOCKUP_SPLIT, 1]);
 }
@@ -311,7 +323,7 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
 
   // Mag stripe, bleeding to the top edge (Thales sample 1:116).
   ctx.fillStyle = '#242426';
-  ctx.fillRect(0, 0, TEX_W, STRIPE.y + STRIPE.h);
+  ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
 
   // Contactless indicator: right-aligned at 54, 90 tall.
   const ch = F(90);

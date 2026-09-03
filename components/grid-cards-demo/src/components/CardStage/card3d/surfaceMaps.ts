@@ -85,7 +85,7 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
   // metallic); the Visa mark is stamped silver foil (metal with a soft,
   // brushed sheen rather than a mirror).
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.5, 0.55), [0, LOCKUP_SPLIT]);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.3, 1), [LOCKUP_SPLIT, 1]);
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.22, 1), [LOCKUP_SPLIT, 1]);
   return c;
 }
 
@@ -156,13 +156,13 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     // of a flat mirror.
     const foil = makeCanvas(MAP_W, MAP_H);
     const fctx = foil.getContext('2d')!;
-    fctx.fillStyle = '#8a8a8a';
+    fctx.fillStyle = '#8e8e8e';
     fctx.fillRect(0, 0, MAP_W, MAP_H);
     fctx.save();
     fctx.translate(MAP_W / 2, MAP_H / 2);
     fctx.rotate(-Math.PI / 4);
     for (let y = -MAP_W; y < MAP_W; y += 2) {
-      fctx.fillStyle = `rgb(${138 + Math.round((Math.random() - 0.5) * 10)} 0 0)`;
+      fctx.fillStyle = `rgb(${142 + Math.round((Math.random() - 0.5) * 8)} 0 0)`;
       fctx.fillRect(-MAP_W, y, MAP_W * 2, 1);
     }
     fctx.restore();
