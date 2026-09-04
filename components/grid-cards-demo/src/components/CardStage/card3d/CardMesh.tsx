@@ -13,7 +13,7 @@ import {
   type CardMaterial,
 } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
-import { foilStudioTexture } from './CardEnv';
+import { blankStudioTexture, foilStudioTexture } from './CardEnv';
 import {
   cellAt,
   createSwapUniforms,
@@ -314,11 +314,11 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   useEffect(() => {
     if (!assets) return;
     const c = SURFACE[surface];
-    const maps = (s: Surface, side: 'front' | 'back') => {
-      const key = `${s}|${side}`;
+    const maps = (s: Surface, side: 'front' | 'back', plain = false) => {
+      const key = `${s}|${side}|${plain}`;
       let t = surfaceTex.current.get(key);
       if (!t) {
-        const m = getSurfaceMaps(s, side, assets);
+        const m = getSurfaceMaps(s, side, assets, plain);
         t = { orm: canvasTexture(m.orm), normal: canvasTexture(m.normal) };
         surfaceTex.current.set(key, t);
       }
@@ -337,15 +337,33 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       mat.clearcoat = c.clearcoat;
       mat.clearcoatRoughness = c.clearcoatRoughness;
       mat.needsUpdate = true;
-      const bare = maps(bareSurface, side);
+      // The blank and the base are the body before its back is dressed: no
+      // stripe, no mark. The chip is milled into the body, so the front keeps it.
+      const bare = maps(bareSurface, side, true);
       u.uBareOrm.value = bare.orm;
       u.uBareNormal.value = bare.normal;
-      const base = maps(baseSurface, side);
+      const base = maps(baseSurface, side, true);
       u.uBaseOrm.value = base.orm;
       u.uBaseNormal.value = base.normal;
     }
     invalidate();
   }, [assets, surface, bareSurface, baseSurface, materials, swapU, invalidate]);
+
+  // The blank's room, as a PMREM in the scene environment's layout, so
+  // polished steel has something to reflect.
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const room = blankStudioTexture();
+    const target = pmrem.fromEquirectangular(room);
+    room.dispose();
+    pmrem.dispose();
+    swapU.shared.uBareEnv.value = target.texture;
+    return () => {
+      swapU.shared.uBareEnv.value = null;
+      target.dispose();
+    };
+  }, [gl, swapU]);
 
   // The bare body's albedo: the new stock, with the chip set into the front.
   // Plastic shows as the white PVC blank whatever the print (a dark print's
@@ -551,7 +569,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     // Redirected mid-wipe: the fronts carry on where they are, and the body
     // is rebuilt again for the new target.
     const t = cur ? cur.t : 0;
-    swarm.begin(targetMaterial, newStock.face, dir);
+    swarm.begin(targetMaterial, newStock.face, dir, [frontCanvas, backCanvas]);
     swap.current = { t, to: targetMaterial, dir, committed: false };
   }, [
     targetMaterial,
@@ -560,6 +578,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     art,
     frontPending,
     newStock,
+    frontCanvas,
+    backCanvas,
     baseFrontCanvas,
     baseBackCanvas,
     baseFrontMap,
@@ -581,8 +601,11 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     shared.uFront.value = front;
     shared.uBase.value = travel(pass(1));
     shared.uPrint.value = travel(pass(2));
-    if (p1 < 1) swarm.update(front);
-    else swarm.end();
+    // The particles' clock runs on past the pass, at the pass's pace, so the
+    // last dust can finish floating off.
+    const particleFront = sw.t <= WIPE_MS ? front : FRONT_REST + ((sw.t - WIPE_MS) / WIPE_MS) * (FRONT_REST - FRONT_START);
+    if (swarm.finished(particleFront)) swarm.end();
+    else swarm.update(particleFront);
     // The blank covers the face: rebuild the body as the new material.
     if (p1 >= 1 && !sw.committed) {
       sw.committed = true;
@@ -640,7 +663,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       {assets && (
         <FoilMark assets={assets} backZ={backZ} black={foilIsBlack(bodyDesign)} materialRef={foilMaterial} />
       )}
-      <primitive object={swarm.mesh} />
+      <primitive object={swarm.stock} />
+      <primitive object={swarm.dust} />
     </group>
   );
 });

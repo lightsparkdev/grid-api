@@ -154,20 +154,19 @@ function foilBase(y: number): number {
   return 0.4 + 0.5 * t;
 }
 
-export function foilStudioTexture(): THREE.DataTexture {
-  const w = 512;
-  const h = 256;
+/** A room of hard-edged panels over a gray by elevation, as an equirect. */
+function panelStudio(panels: Panel[], base: (y: number) => number, w: number, h: number): THREE.DataTexture {
   const data = new Float32Array(w * h * 4);
   const soft = 0.02;
   for (let j = 0; j < h; j++) {
     const lat = ((j + 0.5) / h - 0.5) * Math.PI;
     for (let i = 0; i < w; i++) {
       const lon = ((i + 0.5) / w - 0.5) * Math.PI * 2;
-      const b = foilBase(Math.sin(lat));
+      const b = base(Math.sin(lat));
       let R = b;
       let G = b;
       let B = b;
-      for (const p of FOIL_PANELS) {
+      for (const p of panels) {
         // Wrap the longitude difference.
         let dl = lon - p.lon;
         dl = Math.atan2(Math.sin(dl), Math.cos(dl));
@@ -193,6 +192,44 @@ export function foilStudioTexture(): THREE.DataTexture {
   t.generateMipmaps = false;
   t.needsUpdate = true;
   return t;
+}
+
+export function foilStudioTexture(): THREE.DataTexture {
+  return panelStudio(FOIL_PANELS, foilBase, 512, 256);
+}
+
+/**
+ * The room a bare steel blank reflects during a material change. A polished
+ * sheet the size of a card reflects only a few degrees of the room, so the
+ * foil's window (built for letters a few millimeters tall) fills the whole
+ * face with one glow. This room is darker, with narrow light strips at the
+ * card's scale stacked through the head-on direction: the face shows them
+ * as bright bars that slide across it as the card tilts, the way a steel
+ * sheet under a bank of tube lights does. Sized as the studio is, since a
+ * PMREM standing in for the scene's must share its layout.
+ */
+const BLANK_PANELS: Panel[] = [
+  // The bank of strips, head-on (lon π/2) and a little above.
+  { lon: Math.PI * 0.5, lat: -0.06, w: 1.1, h: 0.022, intensity: 2.4, color: [1, 1, 1] },
+  { lon: Math.PI * 0.5, lat: 0.1, w: 1.1, h: 0.022, intensity: 2.4, color: [1, 1, 1] },
+  { lon: Math.PI * 0.5, lat: 0.26, w: 1.1, h: 0.022, intensity: 2.2, color: [1, 1, 1] },
+  { lon: Math.PI * 0.5, lat: 0.42, w: 1.1, h: 0.022, intensity: 2.0, color: [1, 1, 1] },
+  // Softbox above left, for the face's general lift.
+  { lon: Math.PI * 0.62, lat: 0.7, w: 0.4, h: 0.22, intensity: 1.2, color: [1, 0.99, 0.97] },
+  // Tall strips either side, for a card turned.
+  { lon: Math.PI * 0.7, lat: 0.05, w: 0.05, h: 0.5, intensity: 1.8, color: [1, 1, 1] },
+  { lon: Math.PI * 0.3, lat: 0.05, w: 0.05, h: 0.5, intensity: 1.8, color: [1, 1, 1] },
+];
+
+function blankBase(y: number): number {
+  // Dark floor to mid ceiling: steel between the strips reads as dark
+  // silver, so the strips have something to stand against.
+  const t = (y + 1) / 2;
+  return 0.07 + 0.3 * t;
+}
+
+export function blankStudioTexture(): THREE.DataTexture {
+  return panelStudio(BLANK_PANELS, blankBase, ENV_W, ENV_H);
 }
 
 export function CardEnv() {

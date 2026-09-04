@@ -118,10 +118,15 @@ export interface SwapUniforms {
    *  right on screen when the back is showing. */
   uDir: { value: number };
   uGrain: { value: THREE.Texture };
-  /** The blank: the stock with the chip set in. */
+  /** The blank: the stock with the chip set in, and the room it reflects (a
+   *  PMREM, the same layout as the scene's): polished steel in the card's
+   *  shapeless studio is flat gray, so like the foil it gets a room with
+   *  lights in it (`blankStudioTexture`). */
   uBareMap: { value: THREE.Texture | null };
   uBareOrm: { value: THREE.Texture | null };
   uBareNormal: { value: THREE.Texture | null };
+  uBareEnv: { value: THREE.Texture | null };
+  uBareEnvIntensity: { value: number };
   /** The base: the print's ground, and the print surface without its effects. */
   uBaseMap: { value: THREE.Texture | null };
   uBaseOrm: { value: THREE.Texture | null };
@@ -144,6 +149,8 @@ export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
     uBareMap: { value: null },
     uBareOrm: { value: null },
     uBareNormal: { value: null },
+    uBareEnv: shared?.uBareEnv ?? { value: null },
+    uBareEnvIntensity: shared?.uBareEnvIntensity ?? { value: 0.85 },
     uBaseMap: { value: null },
     uBaseOrm: { value: null },
     uBaseNormal: { value: null },
@@ -185,7 +192,41 @@ uniform sampler2D uBareNormal;
 uniform sampler2D uBaseMap;
 uniform sampler2D uBaseOrm;
 uniform sampler2D uBaseNormal;
+uniform sampler2D uBareEnv;
+uniform float uBareEnvIntensity;
 ${DOT_FN}
+`;
+
+/** The blank's room, sampled the way three samples the scene's (a PMREM in
+ *  the cube-UV layout), declared after three's own IBL functions. */
+const BARE_ENV_FNS = /* glsl */ `
+#include <envmap_physical_pars_fragment>
+#if defined( USE_ENVMAP ) && defined( ENVMAP_TYPE_CUBE_UV )
+	vec3 getBareIrradiance( const in vec3 normal ) {
+		vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
+		return PI * textureCubeUV( uBareEnv, worldNormal, 1.0 ).rgb * uBareEnvIntensity;
+	}
+	vec3 getBareRadiance( const in vec3 viewDir, const in vec3 normal, const in float roughness ) {
+		vec3 reflectVec = reflect( - viewDir, normal );
+		reflectVec = normalize( mix( reflectVec, normal, roughness * roughness ) );
+		reflectVec = inverseTransformDirection( reflectVec, viewMatrix );
+		return textureCubeUV( uBareEnv, reflectVec, roughness ).rgb * uBareEnvIntensity;
+	}
+#endif
+`;
+
+/** Where the texel is blank, its light comes from the blank's room. */
+const BARE_ENV_MIX = /* glsl */ `
+#include <lights_fragment_maps>
+#if defined( USE_ENVMAP ) && defined( ENVMAP_TYPE_CUBE_UV )
+	if ( swapBare > 0.0 ) {
+		iblIrradiance = mix( iblIrradiance, getBareIrradiance( geometryNormal ), swapBare );
+		radiance = mix( radiance, getBareRadiance( geometryViewDir, geometryNormal, material.roughness ), swapBare );
+		#ifdef USE_CLEARCOAT
+			clearcoatRadiance = mix( clearcoatRadiance, getBareRadiance( geometryViewDir, geometryClearcoatNormal, material.clearcoatRoughness ), swapBare );
+		#endif
+	}
+#endif
 `;
 
 /** The layer at this texel. Every cell turns at its moment, a front's
@@ -262,10 +303,12 @@ export function patchFaceMaterial(m: THREE.MeshPhysicalMaterial, u: SwapUniforms
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBody = position;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', PARS)
+      .replace('#include <envmap_physical_pars_fragment>', BARE_ENV_FNS)
       .replace('#include <map_fragment>', SWEEP + MAP)
       .replace('#include <roughnessmap_fragment>', ROUGHNESS)
       .replace('#include <metalnessmap_fragment>', METALNESS)
-      .replace(NORMAL_LINE, NORMAL_MIXED);
+      .replace(NORMAL_LINE, NORMAL_MIXED)
+      .replace('#include <lights_fragment_maps>', BARE_ENV_MIX);
   };
   m.customProgramCacheKey = () => 'swap-face';
 }

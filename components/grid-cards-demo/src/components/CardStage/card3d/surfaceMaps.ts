@@ -65,13 +65,15 @@ function texelSpace(c: HTMLCanvasElement): CanvasRenderingContext2D {
 
 /** Full texel resolution: the foil's edges must land exactly where the albedo
  *  paints them, or a half-texel of "metal" leaks around each letter. */
-function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): HTMLCanvasElement {
+function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets, plain: boolean): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = texelSpace(c);
   const f = FIELD[surface];
   ctx.fillStyle = orm(f.rough, f.metal);
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   if (surface === 'bare-matte') beadblastRoughness(ctx, assets);
+  // A plain back is the body alone: no stripe, no mark.
+  if (plain && side === 'back') return c;
   if (side === 'back') {
     ctx.fillStyle = orm(0.78, 0);
     ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
@@ -104,7 +106,7 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
 
 /* ── Relief ───────────────────────────────────────────────────────────────── */
 
-function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets): HTMLCanvasElement {
+function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets, plain: boolean): HTMLCanvasElement {
   const c = makeCanvas(MAP_W, MAP_H);
   const ctx = c.getContext('2d')!;
   ctx.fillStyle = '#808080';
@@ -142,12 +144,12 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     chipContactsPath(ctx);
     ctx.stroke();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  } else {
+  } else if (!plain) {
     // The mag stripe is laminated a hair above the face.
     ctx.fillStyle = '#848484';
     ctx.fillRect(0, STRIPE.y * S, MAP_W, STRIPE.h * S);
   }
-  if (side === 'back') {
+  if (side === 'back' && !plain) {
     // Hot-stamped foil is a film laid on the face: the clear carrier sits a
     // hair proud, following the mark's geometry about a millimeter out, and
     // the metal on top of that. Both steps catch light at their edges. The
@@ -388,13 +390,16 @@ export function decorateNormal(
 
 const surfaceCache = new Map<string, SurfaceMaps>();
 
-export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets: FaceAssets): SurfaceMaps {
-  const key = `${surface}|${side}`;
+/** `plain`: the body before anything is laid on its back (no stripe, no
+ *  mark), for the blank and base layers of a material change. The front's
+ *  chip is milled into the body, so it stays. */
+export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets: FaceAssets, plain = false): SurfaceMaps {
+  const key = `${surface}|${side}|${plain ? 'plain' : 'full'}`;
   let maps = surfaceCache.get(key);
   if (!maps) {
-    const height = bakeHeight(surface, side, assets);
+    const height = bakeHeight(surface, side, assets, plain);
     maps = {
-      orm: bakeOrm(surface, side, assets),
+      orm: bakeOrm(surface, side, assets, plain),
       normal: surface === 'bare-matte' ? beadblastNormal(height, assets) : heightToNormal(height, 1.6),
     };
     surfaceCache.set(key, maps);
