@@ -53,8 +53,9 @@ const RING_STROKE = 2;
  * ring is a single element positioned over whichever child is checked
  * (`aria-checked` or `data-active`), sprung to its place; while it travels it
  * stretches a little toward where it is going, by how far it still has to
- * go, so it is stretched the moment a swatch is clicked and exactly its own
- * size once it lands.
+ * go. Pressing another swatch (pointer down, before release) already leans
+ * the ring toward it, so the move begins under the finger; letting go off
+ * the swatch relaxes it back.
  */
 function SwatchRow({ label, active, children }: { label: string; active: string | null; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -65,16 +66,32 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
   const spring = { stiffness: 620, damping: 40, mass: 0.9 };
   const sx = useSpring(x, spring);
   const sy = useSpring(y, spring);
-  // Remaining travel, signed: positive when the target is to the right.
-  const ahead = useTransform([x, sx], ([tx, px]) => (tx as number) - (px as number));
-  const stretch = useTransform(ahead, (d) => Math.min(6, Math.abs(d) * 0.12));
+  // A press on another swatch leans the ring toward it: signed, in px.
+  const press = useMotionValue(0);
+  const lean = useSpring(press, { stiffness: 520, damping: 32 });
+  // Signed reach: remaining travel (positive when the target is to the
+  // right), capped, plus the lean.
+  const reach = useTransform([x, sx, lean], ([tx, px, l]) => {
+    const d = (tx as number) - (px as number);
+    return Math.sign(d) * Math.min(6, Math.abs(d) * 0.12) + (l as number);
+  });
   // The leading edge reaches ahead: going left, the box starts earlier.
-  const left = useTransform(
-    [sx, ahead, stretch],
-    ([px, d, s]) => (px as number) - RING_OUT - ((d as number) < 0 ? (s as number) : 0),
-  );
+  const left = useTransform([sx, reach], ([px, r]) => (px as number) - RING_OUT - Math.max(0, -(r as number)));
   const top = useTransform(sy, (py) => py - RING_OUT);
-  const width = useTransform([w, stretch], ([bw, s]) => (bw as number) + RING_OUT * 2 + (s as number));
+  const width = useTransform([w, reach], ([bw, r]) => (bw as number) + RING_OUT * 2 + Math.abs(r as number));
+
+  // Press: lean toward the swatch under the pointer until it is released.
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const row = ref.current;
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[role="radio"], label');
+    if (!row || !el || el.getAttribute('aria-checked') === 'true' || el.dataset.active === 'true') return;
+    const rr = row.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const targetCenter = er.left + er.width / 2 - rr.left;
+    const ringCenter = sx.get() + w.get() / 2;
+    press.set(Math.sign(targetCenter - ringCenter) * 6);
+  };
+  const release = () => press.set(0);
   const height = useTransform(h, (bh) => bh + RING_OUT * 2);
   const [placed, setPlaced] = useState(false);
 
@@ -120,7 +137,16 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
   }, [active, placed, x, y, w, h, sx, sy]);
 
   return (
-    <div ref={ref} className={styles.swatches} role="radiogroup" aria-label={label}>
+    <div
+      ref={ref}
+      className={styles.swatches}
+      role="radiogroup"
+      aria-label={label}
+      onPointerDown={onPointerDown}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onPointerLeave={release}
+    >
       {children}
       {placed && active !== null && (
         <motion.span className={styles.ring} style={{ left, top, width, height }} aria-hidden />
