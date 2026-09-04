@@ -37,14 +37,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="theme-color" content="#F0F0EE" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
-        {/* Preload the visible Suisse Intl weights so the first paint shows the
-            real font sooner (body=Book 450, headings/buttons=Medium 500,
-            code=Mono). crossOrigin is required even though the fonts are
-            same-origin: @font-face fetches use CORS mode, so without it the
-            preload wouldn't match and the font would download twice. */}
-        <link rel="preload" href="/fonts/SuisseIntl-Book.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/SuisseIntl-Medium.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link rel="preload" href="/fonts/SuisseIntlMono-Regular-WebXL.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        {/* Preload the two variable fonts (every weight of Suisse Intl and of
+            its Mono) so the first paint shows the real font sooner.
+            crossOrigin is required even though the fonts are same-origin:
+            @font-face fetches use CORS mode, so without it the preload
+            wouldn't match and the font would download twice. */}
+        <link rel="preload" href="/fonts/SuisseIntlVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/SuisseIntlMonoVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         {/* Boot attributes, set before first paint to avoid flashes — an
             effect is too late (the SSR HTML paints long before hydration):
             - data-embed / data-theme from the URL (embed) or stored pref

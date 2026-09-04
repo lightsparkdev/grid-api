@@ -3,7 +3,8 @@
 // Hidden by default, shown in embed mode via CSS
 .coordsLabel {
   display: none;
-  font-family: "Suisse Int'l Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-mono);
   font-size: 10px;
   font-feature-settings: 'salt' 0, 'kern' 0 !important;
   color: var(--color-gray-400);

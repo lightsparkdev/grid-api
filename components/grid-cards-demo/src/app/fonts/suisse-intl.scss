@@ -1,4 +1,6 @@
-/* Suisse Intl: the variable font, in place of origin's static faces.
+/* Suisse Intl and Suisse Intl Mono: the variable fonts, in place of origin's
+   static faces. This app uses the variable builds everywhere; the statics
+   are not shipped.
 
    @lightsparkdev/origin (src/tokens/_fonts.scss) declares 'Suisse Intl' at
    400/450/500 from static woff2s that carry no stylistic sets, so the
@@ -9,8 +11,7 @@
    the weights in between. Metrics are the Mintlify docs' 85% / 15% so glyphs
    sit at the same height in the line box across the docs and the demo.
 
-   Must be @use'd AFTER the origin fonts import in globals.scss. Mono is
-   intentionally left untouched, matching origin and the docs. */
+   Must be @use'd AFTER the origin fonts import in globals.scss. */
 
 @font-face {
   font-family: 'Suisse Intl';
@@ -55,4 +56,23 @@
   ascent-override: 85%;
   descent-override: 15%;
   line-gap-override: 0%;
+}
+
+/* Suisse Intl Mono: origin declares it at 400 from a static woff2; the same
+   face from SuisseIntlMonoVF.woff2 (wght 200-700) replaces it, and one face
+   over the range serves the 450 the app sets mono text at. */
+@font-face {
+  font-family: "Suisse Int'l Mono";
+  src: url('/fonts/SuisseIntlMonoVF.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Suisse Int'l Mono";
+  src: url('/fonts/SuisseIntlMonoVF.woff2') format('woff2');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
 }

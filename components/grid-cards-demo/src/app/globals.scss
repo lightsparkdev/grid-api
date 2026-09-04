@@ -22,6 +22,8 @@
 :root {
   --font-family-sans: 'Suisse Intl', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-family-mono: "Suisse Int'l Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Mono text sits at Book, like the body; the variable build makes it exact. */
+  --font-weight-mono: 450;
 }
 
 /* App-wide corner curve, single source of truth. superellipse(1.24) = exp ~2.48,

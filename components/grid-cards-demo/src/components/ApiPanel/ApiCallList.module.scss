@@ -178,6 +178,7 @@
   @include label-sm;
   color: var(--text-primary);
   font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-mono);
   font-feature-settings: 'salt' 1;
   white-space: nowrap;
   user-select: text;
@@ -327,7 +328,7 @@
   margin: 0;
   font-family: var(--font-family-mono);
   font-size: 12px;
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-mono);
   line-height: var(--font-leading-18);
   color: var(--text-primary);
   white-space: pre;
