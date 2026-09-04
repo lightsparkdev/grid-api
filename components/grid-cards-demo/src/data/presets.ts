@@ -39,7 +39,7 @@ export const PRESETS: CardPreset[] = [
       gradient: null,
       logoUrl: `${ASSETS}/logo-creator.svg`,
       logoTreatment: 'print',
-      brandLayout: { x: 1536 - 152, y: MID_Y_CHIP, h: 160, anchor: 'right', rotation: 0, opacity: 1 },
+      brandLayout: { x: 1536 - 152, y: MID_Y_CHIP, h: 180, anchor: 'right', rotation: 0, opacity: 1 },
       backgroundUrl: null,
       artTreatment: 'print',
     },
