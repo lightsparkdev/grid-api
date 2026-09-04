@@ -11,6 +11,7 @@ import { CARD_CVV, CARD_EXP, PAN_GROUPS } from '@/apps/shared/card/cardholder';
 import {
   BRAND_DEFAULT_LAYOUT,
   isBare,
+  luminance,
   materialOf,
   stockOf,
   type BrandLayout,
@@ -239,12 +240,12 @@ function stripeFor(design: CardDesign): string {
   return mixHex(base, '#000000', 0.2);
 }
 
-/** Ink that reads on the face: white on print and on dark stock, near-black
- *  on light stock. Art is treated as dark. */
+/** Ink that reads on the face: near-black on a light print or light stock,
+ *  white otherwise. Art is treated as dark. */
 export function inkFor(design: CardDesign, art: HTMLImageElement | null): string {
   if (art) return '#ffffff';
-  if (isBare(design) && stockOf(design).ink === 'dark') return '#26262b';
-  return '#ffffff';
+  if (isBare(design)) return stockOf(design).ink === 'dark' ? '#26262b' : '#ffffff';
+  return luminance(design.color!) > 0.6 ? '#26262b' : '#ffffff';
 }
 
 function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: boolean) {

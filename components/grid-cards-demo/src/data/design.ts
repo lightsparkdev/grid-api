@@ -32,13 +32,13 @@ export interface CardStock {
 }
 
 export const STOCKS: CardStock[] = [
-  { id: 'bone', label: 'Bone plastic', material: 'plastic', face: '#f2efe9', core: '#ebe8e1', ink: 'dark' },
+  { id: 'white', label: 'White plastic', material: 'plastic', face: '#f1f1ef', core: '#ececef', ink: 'dark' },
   { id: 'black', label: 'Black plastic', material: 'plastic', face: '#17171a', core: '#1c1c20', ink: 'light' },
   { id: 'steel', label: 'Stainless steel', material: 'metal', face: '#c9c8c7', core: '#d6d6d8', ink: 'dark' },
 ];
 
 /** Relative luminance of a #rrggbb, 0..1. */
-function luminance(hex: string): number {
+export function luminance(hex: string): number {
   const c = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
   return 0.2126 * c(0) + 0.7152 * c(1) + 0.0722 * c(2);
 }
@@ -133,6 +133,8 @@ export interface DesignSwatch {
 
 export const DESIGN_SWATCHES: DesignSwatch[] = [
   { id: 'ink', label: 'Ink', color: '#151517' },
+  // A very slightly warm white.
+  { id: 'bone', label: 'Bone', color: '#f2efe9' },
   { id: 'ocean', label: 'Ocean', color: '#0b3d91' },
   { id: 'forest', label: 'Forest', color: '#0c3b2e' },
   { id: 'terracotta', label: 'Terracotta', color: '#b3472a' },

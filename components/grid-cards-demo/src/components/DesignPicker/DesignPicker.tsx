@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
-import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
+import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
 import {
@@ -210,7 +210,7 @@ function SampleSwatches<T extends string>({
   );
 }
 
-/** One image upload: a preview with Remove once picked, an Upload button until then. */
+/** One image upload: a swatch-sized preview with a Remove tile once picked, an Upload button until then. */
 function UploadRow({
   url,
   accept,
@@ -258,10 +258,13 @@ function UploadRow({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt="" />
           </span>
-          <button type="button" className={styles.logoClear} onClick={clear}>
-            <IconCrossSmall size={16} aria-hidden />
-            Remove
-          </button>
+          <Tooltip text="Remove">
+            {(tip) => (
+              <button type="button" className={styles.logoClear} onClick={clear} aria-label="Remove" {...tip}>
+                <IconCrossMedium size={16} aria-hidden />
+              </button>
+            )}
+          </Tooltip>
         </>
       ) : (
         <button type="button" className={styles.logoUpload} onClick={() => fileRef.current?.click()}>
