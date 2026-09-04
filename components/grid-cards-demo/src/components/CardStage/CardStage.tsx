@@ -23,6 +23,7 @@ import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/CardMesh';
 import type { SpecRect } from './card3d/facePaint';
 import { CardMotion } from './cardMotion';
+import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
 import { INTRO_END, introCard, stepIntro } from './introTimeline';
 import styles from './CardStage.module.scss';
@@ -107,6 +108,10 @@ const HANDLE_DIR: Record<Handle, Pt> = {
   se: { x: 1, y: 1 },
   sw: { x: -1, y: 1 },
 };
+/** The angle a handle's resize arrow lies along, in the box's frame. */
+const handleAngle = (h: Handle) => (Math.atan2(HANDLE_DIR[h].y, HANDLE_DIR[h].x) * 180) / Math.PI;
+/** The rotate cursor's arch turns to bulge toward its corner. */
+const CORNER_ANGLE: Record<Handle, number> = { nw: -45, ne: 45, se: 135, sw: -135, n: 0, e: 90, s: 180, w: -90 };
 
 /** A brand edit in flight, from the pointer that started it. */
 interface BrandDrag {
@@ -540,13 +545,19 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
                 <span
                   key={`r${h}`}
                   className={clsx(styles.rotateZone, styles[`zone_${h}`])}
+                  style={{ cursor: rotateCursor(CORNER_ANGLE[h] + placed!.layout.rotation) }}
                   data-handle={h}
                   data-rotate="true"
                 />
               ))}
             {selected &&
               [...EDGES, ...CORNERS].map((h) => (
-                <span key={h} className={clsx(styles.handle, styles[`handle_${h}`])} data-handle={h} />
+                <span
+                  key={h}
+                  className={clsx(styles.handle, styles[`handle_${h}`])}
+                  style={{ cursor: resizeCursor(handleAngle(h) + placed!.layout.rotation) }}
+                  data-handle={h}
+                />
               ))}
           </div>
         )}

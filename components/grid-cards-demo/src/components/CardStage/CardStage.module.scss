@@ -101,35 +101,19 @@
   pointer-events: auto;
 }
 
-.handle_n { left: 50%; top: 0; cursor: ns-resize; }
-.handle_s { left: 50%; top: 100%; cursor: ns-resize; }
-.handle_e { left: 100%; top: 50%; cursor: ew-resize; }
-.handle_w { left: 0; top: 50%; cursor: ew-resize; }
-.handle_nw { left: 0; top: 0; cursor: nwse-resize; }
-.handle_se { left: 100%; top: 100%; cursor: nwse-resize; }
-.handle_ne { left: 100%; top: 0; cursor: nesw-resize; }
-.handle_sw { left: 0; top: 100%; cursor: nesw-resize; }
+/* Cursors are set inline: the design tool's resize and rotate glyphs, drawn
+   in `cursors.ts` at the angle of each handle plus the box's own rotation. */
+.handle_n { left: 50%; top: 0; }
+.handle_s { left: 50%; top: 100%; }
+.handle_e { left: 100%; top: 50%; }
+.handle_w { left: 0; top: 50%; }
+.handle_nw { left: 0; top: 0; }
+.handle_se { left: 100%; top: 100%; }
+.handle_ne { left: 100%; top: 0; }
+.handle_sw { left: 0; top: 100%; }
 
 /* Rotate zones: invisible squares just outside each corner, under the corner
-   handle, with the design tool's turning cursor: a quarter arc wrapping the
-   corner, concave toward the box, an arrowhead at each end, white-keylined
-   black. Central has no such glyph, so it is built from Central's parts: the
-   24 grid, stroke 1.5 with round caps and joins, and the arrowhead from
-   `IconArrowRotateRightLeft` (a right-angle chevron with 4-unit legs) set on
-   each end of the arc. Drawn for the top-left corner and turned for the
-   others. */
-@function rotate-cursor($deg) {
-  $arc: "M17 8 A9 9 0 0 0 8 17";
-  $head-a: "M14.17 5.17 L17 8 L14.17 10.83";
-  $head-b: "M5.17 14.17 L8 17 L10.83 14.17";
-  $svg: "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>"
-    + "<g transform='rotate(#{$deg} 12 12)' fill='none' stroke-linecap='round' stroke-linejoin='round'>"
-    + "<g stroke='white' stroke-width='3.75'><path d='#{$arc}'/><path d='#{$head-a}'/><path d='#{$head-b}'/></g>"
-    + "<g stroke='black' stroke-width='1.5'><path d='#{$arc}'/><path d='#{$head-a}'/><path d='#{$head-b}'/></g>"
-    + "</g></svg>";
-  @return url("data:image/svg+xml;utf8,#{$svg}") 12 12, auto;
-}
-
+   handle. */
 .rotateZone {
   position: absolute;
   width: var(--zone);
@@ -137,10 +121,10 @@
   pointer-events: auto;
 }
 
-.zone_nw { right: 100%; bottom: 100%; margin: 0 calc(var(--zone) / -3) calc(var(--zone) / -3) 0; cursor: rotate-cursor(0); }
-.zone_ne { left: 100%; bottom: 100%; margin: 0 0 calc(var(--zone) / -3) calc(var(--zone) / -3); cursor: rotate-cursor(90); }
-.zone_se { left: 100%; top: 100%; margin: calc(var(--zone) / -3) 0 0 calc(var(--zone) / -3); cursor: rotate-cursor(180); }
-.zone_sw { right: 100%; top: 100%; margin: calc(var(--zone) / -3) calc(var(--zone) / -3) 0 0; cursor: rotate-cursor(270); }
+.zone_nw { right: 100%; bottom: 100%; margin: 0 calc(var(--zone) / -3) calc(var(--zone) / -3) 0; }
+.zone_ne { left: 100%; bottom: 100%; margin: 0 0 calc(var(--zone) / -3) calc(var(--zone) / -3); }
+.zone_se { left: 100%; top: 100%; margin: calc(var(--zone) / -3) 0 0 calc(var(--zone) / -3); }
+.zone_sw { right: 100%; top: 100%; margin: calc(var(--zone) / -3) calc(var(--zone) / -3) 0 0; }
 
 /* Snap guides across the whole face. */
 .guideV,
