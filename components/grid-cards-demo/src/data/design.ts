@@ -32,7 +32,7 @@ export interface CardStock {
 }
 
 export const STOCKS: CardStock[] = [
-  { id: 'white', label: 'White plastic', material: 'plastic', face: '#f1f1ef', core: '#ececef', ink: 'dark' },
+  { id: 'bone', label: 'Bone plastic', material: 'plastic', face: '#f2efe9', core: '#ebe8e1', ink: 'dark' },
   { id: 'black', label: 'Black plastic', material: 'plastic', face: '#17171a', core: '#1c1c20', ink: 'light' },
   { id: 'steel', label: 'Stainless steel', material: 'metal', face: '#c9c8c7', core: '#d6d6d8', ink: 'dark' },
 ];

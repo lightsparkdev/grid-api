@@ -225,6 +225,20 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, front: boo
   ctx.fillRect(0, 0, TEX_W, TEX_H);
 }
 
+/** `a` toward `b` by `t`, both #rrggbb. */
+export function mixHex(a: string, b: string, t: number): string {
+  const ch = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const c = [0, 1, 2].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t));
+  return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** The mag stripe is the face's own color, deepened: a darker print on a
+ *  printed card, a darker bone or steel on a bare one. */
+function stripeFor(design: CardDesign): string {
+  const base = isBare(design) ? stockOf(design).face : design.color!;
+  return mixHex(base, '#000000', 0.6);
+}
+
 /** Ink that reads on the face: white on print and on dark stock, near-black
  *  on light stock. Art is treated as dark. */
 export function inkFor(design: CardDesign, art: HTMLImageElement | null): string {
@@ -259,15 +273,15 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
  *  Standards, January 2026: "silver foil PVBM, printed silver product
  *  identifier"). The surface maps make the mark a mirror and the identifier
  *  flat. */
-/** Silver foil would vanish on bare metal or a light bare stock; the standards
- *  allow a black foil PVBM with a black printed identifier, which is what
- *  metal cards use. */
+/** Silver foil would vanish on bare metal; the standards allow a black foil
+ *  PVBM with a black printed identifier there, which is what metal cards use.
+ *  Bare plastic keeps the silver foil, with the identifier in the face's ink. */
 export function foilIsBlack(design: CardDesign): boolean {
-  return (isBare(design) && materialOf(design) === 'metal') || inkFor(design, null) !== '#ffffff';
+  return isBare(design) && materialOf(design) === 'metal';
 }
 
-function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: boolean) {
-  const identifier = black ? '#2a2a2e' : '#cfd0d5';
+function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: boolean, ink: string) {
+  const identifier = black || ink !== '#ffffff' ? '#2a2a2e' : '#cfd0d5';
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);
   if (black) {
     drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#1c1c20', [LOCKUP_SPLIT, 1]);
@@ -614,7 +628,7 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   const ink = inkFor(s.design, null);
 
   // Mag stripe, bleeding to the top edge (Thales sample 1:116).
-  ctx.fillStyle = '#242426';
+  ctx.fillStyle = stripeFor(s.design);
   ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
 
   // Contactless indicator: right-aligned at 54, 90 tall.
@@ -677,7 +691,7 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.fillText('1-855-516-0103   lightspark.com/help', x, F(876) + F(16));
   ctx.fillText('Issued by Lead Bank', x, F(876) + F(16) + F(26));
 
-  paintLockup(ctx, assets, foilIsBlack(s.design));
+  paintLockup(ctx, assets, foilIsBlack(s.design), ink);
   paintState(ctx, s.frozen, s.closed);
 }
 

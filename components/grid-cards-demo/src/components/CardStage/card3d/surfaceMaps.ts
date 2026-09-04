@@ -18,6 +18,7 @@ import {
   LOCKUP_SPLIT,
   makeCanvas,
   STRIPE,
+  mixHex,
   TEX_H,
   TEX_W,
   type FaceAssets,
@@ -235,13 +236,6 @@ function beadblastRoughness(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
 }
 
 /* ── Edge ─────────────────────────────────────────────────────────────────── */
-
-/** `a` toward `b` by `t`, both #rrggbb. */
-function mixHex(a: string, b: string, t: number): string {
-  const ch = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
-  const c = [0, 1, 2].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t));
-  return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
-}
 
 /** Strip height in texels; the edge is only a few px tall on screen. */
 const EDGE_H = 256;
