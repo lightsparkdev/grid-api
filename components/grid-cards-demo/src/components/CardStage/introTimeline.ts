@@ -19,9 +19,10 @@ import { CARD_R } from './card3d/cardGeometry';
 const ease = cubicBezier(0.165, 0.84, 0.44, 1);
 /** Line draws: symmetric, so a stroke starts and lands softly. */
 const easeDraw = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
-/** The ticks' arrival: Anticipate, a pull back toward the center before the
- *  move out, cubic-bezier(1, -0.4, 0.35, 0.95). */
-const easeTicks = cubicBezier(1, -0.4, 0.35, 0.95);
+/** The ticks' arrival: Anticipate's pull back toward the center, then the
+ *  move out past the mark (about 7% of the travel) and a settle back onto it.
+ *  Anticipate is cubic-bezier(1, -0.4, 0.35, 0.95); y2 raised for the overshoot. */
+const easeTicks = cubicBezier(1, -0.4, 0.35, 1.45);
 
 const W = CARD_W;
 const H = CARD_H;
@@ -162,7 +163,7 @@ const CUES: Record<string, Cue> = {
 
 /** The ticks arrive from part way toward the center, settling as they fade in. */
 const TICK_START = 0.5;
-const TICK_TRAVEL = 0.7;
+const TICK_TRAVEL = 0.9;
 
 /** The finished blueprint holds this long before the reveal. */
 const REVEAL_HOLD = 0.25;
