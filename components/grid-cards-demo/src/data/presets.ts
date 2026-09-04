@@ -61,8 +61,9 @@ export const PRESETS: CardPreset[] = [
     id: 'marketplace',
     label: 'Marketplace',
     iconSrc: `${ASSETS}/app-icon-marketplace.png`,
-    // Waterbnb: an illustrated stay across the card, the house as a white
-    // badge at its center (Figma 2631:12225, the art variant).
+    // Waterbnb: an illustrated stay across the card (a Hollywood Hills house
+    // at golden hour, in the GA design gallery's gouache style), the house
+    // as a white badge at its center (Figma 2631:12225, the art variant).
     design: {
       programName: 'Waterbnb',
       material: 'plastic',

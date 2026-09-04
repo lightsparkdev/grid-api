@@ -93,7 +93,16 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
     place(!placed);
     if (!placed) setPlaced(true);
     // The row wraps at narrow widths; follow the checked swatch when it moves.
-    const ro = new ResizeObserver(() => place(true));
+    // ResizeObserver fires once on observe, so this must not jump, or it
+    // would cut the slide short on every change.
+    let first = true;
+    const ro = new ResizeObserver(() => {
+      if (first) {
+        first = false;
+        return;
+      }
+      place(false);
+    });
     ro.observe(row);
     return () => ro.disconnect();
   }, [active, placed, x, y, w, h, sx, sy]);

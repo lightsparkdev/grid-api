@@ -90,6 +90,8 @@
   position: absolute;
   top: 0;
   left: 0;
+  /* Its box is the swatch plus 3px a side, stroke included. */
+  box-sizing: border-box;
   corner-shape: var(--corner-shape);
   border-radius: calc(var(--swatch-radius) + 3px);
   border: 2px solid var(--text-primary);
