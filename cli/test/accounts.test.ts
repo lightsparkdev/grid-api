@@ -38,6 +38,8 @@ describe("accounts external create — beneficiary gating", () => {
       "1234567890",
       "--routing-number",
       "021000021",
+      "--bank-account-type",
+      "CHECKING",
       "--beneficiary-type",
       "BUSINESS",
       "--beneficiary-name",
@@ -75,6 +77,8 @@ describe("accounts external create — beneficiary gating", () => {
       "1234567890",
       "--routing-number",
       "021000021",
+      "--bank-account-type",
+      "CHECKING",
       "--beneficiary-type",
       "INDIVIDUAL",
       "--beneficiary-name",
@@ -103,6 +107,8 @@ describe("accounts external create", () => {
       "1234567890",
       "--routing-number",
       "021000021",
+      "--bank-account-type",
+      "CHECKING",
       "--beneficiary-type",
       "INDIVIDUAL",
       "--beneficiary-name",
@@ -118,6 +124,7 @@ describe("accounts external create", () => {
         accountType: "USD_ACCOUNT",
         accountNumber: "1234567890",
         routingNumber: "021000021",
+        bankAccountType: "CHECKING",
         beneficiary: { beneficiaryType: "INDIVIDUAL", fullName: "Ada Lovelace" },
       },
     });
@@ -138,6 +145,8 @@ describe("accounts external create", () => {
       "1234567890",
       "--routing-number",
       "021000021",
+      "--bank-account-type",
+      "CHECKING",
     ]);
 
     expect(calls).toBe(0);
@@ -159,6 +168,8 @@ describe("accounts external create", () => {
       "1234567890",
       "--routing-number",
       "021000021",
+      "--bank-account-type",
+      "CHECKING",
       "--beneficiary-type",
       "INDIVIDUAL",
       // --beneficiary-name omitted
@@ -182,6 +193,8 @@ describe("accounts external create", () => {
       "1234567890",
       "--routing-number",
       "021000021",
+      "--bank-account-type",
+      "CHECKING",
       "--beneficiary-type",
       "INDIVIDUAL",
       "--beneficiary-name",
@@ -195,6 +208,85 @@ describe("accounts external create", () => {
       platformAccountId: "ext_acc_1",
       defaultUmaDepositAccount: true,
     });
+  });
+
+  it("sends SAVINGS through so the ACH transaction code matches the account", async () => {
+    const { request } = await runCli([
+      "accounts",
+      "external",
+      "create",
+      "--customer-id",
+      "Customer:abc",
+      "--currency",
+      "USD",
+      "--account-type",
+      "USD_ACCOUNT",
+      "--account-number",
+      "1234567890",
+      "--routing-number",
+      "021000021",
+      "--bank-account-type",
+      "SAVINGS",
+      "--beneficiary-type",
+      "INDIVIDUAL",
+      "--beneficiary-name",
+      "Ada Lovelace",
+    ]);
+
+    expect(request?.body).toMatchObject({
+      accountInfo: { accountType: "USD_ACCOUNT", bankAccountType: "SAVINGS" },
+    });
+  });
+
+  it("does not send a request when USD_ACCOUNT omits bankAccountType", async () => {
+    const { request, calls } = await runCli([
+      "accounts",
+      "external",
+      "create",
+      "--customer-id",
+      "Customer:abc",
+      "--currency",
+      "USD",
+      "--account-type",
+      "USD_ACCOUNT",
+      "--account-number",
+      "1234567890",
+      "--routing-number",
+      "021000021",
+      "--beneficiary-type",
+      "INDIVIDUAL",
+      "--beneficiary-name",
+      "Ada Lovelace",
+    ]);
+
+    expect(calls).toBe(0);
+    expect(request).toBeNull();
+  });
+
+  it("rejects a bankAccountType outside CHECKING and SAVINGS", async () => {
+    const { calls } = await runCli([
+      "accounts",
+      "external",
+      "create",
+      "--customer-id",
+      "Customer:abc",
+      "--currency",
+      "USD",
+      "--account-type",
+      "USD_ACCOUNT",
+      "--account-number",
+      "1234567890",
+      "--routing-number",
+      "021000021",
+      "--bank-account-type",
+      "MONEY_MARKET",
+      "--beneficiary-type",
+      "INDIVIDUAL",
+      "--beneficiary-name",
+      "Ada Lovelace",
+    ]);
+
+    expect(calls).toBe(0);
   });
 });
 
