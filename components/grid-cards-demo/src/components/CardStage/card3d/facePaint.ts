@@ -16,6 +16,7 @@ import {
   stockOf,
   type BrandLayout,
   type CardDesign,
+  type CardGradient,
 } from '@/data/design';
 import { CARD_FONT_FAMILY, loadCardFont } from './cardFont';
 
@@ -233,6 +234,28 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, front: boo
   // A solid print; the studio does the shading.
   ctx.fillStyle = design.color!;
   ctx.fillRect(0, 0, TEX_W, TEX_H);
+  if (design.gradient) {
+    ctx.fillStyle = gradientPaint(ctx, design.gradient, front);
+    ctx.fillRect(0, 0, TEX_W, TEX_H);
+  }
+}
+
+/**
+ * The gradient print as a canvas gradient in texels. The back's texture is
+ * mirrored in u on the mesh, so its x is flipped here and the gradient reads
+ * the same way round from either side, as a card printed with one artwork
+ * on both faces does.
+ */
+function gradientPaint(ctx: CanvasRenderingContext2D, g: CardGradient, front: boolean): CanvasGradient {
+  const px = (p: { x: number; y: number }) => ({ x: front ? F(p.x) : TEX_W - F(p.x), y: F(p.y) });
+  const a = px(g.from);
+  const b = px(g.to);
+  const grad =
+    g.type === 'radial'
+      ? ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)))
+      : ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+  for (const s of [...g.stops].sort((p, q) => p.at - q.at)) grad.addColorStop(Math.min(1, Math.max(0, s.at)), s.color);
+  return grad;
 }
 
 /** `a` toward `b` by `t`, both #rrggbb. */

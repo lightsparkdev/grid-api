@@ -333,7 +333,7 @@ function UploadRow({
  */
 export function DesignPicker({ design, onChange, preset, onPresetSelect }: DesignPickerProps) {
   const stock = stockOf(design);
-  const activeSwatch = design.color ? DESIGN_SWATCHES.find((s) => s.color === design.color) : undefined;
+  const activeSwatch = design.color && !design.gradient ? DESIGN_SWATCHES.find((s) => s.color === design.color) : undefined;
   const custom = design.color !== null && !activeSwatch;
   const brand = brandColorOf(design);
   // Spot gloss is a clear varnish that reads against a matte coat; on a gloss
@@ -387,7 +387,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Color</span>
-          <SwatchRow label="Card color" active={design.color === null ? 'none' : design.color}>
+          <SwatchRow label="Card color" active={design.color === null ? 'none' : custom ? 'custom' : design.color}>
             <Tooltip text={`None (bare ${stock.label.toLowerCase()})`}>
               {(tip) => (
                 <button
@@ -396,7 +396,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                   aria-checked={design.color === null}
                   aria-label="None"
                   className={clsx(styles.swatch, styles.swatchNone)}
-                  onClick={() => onChange({ color: null })}
+                  onClick={() => onChange({ color: null, gradient: null })}
                   {...tip}
                 />
               )}
@@ -411,7 +411,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                     aria-label={s.label}
                     className={styles.swatch}
                     style={swatchStyle(s.color)}
-                    onClick={() => onChange({ color: s.color })}
+                    onClick={() => onChange({ color: s.color, gradient: null })}
                     {...tip}
                   />
                 )}
@@ -419,11 +419,12 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             ))}
             <ColorPicker
               value={design.color ?? brand}
-              onChange={(color) => onChange({ color })}
+              gradient={design.gradient}
+              onChange={(color, gradient) => onChange({ color, gradient })}
               triggerClassName={clsx(styles.swatch, styles.swatchCustom)}
               triggerActive={custom}
               triggerLabel="Custom color"
-              tooltip={custom ? 'Custom' : 'Custom color'}
+              tooltip={design.gradient ? 'Gradient' : custom ? 'Custom' : 'Custom color'}
             >
               {!custom ? <IconPlusSmall size={16} aria-hidden /> : null}
             </ColorPicker>

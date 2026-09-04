@@ -4,7 +4,7 @@
    design, so any edit is the visitor's own design again. */
 
 import { FIGMA_FACE_H } from '@/apps/card/cardMetrics';
-import { sameBrandLayout, type CardDesign } from './design';
+import { sameBrandLayout, sameGradient, type CardDesign } from './design';
 
 export type PresetId = 'creator' | 'social' | 'marketplace' | 'ondemand' | 'messaging';
 
@@ -33,6 +33,7 @@ export const PRESETS: CardPreset[] = [
       material: 'plastic',
       finish: 'gloss',
       color: '#9147ff',
+      gradient: null,
       logoUrl: `${ASSETS}/logo-creator.svg`,
       logoTreatment: 'print',
       brandLayout: { x: 100, y: 141, h: 116, anchor: 'left', rotation: 0, opacity: 1 },
@@ -50,6 +51,7 @@ export const PRESETS: CardPreset[] = [
       material: 'metal',
       finish: 'matte',
       color: null,
+      gradient: null,
       logoUrl: `${ASSETS}/logo-social.svg`,
       logoTreatment: 'etch',
       brandLayout: { x: 768, y: MID_Y, h: 767, anchor: 'center', rotation: 0, opacity: 1 },
@@ -69,6 +71,7 @@ export const PRESETS: CardPreset[] = [
       material: 'plastic',
       finish: 'matte',
       color: '#ff385c',
+      gradient: null,
       logoUrl: `${ASSETS}/logo-marketplace-badge.svg`,
       logoTreatment: 'print',
       brandLayout: { x: 768, y: MID_Y, h: 343, anchor: 'center', rotation: 0, opacity: 1 },
@@ -88,6 +91,7 @@ export const PRESETS: CardPreset[] = [
       material: 'plastic',
       finish: 'matte',
       color: '#000000',
+      gradient: null,
       logoUrl: null,
       logoTreatment: 'spotGloss',
       brandLayout: { x: 95, y: 138, h: 125, anchor: 'left', rotation: 0, opacity: 1 },
@@ -107,6 +111,7 @@ export const PRESETS: CardPreset[] = [
       material: 'plastic',
       finish: 'matte',
       color: '#1daa61',
+      gradient: null,
       logoUrl: `${ASSETS}/logo-messaging.svg`,
       logoTreatment: 'print',
       brandLayout: { x: 1536 - 505, y: 475, h: 838, anchor: 'center', rotation: 0, opacity: 0.2 },
@@ -120,7 +125,11 @@ const PRESET_KEYS = Object.keys(PRESETS[0].design) as Array<keyof PresetDesign>;
 
 function matches(design: CardDesign, preset: PresetDesign): boolean {
   return PRESET_KEYS.every((k) =>
-    k === 'brandLayout' ? sameBrandLayout(design.brandLayout, preset.brandLayout) : design[k] === preset[k],
+    k === 'brandLayout'
+      ? sameBrandLayout(design.brandLayout, preset.brandLayout)
+      : k === 'gradient'
+        ? sameGradient(design.gradient, preset.gradient)
+        : design[k] === preset[k],
   );
 }
 

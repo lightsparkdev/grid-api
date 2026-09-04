@@ -79,6 +79,53 @@
   cursor: default;
 }
 
+/* ── The gradient's handles ─────────────────────────────────────────────────
+   Figma's: a line between the ends, a ring at each end to drag, a dot per
+   stop. Same blue and scale-compensated stroke as the selection box. */
+.gradient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gradientLine {
+  position: absolute;
+  height: var(--sel-px);
+  margin-top: calc(var(--sel-px) / -2);
+  background: var(--sel);
+  transform-origin: 0 50%;
+  box-shadow: 0 0 0 calc(var(--sel-px) / 2) rgba(255, 255, 255, 0.6);
+}
+
+.gradientRadius {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: var(--sel-px) solid var(--sel);
+  opacity: 0.5;
+}
+
+.gradientStop {
+  position: absolute;
+  width: calc(6px / var(--card-scale));
+  height: calc(6px / var(--card-scale));
+  margin: calc(3px / var(--card-scale) * -1);
+  border-radius: 50%;
+  box-shadow: 0 0 0 var(--sel-px) #ffffff, 0 0 0 calc(var(--sel-px) * 2) var(--sel);
+}
+
+.gradientEnd {
+  position: absolute;
+  width: calc(12px / var(--card-scale));
+  height: calc(12px / var(--card-scale));
+  margin: calc(6px / var(--card-scale) * -1);
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 calc(var(--sel-px) * 2) var(--sel), 0 1px 3px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  cursor: move;
+}
+
 /* ── The brand's selection box ──────────────────────────────────────────────
    Laid out in card px on the hit box, an outline on hover and, selected, the
    handles. Click-through itself: the brand under it is picked by the ray. */

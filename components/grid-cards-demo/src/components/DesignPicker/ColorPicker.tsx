@@ -1,7 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+} from 'react';
+import clsx from 'clsx';
 import { IconEyedropper } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyedropper';
+import { IconArrowLeftRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeftRight';
+import { IconRotate } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate';
+import { IconMinusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMinusSmall';
+import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import {
   PopoverPopup,
   PopoverPortal,
@@ -9,7 +22,10 @@ import {
   PopoverRoot,
   PopoverTrigger,
 } from '@lightsparkdev/origin/popover';
+import { FIGMA_CARD_W, FIGMA_FACE_H } from '@/apps/card/cardMetrics';
+import { gradientCss, type CardGradient, type GradientStop } from '@/data/design';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
+import { setGradientEditing } from './gradientEditing';
 import styles from './ColorPicker.module.scss';
 
 /* ── Color math ───────────────────────────────────────────────────────────── */
@@ -79,12 +95,52 @@ function hexToHsv(hex: string): Hsv | null {
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
+/** The gradient's color at `at`, by its stops. */
+function colorAt(stops: GradientStop[], at: number): string {
+  const s = [...stops].sort((a, b) => a.at - b.at);
+  if (at <= s[0].at) return s[0].color;
+  if (at >= s[s.length - 1].at) return s[s.length - 1].color;
+  for (let i = 1; i < s.length; i++) {
+    if (at <= s[i].at) {
+      const a = hexToRgb(s[i - 1].color)!;
+      const b = hexToRgb(s[i].color)!;
+      const t = (at - s[i - 1].at) / Math.max(1e-6, s[i].at - s[i - 1].at);
+      return rgbToHex(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t);
+    }
+  }
+  return s[s.length - 1].color;
+}
+
+/** A first gradient from a solid: the color, then a lighter or darker
+ *  version of it, top to bottom, as Figma's default fill. */
+function gradientFrom(color: string, type: CardGradient['type']): CardGradient {
+  const hsv = hexToHsv(color) ?? { h: 0, s: 0, v: 0.5 };
+  const second = hsvToHex({ ...hsv, v: clamp01(hsv.v < 0.5 ? hsv.v + 0.35 : hsv.v - 0.35) });
+  return {
+    type,
+    stops: [
+      { at: 0, color },
+      { at: 1, color: second },
+    ],
+    from: { x: FIGMA_CARD_W / 2, y: 0 },
+    to: { x: FIGMA_CARD_W / 2, y: FIGMA_FACE_H },
+  };
+}
+
 /* ── Picker ───────────────────────────────────────────────────────────────── */
 
+type Mode = 'solid' | 'linear' | 'radial';
+const MODES: Array<{ id: Mode; label: string }> = [
+  { id: 'solid', label: 'Solid' },
+  { id: 'linear', label: 'Linear' },
+  { id: 'radial', label: 'Radial' },
+];
+
 interface ColorPickerProps {
-  /** The current color, #rrggbb. */
+  /** The current color, #rrggbb: the solid, or the gradient's first stop. */
   value: string;
-  onChange: (hex: string) => void;
+  gradient: CardGradient | null;
+  onChange: (color: string, gradient: CardGradient | null) => void;
   /** The trigger; rendered as the popover's anchor. */
   children: ReactNode;
   triggerClassName?: string;
@@ -97,31 +153,75 @@ interface ColorPickerProps {
 /**
  * A color picker in Origin's idiom: its popover, tokens, and input, with a
  * saturation/value field, a hue bar, a hex field, and an eyedropper where
- * the platform has one. Hue and saturation are kept locally so they survive
- * the value being dragged to black or white, where a hex can't hold them.
+ * the platform has one. Solid, or a gradient as Figma's fill: a bar of
+ * stops to drag, add (click the bar) and remove, flip and turn, with the
+ * field editing the selected stop; while the gradient tab is open the stage
+ * shows the gradient's two handles on the card to position it. Hue and
+ * saturation are kept locally so they survive the value being dragged to
+ * black or white, where a hex can't hold them.
  */
-export function ColorPicker({ value, onChange, children, triggerClassName, triggerActive, triggerLabel, tooltip }: ColorPickerProps) {
+export function ColorPicker({
+  value,
+  gradient,
+  onChange,
+  children,
+  triggerClassName,
+  triggerActive,
+  triggerLabel,
+  tooltip,
+}: ColorPickerProps) {
   const [open, setOpen] = useState(false);
-  const [hsv, setHsv] = useState<Hsv>(() => hexToHsv(value) ?? { h: 0, s: 0, v: 0 });
-  const [hexText, setHexText] = useState(value);
-  const lastEmitted = useRef(value);
+  const [stop, setStop] = useState(0);
+  const mode: Mode = gradient ? gradient.type : 'solid';
+  const sel = gradient ? Math.min(stop, gradient.stops.length - 1) : 0;
+  const edited = gradient ? gradient.stops[sel].color : value;
 
-  // Follow the value when something else set it (a swatch, a preset).
+  const [hsv, setHsv] = useState<Hsv>(() => hexToHsv(edited) ?? { h: 0, s: 0, v: 0 });
+  const [hexText, setHexText] = useState(edited);
+  const lastEmitted = useRef(edited);
+
+  // Follow the edited color when something else set it (a swatch, a preset,
+  // another stop selected).
   useEffect(() => {
-    if (value === lastEmitted.current) return;
-    lastEmitted.current = value;
-    const next = hexToHsv(value);
+    if (edited === lastEmitted.current) return;
+    lastEmitted.current = edited;
+    const next = hexToHsv(edited);
     if (next) setHsv(next);
-    setHexText(value);
-  }, [value]);
+    setHexText(edited);
+  }, [edited]);
+
+  // The stage shows the handles while the gradient tab is open.
+  useEffect(() => {
+    setGradientEditing(open && gradient !== null);
+  }, [open, gradient]);
+  useEffect(() => () => setGradientEditing(false), []);
+
+  const emit = (color: string, g: CardGradient | null) => onChange(g ? g.stops[0].color : color, g);
+  const setGradient = (g: CardGradient) => emit(g.stops[0].color, g);
 
   const commit = (next: Hsv) => {
     setHsv(next);
     const hex = hsvToHex(next);
     setHexText(hex);
-    if (hex !== lastEmitted.current) {
-      lastEmitted.current = hex;
-      onChange(hex);
+    if (hex === lastEmitted.current) return;
+    lastEmitted.current = hex;
+    if (gradient) {
+      setGradient({ ...gradient, stops: gradient.stops.map((s, i) => (i === sel ? { ...s, color: hex } : s)) });
+    } else {
+      emit(hex, null);
+    }
+  };
+
+  const setMode = (m: Mode) => {
+    if (m === mode) return;
+    if (m === 'solid') {
+      emit(gradient!.stops[0].color, null);
+      return;
+    }
+    if (gradient) setGradient({ ...gradient, type: m });
+    else {
+      setStop(0);
+      setGradient(gradientFrom(value, m));
     }
   };
 
@@ -175,6 +275,84 @@ export function ColorPicker({ value, onChange, children, triggerClassName, trigg
     else setHexText(hsvToHex(hsv));
   };
 
+  // ── The stops bar ──────────────────────────────────────────────────────────
+  const barDrag = useRef<{ id: number; index: number } | null>(null);
+  const atFrom = (el: HTMLElement, clientX: number) => {
+    const r = el.getBoundingClientRect();
+    return clamp01((clientX - r.left) / r.width);
+  };
+  const onBarDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (!gradient || e.button !== 0) return;
+    e.preventDefault();
+    const handle = (e.target as HTMLElement).closest<HTMLElement>('[data-stop]');
+    let index: number;
+    if (handle) {
+      index = Number(handle.dataset.stop);
+    } else {
+      // Add a stop where the bar was pressed, in the gradient's own color there.
+      const at = atFrom(e.currentTarget, e.clientX);
+      index = gradient.stops.length;
+      setGradient({ ...gradient, stops: [...gradient.stops, { at, color: colorAt(gradient.stops, at) }] });
+    }
+    setStop(index);
+    barDrag.current = { id: e.pointerId, index };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onBarMove = (e: PointerEvent<HTMLDivElement>) => {
+    const d = barDrag.current;
+    if (!d || !gradient || e.pointerId !== d.id) return;
+    const at = atFrom(e.currentTarget, e.clientX);
+    setGradient({ ...gradient, stops: gradient.stops.map((s, i) => (i === d.index ? { ...s, at } : s)) });
+  };
+  const onBarUp = () => {
+    barDrag.current = null;
+  };
+  const removeStop = (index: number) => {
+    if (!gradient || gradient.stops.length <= 2) return;
+    setGradient({ ...gradient, stops: gradient.stops.filter((_, i) => i !== index) });
+    setStop(Math.max(0, Math.min(index, gradient.stops.length - 2)));
+  };
+  const onBarKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!gradient) return;
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault();
+      removeStop(sel);
+      return;
+    }
+    const step = e.shiftKey ? 0.1 : 0.01;
+    const d = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+    if (!d) return;
+    e.preventDefault();
+    setGradient({ ...gradient, stops: gradient.stops.map((s, i) => (i === sel ? { ...s, at: clamp01(s.at + d) } : s)) });
+  };
+  const setStopAt = (index: number, pct: string) => {
+    if (!gradient) return;
+    const n = Number(pct);
+    if (!Number.isFinite(n)) return;
+    setGradient({ ...gradient, stops: gradient.stops.map((s, i) => (i === index ? { ...s, at: clamp01(n / 100) } : s)) });
+  };
+  const flip = () => {
+    if (!gradient) return;
+    setGradient({ ...gradient, stops: gradient.stops.map((s) => ({ ...s, at: 1 - s.at })) });
+  };
+  const turn = () => {
+    if (!gradient) return;
+    // A quarter turn about the line's midpoint.
+    const c = { x: (gradient.from.x + gradient.to.x) / 2, y: (gradient.from.y + gradient.to.y) / 2 };
+    const rot = (p: { x: number; y: number }) => ({ x: c.x - (p.y - c.y), y: c.y + (p.x - c.x) });
+    setGradient({ ...gradient, from: rot(gradient.from), to: rot(gradient.to) });
+  };
+  const addStop = () => {
+    if (!gradient) return;
+    // Midway between the selected stop and its neighbor to the right (or left at the end).
+    const sorted = [...gradient.stops].map((s, i) => ({ ...s, i })).sort((a, b) => a.at - b.at);
+    const k = sorted.findIndex((s) => s.i === sel);
+    const next = sorted[k + 1] ?? sorted[k - 1];
+    const at = next ? (sorted[k].at + next.at) / 2 : clamp01(sorted[k].at + 0.25);
+    setGradient({ ...gradient, stops: [...gradient.stops, { at, color: colorAt(gradient.stops, at) }] });
+    setStop(gradient.stops.length);
+  };
+
   const hueHex = hsvToHex({ h: hsv.h, s: 1, v: 1 });
   const current = hsvToHex(hsv);
   const canDrop = typeof window !== 'undefined' && 'EyeDropper' in window;
@@ -189,15 +367,34 @@ export function ColorPicker({ value, onChange, children, triggerClassName, trigg
     }
   };
 
+  const triggerStyle: CSSProperties | undefined = triggerActive
+    ? { background: gradient ? gradientCss(gradient, '135deg') : value }
+    : undefined;
+  const sortedStops = gradient ? gradient.stops.map((s, i) => ({ ...s, i })).sort((a, b) => a.at - b.at) : [];
+
+  // With a gradient up, a press on the card (its handles, or the card under
+  // a handle drag, which captures the pointer) is part of editing the
+  // gradient, not a click away from the picker.
+  const onOpenChange = (next: boolean, details: { reason: string; event: Event; cancel: () => void }) => {
+    if (!next && gradient && details.reason === 'outside-press') {
+      const t = details.event.target as Element | null;
+      if (t?.closest?.('[data-grad], [data-card-hit]')) {
+        details.cancel();
+        return;
+      }
+    }
+    setOpen(next);
+  };
+
   return (
-    <PopoverRoot open={open} onOpenChange={setOpen}>
+    <PopoverRoot open={open} onOpenChange={onOpenChange}>
       <Tooltip text={tooltip}>
         {(tip) => (
           <PopoverTrigger
             className={triggerClassName}
             data-active={triggerActive || undefined}
             aria-label={triggerLabel}
-            style={triggerActive ? { background: value } : undefined}
+            style={triggerStyle}
             {...(open ? {} : tip)}
             onClick={tip.onMouseLeave}
           >
@@ -208,6 +405,106 @@ export function ColorPicker({ value, onChange, children, triggerClassName, trigg
       <PopoverPortal>
         <PopoverPositioner side="top" align="end" sideOffset={8}>
           <PopoverPopup className={styles.popup} aria-label="Custom color">
+            <div className={styles.modes} role="tablist" aria-label="Fill">
+              {MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m.id}
+                  className={clsx(styles.mode, mode === m.id && styles.modeOn)}
+                  onClick={() => setMode(m.id)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
+            {gradient && (
+              <>
+                <div
+                  className={styles.stopsBar}
+                  style={{ background: gradientCss(gradient) }}
+                  role="slider"
+                  tabIndex={0}
+                  aria-label="Gradient stops"
+                  aria-valuenow={Math.round(gradient.stops[sel].at * 100)}
+                  aria-valuetext={`Stop ${sel + 1} at ${Math.round(gradient.stops[sel].at * 100)}%`}
+                  onPointerDown={onBarDown}
+                  onPointerMove={onBarMove}
+                  onPointerUp={onBarUp}
+                  onPointerCancel={onBarUp}
+                  onKeyDown={onBarKey}
+                >
+                  {gradient.stops.map((s, i) => (
+                    <span
+                      key={i}
+                      data-stop={i}
+                      className={clsx(styles.stopHandle, i === sel && styles.stopHandleOn)}
+                      style={{ left: `${s.at * 100}%`, background: s.color }}
+                    />
+                  ))}
+                </div>
+                <div className={styles.stopsHead}>
+                  <span>Stops</span>
+                  <span className={styles.stopsTools}>
+                    <Tooltip text="Flip">
+                      {(tip) => (
+                        <button type="button" className={styles.tool} onClick={flip} aria-label="Flip gradient" {...tip}>
+                          <IconArrowLeftRight size={14} aria-hidden />
+                        </button>
+                      )}
+                    </Tooltip>
+                    <Tooltip text="Turn 90°">
+                      {(tip) => (
+                        <button type="button" className={styles.tool} onClick={turn} aria-label="Turn gradient 90 degrees" {...tip}>
+                          <IconRotate size={14} aria-hidden />
+                        </button>
+                      )}
+                    </Tooltip>
+                    <Tooltip text="Add stop">
+                      {(tip) => (
+                        <button type="button" className={styles.tool} onClick={addStop} aria-label="Add stop" {...tip}>
+                          <IconPlusSmall size={14} aria-hidden />
+                        </button>
+                      )}
+                    </Tooltip>
+                  </span>
+                </div>
+                <div className={styles.stops}>
+                  {sortedStops.map((s) => (
+                    <div
+                      key={s.i}
+                      className={clsx(styles.stopRow, s.i === sel && styles.stopRowOn)}
+                      onPointerDown={() => setStop(s.i)}
+                    >
+                      <input
+                        className={styles.stopAt}
+                        value={Math.round(s.at * 100)}
+                        inputMode="numeric"
+                        aria-label={`Stop ${s.i + 1} position`}
+                        onFocus={() => setStop(s.i)}
+                        onChange={(e) => setStopAt(s.i, e.target.value)}
+                      />
+                      <span className={styles.stopColor}>
+                        <span className={styles.stopSwatch} style={{ background: s.color }} aria-hidden />
+                        <span className={styles.stopHex}>{s.color.slice(1).toUpperCase()}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.stopRemove}
+                        disabled={gradient.stops.length <= 2}
+                        aria-label={`Remove stop ${s.i + 1}`}
+                        onClick={() => removeStop(s.i)}
+                      >
+                        <IconMinusSmall size={14} aria-hidden />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
             <div
               className={styles.field}
               style={{ '--hue': hueHex } as CSSProperties}

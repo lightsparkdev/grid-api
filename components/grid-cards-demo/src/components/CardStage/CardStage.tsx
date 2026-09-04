@@ -11,6 +11,7 @@ import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import { PAN_GROUPS, type CardHome } from '@/apps/shared/card';
 import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
+import { useGradientEditing } from '@/components/DesignPicker/gradientEditing';
 import {
   BRAND_DEFAULT_LAYOUT,
   BRAND_MARGIN,
@@ -18,6 +19,7 @@ import {
   BRAND_MIN_H,
   type BrandLayout,
   type CardDesign,
+  type CardGradient,
 } from '@/data/design';
 import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/CardMesh';
@@ -265,7 +267,10 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // brand's placement (a color, a finish, a preset, Reset) deselects: the
   // box is for placing, and those edits are something else.
   const [selected, setSelected] = useState(false);
-  live.current.editing = selected;
+  // A gradient being edited in the picker: its handles show on the card,
+  // which holds flat under them too.
+  const gradEditing = useGradientEditing() && !!design.gradient && brandEditable;
+  live.current.editing = selected || gradEditing;
   useEffect(() => {
     if (phoneUp || !introDone) setSelected(false);
   }, [phoneUp, introDone]);
@@ -369,6 +374,14 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   const brandDrag = useRef<BrandDrag | null>(null);
+  /** A gradient handle in flight: which end, from which pointer. */
+  const gradDrag = useRef<{ id: number; end: 'from' | 'to' } | null>(null);
+  const moveGradEnd = (end: 'from' | 'to', p: Pt) => {
+    const g = design.gradient;
+    if (!g) return;
+    const next: CardGradient = { ...g, [end]: { x: Math.round(p.x), y: Math.round(p.y) } };
+    onDesignChange?.({ gradient: next });
+  };
   /** The cursor a brand edit shows while the pointer is captured: the
    *  handle's own, turning with the box as it rotates. */
   const dragCursor = (bd: BrandDrag, rotation: number) =>
@@ -432,6 +445,13 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     setLayout(layoutAt(l0, { x: c0.x + world.x, y: c0.y + world.y }, w, h));
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const gd = gradDrag.current;
+    if (gd) {
+      if (e.pointerId !== gd.id) return;
+      const p = pick.current?.(e.clientX, e.clientY);
+      if (p) moveGradEnd(gd.end, p);
+      return;
+    }
     const bd = brandDrag.current;
     if (bd) {
       if (e.pointerId !== bd.id) return;
@@ -454,7 +474,17 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // Nothing says the card can be turned; say it once, until the first drag.
   const [dragged, setDragged] = useState(false);
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (live.current.t > 0 || e.button !== 0 || brandDrag.current) return;
+    if (live.current.t > 0 || e.button !== 0 || brandDrag.current || gradDrag.current) return;
+    if (gradEditing) {
+      const gradEl = (e.target as HTMLElement).closest<HTMLElement>('[data-grad]');
+      if (gradEl) {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        gradDrag.current = { id: e.pointerId, end: gradEl.dataset.grad as 'from' | 'to' };
+        motion.clearTilt();
+        e.currentTarget.classList.add(styles.hitMoving);
+        return;
+      }
+    }
     if (brandEditable) {
       // A handle of the selection box: scale, or rotate from just outside a corner.
       const handleEl = (e.target as HTMLElement).closest<HTMLElement>('[data-handle]');
@@ -480,6 +510,13 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     e.currentTarget.classList.add(styles.hitDragging);
   };
   const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const gd = gradDrag.current;
+    if (gd) {
+      if (e.pointerId !== gd.id) return;
+      gradDrag.current = null;
+      e.currentTarget.classList.remove(styles.hitMoving);
+      return;
+    }
     const bd = brandDrag.current;
     if (bd) {
       if (e.pointerId !== bd.id) return;
@@ -558,6 +595,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       <div
         ref={hitRef}
         className={clsx(styles.hit, overBrand && styles.hitOverBrand)}
+        data-card-hit
         style={{ width: CARD_W, height: CARD_H, pointerEvents: phoneUp || !introDone ? 'none' : 'auto' }}
         onPointerMove={onPointerMove}
         onPointerDown={onPointerDown}
@@ -608,6 +646,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
               ))}
           </div>
         )}
+        {/* The gradient's line and its two ends, while its picker is open. */}
+        {gradEditing && design.gradient && <GradientHandles gradient={design.gradient} />}
         {guides.x !== undefined && (
           <span className={styles.guideV} style={{ left: guides.x * CARD_PER_SPEC }} aria-hidden />
         )}
@@ -634,6 +674,42 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           Drag to turn it over
         </span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Figma's gradient handles: the line from the first stop to the last, a ring
+ * at each end to drag, and a dot at each stop along it. In card px on the
+ * hit box; the ends are grips (`data-grad`), the rest is click-through.
+ */
+function GradientHandles({ gradient: g }: { gradient: CardGradient }) {
+  const k = CARD_PER_SPEC;
+  const a = { x: g.from.x * k, y: g.from.y * k };
+  const b = { x: g.to.x * k, y: g.to.y * k };
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+  return (
+    <div className={styles.gradient} aria-hidden>
+      <span
+        className={styles.gradientLine}
+        style={{ left: a.x, top: a.y, width: len, transform: `rotate(${angle}deg)` }}
+      />
+      {g.type === 'radial' && (
+        <span
+          className={styles.gradientRadius}
+          style={{ left: a.x - len, top: a.y - len, width: len * 2, height: len * 2 }}
+        />
+      )}
+      {g.stops.map((s, i) => (
+        <span
+          key={i}
+          className={styles.gradientStop}
+          style={{ left: a.x + (b.x - a.x) * s.at, top: a.y + (b.y - a.y) * s.at, background: s.color }}
+        />
+      ))}
+      <span className={styles.gradientEnd} style={{ left: a.x, top: a.y }} data-grad="from" />
+      <span className={styles.gradientEnd} style={{ left: b.x, top: b.y }} data-grad="to" />
     </div>
   );
 }

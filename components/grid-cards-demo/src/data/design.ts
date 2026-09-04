@@ -104,6 +104,47 @@ export function sameBrandLayout(a: BrandLayout | null, b: BrandLayout | null): b
   );
 }
 
+/** A color stop of a gradient print. */
+export interface GradientStop {
+  /** Position along the gradient, 0..1. */
+  at: number;
+  color: string;
+}
+
+/**
+ * A gradient print, as Figma's fill: stops along a line from `from` to `to`
+ * on the front face (spec px, as the brand's layout). Linear runs along the
+ * line; radial is centered at `from` and reaches `to`. The back is printed
+ * with the same gradient. `color` stays the first stop, for everything that
+ * wants one color of the card (the stock, the ink, the app's chrome).
+ */
+export interface CardGradient {
+  type: 'linear' | 'radial';
+  stops: GradientStop[];
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
+export function sameGradient(a: CardGradient | null, b: CardGradient | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.type === b.type &&
+    a.from.x === b.from.x &&
+    a.from.y === b.from.y &&
+    a.to.x === b.to.x &&
+    a.to.y === b.to.y &&
+    a.stops.length === b.stops.length &&
+    a.stops.every((s, i) => s.at === b.stops[i].at && s.color === b.stops[i].color)
+  );
+}
+
+/** The CSS for a gradient's stops, left to right (for a swatch or a bar). */
+export function gradientCss(g: CardGradient, angle = '90deg'): string {
+  const stops = [...g.stops].sort((a, b) => a.at - b.at).map((s) => `${s.color} ${s.at * 100}%`);
+  return `linear-gradient(${angle}, ${stops.join(', ')})`;
+}
+
 export interface CardDesign {
   /** Program name printed on the card and used as the app's brand. */
   programName: string;
@@ -111,8 +152,11 @@ export interface CardDesign {
   cardholderName: string;
   material: CardMaterial;
   finish: CardFinish;
-  /** Printed color, solid. Null = no print: the bare stock shows. */
+  /** Printed color, solid. Null = no print: the bare stock shows. With a
+   *  gradient, its first stop. */
   color: string | null;
+  /** A gradient print over the color, or null for solid. */
+  gradient: CardGradient | null;
   /** Object URL (or data URL) of an uploaded logo. Null = wordmark only. */
   logoUrl: string | null;
   logoTreatment: LogoTreatment;
@@ -180,6 +224,7 @@ export const initialDesign: CardDesign = {
   material: 'plastic',
   finish: 'matte',
   color: DESIGN_SWATCHES[0].color,
+  gradient: null,
   logoUrl: null,
   logoTreatment: 'print',
   brandLayout: null,

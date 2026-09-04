@@ -11,6 +11,191 @@
   padding: var(--spacing-xs);
 }
 
+/* Fill kind: Solid, Linear, Radial, as text tabs. */
+.modes {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.mode {
+  @include button-reset;
+  @include label;
+  font-size: 12px;
+  line-height: 16px;
+  padding: 2px var(--spacing-xs);
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+  transition: color 120ms ease, background-color 120ms ease;
+
+  @media (hover: hover) {
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+
+  &:focus-visible {
+    box-shadow: var(--input-focus);
+  }
+}
+
+.modeOn {
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+}
+
+.stopsTools {
+  display: flex;
+  gap: 2px;
+}
+
+/* The stops, on the gradient itself. */
+.stopsBar {
+  position: relative;
+  height: 14px;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  cursor: copy;
+  touch-action: none;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), var(--input-focus);
+  }
+}
+
+.stopHandle {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), var(--shadow-sm);
+  transform: translate(-50%, -50%);
+  cursor: ew-resize;
+}
+
+.stopHandleOn {
+  box-shadow: 0 0 0 2px var(--text-primary), var(--shadow-sm);
+}
+
+.stopsHead {
+  @include label;
+  font-size: 12px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+  padding-left: 2px;
+}
+
+.stops {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stopRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  padding: 2px;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  cursor: default;
+}
+
+.stopRowOn {
+  background: var(--surface-secondary);
+}
+
+.stopAt,
+.stopColor {
+  @include input;
+  font-size: 12px;
+  height: 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  border: var(--stroke-sm) solid var(--border-primary);
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  background: transparent;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1, 'tnum' 1;
+}
+
+.stopAt {
+  width: 40px;
+  padding-inline: var(--spacing-2xs);
+  text-align: right;
+  outline: none;
+
+  &:focus {
+    @include input-focus;
+  }
+}
+
+.stopColor {
+  flex: 1;
+  min-width: 0;
+  gap: var(--spacing-2xs);
+  padding-inline: 3px;
+}
+
+.stopSwatch {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  corner-shape: var(--corner-shape);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.stopHex {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stopRemove {
+  @include button-reset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  color: var(--icon-secondary);
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      color: var(--icon-primary);
+      background: var(--surface-hover);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
 .field,
 .hue {
   position: relative;
@@ -97,6 +282,11 @@
   place-items: center;
   width: 28px;
   height: 28px;
+
+  .stopsHead & {
+    width: 22px;
+    height: 22px;
+  }
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
   color: var(--icon-primary);
