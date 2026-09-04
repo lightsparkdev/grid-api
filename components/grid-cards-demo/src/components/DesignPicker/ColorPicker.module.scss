@@ -12,6 +12,13 @@
   /* Origin clips its popup; the round thumbs and stop handles reach past
      the field and the bar, and the side padding gives them room. */
   overflow: visible;
+  /* The fills (active tab, selected stop, tools) sit a step off the popup's
+     surface: darker in light, lighter in dark. */
+  --picker-fill: var(--surface-secondary);
+
+  :global([data-theme='dark']) & {
+    --picker-fill: var(--surface-tertiary);
+  }
 }
 
 /* Fill kind: Solid, Linear, Radial, as text tabs. */
@@ -46,7 +53,7 @@
 
 .modeOn {
   color: var(--text-primary);
-  background: var(--surface-secondary);
+  background: var(--picker-fill);
 }
 
 .stopsTools {
@@ -113,12 +120,13 @@
   gap: var(--spacing-2xs);
   padding: 2px;
   corner-shape: var(--corner-shape);
-  border-radius: var(--corner-radius-xs);
+  /* Concentric with the fields inside: their radius plus the padding. */
+  border-radius: calc(var(--corner-radius-xs) + 2px);
   cursor: default;
 }
 
 .stopRowOn {
-  background: var(--surface-secondary);
+  background: var(--picker-fill);
 }
 
 .stopAt,
@@ -311,7 +319,7 @@
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
   color: var(--icon-primary);
-  @include surface-with-hover(var(--surface-secondary));
+  @include surface-with-hover(var(--picker-fill));
   cursor: pointer;
 
   svg {
