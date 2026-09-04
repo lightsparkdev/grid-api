@@ -446,8 +446,8 @@ function wordmarkOf(design: CardDesign): string {
 }
 
 let measureCtx: CanvasRenderingContext2D | null = null;
-/** The wordmark's tracking, in em (the print sample sets -5%). */
-const BRAND_TRACKING = -0.05;
+/** The wordmark's tracking, in em (the print sample sets -4%). */
+const BRAND_TRACKING = -0.04;
 
 function measureWordmark(text: string, px: number): number {
   measureCtx ??= makeCanvas(1, 1).getContext('2d')!;

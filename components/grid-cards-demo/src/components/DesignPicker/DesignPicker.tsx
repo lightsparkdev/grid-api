@@ -26,6 +26,7 @@ import {
 } from '@/data/design';
 import { PRESETS, type PresetId } from '@/data/presets';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
+import { ColorPicker } from './ColorPicker';
 import styles from './DesignPicker.module.scss';
 
 interface DesignPickerProps {
@@ -370,20 +371,15 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                 )}
               </Tooltip>
             ))}
-            <label
-              className={clsx(styles.swatch, styles.swatchCustom)}
-              data-active={custom || undefined}
-              style={custom ? swatchStyle(design.color!) : undefined}
+            <ColorPicker
+              value={design.color ?? brand}
+              onChange={(color) => onChange({ color })}
+              triggerClassName={clsx(styles.swatch, styles.swatchCustom)}
+              triggerActive={custom}
+              triggerLabel="Custom color"
             >
-              <input
-                type="color"
-                className={styles.colorInput}
-                value={design.color ?? brand}
-                aria-label="Custom color"
-                onChange={(e) => onChange({ color: e.target.value })}
-              />
               {!custom ? <IconPlusSmall size={16} aria-hidden /> : null}
-            </label>
+            </ColorPicker>
           </SwatchRow>
         </div>
         <div className={styles.row}>

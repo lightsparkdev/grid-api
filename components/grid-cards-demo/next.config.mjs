@@ -51,6 +51,10 @@ const nextConfig = {
         __dirname,
         'node_modules/@lightsparkdev/origin/src/components/Badge/index.ts',
       ),
+      '@lightsparkdev/origin/popover': path.resolve(
+        __dirname,
+        'node_modules/@lightsparkdev/origin/src/components/Popover/index.ts',
+      ),
     };
 
     return config;

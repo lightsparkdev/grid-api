@@ -1,0 +1,115 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+@use '@lightsparkdev/origin/src/tokens/mixins' as *;
+
+/* Origin's popover surface; the picker's own parts use its tokens: xs radius
+   on the field and bar, an Input-styled hex field, secondary-surface tool. */
+.popup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 216px;
+  padding: var(--spacing-xs);
+}
+
+.field,
+.hue {
+  position: relative;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  cursor: crosshair;
+  touch-action: none;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), var(--input-focus);
+  }
+}
+
+.field {
+  height: 136px;
+  /* Value down, saturation across, over the pure hue. */
+  background:
+    linear-gradient(to top, #000, rgba(0, 0, 0, 0)),
+    linear-gradient(to right, #fff, var(--hue));
+}
+
+.hue {
+  height: 12px;
+  cursor: ew-resize;
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+
+.thumb {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 50%;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), var(--shadow-sm);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.preview {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.hex {
+  @include input;
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  box-sizing: border-box;
+  padding-inline: var(--spacing-xs);
+  border: var(--stroke-sm) solid var(--border-primary);
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  background: transparent;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1, 'tnum' 1;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+
+  &:focus {
+    @include input-focus;
+  }
+}
+
+.tool {
+  @include button-reset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-xs);
+  color: var(--icon-primary);
+  @include surface-with-hover(var(--surface-secondary));
+  cursor: pointer;
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+
+  &:focus-visible {
+    box-shadow: var(--input-focus);
+  }
+}
