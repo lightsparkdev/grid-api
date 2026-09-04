@@ -42,7 +42,14 @@
   /* Snap guides are red, as Figma's are, so they never read as part of the
      blue selection. The palette's red-500. */
   --guide: var(--color-red-500);
+  /* A guide is one device pixel at any zoom. */
+  --guide-px: calc(1px / var(--card-scale));
+  --mark: calc(7px / var(--card-scale));
   --sel-px: calc(1px / var(--card-scale));
+
+  @media (min-resolution: 1.5dppx) {
+    --guide-px: calc(0.5px / var(--card-scale));
+  }
   --handle: calc(8px / var(--card-scale));
   --zone: calc(18px / var(--card-scale));
 }
@@ -131,15 +138,44 @@
 .guideV {
   top: 0;
   bottom: 0;
-  width: var(--sel-px);
-  margin-left: calc(var(--sel-px) / -2);
+  width: var(--guide-px);
+  margin-left: calc(var(--guide-px) / -2);
 }
 
 .guideH {
   left: 0;
   right: 0;
-  height: var(--sel-px);
-  margin-top: calc(var(--sel-px) / -2);
+  height: var(--guide-px);
+  margin-top: calc(var(--guide-px) / -2);
+}
+
+/* An × at each point a guide aligns: two hairlines through one point. */
+.guideMark {
+  position: absolute;
+  width: var(--mark);
+  height: var(--mark);
+  margin: calc(var(--mark) / -2);
+  pointer-events: none;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: var(--guide-px);
+    margin-top: calc(var(--guide-px) / -2);
+    background: var(--guide);
+  }
+
+  &::before {
+    transform: rotate(45deg);
+  }
+
+  &::after {
+    transform: rotate(-45deg);
+  }
 }
 
 .srOnly {

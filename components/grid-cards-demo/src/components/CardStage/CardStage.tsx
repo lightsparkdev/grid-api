@@ -48,6 +48,8 @@ const ROTATE_STEP = 15;
 const SNAP_DEG = 3;
 /** Spec px → card px, the hit box's unit. */
 const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
+/** The chip module's center x (spec px; see `CHIP` in facePaint). */
+const CHIP_CENTER_X = 172 + 197 / 2;
 
 // Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
@@ -117,10 +119,12 @@ interface BrandDrag {
   box0: SpecRect;
 }
 
-/** Snap guides shown during a move, in spec px. */
+/** Snap guides shown during a move, in spec px: the lines, and an × at each
+ *  point being aligned (on the brand, and on what it snapped to). */
 interface Guides {
   x?: number;
   y?: number;
+  marks?: Pt[];
 }
 
 interface CardStageProps {
@@ -277,38 +281,60 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   };
 
   /** Snap a moved box to the card's center, the chip's row, and the print
-   *  margins; a turned box snaps by its center only. */
+   *  margins; a turned box snaps by its center only. Each snap comes with
+   *  its guide and the points it aligned: on the brand, and on the card
+   *  feature (its center, the chip) when there is one to mark. */
   const snapMove = (box: SpecRect, rotation: number): { dx: number; dy: number; guides: Guides } => {
     const hit = hitRef.current;
     const tol = hit ? (SNAP_PX * FIGMA_CARD_W) / hit.getBoundingClientRect().width : 0;
     const turned = Math.abs(rotation) > 0.5;
     const c = center(box);
-    const xs: Array<[number, number]> = [[c.x, FIGMA_CARD_W / 2]];
-    const ys: Array<[number, number]> = [
-      [c.y, FIGMA_FACE_H / 2],
-      [c.y, BRAND_DEFAULT_LAYOUT.y],
+    const cardCenter: Pt = { x: FIGMA_CARD_W / 2, y: FIGMA_FACE_H / 2 };
+    const chipCenter: Pt = { x: CHIP_CENTER_X, y: BRAND_DEFAULT_LAYOUT.y };
+    // [from, to, the feature's point to mark, if any]
+    type Pair = [number, number, Pt | null];
+    const xs: Pair[] = [[c.x, cardCenter.x, cardCenter]];
+    const ys: Pair[] = [
+      [c.y, cardCenter.y, cardCenter],
+      [c.y, chipCenter.y, chipCenter],
     ];
     if (!turned) {
-      xs.push([box.x, BRAND_MARGIN], [box.x + box.w, FIGMA_CARD_W - BRAND_MARGIN]);
-      ys.push([box.y, BRAND_MARGIN], [box.y + box.h, FIGMA_FACE_H - BRAND_MARGIN]);
+      xs.push([box.x, BRAND_MARGIN, null], [box.x + box.w, FIGMA_CARD_W - BRAND_MARGIN, null]);
+      ys.push([box.y, BRAND_MARGIN, null], [box.y + box.h, FIGMA_FACE_H - BRAND_MARGIN, null]);
     }
-    const best = (pairs: Array<[number, number]>) => {
+    const best = (pairs: Pair[]) => {
       let d = 0;
       let at: number | undefined;
+      let feature: Pt | null = null;
       let min = tol;
-      for (const [from, to] of pairs) {
+      for (const [from, to, pt] of pairs) {
         const dist = Math.abs(to - from);
         if (dist <= min) {
           min = dist;
           d = to - from;
           at = to;
+          feature = pt;
         }
       }
-      return { d, at };
+      return { d, at, feature };
     };
     const sx = best(xs);
     const sy = best(ys);
-    return { dx: sx.d, dy: sy.d, guides: { x: sx.at, y: sy.at } };
+    // Where the brand's snapped edge or center sits once moved.
+    const snapped: Pt = { x: c.x + sx.d, y: c.y + sy.d };
+    const marks: Pt[] = [];
+    const mark = (p: Pt) => {
+      if (!marks.some((m) => Math.hypot(m.x - p.x, m.y - p.y) < 3)) marks.push(p);
+    };
+    if (sx.at !== undefined) {
+      mark({ x: sx.at, y: snapped.y });
+      if (sx.feature) mark(sx.feature);
+    }
+    if (sy.at !== undefined) {
+      mark({ x: snapped.x, y: sy.at });
+      if (sy.feature) mark(sy.feature);
+    }
+    return { dx: sx.d, dy: sy.d, guides: { x: sx.at, y: sy.at, marks } };
   };
 
   // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
@@ -530,6 +556,14 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         {guides.y !== undefined && (
           <span className={styles.guideH} style={{ top: guides.y * CARD_PER_SPEC }} aria-hidden />
         )}
+        {guides.marks?.map((m, i) => (
+          <span
+            key={i}
+            className={styles.guideMark}
+            style={{ left: m.x * CARD_PER_SPEC, top: m.y * CARD_PER_SPEC }}
+            aria-hidden
+          />
+        ))}
 
         <span
           className={clsx(

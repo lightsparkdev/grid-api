@@ -236,7 +236,7 @@ export function mixHex(a: string, b: string, t: number): string {
  *  printed card, a darker bone or steel on a bare one. */
 function stripeFor(design: CardDesign): string {
   const base = isBare(design) ? stockOf(design).face : design.color!;
-  return mixHex(base, '#000000', 0.6);
+  return mixHex(base, '#000000', 0.2);
 }
 
 /** Ink that reads on the face: white on print and on dark stock, near-black
