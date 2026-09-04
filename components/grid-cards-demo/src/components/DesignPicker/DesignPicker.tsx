@@ -15,6 +15,7 @@ import {
   stockOf,
   type CardDesign,
 } from '@/data/design';
+import { Tooltip } from '@/components/Tooltip/Tooltip';
 import styles from './DesignPicker.module.scss';
 
 interface DesignPickerProps {
@@ -73,8 +74,7 @@ function Choices<T extends string>({
 /**
  * A finish as a small sample of itself, the way the Color row shows colors:
  * ink is flat, spot gloss has a shine, foil is silver with a bright run, and
- * an etch is pressed in. The chosen one is named beside them, so the squares
- * never need a tooltip to be read (each still has one).
+ * an etch is pressed in. Each names itself in a tooltip on hover.
  */
 const FINISH_SAMPLE: Record<string, string> = {
   print: styles.sampleInk,
@@ -96,24 +96,25 @@ function FinishSwatches<T extends string>({
   onChange: (id: T) => void;
   disabled?: Partial<Record<T, string>>;
 }) {
-  const current = options.find((o) => o.id === value);
   return (
     <div className={styles.swatches} role="radiogroup" aria-label={label}>
-      <span className={styles.swatchesValue}>{current?.label}</span>
       {options.map((o) => {
         const why = disabled?.[o.id];
         return (
-          <button
-            key={o.id}
-            type="button"
-            role="radio"
-            aria-checked={value === o.id}
-            aria-label={o.label}
-            title={why ?? o.label}
-            disabled={!!why}
-            className={clsx(styles.swatch, FINISH_SAMPLE[o.id], value === o.id && styles.swatchActive)}
-            onClick={() => onChange(o.id)}
-          />
+          <Tooltip key={o.id} text={why ?? o.label}>
+            {(tip) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={value === o.id}
+                aria-label={o.label}
+                disabled={!!why}
+                className={clsx(styles.swatch, FINISH_SAMPLE[o.id], value === o.id && styles.swatchActive)}
+                onClick={() => onChange(o.id)}
+                {...tip}
+              />
+            )}
+          </Tooltip>
         );
       })}
     </div>
@@ -225,31 +226,37 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
         <div className={styles.row}>
           <span className={styles.rowLabel}>Color</span>
           <div className={styles.swatches} role="radiogroup" aria-label="Card color">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={design.color === null}
-              aria-label="None"
-              title={`No print: bare ${stock.label.toLowerCase()}`}
-              className={clsx(styles.swatch, styles.swatchNone, design.color === null && styles.swatchActive)}
-              onClick={() => onChange({ color: null })}
-            />
+            <Tooltip text={`None (bare ${stock.label.toLowerCase()})`}>
+              {(tip) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={design.color === null}
+                  aria-label="None"
+                  className={clsx(styles.swatch, styles.swatchNone, design.color === null && styles.swatchActive)}
+                  onClick={() => onChange({ color: null })}
+                  {...tip}
+                />
+              )}
+            </Tooltip>
             {DESIGN_SWATCHES.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                role="radio"
-                aria-checked={activeSwatch?.id === s.id}
-                aria-label={s.label}
-                title={s.label}
-                className={clsx(styles.swatch, activeSwatch?.id === s.id && styles.swatchActive)}
-                style={swatchStyle(s.color)}
-                onClick={() => onChange({ color: s.color })}
-              />
+              <Tooltip key={s.id} text={s.label}>
+                {(tip) => (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={activeSwatch?.id === s.id}
+                    aria-label={s.label}
+                    className={clsx(styles.swatch, activeSwatch?.id === s.id && styles.swatchActive)}
+                    style={swatchStyle(s.color)}
+                    onClick={() => onChange({ color: s.color })}
+                    {...tip}
+                  />
+                )}
+              </Tooltip>
             ))}
             <label
               className={clsx(styles.swatch, styles.swatchCustom, custom && styles.swatchActive)}
-              title="Custom color"
               style={custom ? swatchStyle(design.color!) : undefined}
             >
               <input

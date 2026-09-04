@@ -135,14 +135,6 @@
   }
 }
 
-/* The chosen finish, named, ahead of its samples. */
-.swatchesValue {
-  @include label;
-  color: var(--text-secondary);
-  font-feature-settings: 'salt' 1;
-  margin-right: var(--spacing-3xs);
-}
-
 /* Finish samples: a neutral mid tone under each treatment. Ink is flat;
    gloss carries a soft specular; foil is silver with a bright diagonal run;
    etch is pressed in (a shadow on its top-left walls, light on the lower). */
