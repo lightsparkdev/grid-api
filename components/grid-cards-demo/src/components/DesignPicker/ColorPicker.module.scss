@@ -336,7 +336,11 @@
 
 .hue {
   height: 12px;
-  cursor: ew-resize;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
   background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
 }
 

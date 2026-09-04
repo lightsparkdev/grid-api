@@ -34,7 +34,11 @@ export function Tooltip({ text, children }: { text: string; children: (target: T
   const target: TooltipTargetProps = {
     onMouseEnter: (e) => show(e.currentTarget),
     onMouseLeave: hide,
-    onFocus: (e) => show(e.currentTarget),
+    // Keyboard focus only: focus handed back by a closing popover (or set by
+    // a click) should not raise the tip.
+    onFocus: (e) => {
+      if (e.currentTarget.matches(':focus-visible')) show(e.currentTarget);
+    },
     onBlur: hide,
   };
   return (
