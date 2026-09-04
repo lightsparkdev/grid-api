@@ -272,8 +272,20 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setSelected(false);
     };
+    // A click on the stage off the card deselects; the panels beside it
+    // don't, so a control can be used on the selection.
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node | null;
+      const stage = rootRef.current?.closest('section');
+      if (!t || !stage?.contains(t) || hitRef.current?.contains(t)) return;
+      setSelected(false);
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
   }, [selected]);
 
   const [guides, setGuides] = useState<Guides>({});
@@ -550,8 +562,18 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
                   data-rotate="true"
                 />
               ))}
+            {/* The edges resize along their whole length; the corners carry the handles. */}
             {selected &&
-              [...EDGES, ...CORNERS].map((h) => (
+              EDGES.map((h) => (
+                <span
+                  key={h}
+                  className={clsx(styles.edge, styles[`edge_${h}`])}
+                  style={{ cursor: resizeCursor(handleAngle(h) + placed!.layout.rotation) }}
+                  data-handle={h}
+                />
+              ))}
+            {selected &&
+              CORNERS.map((h) => (
                 <span
                   key={h}
                   className={clsx(styles.handle, styles[`handle_${h}`])}

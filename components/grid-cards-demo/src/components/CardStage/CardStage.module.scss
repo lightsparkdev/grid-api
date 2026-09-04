@@ -90,7 +90,35 @@
   transform-origin: center center;
 }
 
-/* Scale handles: white squares on the corners and the edges' midpoints. */
+/* The edges: invisible strips along each side that resize, so any point on
+   the outline is a grip, as in Figma. Under the corner handles. */
+.edge {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.edge_n,
+.edge_s {
+  left: 0;
+  right: 0;
+  height: var(--handle);
+  margin-top: calc(var(--handle) / -2);
+}
+
+.edge_e,
+.edge_w {
+  top: 0;
+  bottom: 0;
+  width: var(--handle);
+  margin-left: calc(var(--handle) / -2);
+}
+
+.edge_n { top: 0; }
+.edge_s { top: 100%; }
+.edge_w { left: 0; }
+.edge_e { left: 100%; }
+
+/* Scale handles: white squares on the four corners. */
 .handle {
   position: absolute;
   width: var(--handle);
@@ -103,10 +131,6 @@
 
 /* Cursors are set inline: the design tool's resize and rotate glyphs, drawn
    in `cursors.ts` at the angle of each handle plus the box's own rotation. */
-.handle_n { left: 50%; top: 0; }
-.handle_s { left: 50%; top: 100%; }
-.handle_e { left: 100%; top: 50%; }
-.handle_w { left: 0; top: 50%; }
 .handle_nw { left: 0; top: 0; }
 .handle_se { left: 100%; top: 100%; }
 .handle_ne { left: 100%; top: 0; }
