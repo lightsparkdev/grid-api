@@ -326,8 +326,11 @@
     vector-effect: non-scaling-stroke;
   }
 
+  /* The whole row is the target until a file is picked, so the row's hover
+     lights the button too. */
   @media (hover: hover) {
-    &:hover:not(:disabled) {
+    &:hover:not(:disabled),
+    .rowPick:hover & {
       color: var(--text-primary);
     }
   }

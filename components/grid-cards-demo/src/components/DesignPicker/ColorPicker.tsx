@@ -582,9 +582,9 @@ export function ColorPicker({
                   <motion.div
                     key="gradient"
                     className={styles.gradientBlock}
-                    initial={{ opacity: 0, y: -8 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
+                    exit={{ opacity: 0, y: 8 }}
                     transition={ENTER}
                   >
                     <div
@@ -665,9 +665,9 @@ export function ColorPicker({
                             layout
                             className={clsx(styles.stopRow, s.i === sel && styles.stopRowOn)}
                             onPointerDown={() => setStop(s.i)}
-                            initial={{ opacity: 0, y: -6 }}
+                            initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
+                            exit={{ opacity: 0, y: 6 }}
                             transition={ENTER}
                           >
                             <label className={styles.stopAt}>
