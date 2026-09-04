@@ -172,17 +172,29 @@ curl -X GET 'https://api.lightspark.com/grid/2025-10-13/customers/external-accou
 
 External accounts move through verification states:
 
-| Status     | Description              | Can Use for Conversions |
-| ---------- | ------------------------ | ----------------------- |
-| `PENDING`       | Verification in progress    | ❌                      |
-| `ACTIVE`        | Verified and ready          | ✅                      |
-| `UNDER_REVIEW`  | Additional review required  | ❌                      |
-| `INACTIVE`      | Manually disabled           | ❌                      |
+| Status                           | Description                                                       | Can use for conversions        |
+| -------------------------------- | ----------------------------------------------------------------- | ------------------------------ |
+| `PENDING`                        | Verification in progress                                          | No                             |
+| `ACTIVE`                         | Verified and ready                                                | Yes                            |
+| `PENDING_OWNERSHIP_VERIFICATION` | The customer must prove they control this self-custody wallet     | Below the regulatory threshold |
+| `UNVERIFIED`                     | The last ownership attempt failed. Start a new challenge to retry  | Below the regulatory threshold |
+| `UNDER_REVIEW`                   | Additional review required                                        | No                             |
+| `INACTIVE`                       | Manually disabled                                                 | No                             |
 
 <Info>
   Spark wallet accounts are immediately `ACTIVE`. Bank accounts may require
   verification (typically instant to a few hours).
 </Info>
+
+<Note>
+  A self-custody wallet registered with `ownershipType` set to `FIRST_PARTY` in a
+  region that applies the EU Travel Rule starts at
+  `PENDING_OWNERSHIP_VERIFICATION`. It is not blocked: conversions below the
+  regulatory threshold go through while the wallet is pending. To clear the
+  status, start a challenge with
+  `POST /customers/external-accounts/{externalAccountId}/challenge` and complete
+  it with either a wallet signature or a liveness check.
+</Note>
 
 ## Best practices for ramps
 
