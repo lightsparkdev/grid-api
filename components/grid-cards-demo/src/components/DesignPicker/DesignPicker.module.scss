@@ -60,6 +60,10 @@
     border-bottom: none;
   }
 
+  &.rowPick {
+    cursor: pointer;
+  }
+
   /* The flow tiles' hover wash, with a real pointer only. */
   @media (hover: hover) {
     &:hover {

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import clsx from 'clsx';
+import clsx from "clsx";
 import {
   useEffect,
   useLayoutEffect,
@@ -9,11 +9,11 @@ import {
   type ChangeEvent,
   type CSSProperties,
   type ReactNode,
-} from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
-import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
-import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
-import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
+} from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { IconCrossMedium } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium";
+import { IconPlusSmall } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall";
+import { IconArrowUpSquare } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare";
 import {
   ART_TREATMENTS,
   brandColorOf,
@@ -23,11 +23,11 @@ import {
   MATERIALS,
   stockOf,
   type CardDesign,
-} from '@/data/design';
-import { PRESETS, type PresetId } from '@/data/presets';
-import { Tooltip } from '@/components/Tooltip/Tooltip';
-import { ColorPicker } from './ColorPicker';
-import styles from './DesignPicker.module.scss';
+} from "@/data/design";
+import { PRESETS, type PresetId } from "@/data/presets";
+import { Tooltip } from "@/components/Tooltip/Tooltip";
+import { ColorPicker } from "./ColorPicker";
+import styles from "./DesignPicker.module.scss";
 
 interface DesignPickerProps {
   design: CardDesign;
@@ -58,7 +58,15 @@ const RING_STROKE = 2;
  * the ring toward it, so the move begins under the finger; letting go off
  * the swatch relaxes it back.
  */
-function SwatchRow({ label, active, children }: { label: string; active: string | null; children: ReactNode }) {
+function SwatchRow({
+  label,
+  active,
+  children,
+}: {
+  label: string;
+  active: string | null;
+  children: ReactNode;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -77,15 +85,29 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
     return Math.sign(d) * Math.min(6, Math.abs(d) * 0.12) + (l as number);
   });
   // The leading edge reaches ahead: going left, the box starts earlier.
-  const left = useTransform([sx, reach], ([px, r]) => (px as number) - RING_OUT - Math.max(0, -(r as number)));
+  const left = useTransform(
+    [sx, reach],
+    ([px, r]) => (px as number) - RING_OUT - Math.max(0, -(r as number)),
+  );
   const top = useTransform(sy, (py) => py - RING_OUT);
-  const width = useTransform([w, reach], ([bw, r]) => (bw as number) + RING_OUT * 2 + Math.abs(r as number));
+  const width = useTransform(
+    [w, reach],
+    ([bw, r]) => (bw as number) + RING_OUT * 2 + Math.abs(r as number),
+  );
 
   // Press: lean toward the swatch under the pointer until it is released.
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const row = ref.current;
-    const el = (e.target as HTMLElement).closest<HTMLElement>('[role="radio"], label');
-    if (!row || !el || el.getAttribute('aria-checked') === 'true' || el.dataset.active === 'true') return;
+    const el = (e.target as HTMLElement).closest<HTMLElement>(
+      '[role="radio"], label',
+    );
+    if (
+      !row ||
+      !el ||
+      el.getAttribute("aria-checked") === "true" ||
+      el.dataset.active === "true"
+    )
+      return;
     const rr = row.getBoundingClientRect();
     const er = el.getBoundingClientRect();
     const targetCenter = er.left + er.width / 2 - rr.left;
@@ -100,7 +122,9 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
     const row = ref.current;
     if (!row) return;
     const place = (jump: boolean) => {
-      const el = row.querySelector<HTMLElement>('[aria-checked="true"], [data-active="true"]');
+      const el = row.querySelector<HTMLElement>(
+        '[aria-checked="true"], [data-active="true"]',
+      );
       if (!el) return;
       // Sub-pixel: the row is right-aligned, so a swatch often sits on a half
       // pixel that offsetLeft rounds away. Measure from the swatch's center so
@@ -130,10 +154,10 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
     ro.observe(row);
     Array.from(row.children).forEach((el) => ro.observe(el));
     document.fonts?.ready.then(follow);
-    window.addEventListener('resize', follow);
+    window.addEventListener("resize", follow);
     return () => {
       ro.disconnect();
-      window.removeEventListener('resize', follow);
+      window.removeEventListener("resize", follow);
     };
   }, [active, placed, x, y, w, h, sx, sy]);
 
@@ -150,7 +174,11 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
     >
       {children}
       {placed && active !== null && (
-        <motion.span className={styles.ring} style={{ left, top, width, height }} aria-hidden />
+        <motion.span
+          className={styles.ring}
+          style={{ left, top, width, height }}
+          aria-hidden
+        />
       )}
     </div>
   );
@@ -248,7 +276,12 @@ function ShimmerField({
       {!value && (
         <span
           className={styles.shimmerGhost}
-          style={{ '--shimmer-duration': `${duration}ms`, '--shimmer-delay': `${-phase * duration}ms` } as CSSProperties}
+          style={
+            {
+              "--shimmer-duration": `${duration}ms`,
+              "--shimmer-delay": `${-phase * duration}ms`,
+            } as CSSProperties
+          }
           aria-hidden
         >
           {placeholder}
@@ -258,14 +291,18 @@ function ShimmerField({
   );
 }
 
-/** One image upload: a swatch-sized preview with a Remove tile once picked, an Upload button until then. */
+/** One image upload, as a whole row: until a file is picked the row itself
+ *  is the target (the label, the empty space, the Upload button), after that
+ *  a swatch-sized preview and a Remove tile. */
 function UploadRow({
+  rowLabel,
   url,
   accept,
   label,
   previewStyle,
   onPick,
 }: {
+  rowLabel: string;
   url: string | null;
   accept: string;
   label: string;
@@ -289,7 +326,7 @@ function UploadRow({
     const next = URL.createObjectURL(file);
     objectUrl.current = next;
     onPick(next);
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const clear = () => {
@@ -299,28 +336,47 @@ function UploadRow({
   };
 
   return (
-    <div className={styles.logoRow}>
-      {url ? (
-        <>
-          <span className={styles.logoPreview} style={previewStyle}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={url} alt="" />
-          </span>
-          <Tooltip text="Remove">
-            {(tip) => (
-              <button type="button" className={styles.logoClear} onClick={clear} aria-label="Remove" {...tip}>
-                <IconCrossMedium size={16} aria-hidden />
-              </button>
-            )}
-          </Tooltip>
-        </>
-      ) : (
-        <button type="button" className={styles.logoUpload} onClick={() => fileRef.current?.click()}>
-          <IconArrowUpSquare size={16} aria-hidden />
-          {label}
-        </button>
-      )}
-      <input ref={fileRef} type="file" accept={accept} className={styles.fileInput} onChange={onPicked} tabIndex={-1} />
+    <div
+      className={clsx(styles.row, !url && styles.rowPick)}
+      onClick={url ? undefined : () => fileRef.current?.click()}
+    >
+      <span className={styles.rowLabel}>{rowLabel}</span>
+      <div className={styles.logoRow}>
+        {url ? (
+          <>
+            <span className={styles.logoPreview} style={previewStyle}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" />
+            </span>
+            <Tooltip text="Remove">
+              {(tip) => (
+                <button
+                  type="button"
+                  className={styles.logoClear}
+                  onClick={clear}
+                  aria-label="Remove"
+                  {...tip}
+                >
+                  <IconCrossMedium size={16} aria-hidden />
+                </button>
+              )}
+            </Tooltip>
+          </>
+        ) : (
+          <button type="button" className={styles.logoUpload}>
+            <IconArrowUpSquare size={16} aria-hidden />
+            {label}
+          </button>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept={accept}
+          className={styles.fileInput}
+          onChange={onPicked}
+          tabIndex={-1}
+        />
+      </div>
     </div>
   );
 }
@@ -331,15 +387,25 @@ function UploadRow({
  * core under a print is chosen to match it, not offered). Brand: the name and
  * logo, and how the mark is applied once there is one. Name: the cardholder's.
  */
-export function DesignPicker({ design, onChange, preset, onPresetSelect }: DesignPickerProps) {
+export function DesignPicker({
+  design,
+  onChange,
+  preset,
+  onPresetSelect,
+}: DesignPickerProps) {
   const stock = stockOf(design);
-  const activeSwatch = design.color && !design.gradient ? DESIGN_SWATCHES.find((s) => s.color === design.color) : undefined;
+  const activeSwatch =
+    design.color && !design.gradient
+      ? DESIGN_SWATCHES.find((s) => s.color === design.color)
+      : undefined;
   const custom = design.color !== null && !activeSwatch;
   const brand = brandColorOf(design);
   // Spot gloss is a clear varnish that reads against a matte coat; on a gloss
   // card it is invisible.
-  const glossy = design.finish === 'gloss';
-  const noSpotGloss = glossy ? ({ spotGloss: 'Spot gloss needs a matte card' } as const) : undefined;
+  const glossy = design.finish === "gloss";
+  const noSpotGloss = glossy
+    ? ({ spotGloss: "Spot gloss needs a matte card" } as const)
+    : undefined;
 
   return (
     <div className={styles.groups}>
@@ -387,7 +453,12 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Color</span>
-          <SwatchRow label="Card color" active={design.color === null ? 'none' : custom ? 'custom' : design.color}>
+          <SwatchRow
+            label="Card color"
+            active={
+              design.color === null ? "none" : custom ? "custom" : design.color
+            }
+          >
             <Tooltip text={`None (bare ${stock.label.toLowerCase()})`}>
               {(tip) => (
                 <button
@@ -423,22 +494,22 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
               onChange={(color, gradient) => onChange({ color, gradient })}
               triggerClassName={clsx(styles.swatch, styles.swatchCustom)}
               triggerActive={custom}
-              triggerLabel={design.gradient ? 'Custom gradient' : 'Custom color'}
-              tooltip={design.gradient ? 'Custom gradient' : 'Custom color'}
+              triggerLabel={
+                design.gradient ? "Custom gradient" : "Custom color"
+              }
+              tooltip={design.gradient ? "Custom gradient" : "Custom color"}
             >
               {!custom ? <IconPlusSmall size={16} aria-hidden /> : null}
             </ColorPicker>
           </SwatchRow>
         </div>
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Art</span>
-          <UploadRow
-            url={design.backgroundUrl}
-            accept="image/png,image/jpeg,image/webp"
-            label="Upload card art"
-            onPick={(url) => onChange({ backgroundUrl: url })}
-          />
-        </div>
+        <UploadRow
+          rowLabel="Art"
+          url={design.backgroundUrl}
+          accept="image/png,image/jpeg,image/webp"
+          label="Upload card art"
+          onPick={(url) => onChange({ backgroundUrl: url })}
+        />
         {design.backgroundUrl && (
           <div className={styles.row}>
             <span className={styles.rowLabel}>Effect</span>
@@ -465,16 +536,14 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             onChange={(programName) => onChange({ programName })}
           />
         </div>
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Logo</span>
-          <UploadRow
-            url={design.logoUrl}
-            accept="image/svg+xml,image/png,image/webp"
-            label="Upload SVG or PNG"
-            previewStyle={swatchStyle(brand)}
-            onPick={(url) => onChange({ logoUrl: url })}
-          />
-        </div>
+        <UploadRow
+          rowLabel="Logo"
+          url={design.logoUrl}
+          accept="image/svg+xml,image/png,image/webp"
+          label="Upload SVG or PNG"
+          previewStyle={swatchStyle(brand)}
+          onPick={(url) => onChange({ logoUrl: url })}
+        />
         <div className={styles.row}>
           <span className={styles.rowLabel}>Effect</span>
           <SampleSwatches
