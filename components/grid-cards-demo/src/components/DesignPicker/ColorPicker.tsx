@@ -11,6 +11,7 @@ import {
 } from 'react';
 import clsx from 'clsx';
 import { motion } from 'motion/react';
+import { motionTransition } from '@/lib/easing';
 import { IconEyedropper } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyedropper';
 import { IconArrowLeftRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeftRight';
 import { IconRotate } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate';
@@ -126,6 +127,46 @@ function gradientFrom(color: string, type: CardGradient['type']): CardGradient {
     from: { x: FIGMA_CARD_W / 2, y: 0 },
     to: { x: FIGMA_CARD_W / 2, y: FIGMA_FACE_H },
   };
+}
+
+/**
+ * Solid / Linear / Radial, full bleed across the popup's top, in the code
+ * block's Request / Response idiom: a rule under the row, and the active tab
+ * an indicator that slides between them, walled by hairlines on either side
+ * and open at the bottom into the content.
+ */
+function ModeTabs({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
+  const group = useRef<HTMLDivElement>(null);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+  useEffect(() => {
+    const g = group.current;
+    if (!g) return;
+    const place = () => {
+      const el = g.querySelector<HTMLElement>('[aria-selected="true"]');
+      if (el) setIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    place();
+    const ro = new ResizeObserver(place);
+    ro.observe(g);
+    return () => ro.disconnect();
+  }, [mode]);
+  return (
+    <div ref={group} className={clsx(styles.modes, mode === 'solid' && styles.modesLeadingOn)} role="tablist" aria-label="Fill">
+      <motion.span className={styles.modeIndicator} aria-hidden initial={false} animate={indicator} transition={motionTransition()} />
+      {MODES.map((m) => (
+        <button
+          key={m.id}
+          type="button"
+          role="tab"
+          aria-selected={mode === m.id}
+          className={clsx(styles.mode, mode === m.id && styles.modeOn)}
+          onClick={() => onChange(m.id)}
+        >
+          {m.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /**
@@ -439,20 +480,7 @@ export function ColorPicker({
         <PopoverPositioner side="bottom" align="end" sideOffset={8}>
           <PopoverPopup className={styles.popup} aria-label="Custom color">
             <AnimatedHeight className={styles.body}>
-              <div className={styles.modes} role="tablist" aria-label="Fill">
-                {MODES.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === m.id}
-                    className={clsx(styles.mode, mode === m.id && styles.modeOn)}
-                    onClick={() => setMode(m.id)}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
+              <ModeTabs mode={mode} onChange={setMode} />
 
               {gradient && (
                 <div className={styles.gradientBlock}>

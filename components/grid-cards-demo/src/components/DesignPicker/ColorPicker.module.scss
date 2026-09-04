@@ -34,11 +34,12 @@
 /* The height-animated body: clips vertically while it grows, with 8px of
    slack all round so the thumbs that reach past the field are not cut. */
 .body {
-  /* The animated height is the inner content's; the padding is the slack. */
+  /* The animated height is the inner content's; the padding is the slack,
+     enough for the tabs' full bleed and the thumbs past the field. */
   box-sizing: content-box;
   overflow: visible clip;
-  margin: -8px;
-  padding: 8px;
+  margin: -12px;
+  padding: 12px;
 }
 
 .bodyInner,
@@ -48,26 +49,74 @@
   gap: var(--spacing-xs);
 }
 
-/* Fill kind: Solid, Linear, Radial, as text tabs. */
+/* Fill kind: Solid, Linear, Radial. Full bleed across the popup's top (out
+   through its padding), in the code block's Request / Response idiom: a
+   rule under the row, and the active tab an indicator walled by hairlines
+   and open at the bottom into the content. */
 .modes {
+  position: relative;
+  z-index: 1;
   display: flex;
-  align-items: center;
-  gap: 2px;
+  height: 36px;
+  margin: -12px -12px 0;
+  /* Follows the popup's top corners; the rule is a layer under the
+     indicator rather than a border, so the indicator can open it. */
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-sm) var(--corner-radius-sm) 0 0;
+  overflow: clip;
+
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--stroke-xs);
+    background: var(--border-primary);
+  }
+}
+
+.modeIndicator {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  height: 100%;
+  box-sizing: border-box;
+  border-left: var(--stroke-xs) solid var(--border-primary);
+  border-right: var(--stroke-xs) solid var(--border-primary);
+  background: var(--surface-primary);
+  pointer-events: none;
+}
+
+/* Flipped above the swatch, the row sits at the popup's bottom: corners and
+   rule swap ends. */
+.popup[data-side='top'] .modes {
+  margin: 0 -12px -12px;
+  border-radius: 0 0 var(--corner-radius-sm) var(--corner-radius-sm);
+
+  &::after {
+    bottom: auto;
+    top: 0;
+  }
+}
+
+.modesLeadingOn .modeIndicator {
+  border-left: none;
 }
 
 .mode {
   @include button-reset;
-  @include label;
-  font-size: 12px;
-  /* The row's height: the tools' and the hex field's. */
-  height: 28px;
-  line-height: 28px;
-  padding: 0 var(--spacing-xs);
-  corner-shape: var(--corner-shape);
-  border-radius: var(--corner-radius-xs);
-  color: var(--text-secondary);
+  @include label-sm;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-tertiary);
   font-feature-settings: 'salt' 1;
-  transition: color 120ms ease, background-color 120ms ease;
+  transition: color 150ms ease;
 
   @media (hover: hover) {
     &:hover {
@@ -76,13 +125,12 @@
   }
 
   &:focus-visible {
-    box-shadow: var(--input-focus);
+    box-shadow: inset var(--input-focus);
   }
 }
 
 .modeOn {
   color: var(--text-primary);
-  background: var(--picker-fill);
 }
 
 .stopsTools {
