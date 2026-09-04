@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  width: 216px;
+  width: 200px;
   padding: var(--spacing-xs);
 }
 
@@ -27,7 +27,8 @@
 }
 
 .field {
-  height: 136px;
+  /* Square: the popup's inner width. */
+  aspect-ratio: 1;
   /* Value down, saturation across, over the pure hue. */
   background:
     linear-gradient(to top, #000, rgba(0, 0, 0, 0)),
@@ -60,8 +61,8 @@
 
 .preview {
   flex: none;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
@@ -74,6 +75,7 @@
   height: 28px;
   box-sizing: border-box;
   padding-inline: var(--spacing-xs);
+  font-size: 12px;
   border: var(--stroke-sm) solid var(--border-primary);
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
