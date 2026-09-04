@@ -150,16 +150,19 @@ export interface SwapUniforms {
   uBodySize: { value: THREE.Vector2 };
 }
 
-export function createSwapUniforms(): SwapUniforms {
+/** One set per surface. Given `shared`, the clock (solidity, noise, laminate)
+ *  is the same objects, so the faces and the edge move together; the bare
+ *  maps are each surface's own. */
+export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
   return {
-    uSolid: { value: 1 },
-    uNoise: { value: swapNoise('plastic').texture },
-    uNoiseSel: { value: new THREE.Vector2(1, 0) },
-    uLaminate: { value: 1 },
+    uSolid: shared?.uSolid ?? { value: 1 },
+    uNoise: shared?.uNoise ?? { value: swapNoise('plastic').texture },
+    uNoiseSel: shared?.uNoiseSel ?? { value: new THREE.Vector2(1, 0) },
+    uLaminate: shared?.uLaminate ?? { value: 1 },
     uBareMap: { value: null },
     uBareOrm: { value: null },
     uBareNormal: { value: null },
-    uBodySize: { value: new THREE.Vector2(CARD_W, CARD_H) },
+    uBodySize: shared?.uBodySize ?? { value: new THREE.Vector2(CARD_W, CARD_H) },
   };
 }
 

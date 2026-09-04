@@ -1,12 +1,21 @@
 'use client';
 
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
-import { materialOf, stockOf, type BrandLayout, type CardDesign } from '@/data/design';
+import { materialOf, stockOf, type BrandLayout, type CardDesign, type CardMaterial } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { foilStudioTexture } from './CardEnv';
+import {
+  createSwapUniforms,
+  LAMINATE_MS,
+  patchEdgeMaterial,
+  patchFaceMaterial,
+  SWAP_TIMING,
+  swapNoise,
+} from './materialSwap';
+import { MaterialSwarm } from './MaterialSwarm';
 import {
   brandBox,
   brandRegion,
@@ -17,6 +26,8 @@ import {
   makeCanvas,
   paintArtMask,
   paintBack,
+  paintBareBack,
+  paintBareFront,
   paintBrandMask,
   foilIsBlack,
   paintFoilAlbedo,
@@ -109,7 +120,18 @@ function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture 
  */
 const FOIL = { roughness: 0.04, envMapIntensity: 1.1, normalScale: 1 };
 
-function FoilMark({ assets, backZ, black }: { assets: FaceAssets; backZ: number; black: boolean }) {
+function FoilMark({
+  assets,
+  backZ,
+  black,
+  materialRef,
+}: {
+  assets: FaceAssets;
+  backZ: number;
+  black: boolean;
+  /** The swap fades the foil with the body's print. */
+  materialRef: React.MutableRefObject<THREE.MeshPhysicalMaterial | null>;
+}) {
   const material = useMemo(() => {
     const m = new THREE.MeshPhysicalMaterial({
       metalness: 1,
@@ -125,6 +147,12 @@ function FoilMark({ assets, backZ, black }: { assets: FaceAssets; backZ: number;
     m.depthWrite = false;
     return m;
   }, [assets, black]);
+  useEffect(() => {
+    materialRef.current = material;
+    return () => {
+      if (materialRef.current === material) materialRef.current = null;
+    };
+  }, [material, materialRef]);
   useEffect(
     () => () => {
       material.map?.dispose();
@@ -159,15 +187,37 @@ interface CardMeshProps {
   onReady?: () => void;
   /** Fires after each front paint with where the brand landed. */
   onBrandPlacement?: (placement: BrandPlacement) => void;
+  /** Whether a material change may play out (the card is floating, the intro
+   *  is over, motion is allowed); otherwise the body swaps at once. */
+  animateMaterial?: () => boolean;
 }
 
+/** A material change in flight. */
+interface Swap {
+  /** ms since it began. */
+  t: number;
+  from: CardMaterial;
+  to: CardMaterial;
+  /** The body has been rebuilt as `to` (at the end of the dissolve). */
+  committed: boolean;
+}
+
+const easeInOutCubic = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
-  { state, onReady, onBrandPlacement },
+  { state, onReady, onBrandPlacement, animateMaterial },
   ref,
 ) {
   const invalidate = useThree((s) => s.invalidate);
+  // The body's material lags the design's through a change: the old body
+  // dissolves, then the slab is rebuilt as the new one and assembles.
+  const [bodyMaterial, setBodyMaterial] = useState<CardMaterial>(state.design.material);
+  const bodyDesign = useMemo(
+    () => (state.design.material === bodyMaterial ? state.design : { ...state.design, material: bodyMaterial }),
+    [state.design, bodyMaterial],
+  );
   // Thickness follows the material, so the slab is rebuilt when it changes.
-  const cardMaterial = materialOf(state.design);
+  const cardMaterial = materialOf(bodyDesign);
   const geometry = useMemo(() => createCardGeometry(cardMaterial), [cardMaterial]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   // The back face's plane (the bevel makes the slab deeper than its depth).
@@ -186,6 +236,21 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const backCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
   const frontMap = useMemo(() => canvasTexture(frontCanvas, true), [frontCanvas]);
   const backMap = useMemo(() => canvasTexture(backCanvas, true), [backCanvas]);
+  // The bare body under the print, for the assembly beat of a material change.
+  const bareFrontCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
+  const bareBackCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
+  const bareFrontMap = useMemo(() => canvasTexture(bareFrontCanvas, true), [bareFrontCanvas]);
+  const bareBackMap = useMemo(() => canvasTexture(bareBackCanvas, true), [bareBackCanvas]);
+
+  // The swap's clock, shared by every surface; each face owns its bare maps.
+  const swapU = useMemo(() => {
+    const front = createSwapUniforms();
+    front.uBareMap.value = bareFrontMap;
+    const back = createSwapUniforms(front);
+    back.uBareMap.value = bareBackMap;
+    const edge = createSwapUniforms(front);
+    return { front, back, edge, shared: front };
+  }, [bareFrontMap, bareBackMap]);
 
   const materials = useMemo(() => {
     const face = () =>
@@ -205,8 +270,11 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     });
     mats[MAT_BACK].map = backMap;
     mats[MAT_FRONT].map = frontMap;
+    patchFaceMaterial(mats[MAT_FRONT], swapU.front);
+    patchFaceMaterial(mats[MAT_BACK], swapU.back);
+    patchEdgeMaterial(mats[MAT_EDGE], swapU.edge);
     return mats;
-  }, [frontMap, backMap]);
+  }, [frontMap, backMap, swapU]);
 
   useEffect(() => {
     loadFaceAssets().then(setAssets);
@@ -214,22 +282,28 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // Surface textures are cached per surface and face for the session.
   const surfaceTex = useRef(new Map<string, { orm: THREE.Texture; normal: THREE.Texture }>());
 
-  // Surface: print or bare metal, matte or gloss, on both faces.
-  const surface = surfaceOf(state.design);
+  // Surface: print or bare metal, matte or gloss, on both faces. The bare
+  // body's surface (steel, or bare PVC, in the same finish) goes to the swap.
+  const surface = surfaceOf(bodyDesign);
+  const bareSurface: Surface = `${cardMaterial === 'metal' ? 'bare' : 'print'}-${bodyDesign.finish}`;
   useEffect(() => {
     if (!assets) return;
     const c = SURFACE[surface];
-    for (const [side, idx] of [
-      ['front', MAT_FRONT],
-      ['back', MAT_BACK],
-    ] as const) {
-      const key = `${surface}|${side}`;
+    const maps = (s: Surface, side: 'front' | 'back') => {
+      const key = `${s}|${side}`;
       let t = surfaceTex.current.get(key);
       if (!t) {
-        const m = getSurfaceMaps(surface, side, assets);
+        const m = getSurfaceMaps(s, side, assets);
         t = { orm: canvasTexture(m.orm), normal: canvasTexture(m.normal) };
         surfaceTex.current.set(key, t);
       }
+      return t;
+    };
+    for (const [side, idx, u] of [
+      ['front', MAT_FRONT, swapU.front],
+      ['back', MAT_BACK, swapU.back],
+    ] as const) {
+      const t = maps(surface, side);
       const mat = materials[idx];
       mat.roughnessMap = t.orm;
       mat.metalnessMap = t.orm;
@@ -238,9 +312,23 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       mat.clearcoat = c.clearcoat;
       mat.clearcoatRoughness = c.clearcoatRoughness;
       mat.needsUpdate = true;
+      const bare = maps(bareSurface, side);
+      u.uBareOrm.value = bare.orm;
+      u.uBareNormal.value = bare.normal;
     }
     invalidate();
-  }, [assets, surface, materials, invalidate]);
+  }, [assets, surface, bareSurface, materials, swapU, invalidate]);
+
+  // The bare body's albedo: the stock, with the chip set into the front.
+  const stock = stockOf(bodyDesign);
+  useEffect(() => {
+    if (!assets) return;
+    paintBareFront(bareFrontCanvas.getContext('2d')!, bodyDesign);
+    paintBareBack(bareBackCanvas.getContext('2d')!, bodyDesign);
+    bareFrontMap.needsUpdate = true;
+    bareBackMap.needsUpdate = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the paint reads only the stock
+  }, [assets, stock, bareFrontCanvas, bareBackCanvas, bareFrontMap, bareBackMap]);
 
   // Decoration: spot gloss, foil, or etch on the brand, spot gloss on the
   // art, laid over the front's cached maps per design.

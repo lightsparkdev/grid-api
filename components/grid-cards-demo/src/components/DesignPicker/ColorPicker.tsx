@@ -521,6 +521,11 @@ export function ColorPicker({
     }
   };
 
+  // The stops come out from under the tabs: down from them when the popup
+  // hangs below the swatch, up from them when it stands above, so the whole
+  // panel reads as unfolding away from its anchored edge.
+  const rise = side === 'bottom' ? -8 : 8;
+
   const triggerStyle: CSSProperties | undefined = triggerActive
     ? { background: gradient ? gradientCss(gradient, '135deg') : value }
     : undefined;
@@ -582,9 +587,9 @@ export function ColorPicker({
                   <motion.div
                     key="gradient"
                     className={styles.gradientBlock}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: rise }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
+                    exit={{ opacity: 0, y: rise }}
                     transition={ENTER}
                   >
                     <div
@@ -665,9 +670,9 @@ export function ColorPicker({
                             layout
                             className={clsx(styles.stopRow, s.i === sel && styles.stopRowOn)}
                             onPointerDown={() => setStop(s.i)}
-                            initial={{ opacity: 0, y: 6 }}
+                            initial={{ opacity: 0, y: rise * 0.75 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 6 }}
+                            exit={{ opacity: 0, y: rise * 0.75 }}
                             transition={ENTER}
                           >
                             <label className={styles.stopAt}>
