@@ -178,6 +178,15 @@ export function chipPlatePath(ctx: CanvasRenderingContext2D) {
   roundRectPath(ctx, CHIP.x, CHIP.y, CHIP.w, CHIP_H, CHIP.r);
 }
 
+/** The module is glued into a milled pocket a hair larger than its plate;
+ *  the gap shows as a hairline all the way round. About 0.15 mm. */
+export const CHIP_GAP = F(0.15 * 17.94);
+
+/** The pocket's outline in texels: the plate grown by the gap. */
+export function chipPocketPath(ctx: CanvasRenderingContext2D) {
+  roundRectPath(ctx, CHIP.x - CHIP_GAP, CHIP.y - CHIP_GAP, CHIP.w + CHIP_GAP * 2, CHIP_H + CHIP_GAP * 2, CHIP.r + CHIP_GAP);
+}
+
 /** The 2 × 3 contact outlines in texels (one path). */
 export function chipContactsPath(ctx: CanvasRenderingContext2D) {
   const sx = CHIP_SCALE;
@@ -233,11 +242,14 @@ export function mixHex(a: string, b: string, t: number): string {
   return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** The mag stripe is the face's own color, deepened: a darker print on a
- *  printed card, a darker bone or steel on a bare one. */
+/** The color of the face's ground: the print, or the bare stock. */
+function faceColorOf(design: CardDesign): string {
+  return isBare(design) ? stockOf(design).face : design.color!;
+}
+
+/** The mag stripe is the face's own color, deepened a fifth toward black. */
 function stripeFor(design: CardDesign): string {
-  const base = isBare(design) ? stockOf(design).face : design.color!;
-  return mixHex(base, '#000000', 0.2);
+  return mixHex(faceColorOf(design), '#000000', 0.2);
 }
 
 /** Ink that reads on the face: near-black on a light print or light stock,
@@ -376,8 +388,18 @@ export function paintFoilNormal(assets: FaceAssets): HTMLCanvasElement {
   return c;
 }
 
-/** Silver (nickel-plated) contact module; the material makes it metal. */
-function paintChip(ctx: CanvasRenderingContext2D) {
+/** Silver (nickel-plated) contact module set in its pocket; the material
+ *  makes the plate metal. `face` is the card color the pocket is cut into. */
+function paintChip(ctx: CanvasRenderingContext2D, face: string) {
+  // The gap looks down into the pocket: the card's core in shadow, darkest
+  // under the lit (upper left) side of the plate, a little lighter where the
+  // far wall catches light.
+  const pocket = ctx.createLinearGradient(CHIP.x, CHIP.y, CHIP.x + CHIP.w, CHIP.y + CHIP_H);
+  pocket.addColorStop(0, mixHex(face, '#000000', 0.82));
+  pocket.addColorStop(1, mixHex(face, '#000000', 0.55));
+  ctx.fillStyle = pocket;
+  chipPocketPath(ctx);
+  ctx.fill();
   const g = ctx.createLinearGradient(CHIP.x, CHIP.y, CHIP.x + CHIP.w, CHIP.y + CHIP_H);
   g.addColorStop(0, '#d9dade');
   g.addColorStop(0.5, '#f4f5f8');
@@ -611,7 +633,7 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
     drawBrand(ctx, s.design, s.logo, ink);
   }
 
-  paintChip(ctx);
+  paintChip(ctx, faceColorOf(s.design));
   // The front carries nothing personal: the number, name, and codes are all
   // on the back, as the Figma physical front spec ("chip only") has it.
 

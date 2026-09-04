@@ -10,6 +10,7 @@ import { isBare, materialOf, type CardDesign, type CardFinish, type CardMaterial
 import {
   chipContactsPath,
   chipPlatePath,
+  chipPocketPath,
   drawDilated,
   drawTinted,
   FOIL_CARRIER,
@@ -75,7 +76,11 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
     ctx.fillStyle = orm(0.78, 0);
     ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
   } else {
-    // Silver plating: polished metal; the grooves are rougher.
+    // The pocket's gap is bare core plastic, dull; the plate is polished
+    // silver plating, its grooves rougher.
+    ctx.fillStyle = orm(0.7, 0);
+    chipPocketPath(ctx);
+    ctx.fill();
     ctx.fillStyle = orm(0.22, 1);
     chipPlatePath(ctx);
     ctx.fill();
@@ -120,15 +125,14 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
   }
 
   if (side === 'front') {
-    // The chip is a plate set flush in a milled pocket: a soft step around it,
-    // smooth on top, with grooves cut between the contacts.
+    // The chip sits in a milled pocket a hair larger than its plate: the
+    // face steps down into the gap, then the plate rises out of it, smooth on
+    // top, with grooves cut between the contacts. The two steps give the gap
+    // its shadowed near lip and lit far wall as the card turns.
     ctx.setTransform(S, 0, 0, S, 0, 0);
-    ctx.save();
-    ctx.filter = `blur(${1.2 * K * S}px)`;
-    ctx.fillStyle = '#8c8c8c';
-    chipPlatePath(ctx);
+    ctx.fillStyle = '#666666';
+    chipPocketPath(ctx);
     ctx.fill();
-    ctx.restore();
     ctx.fillStyle = '#8c8c8c';
     chipPlatePath(ctx);
     ctx.fill();
@@ -136,10 +140,6 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.lineWidth = 0.8 * K;
     ctx.lineJoin = 'round';
     chipContactsPath(ctx);
-    ctx.stroke();
-    ctx.strokeStyle = '#707070';
-    ctx.lineWidth = 0.8 * K;
-    chipPlatePath(ctx);
     ctx.stroke();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   } else {
