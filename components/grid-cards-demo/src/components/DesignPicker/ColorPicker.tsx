@@ -201,6 +201,9 @@ function AnimatedHeight({ className, children }: { className?: string; children:
 /* ── Picker ───────────────────────────────────────────────────────────────── */
 
 type Mode = 'solid' | 'linear' | 'radial';
+
+/** The popup at its tallest: a gradient with three stops, plus the offset. */
+const POPUP_MAX_H = 460;
 const MODES: Array<{ id: Mode; label: string }> = [
   { id: 'solid', label: 'Solid' },
   { id: 'linear', label: 'Linear' },
@@ -242,6 +245,11 @@ export function ColorPicker({
   tooltip,
 }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
+  // Which side of the swatch the popup opens on, chosen once per opening
+  // for the popup at its tallest (a gradient with a few stops), so a change
+  // of tab never flips it to the other side mid-use.
+  const [side, setSide] = useState<'top' | 'bottom'>('bottom');
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [stop, setStop] = useState(0);
   const mode: Mode = gradient ? gradient.type : 'solid';
   const sel = gradient ? Math.min(stop, gradient.stops.length - 1) : 0;
@@ -447,6 +455,12 @@ export function ColorPicker({
   // a handle drag, which captures the pointer) is part of editing the
   // gradient, not a click away from the picker.
   const onOpenChange = (next: boolean, details: { reason: string; event: Event; cancel: () => void }) => {
+    if (next && triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom;
+      const above = r.top;
+      setSide(below >= POPUP_MAX_H || below >= above ? 'bottom' : 'top');
+    }
     if (!next && gradient && details.reason === 'outside-press') {
       const t = details.event.target as Element | null;
       if (t?.closest?.('[data-grad], [data-card-hit]')) {
@@ -462,6 +476,7 @@ export function ColorPicker({
       <Tooltip text={tooltip}>
         {(tip) => (
           <PopoverTrigger
+            ref={triggerRef}
             className={triggerClassName}
             data-active={triggerActive || undefined}
             aria-label={triggerLabel}
@@ -474,10 +489,10 @@ export function ColorPicker({
         )}
       </Tooltip>
       <PopoverPortal>
-        {/* Below the swatch, where there is room for the gradient's stops to
-            grow downward from the anchored top edge; the rows it covers are
-            not needed while a color is picked. */}
-        <PopoverPositioner side="bottom" align="end" sideOffset={8}>
+        {/* Below the swatch when it fits there at its tallest (the rows it
+            covers are not needed while a color is picked), else above; held
+            to that side and shifted, never flipped, while open. */}
+        <PopoverPositioner side={side} align="end" sideOffset={8} collisionAvoidance={{ side: 'shift', align: 'shift' }}>
           <PopoverPopup className={styles.popup} aria-label="Custom color">
             <AnimatedHeight className={styles.body}>
               <ModeTabs mode={mode} onChange={setMode} />
