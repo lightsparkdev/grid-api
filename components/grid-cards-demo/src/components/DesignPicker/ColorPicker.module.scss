@@ -166,7 +166,11 @@
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), var(--shadow-sm);
   transform: translate(-50%, -50%);
-  cursor: ew-resize;
+  cursor: grab;
+
+  .stopsBar:active & {
+    cursor: grabbing;
+  }
 }
 
 .stopHandleOn {
