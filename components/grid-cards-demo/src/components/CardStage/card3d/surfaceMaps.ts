@@ -342,8 +342,9 @@ export function decorateOrm(
  * front's normal map wherever the height departs from flat (the same
  * composition as the beadblast's structure). The cut is the Z card's deboss
  * (grid-wallet-demo `cardTextures`): a fifth of the height range, its edge
- * blurred over 6 texels, Sobel'd at 2.5, which reads as a shallow, soft
- * basin rather than a chamfer. Built at texel size, not map size: the
+ * blurred over 6 texels, which reads as a shallow, soft basin rather than a
+ * chamfer. The Z card Sobels it at 2.5 under a normal scale of 1.6; ours is
+ * 0.6, so the strength carries the difference. Built at texel size, not map size: the
  * wordmark's strokes are only a few texels wide, and a bevel wider than a
  * stroke smooths the whole mark away.
  */
@@ -366,7 +367,7 @@ export function decorateNormal(base: HTMLCanvasElement, brandMask: HTMLCanvasEle
   mc.fillRect(0, 0, m.width, m.height);
   hc.drawImage(m, 0, 0, TEX_W, TEX_H);
   hc.filter = 'none';
-  const structure = heightToNormal(height, 2.5);
+  const structure = heightToNormal(height, 2.5 * (1.6 / 0.6));
   const sctx = structure.getContext('2d')!;
   const n = sctx.getImageData(0, 0, TEX_W, TEX_H);
   const hd = hc.getImageData(0, 0, TEX_W, TEX_H).data;

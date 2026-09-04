@@ -57,7 +57,9 @@ const PRINT_STEPS = 6;
 const SURFACE: Record<Surface, { clearcoat: number; clearcoatRoughness: number; normalScale: number }> = {
   'print-matte': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.6 },
   'print-gloss': { clearcoat: 1, clearcoatRoughness: 0.08, normalScale: 0.35 },
-  'bare-matte': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 1.6 },
+  // The Z card runs its grain at 1.6, but under this studio's key that reads
+  // as stucco; 0.6 is the same fine, even speckle its diffuse room gives.
+  'bare-matte': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.6 },
   'bare-gloss': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.4 },
 };
 
