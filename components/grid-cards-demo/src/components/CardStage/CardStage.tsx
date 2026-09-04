@@ -364,6 +364,8 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
       hit.style.transform = `translate(${x + pose.dx * s - CARD_W / 2}px, ${y + bob - CARD_H / 2}px) scale(${s})`;
       // The pill belongs to the front; hide it while the back is showing.
       hit.style.setProperty('--pill-opacity', pose.facing > 0.3 ? '1' : '0');
+      // The hit box scales with the card; text riding on it undoes that.
+      hit.style.setProperty('--card-scale', s.toFixed(4));
     }
   });
 

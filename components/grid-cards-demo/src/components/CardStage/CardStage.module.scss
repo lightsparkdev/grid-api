@@ -32,6 +32,7 @@
   touch-action: none;
   user-select: none;
   --pill-opacity: 1;
+  --card-scale: 1;
   /* Blueprint ink: the tertiary text grey (gray-400 light, gray-600 dark), a
      step above the dot grid in either theme. */
   --card-blueprint: var(--text-tertiary);
@@ -85,12 +86,15 @@
   pointer-events: none;
 }
 
-/* The one-time drag hint, below the card, in the section divider's type. */
+/* The one-time drag hint, below the card, in the section divider's type. The
+   hit box is scaled with the card on stage; the hint scales back so it is
+   the divider's size, not the card's. */
 .hint {
   position: absolute;
-  top: calc(100% + 18px);
+  top: calc(100% + 14px);
   left: 50%;
-  transform: translateX(-50%);
+  transform-origin: top center;
+  transform: translateX(-50%) scale(calc(1 / var(--card-scale)));
   display: inline-flex;
   align-items: center;
   gap: 4px;
