@@ -130,7 +130,7 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     // top, with grooves cut between the contacts. The two steps give the gap
     // its shadowed near lip and lit far wall as the card turns.
     ctx.setTransform(S, 0, 0, S, 0, 0);
-    ctx.fillStyle = '#666666';
+    ctx.fillStyle = '#707070';
     chipPocketPath(ctx);
     ctx.fill();
     ctx.fillStyle = '#8c8c8c';

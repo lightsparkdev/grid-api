@@ -398,8 +398,8 @@ function paintChip(ctx: CanvasRenderingContext2D, face: string) {
   // under the lit (upper left) side of the plate, a little lighter where the
   // far wall catches light.
   const pocket = ctx.createLinearGradient(CHIP.x, CHIP.y, CHIP.x + CHIP.w, CHIP.y + CHIP_H);
-  pocket.addColorStop(0, mixHex(face, '#000000', 0.82));
-  pocket.addColorStop(1, mixHex(face, '#000000', 0.55));
+  pocket.addColorStop(0, mixHex(face, '#000000', 0.5));
+  pocket.addColorStop(1, mixHex(face, '#000000', 0.28));
   ctx.fillStyle = pocket;
   chipPocketPath(ctx);
   ctx.fill();
