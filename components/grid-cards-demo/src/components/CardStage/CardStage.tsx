@@ -371,6 +371,49 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     return { dx: sx.d, dy: sy.d, guides: { x: sx.at, y: sy.at, marks } };
   };
 
+  /** Snap a gradient's end to the card's corners, edges and center, the
+   *  chip's row, and the line's other end (so the line can be held straight),
+   *  with the same guides a brand move shows. */
+  const snapPoint = (p: Pt, other: Pt): { p: Pt; guides: Guides } => {
+    const hit = hitRef.current;
+    const tol = hit ? (SNAP_PX * FIGMA_CARD_W) / hit.getBoundingClientRect().width : 0;
+    const cardCenter: Pt = { x: FIGMA_CARD_W / 2, y: FIGMA_FACE_H / 2 };
+    const chipCenter: Pt = { x: CHIP_CENTER_X, y: BRAND_DEFAULT_LAYOUT.y };
+    type Target = [number, Pt | null];
+    const xs: Target[] = [[cardCenter.x, cardCenter], [0, null], [FIGMA_CARD_W, null], [other.x, other]];
+    const ys: Target[] = [[cardCenter.y, cardCenter], [chipCenter.y, chipCenter], [0, null], [FIGMA_FACE_H, null], [other.y, other]];
+    const best = (v: number, targets: Target[]) => {
+      let at: number | undefined;
+      let feature: Pt | null = null;
+      let min = tol;
+      for (const [to, pt] of targets) {
+        const dist = Math.abs(to - v);
+        if (dist <= min) {
+          min = dist;
+          at = to;
+          feature = pt;
+        }
+      }
+      return { at, feature };
+    };
+    const sx = best(p.x, xs);
+    const sy = best(p.y, ys);
+    const snapped: Pt = { x: sx.at ?? p.x, y: sy.at ?? p.y };
+    const marks: Pt[] = [];
+    const mark = (q: Pt) => {
+      if (!marks.some((m) => Math.hypot(m.x - q.x, m.y - q.y) < 3)) marks.push(q);
+    };
+    if (sx.at !== undefined) {
+      mark(snapped);
+      if (sx.feature) mark(sx.feature);
+    }
+    if (sy.at !== undefined) {
+      mark(snapped);
+      if (sy.feature) mark(sy.feature);
+    }
+    return { p: snapped, guides: { x: sx.at, y: sy.at, marks } };
+  };
+
   // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   const brandDrag = useRef<BrandDrag | null>(null);
@@ -379,7 +422,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const moveGradEnd = (end: 'from' | 'to', p: Pt) => {
     const g = design.gradient;
     if (!g) return;
-    const next: CardGradient = { ...g, [end]: { x: Math.round(p.x), y: Math.round(p.y) } };
+    const snap = snapPoint(p, end === 'from' ? g.to : g.from);
+    setGuides(snap.guides);
+    const next: CardGradient = { ...g, [end]: { x: Math.round(snap.p.x), y: Math.round(snap.p.y) } };
     onDesignChange?.({ gradient: next });
   };
   /** The cursor a brand edit shows while the pointer is captured: the
@@ -514,6 +559,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (gd) {
       if (e.pointerId !== gd.id) return;
       gradDrag.current = null;
+      setGuides({});
       e.currentTarget.classList.remove(styles.hitMoving);
       return;
     }
