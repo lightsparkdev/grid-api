@@ -80,9 +80,9 @@
   justify-content: flex-end;
   flex-wrap: wrap;
   align-items: center;
-  /* The ring sits 3px out with a 2px stroke; 8px between swatches leaves the
-     same 3px on its far side. */
-  gap: 8px;
+  /* The ring sits 3px out with a 2px stroke; 6px between swatches leaves it
+     1px clear of the next. */
+  gap: 6px;
 }
 
 /* The one selection ring, slid between swatches by SwatchRow. */
