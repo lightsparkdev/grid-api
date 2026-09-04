@@ -423,8 +423,8 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
               onChange={(color, gradient) => onChange({ color, gradient })}
               triggerClassName={clsx(styles.swatch, styles.swatchCustom)}
               triggerActive={custom}
-              triggerLabel="Custom color"
-              tooltip={design.gradient ? 'Gradient' : custom ? 'Custom' : 'Custom color'}
+              triggerLabel={design.gradient ? 'Custom gradient' : 'Custom color'}
+              tooltip={design.gradient ? 'Custom gradient' : 'Custom color'}
             >
               {!custom ? <IconPlusSmall size={16} aria-hidden /> : null}
             </ColorPicker>

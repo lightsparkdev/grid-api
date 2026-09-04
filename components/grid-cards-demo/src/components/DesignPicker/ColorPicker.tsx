@@ -14,7 +14,7 @@ import { motion } from 'motion/react';
 import { motionTransition } from '@/lib/easing';
 import { IconEyedropper } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyedropper';
 import { IconArrowLeftRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeftRight';
-import { IconRotate } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate';
+import { IconArrowRotateClockwise } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateClockwise';
 import { IconMinusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMinusSmall';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import {
@@ -520,7 +520,7 @@ export function ColorPicker({
                       <Tooltip text="Turn 90°">
                         {(tip) => (
                           <button type="button" className={styles.tool} onClick={turn} aria-label="Turn gradient 90 degrees" {...tip}>
-                            <IconRotate size={16} aria-hidden />
+                            <IconArrowRotateClockwise size={16} aria-hidden />
                           </button>
                         )}
                       </Tooltip>
