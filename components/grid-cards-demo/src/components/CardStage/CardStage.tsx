@@ -584,7 +584,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     }
     if (!drag.current || e.pointerId !== drag.current.id) return;
     drag.current = null;
-    motion.endDrag();
+    motion.endDrag(e.timeStamp);
     e.currentTarget.classList.remove(styles.hitDragging);
   };
   const onPointerLeave = () => {
