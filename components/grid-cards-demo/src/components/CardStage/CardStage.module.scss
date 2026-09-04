@@ -110,22 +110,32 @@
 .handle_sw { left: 0; top: 100%; cursor: nesw-resize; }
 
 /* Rotate zones: invisible squares just outside each corner, under the corner
-   handle, with a turning cursor. */
+   handle, with the design tool's turning cursor: a quarter arc wrapping the
+   corner, concave toward the box, an arrowhead at each end, white-keylined
+   black. Drawn for the top-left corner and turned for the others. */
+@function rotate-cursor($deg) {
+  $arc: "M17 8 A9 9 0 0 0 8 17";
+  $head-a: "M14 5.5 L17 8 L14 10.5";
+  $head-b: "M5.5 14 L8 17 L10.5 14";
+  $svg: "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>"
+    + "<g transform='rotate(#{$deg} 12 12)' fill='none' stroke-linecap='round' stroke-linejoin='round'>"
+    + "<g stroke='white' stroke-width='4'><path d='#{$arc}'/><path d='#{$head-a}'/><path d='#{$head-b}'/></g>"
+    + "<g stroke='black' stroke-width='1.6'><path d='#{$arc}'/><path d='#{$head-a}'/><path d='#{$head-b}'/></g>"
+    + "</g></svg>";
+  @return url("data:image/svg+xml;utf8,#{$svg}") 12 12, auto;
+}
+
 .rotateZone {
   position: absolute;
   width: var(--zone);
   height: var(--zone);
   pointer-events: auto;
-  cursor:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><path d='M16.5 5.5A7 7 0 1 0 18 11' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round'/><path d='M16.5 5.5A7 7 0 1 0 18 11' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'/><path d='M13 4.5 17.5 5.5 16.5 1' fill='none' stroke='white' stroke-width='3.5' stroke-linejoin='round' stroke-linecap='round'/><path d='M13 4.5 17.5 5.5 16.5 1' fill='none' stroke='black' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/></svg>")
-      11 11,
-    auto;
 }
 
-.zone_nw { right: 100%; bottom: 100%; margin: 0 calc(var(--zone) / -3) calc(var(--zone) / -3) 0; }
-.zone_ne { left: 100%; bottom: 100%; margin: 0 0 calc(var(--zone) / -3) calc(var(--zone) / -3); }
-.zone_se { left: 100%; top: 100%; margin: calc(var(--zone) / -3) 0 0 calc(var(--zone) / -3); }
-.zone_sw { right: 100%; top: 100%; margin: calc(var(--zone) / -3) calc(var(--zone) / -3) 0 0; }
+.zone_nw { right: 100%; bottom: 100%; margin: 0 calc(var(--zone) / -3) calc(var(--zone) / -3) 0; cursor: rotate-cursor(0); }
+.zone_ne { left: 100%; bottom: 100%; margin: 0 0 calc(var(--zone) / -3) calc(var(--zone) / -3); cursor: rotate-cursor(90); }
+.zone_se { left: 100%; top: 100%; margin: calc(var(--zone) / -3) 0 0 calc(var(--zone) / -3); cursor: rotate-cursor(180); }
+.zone_sw { right: 100%; top: 100%; margin: calc(var(--zone) / -3) calc(var(--zone) / -3) 0 0; cursor: rotate-cursor(270); }
 
 /* Snap guides across the whole face. */
 .guideV,
