@@ -64,7 +64,20 @@ export const INTRO_GEOMETRY = {
     `M ${f(W + g)} ${f(H + g - L)} L ${f(W + g)} ${f(H + g)} L ${f(W + g - L)} ${f(H + g)}`,
     `M ${f(-g + L)} ${f(H + g)} L ${f(-g)} ${f(H + g)} L ${f(-g)} ${f(H + g - L)}`,
   ],
-  cross: `M ${f(cx - CROSS_ARM)} ${f(cy)} L ${f(cx + CROSS_ARM)} ${f(cy)} M ${f(cx)} ${f(cy - CROSS_ARM)} L ${f(cx)} ${f(cy + CROSS_ARM)}`,
+  /** Each tick's corner point, as a vector from the card's center. */
+  tickVectors: [
+    [-g - cx, -g - cy],
+    [W + g - cx, -g - cy],
+    [W + g - cx, H + g - cy],
+    [-g - cx, H + g - cy],
+  ] as Array<[number, number]>,
+  /** Four arms, each from the center out. */
+  crossArms: [
+    `M ${f(cx)} ${f(cy)} L ${f(cx - CROSS_ARM)} ${f(cy)}`,
+    `M ${f(cx)} ${f(cy)} L ${f(cx + CROSS_ARM)} ${f(cy)}`,
+    `M ${f(cx)} ${f(cy)} L ${f(cx)} ${f(cy - CROSS_ARM)}`,
+    `M ${f(cx)} ${f(cy)} L ${f(cx)} ${f(cy + CROSS_ARM)}`,
+  ],
   ring: { cx, cy, r: RING_R },
   centerlines: `M 0 ${f(cy)} L ${f(W)} ${f(cy)} M ${f(cx)} 0 L ${f(cx)} ${f(H)}`,
   outline: squirclePath(W, H, CARD_R, 0.12),
@@ -102,12 +115,15 @@ type Cue = { kind: 'draw' | 'fade'; at: number; dur: number };
 /** Each `data-intro` element's cue. Draws run stroke-dashoffset 1 → 0 over a
  *  `pathLength` of 1; fades run opacity 0 → the element's own `data-opacity`. */
 const CUES: Record<string, Cue> = {
-  'tick-0': { kind: 'draw', at: 0.0, dur: 0.28 },
-  'tick-1': { kind: 'draw', at: 0.06, dur: 0.28 },
-  'tick-2': { kind: 'draw', at: 0.12, dur: 0.28 },
-  'tick-3': { kind: 'draw', at: 0.18, dur: 0.28 },
-  cross: { kind: 'draw', at: 0.2, dur: 0.3 },
-  ring: { kind: 'draw', at: 0.3, dur: 0.3 },
+  'tick-0': { kind: 'fade', at: 0.0, dur: 0.45 },
+  'tick-1': { kind: 'fade', at: 0.06, dur: 0.45 },
+  'tick-2': { kind: 'fade', at: 0.12, dur: 0.45 },
+  'tick-3': { kind: 'fade', at: 0.18, dur: 0.45 },
+  'cross-0': { kind: 'draw', at: 0.2, dur: 0.3 },
+  'cross-1': { kind: 'draw', at: 0.2, dur: 0.3 },
+  'cross-2': { kind: 'draw', at: 0.2, dur: 0.3 },
+  'cross-3': { kind: 'draw', at: 0.2, dur: 0.3 },
+  ring: { kind: 'draw', at: 0.2, dur: 0.3 },
   outline: { kind: 'draw', at: 0.35, dur: 0.95 },
   centerlines: { kind: 'fade', at: 0.75, dur: 0.4 },
   'dim-w': { kind: 'draw', at: 1.05, dur: 0.35 },
@@ -135,10 +151,18 @@ const CUES: Record<string, Cue> = {
   'brand-text': { kind: 'fade', at: 2.1, dur: 0.3 },
 };
 
+/** The ticks arrive from part way toward the center, settling as they fade in. */
+const TICK_START = 0.5;
+const TICK_TRAVEL = 0.7;
+
 /** The reveal: the blueprint blurs out while the card blurs in. */
 const REVEAL_AT = 2.55;
 const BLUEPRINT_OUT = 0.8;
 const CARD_IN = 1.0;
+/** As the card comes in, the ticks tuck toward it and the outer dimensions
+ *  push away (card px). */
+const TICK_EXIT = 8;
+const DIM_EXIT = 10;
 /** Where the card starts, stage px of blur. */
 const CARD_BLUR = 16;
 /** Where the blueprint ends, card px of blur (it scales with the hit box, so
@@ -186,4 +210,19 @@ export function stepIntro(root: HTMLElement | SVGElement, t: number) {
       el.style.opacity = String(peak * easeOutCubic(u));
     }
   }
+
+  // Motion. Ticks: in from TICK_START of the way to the center as they fade
+  // in, then a small tuck toward the card on the reveal. Outer dimensions:
+  // a small push away on the reveal.
+  const exit = easeOutCubic(clamp01((t - REVEAL_AT) / BLUEPRINT_OUT));
+  INTRO_GEOMETRY.tickVectors.forEach(([vx, vy], i) => {
+    const el = els.get(`tick-${i}`);
+    const cue = CUES[`tick-${i}`];
+    if (!el || !cue) return;
+    const enter = 1 - easeOutCubic(clamp01((t - cue.at) / TICK_TRAVEL));
+    const k = TICK_START * enter + (TICK_EXIT / Math.hypot(vx, vy)) * exit;
+    el.setAttribute('transform', `translate(${f(-vx * k)} ${f(-vy * k)})`);
+  });
+  els.get('dims-w')?.setAttribute('transform', `translate(0 ${f(-DIM_EXIT * exit)})`);
+  els.get('dims-h')?.setAttribute('transform', `translate(${f(DIM_EXIT * exit)} 0)`);
 }
