@@ -1970,14 +1970,18 @@ For business beneficiaries, the required fields vary by destination currency:
 </Info>
 
 ## Account status
-Beneficiary data may be reviewed for risk and compliance. Only `ACTIVE` accounts can receive payments. Updates to account data may trigger account re-review.
+Beneficiary data may be reviewed for risk and compliance. Only `ACTIVE` accounts can receive payments, except that a self-custody wallet still owed ownership verification can receive transfers below the regulatory threshold. Updates to account data may trigger account re-review.
 
-| Status         | Description                         |
-| -------------- | ----------------------------------- |
-| `PENDING`      | Created, awaiting verification      |
-| `ACTIVE`       | Verified and ready for transactions |
-| `UNDER_REVIEW` | Additional review required          |
-| `INACTIVE`     | Disabled, cannot be used            |
+| Status                           | Description                                                                       |
+| -------------------------------- | --------------------------------------------------------------------------------- |
+| `PENDING`                        | Created, awaiting verification                                                    |
+| `ACTIVE`                         | Verified and ready for transactions                                               |
+| `PENDING_OWNERSHIP_VERIFICATION` | The customer must prove they control this self-custody wallet                     |
+| `UNVERIFIED`                     | The last ownership attempt failed. Start a new challenge to retry                  |
+| `UNDER_REVIEW`                   | Additional review required                                                        |
+| `INACTIVE`                       | Disabled, cannot be used                                                          |
+
+A wallet reaches `PENDING_OWNERSHIP_VERIFICATION` when you register it with `ownershipType` set to `FIRST_PARTY` in a region that requires the owner to prove they control it (e.g. the EU). To clear it, start a challenge with `POST /customers/external-accounts/{externalAccountId}/challenge` and complete it with either a wallet signature or a liveness check. Both statuses allow transfers below the regulatory threshold, so a pending wallet is not blocked outright.
 
 ## Listing external accounts
 

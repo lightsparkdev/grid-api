@@ -2580,12 +2580,16 @@ paths:
           asynchronously. The outcome is delivered via
           `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the account.
 
-        Calling this endpoint again abandons any in-flight challenge and issues a
-        new one with the requested method — use it to retry after a failed
-        attempt, to replace an expired challenge, or to switch methods. An
-        `UNVERIFIED` account returns to `PENDING_OWNERSHIP_VERIFICATION` when a
-        new challenge is issued.
+        While a `WALLET_SIGNATURE` challenge is outstanding, calling this endpoint
+        again returns that same challenge, with the same `messageToSign` and
+        `expiresAt`. Reloading a signing page therefore does not invalidate the
+        message the user is about to sign. You get a new challenge once the
+        outstanding one expires or its attempt fails.
 
+        Requesting `LIVENESS` always starts a liveness attempt, even while a
+        signature challenge is outstanding.
+
+        An `UNVERIFIED` account stays `UNVERIFIED` until a retry succeeds.
         Completing ownership verification moves the account to `ACTIVE`.
       operationId: createExternalAccountOwnershipChallenge
       tags:
@@ -2932,12 +2936,16 @@ paths:
           asynchronously. The outcome is delivered via
           `EXTERNAL_ACCOUNT.STATUS_UPDATED` webhooks or by polling the account.
 
-        Calling this endpoint again abandons any in-flight challenge and issues a
-        new one with the requested method — use it to retry after a failed
-        attempt, to replace an expired challenge, or to switch methods. An
-        `UNVERIFIED` account returns to `PENDING_OWNERSHIP_VERIFICATION` when a
-        new challenge is issued.
+        While a `WALLET_SIGNATURE` challenge is outstanding, calling this endpoint
+        again returns that same challenge, with the same `messageToSign` and
+        `expiresAt`. Reloading a signing page therefore does not invalidate the
+        message the user is about to sign. You get a new challenge once the
+        outstanding one expires or its attempt fails.
 
+        Requesting `LIVENESS` always starts a liveness attempt, even while a
+        signature challenge is outstanding.
+
+        An `UNVERIFIED` account stays `UNVERIFIED` until a retry succeeds.
         Completing ownership verification moves the account to `ACTIVE`.
       operationId: createPlatformExternalAccountOwnershipChallenge
       tags:
