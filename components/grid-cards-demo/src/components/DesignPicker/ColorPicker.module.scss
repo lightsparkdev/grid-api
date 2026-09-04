@@ -15,9 +15,11 @@
   /* The fills (active tab, selected stop, tools) sit a step off the popup's
      surface: darker in light, lighter in dark. */
   --picker-fill: var(--surface-secondary);
+  --picker-border: var(--border-primary);
 
   :global([data-theme='dark']) & {
-    --picker-fill: var(--surface-tertiary);
+    --picker-fill: var(--color-gray-850);
+    --picker-border: rgba(244, 244, 245, 0.16);
   }
 }
 
@@ -139,7 +141,7 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  border: var(--stroke-sm) solid var(--border-primary);
+  border: var(--stroke-sm) solid var(--picker-border);
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
   background: transparent;
@@ -290,7 +292,7 @@
   font-family: var(--font-family-mono);
   font-weight: 480;
   font-size: 12px;
-  border: var(--stroke-sm) solid var(--border-primary);
+  border: var(--stroke-sm) solid var(--picker-border);
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
   background: transparent;

@@ -14,7 +14,7 @@
   --picker-fill: var(--surface-secondary);
 
   :global([data-theme='dark']) & {
-    --picker-fill: var(--surface-tertiary);
+    --picker-fill: var(--color-gray-850);
   }
 }
 
