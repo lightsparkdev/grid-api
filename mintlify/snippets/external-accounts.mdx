@@ -1981,7 +1981,7 @@ Beneficiary data may be reviewed for risk and compliance. Only `ACTIVE` accounts
 | `UNDER_REVIEW`                   | Additional review required                                                        |
 | `INACTIVE`                       | Disabled, cannot be used                                                          |
 
-A wallet reaches `PENDING_OWNERSHIP_VERIFICATION` when you register it with `ownershipType` set to `FIRST_PARTY` in a region that applies the EU Travel Rule. To clear it, start a challenge with `POST /customers/external-accounts/{externalAccountId}/challenge` and complete it with either a wallet signature or a liveness check. Both statuses allow transfers below the regulatory threshold, so a pending wallet is not blocked outright.
+A wallet reaches `PENDING_OWNERSHIP_VERIFICATION` when you register it with `ownershipType` set to `FIRST_PARTY` in a region that requires the owner to prove they control it (e.g. the EU). To clear it, start a challenge with `POST /customers/external-accounts/{externalAccountId}/challenge` and complete it with either a wallet signature or a liveness check. Both statuses allow transfers below the regulatory threshold, so a pending wallet is not blocked outright.
 
 ## Listing external accounts
 

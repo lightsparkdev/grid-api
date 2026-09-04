@@ -187,9 +187,9 @@ External accounts move through verification states:
 </Info>
 
 <Note>
-  A self-custody wallet registered with `ownershipType` set to `FIRST_PARTY` in a
-  region that applies the EU Travel Rule starts at
-  `PENDING_OWNERSHIP_VERIFICATION`. It is not blocked: conversions below the
+  A self-custody wallet registered with `ownershipType` set to `FIRST_PARTY`
+  starts at `PENDING_OWNERSHIP_VERIFICATION` in regions that require the owner to
+  prove they control it (e.g. the EU). It is not blocked: conversions below the
   regulatory threshold go through while the wallet is pending. To clear the
   status, start a challenge with
   `POST /customers/external-accounts/{externalAccountId}/challenge` and complete

@@ -209,8 +209,12 @@ PENDING → ACTIVE
 
 - **PENDING**: Created, undergoing verification/screening
 - **ACTIVE**: Verified, ready for transactions
+- **PENDING_OWNERSHIP_VERIFICATION**: The customer must prove they control this self-custody wallet
+- **UNVERIFIED**: The last ownership attempt failed. Start a new challenge to retry
 - **INACTIVE**: Disabled (can be reactivated)
 - **UNDER_REVIEW**: Additional review required
+
+A self-custody wallet registered with `ownershipType` set to `FIRST_PARTY` starts at `PENDING_OWNERSHIP_VERIFICATION` in regions that require the owner to prove they control it (e.g. the EU). Transfers below the regulatory threshold go through while it is pending, so the status is not a block. Clear it by starting a challenge on the account and completing it with either a wallet signature or a liveness check.
 
 You'll receive `INTERNAL_ACCOUNT.BALANCE_UPDATED` webhooks as balance changes, and `INTERNAL_ACCOUNT.STATUS_UPDATED` webhooks when account status changes (e.g., ACTIVE to FROZEN).
 
