@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useReducedMotion } from 'motion/react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
@@ -233,6 +234,7 @@ export function CardStage({ design, home }: CardStageProps) {
           </span>
         )}
         <span className={clsx(styles.hint, (dragged || !introDone || phoneUp) && styles.hintGone)} aria-hidden>
+          <IconRotate360Right size={14} />
           Drag to turn it over
         </span>
       </div>

@@ -94,6 +94,8 @@ body {
   color: var(--text-primary);
   font-family: var(--font-family-sans);
   font-weight: var(--font-weight-book);
+  /* The single-story a, everywhere, as on the card. */
+  font-feature-settings: 'salt' 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

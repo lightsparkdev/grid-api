@@ -1,18 +1,20 @@
-/* Suisse Intl metric overrides.
+/* Suisse Intl: the variable font, in place of origin's static faces.
 
-   @lightsparkdev/origin (src/tokens/_fonts.scss) declares these faces with
-   ascent-override: 81% / descent-override: 19%. We re-declare the same faces
-   (identical family + weight + style + src) so the later rule wins the cascade,
-   bumping them to the Mintlify docs' 85% / 15% so glyphs sit at the same height
-   in the line box across the docs and the demo.
+   @lightsparkdev/origin (src/tokens/_fonts.scss) declares 'Suisse Intl' at
+   400/450/500 from static woff2s that carry no stylistic sets, so the
+   `font-feature-settings: 'salt' 1` the UI asks for (the single-story a, as
+   on the card) did nothing. We re-declare the same faces (identical family +
+   weight + style, so the later rule wins the cascade) from SuisseIntlVF.woff2,
+   which has 'salt' and 'ss01', plus one face over the whole weight range for
+   the weights in between. Metrics are the Mintlify docs' 85% / 15% so glyphs
+   sit at the same height in the line box across the docs and the demo.
 
-   Must be @use'd AFTER the origin fonts import in globals.scss. Same src URLs as
-   origin, so the browser reuses the already-loaded woff2 (no extra download).
-   Mono is intentionally left untouched, matching origin and the docs. */
+   Must be @use'd AFTER the origin fonts import in globals.scss. Mono is
+   intentionally left untouched, matching origin and the docs. */
 
 @font-face {
   font-family: 'Suisse Intl';
-  src: url('/fonts/SuisseIntl-Regular.woff2') format('woff2');
+  src: url('/fonts/SuisseIntlVF.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -23,7 +25,7 @@
 
 @font-face {
   font-family: 'Suisse Intl';
-  src: url('/fonts/SuisseIntl-Book.woff2') format('woff2');
+  src: url('/fonts/SuisseIntlVF.woff2') format('woff2');
   font-weight: 450;
   font-style: normal;
   font-display: swap;
@@ -34,8 +36,20 @@
 
 @font-face {
   font-family: 'Suisse Intl';
-  src: url('/fonts/SuisseIntl-Medium.woff2') format('woff2');
+  src: url('/fonts/SuisseIntlVF.woff2') format('woff2');
   font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}
+
+/* Every other weight (the phone's 590, 600, 700). */
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('/fonts/SuisseIntlVF.woff2') format('woff2');
+  font-weight: 300 900;
   font-style: normal;
   font-display: swap;
   ascent-override: 85%;

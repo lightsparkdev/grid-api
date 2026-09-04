@@ -85,17 +85,31 @@
   pointer-events: none;
 }
 
-/* The one-time drag hint, below the card in the stage's caption style. */
+/* The one-time drag hint, below the card, in the section divider's type. */
 .hint {
   position: absolute;
   top: calc(100% + 18px);
   left: 50%;
   transform: translateX(-50%);
-  @include ios.ios-text-caption-2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
   color: var(--text-tertiary);
   white-space: nowrap;
   pointer-events: none;
   transition: opacity 400ms ease;
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
 }
 
 .hintGone {
