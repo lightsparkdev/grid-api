@@ -37,7 +37,9 @@
   /* The animated height is the inner content's; the padding is the slack,
      enough for the tabs' full bleed and the thumbs past the field. */
   box-sizing: content-box;
-  overflow: visible clip;
+  /* No clip: the controls move with the same spring as the height, so
+     nothing is ever outside it; a clip would only show a mismatch. */
+  overflow: visible;
   margin: -12px;
   padding: 12px;
 }

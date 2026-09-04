@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -10,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 import clsx from 'clsx';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, animate, motion, useMotionValue } from 'motion/react';
 import { motionTransition } from '@/lib/easing';
 import { IconEyedropper } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyedropper';
 import { IconArrowLeftRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeftRight';
@@ -154,8 +155,10 @@ function ModeTabs({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void 
     return () => ro.disconnect();
   }, [mode]);
   return (
-    <div
+    <motion.div
       ref={group}
+      layout="position"
+      transition={ENTER}
       className={clsx(styles.modes, mode === 'solid' && styles.modesLeadingOn)}
       role="tablist"
       aria-label="Fill"
@@ -179,7 +182,7 @@ function ModeTabs({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void 
           {m.label}
         </button>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
@@ -190,21 +193,33 @@ function ModeTabs({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void 
  */
 function AnimatedHeight({ className, children }: { className?: string; children: ReactNode }) {
   const inner = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState<number | 'auto'>('auto');
+  const height = useMotionValue<number | 'auto'>('auto');
+  const target = useRef<number | null>(null);
+  // Measured in a layout effect, on every render, so the height starts its
+  // spring in the same commit the children start their layout springs; a
+  // state round trip would start it a frame or two later, and the children
+  // would run ahead of the box.
+  const sync = () => {
+    const el = inner.current;
+    if (!el) return;
+    const h = el.offsetHeight;
+    if (h === target.current) return;
+    const first = target.current === null;
+    target.current = h;
+    if (first) height.set(h);
+    else animate(height, h, ENTER);
+  };
+  useLayoutEffect(sync);
   useEffect(() => {
     const el = inner.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setHeight(el.offsetHeight));
+    const ro = new ResizeObserver(sync);
     ro.observe(el);
     return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
-    <motion.div
-      className={className}
-      initial={false}
-      animate={{ height }}
-      transition={{ type: 'spring', stiffness: 520, damping: 42, mass: 0.8 }}
-    >
+    <motion.div className={className} style={{ height }}>
       <div ref={inner} className={styles.bodyInner}>
         {children}
       </div>
@@ -686,7 +701,9 @@ export function ColorPicker({
                 )}
               </AnimatePresence>
 
-              <div
+              <motion.div
+                layout="position"
+                transition={ENTER}
                 className={styles.field}
                 style={{ '--hue': hueHex } as CSSProperties}
                 role="slider"
@@ -705,8 +722,10 @@ export function ColorPicker({
                     background: current,
                   }}
                 />
-              </div>
-              <div
+              </motion.div>
+              <motion.div
+                layout="position"
+                transition={ENTER}
                 className={styles.hue}
                 role="slider"
                 tabIndex={0}
@@ -724,8 +743,8 @@ export function ColorPicker({
                     background: hueHex,
                   }}
                 />
-              </div>
-              <div className={styles.row}>
+              </motion.div>
+              <motion.div layout="position" transition={ENTER} className={styles.row}>
                 <span className={styles.preview} style={{ background: current }} aria-hidden />
                 <input
                   className={styles.hex}
@@ -744,7 +763,7 @@ export function ColorPicker({
                     <IconEyedropper size={16} aria-hidden />
                   </button>
                 )}
-              </div>
+              </motion.div>
             </AnimatedHeight>
           </PopoverPopup>
         </PopoverPositioner>
