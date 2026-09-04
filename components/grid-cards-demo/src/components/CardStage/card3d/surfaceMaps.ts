@@ -127,25 +127,7 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.putImageData(img, 0, 0);
   }
 
-  // A steel blank is smooth but not flat: a sheet off the mill carries slow,
-  // shallow waves, a degree or two over the card, so the room's light lands
-  // a little differently on every part of it. No grain, no brush.
-  if (plain && surface === 'bare-gloss') {
-    const img = ctx.getImageData(0, 0, MAP_W, MAP_H);
-    const d = img.data;
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
-        const wave =
-          Math.sin(x / 210 + y / 340 + 0.7) * 2.0 +
-          Math.sin(x / 95 - y / 150 + 2.1) * 0.9 +
-          Math.sin(y / 120 + x / 500 + 4.4) * 1.3;
-        const i = (y * MAP_W + x) * 4;
-        d[i] = d[i + 1] = d[i + 2] = 128 + wave;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-  }
-
+  // A plain steel blank is optically flat: any waviness rings in a mirror.
   if (plain) return c;
 
   if (side === 'front') {

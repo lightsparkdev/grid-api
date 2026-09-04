@@ -230,25 +230,26 @@ const BLANK_TILT = -0.42;
 const BLANK_PANELS: Panel[] = [
   // Lights: a big one above and left, a lesser one right and a little below
   // head-on, a small bright one high right.
-  { lon: Math.PI * 0.58, lat: 0.24, w: 0.34, h: 0.1, intensity: 1.7, color: [1, 0.99, 0.97], tilt: BLANK_TILT },
-  { lon: Math.PI * 0.4, lat: -0.06, w: 0.26, h: 0.07, intensity: 1.0, color: [1, 1, 1], tilt: BLANK_TILT },
-  { lon: Math.PI * 0.32, lat: 0.4, w: 0.12, h: 0.08, intensity: 1.8, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.58, lat: 0.12, w: 0.34, h: 0.08, intensity: 2.6, color: [1, 0.99, 0.97], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.4, lat: -0.06, w: 0.26, h: 0.06, intensity: 1.5, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.34, lat: 0.2, w: 0.12, h: 0.07, intensity: 2.6, color: [1, 1, 1], tilt: BLANK_TILT },
   // Dark: the floor's edge below, a dark mass low left, a gap in the ceiling.
-  { lon: Math.PI * 0.5, lat: -0.34, w: 0.7, h: 0.14, intensity: -0.32, color: [1, 1, 1], tilt: BLANK_TILT * 0.5 },
-  { lon: Math.PI * 0.68, lat: -0.1, w: 0.18, h: 0.12, intensity: -0.2, color: [1, 1, 1], tilt: BLANK_TILT },
-  { lon: Math.PI * 0.5, lat: 0.62, w: 0.3, h: 0.08, intensity: -0.16, color: [1, 1, 1] },
+  { lon: Math.PI * 0.5, lat: -0.34, w: 0.7, h: 0.14, intensity: -0.5, color: [1, 1, 1], tilt: BLANK_TILT * 0.5 },
+  { lon: Math.PI * 0.68, lat: -0.1, w: 0.18, h: 0.12, intensity: -0.36, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.5, lat: 0.62, w: 0.3, h: 0.08, intensity: -0.2, color: [1, 1, 1] },
   // The ceiling proper, and something either side for a card turned.
   { lon: Math.PI * 0.5, lat: 1.1, w: 0.7, h: 0.18, intensity: 1.0, color: [1, 1, 1] },
   { lon: Math.PI * 0.82, lat: 0.1, w: 0.1, h: 0.35, intensity: 0.7, color: [1, 1, 1] },
   { lon: Math.PI * 0.18, lat: 0.1, w: 0.1, h: 0.35, intensity: 0.7, color: [1, 1, 1] },
 ];
 
-/** The room by elevation: mid-light, a little darker toward the floor. */
+/** The room by elevation: light gray through most of it, so most of the face
+ *  is light gray, darker toward the floor. */
 function blankBase(y: number): number {
   const lat = Math.asin(Math.max(-1, Math.min(1, y)));
-  if (lat < -0.6) return 0.28;
-  if (lat < -0.2) return 0.28 + (0.42 - 0.28) * ((lat + 0.6) / 0.4);
-  return 0.42 + (0.52 - 0.42) * Math.min(1, (lat + 0.2) / 1.4);
+  if (lat < -0.6) return 0.3;
+  if (lat < -0.2) return 0.3 + (0.5 - 0.3) * ((lat + 0.6) / 0.4);
+  return 0.5 + (0.6 - 0.5) * Math.min(1, (lat + 0.2) / 1.4);
 }
 
 export function blankStudioTexture(): THREE.DataTexture {

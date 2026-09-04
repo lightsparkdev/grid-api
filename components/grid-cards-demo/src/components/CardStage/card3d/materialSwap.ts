@@ -145,8 +145,8 @@ export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
     uBareNormal: { value: null },
     uBareEnv: shared?.uBareEnv ?? { value: null },
     uBareEnvIntensity: shared?.uBareEnvIntensity ?? { value: 1 },
-    // Near mirror: 0.12 × 0.7 ≈ 0.08. The room does the softening.
-    uBareRoughScale: shared?.uBareRoughScale ?? { value: 0.7 },
+    // Mirror: 0.12 × 0.5 = 0.06. The room does the softening.
+    uBareRoughScale: shared?.uBareRoughScale ?? { value: 0.5 },
     uBareSteel: shared?.uBareSteel ?? { value: 0 },
     uBaseMap: { value: null },
     uBaseOrm: { value: null },
@@ -321,6 +321,9 @@ export function patchFaceMaterial(m: THREE.MeshPhysicalMaterial, u: SwapUniforms
   // it to the blank.
   m.anisotropy = BLANK_ANISOTROPY;
   m.anisotropyRotation = BLANK_ANISOTROPY_ROTATION;
+  // A mirror shows the room's soft lights as broad, slow gradients, which
+  // band into rings at 8 bits; dither the output.
+  m.dithering = true;
   m.onBeforeCompile = (shader) => {
     for (const k of Object.keys(u) as Array<keyof SwapUniforms>) shader.uniforms[k] = u[k];
     shader.vertexShader = shader.vertexShader
