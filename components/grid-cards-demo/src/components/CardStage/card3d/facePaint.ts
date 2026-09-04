@@ -343,7 +343,7 @@ export function paintFoilNormal(assets: FaceAssets): HTMLCanvasElement {
     const cy = h * LOCKUP_SPLIT + rand() * h * (1 - LOCKUP_SPLIT);
     const r = (0.12 + rand() * 0.14) * w;
     const g = hc.createRadialGradient(cx, cy, 0, cx, cy, r);
-    g.addColorStop(0, 'rgba(255,255,255,0.05)');
+    g.addColorStop(0, 'rgba(255,255,255,0.08)');
     g.addColorStop(1, 'rgba(255,255,255,0)');
     hc.fillStyle = g;
     hc.fillRect(0, 0, w, h);
@@ -358,7 +358,7 @@ export function paintFoilNormal(assets: FaceAssets): HTMLCanvasElement {
     const cy = y < 0 ? 0 : y >= h ? h - 1 : y;
     return src[(cy * w + cx) * 4] / 255;
   };
-  const strength = 3;
+  const strength = 2.2;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const dx = (at(x - 1, y) - at(x + 1, y)) * strength;
@@ -379,9 +379,9 @@ export function paintFoilNormal(assets: FaceAssets): HTMLCanvasElement {
 /** Silver (nickel-plated) contact module; the material makes it metal. */
 function paintChip(ctx: CanvasRenderingContext2D) {
   const g = ctx.createLinearGradient(CHIP.x, CHIP.y, CHIP.x + CHIP.w, CHIP.y + CHIP_H);
-  g.addColorStop(0, '#c9cacf');
-  g.addColorStop(0.5, '#e9eaee');
-  g.addColorStop(1, '#b9bbc1');
+  g.addColorStop(0, '#d9dade');
+  g.addColorStop(0.5, '#f4f5f8');
+  g.addColorStop(1, '#cbcdd3');
   ctx.fillStyle = g;
   chipPlatePath(ctx);
   ctx.fill();
@@ -421,10 +421,15 @@ function wordmarkOf(design: CardDesign): string {
 }
 
 let measureCtx: CanvasRenderingContext2D | null = null;
+/** The wordmark's tracking, in em (the print sample sets -5%). */
+const BRAND_TRACKING = -0.05;
+
 function measureWordmark(text: string, px: number): number {
   measureCtx ??= makeCanvas(1, 1).getContext('2d')!;
   measureCtx.font = `${BRAND_TEXT_WEIGHT} ${px}px ${FONT}`;
-  return measureCtx.measureText(text).width;
+  measureCtx.letterSpacing = `${px * BRAND_TRACKING}px`;
+  // The spacing after the last glyph is not part of the visible width.
+  return measureCtx.measureText(text).width - px * BRAND_TRACKING;
 }
 
 /**
@@ -505,6 +510,7 @@ function drawBrand(ctx: CanvasRenderingContext2D, design: CardDesign, logo: HTML
     const em = b.h * k;
     ctx.fillStyle = ink;
     ctx.font = `${BRAND_TEXT_WEIGHT} ${em}px ${FONT}`;
+    ctx.letterSpacing = `${em * BRAND_TRACKING}px`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     // The caps centered in the em box: baseline half a cap below its middle.

@@ -137,16 +137,21 @@ const FOIL_PANELS: Panel[] = [
   { lon: Math.PI * 0.12, lat: 0.35, w: 0.22, h: 0.3, intensity: 1.6, color: [1, 1, 1] },
   // Fill card far left, for a card turned to the left.
   { lon: Math.PI * 0.85, lat: 0.1, w: 0.18, h: 0.4, intensity: 1.4, color: [1, 1, 1] },
+  // Tall strips either side of the window, so a card turned a little shows
+  // a bright streak rather than the bare room.
+  { lon: Math.PI * 0.68, lat: 0.0, w: 0.07, h: 0.5, intensity: 1.6, color: [1, 1, 1] },
+  { lon: Math.PI * 0.26, lat: -0.05, w: 0.06, h: 0.45, intensity: 1.5, color: [1, 1, 1] },
   // Ceiling strips, for a card pitched up.
   { lon: Math.PI * 0.5, lat: 1.05, w: 1.2, h: 0.05, intensity: 1.8, color: [1, 1, 1] },
   { lon: Math.PI * 0.5, lat: 1.3, w: 1.6, h: 0.05, intensity: 1.8, color: [1, 1, 1] },
 ];
 
 function foilBase(y: number): number {
-  // A lit room: mid floor to light ceiling, so the foil never goes dark
-  // between the panels; the panels stand out as brighter shapes.
+  // A bright room: light floor to near-white ceiling, so between the panels
+  // the foil reads as silver against a light face too, not as gray; the
+  // panels stand out as brighter shapes.
   const t = (y + 1) / 2;
-  return 0.22 + 0.45 * t;
+  return 0.4 + 0.5 * t;
 }
 
 export function foilStudioTexture(): THREE.DataTexture {
