@@ -61,8 +61,10 @@ const SURFACE: Record<Surface, { clearcoat: number; clearcoatRoughness: number; 
   'bare-gloss': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.4 },
 };
 
-/** The image at `url` once loaded; null while loading, on failure, or with no url. */
-function useLoadedImage(url: string | null): HTMLImageElement | null {
+/** The image at `url` once loaded (null on failure or with no url), and
+ *  whether it is still on its way: a face is not painted against a missing
+ *  logo or art, or the wordmark and the color would flash first. */
+function useLoadedImage(url: string | null): { img: HTMLImageElement | null; pending: boolean } {
   const [state, setState] = useState<{
     url: string | null;
     img: HTMLImageElement | null;
@@ -80,7 +82,8 @@ function useLoadedImage(url: string | null): HTMLImageElement | null {
       alive = false;
     };
   }, [url]);
-  return state.url === url ? state.img : null;
+  const settled = state.url === url;
+  return { img: settled ? state.img : null, pending: !!url && !settled };
 }
 
 function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture {
@@ -172,8 +175,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     return geometry.boundingBox!.min.z;
   }, [geometry]);
   const [assets, setAssets] = useState<FaceAssets | null>(null);
-  const logo = useLoadedImage(state.design.logoUrl);
-  const art = useLoadedImage(state.design.backgroundUrl);
+  const { img: logo, pending: logoPending } = useLoadedImage(state.design.logoUrl);
+  const { img: art, pending: artPending } = useLoadedImage(state.design.backgroundUrl);
+  // The front waits for its images; the last paint stays up meanwhile.
+  const frontPending = logoPending || artPending;
 
   // One canvas per face for the life of the mesh; repaints upload in place.
   const frontCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
@@ -241,7 +246,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const { logoTreatment, artTreatment } = state.design;
   const decoTex = useRef<{ orm: THREE.Texture | null; normal: THREE.Texture | null }>({ orm: null, normal: null });
   useEffect(() => {
-    if (!assets) return;
+    if (!assets || frontPending) return;
     const front = materials[MAT_FRONT];
     const base = surfaceTex.current.get(`${surface}|front`);
     if (!base) return;
@@ -281,7 +286,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     }
     front.needsUpdate = true;
     invalidate();
-  }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, materials, invalidate]);
+  }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, frontPending, materials, invalidate]);
 
   // Edge: the construction's layers, the printed skins in the print color (or
   // the stock's own face when nothing is printed).
@@ -337,7 +342,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // Front print.
   const ready = useRef(false);
   useEffect(() => {
-    if (!assets) return;
+    if (!assets || frontPending) return;
     paintFront(frontCanvas.getContext('2d')!, {
       design: state.design,
       logo,
@@ -359,6 +364,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     art,
     state.frozen,
     state.closed,
+    frontPending,
     frontCanvas,
     frontMap,
     invalidate,

@@ -80,7 +80,9 @@ export const PRESETS: CardPreset[] = [
     id: 'ondemand',
     label: 'On-demand',
     iconSrc: `${ASSETS}/app-icon-ondemand.png`,
-    // Super: matte black, the wordmark top-left as a spot-gloss varnish.
+    // Super: matte black with the GA card's ambient dot grid across the face
+    // (one frame of it, baked as art), the wordmark top-left as a spot-gloss
+    // varnish.
     design: {
       programName: 'Super',
       material: 'plastic',
@@ -89,7 +91,7 @@ export const PRESETS: CardPreset[] = [
       logoUrl: null,
       logoTreatment: 'spotGloss',
       brandLayout: { x: 95, y: 138, h: 125, anchor: 'left', rotation: 0, opacity: 1 },
-      backgroundUrl: null,
+      backgroundUrl: `${ASSETS}/art-ondemand.png`,
       artTreatment: 'print',
     },
   },
