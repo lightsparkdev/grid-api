@@ -715,6 +715,8 @@ function CardRig({ rootRef, hitRef, live, motion, pick, placement, onBrandPlacem
       if (intro.overlay.current) stepIntro(intro.overlay.current, intro.t);
       const canvas = intro.canvas.current;
       const look = introCard(intro.t);
+      // The mesh alone settles down to size; the blueprint and hit box stay put.
+      c.scale.setScalar(s * look.scale);
       if (canvas) {
         canvas.style.opacity = String(look.opacity);
         canvas.style.filter = look.blur > 0.05 ? `blur(${look.blur.toFixed(2)}px)` : '';

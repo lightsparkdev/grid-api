@@ -170,8 +170,9 @@ const BLUEPRINT_OUT = 0.8;
 const CARD_IN = 1.0;
 /** As the card comes in, the ticks tuck toward it (card px). */
 const TICK_EXIT = 8;
-/** Where the card starts, stage px of blur. */
+/** Where the card starts: stage px of blur, and a little large. */
 const CARD_BLUR = 16;
+const CARD_SCALE = 1.06;
 /** Where the blueprint ends, card px of blur (it scales with the hit box, so
  *  this lands near the card's 16 stage px at the desktop scale). */
 const BLUEPRINT_BLUR = 12;
@@ -179,10 +180,11 @@ export const INTRO_END = REVEAL_AT + CARD_IN;
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 
-/** The card's look at `t`: hidden until the reveal, then fading in as the blur clears. */
-export function introCard(t: number): { opacity: number; blur: number } {
+/** The card's look at `t`: hidden until the reveal, then fading in as the
+ *  blur clears and it settles down to size. */
+export function introCard(t: number): { opacity: number; blur: number; scale: number } {
   const u = ease(clamp01((t - REVEAL_AT) / CARD_IN));
-  return { opacity: u, blur: CARD_BLUR * (1 - u) };
+  return { opacity: u, blur: CARD_BLUR * (1 - u), scale: 1 + (CARD_SCALE - 1) * (1 - u) };
 }
 
 const cache = new WeakMap<Element, Map<string, SVGElement>>();
