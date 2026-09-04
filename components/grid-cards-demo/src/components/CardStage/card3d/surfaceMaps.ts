@@ -72,6 +72,10 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets, p
   ctx.fillStyle = orm(f.rough, f.metal);
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   if (surface === 'bare-matte') beadblastRoughness(ctx, assets);
+  // A plain steel blank's finish is uneven: slow blotches where the sheet is
+  // more or less polished, so some of the face holds a tighter, brighter
+  // pool of light and some goes dull. Roughness ±30% at low frequency.
+  if (plain && surface === 'bare-gloss') blotchRoughness(ctx, f.rough);
   // A plain body is the body alone: no stripe, no mark, and no chip (the
   // pocket is milled and the module set after the print).
   if (plain) return c;
@@ -105,6 +109,59 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets, p
   return c;
 }
 
+/** Smooth value noise, 0..1, lattice `cell` px wide, from a fixed seed. */
+function valueNoise(seed: number, cell: number): (x: number, y: number) => number {
+  const hash = (i: number, j: number) => {
+    const s = Math.sin(i * 127.1 + j * 311.7 + seed * 74.7) * 43758.5453;
+    return s - Math.floor(s);
+  };
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const gx = x / cell;
+    const gy = y / cell;
+    const x0 = Math.floor(gx);
+    const y0 = Math.floor(gy);
+    const fx = smooth(gx - x0);
+    const fy = smooth(gy - y0);
+    const a = hash(x0, y0);
+    const b = hash(x0 + 1, y0);
+    const c = hash(x0, y0 + 1);
+    const d = hash(x0 + 1, y0 + 1);
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+  };
+}
+
+/** Roughness varied slowly across the face about `rough`, in the G channel;
+ *  metalness stays. Painted at a quarter resolution and scaled up, since the
+ *  variation is by the centimeter. */
+function blotchRoughness(ctx: CanvasRenderingContext2D, rough: number) {
+  const w = TEX_W / 4;
+  const h = TEX_H / 4;
+  const small = makeCanvas(w, h);
+  const sctx = small.getContext('2d')!;
+  const img = sctx.createImageData(w, h);
+  const d = img.data;
+  const broad = valueNoise(3, 90);
+  const fine = valueNoise(11, 28);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const n = 0.7 * broad(x, y) + 0.3 * fine(x, y);
+      const r = rough * (0.7 + 0.6 * n);
+      const i = (y * w + x) * 4;
+      d[i] = 0;
+      d[i + 1] = Math.round(Math.min(1, r) * 255);
+      d[i + 2] = 255;
+      d[i + 3] = 255;
+    }
+  }
+  sctx.putImageData(img, 0, 0);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(small, 0, 0, TEX_W, TEX_H);
+  ctx.restore();
+}
+
 /* ── Relief ───────────────────────────────────────────────────────────────── */
 
 function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets, plain: boolean): HTMLCanvasElement {
@@ -127,24 +184,20 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.putImageData(img, 0, 0);
   }
 
-  // A polished blank is brushed: long fine streaks along the card, each a
-  // little different in length and depth, the way a sheet comes off the
-  // belt; a few deeper scores among them. Height ±4 at most: a hair of
-  // tilt, so the room's lights fray along them without reading as lines.
+  // A steel blank is smooth but not flat: a sheet off the mill carries slow,
+  // shallow waves, a degree or two over the card, so the room's light lands
+  // a little differently on every part of it. No grain, no brush.
   if (plain && surface === 'bare-gloss') {
     const img = ctx.getImageData(0, 0, MAP_W, MAP_H);
     const d = img.data;
     for (let y = 0; y < MAP_H; y++) {
-      // Each row is its own streak, fading in and out along its length.
-      const lane = Math.random() - 0.5;
-      const score = Math.random() < 0.06 ? 2.2 : 1;
-      const phase = Math.random() * 1000;
-      const len = 90 + Math.random() * 260;
       for (let x = 0; x < MAP_W; x++) {
-        const along = Math.sin((x + phase) / len) * 0.5 + 0.5;
-        const v = 128 + lane * 4 * score * along;
+        const wave =
+          Math.sin(x / 210 + y / 340 + 0.7) * 3.2 +
+          Math.sin(x / 95 - y / 150 + 2.1) * 1.6 +
+          Math.sin(y / 120 + x / 500 + 4.4) * 2.2;
         const i = (y * MAP_W + x) * 4;
-        d[i] = d[i + 1] = d[i + 2] = v;
+        d[i] = d[i + 1] = d[i + 2] = 128 + wave;
       }
     }
     ctx.putImageData(img, 0, 0);

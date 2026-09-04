@@ -145,7 +145,9 @@ export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
     uBareNormal: { value: null },
     uBareEnv: shared?.uBareEnv ?? { value: null },
     uBareEnvIntensity: shared?.uBareEnvIntensity ?? { value: 1 },
-    uBareRoughScale: shared?.uBareRoughScale ?? { value: 0.35 },
+    // Satin, not mirror: 0.12 × 1.8 ≈ 0.22, so the room's lights land as
+    // soft pools and its dark patches as soft shade.
+    uBareRoughScale: shared?.uBareRoughScale ?? { value: 1.8 },
     uBareSteel: shared?.uBareSteel ?? { value: 0 },
     uBaseMap: { value: null },
     uBaseOrm: { value: null },
@@ -193,8 +195,9 @@ uniform float uChipHide;
 /** How brushed the blank is (three's `anisotropy` on the face materials; the
  *  shader zeroes it off the blank), and the brush's direction. Very light: a
  *  streak the eye reads as a sheet, not a texture. */
-export const BLANK_ANISOTROPY = 0.08;
-export const BLANK_ANISOTROPY_ROTATION = 0;
+export const BLANK_ANISOTROPY = 0.12;
+/** Along the tilt of the room's lights, so the pools stretch with them. */
+export const BLANK_ANISOTROPY_ROTATION = -0.42;
 
 /** The blank's room, sampled the way three samples the scene's (a PMREM in
  *  the cube-UV layout), declared after three's own IBL functions. */

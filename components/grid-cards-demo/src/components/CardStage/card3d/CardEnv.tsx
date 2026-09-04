@@ -190,9 +190,11 @@ function panelStudio(panels: Panel[], base: (y: number) => number, w: number, h:
         B += k * p.color[2];
       }
       const o = (j * w + i) * 4;
-      data[o] = R;
-      data[o + 1] = G;
-      data[o + 2] = B;
+      // A panel with a negative intensity is a dark patch; the room stays
+      // non-negative.
+      data[o] = Math.max(0, R);
+      data[o + 1] = Math.max(0, G);
+      data[o + 2] = Math.max(0, B);
       data[o + 3] = 1;
     }
   }
@@ -211,52 +213,47 @@ export function foilStudioTexture(): THREE.DataTexture {
 }
 
 /**
- * The room a bare steel blank reflects during a material change: a factory
- * floor under overhead lights, as a stack of mirror-polished sheets shows
- * it. A polished sheet the size of a card reflects only a few degrees of
- * the room, so what it needs is contrast at that scale with soft edges: a
- * dark floor, a horizon, a brighter ceiling, and wide soft lights overhead
- * and ahead, which slide across the face as broad gradients when the card
- * tilts. (The foil's room, built for letters a few millimeters tall, put
- * one bright window across the whole face; a bank of narrow strips read as
- * a texture.) Sized as the studio is, since a PMREM standing in for the
- * scene's must share its layout.
+ * The room a steel blank reflects during a material change. The blank is
+ * satin, not mirror, so what the face shows is light and shade, not shapes:
+ * a few soft lights of unequal brightness at unequal angles, and a few large
+ * dark patches (negative panels: the floor, a machine, the ceiling between
+ * fixtures) between and below them. On satin they land as pools and shade
+ * that drift across the face as the card tilts. (A mirror needed shapes
+ * sized to the few degrees a card reflects, and every shape read as either
+ * a band or a flat fill.) Sized as the studio is, since a PMREM standing in
+ * for the scene's must share its layout.
  */
-/** The lights lie across the room at this angle, so their reflections cross
- *  the card on a diagonal rather than along its long edge. */
+/** The lights lie across the room at this angle, so their pools cross the
+ *  card on a diagonal rather than along its long edge. */
 const BLANK_TILT = -0.42;
 
 const BLANK_PANELS: Panel[] = [
-  // Ceiling lights in the head-on cone (a card a few degrees across reflects
-  // about ±0.37 rad across and ±0.23 up): long rectangles on a tilt, as a
-  // stack of polished sheets shows the lights over it. One at rest, others
-  // a tilt brings on.
-  { lon: Math.PI * 0.5, lat: 0.03, w: 0.4, h: 0.045, intensity: 0.9, color: [1, 1, 1], tilt: BLANK_TILT },
-  { lon: Math.PI * 0.5, lat: 0.26, w: 0.4, h: 0.045, intensity: 0.8, color: [1, 1, 1], tilt: BLANK_TILT },
-  { lon: Math.PI * 0.5, lat: -0.2, w: 0.4, h: 0.045, intensity: 0.7, color: [1, 1, 1], tilt: BLANK_TILT },
-  // Higher: the ceiling proper.
-  { lon: Math.PI * 0.64, lat: 0.66, w: 0.32, h: 0.14, intensity: 1.0, color: [1, 0.99, 0.97] },
-  { lon: Math.PI * 0.36, lat: 0.66, w: 0.32, h: 0.14, intensity: 0.9, color: [1, 1, 1] },
-  { lon: Math.PI * 0.5, lat: 1.1, w: 0.7, h: 0.18, intensity: 1.1, color: [1, 1, 1] },
-  // Something either side for a card turned.
-  { lon: Math.PI * 0.8, lat: 0.1, w: 0.1, h: 0.35, intensity: 0.8, color: [1, 1, 1] },
-  { lon: Math.PI * 0.2, lat: 0.1, w: 0.1, h: 0.35, intensity: 0.8, color: [1, 1, 1] },
+  // Lights: a big one above and left, a lesser one right and a little below
+  // head-on, a small bright one high right.
+  { lon: Math.PI * 0.58, lat: 0.24, w: 0.34, h: 0.1, intensity: 1.3, color: [1, 0.99, 0.97], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.4, lat: -0.06, w: 0.26, h: 0.07, intensity: 0.8, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.32, lat: 0.4, w: 0.12, h: 0.08, intensity: 1.5, color: [1, 1, 1], tilt: BLANK_TILT },
+  // Dark: the floor's edge below, a dark mass low left, a gap in the ceiling.
+  { lon: Math.PI * 0.5, lat: -0.34, w: 0.7, h: 0.14, intensity: -0.26, color: [1, 1, 1], tilt: BLANK_TILT * 0.5 },
+  { lon: Math.PI * 0.68, lat: -0.1, w: 0.18, h: 0.12, intensity: -0.2, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.5, lat: 0.62, w: 0.3, h: 0.08, intensity: -0.16, color: [1, 1, 1] },
+  // The ceiling proper, and something either side for a card turned.
+  { lon: Math.PI * 0.5, lat: 1.1, w: 0.7, h: 0.18, intensity: 1.0, color: [1, 1, 1] },
+  { lon: Math.PI * 0.82, lat: 0.1, w: 0.1, h: 0.35, intensity: 0.7, color: [1, 1, 1] },
+  { lon: Math.PI * 0.18, lat: 0.1, w: 0.1, h: 0.35, intensity: 0.7, color: [1, 1, 1] },
 ];
 
-/** The room by elevation: light throughout and nearly even through the
- *  head-on cone, so the steel between the lights is silver and the lights,
- *  not a gradient, are what the face shows. */
+/** The room by elevation: mid-light, a little darker toward the floor. */
 function blankBase(y: number): number {
   const lat = Math.asin(Math.max(-1, Math.min(1, y)));
-  if (lat < -0.6) return 0.32;
-  if (lat < -0.3) return 0.32 + (0.44 - 0.32) * ((lat + 0.6) / 0.3);
-  return 0.44 + (0.56 - 0.44) * Math.min(1, (lat + 0.3) / 1.5);
+  if (lat < -0.6) return 0.28;
+  if (lat < -0.2) return 0.28 + (0.42 - 0.28) * ((lat + 0.6) / 0.4);
+  return 0.42 + (0.52 - 0.42) * Math.min(1, (lat + 0.2) / 1.4);
 }
 
 export function blankStudioTexture(): THREE.DataTexture {
-  // Edges soft enough to read as blurred lights in a mirror, hard enough to
-  // read as lights and not a haze, and for the brush's streaks to break them.
-  return panelStudio(BLANK_PANELS, blankBase, ENV_W, ENV_H, 0.03);
+  // Wide edges: on satin nothing should have a line in it.
+  return panelStudio(BLANK_PANELS, blankBase, ENV_W, ENV_H, 0.14);
 }
 
 export function CardEnv() {

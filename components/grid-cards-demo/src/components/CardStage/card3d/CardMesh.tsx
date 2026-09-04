@@ -11,6 +11,7 @@ import {
   type BrandLayout,
   type CardDesign,
   type CardMaterial,
+  type CardStock,
 } from '@/data/design';
 import { createCardGeometry, faceZOf, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
@@ -230,6 +231,10 @@ const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
 const PRESS_SINK = 2.5;
 const PRESS_TILT_DEG = 8;
 
+/** The steel blank's stock, for the change only: the finished card's steel
+ *  (`STOCKS[2]`), a shade cooler and brighter, as mill stainless is. */
+const BLANK_STEEL: CardStock = { ...STOCKS[2], face: '#d3d5da' };
+
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
   { state, onReady, onBrandPlacement, swapContext },
   ref,
@@ -388,10 +393,12 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     };
   }, [gl, swapU]);
 
-  // The bare body's albedo: the new stock, both faces.
-  // Plastic shows as the white PVC blank whatever the print (a dark print's
-  // black core would wipe black over black and say nothing).
-  const newStock = state.design.material === 'metal' ? stockOf(state.design) : STOCKS[0];
+  // The bare body's albedo: the new stock, both faces. Plastic shows as the
+  // white PVC blank whatever the print (a dark print's black core would wipe
+  // black over black and say nothing); steel as a blank a shade cooler and
+  // brighter than the finished card's stock, as mill stainless is next to
+  // the finished part.
+  const newStock = state.design.material === 'metal' ? BLANK_STEEL : STOCKS[0];
   useEffect(() => {
     if (!assets) return;
     paintBare(bareFrontCanvas.getContext('2d')!, newStock);
