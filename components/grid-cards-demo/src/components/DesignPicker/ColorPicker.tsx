@@ -9,6 +9,7 @@ import {
   PopoverRoot,
   PopoverTrigger,
 } from '@lightsparkdev/origin/popover';
+import { Tooltip } from '@/components/Tooltip/Tooltip';
 import styles from './ColorPicker.module.scss';
 
 /* ── Color math ───────────────────────────────────────────────────────────── */
@@ -89,6 +90,8 @@ interface ColorPickerProps {
   triggerClassName?: string;
   triggerActive?: boolean;
   triggerLabel: string;
+  /** Tooltip over the trigger (hidden while the picker is open). */
+  tooltip: string;
 }
 
 /**
@@ -97,7 +100,7 @@ interface ColorPickerProps {
  * the platform has one. Hue and saturation are kept locally so they survive
  * the value being dragged to black or white, where a hex can't hold them.
  */
-export function ColorPicker({ value, onChange, children, triggerClassName, triggerActive, triggerLabel }: ColorPickerProps) {
+export function ColorPicker({ value, onChange, children, triggerClassName, triggerActive, triggerLabel, tooltip }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
   const [hsv, setHsv] = useState<Hsv>(() => hexToHsv(value) ?? { h: 0, s: 0, v: 0 });
   const [hexText, setHexText] = useState(value);
@@ -188,14 +191,20 @@ export function ColorPicker({ value, onChange, children, triggerClassName, trigg
 
   return (
     <PopoverRoot open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={triggerClassName}
-        data-active={triggerActive || undefined}
-        aria-label={triggerLabel}
-        style={triggerActive ? { background: value } : undefined}
-      >
-        {children}
-      </PopoverTrigger>
+      <Tooltip text={tooltip}>
+        {(tip) => (
+          <PopoverTrigger
+            className={triggerClassName}
+            data-active={triggerActive || undefined}
+            aria-label={triggerLabel}
+            style={triggerActive ? { background: value } : undefined}
+            {...(open ? {} : tip)}
+            onClick={tip.onMouseLeave}
+          >
+            {children}
+          </PopoverTrigger>
+        )}
+      </Tooltip>
       <PopoverPortal>
         <PopoverPositioner side="top" align="end" sideOffset={8}>
           <PopoverPopup className={styles.popup} aria-label="Custom color">

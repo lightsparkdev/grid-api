@@ -174,7 +174,8 @@ export const ART_TREATMENTS: Array<{ id: ArtTreatment; label: string }> = [
 ];
 
 export const initialDesign: CardDesign = {
-  programName: 'Your brand',
+  // Empty: the field invites a name; the card and the app fall back to 'Your brand'.
+  programName: '',
   cardholderName: '',
   material: 'plastic',
   finish: 'matte',

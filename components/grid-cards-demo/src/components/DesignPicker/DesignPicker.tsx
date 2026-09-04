@@ -211,6 +211,53 @@ function SampleSwatches<T extends string>({
   );
 }
 
+/**
+ * A text field whose empty state invites: the placeholder is a ghost span
+ * under the caret with the project tracker's "pulse of attention" shimmer,
+ * a single glint gliding across the words every couple of seconds, resting
+ * at the normal placeholder tone between passes. `phase` (0..1) offsets the
+ * cycle so two fields don't pulse in step.
+ */
+function ShimmerField({
+  value,
+  maxLength,
+  placeholder,
+  label,
+  phase,
+  onChange,
+}: {
+  value: string;
+  maxLength: number;
+  placeholder: string;
+  label: string;
+  phase: number;
+  onChange: (value: string) => void;
+}) {
+  const duration = 2400;
+  return (
+    <span className={styles.shimmerField}>
+      <input
+        type="text"
+        className={styles.nameInput}
+        value={value}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        aria-label={label}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {!value && (
+        <span
+          className={styles.shimmerGhost}
+          style={{ '--shimmer-duration': `${duration}ms`, '--shimmer-delay': `${-phase * duration}ms` } as CSSProperties}
+          aria-hidden
+        >
+          {placeholder}
+        </span>
+      )}
+    </span>
+  );
+}
+
 /** One image upload: a swatch-sized preview with a Remove tile once picked, an Upload button until then. */
 function UploadRow({
   url,
@@ -289,7 +336,6 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
   const activeSwatch = design.color ? DESIGN_SWATCHES.find((s) => s.color === design.color) : undefined;
   const custom = design.color !== null && !activeSwatch;
   const brand = brandColorOf(design);
-  const hasBrand = design.logoUrl !== null || design.programName.trim() !== '';
   // Spot gloss is a clear varnish that reads against a matte coat; on a gloss
   // card it is invisible.
   const glossy = design.finish === 'gloss';
@@ -377,6 +423,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
               triggerClassName={clsx(styles.swatch, styles.swatchCustom)}
               triggerActive={custom}
               triggerLabel="Custom color"
+              tooltip={custom ? 'Custom' : 'Custom color'}
             >
               {!custom ? <IconPlusSmall size={16} aria-hidden /> : null}
             </ColorPicker>
@@ -408,14 +455,13 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
       <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Brand</span>
-          <input
-            type="text"
-            className={styles.nameInput}
+          <ShimmerField
             value={design.programName}
             maxLength={MAX_NAME}
             placeholder="Your brand"
-            aria-label="Brand name"
-            onChange={(e) => onChange({ programName: e.target.value })}
+            label="Brand name"
+            phase={0}
+            onChange={(programName) => onChange({ programName })}
           />
         </div>
         <div className={styles.row}>
@@ -428,31 +474,28 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             onPick={(url) => onChange({ logoUrl: url })}
           />
         </div>
-        {hasBrand && (
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Finish</span>
-            <SampleSwatches
-              label="Brand finish"
-              value={design.logoTreatment}
-              options={LOGO_TREATMENTS}
-              onChange={(logoTreatment) => onChange({ logoTreatment })}
-              disabled={noSpotGloss}
-            />
-          </div>
-        )}
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Finish</span>
+          <SampleSwatches
+            label="Brand finish"
+            value={design.logoTreatment}
+            options={LOGO_TREATMENTS}
+            onChange={(logoTreatment) => onChange({ logoTreatment })}
+            disabled={noSpotGloss}
+          />
+        </div>
       </div>
 
       <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Name</span>
-          <input
-            type="text"
-            className={styles.nameInput}
+          <ShimmerField
             value={design.cardholderName}
             maxLength={MAX_CARDHOLDER}
             placeholder="Your name"
-            aria-label="Cardholder name"
-            onChange={(e) => onChange({ cardholderName: e.target.value })}
+            label="Cardholder name"
+            phase={0.45}
+            onChange={(cardholderName) => onChange({ cardholderName })}
           />
         </div>
       </div>
