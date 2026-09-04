@@ -286,25 +286,27 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
  *  Standards, January 2026: "silver foil PVBM, printed silver product
  *  identifier"). The surface maps make the mark a mirror and the identifier
  *  flat. */
-/** Silver foil would vanish on bare metal; the standards allow a black foil
- *  PVBM with a black printed identifier there, which is what metal cards use.
- *  Bare plastic keeps the silver foil, with the identifier in the face's ink. */
+/** Silver foil vanishes on bare metal and fights a light face. The standards
+ *  (Visa Physical Card Brand Standards, January 2026) allow a black foil
+ *  PVBM with a black printed identifier, which is what light and metal cards
+ *  use: the foil reads by its gloss and bevel rather than its brightness. */
 export function foilIsBlack(design: CardDesign): boolean {
-  return isBare(design) && materialOf(design) === 'metal';
+  return (isBare(design) && materialOf(design) === 'metal') || inkFor(design, null) !== '#ffffff';
 }
 
-function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: boolean, ink: string) {
-  const identifier = black || ink !== '#ffffff' ? '#2a2a2e' : '#cfd0d5';
+/** The foil's own tone, silver or black lacquer. */
+export function foilTone(black: boolean): string {
+  return black ? '#26262a' : '#f4f4f6';
+}
+
+function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: boolean) {
+  const identifier = black ? '#2a2a2e' : '#cfd0d5';
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);
-  if (black) {
-    drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#1c1c20', [LOCKUP_SPLIT, 1]);
-    return;
-  }
-  // Silver foil: the mark itself is the foil layer (`FoilMark`), which sits
-  // over this; the clear carrier film around it is in the surface maps only
-  // (glossy, a hair proud), not in the print. Under the foil, paint its tone
-  // so its anti-aliased edge blends.
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#d8d8dc', [LOCKUP_SPLIT, 1]);
+  // The mark itself is the foil layer (`FoilMark`), which sits over this; the
+  // clear carrier film around it is in the surface maps only (glossy, a hair
+  // proud), not in the print. Under the foil, paint its tone so its
+  // anti-aliased edge blends.
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, black ? '#1c1c20' : '#d8d8dc', [LOCKUP_SPLIT, 1]);
 }
 
 /** The Visa mark's shape alone (the foil band of the lockup), white on
@@ -316,13 +318,14 @@ export function paintLockupMask(assets: FaceAssets): HTMLCanvasElement {
   return c;
 }
 
-/** The foil's reflectance: silver, even; its room does the shading. */
-export function paintFoilAlbedo(): HTMLCanvasElement {
+/** The foil's reflectance: silver or black lacquer, even; its room does the
+ *  shading. */
+export function paintFoilAlbedo(black: boolean): HTMLCanvasElement {
   const w = Math.ceil(LOCKUP.w);
   const h = Math.ceil(LOCKUP.h);
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d')!;
-  ctx.fillStyle = '#f4f4f6';
+  ctx.fillStyle = foilTone(black);
   ctx.fillRect(0, 0, w, h);
   return c;
 }
@@ -720,7 +723,7 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.fillText('1-855-516-0103   lightspark.com/help', x, F(876) + F(16));
   ctx.fillText('Issued by Lead Bank', x, F(876) + F(16) + F(26));
 
-  paintLockup(ctx, assets, foilIsBlack(s.design), ink);
+  paintLockup(ctx, assets, foilIsBlack(s.design));
   paintState(ctx, s.frozen, s.closed);
 }
 

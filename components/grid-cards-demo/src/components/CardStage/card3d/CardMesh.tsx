@@ -104,18 +104,19 @@ function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture 
  * normal map carries the letters' bevel and a faint waviness that bends the
  * reflections. A material's `envMapIntensity` is only honored when the map
  * is set on the material itself, which it is here. On bare metal or a light
- * bare stock the mark is black foil, painted into the face instead.
+ * face the foil is black lacquer rather than silver: the same film, read by
+ * its gloss and bevel.
  */
 const FOIL = { roughness: 0.04, envMapIntensity: 1.1, normalScale: 1 };
 
-function FoilMark({ assets, backZ, visible }: { assets: FaceAssets; backZ: number; visible: boolean }) {
+function FoilMark({ assets, backZ, black }: { assets: FaceAssets; backZ: number; black: boolean }) {
   const material = useMemo(() => {
     const m = new THREE.MeshPhysicalMaterial({
       metalness: 1,
       roughness: FOIL.roughness,
       transparent: true,
     });
-    m.map = canvasTexture(paintFoilAlbedo(), true);
+    m.map = canvasTexture(paintFoilAlbedo(black), true);
     m.alphaMap = canvasTexture(paintLockupMask(assets));
     m.normalMap = canvasTexture(paintFoilNormal(assets));
     m.normalScale.set(FOIL.normalScale, FOIL.normalScale);
@@ -123,7 +124,7 @@ function FoilMark({ assets, backZ, visible }: { assets: FaceAssets; backZ: numbe
     m.envMapIntensity = FOIL.envMapIntensity;
     m.depthWrite = false;
     return m;
-  }, [assets]);
+  }, [assets, black]);
   useEffect(
     () => () => {
       material.map?.dispose();
@@ -140,7 +141,7 @@ function FoilMark({ assets, backZ, visible }: { assets: FaceAssets; backZ: numbe
   const cx = -((LOCKUP.x + LOCKUP.w / 2) / TEX_W - 0.5) * CARD_W;
   const cy = (0.5 - (LOCKUP.y + LOCKUP.h / 2) / TEX_H) * CARD_H;
   return (
-    <mesh position={[cx, cy, backZ - 0.08]} rotation={[0, Math.PI, 0]} material={material} visible={visible}>
+    <mesh position={[cx, cy, backZ - 0.08]} rotation={[0, Math.PI, 0]} material={material}>
       <planeGeometry args={[w, h]} />
     </mesh>
   );
@@ -410,7 +411,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   return (
     <group ref={ref}>
       <mesh geometry={geometry} material={materials} visible={assets !== null} />
-      {assets && <FoilMark assets={assets} backZ={backZ} visible={!foilIsBlack(state.design)} />}
+      {assets && <FoilMark assets={assets} backZ={backZ} black={foilIsBlack(state.design)} />}
     </group>
   );
 });
