@@ -212,7 +212,7 @@
   @media (hover: hover) {
     &:hover:not(:disabled) {
       color: var(--icon-primary);
-      background: var(--surface-hover);
+      background: var(--picker-fill);
     }
   }
 
