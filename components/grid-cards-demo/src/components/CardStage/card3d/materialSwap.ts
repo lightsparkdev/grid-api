@@ -2,23 +2,40 @@ import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
 
 /**
- * A material change is three wipes in one direction, the way a card is made.
- * A bowed front sweeps the face left to right and leaves the new stock as a
- * blank (polished steel, or white PVC) across the whole card; a second front
- * lays the print's base (the color, gradient, or art) over it; a third prints
- * the graphics (the brand, the back's text, the effects). The face and its
- * maps are mixed in the shader between the fronts; the first front is made
- * of the stock's particles.
+ * A material change is three passes in one direction, the way a card is
+ * made. The new stock is laid down as a blank (polished steel, or white PVC)
+ * across the whole card; then the print's base (the color, gradient, or art)
+ * over it; then the graphics (the brand, the back's text, the effects). Each
+ * pass is laid grain by grain: the face is cut into ~3 px cells, each with
+ * its own moment inside a zone behind a bowed front that sweeps left to
+ * right, so a layer arrives as a speckle that fills in rather than as a
+ * line. On the first pass the grains are particles: each comes in from above
+ * and lands on its cell at the moment the cell turns, so what the eye sees
+ * laying the stock down is the particles landing.
  */
 
 /** One pass, ms. */
-export const WIPE_MS = 480;
+export const WIPE_MS = 520;
 /** Between passes, ms. */
 export const WIPE_HOLD = 50;
 /** The front bows: its middle leads its ends by this many card px. */
 const WIPE_ARC = 10;
-/** Antialiasing on the front, as a fraction of the sweep. */
-const WIPE_SOFT = 0.012;
+/** The zone behind the front in which a cell turns, as a fraction of the
+ *  sweep: a cell with grain `n` turns when the front is `n · WIPE_GRAIN`
+ *  past it. */
+export const WIPE_GRAIN = 0.12;
+/** A cell turns as a dot growing from a point in it, over this much further
+ *  travel of the front. */
+export const WIPE_SPREAD = 0.035;
+/** The dot's center sits off the cell's center by up to this, in cells, and
+ *  the dot grows to this radius, past the cell, so neighbors' dots overlap
+ *  into blobs rather than squaring off to a grid. Once the front is well past
+ *  a cell's moment the cell is covered outright, whatever the dots did. */
+export const DOT_JITTER = 0.35;
+const DOT_R = 1.05;
+/** Antialiasing on a dot's rim, in cell units. */
+const DOT_AA = 0.12;
+const WIPE_SOFT = 0.004;
 
 /** The sweep coordinate `d` runs 0..1 across the card, left to right, less
  *  the bow. */
@@ -30,6 +47,67 @@ export function sweepOf(x: number, y: number, dir: number): number {
   return (dir * x + CARD_W / 2 - WIPE_ARC * (1 - 4 * yn * yn)) / SWEEP_SPAN;
 }
 
+/* ── Grain ────────────────────────────────────────────────────────────────── */
+
+/** Cells across and down the face (about 2.9 card px each). */
+export const GRAIN_W = 128;
+export const GRAIN_H = 80;
+
+/** A cell of the face: where its dot grows from (card px, centered) and its
+ *  moment within the grain zone. */
+export interface Cell {
+  x: number;
+  y: number;
+  n: number;
+}
+
+export interface Grain {
+  texture: THREE.DataTexture;
+  /** Row-major from the bottom left. */
+  cells: Cell[];
+}
+
+let grainCache: Grain | null = null;
+
+/** The face's cells, each with a random moment (R) and a random offset for
+ *  its dot's center (G, B). Nearest-filtered so a cell reads whole. */
+export function grain(): Grain {
+  if (grainCache) return grainCache;
+  const cells: Cell[] = [];
+  const bytes = new Uint8Array(GRAIN_W * GRAIN_H * 4);
+  const q = (v: number) => Math.round(v * 255);
+  for (let j = 0; j < GRAIN_H; j++) {
+    for (let i = 0; i < GRAIN_W; i++) {
+      const k = j * GRAIN_W + i;
+      const n = q(Math.random());
+      const jx = q(Math.random());
+      const jy = q(Math.random());
+      bytes[k * 4] = n;
+      bytes[k * 4 + 1] = jx;
+      bytes[k * 4 + 2] = jy;
+      bytes[k * 4 + 3] = 255;
+      // The same arithmetic as the shader's, off the same 8-bit values.
+      const cx = i + 0.5 + (jx / 255 - 0.5) * DOT_JITTER * 2;
+      const cy = j + 0.5 + (jy / 255 - 0.5) * DOT_JITTER * 2;
+      cells.push({ x: (cx / GRAIN_W - 0.5) * CARD_W, y: (cy / GRAIN_H - 0.5) * CARD_H, n: n / 255 });
+    }
+  }
+  const texture = new THREE.DataTexture(bytes, GRAIN_W, GRAIN_H, THREE.RGBAFormat, THREE.UnsignedByteType);
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  grainCache = { texture, cells };
+  return grainCache;
+}
+
+/** The cell under a point of the face (card px, centered). */
+export function cellAt(g: Grain, x: number, y: number): Cell {
+  const i = Math.min(GRAIN_W - 1, Math.max(0, Math.floor((x / CARD_W + 0.5) * GRAIN_W)));
+  const j = Math.min(GRAIN_H - 1, Math.max(0, Math.floor((y / CARD_H + 0.5) * GRAIN_H)));
+  return g.cells[j * GRAIN_W + i];
+}
+
 export interface SwapUniforms {
   /** The fronts' positions on the sweep: the blank's, the base's, the
    *  graphics'. Behind each is its layer; all rest past 1. */
@@ -39,6 +117,7 @@ export interface SwapUniforms {
   /** 1 sweeps along local +x; -1 the other way, so the wipe runs left to
    *  right on screen when the back is showing. */
   uDir: { value: number };
+  uGrain: { value: THREE.Texture };
   /** The blank: the stock with the chip set in. */
   uBareMap: { value: THREE.Texture | null };
   uBareOrm: { value: THREE.Texture | null };
@@ -50,9 +129,9 @@ export interface SwapUniforms {
 }
 
 /** A front's travel: from just before the bowed middle's left edge to past
- *  the far corner. */
+ *  the far corner and the whole grain zone. */
 export const FRONT_START = -WIPE_ARC / SWEEP_SPAN - WIPE_SOFT * 2;
-export const FRONT_REST = 1 + WIPE_SOFT * 2;
+export const FRONT_REST = 1 + WIPE_GRAIN + WIPE_SPREAD + WIPE_SOFT * 2;
 
 /** One set per face; the fronts are shared so both faces sweep together. */
 export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
@@ -61,6 +140,7 @@ export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
     uBase: shared?.uBase ?? { value: FRONT_REST },
     uPrint: shared?.uPrint ?? { value: FRONT_REST },
     uDir: shared?.uDir ?? { value: 1 },
+    uGrain: shared?.uGrain ?? { value: grain().texture },
     uBareMap: { value: null },
     uBareOrm: { value: null },
     uBareNormal: { value: null },
@@ -70,13 +150,26 @@ export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
   };
 }
 
-/** How much a front at `at` has passed a point `d`, 1 behind it. */
-export function passed(at: number, d: number): number {
-  const t = Math.min(1, Math.max(0, (d - (at - WIPE_SOFT)) / WIPE_SOFT));
-  return 1 - t * t * (3 - 2 * t);
+/** When a front turns a cell: the moment on the sweep its dot starts. */
+export function turnOf(cell: Cell, dir: number): number {
+  return sweepOf(cell.x, cell.y, dir) + WIPE_GRAIN * cell.n;
+}
+
+/** How far a front at `at` has turned a cell: 0 before its moment, 1 once
+ *  its dot has spread. */
+export function passed(at: number, cell: Cell, dir: number): number {
+  return Math.min(1, Math.max(0, (at - turnOf(cell, dir)) / WIPE_SPREAD));
 }
 
 const f = (n: number) => n.toFixed(6);
+
+/** How far a front at `at` has grown a dot whose cell turns at `turn`. */
+const DOT_FN = /* glsl */ `
+float swapDot(float at, float turn, float dist) {
+	float r = ${f(DOT_R)} * clamp((at - turn) / ${f(WIPE_SPREAD)}, 0.0, 1.0);
+	return (1.0 - smoothstep(r - ${f(DOT_AA)}, r + ${f(DOT_AA)}, dist)) * step(0.001, r);
+}
+`;
 
 const PARS = /* glsl */ `
 #include <common>
@@ -85,22 +178,50 @@ uniform float uFront;
 uniform float uBase;
 uniform float uPrint;
 uniform float uDir;
+uniform sampler2D uGrain;
 uniform sampler2D uBareMap;
 uniform sampler2D uBareOrm;
 uniform sampler2D uBareNormal;
 uniform sampler2D uBaseMap;
 uniform sampler2D uBaseOrm;
 uniform sampler2D uBaseNormal;
+${DOT_FN}
 `;
 
-/** The layer at this texel: the blank between the first and second fronts,
- *  the base between the second and third, the print elsewhere. */
+/** The layer at this texel. Every cell turns at its moment, a front's
+ *  passing plus its grain, as a dot growing from a point in it past its
+ *  edges; the texel is covered by the furthest-grown dot among its cell's
+ *  and its neighbors', and outright once its own cell's moment is well past.
+ *  Blank at the first front, base at the second, print at the third. */
 const SWEEP = /* glsl */ `
-float swapYn = vBody.y / ${f(CARD_H)};
-float swapD = (uDir * vBody.x + ${f(CARD_W / 2)} - ${f(WIPE_ARC)} * (1.0 - 4.0 * swapYn * swapYn)) / ${f(SWEEP_SPAN)};
-float swapL1 = 1.0 - smoothstep(uFront - ${f(WIPE_SOFT)}, uFront, swapD);
-float swapL2 = 1.0 - smoothstep(uBase - ${f(WIPE_SOFT)}, uBase, swapD);
-float swapL3 = 1.0 - smoothstep(uPrint - ${f(WIPE_SOFT)}, uPrint, swapD);
+vec2 swapGrid = vec2(${f(GRAIN_W)}, ${f(GRAIN_H)});
+vec2 swapSize = vec2(${f(CARD_W)}, ${f(CARD_H)});
+vec2 swapCell = (vBody.xy / swapSize + 0.5) * swapGrid;
+vec2 swapHome = floor(swapCell);
+float swapL1 = 0.0;
+float swapL2 = 0.0;
+float swapL3 = 0.0;
+for (int sj = -1; sj <= 1; sj++) {
+	for (int si = -1; si <= 1; si++) {
+		vec2 cid = swapHome + vec2(float(si), float(sj));
+		vec3 g = texture2D(uGrain, (cid + 0.5) / swapGrid).rgb;
+		vec2 center = cid + 0.5 + (g.gb - 0.5) * ${f(DOT_JITTER * 2)};
+		vec2 cpos = (center / swapGrid - 0.5) * swapSize;
+		float cyn = cpos.y / ${f(CARD_H)};
+		float cd = (uDir * cpos.x + ${f(CARD_W / 2)} - ${f(WIPE_ARC)} * (1.0 - 4.0 * cyn * cyn)) / ${f(SWEEP_SPAN)};
+		float turn = cd + ${f(WIPE_GRAIN)} * g.r;
+		float dist = length(swapCell - center);
+		swapL1 = max(swapL1, swapDot(uFront, turn, dist));
+		swapL2 = max(swapL2, swapDot(uBase, turn, dist));
+		swapL3 = max(swapL3, swapDot(uPrint, turn, dist));
+		if (si == 0 && sj == 0) {
+			float done = ${f(WIPE_SPREAD * 2)};
+			swapL1 = max(swapL1, step(turn + done, uFront));
+			swapL2 = max(swapL2, step(turn + done, uBase));
+			swapL3 = max(swapL3, step(turn + done, uPrint));
+		}
+	}
+}
 float swapBare = swapL1 * (1.0 - swapL2);
 float swapBase = swapL2 * (1.0 - swapL3);
 float swapPrint = 1.0 - swapBare - swapBase;

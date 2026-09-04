@@ -15,12 +15,13 @@ import {
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { foilStudioTexture } from './CardEnv';
 import {
+  cellAt,
   createSwapUniforms,
   FRONT_REST,
   FRONT_START,
+  grain,
   passed,
   patchFaceMaterial,
-  sweepOf,
   WIPE_HOLD,
   WIPE_MS,
 } from './materialSwap';
@@ -587,11 +588,11 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       sw.committed = true;
       setBodyMaterial(sw.to);
     }
-    // The foil prints with the graphics.
+    // The foil prints with the graphics, at its cell's moment.
     const foil = foilMaterial.current;
     if (foil) {
-      const d = sweepOf(FOIL_CENTER.x, FOIL_CENTER.y, sw.dir);
-      foil.opacity = 1 - passed(shared.uFront.value, d) + passed(shared.uPrint.value, d);
+      const cell = cellAt(grain(), FOIL_CENTER.x, FOIL_CENTER.y);
+      foil.opacity = 1 - passed(shared.uFront.value, cell, sw.dir) + passed(shared.uPrint.value, cell, sw.dir);
     }
     if (pass(2) >= 1) {
       swap.current = null;
