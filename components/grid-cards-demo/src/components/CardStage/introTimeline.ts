@@ -116,9 +116,9 @@ type Cue = { kind: 'draw' | 'fade'; at: number; dur: number };
  *  `pathLength` of 1; fades run opacity 0 → the element's own `data-opacity`. */
 const CUES: Record<string, Cue> = {
   'tick-0': { kind: 'fade', at: 0.0, dur: 0.45 },
-  'tick-1': { kind: 'fade', at: 0.06, dur: 0.45 },
-  'tick-2': { kind: 'fade', at: 0.12, dur: 0.45 },
-  'tick-3': { kind: 'fade', at: 0.18, dur: 0.45 },
+  'tick-1': { kind: 'fade', at: 0.0, dur: 0.45 },
+  'tick-2': { kind: 'fade', at: 0.0, dur: 0.45 },
+  'tick-3': { kind: 'fade', at: 0.0, dur: 0.45 },
   'cross-0': { kind: 'draw', at: 0.2, dur: 0.3 },
   'cross-1': { kind: 'draw', at: 0.2, dur: 0.3 },
   'cross-2': { kind: 'draw', at: 0.2, dur: 0.3 },
