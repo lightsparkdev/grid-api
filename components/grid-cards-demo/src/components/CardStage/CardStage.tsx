@@ -71,6 +71,8 @@ interface Live {
   reduceMotion: boolean;
   /** The brand is selected: the card holds flat under the selection box. */
   editing: boolean;
+  /** Which face is toward the camera, from the last frame (+ front, - back). */
+  facing: number;
   intro: Intro;
 }
 
@@ -193,6 +195,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     wantBack: false,
     reduceMotion,
     editing: false,
+    facing: 1,
     intro: {
       t: -1,
       done: false,
@@ -882,6 +885,7 @@ function CardRig({ rootRef, hitRef, live, motion, pick, placement, onBrandPlacem
       reduceMotion: live.current.reduceMotion,
     });
     const bob = pose.dy * (1 - t);
+    live.current.facing = pose.facing;
     // Stage px → scene: origin at the stage center, y up.
     c.position.set(x + pose.dx * s - size.width / 2, size.height / 2 - (y + bob), 0);
     c.scale.setScalar(s);
@@ -933,10 +937,16 @@ function CardRig({ rootRef, hitRef, live, motion, pick, placement, onBrandPlacem
     const { intro } = live.current;
     if (intro.t < 0) intro.t = 0;
   }, [live]);
+  // A material change plays out on the floating card; parked, mid-intro, or
+  // with reduced motion the body swaps at once.
+  const swapContext = useCallback(() => {
+    const l = live.current;
+    return { animate: l.intro.done && l.t === 0 && !l.reduceMotion, backShowing: l.facing < 0 };
+  }, [live]);
 
   return (
     <group ref={carrier}>
-      <CardMesh ref={group} state={state} onReady={onReady} onBrandPlacement={onBrandPlacement} />
+      <CardMesh ref={group} state={state} onReady={onReady} onBrandPlacement={onBrandPlacement} swapContext={swapContext} />
     </group>
   );
 }

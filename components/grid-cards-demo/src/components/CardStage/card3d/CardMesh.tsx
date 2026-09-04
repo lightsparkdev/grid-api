@@ -1,12 +1,22 @@
 'use client';
 
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
-import { materialOf, stockOf, type BrandLayout, type CardDesign } from '@/data/design';
+import {
+  isBare,
+  materialOf,
+  STOCKS,
+  stockOf,
+  type BrandLayout,
+  type CardDesign,
+  type CardMaterial,
+} from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { foilStudioTexture } from './CardEnv';
+import { createSwapUniforms, FRONT_REST, patchFaceMaterial, WIPE_MS } from './materialSwap';
+import { MaterialSwarm } from './MaterialSwarm';
 import {
   brandBox,
   brandRegion,
@@ -17,6 +27,8 @@ import {
   makeCanvas,
   paintArtMask,
   paintBack,
+  paintBareBack,
+  paintBareFront,
   paintBrandMask,
   foilIsBlack,
   paintFoilAlbedo,
@@ -159,15 +171,37 @@ interface CardMeshProps {
   onReady?: () => void;
   /** Fires after each front paint with where the brand landed. */
   onBrandPlacement?: (placement: BrandPlacement) => void;
+  /** Whether a material change may play out (the card is floating, the intro
+   *  is over, motion is allowed), and whether the back is showing (the wipe
+   *  runs left to right on screen either way). Absent, the body swaps at once. */
+  swapContext?: () => { animate: boolean; backShowing: boolean };
 }
 
+/** A material change in flight. */
+interface Swap {
+  /** ms since it began. */
+  t: number;
+  to: CardMaterial;
+  /** Dev: hold the clock (`__cardSwap.get().paused = true`) to pose a frame. */
+  paused?: boolean;
+}
+
+const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
+
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
-  { state, onReady, onBrandPlacement },
+  { state, onReady, onBrandPlacement, swapContext },
   ref,
 ) {
   const invalidate = useThree((s) => s.invalidate);
+  // The body's material lags the design's through a change: the wipe shows
+  // the new stock, and the slab is rebuilt as it finishes.
+  const [bodyMaterial, setBodyMaterial] = useState<CardMaterial>(state.design.material);
+  const bodyDesign = useMemo(
+    () => (state.design.material === bodyMaterial ? state.design : { ...state.design, material: bodyMaterial }),
+    [state.design, bodyMaterial],
+  );
   // Thickness follows the material, so the slab is rebuilt when it changes.
-  const cardMaterial = materialOf(state.design);
+  const cardMaterial = materialOf(bodyDesign);
   const geometry = useMemo(() => createCardGeometry(cardMaterial), [cardMaterial]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   // The back face's plane (the bevel makes the slab deeper than its depth).
@@ -186,6 +220,20 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const backCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
   const frontMap = useMemo(() => canvasTexture(frontCanvas, true), [frontCanvas]);
   const backMap = useMemo(() => canvasTexture(backCanvas, true), [backCanvas]);
+  // The bare body under the print, for the assembly beat of a material change.
+  const bareFrontCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
+  const bareBackCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
+  const bareFrontMap = useMemo(() => canvasTexture(bareFrontCanvas, true), [bareFrontCanvas]);
+  const bareBackMap = useMemo(() => canvasTexture(bareBackCanvas, true), [bareBackCanvas]);
+
+  // The wipe's front, shared by both faces; each face owns its bare maps.
+  const swapU = useMemo(() => {
+    const front = createSwapUniforms();
+    front.uBareMap.value = bareFrontMap;
+    const back = createSwapUniforms(front);
+    back.uBareMap.value = bareBackMap;
+    return { front, back, shared: front };
+  }, [bareFrontMap, bareBackMap]);
 
   const materials = useMemo(() => {
     const face = () =>
@@ -205,8 +253,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     });
     mats[MAT_BACK].map = backMap;
     mats[MAT_FRONT].map = frontMap;
+    patchFaceMaterial(mats[MAT_FRONT], swapU.front);
+    patchFaceMaterial(mats[MAT_BACK], swapU.back);
     return mats;
-  }, [frontMap, backMap]);
+  }, [frontMap, backMap, swapU]);
 
   useEffect(() => {
     loadFaceAssets().then(setAssets);
@@ -214,22 +264,28 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // Surface textures are cached per surface and face for the session.
   const surfaceTex = useRef(new Map<string, { orm: THREE.Texture; normal: THREE.Texture }>());
 
-  // Surface: print or bare metal, matte or gloss, on both faces.
-  const surface = surfaceOf(state.design);
+  // Surface: print or bare metal, matte or gloss, on both faces. The wipe's
+  // band shows the new material's bare stock (steel, or PVC, in the finish).
+  const surface = surfaceOf(bodyDesign);
+  const bareSurface: Surface = `${state.design.material === 'metal' ? 'bare' : 'print'}-${state.design.finish}`;
   useEffect(() => {
     if (!assets) return;
     const c = SURFACE[surface];
-    for (const [side, idx] of [
-      ['front', MAT_FRONT],
-      ['back', MAT_BACK],
-    ] as const) {
-      const key = `${surface}|${side}`;
+    const maps = (s: Surface, side: 'front' | 'back') => {
+      const key = `${s}|${side}`;
       let t = surfaceTex.current.get(key);
       if (!t) {
-        const m = getSurfaceMaps(surface, side, assets);
+        const m = getSurfaceMaps(s, side, assets);
         t = { orm: canvasTexture(m.orm), normal: canvasTexture(m.normal) };
         surfaceTex.current.set(key, t);
       }
+      return t;
+    };
+    for (const [side, idx, u] of [
+      ['front', MAT_FRONT, swapU.front],
+      ['back', MAT_BACK, swapU.back],
+    ] as const) {
+      const t = maps(surface, side);
       const mat = materials[idx];
       mat.roughnessMap = t.orm;
       mat.metalnessMap = t.orm;
@@ -238,9 +294,24 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       mat.clearcoat = c.clearcoat;
       mat.clearcoatRoughness = c.clearcoatRoughness;
       mat.needsUpdate = true;
+      const bare = maps(bareSurface, side);
+      u.uBareOrm.value = bare.orm;
+      u.uBareNormal.value = bare.normal;
     }
     invalidate();
-  }, [assets, surface, materials, invalidate]);
+  }, [assets, surface, bareSurface, materials, swapU, invalidate]);
+
+  // The bare body's albedo: the new stock, with the chip set into the front.
+  // Plastic shows as the white PVC blank whatever the print (a dark print's
+  // black core would wipe black over black and say nothing).
+  const newStock = state.design.material === 'metal' ? stockOf(state.design) : STOCKS[0];
+  useEffect(() => {
+    if (!assets) return;
+    paintBareFront(bareFrontCanvas.getContext('2d')!, newStock);
+    paintBareBack(bareBackCanvas.getContext('2d')!, newStock);
+    bareFrontMap.needsUpdate = true;
+    bareBackMap.needsUpdate = true;
+  }, [assets, newStock, bareFrontCanvas, bareBackCanvas, bareFrontMap, bareBackMap]);
 
   // Decoration: spot gloss, foil, or etch on the brand, spot gloss on the
   // art, laid over the front's cached maps per design.
@@ -256,7 +327,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     decoTex.current = { orm: null, normal: null };
     const brandT = logoTreatment === 'print' ? null : logoTreatment;
     const artT = art && artTreatment === 'spotGloss';
-    const brandMask = brandT ? paintBrandMask(state.design, logo) : null;
+    const brandMask = brandT ? paintBrandMask(bodyDesign, logo) : null;
     if (!brandT && !artT) {
       front.roughnessMap = base.orm;
       front.metalnessMap = base.orm;
@@ -278,7 +349,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       // The relief is a per-texel bake, confined to the brand's own texels so
       // it keeps up with a drag.
       const relief = canvasTexture(
-        decorateNormal(base.normal.image as HTMLCanvasElement, brandMask, brandRegion(state.design, logo)),
+        decorateNormal(base.normal.image as HTMLCanvasElement, brandMask, brandRegion(bodyDesign, logo)),
       );
       decoTex.current.normal = relief;
       front.normalMap = relief;
@@ -287,12 +358,12 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     }
     front.needsUpdate = true;
     invalidate();
-  }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, frontPending, materials, invalidate]);
+  }, [assets, surface, bodyDesign, cardMaterial, logoTreatment, artTreatment, logo, art, frontPending, materials, invalidate]);
 
   // Edge: the construction's layers, the printed skins in the print color (or
   // the stock's own face when nothing is printed).
-  const stock = stockOf(state.design);
-  const edgeSkin = state.design.color ?? stock.face;
+  const stock = stockOf(bodyDesign);
+  const edgeSkin = bodyDesign.color ?? stock.face;
   const edgeCore = stock.core;
   const edgeTex = useRef<{ albedo: THREE.Texture; orm: THREE.Texture } | null>(null);
   useEffect(() => {
@@ -345,7 +416,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   useEffect(() => {
     if (!assets || frontPending) return;
     paintFront(frontCanvas.getContext('2d')!, {
-      design: state.design,
+      design: bodyDesign,
       logo,
       art,
       frozen: state.frozen,
@@ -353,14 +424,14 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     });
     frontMap.needsUpdate = true;
     invalidate();
-    onBrandPlacement?.({ box: brandBox(state.design, logo), layout: resolveBrandLayout(state.design, logo) });
+    onBrandPlacement?.({ box: brandBox(bodyDesign, logo), layout: resolveBrandLayout(bodyDesign, logo) });
     if (!ready.current) {
       ready.current = true;
       onReady?.();
     }
   }, [
     assets,
-    state.design,
+    bodyDesign,
     logo,
     art,
     state.frozen,
@@ -379,7 +450,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     paintBack(
       backCanvas.getContext('2d')!,
       {
-        design: state.design,
+        design: bodyDesign,
         personalized,
         shown: state.shown,
         frozen: state.frozen,
@@ -389,13 +460,79 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     );
     backMap.needsUpdate = true;
     invalidate();
-  }, [assets, state.design, personalized, state.shown, state.frozen, state.closed, backCanvas, backMap, invalidate]);
+  }, [assets, bodyDesign, personalized, state.shown, state.frozen, state.closed, backCanvas, backMap, invalidate]);
+
+  // ── Material change ────────────────────────────────────────────────────────
+  // A slanted front wipes the face left to right; behind it a band of the
+  // new stock, then the print again. The slab is rebuilt as the new material
+  // when the wipe has passed (its thickness and edge, which the face doesn't
+  // show head-on).
+  const swarm = useMemo(() => new MaterialSwarm(), []);
+  useEffect(() => () => swarm.dispose(), [swarm]);
+  const swap = useRef<Swap | null>(null);
+  const targetMaterial = state.design.material;
+  const newIsBare = isBare(state.design);
+  useEffect(() => {
+    if (targetMaterial === bodyMaterial) return;
+    const cur = swap.current;
+    if (cur?.to === targetMaterial) return;
+    const { shared } = swapU;
+    const ctx = swapContext?.();
+    if (!ready.current || !ctx?.animate) {
+      swap.current = null;
+      swarm.end();
+      shared.uFront.value = FRONT_REST;
+      setBodyMaterial(targetMaterial);
+      return;
+    }
+    const dir = ctx.backShowing ? -1 : 1;
+    shared.uDir.value = dir;
+    shared.uNewIsBare.value = newIsBare ? 1 : 0;
+    // Redirected mid-wipe: the front carries on where it is.
+    const t = cur ? cur.t : 0;
+    swarm.begin(targetMaterial, newStock.face, dir);
+    swap.current = { t, to: targetMaterial };
+  }, [targetMaterial, bodyMaterial, newIsBare, newStock, swapU, swarm, swapContext]);
+
+  useFrame((_, delta) => {
+    const sw = swap.current;
+    if (!sw) return;
+    if (!sw.paused) sw.t += Math.min(50, delta * 1000);
+    const { shared } = swapU;
+    const p = Math.min(1, sw.t / WIPE_MS);
+    const front = easeInOutSine(p) * FRONT_REST;
+    shared.uFront.value = front;
+    swarm.update(front);
+    if (p >= 1) {
+      swap.current = null;
+      swarm.end();
+      // The front stays past the far edge (the band's stock everywhere, for a
+      // None color) until the rebuilt body has painted; then it rests.
+      setBodyMaterial(sw.to);
+    }
+    invalidate();
+  });
+  useEffect(() => {
+    swapU.shared.uFront.value = FRONT_REST;
+    swapU.shared.uNewIsBare.value = 0;
+  }, [bodyMaterial, swapU]);
+
+  // Dev: the wipe's clock and front, for tracing from the console.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    (window as unknown as Record<string, unknown>).__cardSwap = {
+      get: () => swap.current,
+      uniforms: swapU.shared,
+    };
+  }, [swapU]);
 
   useEffect(
     () => () => {
       materials.forEach((m) => m.dispose());
       frontMap.dispose();
       backMap.dispose();
+      bareFrontMap.dispose();
+      bareBackMap.dispose();
       surfaceTex.current.forEach((t) => {
         t.orm.dispose();
         t.normal.dispose();
@@ -405,13 +542,14 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       edgeTex.current?.albedo.dispose();
       edgeTex.current?.orm.dispose();
     },
-    [materials, frontMap, backMap],
+    [materials, frontMap, backMap, bareFrontMap, bareBackMap],
   );
 
   return (
     <group ref={ref}>
       <mesh geometry={geometry} material={materials} visible={assets !== null} />
-      {assets && <FoilMark assets={assets} backZ={backZ} black={foilIsBlack(state.design)} />}
+      {assets && <FoilMark assets={assets} backZ={backZ} black={foilIsBlack(bodyDesign)} />}
+      <primitive object={swarm.mesh} />
     </group>
   );
 });

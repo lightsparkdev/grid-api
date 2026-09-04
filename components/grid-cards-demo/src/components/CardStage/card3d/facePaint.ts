@@ -17,6 +17,7 @@ import {
   type BrandLayout,
   type CardDesign,
   type CardGradient,
+  type CardStock,
 } from '@/data/design';
 import { CARD_FONT_FAMILY, loadCardFont } from './cardFont';
 
@@ -444,20 +445,19 @@ function paintChip(ctx: CanvasRenderingContext2D, face: string) {
 /* ── Faces ────────────────────────────────────────────────────────────────── */
 
 /** The body before its print: the bare stock (PVC or steel) with the chip
- *  set into it. What a material change assembles, before the laminate. */
-export function paintBareFront(ctx: CanvasRenderingContext2D, design: CardDesign) {
+ *  set into it. What a material change's wipe shows in its band. */
+export function paintBareFront(ctx: CanvasRenderingContext2D, stock: CardStock) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
-  const face = stockOf(design).face;
-  ctx.fillStyle = face;
+  ctx.fillStyle = stock.face;
   ctx.fillRect(0, 0, TEX_W, TEX_H);
-  paintChip(ctx, face);
+  paintChip(ctx, stock.face);
 }
 
-export function paintBareBack(ctx: CanvasRenderingContext2D, design: CardDesign) {
+export function paintBareBack(ctx: CanvasRenderingContext2D, stock: CardStock) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = stockOf(design).face;
+  ctx.fillStyle = stock.face;
   ctx.fillRect(0, 0, TEX_W, TEX_H);
 }
 
