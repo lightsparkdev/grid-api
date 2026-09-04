@@ -62,6 +62,10 @@ export class MaterialSwarm {
     this.hide();
   }
 
+  get active() {
+    return this.running;
+  }
+
   /** Scatter the particles for a change to `material`, in the stock's color. */
   begin(material: CardMaterial, color: string, dir: number) {
     const metal = material === 'metal';
@@ -118,6 +122,7 @@ export class MaterialSwarm {
   }
 
   end() {
+    if (!this.running) return;
     this.running = false;
     this.hide();
     this.mesh.visible = false;
@@ -130,6 +135,7 @@ export class MaterialSwarm {
 
   dispose() {
     this.end();
+    this.hide();
     this.mesh.geometry.dispose();
     this.material.dispose();
     this.mesh.dispose();

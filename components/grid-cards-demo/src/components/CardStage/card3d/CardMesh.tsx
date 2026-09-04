@@ -15,7 +15,7 @@ import {
 } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { foilStudioTexture } from './CardEnv';
-import { createSwapUniforms, FRONT_REST, patchFaceMaterial, WIPE_MS } from './materialSwap';
+import { createSwapUniforms, FRONT_REST, patchFaceMaterial, WIPE_HOLD, WIPE_MS } from './materialSwap';
 import { MaterialSwarm } from './MaterialSwarm';
 import {
   brandBox,
@@ -463,10 +463,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   }, [assets, bodyDesign, personalized, state.shown, state.frozen, state.closed, backCanvas, backMap, invalidate]);
 
   // ── Material change ────────────────────────────────────────────────────────
-  // A slanted front wipes the face left to right; behind it a band of the
-  // new stock, then the print again. The slab is rebuilt as the new material
-  // when the wipe has passed (its thickness and edge, which the face doesn't
-  // show head-on).
+  // A slanted front wipes the face left to right and leaves the new stock
+  // bare; a second front follows and the print is back behind it. The slab is
+  // rebuilt as the new material when the wipes have passed (its thickness and
+  // edge, which the face doesn't show head-on).
   const swarm = useMemo(() => new MaterialSwarm(), []);
   useEffect(() => () => swarm.dispose(), [swarm]);
   const swap = useRef<Swap | null>(null);
@@ -482,6 +482,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       swap.current = null;
       swarm.end();
       shared.uFront.value = FRONT_REST;
+      shared.uClose.value = FRONT_REST;
       setBodyMaterial(targetMaterial);
       return;
     }
@@ -499,21 +500,26 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     if (!sw) return;
     if (!sw.paused) sw.t += Math.min(50, delta * 1000);
     const { shared } = swapU;
-    const p = Math.min(1, sw.t / WIPE_MS);
-    const front = easeInOutSine(p) * FRONT_REST;
+    // First pass: the stock front, with the particles. Hold. Second pass:
+    // the print's front.
+    const p1 = Math.min(1, sw.t / WIPE_MS);
+    const p2 = Math.min(1, Math.max(0, (sw.t - WIPE_MS - WIPE_HOLD) / WIPE_MS));
+    const front = easeInOutSine(p1) * FRONT_REST;
     shared.uFront.value = front;
-    swarm.update(front);
-    if (p >= 1) {
+    shared.uClose.value = p2 > 0 ? easeInOutSine(p2) * FRONT_REST : 0;
+    if (p1 < 1) swarm.update(front);
+    else swarm.end();
+    if (p2 >= 1) {
       swap.current = null;
-      swarm.end();
-      // The front stays past the far edge (the band's stock everywhere, for a
-      // None color) until the rebuilt body has painted; then it rests.
+      // The fronts stay past the far edge (the stock everywhere, for a None
+      // color) until the rebuilt body has painted; then they rest.
       setBodyMaterial(sw.to);
     }
     invalidate();
   });
   useEffect(() => {
     swapU.shared.uFront.value = FRONT_REST;
+    swapU.shared.uClose.value = FRONT_REST;
     swapU.shared.uNewIsBare.value = 0;
   }, [bodyMaterial, swapU]);
 
