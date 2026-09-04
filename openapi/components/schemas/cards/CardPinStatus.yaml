@@ -1,0 +1,15 @@
+type: string
+enum:
+  - NOT_SET
+  - OK
+  - BLOCKED
+example: OK
+description: |
+  State of the card's PIN. Absent on cards whose processor does not offer
+  PIN management.
+
+  | Status | Description |
+  |--------|-------------|
+  | `NOT_SET` | No PIN has been set on the card. PIN-verified transactions decline. Set one with `POST /cards/{id}/pin` or `POST /cards/{id}/pin/session`. |
+  | `OK` | A PIN is set and usable. |
+  | `BLOCKED` | The PIN was entered incorrectly three consecutive times and is refused until cleared with `POST /cards/{id}/pin/unblock`, or replaced with `POST /cards/{id}/pin`. |

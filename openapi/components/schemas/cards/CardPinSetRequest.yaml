@@ -1,0 +1,27 @@
+type: object
+required:
+  - encryptedPinBlock
+properties:
+  encryptedPinBlock:
+    type: string
+    description: >-
+      The cardholder's PIN, encrypted for the card processor. Grid forwards
+      this value to the processor verbatim and can neither read nor validate
+      it — no PIN, in plaintext or ciphertext, is ever stored or logged by
+      Grid.
+
+
+      Build it in the client, immediately after PIN entry, so the PIN never
+      reaches your servers either: serialize `{"nonce": <random integer>,
+      "pin": "<4-digit PIN>"}` as UTF-8, encrypt it under the processor's
+      public key, and base64-encode the ciphertext. Generate a fresh `nonce`
+      per request — it is what makes a captured block useless to replay.
+
+
+      A block the processor rejects returns `400 INVALID_INPUT`; Grid cannot
+      distinguish a malformed block from a mis-encrypted one, so verify your
+      encryption against the processor's documentation rather than against
+      Grid's response.
+    minLength: 16
+    maxLength: 1024
+    example: SGVsbG8sIHRoaXMgaXMgYSBiYXNlNjQtZW5jb2RlZCBjaXBoZXJ0ZXh0Li4u
