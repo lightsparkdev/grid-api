@@ -7,8 +7,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  width: 200px;
-  padding: var(--spacing-xs);
+  width: 208px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  /* Origin clips its popup; the round thumbs and stop handles reach past
+     the field and the bar, and the side padding gives them room. */
+  overflow: visible;
 }
 
 /* Fill kind: Solid, Linear, Radial, as text tabs. */
