@@ -1,0 +1,102 @@
+parameters:
+  - name: id
+    in: path
+    description: System-generated unique card identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Create a PIN-entry session
+  description: >-
+    Create a temporary session for a secure PIN-entry iframe. The cardholder
+    chooses a four-digit PIN inside the iframe, without the plaintext PIN
+    crossing your servers or Grid's. Grid supports online PINs only.
+
+
+    Request the session immediately before displaying the form. Set your
+    iframe's `src` to the returned `iframeUrl` without modifying it. Follow
+    the [Card PIN guide](https://docs.lightspark.com/cards/card-management/pins)
+    to submit the form and confirm the result. Never store, cache, or log
+    the URL or token. The session expires at `expiresAt` and permits one
+    successful PIN submission.
+
+
+    Use the iframe's submission result to confirm completion, and
+    `GET /cards/{id}` to read `pinStatus`. `OK` alone cannot confirm a
+    change to an already configured PIN.
+
+
+    If you operate your own PIN-entry UI, use `POST /cards/{id}/pin` with
+    a client-encrypted payload instead.
+
+
+    Every successful session request is audit-logged with the requesting actor.
+  operationId: createCardPinSession
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/cards/CardPinSessionRequest.yaml
+  responses:
+    '200':
+      description: PIN-entry session minted.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardPinSessionResponse.yaml
+    '400':
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when `targetOrigin` is
+        absent or is not a canonical HTTPS origin.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. The session has no attributable actor to audit the mint
+        against (for example, an impersonated dashboard session).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CONFLICT` for a closed card or a card that
+        does not support PIN management.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Not implemented in this environment. Cards are not enabled for
+        every Grid deployment; environments without card support return
+        `501 NOT_IMPLEMENTED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

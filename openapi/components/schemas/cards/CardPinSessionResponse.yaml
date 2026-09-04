@@ -1,0 +1,43 @@
+type: object
+required:
+  - iframeUrl
+  - sessionToken
+  - expiresAt
+  - environment
+properties:
+  iframeUrl:
+    type: string
+    format: uri
+    description: >-
+      Ready-to-use URL for the secure PIN-entry iframe. Set this as your
+      iframe's `src` without modifying it. The cardholder enters their PIN
+      inside the iframe, so the plaintext PIN never reaches your servers
+      or Grid's. Use the message flow in the
+      [Card PIN guide](https://docs.lightspark.com/cards/card-management/pins)
+      to submit and confirm the result.
+
+
+      The URL contains a temporary credential. Never store, cache, or log it.
+      It expires at `expiresAt` and permits one successful PIN submission.
+    example: https://embed.example.com/pin?session=eyJhbGciOiJIUzI1NiJ9...
+  sessionToken:
+    type: string
+    description: >-
+      Temporary credential authorizing one successful PIN submission.
+      It is already included in `iframeUrl`; use that URL to load the form.
+      Never store, cache, or log the token. Use the iframe's submission
+      result to confirm a change; status `OK` alone cannot prove that an
+      existing PIN was changed. Read `GET /cards/{id}` for its `pinStatus`.
+    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the session stops working. Request a new session rather than
+      reusing an expired URL or token.
+    example: '2026-05-08T14:16:00Z'
+  environment:
+    type: string
+    enum: [SANDBOX, PRODUCTION]
+    description: Session environment. The iframeUrl already selects the matching environment.
+    example: SANDBOX
