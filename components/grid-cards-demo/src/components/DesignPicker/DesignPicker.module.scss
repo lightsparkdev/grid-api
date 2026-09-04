@@ -135,6 +135,50 @@
   }
 }
 
+/* The chosen finish, named, ahead of its samples. */
+.swatchesValue {
+  @include label;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+  margin-right: var(--spacing-3xs);
+}
+
+/* Finish samples: a neutral mid tone under each treatment. Ink is flat;
+   gloss carries a soft specular; foil is silver with a bright diagonal run;
+   etch is pressed in (a shadow on its top-left walls, light on the lower). */
+.sampleInk {
+  background: #8e8e93;
+}
+
+.sampleGloss {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 28%, rgba(255, 255, 255, 0) 46%),
+    #8e8e93;
+}
+
+.sampleFoil {
+  background: linear-gradient(
+    135deg,
+    #f4f4f6 0%,
+    #b8b8bf 38%,
+    #ffffff 50%,
+    #a6a6ad 62%,
+    #dedee2 100%
+  );
+}
+
+.sampleEtch {
+  background: #8e8e93;
+  box-shadow:
+    inset 2px 2px 3px rgba(0, 0, 0, 0.55),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.swatch:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .swatchCustom {
   display: grid;
   place-items: center;

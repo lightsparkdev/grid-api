@@ -70,6 +70,56 @@ function Choices<T extends string>({
   );
 }
 
+/**
+ * A finish as a small sample of itself, the way the Color row shows colors:
+ * ink is flat, spot gloss has a shine, foil is silver with a bright run, and
+ * an etch is pressed in. The chosen one is named beside them, so the squares
+ * never need a tooltip to be read (each still has one).
+ */
+const FINISH_SAMPLE: Record<string, string> = {
+  print: styles.sampleInk,
+  spotGloss: styles.sampleGloss,
+  foil: styles.sampleFoil,
+  etch: styles.sampleEtch,
+};
+
+function FinishSwatches<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: T;
+  options: ReadonlyArray<{ id: T; label: string }>;
+  onChange: (id: T) => void;
+  disabled?: Partial<Record<T, string>>;
+}) {
+  const current = options.find((o) => o.id === value);
+  return (
+    <div className={styles.swatches} role="radiogroup" aria-label={label}>
+      <span className={styles.swatchesValue}>{current?.label}</span>
+      {options.map((o) => {
+        const why = disabled?.[o.id];
+        return (
+          <button
+            key={o.id}
+            type="button"
+            role="radio"
+            aria-checked={value === o.id}
+            aria-label={o.label}
+            title={why ?? o.label}
+            disabled={!!why}
+            className={clsx(styles.swatch, FINISH_SAMPLE[o.id], value === o.id && styles.swatchActive)}
+            onClick={() => onChange(o.id)}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 /** One image upload: a preview with Remove once picked, an Upload button until then. */
 function UploadRow({
   url,
@@ -225,7 +275,7 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
         {design.backgroundUrl && (
           <div className={styles.row}>
             <span className={styles.rowLabel}>Art finish</span>
-            <Choices
+            <FinishSwatches
               label="Art finish"
               value={design.artTreatment}
               options={ART_TREATMENTS}
@@ -262,7 +312,7 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
         {hasBrand && (
           <div className={styles.row}>
             <span className={styles.rowLabel}>Finish</span>
-            <Choices
+            <FinishSwatches
               label="Brand finish"
               value={design.logoTreatment}
               options={LOGO_TREATMENTS}
