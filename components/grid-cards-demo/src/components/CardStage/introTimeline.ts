@@ -176,8 +176,9 @@ const CUES: Record<string, Cue> = {
 /** The ticks arrive from part way toward the center, settling as they fade in. */
 const TICK_START = 0.5;
 const TICK_TRAVEL = 1.2;
-/** Once settled, the ticks have framed the card and leave. */
-const TICK_OUT_AT = TICK_TRAVEL + 0.05;
+/** The ticks have framed the card by the time they're settling; they start
+ *  to leave on the last stretch of the return. */
+const TICK_OUT_AT = TICK_TRAVEL - 0.2;
 const TICK_OUT_DUR = 0.5;
 
 /** The finished blueprint holds this long before the reveal. */
