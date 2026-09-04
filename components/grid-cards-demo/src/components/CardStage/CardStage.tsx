@@ -521,6 +521,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     }
     if (live.current.t > 0) return;
     hover(brandEditable && e.pointerType === 'mouse' && hitBrand(e.clientX, e.clientY) !== null);
+    hoverName(brandEditable && e.pointerType === 'mouse' && !textEdit && hitName(e.clientX, e.clientY));
     if (reduceMotion || selected) return;
     const b = e.currentTarget.getBoundingClientRect();
     motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
@@ -588,6 +589,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   };
   const onPointerLeave = () => {
     hover(false);
+    hoverName(false);
     if (!drag.current) motion.clearTilt();
   };
   // ── Typing on the card ─────────────────────────────────────────────────────
@@ -621,6 +623,14 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   useEffect(() => {
     if (phoneUp || !introDone) setTextEdit(null);
   }, [phoneUp, introDone]);
+  // Over the name on the back: its outline shows (no handles; it only edits).
+  const [overName, setOverName] = useState(false);
+  const overNameRef = useRef(false);
+  const hoverName = (over: boolean) => {
+    if (over === overNameRef.current) return;
+    overNameRef.current = over;
+    setOverName(over);
+  };
   const hitName = (clientX: number, clientY: number) => {
     const p = pickBack.current?.(clientX, clientY);
     if (!p) return false;
@@ -736,7 +746,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       {/* Rides with the card: pointer input, the state pill, the accessible name. */}
       <div
         ref={hitRef}
-        className={clsx(styles.hit, overBrand && styles.hitOverBrand)}
+        className={clsx(styles.hit, overBrand && styles.hitOverBrand, overName && styles.hitOverName)}
         data-card-hit
         style={{ width: CARD_W, height: CARD_H, pointerEvents: phoneUp || !introDone ? 'none' : 'auto' }}
         onPointerMove={onPointerMove}
@@ -755,6 +765,16 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         )}
 
         {/* The brand's box: an outline on hover; selected, the handles too. */}
+        {overName && !textEdit && (
+          <div
+            className={styles.selection}
+            style={(() => {
+              const b = backNameBox(design);
+              return { left: b.x * k, top: b.y * k, width: b.w * k, height: b.h * k };
+            })()}
+            aria-hidden
+          />
+        )}
         {box && (
           <div className={styles.selection} style={boxStyle} aria-hidden>
             {selected &&

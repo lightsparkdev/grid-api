@@ -79,6 +79,10 @@
   cursor: default;
 }
 
+.hitOverName {
+  cursor: text;
+}
+
 /* ── Typing on the card ─────────────────────────────────────────────────────
    A transparent input laid over the painted text, in the card's face, size
    and tracking (set inline), so only the caret and selection show; the paint
