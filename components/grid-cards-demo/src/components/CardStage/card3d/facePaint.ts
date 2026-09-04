@@ -443,6 +443,24 @@ function paintChip(ctx: CanvasRenderingContext2D, face: string) {
 
 /* ── Faces ────────────────────────────────────────────────────────────────── */
 
+/** The body before its print: the bare stock (PVC or steel) with the chip
+ *  set into it. What a material change assembles, before the laminate. */
+export function paintBareFront(ctx: CanvasRenderingContext2D, design: CardDesign) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  const face = stockOf(design).face;
+  ctx.fillStyle = face;
+  ctx.fillRect(0, 0, TEX_W, TEX_H);
+  paintChip(ctx, face);
+}
+
+export function paintBareBack(ctx: CanvasRenderingContext2D, design: CardDesign) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = stockOf(design).face;
+  ctx.fillRect(0, 0, TEX_W, TEX_H);
+}
+
 /* ── Brand ─────────────────────────────────────────────────────────────────── */
 
 /** With no layout of its own, a wide logo is held to this (spec px), as the

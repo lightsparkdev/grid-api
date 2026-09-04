@@ -12,6 +12,8 @@ export const CARD_DEPTH_MM: Record<CardMaterial, number> = { plastic: 0.76, meta
 export const CARD_R = 13 * 1.2;
 const CORNER_SMOOTHING = 0.12;
 const BEVEL = 0.3;
+/** Where a face's plane sits (|z|) for a material: half the depth plus the bevel. */
+export const faceZOf = (material: CardMaterial) => (CARD_DEPTH_MM[material] * PX_PER_MM) / 2 + BEVEL;
 
 /** Material slots on the extruded card. */
 export const MAT_BACK = 0;

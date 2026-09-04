@@ -6,6 +6,8 @@
 .popup {
   width: 208px;
   padding: var(--spacing-sm);
+  /* The design tiles' radius, not Origin's popup default. */
+  border-radius: var(--corner-radius-md);
   /* Origin clips its popup; the round thumbs and stop handles reach past
      the field and the bar, and the side padding gives them room. */
   overflow: visible;
@@ -13,10 +15,13 @@
      surface: darker in light, lighter in dark. */
   --picker-fill: var(--surface-secondary);
   --picker-border: var(--border-primary);
+  /* Fields sit a step brighter than the surface. */
+  --picker-input: var(--surface-base);
 
   :global([data-theme='dark']) & {
     --picker-fill: var(--color-gray-850);
     --picker-border: rgba(244, 244, 245, 0.16);
+    --picker-input: var(--color-gray-900);
   }
 
   /* The popup opens below the swatch and grows downward from its anchored
@@ -64,7 +69,7 @@
   /* Follows the popup's top corners; the rule is a layer under the
      indicator rather than a border, so the indicator can open it. */
   corner-shape: var(--corner-shape);
-  border-radius: var(--corner-radius-sm) var(--corner-radius-sm) 0 0;
+  border-radius: var(--corner-radius-md) var(--corner-radius-md) 0 0;
   overflow: clip;
 
   &::after {
@@ -96,7 +101,7 @@
    rule swap ends. */
 .popup[data-side='top'] .modes {
   margin: 0 -12px -12px;
-  border-radius: 0 0 var(--corner-radius-sm) var(--corner-radius-sm);
+  border-radius: 0 0 var(--corner-radius-md) var(--corner-radius-md);
 
   &::after {
     bottom: auto;
@@ -222,10 +227,10 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  border: var(--stroke-sm) solid var(--picker-border);
+  border: var(--stroke-xs) solid var(--picker-border);
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
-  background: transparent;
+  background: var(--picker-input);
   color: var(--text-primary);
   font-feature-settings: 'salt' 1, 'tnum' 1;
 }
@@ -264,7 +269,7 @@
   height: 16px;
   corner-shape: var(--corner-shape);
   border-radius: 3px;
-  box-shadow: inset 0 0 0 1px var(--picker-border);
+  box-shadow: inset 0 0 0 var(--stroke-xs) var(--picker-border);
 }
 
 .stopHex {
@@ -360,8 +365,8 @@
   height: 28px;
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
-  /* A translucent stroke, so a color near the surface still has an edge. */
-  box-shadow: inset 0 0 0 1px var(--picker-border);
+  /* A translucent hairline, so a color near the surface still has an edge. */
+  box-shadow: inset 0 0 0 var(--stroke-xs) var(--picker-border);
 }
 
 .hex {
@@ -374,10 +379,10 @@
   font-family: var(--font-family-mono);
   font-weight: 480;
   font-size: 12px;
-  border: var(--stroke-sm) solid var(--picker-border);
+  border: var(--stroke-xs) solid var(--picker-border);
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
-  background: transparent;
+  background: var(--picker-input);
   color: var(--text-primary);
   font-feature-settings: 'salt' 1, 'tnum' 1;
   outline: none;
@@ -395,7 +400,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  box-shadow: inset 0 0 0 1px var(--picker-border);
+  box-shadow: inset 0 0 0 var(--stroke-xs) var(--picker-border);
 
   .stopsHead & {
     width: 22px;
@@ -416,6 +421,6 @@
   }
 
   &:focus-visible {
-    box-shadow: inset 0 0 0 1px var(--picker-border), var(--input-focus);
+    box-shadow: inset 0 0 0 var(--stroke-xs) var(--picker-border), var(--input-focus);
   }
 }
