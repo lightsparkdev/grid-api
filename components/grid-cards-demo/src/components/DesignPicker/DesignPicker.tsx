@@ -7,7 +7,6 @@ import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stro
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
 import {
   ART_TREATMENTS,
-  BRAND_DEFAULT_LAYOUT,
   brandColorOf,
   DESIGN_SWATCHES,
   FINISHES,
@@ -194,8 +193,7 @@ function UploadRow({
  * The Design section, in the order a card is made. Card: a preset to start
  * from, then material, finish, and the print (a color, or none, or art; the
  * core under a print is chosen to match it, not offered). Brand: the name and
- * logo, how the mark is applied once there is one, and how faint it prints.
- * Name: the cardholder's.
+ * logo, and how the mark is applied once there is one. Name: the cardholder's.
  */
 export function DesignPicker({ design, onChange, preset, onPresetSelect }: DesignPickerProps) {
   const stock = stockOf(design);
@@ -207,7 +205,6 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
   // card it is invisible.
   const glossy = design.finish === 'gloss';
   const noSpotGloss = glossy ? ({ spotGloss: 'Spot gloss needs a matte card' } as const) : undefined;
-  const opacity = design.brandLayout?.opacity ?? BRAND_DEFAULT_LAYOUT.opacity;
 
   return (
     <div className={styles.groups}>
@@ -356,26 +353,6 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
               onChange={(logoTreatment) => onChange({ logoTreatment })}
               disabled={noSpotGloss}
             />
-          </div>
-        )}
-        {hasBrand && (
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Opacity</span>
-            <input
-              type="range"
-              className={styles.slider}
-              min={5}
-              max={100}
-              step={1}
-              value={Math.round(opacity * 100)}
-              aria-label="Brand opacity"
-              onChange={(e) =>
-                onChange({
-                  brandLayout: { ...(design.brandLayout ?? BRAND_DEFAULT_LAYOUT), opacity: Number(e.target.value) / 100 },
-                })
-              }
-            />
-            <span className={styles.sliderValue}>{Math.round(opacity * 100)}%</span>
           </div>
         )}
       </div>

@@ -97,7 +97,8 @@ export const PRESETS: CardPreset[] = [
     label: 'Messaging',
     iconSrc: `${ASSETS}/app-icon-messaging.png`,
     // ChatsApp: brand green, the bubble as an oversized watermark bleeding
-    // off the left edge, white at 20% (Figma 2650:11281).
+    // off the edge, white at 20% (Figma 2650:11281 has it on the left; here
+    // it is on the right, clear of the chip).
     design: {
       programName: 'ChatsApp',
       material: 'plastic',
@@ -105,7 +106,7 @@ export const PRESETS: CardPreset[] = [
       color: '#1daa61',
       logoUrl: `${ASSETS}/logo-messaging.svg`,
       logoTreatment: 'print',
-      brandLayout: { x: 505, y: 475, h: 838, anchor: 'center', opacity: 0.2 },
+      brandLayout: { x: 1536 - 505, y: 475, h: 838, anchor: 'center', opacity: 0.2 },
       backgroundUrl: null,
       artTreatment: 'print',
     },

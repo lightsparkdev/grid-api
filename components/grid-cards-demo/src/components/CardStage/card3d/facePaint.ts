@@ -514,7 +514,8 @@ function foilGradient(ctx: CanvasRenderingContext2D): CanvasGradient {
  *  laminate; on plastic the pressed print, a shade off the color (lighter on
  *  a dark print, darker on a light one) so a blind mark reads head-on. */
 function etchFloor(design: CardDesign): string {
-  if (materialOf(design) === 'metal') return '#dcdbda';
+  // The Z card's polished basin reflectance.
+  if (materialOf(design) === 'metal') return '#f0efee';
   const base = design.color ?? stockOf(design).face;
   const c = (i: number) => parseInt(base.slice(1 + i * 2, 3 + i * 2), 16);
   const lum = (0.2126 * c(0) + 0.7152 * c(1) + 0.0722 * c(2)) / 255;

@@ -338,34 +338,35 @@ export function decorateOrm(
 }
 
 /**
- * Relief for an etched brand: the mask cut into the face, with a bevel about
- * 0.12 mm wide, laid over the front's normal map wherever the height departs
- * from flat (the same composition as the beadblast's structure). Built at
- * texel size, not map size: the wordmark's strokes are only a few texels
- * wide, and a bevel wider than a stroke smooths the whole mark away.
+ * Relief for an etched brand: the mask cut into the face, laid over the
+ * front's normal map wherever the height departs from flat (the same
+ * composition as the beadblast's structure). The cut is the Z card's deboss
+ * (grid-wallet-demo `cardTextures`): a fifth of the height range, its edge
+ * blurred over 6 texels, Sobel'd at 2.5, which reads as a shallow, soft
+ * basin rather than a chamfer. Built at texel size, not map size: the
+ * wordmark's strokes are only a few texels wide, and a bevel wider than a
+ * stroke smooths the whole mark away.
  */
 export function decorateNormal(base: HTMLCanvasElement, brandMask: HTMLCanvasElement): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
   ctx.drawImage(base, 0, 0, TEX_W, TEX_H);
-  // Height in texels: flat mid-gray, the mark's floor black, the edge
+  // Height in texels: flat mid-gray, the mark's floor a step down, the edge
   // softened over the bevel.
   const height = makeCanvas(TEX_W, TEX_H);
   const hc = height.getContext('2d')!;
   hc.fillStyle = '#808080';
   hc.fillRect(0, 0, TEX_W, TEX_H);
-  const bevel = 0.12 * 17.94 * K;
-  hc.filter = `blur(${bevel / 2}px)`;
+  hc.filter = 'blur(6px)';
   const m = makeCanvas(brandMask.width, brandMask.height);
   const mc = m.getContext('2d')!;
   mc.drawImage(brandMask, 0, 0);
   mc.globalCompositeOperation = 'source-in';
-  mc.fillStyle = '#000000';
+  mc.fillStyle = '#4d4d4d';
   mc.fillRect(0, 0, m.width, m.height);
   hc.drawImage(m, 0, 0, TEX_W, TEX_H);
   hc.filter = 'none';
-  // Half a unit of height over the bevel's width, to a slope near 45°.
-  const structure = heightToNormal(height, bevel * 0.9);
+  const structure = heightToNormal(height, 2.5);
   const sctx = structure.getContext('2d')!;
   const n = sctx.getImageData(0, 0, TEX_W, TEX_H);
   const hd = hc.getImageData(0, 0, TEX_W, TEX_H).data;
