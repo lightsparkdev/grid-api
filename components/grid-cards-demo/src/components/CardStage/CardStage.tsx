@@ -598,14 +598,26 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const [textEdit, setTextEdit] = useState<'brand' | 'name' | null>(null);
   live.current.freeze = textEdit !== null;
   const textInput = useRef<HTMLInputElement>(null);
+  // What the editor shows: the design's text, or, while it is empty, the
+  // specimen text the face paints in its place, so there is something to
+  // select and type over. The specimen is never written to the design.
+  const textValue = textEdit === 'brand' ? design.programName : design.cardholderName;
+  const specimen = textEdit === 'brand' ? 'Your brand' : 'Cardholder name';
+  const [draft, setDraft] = useState<string | null>(null);
+  const editorText = draft ?? (textValue || specimen);
   useEffect(() => {
     if (!textEdit) return;
+    setDraft(null);
     const el = textInput.current;
     if (!el) return;
     el.focus();
     // As a double-click on text does: everything selected, ready to replace.
     el.select();
   }, [textEdit]);
+  const onTextChange = (v: string) => {
+    setDraft(v);
+    onDesignChange?.(textEdit === 'brand' ? { programName: v } : { cardholderName: v });
+  };
   useEffect(() => {
     if (phoneUp || !introDone) setTextEdit(null);
   }, [phoneUp, introDone]);
@@ -798,12 +810,10 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
             ref={textInput}
             className={styles.textEdit}
             style={{ ...textStyle, fontFamily: `"${CARD_FONT_FAMILY}"` }}
-            value={textEdit === 'brand' ? design.programName : design.cardholderName}
+            value={editorText}
             maxLength={textEdit === 'brand' ? 18 : 24}
             aria-label={textEdit === 'brand' ? 'Brand name' : 'Cardholder name'}
-            onChange={(e) =>
-              onDesignChange?.(textEdit === 'brand' ? { programName: e.target.value } : { cardholderName: e.target.value })
-            }
+            onChange={(e) => onTextChange(e.target.value)}
             onKeyDown={onTextKey}
             onBlur={() => setTextEdit(null)}
             onPointerDown={(e) => e.stopPropagation()}

@@ -89,6 +89,10 @@
   box-sizing: border-box;
   color: transparent;
   caret-color: var(--sel);
+  /* The hit box turns selection off; the editor needs it back for the
+     highlight to draw. */
+  user-select: text;
+  -webkit-user-select: text;
   white-space: pre;
   font-feature-settings: 'salt' 1, 'ss01' 1;
   cursor: text;
