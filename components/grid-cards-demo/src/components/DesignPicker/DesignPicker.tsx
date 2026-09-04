@@ -1,7 +1,16 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useRef, type ChangeEvent, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
+import { motion, useMotionValue, useSpring, useTransform, useVelocity } from 'motion/react';
 import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
@@ -34,60 +43,89 @@ function swatchStyle(color: string) {
   return { background: color };
 }
 
-/** A row of text choices divided by hairlines (Material, Finish, treatments). */
-function Choices<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  dense = false,
-  disabled,
-}: {
-  label: string;
-  value: T;
-  options: ReadonlyArray<{ id: T; label: string }>;
-  onChange: (id: T) => void;
-  /** Tighter padding for rows with four options. */
-  dense?: boolean;
-  /** Options that would do nothing right now, with the reason (a title). */
-  disabled?: Partial<Record<T, string>>;
-}) {
+/** How far the ring sits outside its swatch; the row's gap is twice this
+ *  plus the stroke, so the ring clears its neighbors by the same distance. */
+const RING_OUT = 3;
+const RING_STROKE = 2;
+
+/**
+ * A row of swatches with one selection ring that slides between them. The
+ * ring is a single element positioned over whichever child is checked
+ * (`aria-checked` or `data-active`), sprung to its place; while it travels it
+ * stretches a little toward where it is going, from the spring's velocity.
+ */
+function SwatchRow({ label, active, children }: { label: string; active: string | null; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const w = useMotionValue(20);
+  const h = useMotionValue(20);
+  const spring = { stiffness: 620, damping: 40, mass: 0.9 };
+  const sx = useSpring(x, spring);
+  const sy = useSpring(y, spring);
+  const vx = useVelocity(sx);
+  const stretch = useTransform(vx, (v) => Math.min(6, Math.abs(v) / 220));
+  // The leading edge reaches ahead: moving left, the box starts earlier.
+  const left = useTransform(
+    [sx, vx, stretch],
+    ([px, v, s]) => (px as number) - RING_OUT - ((v as number) < 0 ? (s as number) : 0),
+  );
+  const top = useTransform(sy, (py) => py - RING_OUT);
+  const width = useTransform([w, stretch], ([bw, s]) => (bw as number) + RING_OUT * 2 + (s as number));
+  const height = useTransform(h, (bh) => bh + RING_OUT * 2);
+  const [placed, setPlaced] = useState(false);
+
+  useLayoutEffect(() => {
+    const row = ref.current;
+    if (!row) return;
+    const place = (jump: boolean) => {
+      const el = row.querySelector<HTMLElement>('[aria-checked="true"], [data-active="true"]');
+      if (!el) return;
+      x.set(el.offsetLeft);
+      y.set(el.offsetTop);
+      w.set(el.offsetWidth);
+      h.set(el.offsetHeight);
+      if (jump) {
+        sx.jump(el.offsetLeft);
+        sy.jump(el.offsetTop);
+      }
+    };
+    place(!placed);
+    if (!placed) setPlaced(true);
+    // The row wraps at narrow widths; follow the checked swatch when it moves.
+    const ro = new ResizeObserver(() => place(true));
+    ro.observe(row);
+    return () => ro.disconnect();
+  }, [active, placed, x, y, w, h, sx, sy]);
+
   return (
-    <div className={clsx(styles.segments, dense && styles.segmentsDense)} role="radiogroup" aria-label={label}>
-      {options.map((o) => {
-        const why = disabled?.[o.id];
-        return (
-          <button
-            key={o.id}
-            type="button"
-            role="radio"
-            aria-checked={value === o.id}
-            className={clsx(styles.segment, value === o.id && styles.segmentActive)}
-            disabled={!!why}
-            title={why}
-            onClick={() => onChange(o.id)}
-          >
-            {o.label}
-          </button>
-        );
-      })}
+    <div ref={ref} className={styles.swatches} role="radiogroup" aria-label={label}>
+      {children}
+      {placed && active !== null && (
+        <motion.span className={styles.ring} style={{ left, top, width, height }} aria-hidden />
+      )}
     </div>
   );
 }
 
 /**
- * A finish as a small sample of itself, the way the Color row shows colors:
- * ink is flat, spot gloss has a shine, foil is silver with a bright run, and
- * an etch is pressed in. Each names itself in a tooltip on hover.
+ * A choice as a small sample of itself, the way the Color row shows colors:
+ * plastic and steel; matte and gloss; ink flat, spot gloss with a shine, foil
+ * silver with a bright run, an etch pressed in. Each names itself in a
+ * tooltip on hover.
  */
-const FINISH_SAMPLE: Record<string, string> = {
+const SAMPLE: Record<string, string> = {
+  plastic: styles.samplePlastic,
+  metal: styles.sampleMetal,
+  matte: styles.sampleInk,
+  gloss: styles.sampleGloss,
   print: styles.sampleInk,
   spotGloss: styles.sampleGloss,
   foil: styles.sampleFoil,
   etch: styles.sampleEtch,
 };
 
-function FinishSwatches<T extends string>({
+function SampleSwatches<T extends string>({
   label,
   value,
   options,
@@ -101,7 +139,7 @@ function FinishSwatches<T extends string>({
   disabled?: Partial<Record<T, string>>;
 }) {
   return (
-    <div className={styles.swatches} role="radiogroup" aria-label={label}>
+    <SwatchRow label={label} active={value}>
       {options.map((o) => {
         const why = disabled?.[o.id];
         return (
@@ -113,7 +151,7 @@ function FinishSwatches<T extends string>({
                 aria-checked={value === o.id}
                 aria-label={o.label}
                 disabled={!!why}
-                className={clsx(styles.swatch, FINISH_SAMPLE[o.id], value === o.id && styles.swatchActive)}
+                className={clsx(styles.swatch, SAMPLE[o.id])}
                 onClick={() => onChange(o.id)}
                 {...tip}
               />
@@ -121,7 +159,7 @@ function FinishSwatches<T extends string>({
           </Tooltip>
         );
       })}
-    </div>
+    </SwatchRow>
   );
 }
 
@@ -211,7 +249,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
       <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Preset</span>
-          <div className={styles.swatches} role="radiogroup" aria-label="Preset">
+          <SwatchRow label="Preset" active={preset}>
             {PRESETS.map((p) => (
               <Tooltip key={p.id} text={p.design.programName}>
                 {(tip) => (
@@ -220,7 +258,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                     role="radio"
                     aria-checked={preset === p.id}
                     aria-label={p.design.programName}
-                    className={clsx(styles.swatch, styles.swatchIcon, preset === p.id && styles.swatchActive)}
+                    className={clsx(styles.swatch, styles.swatchIcon)}
                     onClick={() => onPresetSelect(p.id)}
                     {...tip}
                   >
@@ -230,11 +268,11 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                 )}
               </Tooltip>
             ))}
-          </div>
+          </SwatchRow>
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Material</span>
-          <Choices
+          <SampleSwatches
             label="Card material"
             value={design.material}
             options={MATERIALS}
@@ -243,7 +281,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Finish</span>
-          <Choices
+          <SampleSwatches
             label="Card finish"
             value={design.finish}
             options={FINISHES}
@@ -252,7 +290,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Color</span>
-          <div className={styles.swatches} role="radiogroup" aria-label="Card color">
+          <SwatchRow label="Card color" active={design.color === null ? 'none' : design.color}>
             <Tooltip text={`None (bare ${stock.label.toLowerCase()})`}>
               {(tip) => (
                 <button
@@ -260,7 +298,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                   role="radio"
                   aria-checked={design.color === null}
                   aria-label="None"
-                  className={clsx(styles.swatch, styles.swatchNone, design.color === null && styles.swatchActive)}
+                  className={clsx(styles.swatch, styles.swatchNone)}
                   onClick={() => onChange({ color: null })}
                   {...tip}
                 />
@@ -274,7 +312,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                     role="radio"
                     aria-checked={activeSwatch?.id === s.id}
                     aria-label={s.label}
-                    className={clsx(styles.swatch, activeSwatch?.id === s.id && styles.swatchActive)}
+                    className={styles.swatch}
                     style={swatchStyle(s.color)}
                     onClick={() => onChange({ color: s.color })}
                     {...tip}
@@ -283,7 +321,8 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
               </Tooltip>
             ))}
             <label
-              className={clsx(styles.swatch, styles.swatchCustom, custom && styles.swatchActive)}
+              className={clsx(styles.swatch, styles.swatchCustom)}
+              data-active={custom || undefined}
               style={custom ? swatchStyle(design.color!) : undefined}
             >
               <input
@@ -295,7 +334,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
               />
               {!custom ? <IconPlusSmall size={16} aria-hidden /> : null}
             </label>
-          </div>
+          </SwatchRow>
         </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Art</span>
@@ -309,7 +348,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         {design.backgroundUrl && (
           <div className={styles.row}>
             <span className={styles.rowLabel}>Art finish</span>
-            <FinishSwatches
+            <SampleSwatches
               label="Art finish"
               value={design.artTreatment}
               options={ART_TREATMENTS}
@@ -346,7 +385,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         {hasBrand && (
           <div className={styles.row}>
             <span className={styles.rowLabel}>Finish</span>
-            <FinishSwatches
+            <SampleSwatches
               label="Brand finish"
               value={design.logoTreatment}
               options={LOGO_TREATMENTS}

@@ -74,13 +74,31 @@
 }
 
 .swatches {
+  position: relative;
   flex: 1;
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
   align-items: center;
-  /* Room for the selection ring (4px out, 2px stroke) between neighbors. */
-  gap: var(--spacing-xs);
+  /* The ring sits 3px out with a 2px stroke; 8px between swatches leaves the
+     same 3px on its far side. */
+  gap: 8px;
+}
+
+/* The one selection ring, slid between swatches by SwatchRow. */
+.ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  corner-shape: var(--corner-shape);
+  border-radius: calc(var(--swatch-radius) + 3px);
+  border: 2px solid var(--text-primary);
+  pointer-events: none;
+}
+
+.swatches,
+.ring {
+  --swatch-radius: calc(5px * var(--corner-superellipse-scale, 1));
 }
 
 .swatch {
@@ -91,30 +109,16 @@
   position: relative;
   width: 20px;
   height: 20px;
-  border-radius: var(--corner-radius-xs);
+  border-radius: var(--swatch-radius);
   cursor: pointer;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
   transition: transform 160ms cubic-bezier(0.19, 1, 0.22, 1);
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    corner-shape: var(--corner-shape);
-    border-radius: calc(var(--corner-radius-xs) + 4px);
-    border: 2px solid transparent;
-    transition: border-color 160ms ease;
-  }
 
   @media (hover: hover) {
     &:hover:not(:disabled) {
       transform: scale(1.08);
     }
   }
-}
-
-.swatchActive::after {
-  border-color: var(--text-primary);
 }
 
 /* No print: an empty square with a diagonal through it, both in one ink. */
@@ -133,6 +137,16 @@
     background: var(--text-tertiary);
     transform: rotate(45deg);
   }
+}
+
+/* Material samples: white card plastic, and steel. */
+.samplePlastic {
+  background: #f1f1ef;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+
+.sampleMetal {
+  background: linear-gradient(135deg, #e6e6e8 0%, #a9a9ae 50%, #d8d8db 100%);
 }
 
 /* Finish samples: a neutral mid tone under each treatment. Ink is flat;
@@ -194,57 +208,6 @@
   cursor: pointer;
 }
 
-/* Material and Finish: plain text choices in the flow tile's type, divided by
-   a short hairline the height of the text. No track. */
-.segments {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-}
-
-.segment {
-  all: unset;
-  box-sizing: border-box;
-  @include label;
-  display: flex;
-  align-items: center;
-  line-height: 1;
-  padding: 0 var(--spacing-sm);
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  font-feature-settings: 'salt' 1;
-  cursor: pointer;
-  transition: color 150ms ease;
-
-  & + & {
-    border-left: var(--stroke-xs) solid var(--border-tertiary);
-  }
-
-  &:last-child {
-    padding-right: 0;
-  }
-
-  &:disabled {
-    color: var(--text-quaternary, var(--text-tertiary));
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  @media (hover: hover) {
-    &:hover:not(:disabled) {
-      color: var(--text-primary);
-    }
-  }
-}
-
-.segmentActive {
-  color: var(--text-primary);
-}
-
-.segmentsDense .segment {
-  padding: 0 6px;
-}
-
 .logoRow {
   flex: 1;
   display: flex;
@@ -300,10 +263,12 @@
   pointer-events: none;
 }
 
-/* A preset: the platform's app icon as a swatch. The icon carries its own
-   corner curve, so the swatch's shape and inset stroke come off. */
+/* A preset: the platform's app icon as a swatch, the swatch's size. The icon
+   carries its own corner curve, so the swatch's shape and inset stroke come off. */
 .swatchIcon {
   display: block;
+  width: 20px;
+  height: 20px;
   padding: 0;
   background: none;
   box-shadow: none;
