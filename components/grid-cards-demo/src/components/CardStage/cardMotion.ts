@@ -19,14 +19,9 @@
 export const TILT_DEG = 9;
 /** Drag: degrees of spin per pixel of pointer travel. */
 const DRAG_DEG_PER_PX = 0.55;
-/** Spring that settles the spin onto a face (per second, per degree): stiff
- *  and nearly critically damped, so a released card lands in about a third
- *  of a second with only a hint of overshoot. */
-const SPIN_K = 260;
-const SPIN_C = 30;
-/** A pointer that has not moved for this long has stopped: its last
- *  velocity is stale and is not carried into the release. */
-const FLING_STALE_MS = 90;
+/** Spring that settles the spin onto a face (per second, per degree). */
+const SPIN_K = 120;
+const SPIN_C = 18;
 /** Cursor tilt smoothing rate (1/s). */
 const TILT_RATE = 14;
 /** Letting the tilt go when the card is asked to hold still: slower than
@@ -125,16 +120,11 @@ export class CardMotion {
     this.dragVX = this.dragVX * 0.6 + (dxDeg / dt) * 0.4;
   }
 
-  endDrag(now = performance.now()) {
+  endDrag() {
     if (!this.dragging) return;
     this.dragging = false;
-    // The smoothed velocity is only updated by moves: a drag that paused
-    // before letting go still holds the speed it had, which would fling the
-    // card the hand had stopped. Fade it by the pause.
-    const since = now - this.lastDragT;
-    const carry = since > FLING_STALE_MS ? 0 : 1 - since / FLING_STALE_MS;
-    this.spinVY = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVY * carry));
-    this.pitchV = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVX * carry));
+    this.spinVY = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVY));
+    this.pitchV = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVX));
     this.restAny = true;
     // Settle on whichever face each fling is headed for.
     this.targetX = nearestWithParity(this.pitch + this.pitchV * FLING_LOOKAHEAD, 0, 180);
