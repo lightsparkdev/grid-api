@@ -12,9 +12,11 @@
   /* Button fills (the + swatch, Remove) sit a step off the tile: darker in
      light, lighter in dark; the same step the color picker's tools take. */
   --picker-fill: var(--surface-secondary);
+  --picker-border: var(--border-primary);
 
   :global([data-theme='dark']) & {
     --picker-fill: var(--color-gray-850);
+    --picker-border: rgba(244, 244, 245, 0.16);
   }
 }
 
@@ -268,7 +270,7 @@
   place-items: center;
   background: var(--picker-fill);
   color: var(--text-primary);
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px var(--picker-border);
 
   svg {
     display: block;
@@ -338,6 +340,7 @@
 .logoClear {
   background: var(--picker-fill);
   color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--picker-border);
   cursor: pointer;
   transition: transform 160ms cubic-bezier(0.19, 1, 0.22, 1);
 
