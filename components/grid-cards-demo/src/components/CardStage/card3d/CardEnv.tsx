@@ -29,7 +29,7 @@ interface Light {
 const LIGHTS: Light[] = [
   // Key: above and a little left, more in front than overhead, so a polished
   // region (an etched mark's floor, the chip) shows it from a head-on view.
-  { dir: [-0.22, 0.3, 0.93], radius: 0.18, intensity: 3.4, color: [1, 0.995, 0.98] },
+  { dir: [-0.22, 0.3, 0.93], radius: 0.22, intensity: 3.1, color: [1, 0.995, 0.98] },
   // Fill: behind the camera and off to the upper right, so a head-on face
   // shows it as a soft band across one side rather than a wash over all of it.
   { dir: [0.45, 0.32, 1], radius: 0.34, intensity: 2.0, color: [1, 1, 1] },
