@@ -98,7 +98,7 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
     const follow = () => place(false);
     const ro = new ResizeObserver(follow);
     ro.observe(row);
-    for (const el of row.children) ro.observe(el);
+    Array.from(row.children).forEach((el) => ro.observe(el));
     document.fonts?.ready.then(follow);
     window.addEventListener('resize', follow);
     return () => {
