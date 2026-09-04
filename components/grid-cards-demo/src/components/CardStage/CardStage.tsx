@@ -261,12 +261,24 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   };
 
   // Selected: the selection box shows and the card holds flat under it. A
-  // flow, the intro, or Escape deselects.
+  // flow, the intro, Escape, or any change to the design other than the
+  // brand's placement (a color, a finish, a preset, Reset) deselects: the
+  // box is for placing, and those edits are something else.
   const [selected, setSelected] = useState(false);
   live.current.editing = selected;
   useEffect(() => {
     if (phoneUp || !introDone) setSelected(false);
   }, [phoneUp, introDone]);
+  const lastDesign = useRef(design);
+  useEffect(() => {
+    const prev = lastDesign.current;
+    lastDesign.current = design;
+    if (prev === design) return;
+    const { brandLayout: _a, ...restPrev } = prev;
+    const { brandLayout: _b, ...restNext } = design;
+    const changed = (Object.keys(restNext) as Array<keyof typeof restNext>).some((k) => restNext[k] !== restPrev[k]);
+    if (changed) setSelected(false);
+  }, [design]);
   useEffect(() => {
     if (!selected) return;
     const onKey = (e: KeyboardEvent) => {
@@ -357,14 +369,25 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   const brandDrag = useRef<BrandDrag | null>(null);
+  /** The cursor a brand edit shows while the pointer is captured: the
+   *  handle's own, turning with the box as it rotates. */
+  const dragCursor = (bd: BrandDrag, rotation: number) =>
+    bd.mode === 'rotate'
+      ? rotateCursor(CORNER_ANGLE[bd.handle!] + rotation)
+      : bd.mode === 'scale'
+        ? resizeCursor(handleAngle(bd.handle!) + rotation)
+        : 'default';
   const beginBrandDrag = (e: ReactPointerEvent<HTMLDivElement>, start: Pt, mode: BrandDrag['mode'], handle?: Handle) => {
     const pl = placement.current;
     if (!pl) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    brandDrag.current = { id: e.pointerId, mode, handle, start, layout0: pl.layout, box0: pl.box };
+    const bd: BrandDrag = { id: e.pointerId, mode, handle, start, layout0: pl.layout, box0: pl.box };
+    brandDrag.current = bd;
     motion.clearTilt();
     setSelected(true);
     e.currentTarget.classList.add(styles.hitMoving);
+    // With the pointer captured, the hit box's cursor is the one shown.
+    e.currentTarget.style.cursor = dragCursor(bd, pl.layout.rotation);
   };
   const moveBrand = (bd: BrandDrag, p: Pt) => {
     const { layout0: l0, box0: b0 } = bd;
@@ -388,6 +411,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       const step = Math.round(rotation / ROTATE_STEP) * ROTATE_STEP;
       if (Math.abs(step - rotation) <= SNAP_DEG) rotation = ((((step + 180) % 360) + 360) % 360) - 180;
       setLayout({ ...l0, rotation });
+      if (hitRef.current) hitRef.current.style.cursor = dragCursor(bd, rotation);
       return;
     }
     // Scale: the aspect is the artwork's, so every handle scales uniformly,
@@ -462,6 +486,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       brandDrag.current = null;
       setGuides({});
       e.currentTarget.classList.remove(styles.hitMoving);
+      e.currentTarget.style.cursor = '';
       return;
     }
     if (!drag.current || e.pointerId !== drag.current.id) return;
