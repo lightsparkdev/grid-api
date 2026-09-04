@@ -21,13 +21,16 @@ export interface CardPreset {
 
 const ASSETS = '/assets/presets';
 const MID_Y = FIGMA_FACE_H / 2;
+/** The chip's center line (the chip is at y 334, 149 tall). */
+const MID_Y_CHIP = 334 + 149 / 2;
 
 export const PRESETS: CardPreset[] = [
   {
     id: 'creator',
     label: 'Creator',
     iconSrc: `${ASSETS}/app-icon-creator.png`,
-    // Glitch: brand purple, the mark top-left (Figma 2528:21065).
+    // Glitch: brand purple, the mark at the right on the chip's row, a little
+    // larger than the sample's wordmark height.
     design: {
       programName: 'Glitch',
       material: 'plastic',
@@ -36,7 +39,7 @@ export const PRESETS: CardPreset[] = [
       gradient: null,
       logoUrl: `${ASSETS}/logo-creator.svg`,
       logoTreatment: 'print',
-      brandLayout: { x: 100, y: 141, h: 116, anchor: 'left', rotation: 0, opacity: 1 },
+      brandLayout: { x: 1536 - 152, y: MID_Y_CHIP, h: 140, anchor: 'right', rotation: 0, opacity: 1 },
       backgroundUrl: null,
       artTreatment: 'print',
     },
