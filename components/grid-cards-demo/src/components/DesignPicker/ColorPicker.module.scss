@@ -142,7 +142,8 @@
 
 .stopsTools {
   display: flex;
-  gap: 2px;
+  /* The same gap as the hex row's swatch, field, and eyedropper. */
+  gap: var(--spacing-xs);
 }
 
 /* The stops, on the gradient itself. */
@@ -205,7 +206,7 @@
 .stopRow {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2xs);
+  gap: var(--spacing-xs);
   padding: 2px;
   corner-shape: var(--corner-shape);
   /* Concentric with the fields inside: their radius plus the padding. */
