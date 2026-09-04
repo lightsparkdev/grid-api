@@ -10,7 +10,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { motion, useMotionValue, useSpring, useTransform, useVelocity } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { IconCrossSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossSmall';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
@@ -52,7 +52,9 @@ const RING_STROKE = 2;
  * A row of swatches with one selection ring that slides between them. The
  * ring is a single element positioned over whichever child is checked
  * (`aria-checked` or `data-active`), sprung to its place; while it travels it
- * stretches a little toward where it is going, from the spring's velocity.
+ * stretches a little toward where it is going, by how far it still has to
+ * go, so it is stretched the moment a swatch is clicked and exactly its own
+ * size once it lands.
  */
 function SwatchRow({ label, active, children }: { label: string; active: string | null; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -63,12 +65,13 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
   const spring = { stiffness: 620, damping: 40, mass: 0.9 };
   const sx = useSpring(x, spring);
   const sy = useSpring(y, spring);
-  const vx = useVelocity(sx);
-  const stretch = useTransform(vx, (v) => Math.min(6, Math.abs(v) / 220));
-  // The leading edge reaches ahead: moving left, the box starts earlier.
+  // Remaining travel, signed: positive when the target is to the right.
+  const ahead = useTransform([x, sx], ([tx, px]) => (tx as number) - (px as number));
+  const stretch = useTransform(ahead, (d) => Math.min(6, Math.abs(d) * 0.12));
+  // The leading edge reaches ahead: going left, the box starts earlier.
   const left = useTransform(
-    [sx, vx, stretch],
-    ([px, v, s]) => (px as number) - RING_OUT - ((v as number) < 0 ? (s as number) : 0),
+    [sx, ahead, stretch],
+    ([px, d, s]) => (px as number) - RING_OUT - ((d as number) < 0 ? (s as number) : 0),
   );
   const top = useTransform(sy, (py) => py - RING_OUT);
   const width = useTransform([w, stretch], ([bw, s]) => (bw as number) + RING_OUT * 2 + (s as number));
@@ -81,13 +84,22 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
     const place = (jump: boolean) => {
       const el = row.querySelector<HTMLElement>('[aria-checked="true"], [data-active="true"]');
       if (!el) return;
-      x.set(el.offsetLeft);
-      y.set(el.offsetTop);
-      w.set(el.offsetWidth);
-      h.set(el.offsetHeight);
+      // Sub-pixel: the row is right-aligned, so a swatch often sits on a half
+      // pixel that offsetLeft rounds away. Measure from the swatch's center so
+      // the hover scale does not move it.
+      const rr = row.getBoundingClientRect();
+      const er = el.getBoundingClientRect();
+      const bw = el.offsetWidth;
+      const bh = el.offsetHeight;
+      const nx = er.left + er.width / 2 - rr.left - bw / 2;
+      const ny = er.top + er.height / 2 - rr.top - bh / 2;
+      x.set(nx);
+      y.set(ny);
+      w.set(bw);
+      h.set(bh);
       if (jump) {
-        sx.jump(el.offsetLeft);
-        sy.jump(el.offsetTop);
+        sx.jump(nx);
+        sy.jump(ny);
       }
     };
     place(!placed);
