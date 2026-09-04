@@ -15,7 +15,7 @@ import {
 } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { foilStudioTexture } from './CardEnv';
-import { createSwapUniforms, FRONT_REST, patchFaceMaterial, WIPE_HOLD, WIPE_MS } from './materialSwap';
+import { createSwapUniforms, FRONT_REST, FRONT_START, patchFaceMaterial, WIPE_HOLD, WIPE_MS } from './materialSwap';
 import { MaterialSwarm } from './MaterialSwarm';
 import {
   brandBox,
@@ -264,10 +264,11 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // Surface textures are cached per surface and face for the session.
   const surfaceTex = useRef(new Map<string, { orm: THREE.Texture; normal: THREE.Texture }>());
 
-  // Surface: print or bare metal, matte or gloss, on both faces. The wipe's
-  // band shows the new material's bare stock (steel, or PVC, in the finish).
+  // Surface: print or bare metal, matte or gloss, on both faces. The wipe
+  // shows the new material's stock as a blank: polished steel whatever the
+  // finish (the finish is the coat, which the blank hasn't had), or PVC.
   const surface = surfaceOf(bodyDesign);
-  const bareSurface: Surface = `${state.design.material === 'metal' ? 'bare' : 'print'}-${state.design.finish}`;
+  const bareSurface: Surface = state.design.material === 'metal' ? 'bare-gloss' : `print-${state.design.finish}`;
   useEffect(() => {
     if (!assets) return;
     const c = SURFACE[surface];
@@ -504,9 +505,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     // the print's front.
     const p1 = Math.min(1, sw.t / WIPE_MS);
     const p2 = Math.min(1, Math.max(0, (sw.t - WIPE_MS - WIPE_HOLD) / WIPE_MS));
-    const front = easeInOutSine(p1) * FRONT_REST;
+    const travel = (p: number) => FRONT_START + easeInOutSine(p) * (FRONT_REST - FRONT_START);
+    const front = travel(p1);
     shared.uFront.value = front;
-    shared.uClose.value = p2 > 0 ? easeInOutSine(p2) * FRONT_REST : 0;
+    shared.uClose.value = travel(p2);
     if (p1 < 1) swarm.update(front);
     else swarm.end();
     if (p2 >= 1) {

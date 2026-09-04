@@ -5,20 +5,25 @@ import { CARD_R, faceZOf } from './cardGeometry';
 import { sweepOf } from './materialSwap';
 
 /**
- * A dusting of the new stock along the wipe's front: small particles, lit by
- * the studio like the card is, that hang just ahead of the edge and settle
- * onto the face as it passes over them. In the card's frame, so they tilt and
- * scale with it. Steel particles are metal; PVC ones are matte.
+ * The wipe's front is made of the new stock's particles: small, dense, lit
+ * by the studio like the card is. Each comes in ahead of the edge, lands on
+ * the face just behind it, rests there on the new stock, and fades into it.
+ * In the card's frame, so they tilt and scale with it. Steel particles are
+ * polished metal; PVC ones are matte.
  */
 
-const PER_FACE = 900;
+const PER_FACE = 7000;
 const COUNT = PER_FACE * 2;
 /** How far ahead of the front (sweep units) a particle appears, and how far
  *  behind it it is gone. */
-const LEAD = 0.05;
-const TRAIL = 0.06;
+const LEAD = 0.07;
+const TRAIL = 0.14;
+/** Where in that span it lands: a little behind the front. */
+const LAND = LEAD / (LEAD + TRAIL) + 0.08;
+/** It rests on the face until here, then fades. */
+const REST_UNTIL = 0.7;
 /** How high off the face it starts, card px. */
-const LIFT = 9;
+const LIFT = 10;
 
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 const smoothstep = (a: number, b: number, x: number) => {
@@ -56,7 +61,7 @@ export class MaterialSwarm {
 
   constructor() {
     this.material = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.5 });
-    this.mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), this.material, COUNT);
+    this.mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), this.material, COUNT);
     this.mesh.frustumCulled = false;
     this.mesh.visible = false;
     this.hide();
@@ -71,7 +76,7 @@ export class MaterialSwarm {
     const metal = material === 'metal';
     this.material.color.set(color);
     this.material.metalness = metal ? 1 : 0;
-    this.material.roughness = metal ? 0.35 : 0.55;
+    this.material.roughness = metal ? 0.2 : 0.55;
     const z = faceZOf(material);
     for (let i = 0; i < COUNT; i++) {
       const side = i < PER_FACE ? 1 : -1;
@@ -80,9 +85,10 @@ export class MaterialSwarm {
       this.home[i * 3 + 1] = y;
       this.home[i * 3 + 2] = side * z;
       this.d[i] = sweepOf(x, y, dir);
-      this.size[i] = rnd(0.5, 1.1);
-      this.drift[i * 2] = rnd(-4, 4);
-      this.drift[i * 2 + 1] = rnd(-4, 4);
+      this.size[i] = rnd(0.55, 1.2);
+      // Where it comes in from: ahead along the sweep, and a little sideways.
+      this.drift[i * 2] = -dir * rnd(6, 18);
+      this.drift[i * 2 + 1] = rnd(-5, 5);
     }
     this.running = true;
     this.mesh.visible = true;
@@ -93,23 +99,24 @@ export class MaterialSwarm {
     if (!this.running) return;
     const { home, d, size, drift, m, p, s, mesh } = this;
     for (let i = 0; i < COUNT; i++) {
-      // u runs 0 as the particle appears ahead of the front to 1 as the
-      // front leaves it behind; it is on the face at the front itself.
+      // u runs 0 as the particle appears ahead of the front to 1 as it is
+      // gone behind it; it lands at LAND, once the front has passed.
       const u = (front - (d[i] - LEAD)) / (LEAD + TRAIL);
       if (u <= 0 || u >= 1) {
         mesh.setMatrixAt(i, this.hidden);
         continue;
       }
-      const atFront = LEAD / (LEAD + TRAIL);
-      const settle = Math.min(1, u / atFront);
-      const lift = LIFT * (1 - settle) * (1 - settle);
+      // Carried in with the front, slowing as it comes down onto the face.
+      const settle = Math.min(1, u / LAND);
+      const ease = 1 - (1 - settle) * (1 - settle);
+      const lift = LIFT * (1 - ease);
       const side = Math.sign(home[i * 3 + 2]);
       p.set(
-        home[i * 3] + drift[i * 2] * (1 - settle),
-        home[i * 3 + 1] + drift[i * 2 + 1] * (1 - settle),
+        home[i * 3] + drift[i * 2] * (1 - ease),
+        home[i * 3 + 1] + drift[i * 2 + 1] * (1 - ease),
         home[i * 3 + 2] + side * (lift + 0.6),
       );
-      const scale = size[i] * smoothstep(0, 0.25, u) * (1 - smoothstep(atFront, 1, u));
+      const scale = size[i] * smoothstep(0, 0.2, u) * (1 - smoothstep(REST_UNTIL, 1, u));
       if (scale <= 0.01) {
         mesh.setMatrixAt(i, this.hidden);
         continue;
