@@ -444,17 +444,10 @@ function paintChip(ctx: CanvasRenderingContext2D, face: string) {
 
 /* ── Faces ────────────────────────────────────────────────────────────────── */
 
-/** The body before its print: the bare stock (PVC or steel) with the chip
- *  set into it. What a material change's wipe shows in its band. */
-export function paintBareFront(ctx: CanvasRenderingContext2D, stock: CardStock) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = stock.face;
-  ctx.fillRect(0, 0, TEX_W, TEX_H);
-  paintChip(ctx, stock.face);
-}
-
-export function paintBareBack(ctx: CanvasRenderingContext2D, stock: CardStock) {
+/** The body before its print: the bare stock (PVC or steel), nothing on it
+ *  and nothing set into it yet (the chip's pocket is milled after the
+ *  print). A material change's first layer. */
+export function paintBare(ctx: CanvasRenderingContext2D, stock: CardStock) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = stock.face;
@@ -462,12 +455,11 @@ export function paintBareBack(ctx: CanvasRenderingContext2D, stock: CardStock) {
 }
 
 /** The print's base: its ground (color, gradient, or art) laid on the body,
- *  before the graphics. The wipe's second layer. */
+ *  before the graphics. The second layer. */
 export function paintBaseFront(ctx: CanvasRenderingContext2D, design: CardDesign, art: HTMLImageElement | null) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
   paintBase(ctx, design, true, art);
-  paintChip(ctx, faceColorOf(design));
 }
 
 export function paintBaseBack(ctx: CanvasRenderingContext2D, design: CardDesign) {

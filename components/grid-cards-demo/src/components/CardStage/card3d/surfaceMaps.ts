@@ -72,8 +72,9 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets, p
   ctx.fillStyle = orm(f.rough, f.metal);
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   if (surface === 'bare-matte') beadblastRoughness(ctx, assets);
-  // A plain back is the body alone: no stripe, no mark.
-  if (plain && side === 'back') return c;
+  // A plain body is the body alone: no stripe, no mark, and no chip (the
+  // pocket is milled and the module set after the print).
+  if (plain) return c;
   if (side === 'back') {
     ctx.fillStyle = orm(0.78, 0);
     ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
@@ -126,6 +127,31 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.putImageData(img, 0, 0);
   }
 
+  // A polished blank is brushed: long fine streaks along the card, each a
+  // little different in length and depth, the way a sheet comes off the
+  // belt; a few deeper scores among them. Height ±14 at most: the streaks
+  // tilt the mirror a degree or two, so the room's lights break along them.
+  if (plain && surface === 'bare-gloss') {
+    const img = ctx.getImageData(0, 0, MAP_W, MAP_H);
+    const d = img.data;
+    for (let y = 0; y < MAP_H; y++) {
+      // Each row is its own streak, fading in and out along its length.
+      const lane = Math.random() - 0.5;
+      const score = Math.random() < 0.06 ? 2.2 : 1;
+      const phase = Math.random() * 1000;
+      const len = 90 + Math.random() * 260;
+      for (let x = 0; x < MAP_W; x++) {
+        const along = Math.sin((x + phase) / len) * 0.5 + 0.5;
+        const v = 128 + lane * 13 * score * along;
+        const i = (y * MAP_W + x) * 4;
+        d[i] = d[i + 1] = d[i + 2] = v;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  if (plain) return c;
+
   if (side === 'front') {
     // The chip sits in a milled pocket a hair larger than its plate: the
     // face steps down into the gap, then the plate rises out of it, smooth on
@@ -144,12 +170,12 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     chipContactsPath(ctx);
     ctx.stroke();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  } else if (!plain) {
+  } else {
     // The mag stripe is laminated a hair above the face.
     ctx.fillStyle = '#848484';
     ctx.fillRect(0, STRIPE.y * S, MAP_W, STRIPE.h * S);
   }
-  if (side === 'back' && !plain) {
+  if (side === 'back') {
     // Hot-stamped foil is a film laid on the face: the clear carrier sits a
     // hair proud, following the mark's geometry about a millimeter out, and
     // the metal on top of that. Both steps catch light at their edges. The
@@ -390,9 +416,9 @@ export function decorateNormal(
 
 const surfaceCache = new Map<string, SurfaceMaps>();
 
-/** `plain`: the body before anything is laid on its back (no stripe, no
- *  mark), for the blank and base layers of a material change. The front's
- *  chip is milled into the body, so it stays. */
+/** `plain`: the body before anything is laid on or set into it (no stripe,
+ *  no mark, no chip pocket), for the blank and base layers of a material
+ *  change; a polished plain blank is lightly brushed. */
 export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets: FaceAssets, plain = false): SurfaceMaps {
   const key = `${surface}|${side}|${plain ? 'plain' : 'full'}`;
   let maps = surfaceCache.get(key);

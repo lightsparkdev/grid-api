@@ -154,10 +154,11 @@ function foilBase(y: number): number {
   return 0.4 + 0.5 * t;
 }
 
-/** A room of hard-edged panels over a gray by elevation, as an equirect. */
-function panelStudio(panels: Panel[], base: (y: number) => number, w: number, h: number): THREE.DataTexture {
+/** A room of panels over a gray by elevation, as an equirect; `soft` is the
+ *  width of a panel's edge in radians (hard for the foil's letters, wide for
+ *  a sheet that mirrors the room as soft shapes). */
+function panelStudio(panels: Panel[], base: (y: number) => number, w: number, h: number, soft = 0.02): THREE.DataTexture {
   const data = new Float32Array(w * h * 4);
-  const soft = 0.02;
   for (let j = 0; j < h; j++) {
     const lat = ((j + 0.5) / h - 0.5) * Math.PI;
     for (let i = 0; i < w; i++) {
@@ -199,37 +200,45 @@ export function foilStudioTexture(): THREE.DataTexture {
 }
 
 /**
- * The room a bare steel blank reflects during a material change. A polished
- * sheet the size of a card reflects only a few degrees of the room, so the
- * foil's window (built for letters a few millimeters tall) fills the whole
- * face with one glow. This room is darker, with narrow light strips at the
- * card's scale stacked through the head-on direction: the face shows them
- * as bright bars that slide across it as the card tilts, the way a steel
- * sheet under a bank of tube lights does. Sized as the studio is, since a
- * PMREM standing in for the scene's must share its layout.
+ * The room a bare steel blank reflects during a material change: a factory
+ * floor under overhead lights, as a stack of mirror-polished sheets shows
+ * it. A polished sheet the size of a card reflects only a few degrees of
+ * the room, so what it needs is contrast at that scale with soft edges: a
+ * dark floor, a horizon, a brighter ceiling, and wide soft lights overhead
+ * and ahead, which slide across the face as broad gradients when the card
+ * tilts. (The foil's room, built for letters a few millimeters tall, put
+ * one bright window across the whole face; a bank of narrow strips read as
+ * a texture.) Sized as the studio is, since a PMREM standing in for the
+ * scene's must share its layout.
  */
 const BLANK_PANELS: Panel[] = [
-  // The bank of strips, head-on (lon π/2) and a little above.
-  { lon: Math.PI * 0.5, lat: -0.06, w: 1.1, h: 0.022, intensity: 2.4, color: [1, 1, 1] },
-  { lon: Math.PI * 0.5, lat: 0.1, w: 1.1, h: 0.022, intensity: 2.4, color: [1, 1, 1] },
-  { lon: Math.PI * 0.5, lat: 0.26, w: 1.1, h: 0.022, intensity: 2.2, color: [1, 1, 1] },
-  { lon: Math.PI * 0.5, lat: 0.42, w: 1.1, h: 0.022, intensity: 2.0, color: [1, 1, 1] },
-  // Softbox above left, for the face's general lift.
-  { lon: Math.PI * 0.62, lat: 0.7, w: 0.4, h: 0.22, intensity: 1.2, color: [1, 0.99, 0.97] },
-  // Tall strips either side, for a card turned.
-  { lon: Math.PI * 0.7, lat: 0.05, w: 0.05, h: 0.5, intensity: 1.8, color: [1, 1, 1] },
-  { lon: Math.PI * 0.3, lat: 0.05, w: 0.05, h: 0.5, intensity: 1.8, color: [1, 1, 1] },
+  // Ceiling lights: a few large panels, as a factory ceiling has, the first
+  // low enough that a small tilt up brings it onto the face.
+  { lon: Math.PI * 0.5, lat: 0.34, w: 0.6, h: 0.09, intensity: 1.4, color: [1, 1, 1] },
+  { lon: Math.PI * 0.64, lat: 0.66, w: 0.32, h: 0.14, intensity: 1.4, color: [1, 0.99, 0.97] },
+  { lon: Math.PI * 0.36, lat: 0.66, w: 0.32, h: 0.14, intensity: 1.2, color: [1, 1, 1] },
+  { lon: Math.PI * 0.5, lat: 1.1, w: 0.7, h: 0.18, intensity: 1.5, color: [1, 1, 1] },
+  // Something either side for a card turned.
+  { lon: Math.PI * 0.8, lat: 0.15, w: 0.1, h: 0.35, intensity: 1.0, color: [1, 1, 1] },
+  { lon: Math.PI * 0.2, lat: 0.15, w: 0.1, h: 0.35, intensity: 1.0, color: [1, 1, 1] },
 ];
 
+/** The room by elevation: a near-black floor up to a horizon right at the
+ *  head-on line, then the lit wall. A card a few degrees across reflects a
+ *  cone about the head-on direction, so the horizon crosses the face, dark
+ *  below and light above, and rides up and down it as the card tilts: the
+ *  one thing that reads as a mirror on a face this small. */
 function blankBase(y: number): number {
-  // Dark floor to mid ceiling: steel between the strips reads as dark
-  // silver, so the strips have something to stand against.
-  const t = (y + 1) / 2;
-  return 0.07 + 0.3 * t;
+  const lat = Math.asin(Math.max(-1, Math.min(1, y)));
+  if (lat < -0.12) return 0.025;
+  if (lat < 0.0) return 0.025 + (0.46 - 0.025) * ((lat + 0.12) / 0.12);
+  return 0.46 + (0.6 - 0.46) * Math.min(1, lat / 1.2);
 }
 
 export function blankStudioTexture(): THREE.DataTexture {
-  return panelStudio(BLANK_PANELS, blankBase, ENV_W, ENV_H);
+  // Edges soft enough to read as blurred lights in a mirror, hard enough to
+  // read as lights and not a haze, and for the brush's streaks to break them.
+  return panelStudio(BLANK_PANELS, blankBase, ENV_W, ENV_H, 0.06);
 }
 
 export function CardEnv() {

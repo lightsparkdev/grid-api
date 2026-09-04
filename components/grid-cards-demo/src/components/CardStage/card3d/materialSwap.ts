@@ -6,36 +6,28 @@ import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
  * made. The new stock is laid down as a blank (polished steel, or white PVC)
  * across the whole card; then the print's base (the color, gradient, or art)
  * over it; then the graphics (the brand, the back's text, the effects). Each
- * pass is laid grain by grain: the face is cut into ~3 px cells, each with
- * its own moment inside a zone behind a bowed front that sweeps left to
- * right, so a layer arrives as a speckle that fills in rather than as a
- * line. On the first pass the grains are particles: each comes in from above
- * and lands on its cell at the moment the cell turns, so what the eye sees
- * laying the stock down is the particles landing.
+ * pass is laid grain by grain: the face is cut into cells about a pixel
+ * across, each with its own moment inside a zone behind a bowed front that
+ * sweeps left to right, so a layer arrives as a fine dither that fills in
+ * rather than as a line. On the first pass the grains are particles: each
+ * comes in from above and lands on its cell at the moment the cell turns,
+ * and the old face's grain lifts off from the same spot, so what the eye
+ * sees laying the stock down is the particles landing and the old surface
+ * coming apart, the way the project tracker's rows do.
  */
 
 /** One pass, ms. */
-export const WIPE_MS = 520;
+export const WIPE_MS = 300;
 /** Between passes, ms. */
-export const WIPE_HOLD = 50;
+export const WIPE_HOLD = 30;
 /** The front bows: its middle leads its ends by this many card px. */
 const WIPE_ARC = 10;
 /** The zone behind the front in which a cell turns, as a fraction of the
  *  sweep: a cell with grain `n` turns when the front is `n · WIPE_GRAIN`
  *  past it. */
 export const WIPE_GRAIN = 0.12;
-/** A cell turns as a dot growing from a point in it, over this much further
- *  travel of the front. */
-export const WIPE_SPREAD = 0.035;
-/** The dot's center sits off the cell's center by up to this, in cells, and
- *  the dot grows to this radius, past the cell, so neighbors' dots overlap
- *  into blobs rather than squaring off to a grid. Once the front is well past
- *  a cell's moment the cell is covered outright, whatever the dots did. */
-export const DOT_JITTER = 0.35;
-const DOT_R = 1.05;
-/** Antialiasing on a dot's rim, in cell units. */
-const DOT_AA = 0.12;
-const WIPE_SOFT = 0.004;
+/** Antialiasing at a cell's turn, in sweep units (under a texel's worth). */
+const WIPE_SOFT = 0.002;
 
 /** The sweep coordinate `d` runs 0..1 across the card, left to right, less
  *  the bow. */
@@ -49,12 +41,12 @@ export function sweepOf(x: number, y: number, dir: number): number {
 
 /* ── Grain ────────────────────────────────────────────────────────────────── */
 
-/** Cells across and down the face (about 2.9 card px each). */
-export const GRAIN_W = 128;
-export const GRAIN_H = 80;
+/** Cells across and down the face (about 1.15 card px each). */
+export const GRAIN_W = 320;
+export const GRAIN_H = 200;
 
-/** A cell of the face: where its dot grows from (card px, centered) and its
- *  moment within the grain zone. */
+/** A cell of the face: its center (card px, centered) and its moment within
+ *  the grain zone. */
 export interface Cell {
   x: number;
   y: number;
@@ -69,27 +61,19 @@ export interface Grain {
 
 let grainCache: Grain | null = null;
 
-/** The face's cells, each with a random moment (R) and a random offset for
- *  its dot's center (G, B). Nearest-filtered so a cell reads whole. */
+/** The face's cells, each with a random moment. Nearest-filtered so a cell
+ *  turns whole. */
 export function grain(): Grain {
   if (grainCache) return grainCache;
   const cells: Cell[] = [];
   const bytes = new Uint8Array(GRAIN_W * GRAIN_H * 4);
-  const q = (v: number) => Math.round(v * 255);
   for (let j = 0; j < GRAIN_H; j++) {
     for (let i = 0; i < GRAIN_W; i++) {
       const k = j * GRAIN_W + i;
-      const n = q(Math.random());
-      const jx = q(Math.random());
-      const jy = q(Math.random());
+      const n = Math.round(Math.random() * 255);
       bytes[k * 4] = n;
-      bytes[k * 4 + 1] = jx;
-      bytes[k * 4 + 2] = jy;
       bytes[k * 4 + 3] = 255;
-      // The same arithmetic as the shader's, off the same 8-bit values.
-      const cx = i + 0.5 + (jx / 255 - 0.5) * DOT_JITTER * 2;
-      const cy = j + 0.5 + (jy / 255 - 0.5) * DOT_JITTER * 2;
-      cells.push({ x: (cx / GRAIN_W - 0.5) * CARD_W, y: (cy / GRAIN_H - 0.5) * CARD_H, n: n / 255 });
+      cells.push({ x: ((i + 0.5) / GRAIN_W - 0.5) * CARD_W, y: ((j + 0.5) / GRAIN_H - 0.5) * CARD_H, n: n / 255 });
     }
   }
   const texture = new THREE.DataTexture(bytes, GRAIN_W, GRAIN_H, THREE.RGBAFormat, THREE.UnsignedByteType);
@@ -127,16 +111,26 @@ export interface SwapUniforms {
   uBareNormal: { value: THREE.Texture | null };
   uBareEnv: { value: THREE.Texture | null };
   uBareEnvIntensity: { value: number };
+  /** The blank's roughness relative to its surface's: under 1 for a mirror. */
+  uBareRoughScale: { value: number };
+  /** 1 when the blank is steel: it takes the room, the mirror roughness, and
+   *  the brush. A PVC blank is lit like the rest of the card. */
+  uBareSteel: { value: number };
   /** The base: the print's ground, and the print surface without its effects. */
   uBaseMap: { value: THREE.Texture | null };
   uBaseOrm: { value: THREE.Texture | null };
   uBaseNormal: { value: THREE.Texture | null };
+  /** The chip is set after the print: while `uChipHide` is 1 the face shows
+   *  the base under the chip's mask (the front's; the back's is empty) and a
+   *  separate mesh carries the chip down onto the card. */
+  uChipMask: { value: THREE.Texture | null };
+  uChipHide: { value: number };
 }
 
 /** A front's travel: from just before the bowed middle's left edge to past
  *  the far corner and the whole grain zone. */
 export const FRONT_START = -WIPE_ARC / SWEEP_SPAN - WIPE_SOFT * 2;
-export const FRONT_REST = 1 + WIPE_GRAIN + WIPE_SPREAD + WIPE_SOFT * 2;
+export const FRONT_REST = 1 + WIPE_GRAIN + WIPE_SOFT * 2;
 
 /** One set per face; the fronts are shared so both faces sweep together. */
 export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
@@ -150,10 +144,14 @@ export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
     uBareOrm: { value: null },
     uBareNormal: { value: null },
     uBareEnv: shared?.uBareEnv ?? { value: null },
-    uBareEnvIntensity: shared?.uBareEnvIntensity ?? { value: 0.85 },
+    uBareEnvIntensity: shared?.uBareEnvIntensity ?? { value: 0.9 },
+    uBareRoughScale: shared?.uBareRoughScale ?? { value: 0.35 },
+    uBareSteel: shared?.uBareSteel ?? { value: 0 },
     uBaseMap: { value: null },
     uBaseOrm: { value: null },
     uBaseNormal: { value: null },
+    uChipMask: { value: null },
+    uChipHide: shared?.uChipHide ?? { value: 0 },
   };
 }
 
@@ -162,21 +160,13 @@ export function turnOf(cell: Cell, dir: number): number {
   return sweepOf(cell.x, cell.y, dir) + WIPE_GRAIN * cell.n;
 }
 
-/** How far a front at `at` has turned a cell: 0 before its moment, 1 once
- *  its dot has spread. */
+/** Whether a front at `at` has turned a cell, 1 once it has (over a short
+ *  ramp, for things that fade with a cell rather than flip). */
 export function passed(at: number, cell: Cell, dir: number): number {
-  return Math.min(1, Math.max(0, (at - turnOf(cell, dir)) / WIPE_SPREAD));
+  return Math.min(1, Math.max(0, (at - turnOf(cell, dir)) / 0.02));
 }
 
 const f = (n: number) => n.toFixed(6);
-
-/** How far a front at `at` has grown a dot whose cell turns at `turn`. */
-const DOT_FN = /* glsl */ `
-float swapDot(float at, float turn, float dist) {
-	float r = ${f(DOT_R)} * clamp((at - turn) / ${f(WIPE_SPREAD)}, 0.0, 1.0);
-	return (1.0 - smoothstep(r - ${f(DOT_AA)}, r + ${f(DOT_AA)}, dist)) * step(0.001, r);
-}
-`;
 
 const PARS = /* glsl */ `
 #include <common>
@@ -194,8 +184,17 @@ uniform sampler2D uBaseOrm;
 uniform sampler2D uBaseNormal;
 uniform sampler2D uBareEnv;
 uniform float uBareEnvIntensity;
-${DOT_FN}
+uniform float uBareRoughScale;
+uniform float uBareSteel;
+uniform sampler2D uChipMask;
+uniform float uChipHide;
 `;
+
+/** How brushed the blank is (three's `anisotropy` on the face materials; the
+ *  shader zeroes it off the blank), and the brush's direction. Very light: a
+ *  streak the eye reads as a sheet, not a texture. */
+export const BLANK_ANISOTROPY = 0.4;
+export const BLANK_ANISOTROPY_ROTATION = 0;
 
 /** The blank's room, sampled the way three samples the scene's (a PMREM in
  *  the cube-UV layout), declared after three's own IBL functions. */
@@ -212,6 +211,14 @@ const BARE_ENV_FNS = /* glsl */ `
 		reflectVec = inverseTransformDirection( reflectVec, viewMatrix );
 		return textureCubeUV( uBareEnv, reflectVec, roughness ).rgb * uBareEnvIntensity;
 	}
+	#ifdef USE_ANISOTROPY
+		vec3 getBareAnisotropyRadiance( const in vec3 viewDir, const in vec3 normal, const in float roughness, const in vec3 bitangent, const in float anisotropy ) {
+			vec3 bentNormal = cross( bitangent, viewDir );
+			bentNormal = normalize( cross( bentNormal, bitangent ) );
+			bentNormal = normalize( mix( bentNormal, normal, pow2( pow2( 1.0 - anisotropy * ( 1.0 - roughness ) ) ) ) );
+			return getBareRadiance( viewDir, bentNormal, roughness );
+		}
+	#endif
 #endif
 `;
 
@@ -219,53 +226,45 @@ const BARE_ENV_FNS = /* glsl */ `
 const BARE_ENV_MIX = /* glsl */ `
 #include <lights_fragment_maps>
 #if defined( USE_ENVMAP ) && defined( ENVMAP_TYPE_CUBE_UV )
-	if ( swapBare > 0.0 ) {
-		iblIrradiance = mix( iblIrradiance, getBareIrradiance( geometryNormal ), swapBare );
-		radiance = mix( radiance, getBareRadiance( geometryViewDir, geometryNormal, material.roughness ), swapBare );
+	float swapRoom = swapBare * uBareSteel;
+	if ( swapRoom > 0.0 ) {
+		iblIrradiance = mix( iblIrradiance, getBareIrradiance( geometryNormal ), swapRoom );
+		#ifdef USE_ANISOTROPY
+			vec3 bareRadiance = getBareAnisotropyRadiance( geometryViewDir, geometryNormal, material.roughness, material.anisotropyB, material.anisotropy );
+		#else
+			vec3 bareRadiance = getBareRadiance( geometryViewDir, geometryNormal, material.roughness );
+		#endif
+		radiance = mix( radiance, bareRadiance, swapRoom );
 		#ifdef USE_CLEARCOAT
-			clearcoatRadiance = mix( clearcoatRadiance, getBareRadiance( geometryViewDir, geometryClearcoatNormal, material.clearcoatRoughness ), swapBare );
+			clearcoatRadiance = mix( clearcoatRadiance, getBareRadiance( geometryViewDir, geometryClearcoatNormal, material.clearcoatRoughness ), swapRoom );
 		#endif
 	}
 #endif
 `;
 
-/** The layer at this texel. Every cell turns at its moment, a front's
- *  passing plus its grain, as a dot growing from a point in it past its
- *  edges; the texel is covered by the furthest-grown dot among its cell's
- *  and its neighbors', and outright once its own cell's moment is well past.
- *  Blank at the first front, base at the second, print at the third. */
+/** The layer at this texel. Its cell turns at its moment, a front's passing
+ *  plus its grain: to the blank at the first front, the base at the second,
+ *  the print at the third. Cells are about a pixel, so a pass arrives as a
+ *  fine dither. */
 const SWEEP = /* glsl */ `
-vec2 swapGrid = vec2(${f(GRAIN_W)}, ${f(GRAIN_H)});
 vec2 swapSize = vec2(${f(CARD_W)}, ${f(CARD_H)});
-vec2 swapCell = (vBody.xy / swapSize + 0.5) * swapGrid;
-vec2 swapHome = floor(swapCell);
-float swapL1 = 0.0;
-float swapL2 = 0.0;
-float swapL3 = 0.0;
-for (int sj = -1; sj <= 1; sj++) {
-	for (int si = -1; si <= 1; si++) {
-		vec2 cid = swapHome + vec2(float(si), float(sj));
-		vec3 g = texture2D(uGrain, (cid + 0.5) / swapGrid).rgb;
-		vec2 center = cid + 0.5 + (g.gb - 0.5) * ${f(DOT_JITTER * 2)};
-		vec2 cpos = (center / swapGrid - 0.5) * swapSize;
-		float cyn = cpos.y / ${f(CARD_H)};
-		float cd = (uDir * cpos.x + ${f(CARD_W / 2)} - ${f(WIPE_ARC)} * (1.0 - 4.0 * cyn * cyn)) / ${f(SWEEP_SPAN)};
-		float turn = cd + ${f(WIPE_GRAIN)} * g.r;
-		float dist = length(swapCell - center);
-		swapL1 = max(swapL1, swapDot(uFront, turn, dist));
-		swapL2 = max(swapL2, swapDot(uBase, turn, dist));
-		swapL3 = max(swapL3, swapDot(uPrint, turn, dist));
-		if (si == 0 && sj == 0) {
-			float done = ${f(WIPE_SPREAD * 2)};
-			swapL1 = max(swapL1, step(turn + done, uFront));
-			swapL2 = max(swapL2, step(turn + done, uBase));
-			swapL3 = max(swapL3, step(turn + done, uPrint));
-		}
-	}
-}
+vec2 swapCellUv = (floor((vBody.xy / swapSize + 0.5) * vec2(${f(GRAIN_W)}, ${f(GRAIN_H)})) + 0.5) / vec2(${f(GRAIN_W)}, ${f(GRAIN_H)});
+vec2 swapCellPos = (swapCellUv - 0.5) * swapSize;
+float swapYn = swapCellPos.y / ${f(CARD_H)};
+float swapD = (uDir * swapCellPos.x + ${f(CARD_W / 2)} - ${f(WIPE_ARC)} * (1.0 - 4.0 * swapYn * swapYn)) / ${f(SWEEP_SPAN)};
+float swapTurn = swapD + ${f(WIPE_GRAIN)} * texture2D(uGrain, swapCellUv).r;
+float swapL1 = smoothstep(swapTurn - ${f(WIPE_SOFT)}, swapTurn, uFront);
+float swapL2 = smoothstep(swapTurn - ${f(WIPE_SOFT)}, swapTurn, uBase);
+float swapL3 = smoothstep(swapTurn - ${f(WIPE_SOFT)}, swapTurn, uPrint);
 float swapBare = swapL1 * (1.0 - swapL2);
 float swapBase = swapL2 * (1.0 - swapL3);
 float swapPrint = 1.0 - swapBare - swapBase;
+#ifdef USE_MAP
+	// The chip's texels show the base until the chip has been set.
+	float swapChip = uChipHide * texture2D(uChipMask, vMapUv).r * swapPrint;
+	swapPrint -= swapChip;
+	swapBase += swapChip;
+#endif
 `;
 
 const MAP = /* glsl */ `
@@ -275,10 +274,12 @@ const MAP = /* glsl */ `
 #endif
 `;
 
+/** The blank's roughness is its surface's, scaled: a polished blank is a
+ *  mirror, more so than the finished polished card. */
 const ROUGHNESS = /* glsl */ `
 float roughnessFactor = roughness;
 #ifdef USE_ROUGHNESSMAP
-	vec4 texelRoughness = texture2D(roughnessMap, vRoughnessMapUv) * swapPrint + texture2D(uBareOrm, vRoughnessMapUv) * swapBare + texture2D(uBaseOrm, vRoughnessMapUv) * swapBase;
+	vec4 texelRoughness = texture2D(roughnessMap, vRoughnessMapUv) * swapPrint + texture2D(uBareOrm, vRoughnessMapUv) * mix(1.0, uBareRoughScale, uBareSteel) * swapBare + texture2D(uBaseOrm, vRoughnessMapUv) * swapBase;
 	roughnessFactor *= texelRoughness.g;
 #endif
 `;
@@ -291,11 +292,33 @@ float metalnessFactor = metalness;
 #endif
 `;
 
+/** The normal chunk with its sample mixed among the layers. Includes are
+ *  expanded after `onBeforeCompile`, so the chunk is expanded here to edit
+ *  the line. */
 const NORMAL_LINE = 'vec3 mapN = texture2D( normalMap, vNormalMapUv ).xyz * 2.0 - 1.0;';
 const NORMAL_MIXED =
   'vec3 mapN = (texture2D(normalMap, vNormalMapUv) * swapPrint + texture2D(uBareNormal, vNormalMapUv) * swapBare + texture2D(uBaseNormal, vNormalMapUv) * swapBase).xyz * 2.0 - 1.0;';
+const NORMAL_CHUNK = (() => {
+  const chunk = THREE.ShaderChunk.normal_fragment_maps;
+  if (!chunk.includes(NORMAL_LINE)) throw new Error('materialSwap: three\'s normal_fragment_maps chunk has changed');
+  return chunk.replace(NORMAL_LINE, NORMAL_MIXED);
+})();
+
+/** The blank is brushed, very lightly: three's anisotropy, scaled by the
+ *  layer so the print has none. */
+const ANISO_LINE = 'vec2 anisotropyV = anisotropyVector;';
+const ANISO_MIXED = 'vec2 anisotropyV = anisotropyVector * swapBare * uBareSteel;';
+const PHYSICAL_CHUNK = (() => {
+  const chunk = THREE.ShaderChunk.lights_physical_fragment;
+  if (!chunk.includes(ANISO_LINE)) throw new Error('materialSwap: three\'s lights_physical_fragment chunk has changed');
+  return chunk.replace(ANISO_LINE, ANISO_MIXED);
+})();
 
 export function patchFaceMaterial(m: THREE.MeshPhysicalMaterial, u: SwapUniforms) {
+  // On the material so three compiles its anisotropy path; the shader keeps
+  // it to the blank.
+  m.anisotropy = BLANK_ANISOTROPY;
+  m.anisotropyRotation = BLANK_ANISOTROPY_ROTATION;
   m.onBeforeCompile = (shader) => {
     for (const k of Object.keys(u) as Array<keyof SwapUniforms>) shader.uniforms[k] = u[k];
     shader.vertexShader = shader.vertexShader
@@ -307,7 +330,8 @@ export function patchFaceMaterial(m: THREE.MeshPhysicalMaterial, u: SwapUniforms
       .replace('#include <map_fragment>', SWEEP + MAP)
       .replace('#include <roughnessmap_fragment>', ROUGHNESS)
       .replace('#include <metalnessmap_fragment>', METALNESS)
-      .replace(NORMAL_LINE, NORMAL_MIXED)
+      .replace('#include <normal_fragment_maps>', NORMAL_CHUNK)
+      .replace('#include <lights_physical_fragment>', PHYSICAL_CHUNK)
       .replace('#include <lights_fragment_maps>', BARE_ENV_MIX);
   };
   m.customProgramCacheKey = () => 'swap-face';

@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
@@ -12,8 +12,9 @@ import {
   type CardDesign,
   type CardMaterial,
 } from '@/data/design';
-import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
+import { createCardGeometry, faceZOf, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
+import { ChipLayer, paintChipMask } from './ChipLayer';
 import {
   cellAt,
   createSwapUniforms,
@@ -22,6 +23,7 @@ import {
   grain,
   passed,
   patchFaceMaterial,
+  turnOf,
   WIPE_HOLD,
   WIPE_MS,
 } from './materialSwap';
@@ -36,8 +38,7 @@ import {
   makeCanvas,
   paintArtMask,
   paintBack,
-  paintBareBack,
-  paintBareFront,
+  paintBare,
   paintBaseBack,
   paintBaseFront,
   paintBrandMask,
@@ -216,11 +217,18 @@ interface Swap {
   dir: number;
   /** The body has been rebuilt as `to` (once the blank covers the face). */
   committed: boolean;
+  /** When the print passed the chip's pocket (ms into the change), once it has. */
+  chipAt: number | null;
   /** Dev: hold the clock (`__cardSwap.get().paused = true`) to pose a frame. */
   paused?: boolean;
 }
 
 const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
+
+/** The chip press on the body at full: how far in (card px) and how far
+ *  over toward the chip's corner (degrees; a hover at a corner is 9°). */
+const PRESS_SINK = 2.5;
+const PRESS_TILT_DEG = 8;
 
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
   { state, onReady, onBrandPlacement, swapContext },
@@ -264,16 +272,30 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const baseFrontMap = useMemo(() => canvasTexture(baseFrontCanvas, true), [baseFrontCanvas]);
   const baseBackMap = useMemo(() => canvasTexture(baseBackCanvas, true), [baseBackCanvas]);
 
+  // The chip's pocket, as the front's mask (the back has no chip).
+  const chipMask = useMemo(() => canvasTexture(paintChipMask()), []);
+  const noMask = useMemo(() => {
+    const t = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+    t.needsUpdate = true;
+    return t;
+  }, []);
+
   // The wipe's fronts, shared by both faces; each face owns its layer maps.
   const swapU = useMemo(() => {
     const front = createSwapUniforms();
     front.uBareMap.value = bareFrontMap;
     front.uBaseMap.value = baseFrontMap;
+    front.uChipMask.value = chipMask;
     const back = createSwapUniforms(front);
     back.uBareMap.value = bareBackMap;
     back.uBaseMap.value = baseBackMap;
+    back.uChipMask.value = noMask;
     return { front, back, shared: front };
-  }, [bareFrontMap, bareBackMap, baseFrontMap, baseBackMap]);
+  }, [bareFrontMap, bareBackMap, baseFrontMap, baseBackMap, chipMask, noMask]);
+
+  // The chip itself, set into the card after the print.
+  const chip = useMemo(() => new ChipLayer(frontMap, chipMask), [frontMap, chipMask]);
+  useEffect(() => () => chip.dispose(), [chip]);
 
   const materials = useMemo(() => {
     const face = () =>
@@ -337,8 +359,9 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       mat.clearcoat = c.clearcoat;
       mat.clearcoatRoughness = c.clearcoatRoughness;
       mat.needsUpdate = true;
-      // The blank and the base are the body before its back is dressed: no
-      // stripe, no mark. The chip is milled into the body, so the front keeps it.
+      // The blank and the base are the body before anything is laid on or
+      // set into it: no stripe, no mark, no chip pocket (that is milled, and
+      // the module set, after the print).
       const bare = maps(bareSurface, side, true);
       u.uBareOrm.value = bare.orm;
       u.uBareNormal.value = bare.normal;
@@ -365,14 +388,14 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     };
   }, [gl, swapU]);
 
-  // The bare body's albedo: the new stock, with the chip set into the front.
+  // The bare body's albedo: the new stock, both faces.
   // Plastic shows as the white PVC blank whatever the print (a dark print's
   // black core would wipe black over black and say nothing).
   const newStock = state.design.material === 'metal' ? stockOf(state.design) : STOCKS[0];
   useEffect(() => {
     if (!assets) return;
-    paintBareFront(bareFrontCanvas.getContext('2d')!, newStock);
-    paintBareBack(bareBackCanvas.getContext('2d')!, newStock);
+    paintBare(bareFrontCanvas.getContext('2d')!, newStock);
+    paintBare(bareBackCanvas.getContext('2d')!, newStock);
     bareFrontMap.needsUpdate = true;
     bareBackMap.needsUpdate = true;
   }, [assets, newStock, bareFrontCanvas, bareBackCanvas, bareFrontMap, bareBackMap]);
@@ -536,15 +559,38 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const swap = useRef<Swap | null>(null);
   const foilMaterial = useRef<THREE.MeshPhysicalMaterial | null>(null);
   const targetMaterial = state.design.material;
+
+  // The body under the placement head: the press (0..1) pushes it in and
+  // rocks it about its center toward the chip's corner, about as far as a
+  // hover at that corner tilts it, so the chip's spot dips most. On an inner
+  // group, since the rig owns the outer one's rotation every frame.
+  const body = useRef<THREE.Group>(null);
+  const pressBody = useCallback(
+    (press: number) => {
+      const b = body.current;
+      if (!b) return;
+      const { x, y } = chip.center;
+      b.position.z = -PRESS_SINK * press;
+      // About y, z' = -x sin a: a negative a takes a point at negative x in.
+      b.rotation.y = Math.sign(x) * THREE.MathUtils.degToRad(PRESS_TILT_DEG) * press;
+      // About x, z' = y sin b: a negative b takes a point at positive y in.
+      // The chip is only a little above center, so less of it.
+      b.rotation.x = -Math.sign(y) * THREE.MathUtils.degToRad(PRESS_TILT_DEG * (Math.abs(y) / Math.abs(x))) * press;
+    },
+    [chip],
+  );
   useEffect(() => {
     const cur = swap.current;
     const { shared } = swapU;
     const rest = () => {
       swap.current = null;
       swarm.end();
+      chip.hide();
+      pressBody(0);
       shared.uFront.value = FRONT_REST;
       shared.uBase.value = FRONT_REST;
       shared.uPrint.value = FRONT_REST;
+      shared.uChipHide.value = 0;
       if (foilMaterial.current) foilMaterial.current.opacity = 1;
     };
     if (targetMaterial === bodyMaterial) {
@@ -570,7 +616,9 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     // is rebuilt again for the new target.
     const t = cur ? cur.t : 0;
     swarm.begin(targetMaterial, newStock.face, dir, [frontCanvas, backCanvas]);
-    swap.current = { t, to: targetMaterial, dir, committed: false };
+    shared.uChipHide.value = 1;
+    shared.uBareSteel.value = targetMaterial === 'metal' ? 1 : 0;
+    swap.current = { t, to: targetMaterial, dir, committed: false, chipAt: null };
   }, [
     targetMaterial,
     bodyMaterial,
@@ -586,10 +634,12 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     baseBackMap,
     swapU,
     swarm,
+    chip,
     swapContext,
+    pressBody,
   ]);
 
-  useFrame((_, delta) => {
+  useFrame((frame, delta) => {
     const sw = swap.current;
     if (!sw) return;
     if (!sw.paused) sw.t += Math.min(50, delta * 1000);
@@ -605,7 +655,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     // last dust can finish floating off.
     const particleFront = sw.t <= WIPE_MS ? front : FRONT_REST + ((sw.t - WIPE_MS) / WIPE_MS) * (FRONT_REST - FRONT_START);
     if (swarm.finished(particleFront)) swarm.end();
-    else swarm.update(particleFront);
+    else swarm.update(particleFront, frame.gl.domElement.height);
     // The blank covers the face: rebuild the body as the new material.
     if (p1 >= 1 && !sw.committed) {
       sw.committed = true;
@@ -617,11 +667,24 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       const cell = cellAt(grain(), FOIL_CENTER.x, FOIL_CENTER.y);
       foil.opacity = 1 - passed(shared.uFront.value, cell, sw.dir) + passed(shared.uPrint.value, cell, sw.dir);
     }
-    if (pass(2) >= 1) {
+    // The chip is set once the print has passed its pocket: from then the
+    // placement head comes down on its own clock, and the change waits for
+    // it. The press pushes the whole body in a little.
+    chip.sync(materials[MAT_FRONT]);
+    const chipTurn = turnOf(cellAt(grain(), chip.center.x, chip.center.y), sw.dir);
+    if (sw.chipAt === null && shared.uPrint.value > chipTurn + 0.06) sw.chipAt = sw.t;
+    const chipMs = sw.chipAt === null ? 0 : sw.t - sw.chipAt;
+    const press = chip.pose(chipMs, faceZOf(sw.to));
+    pressBody(press);
+    if (pass(2) >= 1 && chipMs >= ChipLayer.duration) {
       swap.current = null;
+      swarm.end();
+      chip.hide();
+      pressBody(0);
       shared.uFront.value = FRONT_REST;
       shared.uBase.value = FRONT_REST;
       shared.uPrint.value = FRONT_REST;
+      shared.uChipHide.value = 0;
       if (foil) foil.opacity = 1;
     }
     invalidate();
@@ -659,12 +722,15 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
 
   return (
     <group ref={ref}>
-      <mesh geometry={geometry} material={materials} visible={assets !== null} />
-      {assets && (
-        <FoilMark assets={assets} backZ={backZ} black={foilIsBlack(bodyDesign)} materialRef={foilMaterial} />
-      )}
-      <primitive object={swarm.stock} />
-      <primitive object={swarm.dust} />
+      <group ref={body}>
+        <mesh geometry={geometry} material={materials} visible={assets !== null} />
+        {assets && (
+          <FoilMark assets={assets} backZ={backZ} black={foilIsBlack(bodyDesign)} materialRef={foilMaterial} />
+        )}
+        <primitive object={swarm.stock} />
+        <primitive object={swarm.dust} />
+        <primitive object={chip.mesh} />
+      </group>
     </group>
   );
 });
