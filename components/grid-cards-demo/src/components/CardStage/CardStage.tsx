@@ -603,7 +603,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     const el = textInput.current;
     if (!el) return;
     el.focus();
-    el.setSelectionRange(el.value.length, el.value.length);
+    // As a double-click on text does: everything selected, ready to replace.
+    el.select();
   }, [textEdit]);
   useEffect(() => {
     if (phoneUp || !introDone) setTextEdit(null);
