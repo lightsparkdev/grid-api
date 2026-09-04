@@ -25,6 +25,10 @@ const SPIN_C = 18;
 /** A pointer that has not moved for this long has stopped: its last
  *  velocity is stale and is not carried into the release. */
 const FLING_STALE_MS = 90;
+/** A card let go from rest starts toward its face at this many degrees per
+ *  second per degree away, so it moves at once instead of easing in from
+ *  zero, which reads as a hesitation. */
+const RELEASE_KICK = 4;
 /** Cursor tilt smoothing rate (1/s). */
 const TILT_RATE = 14;
 /** Letting the tilt go when the card is asked to hold still: slower than
@@ -137,6 +141,11 @@ export class CardMotion {
     // Settle on whichever face each fling is headed for.
     this.targetX = nearestWithParity(this.pitch + this.pitchV * FLING_LOOKAHEAD, 0, 180);
     this.targetY = this.pickTargetY(this.spinY + this.spinVY * FLING_LOOKAHEAD, this.lastWantBack, this.lastHold);
+    // Let go from rest: set off toward the face at once.
+    if (carry === 0) {
+      this.spinVY = (this.targetY - this.spinY) * RELEASE_KICK;
+      this.pitchV = (this.targetX - this.pitch) * RELEASE_KICK;
+    }
   }
 
   /** The spin to settle on, given where the pitch is settling: the reveal
