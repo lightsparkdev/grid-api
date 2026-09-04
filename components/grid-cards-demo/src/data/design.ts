@@ -60,24 +60,31 @@ export type BrandAnchor = 'left' | 'center' | 'right';
  * Where the brand (the logo, or the wordmark) sits on the front, in the card
  * spec's px (the 1536 × 969 artboard). `x` is the anchor's x and `y` the
  * box's center; `h` is the box's height, and a wordmark is set at 0.8 h so
- * its caps sit inside it. The box may run off the card: a watermark bleeds.
+ * its caps sit inside it. `rotation` turns the box about its center,
+ * degrees clockwise. The box may run off the card: a watermark bleeds.
  */
 export interface BrandLayout {
   x: number;
   y: number;
   h: number;
   anchor: BrandAnchor;
+  rotation: number;
   /** 0..1. A watermark is the brand printed faint. */
   opacity: number;
 }
 
+/** The print's margin on every side (spec px): the chip's own inset, which
+ *  the brand is right-aligned to in the print sample. The stage snaps to it. */
+export const BRAND_MARGIN = 152;
+
 /** The print sample's placement: on the chip's row, right-aligned to the
  *  chip's own inset (152), 90 tall (Thales sample, Figma 1:97). */
 export const BRAND_DEFAULT_LAYOUT: BrandLayout = {
-  x: 1536 - 152,
+  x: 1536 - BRAND_MARGIN,
   y: 334 + 149 / 2,
   h: 90,
   anchor: 'right',
+  rotation: 0,
   opacity: 1,
 };
 
@@ -87,7 +94,14 @@ export const BRAND_MAX_H = 1400;
 export function sameBrandLayout(a: BrandLayout | null, b: BrandLayout | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
-  return a.x === b.x && a.y === b.y && a.h === b.h && a.anchor === b.anchor && a.opacity === b.opacity;
+  return (
+    a.x === b.x &&
+    a.y === b.y &&
+    a.h === b.h &&
+    a.anchor === b.anchor &&
+    a.rotation === b.rotation &&
+    a.opacity === b.opacity
+  );
 }
 
 export interface CardDesign {

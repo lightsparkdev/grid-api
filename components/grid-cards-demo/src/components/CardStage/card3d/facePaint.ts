@@ -370,13 +370,11 @@ function paintChip(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = g;
   chipPlatePath(ctx);
   ctx.fill();
-  ctx.lineWidth = 1.1 * K;
-  ctx.strokeStyle = 'rgba(40, 42, 48, 0.7)';
-  chipContactsPath(ctx);
-  ctx.stroke();
+  // The contact separations are hairline grooves in the plating, a shade
+  // darker, not outlines; the plate's edge is left to its relief.
   ctx.lineWidth = 0.8 * K;
-  ctx.strokeStyle = 'rgba(30, 32, 38, 0.55)';
-  chipPlatePath(ctx);
+  ctx.strokeStyle = 'rgba(70, 74, 82, 0.4)';
+  chipContactsPath(ctx);
   ctx.stroke();
 }
 
@@ -429,7 +427,8 @@ export function resolveBrandLayout(design: CardDesign, logo: HTMLImageElement | 
 
 /**
  * The brand's box in spec px: the logo fitted to the layout's height, or the
- * wordmark's caps. The stage hit-tests this; the painters draw into it.
+ * wordmark's em box with its caps centered. The stage hit-tests this; the
+ * painters draw into it.
  */
 export function brandBox(design: CardDesign, logo: HTMLImageElement | null): SpecRect {
   const l = resolveBrandLayout(design, logo);
@@ -439,9 +438,8 @@ export function brandBox(design: CardDesign, logo: HTMLImageElement | null): Spe
     h = l.h;
     w = (logo.width / logo.height) * h;
   } else {
-    const em = l.h * BRAND_TEXT_EM;
-    h = em * BRAND_CAP;
-    w = measureWordmark(wordmarkOf(design), em * TEX_PER_SPEC) / TEX_PER_SPEC;
+    h = l.h * BRAND_TEXT_EM;
+    w = measureWordmark(wordmarkOf(design), h * TEX_PER_SPEC) / TEX_PER_SPEC;
   }
   const x = l.anchor === 'left' ? l.x : l.anchor === 'center' ? l.x - w / 2 : l.x - w;
   return { x, y: l.y - h / 2, w, h };
@@ -455,16 +453,23 @@ function drawBrand(ctx: CanvasRenderingContext2D, design: CardDesign, logo: HTML
   const k = TEX_PER_SPEC;
   ctx.save();
   ctx.globalAlpha = l.opacity;
+  if (l.rotation) {
+    const cx = (b.x + b.w / 2) * k;
+    const cy = (b.y + b.h / 2) * k;
+    ctx.translate(cx, cy);
+    ctx.rotate((l.rotation * Math.PI) / 180);
+    ctx.translate(-cx, -cy);
+  }
   if (logo) {
     ctx.drawImage(logo, b.x * k, b.y * k, b.w * k, b.h * k);
   } else {
-    const em = l.h * BRAND_TEXT_EM * k;
+    const em = b.h * k;
     ctx.fillStyle = ink;
     ctx.font = `${BRAND_TEXT_WEIGHT} ${em}px ${FONT}`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
-    // The caps fill the box: baseline at its bottom.
-    ctx.fillText(wordmarkOf(design), b.x * k, (b.y + b.h) * k);
+    // The caps centered in the em box: baseline half a cap below its middle.
+    ctx.fillText(wordmarkOf(design), b.x * k, (b.y + b.h / 2) * k + (em * BRAND_CAP) / 2);
   }
   ctx.restore();
 }

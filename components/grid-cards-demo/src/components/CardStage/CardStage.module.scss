@@ -36,6 +36,12 @@
   /* Blueprint ink: the tertiary text grey (gray-400 light, gray-600 dark), a
      step above the dot grid in either theme. */
   --card-blueprint: var(--text-tertiary);
+  /* The brand's selection box: the design-tool blue, with strokes and handles
+     counter-scaled so they stay a constant screen size on the scaled card. */
+  --sel: #0d99ff;
+  --sel-px: calc(1px / var(--card-scale));
+  --handle: calc(8px / var(--card-scale));
+  --zone: calc(18px / var(--card-scale));
 }
 
 /* The intro's blueprint: card px around the hit box, scaled with it. */
@@ -56,10 +62,81 @@
   cursor: grabbing;
 }
 
-/* Over the brand: it can be moved. */
+/* Over the brand, or moving it: the arrow, as a design tool has it. */
 .hitOverBrand,
 .hitMoving {
-  cursor: move;
+  cursor: default;
+}
+
+/* ── The brand's selection box ──────────────────────────────────────────────
+   Laid out in card px on the hit box, an outline on hover and, selected, the
+   handles. Click-through itself: the brand under it is picked by the ray. */
+.selection {
+  position: absolute;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 var(--sel-px) var(--sel);
+  pointer-events: none;
+  transform-origin: center center;
+}
+
+/* Scale handles: white squares on the corners and the edges' midpoints. */
+.handle {
+  position: absolute;
+  width: var(--handle);
+  height: var(--handle);
+  margin: calc(var(--handle) / -2);
+  background: #ffffff;
+  box-shadow: 0 0 0 var(--sel-px) var(--sel);
+  pointer-events: auto;
+}
+
+.handle_n { left: 50%; top: 0; cursor: ns-resize; }
+.handle_s { left: 50%; top: 100%; cursor: ns-resize; }
+.handle_e { left: 100%; top: 50%; cursor: ew-resize; }
+.handle_w { left: 0; top: 50%; cursor: ew-resize; }
+.handle_nw { left: 0; top: 0; cursor: nwse-resize; }
+.handle_se { left: 100%; top: 100%; cursor: nwse-resize; }
+.handle_ne { left: 100%; top: 0; cursor: nesw-resize; }
+.handle_sw { left: 0; top: 100%; cursor: nesw-resize; }
+
+/* Rotate zones: invisible squares just outside each corner, under the corner
+   handle, with a turning cursor. */
+.rotateZone {
+  position: absolute;
+  width: var(--zone);
+  height: var(--zone);
+  pointer-events: auto;
+  cursor:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><path d='M16.5 5.5A7 7 0 1 0 18 11' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round'/><path d='M16.5 5.5A7 7 0 1 0 18 11' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round'/><path d='M13 4.5 17.5 5.5 16.5 1' fill='none' stroke='white' stroke-width='3.5' stroke-linejoin='round' stroke-linecap='round'/><path d='M13 4.5 17.5 5.5 16.5 1' fill='none' stroke='black' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/></svg>")
+      11 11,
+    auto;
+}
+
+.zone_nw { right: 100%; bottom: 100%; margin: 0 calc(var(--zone) / -3) calc(var(--zone) / -3) 0; }
+.zone_ne { left: 100%; bottom: 100%; margin: 0 0 calc(var(--zone) / -3) calc(var(--zone) / -3); }
+.zone_se { left: 100%; top: 100%; margin: calc(var(--zone) / -3) 0 0 calc(var(--zone) / -3); }
+.zone_sw { right: 100%; top: 100%; margin: calc(var(--zone) / -3) calc(var(--zone) / -3) 0 0; }
+
+/* Snap guides across the whole face. */
+.guideV,
+.guideH {
+  position: absolute;
+  background: var(--sel);
+  pointer-events: none;
+}
+
+.guideV {
+  top: 0;
+  bottom: 0;
+  width: var(--sel-px);
+  margin-left: calc(var(--sel-px) / -2);
+}
+
+.guideH {
+  left: 0;
+  right: 0;
+  height: var(--sel-px);
+  margin-top: calc(var(--sel-px) / -2);
 }
 
 .srOnly {

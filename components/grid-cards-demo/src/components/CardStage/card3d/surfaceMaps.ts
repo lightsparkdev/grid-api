@@ -78,8 +78,8 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets): 
     ctx.fillStyle = orm(0.22, 1);
     chipPlatePath(ctx);
     ctx.fill();
-    ctx.strokeStyle = orm(0.6, 1);
-    ctx.lineWidth = 1.1 * K;
+    ctx.strokeStyle = orm(0.5, 1);
+    ctx.lineWidth = 0.8 * K;
     chipContactsPath(ctx);
     ctx.stroke();
     return c;
@@ -131,12 +131,12 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.fillStyle = '#8c8c8c';
     chipPlatePath(ctx);
     ctx.fill();
-    ctx.strokeStyle = '#5a5a5a';
-    ctx.lineWidth = 1.1 * K;
+    ctx.strokeStyle = '#6a6a6a';
+    ctx.lineWidth = 0.8 * K;
     ctx.lineJoin = 'round';
     chipContactsPath(ctx);
     ctx.stroke();
-    ctx.strokeStyle = '#606060';
+    ctx.strokeStyle = '#707070';
     ctx.lineWidth = 0.8 * K;
     chipPlatePath(ctx);
     ctx.stroke();

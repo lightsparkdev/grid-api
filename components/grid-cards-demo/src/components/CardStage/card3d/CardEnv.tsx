@@ -27,8 +27,9 @@ interface Light {
 }
 
 const LIGHTS: Light[] = [
-  // Key: above and a little left, in front. The sheen line on the face.
-  { dir: [-0.35, 0.65, 0.7], radius: 0.28, intensity: 2.8, color: [1, 0.995, 0.98] },
+  // Key: above and a little left, more in front than overhead, so a polished
+  // region (an etched mark's floor, the chip) shows it from a head-on view.
+  { dir: [-0.22, 0.3, 0.93], radius: 0.18, intensity: 3.4, color: [1, 0.995, 0.98] },
   // Fill: behind the camera and off to the upper right, so a head-on face
   // shows it as a soft band across one side rather than a wash over all of it.
   { dir: [0.45, 0.32, 1], radius: 0.34, intensity: 2.0, color: [1, 1, 1] },

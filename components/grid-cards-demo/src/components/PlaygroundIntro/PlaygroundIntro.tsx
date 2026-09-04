@@ -14,7 +14,7 @@ export function PlaygroundIntro() {
         <span className={styles.titleSecondary}>Playground</span>
       </div>
       <p className={styles.body}>
-        Issue a virtual card and watch the exact API calls fire as you go
+        Issue a Visa debit card and watch the exact API calls fire as you go
       </p>
     </section>
   );

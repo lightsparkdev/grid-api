@@ -11,9 +11,17 @@ import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import { PAN_GROUPS, type CardHome } from '@/apps/shared/card';
 import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
-import { BRAND_MAX_H, BRAND_MIN_H, type BrandLayout, type CardDesign } from '@/data/design';
+import {
+  BRAND_DEFAULT_LAYOUT,
+  BRAND_MARGIN,
+  BRAND_MAX_H,
+  BRAND_MIN_H,
+  type BrandLayout,
+  type CardDesign,
+} from '@/data/design';
 import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/CardMesh';
+import type { SpecRect } from './card3d/facePaint';
 import { CardMotion } from './cardMotion';
 import { CardIntro } from './CardIntro';
 import { INTRO_END, introCard, stepIntro } from './introTimeline';
@@ -33,10 +41,13 @@ const CAMERA_Z = 2000;
 const ROLL_STEP_MS = 140;
 /** How far outside the brand's box (spec px) still grabs it. */
 const BRAND_GRAB_MARGIN = 24;
-/** Brand scale per wheel px (a 120 px notch is about +20%). */
-const WHEEL_SCALE = 0.0015;
-/** A wheel resize counts as a drag until this long after the last notch. */
-const WHEEL_SETTLE_MS = 260;
+/** A move snaps within this many screen px of a guide. */
+const SNAP_PX = 6;
+/** Rotation snaps to multiples of this, within SNAP_DEG. */
+const ROTATE_STEP = 15;
+const SNAP_DEG = 3;
+/** Spec px → card px, the hit box's unit. */
+const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
 
 // Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
@@ -53,6 +64,8 @@ interface Live {
   t: number;
   wantBack: boolean;
   reduceMotion: boolean;
+  /** The brand is selected: the card holds flat under the selection box. */
+  editing: boolean;
   intro: Intro;
 }
 
@@ -74,23 +87,61 @@ interface Intro {
 /** A point on the front face, in spec px; null when the pointer misses the
  *  card's plane or the back is showing. */
 type Pick = (clientX: number, clientY: number) => { x: number; y: number } | null;
+type Pt = { x: number; y: number };
 
-/** A brand drag in flight: which pointer, where it last was on the face, the
- *  layout it is writing, and a second pointer if it has become a pinch. */
+/** The selection box's handles: edges and corners scale, the zones just
+ *  outside the corners rotate. */
+type Handle = 'n' | 'e' | 's' | 'w' | 'nw' | 'ne' | 'se' | 'sw';
+const CORNERS: Handle[] = ['nw', 'ne', 'se', 'sw'];
+const EDGES: Handle[] = ['n', 'e', 's', 'w'];
+/** A handle's direction from the box's center, in its own frame. */
+const HANDLE_DIR: Record<Handle, Pt> = {
+  n: { x: 0, y: -1 },
+  e: { x: 1, y: 0 },
+  s: { x: 0, y: 1 },
+  w: { x: -1, y: 0 },
+  nw: { x: -1, y: -1 },
+  ne: { x: 1, y: -1 },
+  se: { x: 1, y: 1 },
+  sw: { x: -1, y: 1 },
+};
+
+/** A brand edit in flight, from the pointer that started it. */
 interface BrandDrag {
   id: number;
-  last: { x: number; y: number };
-  client: { x: number; y: number };
-  layout: BrandLayout;
-  pinch?: { id: number; x: number; y: number; d0: number; h0: number };
+  mode: 'move' | 'scale' | 'rotate';
+  handle?: Handle;
+  /** Where the pointer started on the face, and what the brand was. */
+  start: Pt;
+  layout0: BrandLayout;
+  box0: SpecRect;
+}
+
+/** Snap guides shown during a move, in spec px. */
+interface Guides {
+  x?: number;
+  y?: number;
 }
 
 interface CardStageProps {
   design: CardDesign;
   home: CardHome;
-  /** Lets the stage edit the design: the brand is dragged, resized, and
-   *  reset on the card itself. */
+  /** Lets the stage edit the design: the brand is placed on the card itself. */
   onDesignChange?: (patch: Partial<CardDesign>) => void;
+}
+
+const rad = (deg: number) => (deg * Math.PI) / 180;
+function rotate(p: Pt, deg: number): Pt {
+  const c = Math.cos(rad(deg));
+  const s = Math.sin(rad(deg));
+  return { x: p.x * c - p.y * s, y: p.x * s + p.y * c };
+}
+const center = (b: SpecRect): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+const clampH = (h: number) => Math.min(BRAND_MAX_H, Math.max(BRAND_MIN_H, h));
+/** The layout that puts a box of width `w` and height `h` (spec px) at center `c`. */
+function layoutAt(layout: BrandLayout, c: Pt, w: number, h: number): BrandLayout {
+  const x = layout.anchor === 'left' ? c.x - w / 2 : layout.anchor === 'center' ? c.x : c.x + w / 2;
+  return { ...layout, x, y: c.y, h };
 }
 
 /**
@@ -104,7 +155,8 @@ interface CardStageProps {
  * the phone is up the card interpolates toward the live rect of the phone's
  * `[data-card-slot]` on the phone's boot curve. The slot is an empty box, so
  * nothing ever swaps or unmounts. A DOM hit box rides along with the card for
- * pointer input, the state pill, and the accessible name.
+ * pointer input, the state pill, the accessible name, and the brand's
+ * selection box.
  */
 export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const { bootProgress } = usePhoneBoot();
@@ -129,6 +181,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     t: 0,
     wantBack: false,
     reduceMotion,
+    editing: false,
     intro: {
       t: -1,
       done: false,
@@ -170,40 +223,54 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     return () => window.clearInterval(id);
   }, [rolling]);
 
-  // ── The brand on the card: where it is, and picking the face ───────────────
-  // The mesh reports the brand's box after each front paint; the rig provides
-  // a picker from the pointer to the front face's plane.
+  // ── The brand on the card ──────────────────────────────────────────────────
+  // The mesh reports the brand's box after each front paint (a ref for the
+  // handlers, state for the selection box); the rig provides a picker from
+  // the pointer to the front face's plane.
   const placement = useRef<BrandPlacement | null>(null);
+  const [placed, setPlaced] = useState<BrandPlacement | null>(null);
+  const onBrandPlacement = useCallback((p: BrandPlacement) => {
+    placement.current = p;
+    setPlaced(p);
+  }, []);
   const pick = useRef<Pick | null>(null);
-  /** The face point under the pointer if it is on (or just outside) the brand. */
-  const hitBrand = (clientX: number, clientY: number) => {
-    const p = pick.current?.(clientX, clientY);
-    const b = placement.current?.box;
-    if (!p || !b) return null;
-    const m = Math.max(BRAND_GRAB_MARGIN, b.h * 0.15);
-    const inside = p.x >= b.x - m && p.x <= b.x + b.w + m && p.y >= b.y - m && p.y <= b.y + b.h + m;
-    return inside ? p : null;
-  };
   const brandEditable = !!onDesignChange;
   const setLayout = (layout: BrandLayout | null) => onDesignChange?.({ brandLayout: layout });
-  /** The layout at height `h`, grown or shrunk about the box's center. */
-  const resized = (layout: BrandLayout, h: number): BrandLayout => {
-    h = Math.min(BRAND_MAX_H, Math.max(BRAND_MIN_H, h));
-    const b = placement.current?.box;
-    if (!b) return { ...layout, h };
-    // The box scales with the layout's height (a wordmark's box is its caps,
-    // shorter than h, so the ratio is taken against h itself).
-    const w = (b.w * h) / layout.h;
-    const cx = b.x + b.w / 2;
-    const x = layout.anchor === 'left' ? cx - w / 2 : layout.anchor === 'center' ? cx : cx + w / 2;
-    return { ...layout, x, h };
+
+  /** The face point under the pointer if it is on (or just outside) the brand,
+   *  allowing for the brand's rotation. */
+  const hitBrand = (clientX: number, clientY: number) => {
+    const p = pick.current?.(clientX, clientY);
+    const pl = placement.current;
+    if (!p || !pl) return null;
+    const b = pl.box;
+    const c = center(b);
+    const q = rotate({ x: p.x - c.x, y: p.y - c.y }, -pl.layout.rotation);
+    const m = Math.max(BRAND_GRAB_MARGIN, b.h * 0.15);
+    const inside = Math.abs(q.x) <= b.w / 2 + m && Math.abs(q.y) <= b.h / 2 + m;
+    return inside ? p : null;
   };
 
-  // Dragging (or wheeling) the brand repaints the print live; the surface
-  // bake waits until it settles.
+  // Selected: the selection box shows and the card holds flat under it. A
+  // flow, the intro, or Escape deselects.
+  const [selected, setSelected] = useState(false);
+  live.current.editing = selected;
+  useEffect(() => {
+    if (phoneUp || !introDone) setSelected(false);
+  }, [phoneUp, introDone]);
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelected(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected]);
+
+  // An edit in flight repaints the print live; the surface bake waits until
+  // the release.
   const [brandDragging, setBrandDragging] = useState(false);
-  const wheelSettle = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => () => clearTimeout(wheelSettle.current), []);
+  const [guides, setGuides] = useState<Guides>({});
   const [overBrand, setOverBrand] = useState(false);
   const overBrandRef = useRef(false);
   const hover = (over: boolean) => {
@@ -212,34 +279,101 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     setOverBrand(over);
   };
 
-  // ── Pointer: tilt on hover, spin on drag; the brand moves and resizes ──────
+  /** Snap a moved box to the card's center, the chip's row, and the print
+   *  margins; a turned box snaps by its center only. */
+  const snapMove = (box: SpecRect, rotation: number): { dx: number; dy: number; guides: Guides } => {
+    const hit = hitRef.current;
+    const tol = hit ? (SNAP_PX * FIGMA_CARD_W) / hit.getBoundingClientRect().width : 0;
+    const turned = Math.abs(rotation) > 0.5;
+    const c = center(box);
+    const xs: Array<[number, number]> = [[c.x, FIGMA_CARD_W / 2]];
+    const ys: Array<[number, number]> = [
+      [c.y, FIGMA_FACE_H / 2],
+      [c.y, BRAND_DEFAULT_LAYOUT.y],
+    ];
+    if (!turned) {
+      xs.push([box.x, BRAND_MARGIN], [box.x + box.w, FIGMA_CARD_W - BRAND_MARGIN]);
+      ys.push([box.y, BRAND_MARGIN], [box.y + box.h, FIGMA_FACE_H - BRAND_MARGIN]);
+    }
+    const best = (pairs: Array<[number, number]>) => {
+      let d = 0;
+      let at: number | undefined;
+      let min = tol;
+      for (const [from, to] of pairs) {
+        const dist = Math.abs(to - from);
+        if (dist <= min) {
+          min = dist;
+          d = to - from;
+          at = to;
+        }
+      }
+      return { d, at };
+    };
+    const sx = best(xs);
+    const sy = best(ys);
+    return { dx: sx.d, dy: sy.d, guides: { x: sx.at, y: sy.at } };
+  };
+
+  // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   const brandDrag = useRef<BrandDrag | null>(null);
-  const applyPinch = (bd: BrandDrag) => {
-    if (!bd.pinch) return;
-    const d = Math.hypot(bd.client.x - bd.pinch.x, bd.client.y - bd.pinch.y);
-    bd.layout = resized(bd.layout, (bd.pinch.h0 * d) / Math.max(1, bd.pinch.d0));
-    setLayout(bd.layout);
+  const beginBrandDrag = (e: ReactPointerEvent<HTMLDivElement>, start: Pt, mode: BrandDrag['mode'], handle?: Handle) => {
+    const pl = placement.current;
+    if (!pl) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    brandDrag.current = { id: e.pointerId, mode, handle, start, layout0: pl.layout, box0: pl.box };
+    motion.clearTilt();
+    setSelected(true);
+    setBrandDragging(true);
+    e.currentTarget.classList.add(styles.hitMoving);
+  };
+  const moveBrand = (bd: BrandDrag, p: Pt) => {
+    const { layout0: l0, box0: b0 } = bd;
+    if (bd.mode === 'move') {
+      let dx = p.x - bd.start.x;
+      let dy = p.y - bd.start.y;
+      const moved = { ...b0, x: b0.x + dx, y: b0.y + dy };
+      const snap = snapMove(moved, l0.rotation);
+      dx += snap.dx;
+      dy += snap.dy;
+      setGuides(snap.guides);
+      setLayout({ ...l0, x: l0.x + dx, y: l0.y + dy });
+      return;
+    }
+    const c0 = center(b0);
+    if (bd.mode === 'rotate') {
+      const a0 = Math.atan2(bd.start.y - c0.y, bd.start.x - c0.x);
+      const a = Math.atan2(p.y - c0.y, p.x - c0.x);
+      let rotation = l0.rotation + ((a - a0) * 180) / Math.PI;
+      rotation = ((((rotation + 180) % 360) + 360) % 360) - 180;
+      const step = Math.round(rotation / ROTATE_STEP) * ROTATE_STEP;
+      if (Math.abs(step - rotation) <= SNAP_DEG) rotation = ((((step + 180) % 360) + 360) % 360) - 180;
+      setLayout({ ...l0, rotation });
+      return;
+    }
+    // Scale: the aspect is the artwork's, so every handle scales uniformly,
+    // about the side or corner opposite the one being dragged.
+    const dir = HANDLE_DIR[bd.handle!];
+    const q = rotate({ x: p.x - c0.x, y: p.y - c0.y }, -l0.rotation);
+    const anchor = { x: (-dir.x * b0.w) / 2, y: (-dir.y * b0.h) / 2 };
+    const reach = { x: dir.x * b0.w, y: dir.y * b0.h };
+    const len = Math.hypot(reach.x, reach.y);
+    const along = ((q.x - anchor.x) * reach.x + (q.y - anchor.y) * reach.y) / len;
+    const s = Math.max(BRAND_MIN_H / l0.h, Math.min(BRAND_MAX_H / l0.h, along / len));
+    const h = clampH(l0.h * s);
+    const scale = h / l0.h;
+    const w = b0.w * scale;
+    const bh = b0.h * scale;
+    const local = { x: anchor.x + (dir.x * w) / 2, y: anchor.y + (dir.y * bh) / 2 };
+    const world = rotate(local, l0.rotation);
+    setLayout(layoutAt(l0, { x: c0.x + world.x, y: c0.y + world.y }, w, h));
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const bd = brandDrag.current;
     if (bd) {
-      if (e.pointerId === bd.id) {
-        bd.client = { x: e.clientX, y: e.clientY };
-        if (bd.pinch) {
-          applyPinch(bd);
-          return;
-        }
-        const p = pick.current?.(e.clientX, e.clientY);
-        if (!p) return;
-        bd.layout = { ...bd.layout, x: bd.layout.x + p.x - bd.last.x, y: bd.layout.y + p.y - bd.last.y };
-        bd.last = p;
-        setLayout(bd.layout);
-      } else if (bd.pinch && e.pointerId === bd.pinch.id) {
-        bd.pinch.x = e.clientX;
-        bd.pinch.y = e.clientY;
-        applyPinch(bd);
-      }
+      if (e.pointerId !== bd.id) return;
+      const p = pick.current?.(e.clientX, e.clientY);
+      if (p) moveBrand(bd, p);
       return;
     }
     if (drag.current && e.pointerId === drag.current.id) {
@@ -250,38 +384,32 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     }
     if (live.current.t > 0) return;
     hover(brandEditable && e.pointerType === 'mouse' && hitBrand(e.clientX, e.clientY) !== null);
-    if (reduceMotion) return;
+    if (reduceMotion || selected) return;
     const b = e.currentTarget.getBoundingClientRect();
     motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
   };
   // Nothing says the card can be turned; say it once, until the first drag.
   const [dragged, setDragged] = useState(false);
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (live.current.t > 0 || e.button !== 0) return;
-    const bd = brandDrag.current;
-    if (bd) {
-      // A second finger on a brand drag makes it a pinch.
-      if (!bd.pinch && e.pointerId !== bd.id) {
-        e.currentTarget.setPointerCapture(e.pointerId);
-        const d0 = Math.hypot(e.clientX - bd.client.x, e.clientY - bd.client.y);
-        bd.pinch = { id: e.pointerId, x: e.clientX, y: e.clientY, d0, h0: bd.layout.h };
+    if (live.current.t > 0 || e.button !== 0 || brandDrag.current) return;
+    if (brandEditable) {
+      // A handle of the selection box: scale, or rotate from just outside a corner.
+      const handleEl = (e.target as HTMLElement).closest<HTMLElement>('[data-handle]');
+      const p = pick.current?.(e.clientX, e.clientY);
+      if (handleEl && p) {
+        const handle = handleEl.dataset.handle as Handle;
+        beginBrandDrag(e, p, handleEl.dataset.rotate ? 'rotate' : 'scale', handle);
+        return;
       }
-      return;
+      // The brand itself: select it and move it.
+      const hit = hitBrand(e.clientX, e.clientY);
+      if (hit) {
+        beginBrandDrag(e, hit, 'move');
+        return;
+      }
     }
-    const hit = brandEditable ? hitBrand(e.clientX, e.clientY) : null;
-    if (hit && placement.current) {
-      e.currentTarget.setPointerCapture(e.pointerId);
-      brandDrag.current = {
-        id: e.pointerId,
-        last: hit,
-        client: { x: e.clientX, y: e.clientY },
-        layout: placement.current.layout,
-      };
-      motion.clearTilt();
-      setBrandDragging(true);
-      e.currentTarget.classList.add(styles.hitMoving);
-      return;
-    }
+    // The card: deselect, and spin.
+    setSelected(false);
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     setDragged(true);
@@ -291,13 +419,11 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
     const bd = brandDrag.current;
     if (bd) {
-      if (bd.pinch && e.pointerId === bd.pinch.id) {
-        bd.pinch = undefined;
-      } else if (e.pointerId === bd.id) {
-        brandDrag.current = null;
-        setBrandDragging(false);
-        e.currentTarget.classList.remove(styles.hitMoving);
-      }
+      if (e.pointerId !== bd.id) return;
+      brandDrag.current = null;
+      setBrandDragging(false);
+      setGuides({});
+      e.currentTarget.classList.remove(styles.hitMoving);
       return;
     }
     if (!drag.current || e.pointerId !== drag.current.id) return;
@@ -314,26 +440,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (!brandEditable || live.current.t > 0) return;
     if (hitBrand(e.clientX, e.clientY)) setLayout(null);
   };
-  // Wheel over the brand resizes it. React's wheel listener is passive, so
-  // this one is attached by hand to be able to keep the page still.
-  useEffect(() => {
-    const el = hitRef.current;
-    if (!el || !onDesignChange) return;
-    const onWheel = (e: WheelEvent) => {
-      if (live.current.t > 0 || brandDrag.current) return;
-      const l = placement.current?.layout;
-      if (!l || !hitBrand(e.clientX, e.clientY)) return;
-      e.preventDefault();
-      onDesignChange({ brandLayout: resized(l, l.h * Math.exp(-e.deltaY * WHEEL_SCALE)) });
-      setBrandDragging(true);
-      clearTimeout(wheelSettle.current);
-      wheelSettle.current = setTimeout(() => setBrandDragging(false), WHEEL_SETTLE_MS);
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-    // hitBrand and resized close over refs and constants only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onDesignChange]);
 
   const pill = card.closed
     ? 'Closed'
@@ -344,6 +450,18 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         : card.inWallet
           ? 'In Apple Wallet'
           : null;
+
+  // The selection box, in card px on the hit box.
+  const box = placed && (selected || overBrand) ? placed.box : null;
+  const boxStyle = box
+    ? {
+        left: box.x * CARD_PER_SPEC,
+        top: box.y * CARD_PER_SPEC,
+        width: box.w * CARD_PER_SPEC,
+        height: box.h * CARD_PER_SPEC,
+        transform: `rotate(${placed!.layout.rotation}deg)`,
+      }
+    : undefined;
 
   return (
     <div ref={rootRef} className={styles.root}>
@@ -368,6 +486,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           motion={motion}
           pick={pick}
           placement={placement}
+          onBrandPlacement={onBrandPlacement}
           state={{ design, issued, frozen: card.frozen, closed: card.closed, shown, brandDragging }}
         />
       </Canvas>
@@ -391,19 +510,48 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
             {pill}
           </span>
         )}
+
+        {/* The brand's box: an outline on hover; selected, the handles too. */}
+        {box && (
+          <div className={styles.selection} style={boxStyle} aria-hidden>
+            {selected &&
+              CORNERS.map((h) => (
+                <span
+                  key={`r${h}`}
+                  className={clsx(styles.rotateZone, styles[`zone_${h}`])}
+                  data-handle={h}
+                  data-rotate="true"
+                />
+              ))}
+            {selected &&
+              [...EDGES, ...CORNERS].map((h) => (
+                <span key={h} className={clsx(styles.handle, styles[`handle_${h}`])} data-handle={h} />
+              ))}
+          </div>
+        )}
+        {guides.x !== undefined && (
+          <span className={styles.guideV} style={{ left: guides.x * CARD_PER_SPEC }} aria-hidden />
+        )}
+        {guides.y !== undefined && (
+          <span className={styles.guideH} style={{ top: guides.y * CARD_PER_SPEC }} aria-hidden />
+        )}
+
         <span
-          className={clsx(styles.hint, (dragged || overBrand || !introDone || phoneUp) && styles.hintGone)}
+          className={clsx(
+            styles.hint,
+            (dragged || overBrand || selected || !introDone || phoneUp) && styles.hintGone,
+          )}
           aria-hidden
         >
           <IconRotate360Right size={14} />
           Drag to turn it over
         </span>
-        {/* Over the brand: what the pointer can do to it. */}
+        {/* The brand, selected: what its box can do. */}
         <span
-          className={clsx(styles.hint, (!overBrand || brandDragging || !introDone || phoneUp) && styles.hintGone)}
+          className={clsx(styles.hint, (!selected || brandDragging || !introDone || phoneUp) && styles.hintGone)}
           aria-hidden
         >
-          Drag to move · Scroll to resize · Double-click to reset
+          Drag to move · Handles scale · Corners rotate · Double-click resets
         </span>
       </div>
     </div>
@@ -432,19 +580,14 @@ interface CardRigProps {
   motion: CardMotion;
   /** Filled with a picker from the pointer to the front face (spec px). */
   pick: React.MutableRefObject<Pick | null>;
-  /** Kept current with where the brand last painted. */
+  /** Where the brand last painted (for the dev hook). */
   placement: React.MutableRefObject<BrandPlacement | null>;
+  onBrandPlacement: (p: BrandPlacement) => void;
   state: CardMeshState;
 }
 
 /** Drives the mesh and the DOM hit box every frame. */
-function CardRig({ rootRef, hitRef, live, motion, pick, placement, state }: CardRigProps) {
-  const onBrandPlacement = useCallback(
-    (p: BrandPlacement) => {
-      placement.current = p;
-    },
-    [placement],
-  );
+function CardRig({ rootRef, hitRef, live, motion, pick, placement, onBrandPlacement, state }: CardRigProps) {
   // Carrier takes position and scale; the card inside it takes the spin.
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
@@ -531,7 +674,9 @@ function CardRig({ rootRef, hitRef, live, motion, pick, placement, state }: Card
     const { intro } = live.current;
     const pose = motion.step(dt, {
       wantBack: live.current.wantBack,
-      hold: t > 0 || !intro.done,
+      // Held flat: parked in the phone, during the intro, or under the
+      // brand's selection box (which is DOM, and must sit on the face).
+      hold: t > 0 || !intro.done || live.current.editing,
       reduceMotion: live.current.reduceMotion,
     });
     const bob = pose.dy * (1 - t);
