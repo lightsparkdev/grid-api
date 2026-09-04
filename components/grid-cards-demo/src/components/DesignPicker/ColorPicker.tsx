@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   useEffect,
@@ -8,31 +8,27 @@ import {
   type KeyboardEvent,
   type PointerEvent,
   type ReactNode,
-} from "react";
-import clsx from "clsx";
-import { AnimatePresence, motion } from "motion/react";
-import { motionTransition } from "@/lib/easing";
-import { IconEyedropper } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyedropper";
-import { IconArrowLeftRight } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeftRight";
-import { IconArrowRotateClockwise } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateClockwise";
-import { IconMinusSmall } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMinusSmall";
-import { IconPlusSmall } from "@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall";
+} from 'react';
+import clsx from 'clsx';
+import { AnimatePresence, motion } from 'motion/react';
+import { motionTransition } from '@/lib/easing';
+import { IconEyedropper } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyedropper';
+import { IconArrowLeftRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeftRight';
+import { IconArrowRotateClockwise } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateClockwise';
+import { IconMinusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconMinusSmall';
+import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import {
   PopoverPopup,
   PopoverPortal,
   PopoverPositioner,
   PopoverRoot,
   PopoverTrigger,
-} from "@lightsparkdev/origin/popover";
-import { FIGMA_CARD_W, FIGMA_FACE_H } from "@/apps/card/cardMetrics";
-import {
-  gradientCss,
-  type CardGradient,
-  type GradientStop,
-} from "@/data/design";
-import { Tooltip } from "@/components/Tooltip/Tooltip";
-import { setGradientEditing } from "./gradientEditing";
-import styles from "./ColorPicker.module.scss";
+} from '@lightsparkdev/origin/popover';
+import { FIGMA_CARD_W, FIGMA_FACE_H } from '@/apps/card/cardMetrics';
+import { gradientCss, type CardGradient, type GradientStop } from '@/data/design';
+import { Tooltip } from '@/components/Tooltip/Tooltip';
+import { setGradientEditing } from './gradientEditing';
+import styles from './ColorPicker.module.scss';
 
 /* ── Color math ───────────────────────────────────────────────────────────── */
 
@@ -50,15 +46,11 @@ function hexToRgb(hex: string): [number, number, number] | null {
   if (!m) return null;
   let s = m[1];
   if (s.length === 3) s = s.replace(/./g, (c) => c + c);
-  return [
-    parseInt(s.slice(0, 2), 16),
-    parseInt(s.slice(2, 4), 16),
-    parseInt(s.slice(4, 6), 16),
-  ];
+  return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
 }
 
 function rgbToHex(r: number, g: number, b: number): string {
-  return `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
+  return `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
 }
 
 function rgbToHsv(r: number, g: number, b: number): Hsv {
@@ -115,11 +107,7 @@ function colorAt(stops: GradientStop[], at: number): string {
       const a = hexToRgb(s[i - 1].color)!;
       const b = hexToRgb(s[i].color)!;
       const t = (at - s[i - 1].at) / Math.max(1e-6, s[i].at - s[i - 1].at);
-      return rgbToHex(
-        a[0] + (b[0] - a[0]) * t,
-        a[1] + (b[1] - a[1]) * t,
-        a[2] + (b[2] - a[2]) * t,
-      );
+      return rgbToHex(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t);
     }
   }
   return s[s.length - 1].color;
@@ -127,7 +115,7 @@ function colorAt(stops: GradientStop[], at: number): string {
 
 /** A first gradient from a solid: the color, then a lighter or darker
  *  version of it, top to bottom, as Figma's default fill. */
-function gradientFrom(color: string, type: CardGradient["type"]): CardGradient {
+function gradientFrom(color: string, type: CardGradient['type']): CardGradient {
   const hsv = hexToHsv(color) ?? { h: 0, s: 0, v: 0.5 };
   const second = hsvToHex({
     ...hsv,
@@ -150,13 +138,7 @@ function gradientFrom(color: string, type: CardGradient["type"]): CardGradient {
  * an indicator that slides between them, walled by hairlines on either side
  * and open at the bottom into the content.
  */
-function ModeTabs({
-  mode,
-  onChange,
-}: {
-  mode: Mode;
-  onChange: (m: Mode) => void;
-}) {
+function ModeTabs({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
   const group = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   useEffect(() => {
@@ -174,7 +156,7 @@ function ModeTabs({
   return (
     <div
       ref={group}
-      className={clsx(styles.modes, mode === "solid" && styles.modesLeadingOn)}
+      className={clsx(styles.modes, mode === 'solid' && styles.modesLeadingOn)}
       role="tablist"
       aria-label="Fill"
     >
@@ -206,15 +188,9 @@ function ModeTabs({
  * growth (the stops appearing) is a motion, not a cut. Clips vertically
  * only, with 8px of slack for the thumbs that reach past the field.
  */
-function AnimatedHeight({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
+function AnimatedHeight({ className, children }: { className?: string; children: ReactNode }) {
   const inner = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState<number | "auto">("auto");
+  const [height, setHeight] = useState<number | 'auto'>('auto');
   useEffect(() => {
     const el = inner.current;
     if (!el) return;
@@ -227,7 +203,7 @@ function AnimatedHeight({
       className={className}
       initial={false}
       animate={{ height }}
-      transition={{ type: "spring", stiffness: 520, damping: 42, mass: 0.8 }}
+      transition={{ type: 'spring', stiffness: 520, damping: 42, mass: 0.8 }}
     >
       <div ref={inner} className={styles.bodyInner}>
         {children}
@@ -238,22 +214,17 @@ function AnimatedHeight({
 
 /* ── Picker ───────────────────────────────────────────────────────────────── */
 
-type Mode = "solid" | "linear" | "radial";
+type Mode = 'solid' | 'linear' | 'radial';
 
 /** The popup at its tallest: a gradient with three stops, plus the offset. */
 const POPUP_MAX_H = 460;
 
 /** Controls arriving: a short fade with a little drop into place. */
-const ENTER = {
-  type: "spring",
-  stiffness: 520,
-  damping: 42,
-  mass: 0.8,
-} as const;
+const ENTER = { type: 'spring', stiffness: 380, damping: 34, mass: 0.8 } as const;
 const MODES: Array<{ id: Mode; label: string }> = [
-  { id: "solid", label: "Solid" },
-  { id: "linear", label: "Linear" },
-  { id: "radial", label: "Radial" },
+  { id: 'solid', label: 'Solid' },
+  { id: 'linear', label: 'Linear' },
+  { id: 'radial', label: 'Radial' },
 ];
 
 interface ColorPickerProps {
@@ -294,16 +265,14 @@ export function ColorPicker({
   // Which side of the swatch the popup opens on, chosen once per opening
   // for the popup at its tallest (a gradient with a few stops), so a change
   // of tab never flips it to the other side mid-use.
-  const [side, setSide] = useState<"top" | "bottom">("bottom");
+  const [side, setSide] = useState<'top' | 'bottom'>('bottom');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [stop, setStop] = useState(0);
-  const mode: Mode = gradient ? gradient.type : "solid";
+  const mode: Mode = gradient ? gradient.type : 'solid';
   const sel = gradient ? Math.min(stop, gradient.stops.length - 1) : 0;
   const edited = gradient ? gradient.stops[sel].color : value;
 
-  const [hsv, setHsv] = useState<Hsv>(
-    () => hexToHsv(edited) ?? { h: 0, s: 0, v: 0 },
-  );
+  const [hsv, setHsv] = useState<Hsv>(() => hexToHsv(edited) ?? { h: 0, s: 0, v: 0 });
   const [hexText, setHexText] = useState(edited);
   const lastEmitted = useRef(edited);
 
@@ -323,8 +292,7 @@ export function ColorPicker({
   }, [open, gradient]);
   useEffect(() => () => setGradientEditing(false), []);
 
-  const emit = (color: string, g: CardGradient | null) =>
-    onChange(g ? g.stops[0].color : color, g);
+  const emit = (color: string, g: CardGradient | null) => onChange(g ? g.stops[0].color : color, g);
   const setGradient = (g: CardGradient) => emit(g.stops[0].color, g);
 
   const commit = (next: Hsv) => {
@@ -336,9 +304,7 @@ export function ColorPicker({
     if (gradient) {
       setGradient({
         ...gradient,
-        stops: gradient.stops.map((s, i) =>
-          i === sel ? { ...s, color: hex } : s,
-        ),
+        stops: gradient.stops.map((s, i) => (i === sel ? { ...s, color: hex } : s)),
       });
     } else {
       emit(hex, null);
@@ -347,7 +313,7 @@ export function ColorPicker({
 
   const setMode = (m: Mode) => {
     if (m === mode) return;
-    if (m === "solid") {
+    if (m === 'solid') {
       emit(gradient!.stops[0].color, null);
       return;
     }
@@ -359,17 +325,17 @@ export function ColorPicker({
   };
 
   // Drag on the field or the bar: capture the pointer so the drag can leave.
-  const dragTo = (el: HTMLElement, e: PointerEvent, what: "field" | "hue") => {
+  const dragTo = (el: HTMLElement, e: PointerEvent, what: 'field' | 'hue') => {
     const r = el.getBoundingClientRect();
     const fx = clamp01((e.clientX - r.left) / r.width);
-    if (what === "hue") {
+    if (what === 'hue') {
       commit({ ...hsv, h: fx * 360 });
     } else {
       const fy = clamp01((e.clientY - r.top) / r.height);
       commit({ ...hsv, s: fx, v: 1 - fy });
     }
   };
-  const dragHandlers = (what: "field" | "hue") => ({
+  const dragHandlers = (what: 'field' | 'hue') => ({
     onPointerDown: (e: PointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return;
       e.preventDefault();
@@ -378,8 +344,7 @@ export function ColorPicker({
       dragTo(e.currentTarget, e, what);
     },
     onPointerMove: (e: PointerEvent<HTMLDivElement>) => {
-      if (e.currentTarget.hasPointerCapture(e.pointerId))
-        dragTo(e.currentTarget, e, what);
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) dragTo(e.currentTarget, e, what);
     },
   });
 
@@ -423,9 +388,7 @@ export function ColorPicker({
   const onBarDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!gradient || e.button !== 0) return;
     e.preventDefault();
-    const handle = (e.target as HTMLElement).closest<HTMLElement>(
-      "[data-stop]",
-    );
+    const handle = (e.target as HTMLElement).closest<HTMLElement>('[data-stop]');
     let index: number;
     if (handle) {
       index = Number(handle.dataset.stop);
@@ -464,20 +427,18 @@ export function ColorPicker({
   };
   const onBarKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (!gradient) return;
-    if (e.key === "Backspace" || e.key === "Delete") {
+    if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
       removeStop(sel);
       return;
     }
     const step = e.shiftKey ? 0.1 : 0.01;
-    const d = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+    const d = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
     if (!d) return;
     e.preventDefault();
     setGradient({
       ...gradient,
-      stops: gradient.stops.map((s, i) =>
-        i === sel ? { ...s, at: clamp01(s.at + d) } : s,
-      ),
+      stops: gradient.stops.map((s, i) => (i === sel ? { ...s, at: clamp01(s.at + d) } : s)),
     });
   };
   const setStopAt = (index: number, pct: string) => {
@@ -486,9 +447,7 @@ export function ColorPicker({
     if (!Number.isFinite(n)) return;
     setGradient({
       ...gradient,
-      stops: gradient.stops.map((s, i) =>
-        i === index ? { ...s, at: clamp01(n / 100) } : s,
-      ),
+      stops: gradient.stops.map((s, i) => (i === index ? { ...s, at: clamp01(n / 100) } : s)),
     });
   };
   const flip = () => {
@@ -518,14 +477,10 @@ export function ColorPicker({
   const addStop = () => {
     if (!gradient) return;
     // Midway between the selected stop and its neighbor to the right (or left at the end).
-    const sorted = [...gradient.stops]
-      .map((s, i) => ({ ...s, i }))
-      .sort((a, b) => a.at - b.at);
+    const sorted = [...gradient.stops].map((s, i) => ({ ...s, i })).sort((a, b) => a.at - b.at);
     const k = sorted.findIndex((s) => s.i === sel);
     const next = sorted[k + 1] ?? sorted[k - 1];
-    const at = next
-      ? (sorted[k].at + next.at) / 2
-      : clamp01(sorted[k].at + 0.25);
+    const at = next ? (sorted[k].at + next.at) / 2 : clamp01(sorted[k].at + 0.25);
     setGradient({
       ...gradient,
       stops: [...gradient.stops, { at, color: colorAt(gradient.stops, at) }],
@@ -535,7 +490,7 @@ export function ColorPicker({
 
   const hueHex = hsvToHex({ h: hsv.h, s: 1, v: 1 });
   const current = hsvToHex(hsv);
-  const canDrop = typeof window !== "undefined" && "EyeDropper" in window;
+  const canDrop = typeof window !== 'undefined' && 'EyeDropper' in window;
   const pickFromScreen = async () => {
     try {
       const Dropper = (
@@ -552,28 +507,23 @@ export function ColorPicker({
   };
 
   const triggerStyle: CSSProperties | undefined = triggerActive
-    ? { background: gradient ? gradientCss(gradient, "135deg") : value }
+    ? { background: gradient ? gradientCss(gradient, '135deg') : value }
     : undefined;
-  const sortedStops = gradient
-    ? gradient.stops.map((s, i) => ({ ...s, i })).sort((a, b) => a.at - b.at)
-    : [];
+  const sortedStops = gradient ? gradient.stops.map((s, i) => ({ ...s, i })).sort((a, b) => a.at - b.at) : [];
 
   // With a gradient up, a press on the card (its handles, or the card under
   // a handle drag, which captures the pointer) is part of editing the
   // gradient, not a click away from the picker.
-  const onOpenChange = (
-    next: boolean,
-    details: { reason: string; event: Event; cancel: () => void },
-  ) => {
+  const onOpenChange = (next: boolean, details: { reason: string; event: Event; cancel: () => void }) => {
     if (next && triggerRef.current) {
       const r = triggerRef.current.getBoundingClientRect();
       const below = window.innerHeight - r.bottom;
       const above = r.top;
-      setSide(below >= POPUP_MAX_H || below >= above ? "bottom" : "top");
+      setSide(below >= POPUP_MAX_H || below >= above ? 'bottom' : 'top');
     }
-    if (!next && gradient && details.reason === "outside-press") {
+    if (!next && gradient && details.reason === 'outside-press') {
       const t = details.event.target as Element | null;
-      if (t?.closest?.("[data-grad], [data-card-hit]")) {
+      if (t?.closest?.('[data-grad], [data-card-hit]')) {
         details.cancel();
         return;
       }
@@ -606,7 +556,7 @@ export function ColorPicker({
           side={side}
           align="end"
           sideOffset={8}
-          collisionAvoidance={{ side: "shift", align: "shift" }}
+          collisionAvoidance={{ side: 'shift', align: 'shift' }}
         >
           <PopoverPopup className={styles.popup} aria-label="Custom color">
             <AnimatedHeight className={styles.body}>
@@ -640,10 +590,7 @@ export function ColorPicker({
                         <span
                           key={i}
                           data-stop={i}
-                          className={clsx(
-                            styles.stopHandle,
-                            i === sel && styles.stopHandleOn,
-                          )}
+                          className={clsx(styles.stopHandle, i === sel && styles.stopHandleOn)}
                           style={{
                             left: `${s.at * 100}%`,
                             background: s.color,
@@ -701,10 +648,7 @@ export function ColorPicker({
                           <motion.div
                             key={s.i}
                             layout
-                            className={clsx(
-                              styles.stopRow,
-                              s.i === sel && styles.stopRowOn,
-                            )}
+                            className={clsx(styles.stopRow, s.i === sel && styles.stopRowOn)}
                             onPointerDown={() => setStop(s.i)}
                             initial={{ opacity: 0, y: -6 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -722,14 +666,8 @@ export function ColorPicker({
                               <span aria-hidden>%</span>
                             </label>
                             <span className={styles.stopColor}>
-                              <span
-                                className={styles.stopSwatch}
-                                style={{ background: s.color }}
-                                aria-hidden
-                              />
-                              <span className={styles.stopHex}>
-                                {s.color.slice(1).toUpperCase()}
-                              </span>
+                              <span className={styles.stopSwatch} style={{ background: s.color }} aria-hidden />
+                              <span className={styles.stopHex}>{s.color.slice(1).toUpperCase()}</span>
                             </span>
                             <button
                               type="button"
@@ -750,14 +688,14 @@ export function ColorPicker({
 
               <div
                 className={styles.field}
-                style={{ "--hue": hueHex } as CSSProperties}
+                style={{ '--hue': hueHex } as CSSProperties}
                 role="slider"
                 tabIndex={0}
                 aria-label="Saturation and brightness"
                 aria-valuetext={`Saturation ${Math.round(hsv.s * 100)}%, brightness ${Math.round(hsv.v * 100)}%`}
                 aria-valuenow={Math.round(hsv.v * 100)}
                 onKeyDown={onFieldKey}
-                {...dragHandlers("field")}
+                {...dragHandlers('field')}
               >
                 <span
                   className={styles.thumb}
@@ -777,7 +715,7 @@ export function ColorPicker({
                 aria-valuemax={360}
                 aria-valuenow={Math.round(hsv.h)}
                 onKeyDown={onHueKey}
-                {...dragHandlers("hue")}
+                {...dragHandlers('hue')}
               >
                 <span
                   className={styles.thumb}
@@ -788,11 +726,7 @@ export function ColorPicker({
                 />
               </div>
               <div className={styles.row}>
-                <span
-                  className={styles.preview}
-                  style={{ background: current }}
-                  aria-hidden
-                />
+                <span className={styles.preview} style={{ background: current }} aria-hidden />
                 <input
                   className={styles.hex}
                   value={hexText}
@@ -802,16 +736,11 @@ export function ColorPicker({
                   onChange={(e) => setHexText(e.target.value)}
                   onBlur={applyHex}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") applyHex();
+                    if (e.key === 'Enter') applyHex();
                   }}
                 />
                 {canDrop && (
-                  <button
-                    type="button"
-                    className={styles.tool}
-                    onClick={pickFromScreen}
-                    aria-label="Pick from screen"
-                  >
+                  <button type="button" className={styles.tool} onClick={pickFromScreen} aria-label="Pick from screen">
                     <IconEyedropper size={16} aria-hidden />
                   </button>
                 )}
