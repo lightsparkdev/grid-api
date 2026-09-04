@@ -177,8 +177,7 @@ export interface DesignSwatch {
 
 export const DESIGN_SWATCHES: DesignSwatch[] = [
   { id: 'ink', label: 'Ink', color: '#151517' },
-  // A very slightly warm white.
-  { id: 'bone', label: 'Bone', color: '#f2efe9' },
+  { id: 'white', label: 'White', color: '#ffffff' },
   { id: 'ocean', label: 'Ocean', color: '#0b3d91' },
   { id: 'forest', label: 'Forest', color: '#0c3b2e' },
   { id: 'terracotta', label: 'Terracotta', color: '#b3472a' },
@@ -231,3 +230,20 @@ export const initialDesign: CardDesign = {
   backgroundUrl: null,
   artTreatment: 'print',
 };
+
+/** The starting design for a theme: the card is ink on dark, white on light,
+ *  so it reads against the stage it first appears on. */
+export function initialDesignFor(theme: 'light' | 'dark'): CardDesign {
+  return { ...initialDesign, color: theme === 'dark' ? DESIGN_SWATCHES[0].color : DESIGN_SWATCHES[1].color };
+}
+
+/** Field-by-field equality of two designs (layouts and gradients by value). */
+export function sameDesign(a: CardDesign, b: CardDesign): boolean {
+  return (Object.keys(a) as Array<keyof CardDesign>).every((k) =>
+    k === 'brandLayout'
+      ? sameBrandLayout(a.brandLayout, b.brandLayout)
+      : k === 'gradient'
+        ? sameGradient(a.gradient, b.gradient)
+        : a[k] === b[k],
+  );
+}

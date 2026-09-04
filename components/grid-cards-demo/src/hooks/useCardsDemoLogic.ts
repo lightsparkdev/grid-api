@@ -25,7 +25,8 @@ import {
   type CardSpendLimits,
   type SpendRef,
 } from '@/data/cardApiCalls';
-import { initialDesign, type CardDesign } from '@/data/design';
+import { initialDesign, initialDesignFor, sameDesign, type CardDesign } from '@/data/design';
+import { useThemeMode } from './useThemeMode';
 import { applyPreset, PRESETS, presetOf, type PresetId } from '@/data/presets';
 import type { Entry } from '@/components/ApiPanel/types';
 import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
@@ -64,18 +65,30 @@ const PHONE_DISMISS_HOLD_MS = 600;
 export function useCardsDemoLogic() {
   // The flow the phone is up for; null = the card floats alone.
   const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
+  const theme = useThemeMode();
   const [design, setDesign] = useState<CardDesign>(initialDesign);
-  const updateDesign = useCallback((patch: Partial<CardDesign>) => {
-    setDesign((d) => {
-      const next = { ...d, ...patch };
-      // Spot gloss has nothing to contrast against on a gloss card.
-      if (next.finish === 'gloss') {
-        if (next.logoTreatment === 'spotGloss') next.logoTreatment = 'print';
-        if (next.artTreatment === 'spotGloss') next.artTreatment = 'print';
-      }
-      return next;
-    });
-  }, []);
+  // Until the visitor designs something, the card is the theme's default:
+  // ink on dark, white on light, following the theme if it changes. Reset
+  // (a design equal to a theme's default) hands it back to the theme.
+  const designed = useRef(false);
+  useEffect(() => {
+    if (!designed.current) setDesign(initialDesignFor(theme));
+  }, [theme]);
+  const updateDesign = useCallback(
+    (patch: Partial<CardDesign>) => {
+      setDesign((d) => {
+        const next = { ...d, ...patch };
+        // Spot gloss has nothing to contrast against on a gloss card.
+        if (next.finish === 'gloss') {
+          if (next.logoTreatment === 'spotGloss') next.logoTreatment = 'print';
+          if (next.artTreatment === 'spotGloss') next.artTreatment = 'print';
+        }
+        designed.current = !sameDesign(next, initialDesignFor(theme));
+        return next;
+      });
+    },
+    [theme],
+  );
   // The latest design, readable from callbacks without re-binding them.
   const designRef = useRef(design);
   designRef.current = design;
