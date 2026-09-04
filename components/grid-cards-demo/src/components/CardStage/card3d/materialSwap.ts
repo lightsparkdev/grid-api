@@ -145,9 +145,8 @@ export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
     uBareNormal: { value: null },
     uBareEnv: shared?.uBareEnv ?? { value: null },
     uBareEnvIntensity: shared?.uBareEnvIntensity ?? { value: 1 },
-    // Satin, not mirror: 0.12 × 1.8 ≈ 0.22, so the room's lights land as
-    // soft pools and its dark patches as soft shade.
-    uBareRoughScale: shared?.uBareRoughScale ?? { value: 1.8 },
+    // Near mirror: 0.12 × 0.7 ≈ 0.08. The room does the softening.
+    uBareRoughScale: shared?.uBareRoughScale ?? { value: 0.7 },
     uBareSteel: shared?.uBareSteel ?? { value: 0 },
     uBaseMap: { value: null },
     uBaseOrm: { value: null },

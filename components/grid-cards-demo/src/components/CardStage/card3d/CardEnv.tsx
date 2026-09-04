@@ -230,11 +230,11 @@ const BLANK_TILT = -0.42;
 const BLANK_PANELS: Panel[] = [
   // Lights: a big one above and left, a lesser one right and a little below
   // head-on, a small bright one high right.
-  { lon: Math.PI * 0.58, lat: 0.24, w: 0.34, h: 0.1, intensity: 1.3, color: [1, 0.99, 0.97], tilt: BLANK_TILT },
-  { lon: Math.PI * 0.4, lat: -0.06, w: 0.26, h: 0.07, intensity: 0.8, color: [1, 1, 1], tilt: BLANK_TILT },
-  { lon: Math.PI * 0.32, lat: 0.4, w: 0.12, h: 0.08, intensity: 1.5, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.58, lat: 0.24, w: 0.34, h: 0.1, intensity: 1.7, color: [1, 0.99, 0.97], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.4, lat: -0.06, w: 0.26, h: 0.07, intensity: 1.0, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.32, lat: 0.4, w: 0.12, h: 0.08, intensity: 1.8, color: [1, 1, 1], tilt: BLANK_TILT },
   // Dark: the floor's edge below, a dark mass low left, a gap in the ceiling.
-  { lon: Math.PI * 0.5, lat: -0.34, w: 0.7, h: 0.14, intensity: -0.26, color: [1, 1, 1], tilt: BLANK_TILT * 0.5 },
+  { lon: Math.PI * 0.5, lat: -0.34, w: 0.7, h: 0.14, intensity: -0.32, color: [1, 1, 1], tilt: BLANK_TILT * 0.5 },
   { lon: Math.PI * 0.68, lat: -0.1, w: 0.18, h: 0.12, intensity: -0.2, color: [1, 1, 1], tilt: BLANK_TILT },
   { lon: Math.PI * 0.5, lat: 0.62, w: 0.3, h: 0.08, intensity: -0.16, color: [1, 1, 1] },
   // The ceiling proper, and something either side for a card turned.
@@ -252,8 +252,8 @@ function blankBase(y: number): number {
 }
 
 export function blankStudioTexture(): THREE.DataTexture {
-  // Wide edges: on satin nothing should have a line in it.
-  return panelStudio(BLANK_PANELS, blankBase, ENV_W, ENV_H, 0.14);
+  // Wide edges: the reflections are gradients, not shapes.
+  return panelStudio(BLANK_PANELS, blankBase, ENV_W, ENV_H, 0.1);
 }
 
 export function CardEnv() {
