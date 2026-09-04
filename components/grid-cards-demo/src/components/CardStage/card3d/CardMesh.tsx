@@ -407,7 +407,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   useEffect(() => {
     if (!assets || frontPending) return;
     const front = materials[MAT_FRONT];
-    const base = surfaceTex.current.get(`${surface}|front`);
+    const base = surfaceTex.current.get(`${surface}|front|false`);
     if (!base) return;
     decoTex.current.orm?.dispose();
     decoTex.current.normal?.dispose();
