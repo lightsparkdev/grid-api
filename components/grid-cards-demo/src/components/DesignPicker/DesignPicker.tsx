@@ -441,9 +441,9 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         </div>
         {design.backgroundUrl && (
           <div className={styles.row}>
-            <span className={styles.rowLabel}>Art finish</span>
+            <span className={styles.rowLabel}>Effect</span>
             <SampleSwatches
-              label="Art finish"
+              label="Art effect"
               value={design.artTreatment}
               options={ART_TREATMENTS}
               onChange={(artTreatment) => onChange({ artTreatment })}
@@ -476,9 +476,9 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           />
         </div>
         <div className={styles.row}>
-          <span className={styles.rowLabel}>Finish</span>
+          <span className={styles.rowLabel}>Effect</span>
           <SampleSwatches
-            label="Brand finish"
+            label="Brand effect"
             value={design.logoTreatment}
             options={LOGO_TREATMENTS}
             onChange={(logoTreatment) => onChange({ logoTreatment })}
