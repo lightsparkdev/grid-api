@@ -176,6 +176,9 @@ const CUES: Record<string, Cue> = {
 /** The ticks arrive from part way toward the center, settling as they fade in. */
 const TICK_START = 0.5;
 const TICK_TRAVEL = 1.2;
+/** Once settled, the ticks have framed the card and leave. */
+const TICK_OUT_AT = TICK_TRAVEL + 0.05;
+const TICK_OUT_DUR = 0.5;
 
 /** The finished blueprint holds this long before the reveal. */
 const REVEAL_HOLD = 0.25;
@@ -183,8 +186,6 @@ const REVEAL_HOLD = 0.25;
 const REVEAL_AT = Math.max(...Object.values(CUES).map((c) => c.at + c.dur)) + REVEAL_HOLD;
 const BLUEPRINT_OUT = 0.8;
 const CARD_IN = 1.0;
-/** As the card comes in, the ticks tuck toward it (card px). */
-const TICK_EXIT = 8;
 /** Where the card starts: stage px of blur, and a little large. */
 const CARD_BLUR = 16;
 const CARD_SCALE = 1.06;
@@ -233,14 +234,15 @@ export function stepIntro(root: HTMLElement | SVGElement, t: number) {
     }
   }
 
-  // Ticks: in from TICK_START of the way to the center as they fade in, then
-  // a small tuck toward the card on the reveal.
+  // Ticks: in from TICK_START of the way to the center as they fade in, then,
+  // once settled from the overshoot, out again.
+  const tickOut = ease(clamp01((t - TICK_OUT_AT) / TICK_OUT_DUR));
   INTRO_GEOMETRY.tickVectors.forEach(([vx, vy], i) => {
     const el = els.get(`tick-${i}`);
     const cue = CUES[`tick-${i}`];
     if (!el || !cue) return;
-    const enter = 1 - easeTicks(clamp01((t - cue.at) / TICK_TRAVEL));
-    const k = TICK_START * enter + (TICK_EXIT / Math.hypot(vx, vy)) * out;
+    const k = TICK_START * (1 - easeTicks(clamp01((t - cue.at) / TICK_TRAVEL)));
     el.setAttribute('transform', `translate(${f(-vx * k)} ${f(-vy * k)})`);
+    el.style.opacity = String(Number(el.style.opacity) * (1 - tickOut));
   });
 }
