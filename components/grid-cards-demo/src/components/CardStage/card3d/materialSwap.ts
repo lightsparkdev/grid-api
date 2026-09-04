@@ -193,7 +193,7 @@ uniform float uChipHide;
 /** How brushed the blank is (three's `anisotropy` on the face materials; the
  *  shader zeroes it off the blank), and the brush's direction. Very light: a
  *  streak the eye reads as a sheet, not a texture. */
-export const BLANK_ANISOTROPY = 0.25;
+export const BLANK_ANISOTROPY = 0.08;
 export const BLANK_ANISOTROPY_ROTATION = 0;
 
 /** The blank's room, sampled the way three samples the scene's (a PMREM in

@@ -129,8 +129,8 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
 
   // A polished blank is brushed: long fine streaks along the card, each a
   // little different in length and depth, the way a sheet comes off the
-  // belt; a few deeper scores among them. Height ±14 at most: the streaks
-  // tilt the mirror a degree or two, so the room's lights break along them.
+  // belt; a few deeper scores among them. Height ±4 at most: a hair of
+  // tilt, so the room's lights fray along them without reading as lines.
   if (plain && surface === 'bare-gloss') {
     const img = ctx.getImageData(0, 0, MAP_W, MAP_H);
     const d = img.data;
@@ -142,7 +142,7 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
       const len = 90 + Math.random() * 260;
       for (let x = 0; x < MAP_W; x++) {
         const along = Math.sin((x + phase) / len) * 0.5 + 0.5;
-        const v = 128 + lane * 13 * score * along;
+        const v = 128 + lane * 4 * score * along;
         const i = (y * MAP_W + x) * 4;
         d[i] = d[i + 1] = d[i + 2] = v;
       }

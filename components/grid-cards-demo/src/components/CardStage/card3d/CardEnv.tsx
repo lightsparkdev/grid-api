@@ -123,6 +123,8 @@ interface Panel {
   h: number;
   intensity: number;
   color: [number, number, number];
+  /** Rotation about the panel's center, radians; 0 is level. */
+  tilt?: number;
 }
 
 const FOIL_PANELS: Panel[] = [
@@ -171,8 +173,17 @@ function panelStudio(panels: Panel[], base: (y: number) => number, w: number, h:
         // Wrap the longitude difference.
         let dl = lon - p.lon;
         dl = Math.atan2(Math.sin(dl), Math.cos(dl));
-        const ex = 1 - Math.min(1, Math.max(0, (Math.abs(dl) * Math.cos(lat) - p.w) / soft));
-        const ey = 1 - Math.min(1, Math.max(0, (Math.abs(lat - p.lat) - p.h) / soft));
+        let dx = dl * Math.cos(lat);
+        let dy = lat - p.lat;
+        if (p.tilt) {
+          const c = Math.cos(p.tilt);
+          const s = Math.sin(p.tilt);
+          const rx = dx * c + dy * s;
+          dy = -dx * s + dy * c;
+          dx = rx;
+        }
+        const ex = 1 - Math.min(1, Math.max(0, (Math.abs(dx) - p.w) / soft));
+        const ey = 1 - Math.min(1, Math.max(0, (Math.abs(dy) - p.h) / soft));
         const k = ex * ey * p.intensity;
         R += k * p.color[0];
         G += k * p.color[1];
@@ -211,33 +222,35 @@ export function foilStudioTexture(): THREE.DataTexture {
  * a texture.) Sized as the studio is, since a PMREM standing in for the
  * scene's must share its layout.
  */
+/** The lights lie across the room at this angle, so their reflections cross
+ *  the card on a diagonal rather than along its long edge. */
+const BLANK_TILT = -0.42;
+
 const BLANK_PANELS: Panel[] = [
   // Ceiling lights in the head-on cone (a card a few degrees across reflects
-  // about ±0.37 rad across and ±0.23 up): large rectangles, short enough to
-  // show their ends on the face, as a stack of polished sheets shows the
-  // lights over it. One at rest, one a tilt brings down, one for the
-  // bottom of a tilt up.
-  { lon: Math.PI * 0.5, lat: 0.02, w: 0.26, h: 0.022, intensity: 0.95, color: [1, 1, 1] },
-  { lon: Math.PI * 0.5, lat: 0.17, w: 0.26, h: 0.022, intensity: 0.9, color: [1, 1, 1] },
-  { lon: Math.PI * 0.5, lat: -0.13, w: 0.26, h: 0.022, intensity: 0.85, color: [1, 1, 1] },
-  { lon: Math.PI * 0.5, lat: 0.32, w: 0.26, h: 0.022, intensity: 0.9, color: [1, 1, 1] },
+  // about ±0.37 rad across and ±0.23 up): long rectangles on a tilt, as a
+  // stack of polished sheets shows the lights over it. One at rest, others
+  // a tilt brings on.
+  { lon: Math.PI * 0.5, lat: 0.03, w: 0.4, h: 0.045, intensity: 0.9, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.5, lat: 0.26, w: 0.4, h: 0.045, intensity: 0.8, color: [1, 1, 1], tilt: BLANK_TILT },
+  { lon: Math.PI * 0.5, lat: -0.2, w: 0.4, h: 0.045, intensity: 0.7, color: [1, 1, 1], tilt: BLANK_TILT },
   // Higher: the ceiling proper.
-  { lon: Math.PI * 0.64, lat: 0.66, w: 0.32, h: 0.14, intensity: 1.4, color: [1, 0.99, 0.97] },
-  { lon: Math.PI * 0.36, lat: 0.66, w: 0.32, h: 0.14, intensity: 1.2, color: [1, 1, 1] },
-  { lon: Math.PI * 0.5, lat: 1.1, w: 0.7, h: 0.18, intensity: 1.5, color: [1, 1, 1] },
+  { lon: Math.PI * 0.64, lat: 0.66, w: 0.32, h: 0.14, intensity: 1.0, color: [1, 0.99, 0.97] },
+  { lon: Math.PI * 0.36, lat: 0.66, w: 0.32, h: 0.14, intensity: 0.9, color: [1, 1, 1] },
+  { lon: Math.PI * 0.5, lat: 1.1, w: 0.7, h: 0.18, intensity: 1.1, color: [1, 1, 1] },
   // Something either side for a card turned.
-  { lon: Math.PI * 0.8, lat: 0.1, w: 0.1, h: 0.35, intensity: 1.2, color: [1, 1, 1] },
-  { lon: Math.PI * 0.2, lat: 0.1, w: 0.1, h: 0.35, intensity: 1.2, color: [1, 1, 1] },
+  { lon: Math.PI * 0.8, lat: 0.1, w: 0.1, h: 0.35, intensity: 0.8, color: [1, 1, 1] },
+  { lon: Math.PI * 0.2, lat: 0.1, w: 0.1, h: 0.35, intensity: 0.8, color: [1, 1, 1] },
 ];
 
-/** The room by elevation: a dark floor, a horizon a little below the head-on
- *  line, a light wall and ceiling. Bright enough between the lights that the
- *  steel reads as light silver, as the sheets do, not gunmetal. */
+/** The room by elevation: light throughout and nearly even through the
+ *  head-on cone, so the steel between the lights is silver and the lights,
+ *  not a gradient, are what the face shows. */
 function blankBase(y: number): number {
   const lat = Math.asin(Math.max(-1, Math.min(1, y)));
-  if (lat < -0.4) return 0.05;
-  if (lat < -0.1) return 0.05 + (0.24 - 0.05) * ((lat + 0.4) / 0.3);
-  return 0.24 + (0.4 - 0.24) * Math.min(1, (lat + 0.1) / 1.2);
+  if (lat < -0.6) return 0.32;
+  if (lat < -0.3) return 0.32 + (0.44 - 0.32) * ((lat + 0.6) / 0.3);
+  return 0.44 + (0.56 - 0.44) * Math.min(1, (lat + 0.3) / 1.5);
 }
 
 export function blankStudioTexture(): THREE.DataTexture {
