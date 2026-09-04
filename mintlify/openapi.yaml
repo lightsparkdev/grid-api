@@ -23534,10 +23534,8 @@ components:
                 - type: 'null'
               description: The payment rail used to settle this transaction (e.g. ACH, WIRE, NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null when no external rail is used (e.g. instant or intra-network transfers, or non-direct-destination transactions) or before a rail is resolved.
             railSelectionMode:
-              anyOf:
-                - $ref: '#/components/schemas/RailSelectionMode'
-                - type: 'null'
-              description: How the rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it. Null when no rail is resolved.
+              $ref: '#/components/schemas/RailSelectionMode'
+              description: How the rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it.
             expectedSettlementAt:
               type:
                 - string
