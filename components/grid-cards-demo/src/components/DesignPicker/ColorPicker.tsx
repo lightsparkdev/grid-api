@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import clsx from 'clsx';
+import { motion } from 'motion/react';
 import { IconEyedropper } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyedropper';
 import { IconArrowLeftRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeftRight';
 import { IconRotate } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate';
@@ -125,6 +126,35 @@ function gradientFrom(color: string, type: CardGradient['type']): CardGradient {
     from: { x: FIGMA_CARD_W / 2, y: 0 },
     to: { x: FIGMA_CARD_W / 2, y: FIGMA_FACE_H },
   };
+}
+
+/**
+ * A box whose height follows its content with a spring, so the popup's
+ * growth (the stops appearing) is a motion, not a cut. Clips vertically
+ * only, with 8px of slack for the thumbs that reach past the field.
+ */
+function AnimatedHeight({ className, children }: { className?: string; children: ReactNode }) {
+  const inner = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | 'auto'>('auto');
+  useEffect(() => {
+    const el = inner.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <motion.div
+      className={className}
+      initial={false}
+      animate={{ height }}
+      transition={{ type: 'spring', stiffness: 520, damping: 42, mass: 0.8 }}
+    >
+      <div ref={inner} className={styles.bodyInner}>
+        {children}
+      </div>
+    </motion.div>
+  );
 }
 
 /* ── Picker ───────────────────────────────────────────────────────────────── */
@@ -403,159 +433,164 @@ export function ColorPicker({
         )}
       </Tooltip>
       <PopoverPortal>
-        <PopoverPositioner side="top" align="end" sideOffset={8}>
+        {/* Below the swatch, where there is room for the gradient's stops to
+            grow downward from the anchored top edge; the rows it covers are
+            not needed while a color is picked. */}
+        <PopoverPositioner side="bottom" align="end" sideOffset={8}>
           <PopoverPopup className={styles.popup} aria-label="Custom color">
-            <div className={styles.modes} role="tablist" aria-label="Fill">
-              {MODES.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={mode === m.id}
-                  className={clsx(styles.mode, mode === m.id && styles.modeOn)}
-                  onClick={() => setMode(m.id)}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
+            <AnimatedHeight className={styles.body}>
+              <div className={styles.modes} role="tablist" aria-label="Fill">
+                {MODES.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === m.id}
+                    className={clsx(styles.mode, mode === m.id && styles.modeOn)}
+                    onClick={() => setMode(m.id)}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
 
-            {gradient && (
-              <>
-                <div
-                  className={styles.stopsBar}
-                  style={{ background: gradientCss(gradient) }}
-                  role="slider"
-                  tabIndex={0}
-                  aria-label="Gradient stops"
-                  aria-valuenow={Math.round(gradient.stops[sel].at * 100)}
-                  aria-valuetext={`Stop ${sel + 1} at ${Math.round(gradient.stops[sel].at * 100)}%`}
-                  onPointerDown={onBarDown}
-                  onPointerMove={onBarMove}
-                  onPointerUp={onBarUp}
-                  onPointerCancel={onBarUp}
-                  onKeyDown={onBarKey}
-                >
-                  {gradient.stops.map((s, i) => (
-                    <span
-                      key={i}
-                      data-stop={i}
-                      className={clsx(styles.stopHandle, i === sel && styles.stopHandleOn)}
-                      style={{ left: `${s.at * 100}%`, background: s.color }}
-                    />
-                  ))}
-                </div>
-                <div className={styles.stopsHead}>
-                  <span>Stops</span>
-                  <span className={styles.stopsTools}>
-                    <Tooltip text="Flip">
-                      {(tip) => (
-                        <button type="button" className={styles.tool} onClick={flip} aria-label="Flip gradient" {...tip}>
-                          <IconArrowLeftRight size={16} aria-hidden />
-                        </button>
-                      )}
-                    </Tooltip>
-                    <Tooltip text="Turn 90°">
-                      {(tip) => (
-                        <button type="button" className={styles.tool} onClick={turn} aria-label="Turn gradient 90 degrees" {...tip}>
-                          <IconRotate size={16} aria-hidden />
-                        </button>
-                      )}
-                    </Tooltip>
-                    <Tooltip text="Add stop">
-                      {(tip) => (
-                        <button type="button" className={styles.tool} onClick={addStop} aria-label="Add stop" {...tip}>
-                          <IconPlusSmall size={16} aria-hidden />
-                        </button>
-                      )}
-                    </Tooltip>
-                  </span>
-                </div>
-                <div className={styles.stops}>
-                  {sortedStops.map((s) => (
-                    <div
-                      key={s.i}
-                      className={clsx(styles.stopRow, s.i === sel && styles.stopRowOn)}
-                      onPointerDown={() => setStop(s.i)}
-                    >
-                      <label className={styles.stopAt}>
-                        <input
-                          value={Math.round(s.at * 100)}
-                          inputMode="numeric"
-                          aria-label={`Stop ${s.i + 1} position`}
-                          onFocus={() => setStop(s.i)}
-                          onChange={(e) => setStopAt(s.i, e.target.value)}
-                        />
-                        <span aria-hidden>%</span>
-                      </label>
-                      <span className={styles.stopColor}>
-                        <span className={styles.stopSwatch} style={{ background: s.color }} aria-hidden />
-                        <span className={styles.stopHex}>{s.color.slice(1).toUpperCase()}</span>
-                      </span>
-                      <button
-                        type="button"
-                        className={styles.stopRemove}
-                        disabled={gradient.stops.length <= 2}
-                        aria-label={`Remove stop ${s.i + 1}`}
-                        onClick={() => removeStop(s.i)}
+              {gradient && (
+                <div className={styles.gradientBlock}>
+                  <div
+                    className={styles.stopsBar}
+                    style={{ background: gradientCss(gradient) }}
+                    role="slider"
+                    tabIndex={0}
+                    aria-label="Gradient stops"
+                    aria-valuenow={Math.round(gradient.stops[sel].at * 100)}
+                    aria-valuetext={`Stop ${sel + 1} at ${Math.round(gradient.stops[sel].at * 100)}%`}
+                    onPointerDown={onBarDown}
+                    onPointerMove={onBarMove}
+                    onPointerUp={onBarUp}
+                    onPointerCancel={onBarUp}
+                    onKeyDown={onBarKey}
+                  >
+                    {gradient.stops.map((s, i) => (
+                      <span
+                        key={i}
+                        data-stop={i}
+                        className={clsx(styles.stopHandle, i === sel && styles.stopHandleOn)}
+                        style={{ left: `${s.at * 100}%`, background: s.color }}
+                      />
+                    ))}
+                  </div>
+                  <div className={styles.stopsHead}>
+                    <span>Stops</span>
+                    <span className={styles.stopsTools}>
+                      <Tooltip text="Flip">
+                        {(tip) => (
+                          <button type="button" className={styles.tool} onClick={flip} aria-label="Flip gradient" {...tip}>
+                            <IconArrowLeftRight size={16} aria-hidden />
+                          </button>
+                        )}
+                      </Tooltip>
+                      <Tooltip text="Turn 90°">
+                        {(tip) => (
+                          <button type="button" className={styles.tool} onClick={turn} aria-label="Turn gradient 90 degrees" {...tip}>
+                            <IconRotate size={16} aria-hidden />
+                          </button>
+                        )}
+                      </Tooltip>
+                      <Tooltip text="Add stop">
+                        {(tip) => (
+                          <button type="button" className={styles.tool} onClick={addStop} aria-label="Add stop" {...tip}>
+                            <IconPlusSmall size={16} aria-hidden />
+                          </button>
+                        )}
+                      </Tooltip>
+                    </span>
+                  </div>
+                  <div className={styles.stops}>
+                    {sortedStops.map((s) => (
+                      <div
+                        key={s.i}
+                        className={clsx(styles.stopRow, s.i === sel && styles.stopRowOn)}
+                        onPointerDown={() => setStop(s.i)}
                       >
-                        <IconMinusSmall size={16} aria-hidden />
-                      </button>
-                    </div>
-                  ))}
+                        <label className={styles.stopAt}>
+                          <input
+                            value={Math.round(s.at * 100)}
+                            inputMode="numeric"
+                            aria-label={`Stop ${s.i + 1} position`}
+                            onFocus={() => setStop(s.i)}
+                            onChange={(e) => setStopAt(s.i, e.target.value)}
+                          />
+                          <span aria-hidden>%</span>
+                        </label>
+                        <span className={styles.stopColor}>
+                          <span className={styles.stopSwatch} style={{ background: s.color }} aria-hidden />
+                          <span className={styles.stopHex}>{s.color.slice(1).toUpperCase()}</span>
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.stopRemove}
+                          disabled={gradient.stops.length <= 2}
+                          aria-label={`Remove stop ${s.i + 1}`}
+                          onClick={() => removeStop(s.i)}
+                        >
+                          <IconMinusSmall size={16} aria-hidden />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </>
-            )}
-
-            <div
-              className={styles.field}
-              style={{ '--hue': hueHex } as CSSProperties}
-              role="slider"
-              tabIndex={0}
-              aria-label="Saturation and brightness"
-              aria-valuetext={`Saturation ${Math.round(hsv.s * 100)}%, brightness ${Math.round(hsv.v * 100)}%`}
-              aria-valuenow={Math.round(hsv.v * 100)}
-              onKeyDown={onFieldKey}
-              {...dragHandlers('field')}
-            >
-              <span
-                className={styles.thumb}
-                style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%`, background: current }}
-              />
-            </div>
-            <div
-              className={styles.hue}
-              role="slider"
-              tabIndex={0}
-              aria-label="Hue"
-              aria-valuemin={0}
-              aria-valuemax={360}
-              aria-valuenow={Math.round(hsv.h)}
-              onKeyDown={onHueKey}
-              {...dragHandlers('hue')}
-            >
-              <span className={styles.thumb} style={{ left: `${(hsv.h / 360) * 100}%`, background: hueHex }} />
-            </div>
-            <div className={styles.row}>
-              <span className={styles.preview} style={{ background: current }} aria-hidden />
-              <input
-                className={styles.hex}
-                value={hexText}
-                spellCheck={false}
-                autoComplete="off"
-                aria-label="Hex color"
-                onChange={(e) => setHexText(e.target.value)}
-                onBlur={applyHex}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') applyHex();
-                }}
-              />
-              {canDrop && (
-                <button type="button" className={styles.tool} onClick={pickFromScreen} aria-label="Pick from screen">
-                  <IconEyedropper size={16} aria-hidden />
-                </button>
               )}
-            </div>
+
+              <div
+                className={styles.field}
+                style={{ '--hue': hueHex } as CSSProperties}
+                role="slider"
+                tabIndex={0}
+                aria-label="Saturation and brightness"
+                aria-valuetext={`Saturation ${Math.round(hsv.s * 100)}%, brightness ${Math.round(hsv.v * 100)}%`}
+                aria-valuenow={Math.round(hsv.v * 100)}
+                onKeyDown={onFieldKey}
+                {...dragHandlers('field')}
+              >
+                <span
+                  className={styles.thumb}
+                  style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%`, background: current }}
+                />
+              </div>
+              <div
+                className={styles.hue}
+                role="slider"
+                tabIndex={0}
+                aria-label="Hue"
+                aria-valuemin={0}
+                aria-valuemax={360}
+                aria-valuenow={Math.round(hsv.h)}
+                onKeyDown={onHueKey}
+                {...dragHandlers('hue')}
+              >
+                <span className={styles.thumb} style={{ left: `${(hsv.h / 360) * 100}%`, background: hueHex }} />
+              </div>
+              <div className={styles.row}>
+                <span className={styles.preview} style={{ background: current }} aria-hidden />
+                <input
+                  className={styles.hex}
+                  value={hexText}
+                  spellCheck={false}
+                  autoComplete="off"
+                  aria-label="Hex color"
+                  onChange={(e) => setHexText(e.target.value)}
+                  onBlur={applyHex}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') applyHex();
+                  }}
+                />
+                {canDrop && (
+                  <button type="button" className={styles.tool} onClick={pickFromScreen} aria-label="Pick from screen">
+                    <IconEyedropper size={16} aria-hidden />
+                  </button>
+                )}
+              </div>
+            </AnimatedHeight>
           </PopoverPopup>
         </PopoverPositioner>
       </PopoverPortal>

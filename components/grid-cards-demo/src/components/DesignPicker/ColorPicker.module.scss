@@ -4,9 +4,6 @@
 /* Origin's popover surface; the picker's own parts use its tokens: xs radius
    on the field and bar, an Input-styled hex field, secondary-surface tool. */
 .popup {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
   width: 208px;
   padding: var(--spacing-sm);
   /* Origin clips its popup; the round thumbs and stop handles reach past
@@ -22,14 +19,33 @@
     --picker-border: rgba(244, 244, 245, 0.16);
   }
 
-  /* Opened above the swatch (the usual case) the popup grows upward from its
-     anchored bottom edge, so the tabs go to the bottom: switching Solid to
-     Linear then adds the stops at the top, away from the pointer, and the
-     tab just clicked stays under it. Opened below, the top edge is the
-     anchored one and the tabs stay there. */
-  &[data-side='top'] .modes {
+  /* The popup opens below the swatch and grows downward from its anchored
+     top edge, so the tabs on top hold still as the stops come in under them.
+     Flipped above (a short window), the bottom edge is the anchored one: the
+     tabs go to the bottom and the stops come in just above them. */
+  &[data-side='top'] .gradientBlock {
     order: 1;
   }
+  &[data-side='top'] .modes {
+    order: 2;
+  }
+}
+
+/* The height-animated body: clips vertically while it grows, with 8px of
+   slack all round so the thumbs that reach past the field are not cut. */
+.body {
+  /* The animated height is the inner content's; the padding is the slack. */
+  box-sizing: content-box;
+  overflow: visible clip;
+  margin: -8px;
+  padding: 8px;
+}
+
+.bodyInner,
+.gradientBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
 }
 
 /* Fill kind: Solid, Linear, Radial, as text tabs. */
