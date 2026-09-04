@@ -4,10 +4,11 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
-import { materialOf, stockOf, type CardDesign } from '@/data/design';
+import { materialOf, stockOf, type BrandLayout, type CardDesign } from '@/data/design';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { foilStudioTexture } from './CardEnv';
 import {
+  brandBox,
   K,
   loadFaceAssets,
   loadImage,
@@ -21,9 +22,11 @@ import {
   paintFoilNormal,
   paintFront,
   paintLockupMask,
+  resolveBrandLayout,
   TEX_H,
   TEX_W,
   type FaceAssets,
+  type SpecRect,
 } from './facePaint';
 import { bakeEdge, decorateNormal, decorateOrm, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
 
@@ -34,6 +37,16 @@ export interface CardMeshState {
   closed: boolean;
   /** PAN groups revealed on the back (0..4; 5 = expiry and CVV). */
   shown: number;
+  /** The brand is being dragged or resized on the stage: the print follows
+   *  live, the surface decoration (a per-texel bake) waits for the release. */
+  brandDragging?: boolean;
+}
+
+/** The brand's box on the front and the layout it was drawn with, so the
+ *  stage can hit-test it and start a drag from where it is. */
+export interface BrandPlacement {
+  box: SpecRect;
+  layout: BrandLayout;
 }
 
 /** Personalization prints on ACTIVE: this long, in this many repaints. */
@@ -140,9 +153,14 @@ interface CardMeshProps {
   state: CardMeshState;
   /** Fires once, when the front has first been painted. */
   onReady?: () => void;
+  /** Fires after each front paint with where the brand landed. */
+  onBrandPlacement?: (placement: BrandPlacement) => void;
 }
 
-export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh({ state, onReady }, ref) {
+export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
+  { state, onReady, onBrandPlacement },
+  ref,
+) {
   const invalidate = useThree((s) => s.invalidate);
   // Thickness follows the material, so the slab is rebuilt when it changes.
   const cardMaterial = materialOf(state.design);
@@ -222,8 +240,12 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // art, laid over the front's cached maps per design.
   const { logoTreatment, artTreatment } = state.design;
   const decoTex = useRef<{ orm: THREE.Texture | null; normal: THREE.Texture | null }>({ orm: null, normal: null });
+  const brandDragging = state.brandDragging ?? false;
   useEffect(() => {
     if (!assets) return;
+    // The etch relief is a per-texel bake; while the brand is being dragged
+    // the decoration stays where it was and catches up on the release.
+    if (brandDragging) return;
     const front = materials[MAT_FRONT];
     const base = surfaceTex.current.get(`${surface}|front`);
     if (!base) return;
@@ -259,7 +281,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     }
     front.needsUpdate = true;
     invalidate();
-  }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, materials, invalidate]);
+  }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, materials, invalidate, brandDragging]);
 
   // Edge: the construction's layers, the printed skins in the print color (or
   // the stock's own face when nothing is printed).
@@ -325,6 +347,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     });
     frontMap.needsUpdate = true;
     invalidate();
+    onBrandPlacement?.({ box: brandBox(state.design, logo), layout: resolveBrandLayout(state.design, logo) });
     if (!ready.current) {
       ready.current = true;
       onReady?.();
@@ -340,6 +363,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     frontMap,
     invalidate,
     onReady,
+    onBrandPlacement,
   ]);
 
   // Back print.

@@ -4,7 +4,6 @@ import { IconArrowRotateCounterClockwise } from '@central-icons-react/round-outl
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { DesignPicker } from '@/components/DesignPicker/DesignPicker';
-import { PresetPicker } from '@/components/PresetPicker/PresetPicker';
 import { FlowPicker } from '@/components/FlowPicker/FlowPicker';
 import { initialDesign, type CardDesign } from '@/data/design';
 import type { PresetId } from '@/data/presets';
@@ -14,7 +13,7 @@ import styles from './ConfigurePanel.module.scss';
 interface ConfigurePanelProps {
   design: CardDesign;
   onDesignChange: (patch: Partial<CardDesign>) => void;
-  preset: PresetId;
+  preset: PresetId | null;
   onPresetSelect: (id: PresetId) => void;
   wallet: WalletState;
   running: boolean;
@@ -55,11 +54,7 @@ export function ConfigurePanel({
                 ) : null
               }
             />
-            {/* The platform tiles are the Design section's first group. */}
-            <div className={styles.designGroups}>
-              <PresetPicker selected={preset} onSelect={onPresetSelect} />
-              <DesignPicker design={design} onChange={onDesignChange} />
-            </div>
+            <DesignPicker design={design} onChange={onDesignChange} preset={preset} onPresetSelect={onPresetSelect} />
           </section>
 
           <section className={styles.section}>

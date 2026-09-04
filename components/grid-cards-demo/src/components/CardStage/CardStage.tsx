@@ -6,14 +6,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import { useReducedMotion } from 'motion/react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
+import { CARD_H, CARD_W, FIGMA_CARD_W, FIGMA_FACE_H } from '@/apps/card/cardMetrics';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import { PAN_GROUPS, type CardHome } from '@/apps/shared/card';
 import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
-import type { CardDesign } from '@/data/design';
+import { BRAND_MAX_H, BRAND_MIN_H, type BrandLayout, type CardDesign } from '@/data/design';
 import { CardEnv } from './card3d/CardEnv';
-import { CardMesh, type CardMeshState } from './card3d/CardMesh';
+import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/CardMesh';
 import { CardMotion } from './cardMotion';
 import { CardIntro } from './CardIntro';
 import { INTRO_END, introCard, stepIntro } from './introTimeline';
@@ -31,6 +31,12 @@ const GLIDE_TAU = 0.14;
 const CAMERA_Z = 2000;
 /** PAN groups roll in at this pace on Reveal. */
 const ROLL_STEP_MS = 140;
+/** How far outside the brand's box (spec px) still grabs it. */
+const BRAND_GRAB_MARGIN = 24;
+/** Brand scale per wheel px (a 120 px notch is about +20%). */
+const WHEEL_SCALE = 0.0015;
+/** A wheel resize counts as a drag until this long after the last notch. */
+const WHEEL_SETTLE_MS = 260;
 
 // Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
@@ -65,9 +71,26 @@ interface Intro {
   paused: boolean;
 }
 
+/** A point on the front face, in spec px; null when the pointer misses the
+ *  card's plane or the back is showing. */
+type Pick = (clientX: number, clientY: number) => { x: number; y: number } | null;
+
+/** A brand drag in flight: which pointer, where it last was on the face, the
+ *  layout it is writing, and a second pointer if it has become a pinch. */
+interface BrandDrag {
+  id: number;
+  last: { x: number; y: number };
+  client: { x: number; y: number };
+  layout: BrandLayout;
+  pinch?: { id: number; x: number; y: number; d0: number; h0: number };
+}
+
 interface CardStageProps {
   design: CardDesign;
   home: CardHome;
+  /** Lets the stage edit the design: the brand is dragged, resized, and
+   *  reset on the card itself. */
+  onDesignChange?: (patch: Partial<CardDesign>) => void;
 }
 
 /**
@@ -83,7 +106,7 @@ interface CardStageProps {
  * nothing ever swaps or unmounts. A DOM hit box rides along with the card for
  * pointer input, the state pill, and the accessible name.
  */
-export function CardStage({ design, home }: CardStageProps) {
+export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const { bootProgress } = usePhoneBoot();
   const reduceMotion = useReducedMotion() ?? false;
   const dark = useThemeMode() === 'dark';
@@ -147,16 +170,87 @@ export function CardStage({ design, home }: CardStageProps) {
     return () => window.clearInterval(id);
   }, [rolling]);
 
-  // ── Pointer: tilt on hover, spin on drag ───────────────────────────────────
+  // ── The brand on the card: where it is, and picking the face ───────────────
+  // The mesh reports the brand's box after each front paint; the rig provides
+  // a picker from the pointer to the front face's plane.
+  const placement = useRef<BrandPlacement | null>(null);
+  const pick = useRef<Pick | null>(null);
+  /** The face point under the pointer if it is on (or just outside) the brand. */
+  const hitBrand = (clientX: number, clientY: number) => {
+    const p = pick.current?.(clientX, clientY);
+    const b = placement.current?.box;
+    if (!p || !b) return null;
+    const m = Math.max(BRAND_GRAB_MARGIN, b.h * 0.15);
+    const inside = p.x >= b.x - m && p.x <= b.x + b.w + m && p.y >= b.y - m && p.y <= b.y + b.h + m;
+    return inside ? p : null;
+  };
+  const brandEditable = !!onDesignChange;
+  const setLayout = (layout: BrandLayout | null) => onDesignChange?.({ brandLayout: layout });
+  /** The layout at height `h`, grown or shrunk about the box's center. */
+  const resized = (layout: BrandLayout, h: number): BrandLayout => {
+    h = Math.min(BRAND_MAX_H, Math.max(BRAND_MIN_H, h));
+    const b = placement.current?.box;
+    if (!b) return { ...layout, h };
+    // The box scales with the layout's height (a wordmark's box is its caps,
+    // shorter than h, so the ratio is taken against h itself).
+    const w = (b.w * h) / layout.h;
+    const cx = b.x + b.w / 2;
+    const x = layout.anchor === 'left' ? cx - w / 2 : layout.anchor === 'center' ? cx : cx + w / 2;
+    return { ...layout, x, h };
+  };
+
+  // Dragging (or wheeling) the brand repaints the print live; the surface
+  // bake waits until it settles.
+  const [brandDragging, setBrandDragging] = useState(false);
+  const wheelSettle = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(wheelSettle.current), []);
+  const [overBrand, setOverBrand] = useState(false);
+  const overBrandRef = useRef(false);
+  const hover = (over: boolean) => {
+    if (over === overBrandRef.current) return;
+    overBrandRef.current = over;
+    setOverBrand(over);
+  };
+
+  // ── Pointer: tilt on hover, spin on drag; the brand moves and resizes ──────
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const brandDrag = useRef<BrandDrag | null>(null);
+  const applyPinch = (bd: BrandDrag) => {
+    if (!bd.pinch) return;
+    const d = Math.hypot(bd.client.x - bd.pinch.x, bd.client.y - bd.pinch.y);
+    bd.layout = resized(bd.layout, (bd.pinch.h0 * d) / Math.max(1, bd.pinch.d0));
+    setLayout(bd.layout);
+  };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const bd = brandDrag.current;
+    if (bd) {
+      if (e.pointerId === bd.id) {
+        bd.client = { x: e.clientX, y: e.clientY };
+        if (bd.pinch) {
+          applyPinch(bd);
+          return;
+        }
+        const p = pick.current?.(e.clientX, e.clientY);
+        if (!p) return;
+        bd.layout = { ...bd.layout, x: bd.layout.x + p.x - bd.last.x, y: bd.layout.y + p.y - bd.last.y };
+        bd.last = p;
+        setLayout(bd.layout);
+      } else if (bd.pinch && e.pointerId === bd.pinch.id) {
+        bd.pinch.x = e.clientX;
+        bd.pinch.y = e.clientY;
+        applyPinch(bd);
+      }
+      return;
+    }
     if (drag.current && e.pointerId === drag.current.id) {
       motion.drag(e.clientX - drag.current.x, e.clientY - drag.current.y, e.timeStamp);
       drag.current.x = e.clientX;
       drag.current.y = e.clientY;
       return;
     }
-    if (reduceMotion || live.current.t > 0) return;
+    if (live.current.t > 0) return;
+    hover(brandEditable && e.pointerType === 'mouse' && hitBrand(e.clientX, e.clientY) !== null);
+    if (reduceMotion) return;
     const b = e.currentTarget.getBoundingClientRect();
     motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
   };
@@ -164,6 +258,30 @@ export function CardStage({ design, home }: CardStageProps) {
   const [dragged, setDragged] = useState(false);
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (live.current.t > 0 || e.button !== 0) return;
+    const bd = brandDrag.current;
+    if (bd) {
+      // A second finger on a brand drag makes it a pinch.
+      if (!bd.pinch && e.pointerId !== bd.id) {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const d0 = Math.hypot(e.clientX - bd.client.x, e.clientY - bd.client.y);
+        bd.pinch = { id: e.pointerId, x: e.clientX, y: e.clientY, d0, h0: bd.layout.h };
+      }
+      return;
+    }
+    const hit = brandEditable ? hitBrand(e.clientX, e.clientY) : null;
+    if (hit && placement.current) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      brandDrag.current = {
+        id: e.pointerId,
+        last: hit,
+        client: { x: e.clientX, y: e.clientY },
+        layout: placement.current.layout,
+      };
+      motion.clearTilt();
+      setBrandDragging(true);
+      e.currentTarget.classList.add(styles.hitMoving);
+      return;
+    }
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     setDragged(true);
@@ -171,14 +289,51 @@ export function CardStage({ design, home }: CardStageProps) {
     e.currentTarget.classList.add(styles.hitDragging);
   };
   const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const bd = brandDrag.current;
+    if (bd) {
+      if (bd.pinch && e.pointerId === bd.pinch.id) {
+        bd.pinch = undefined;
+      } else if (e.pointerId === bd.id) {
+        brandDrag.current = null;
+        setBrandDragging(false);
+        e.currentTarget.classList.remove(styles.hitMoving);
+      }
+      return;
+    }
     if (!drag.current || e.pointerId !== drag.current.id) return;
     drag.current = null;
     motion.endDrag();
     e.currentTarget.classList.remove(styles.hitDragging);
   };
   const onPointerLeave = () => {
+    hover(false);
     if (!drag.current) motion.clearTilt();
   };
+  // Double-click the brand to put it back where the print sample has it.
+  const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!brandEditable || live.current.t > 0) return;
+    if (hitBrand(e.clientX, e.clientY)) setLayout(null);
+  };
+  // Wheel over the brand resizes it. React's wheel listener is passive, so
+  // this one is attached by hand to be able to keep the page still.
+  useEffect(() => {
+    const el = hitRef.current;
+    if (!el || !onDesignChange) return;
+    const onWheel = (e: WheelEvent) => {
+      if (live.current.t > 0 || brandDrag.current) return;
+      const l = placement.current?.layout;
+      if (!l || !hitBrand(e.clientX, e.clientY)) return;
+      e.preventDefault();
+      onDesignChange({ brandLayout: resized(l, l.h * Math.exp(-e.deltaY * WHEEL_SCALE)) });
+      setBrandDragging(true);
+      clearTimeout(wheelSettle.current);
+      wheelSettle.current = setTimeout(() => setBrandDragging(false), WHEEL_SETTLE_MS);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+    // hitBrand and resized close over refs and constants only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onDesignChange]);
 
   const pill = card.closed
     ? 'Closed'
@@ -211,20 +366,23 @@ export function CardStage({ design, home }: CardStageProps) {
           hitRef={hitRef}
           live={live}
           motion={motion}
-          state={{ design, issued, frozen: card.frozen, closed: card.closed, shown }}
+          pick={pick}
+          placement={placement}
+          state={{ design, issued, frozen: card.frozen, closed: card.closed, shown, brandDragging }}
         />
       </Canvas>
 
       {/* Rides with the card: pointer input, the state pill, the accessible name. */}
       <div
         ref={hitRef}
-        className={styles.hit}
+        className={clsx(styles.hit, overBrand && styles.hitOverBrand)}
         style={{ width: CARD_W, height: CARD_H, pointerEvents: phoneUp || !introDone ? 'none' : 'auto' }}
         onPointerMove={onPointerMove}
         onPointerDown={onPointerDown}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onPointerLeave={onPointerLeave}
+        onDoubleClick={onDoubleClick}
       >
         <span className={styles.srOnly} role="img" aria-label={`${programNameOf(design)} card`} />
         {!introDone && <CardIntro ref={overlayRef} brand={programNameOf(design)} />}
@@ -233,9 +391,19 @@ export function CardStage({ design, home }: CardStageProps) {
             {pill}
           </span>
         )}
-        <span className={clsx(styles.hint, (dragged || !introDone || phoneUp) && styles.hintGone)} aria-hidden>
+        <span
+          className={clsx(styles.hint, (dragged || overBrand || !introDone || phoneUp) && styles.hintGone)}
+          aria-hidden
+        >
           <IconRotate360Right size={14} />
           Drag to turn it over
+        </span>
+        {/* Over the brand: what the pointer can do to it. */}
+        <span
+          className={clsx(styles.hint, (!overBrand || brandDragging || !introDone || phoneUp) && styles.hintGone)}
+          aria-hidden
+        >
+          Drag to move · Scroll to resize · Double-click to reset
         </span>
       </div>
     </div>
@@ -262,17 +430,58 @@ interface CardRigProps {
   hitRef: React.RefObject<HTMLDivElement>;
   live: React.MutableRefObject<Live>;
   motion: CardMotion;
+  /** Filled with a picker from the pointer to the front face (spec px). */
+  pick: React.MutableRefObject<Pick | null>;
+  /** Kept current with where the brand last painted. */
+  placement: React.MutableRefObject<BrandPlacement | null>;
   state: CardMeshState;
 }
 
 /** Drives the mesh and the DOM hit box every frame. */
-function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
+function CardRig({ rootRef, hitRef, live, motion, pick, placement, state }: CardRigProps) {
+  const onBrandPlacement = useCallback(
+    (p: BrandPlacement) => {
+      placement.current = p;
+    },
+    [placement],
+  );
   // Carrier takes position and scale; the card inside it takes the spin.
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
   const size = useThree((s) => s.size);
   const get = useThree((s) => s.get);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
+
+  // Pointer → the card's front plane → spec px. The plane, not the mesh, so a
+  // drag can carry the brand past the card's edge; null when the back faces
+  // the camera.
+  useEffect(() => {
+    const ray = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const plane = new THREE.Plane();
+    const origin = new THREE.Vector3();
+    const normal = new THREE.Vector3();
+    const q = new THREE.Quaternion();
+    const hit = new THREE.Vector3();
+    pick.current = (clientX, clientY) => {
+      const g = group.current;
+      if (!g) return null;
+      const { camera, gl } = get();
+      const r = gl.domElement.getBoundingClientRect();
+      ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      g.getWorldPosition(origin);
+      normal.set(0, 0, 1).applyQuaternion(g.getWorldQuaternion(q));
+      if (ray.ray.direction.dot(normal) >= 0) return null;
+      plane.setFromNormalAndCoplanarPoint(normal, origin);
+      if (!ray.ray.intersectPlane(plane, hit)) return null;
+      g.worldToLocal(hit);
+      return { x: (hit.x / CARD_W + 0.5) * FIGMA_CARD_W, y: (0.5 - hit.y / CARD_H) * FIGMA_FACE_H };
+    };
+    return () => {
+      pick.current = null;
+    };
+  }, [get, pick]);
 
   // Dev: expose the scene state and the pose for tracing from the console.
   useEffect(() => {
@@ -282,8 +491,9 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
       group,
       motion,
       intro: live.current.intro,
+      brand: placement,
     };
-  }, [get, motion, live]);
+  }, [get, motion, live, placement]);
 
   useFrame((_, delta) => {
     const g = group.current;
@@ -377,7 +587,7 @@ function CardRig({ rootRef, hitRef, live, motion, state }: CardRigProps) {
 
   return (
     <group ref={carrier}>
-      <CardMesh ref={group} state={state} onReady={onReady} />
+      <CardMesh ref={group} state={state} onReady={onReady} onBrandPlacement={onBrandPlacement} />
     </group>
   );
 }

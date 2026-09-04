@@ -12,6 +12,8 @@ import styles from './AppPanel.module.scss';
 
 export interface AppPanelProps {
   design: CardDesign;
+  /** The stage edits the design too: the brand is moved and resized on the card. */
+  onDesignChange?: (patch: Partial<CardDesign>) => void;
   /** Bumped on reset; remounts the brain so everything starts clean. */
   session: number;
   /** The flow the phone is up for; null = the card floats alone. */
@@ -33,6 +35,7 @@ export function AppPanel({ session, ...props }: AppPanelProps) {
 
 function StageHost({
   design,
+  onDesignChange,
   activeFlow,
   walletEntry,
   onCardIssued,
@@ -66,7 +69,7 @@ function StageHost({
               glassDemoBg
               externalGlass
             />
-            <CardStage design={design} home={home} />
+            <CardStage design={design} home={home} onDesignChange={onDesignChange} />
           </DotGridCanvas>
         </div>
       </div>

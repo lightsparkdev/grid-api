@@ -7,6 +7,7 @@ import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stro
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
 import {
   ART_TREATMENTS,
+  BRAND_DEFAULT_LAYOUT,
   brandColorOf,
   DESIGN_SWATCHES,
   FINISHES,
@@ -15,12 +16,16 @@ import {
   stockOf,
   type CardDesign,
 } from '@/data/design';
+import { PRESETS, type PresetId } from '@/data/presets';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import styles from './DesignPicker.module.scss';
 
 interface DesignPickerProps {
   design: CardDesign;
   onChange: (patch: Partial<CardDesign>) => void;
+  /** The preset the design currently is; null when it is the visitor's own. */
+  preset: PresetId | null;
+  onPresetSelect: (id: PresetId) => void;
 }
 
 const MAX_NAME = 18;
@@ -186,12 +191,13 @@ function UploadRow({
 }
 
 /**
- * The Design section, in the order a card is made. Card: material, finish,
- * and the print (a color, or none, or art; the core under a print is chosen
- * to match it, not offered). Brand: the name and logo, and how the mark is
- * applied once there is one. Name: the cardholder's.
+ * The Design section, in the order a card is made. Card: a preset to start
+ * from, then material, finish, and the print (a color, or none, or art; the
+ * core under a print is chosen to match it, not offered). Brand: the name and
+ * logo, how the mark is applied once there is one, and how faint it prints.
+ * Name: the cardholder's.
  */
-export function DesignPicker({ design, onChange }: DesignPickerProps) {
+export function DesignPicker({ design, onChange, preset, onPresetSelect }: DesignPickerProps) {
   const stock = stockOf(design);
   const activeSwatch = design.color ? DESIGN_SWATCHES.find((s) => s.color === design.color) : undefined;
   const custom = design.color !== null && !activeSwatch;
@@ -201,10 +207,34 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
   // card it is invisible.
   const glossy = design.finish === 'gloss';
   const noSpotGloss = glossy ? ({ spotGloss: 'Spot gloss needs a matte card' } as const) : undefined;
+  const opacity = design.brandLayout?.opacity ?? BRAND_DEFAULT_LAYOUT.opacity;
 
   return (
     <div className={styles.groups}>
       <div className={styles.group}>
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Preset</span>
+          <div className={styles.swatches} role="radiogroup" aria-label="Preset">
+            {PRESETS.map((p) => (
+              <Tooltip key={p.id} text={p.design.programName}>
+                {(tip) => (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={preset === p.id}
+                    aria-label={p.design.programName}
+                    className={clsx(styles.swatch, styles.swatchIcon, preset === p.id && styles.swatchActive)}
+                    onClick={() => onPresetSelect(p.id)}
+                    {...tip}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.iconSrc} alt="" draggable={false} />
+                  </button>
+                )}
+              </Tooltip>
+            ))}
+          </div>
+        </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Material</span>
           <Choices
@@ -326,6 +356,26 @@ export function DesignPicker({ design, onChange }: DesignPickerProps) {
               onChange={(logoTreatment) => onChange({ logoTreatment })}
               disabled={noSpotGloss}
             />
+          </div>
+        )}
+        {hasBrand && (
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Opacity</span>
+            <input
+              type="range"
+              className={styles.slider}
+              min={5}
+              max={100}
+              step={1}
+              value={Math.round(opacity * 100)}
+              aria-label="Brand opacity"
+              onChange={(e) =>
+                onChange({
+                  brandLayout: { ...(design.brandLayout ?? BRAND_DEFAULT_LAYOUT), opacity: Number(e.target.value) / 100 },
+                })
+              }
+            />
+            <span className={styles.sliderValue}>{Math.round(opacity * 100)}%</span>
           </div>
         )}
       </div>

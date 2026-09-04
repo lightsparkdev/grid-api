@@ -56,6 +56,12 @@
   cursor: grabbing;
 }
 
+/* Over the brand: it can be moved. */
+.hitOverBrand,
+.hitMoving {
+  cursor: move;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;

@@ -8,7 +8,14 @@
 
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
 import { CARD_CVV, CARD_EXP, PAN_GROUPS } from '@/apps/shared/card/cardholder';
-import { isBare, materialOf, stockOf, type CardDesign } from '@/data/design';
+import {
+  BRAND_DEFAULT_LAYOUT,
+  isBare,
+  materialOf,
+  stockOf,
+  type BrandLayout,
+  type CardDesign,
+} from '@/data/design';
 import { CARD_FONT_FAMILY, loadCardFont } from './cardFont';
 
 export const TEX_W = 2048;
@@ -375,45 +382,107 @@ function paintChip(ctx: CanvasRenderingContext2D) {
 
 /* ── Faces ────────────────────────────────────────────────────────────────── */
 
-/** Brand placement from the Thales print sample (Figma vgVxXUAcCwNUKjX1xdDIFl,
- *  1:97): on the chip's row, right-aligned to the chip's own inset (152), the
- *  logo 90 tall and up to 410 wide, centered on the chip's height. */
-const BRAND_RIGHT = TEX_W - F(152);
-const BRAND_CENTER_Y = CHIP.y + CHIP_H / 2;
-const BRAND_LOGO_H = F(90);
-const BRAND_LOGO_MAX_W = F(410);
-const BRAND_TEXT_PX = F(72);
-const BRAND_TEXT_WEIGHT = 430;
+/* ── Brand ─────────────────────────────────────────────────────────────────── */
 
-/** Where the logo lands, in texels. */
-function logoRect(logo: HTMLImageElement) {
-  const r = Math.min(BRAND_LOGO_MAX_W / logo.width, BRAND_LOGO_H / logo.height);
-  const w = logo.width * r;
-  const h = logo.height * r;
-  return { x: BRAND_RIGHT - w, y: BRAND_CENTER_Y - h / 2, w, h };
+/** With no layout of its own, a wide logo is held to this (spec px), as the
+ *  print sample has it. */
+const BRAND_DEFAULT_MAX_W = 410;
+/** A wordmark is set at this share of its box, so its caps sit inside it. */
+const BRAND_TEXT_EM = 0.8;
+/** Suisse's cap height, as a share of the em. */
+const BRAND_CAP = 0.72;
+const BRAND_TEXT_WEIGHT = 430;
+/** Spec px → texels, as a factor. */
+export const TEX_PER_SPEC = F(1);
+
+/** A box on the front, in spec px. */
+export interface SpecRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+function wordmarkOf(design: CardDesign): string {
+  return design.programName.trim() || 'Your brand';
+}
+
+let measureCtx: CanvasRenderingContext2D | null = null;
+function measureWordmark(text: string, px: number): number {
+  measureCtx ??= makeCanvas(1, 1).getContext('2d')!;
+  measureCtx.font = `${BRAND_TEXT_WEIGHT} ${px}px ${FONT}`;
+  return measureCtx.measureText(text).width;
+}
+
+/**
+ * The layout the brand is drawn with: the design's own, or the print sample's
+ * placement, where a wide logo is held to 410 wide by lowering its height.
+ * This is the layout a drag starts from.
+ */
+export function resolveBrandLayout(design: CardDesign, logo: HTMLImageElement | null): BrandLayout {
+  if (design.brandLayout) return design.brandLayout;
+  const d = BRAND_DEFAULT_LAYOUT;
+  if (!logo) return d;
+  const h = Math.min(d.h, (BRAND_DEFAULT_MAX_W * logo.height) / logo.width);
+  return h === d.h ? d : { ...d, h };
+}
+
+/**
+ * The brand's box in spec px: the logo fitted to the layout's height, or the
+ * wordmark's caps. The stage hit-tests this; the painters draw into it.
+ */
+export function brandBox(design: CardDesign, logo: HTMLImageElement | null): SpecRect {
+  const l = resolveBrandLayout(design, logo);
+  let w: number;
+  let h: number;
+  if (logo) {
+    h = l.h;
+    w = (logo.width / logo.height) * h;
+  } else {
+    const em = l.h * BRAND_TEXT_EM;
+    h = em * BRAND_CAP;
+    w = measureWordmark(wordmarkOf(design), em * TEX_PER_SPEC) / TEX_PER_SPEC;
+  }
+  const x = l.anchor === 'left' ? l.x : l.anchor === 'center' ? l.x - w / 2 : l.x - w;
+  return { x, y: l.y - h / 2, w, h };
+}
+
+/** Draw the brand (the logo as uploaded, or the wordmark in `ink`) into its
+ *  box at the layout's opacity. */
+function drawBrand(ctx: CanvasRenderingContext2D, design: CardDesign, logo: HTMLImageElement | null, ink: string) {
+  const l = resolveBrandLayout(design, logo);
+  const b = brandBox(design, logo);
+  const k = TEX_PER_SPEC;
+  ctx.save();
+  ctx.globalAlpha = l.opacity;
+  if (logo) {
+    ctx.drawImage(logo, b.x * k, b.y * k, b.w * k, b.h * k);
+  } else {
+    const em = l.h * BRAND_TEXT_EM * k;
+    ctx.fillStyle = ink;
+    ctx.font = `${BRAND_TEXT_WEIGHT} ${em}px ${FONT}`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    // The caps fill the box: baseline at its bottom.
+    ctx.fillText(wordmarkOf(design), b.x * k, (b.y + b.h) * k);
+  }
+  ctx.restore();
 }
 
 /**
  * The brand's shape in white on a transparent canvas: the logo's alpha, or the
- * program name as a wordmark. Both the albedo (for foil) and the surface maps
- * (for spot gloss and foil) are cut from this.
+ * program name as a wordmark, at the layout's opacity. Both the albedo (for
+ * foil and etch) and the surface maps (for every treatment but ink) are cut
+ * from this.
  */
 export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
+  drawBrand(ctx, design, logo, '#fff');
   if (logo) {
-    const r = logoRect(logo);
-    ctx.drawImage(logo, r.x, r.y, r.w, r.h);
     ctx.globalCompositeOperation = 'source-in';
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, TEX_W, TEX_H);
-  } else {
-    ctx.fillStyle = '#fff';
-    ctx.font = `${BRAND_TEXT_WEIGHT} ${BRAND_TEXT_PX}px ${FONT}`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.textAlign = 'right';
-    // Center the cap height (about 0.7 em) on the chip's row.
-    ctx.fillText(design.programName.trim() || 'Your brand', BRAND_RIGHT, BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35);
   }
   return c;
 }
@@ -467,7 +536,7 @@ export interface FrontState {
 export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, s.design, false, s.art);
+  paintBase(ctx, s.design, true, s.art);
   const ink = inkFor(s.design, s.art);
 
   // Brand: the logo as uploaded, or the wordmark in ink; a foil treatment
@@ -487,16 +556,8 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
     m.fillStyle = foilGradient(m);
     m.fillRect(0, 0, TEX_W, TEX_H);
     ctx.drawImage(mask, 0, 0);
-  } else if (s.logo) {
-    const r = logoRect(s.logo);
-    ctx.drawImage(s.logo, r.x, r.y, r.w, r.h);
   } else {
-    ctx.fillStyle = ink;
-    ctx.font = `${BRAND_TEXT_WEIGHT} ${BRAND_TEXT_PX}px ${FONT}`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.textAlign = 'right';
-    ctx.fillText(s.design.programName.trim() || 'Your brand', BRAND_RIGHT, BRAND_CENTER_Y + BRAND_TEXT_PX * 0.35);
-    ctx.textAlign = 'left';
+    drawBrand(ctx, s.design, s.logo, ink);
   }
 
   paintChip(ctx);
@@ -519,7 +580,7 @@ export interface BackState {
 export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: FaceAssets) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, s.design, true, null);
+  paintBase(ctx, s.design, false, null);
   const ink = inkFor(s.design, null);
 
   // Mag stripe, bleeding to the top edge (Thales sample 1:116).

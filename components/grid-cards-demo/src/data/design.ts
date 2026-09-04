@@ -53,6 +53,43 @@ export function materialOf(design: Pick<CardDesign, 'material'>): CardMaterial {
   return design.material;
 }
 
+/** Which point of the brand's box `BrandLayout.x` fixes. */
+export type BrandAnchor = 'left' | 'center' | 'right';
+
+/**
+ * Where the brand (the logo, or the wordmark) sits on the front, in the card
+ * spec's px (the 1536 × 969 artboard). `x` is the anchor's x and `y` the
+ * box's center; `h` is the box's height, and a wordmark is set at 0.8 h so
+ * its caps sit inside it. The box may run off the card: a watermark bleeds.
+ */
+export interface BrandLayout {
+  x: number;
+  y: number;
+  h: number;
+  anchor: BrandAnchor;
+  /** 0..1. A watermark is the brand printed faint. */
+  opacity: number;
+}
+
+/** The print sample's placement: on the chip's row, right-aligned to the
+ *  chip's own inset (152), 90 tall (Thales sample, Figma 1:97). */
+export const BRAND_DEFAULT_LAYOUT: BrandLayout = {
+  x: 1536 - 152,
+  y: 334 + 149 / 2,
+  h: 90,
+  anchor: 'right',
+  opacity: 1,
+};
+
+export const BRAND_MIN_H = 24;
+export const BRAND_MAX_H = 1400;
+
+export function sameBrandLayout(a: BrandLayout | null, b: BrandLayout | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y && a.h === b.h && a.anchor === b.anchor && a.opacity === b.opacity;
+}
+
 export interface CardDesign {
   /** Program name printed on the card and used as the app's brand. */
   programName: string;
@@ -65,6 +102,9 @@ export interface CardDesign {
   /** Object URL (or data URL) of an uploaded logo. Null = wordmark only. */
   logoUrl: string | null;
   logoTreatment: LogoTreatment;
+  /** Where the brand sits. Null = the print sample's placement, with a wide
+   *  logo held to 410 wide. */
+  brandLayout: BrandLayout | null;
   /** Object URL (or data URL) of uploaded card art, drawn across the front
    *  behind everything else. Null = the color (or the bare stock). */
   backgroundUrl: string | null;
@@ -125,6 +165,7 @@ export const initialDesign: CardDesign = {
   color: DESIGN_SWATCHES[0].color,
   logoUrl: null,
   logoTreatment: 'print',
+  brandLayout: null,
   backgroundUrl: null,
   artTreatment: 'print',
 };

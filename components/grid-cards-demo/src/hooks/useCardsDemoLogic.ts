@@ -26,7 +26,7 @@ import {
   type SpendRef,
 } from '@/data/cardApiCalls';
 import { initialDesign, type CardDesign } from '@/data/design';
-import { applyPreset, CUSTOM_PRESET, PRESETS, presetOf, type PresetId } from '@/data/presets';
+import { applyPreset, PRESETS, presetOf, type PresetId } from '@/data/presets';
 import type { Entry } from '@/components/ApiPanel/types';
 import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
 
@@ -80,16 +80,12 @@ export function useCardsDemoLogic() {
   const designRef = useRef(design);
   designRef.current = design;
 
-  // The selected tile is read off the design: a preset while the design equals
-  // one, the custom tile (Fintech) as soon as any control is edited away.
+  // The selected preset is read off the design: one while the design equals
+  // it, none as soon as any control is edited away.
   const preset = useMemo(() => presetOf(design), [design]);
-  // The visitor's own design, kept while a preset is showing so the custom
-  // tile brings it back.
-  const customDesignRef = useRef(design);
-  if (preset === CUSTOM_PRESET) customDesignRef.current = design;
   const selectPreset = useCallback((id: PresetId) => {
     const next = PRESETS.find((p) => p.id === id)?.design;
-    setDesign((d) => (next ? applyPreset(next, d) : { ...customDesignRef.current, cardholderName: d.cardholderName }));
+    if (next) setDesign((d) => applyPreset(next, d));
   }, []);
 
   const [wallet, setWallet] = useState<WalletState>(initialWallet);

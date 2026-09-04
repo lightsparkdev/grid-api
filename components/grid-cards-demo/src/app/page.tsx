@@ -131,6 +131,7 @@ export default function Page() {
           <AppPanel
             activeFlow={logic.activeFlow}
             design={logic.design}
+            onDesignChange={logic.updateDesign}
             session={logic.session}
             walletEntry={logic.walletEntry}
             onCardIssued={logic.onCardIssued}

@@ -300,3 +300,69 @@
   opacity: 0;
   pointer-events: none;
 }
+
+/* A preset: the platform's app icon as a swatch. The icon carries its own
+   corner curve, so the swatch's shape and inset stroke come off. */
+.swatchIcon {
+  display: block;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+/* Brand opacity: a hairline track with a small thumb, in the row's type. */
+.slider {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1;
+  min-width: 0;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+
+  &::-webkit-slider-runnable-track {
+    height: 1px;
+    background: var(--border-primary);
+  }
+
+  &::-moz-range-track {
+    height: 1px;
+    background: var(--border-primary);
+  }
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    margin-top: -4.5px;
+    border-radius: 50%;
+    border: none;
+    background: var(--text-primary);
+  }
+
+  &::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: none;
+    background: var(--text-primary);
+  }
+}
+
+.sliderValue {
+  @include label;
+  flex: 0 0 36px;
+  text-align: right;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1, 'tnum' 1;
+}
