@@ -13,15 +13,15 @@
 import { cubicBezier } from 'motion';
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
 import { squirclePath } from '@/components/liquid-glass';
-import { easeOutOvershoot } from '@/lib/easing';
 import { CARD_R } from './card3d/cardGeometry';
 
 /** Fades and the reveal: Out Quart, cubic-bezier(0.165, 0.84, 0.44, 1). */
 const ease = cubicBezier(0.165, 0.84, 0.44, 1);
 /** Line draws: symmetric, so a stroke starts and lands softly. */
 const easeDraw = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
-/** The ticks' arrival: overshoots its mark and settles back. */
-const easeTicks = cubicBezier(...easeOutOvershoot);
+/** The ticks' arrival: Anticipate, a pull back toward the center before the
+ *  move out, cubic-bezier(1, -0.4, 0.35, 0.95). */
+const easeTicks = cubicBezier(1, -0.4, 0.35, 0.95);
 
 const W = CARD_W;
 const H = CARD_H;
@@ -164,8 +164,10 @@ const CUES: Record<string, Cue> = {
 const TICK_START = 0.5;
 const TICK_TRAVEL = 0.7;
 
+/** The finished blueprint holds this long before the reveal. */
+const REVEAL_HOLD = 0.25;
 /** The reveal: the blueprint blurs out while the card blurs in. */
-const REVEAL_AT = 2.55;
+const REVEAL_AT = Math.max(...Object.values(CUES).map((c) => c.at + c.dur)) + REVEAL_HOLD;
 const BLUEPRINT_OUT = 0.8;
 const CARD_IN = 1.0;
 /** As the card comes in, the ticks tuck toward it (card px). */
