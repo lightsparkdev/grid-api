@@ -120,11 +120,6 @@ export interface SwapUniforms {
   uBaseMap: { value: THREE.Texture | null };
   uBaseOrm: { value: THREE.Texture | null };
   uBaseNormal: { value: THREE.Texture | null };
-  /** The chip is set after the print: while `uChipHide` is 1 the face shows
-   *  the base under the chip's mask (the front's; the back's is empty) and a
-   *  separate mesh carries the chip down onto the card. */
-  uChipMask: { value: THREE.Texture | null };
-  uChipHide: { value: number };
 }
 
 /** A front's travel: from just before the bowed middle's left edge to past
@@ -151,8 +146,6 @@ export function createSwapUniforms(shared?: SwapUniforms): SwapUniforms {
     uBaseMap: { value: null },
     uBaseOrm: { value: null },
     uBaseNormal: { value: null },
-    uChipMask: { value: null },
-    uChipHide: shared?.uChipHide ?? { value: 0 },
   };
 }
 
@@ -187,8 +180,6 @@ uniform sampler2D uBareEnv;
 uniform float uBareEnvIntensity;
 uniform float uBareRoughScale;
 uniform float uBareSteel;
-uniform sampler2D uChipMask;
-uniform float uChipHide;
 `;
 
 /** How brushed the blank is (three's `anisotropy` on the face materials; the
@@ -261,12 +252,6 @@ float swapL3 = smoothstep(swapTurn - ${f(WIPE_SOFT)}, swapTurn, uPrint);
 float swapBare = swapL1 * (1.0 - swapL2);
 float swapBase = swapL2 * (1.0 - swapL3);
 float swapPrint = 1.0 - swapBare - swapBase;
-#ifdef USE_MAP
-	// The chip's texels show the base until the chip has been set.
-	float swapChip = uChipHide * texture2D(uChipMask, vMapUv).r * swapPrint;
-	swapPrint -= swapChip;
-	swapBase += swapChip;
-#endif
 `;
 
 const MAP = /* glsl */ `
