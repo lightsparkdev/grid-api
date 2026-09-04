@@ -39,6 +39,9 @@
   /* The brand's selection box: the design-tool blue, with strokes and handles
      counter-scaled so they stay a constant screen size on the scaled card. */
   --sel: #0d99ff;
+  /* Snap guides are red, as Figma's are, so they never read as part of the
+     blue selection. The palette's red-500. */
+  --guide: var(--color-red-500);
   --sel-px: calc(1px / var(--card-scale));
   --handle: calc(8px / var(--card-scale));
   --zone: calc(18px / var(--card-scale));
@@ -121,7 +124,7 @@
 .guideV,
 .guideH {
   position: absolute;
-  background: var(--sel);
+  background: var(--guide);
   pointer-events: none;
 }
 
