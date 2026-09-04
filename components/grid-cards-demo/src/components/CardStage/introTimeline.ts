@@ -13,10 +13,15 @@
 import { cubicBezier } from 'motion';
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
 import { squirclePath } from '@/components/liquid-glass';
+import { easeOutOvershoot } from '@/lib/easing';
 import { CARD_R } from './card3d/cardGeometry';
 
-/** Every move in the intro: Out Quart, cubic-bezier(0.165, 0.84, 0.44, 1). */
+/** Fades and the reveal: Out Quart, cubic-bezier(0.165, 0.84, 0.44, 1). */
 const ease = cubicBezier(0.165, 0.84, 0.44, 1);
+/** Line draws: symmetric, so a stroke starts and lands softly. */
+const easeDraw = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+/** The ticks' arrival: overshoots its mark and settles back. */
+const easeTicks = cubicBezier(...easeOutOvershoot);
 
 const W = CARD_W;
 const H = CARD_H;
@@ -201,13 +206,13 @@ export function stepIntro(root: HTMLElement | SVGElement, t: number) {
   for (const [key, cue] of Object.entries(CUES)) {
     const el = els.get(key);
     if (!el) continue;
-    const u = ease(clamp01((t - cue.at) / cue.dur));
+    const u = clamp01((t - cue.at) / cue.dur);
     if (cue.kind === 'draw') {
       el.style.opacity = u > 0 ? '1' : '0';
-      el.style.strokeDashoffset = String(1 - u);
+      el.style.strokeDashoffset = String(1 - easeDraw(u));
     } else {
       const peak = Number(el.dataset.opacity ?? '1');
-      el.style.opacity = String(peak * u);
+      el.style.opacity = String(peak * ease(u));
     }
   }
 
@@ -217,7 +222,7 @@ export function stepIntro(root: HTMLElement | SVGElement, t: number) {
     const el = els.get(`tick-${i}`);
     const cue = CUES[`tick-${i}`];
     if (!el || !cue) return;
-    const enter = 1 - ease(clamp01((t - cue.at) / TICK_TRAVEL));
+    const enter = 1 - easeTicks(clamp01((t - cue.at) / TICK_TRAVEL));
     const k = TICK_START * enter + (TICK_EXIT / Math.hypot(vx, vy)) * out;
     el.setAttribute('transform', `translate(${f(-vx * k)} ${f(-vy * k)})`);
   });
