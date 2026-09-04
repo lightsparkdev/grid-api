@@ -24,6 +24,11 @@ const SPIN_K = 120;
 const SPIN_C = 18;
 /** Cursor tilt smoothing rate (1/s). */
 const TILT_RATE = 14;
+/** Letting the tilt go when the card is asked to hold still: slower than
+ *  following the pointer, so it settles rather than snaps. */
+const TILT_RELEASE_RATE = 5;
+/** The idle bob fades out over this when the card is asked to hold still. */
+const BOB_FALL_TAU = 0.3;
 /** How far a fling is projected when picking the face to settle on (s), and
  *  the fastest release the spring is asked to catch (deg/s). */
 const FLING_LOOKAHEAD = 0.28;
@@ -154,7 +159,7 @@ export class CardMotion {
     this.time += dt;
     const still = opts.hold || !!opts.freeze;
     if (still) this.clearTilt();
-    const k = 1 - Math.exp(-dt * TILT_RATE);
+    const k = 1 - Math.exp(-dt * (still ? TILT_RELEASE_RATE : TILT_RATE));
     this.tiltX += (this.tiltTX - this.tiltX) * k;
     this.tiltY += (this.tiltTY - this.tiltY) * k;
 
@@ -176,7 +181,7 @@ export class CardMotion {
     }
 
     const floating = !still && !opts.reduceMotion;
-    this.bobEnv = floating ? this.bobEnv + (1 - this.bobEnv) * (1 - Math.exp(-dt / BOB_RISE_TAU)) : 0;
+    this.bobEnv += ((floating ? 1 : 0) - this.bobEnv) * (1 - Math.exp(-dt / (floating ? BOB_RISE_TAU : BOB_FALL_TAU)));
     const dy = this.bobEnv * BOB_AMPLITUDE * Math.sin((this.time / BOB_PERIOD) * Math.PI * 2);
     let dx = 0;
     if (this.shakeAt >= 0) {
