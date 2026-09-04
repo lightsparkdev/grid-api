@@ -21,6 +21,15 @@
     --picker-fill: var(--color-gray-850);
     --picker-border: rgba(244, 244, 245, 0.16);
   }
+
+  /* Opened above the swatch (the usual case) the popup grows upward from its
+     anchored bottom edge, so the tabs go to the bottom: switching Solid to
+     Linear then adds the stops at the top, away from the pointer, and the
+     tab just clicked stays under it. Opened below, the top edge is the
+     anchored one and the tabs stay there. */
+  &[data-side='top'] .modes {
+    order: 1;
+  }
 }
 
 /* Fill kind: Solid, Linear, Radial, as text tabs. */
@@ -313,6 +322,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
+  box-shadow: inset 0 0 0 1px var(--picker-border);
 
   .stopsHead & {
     width: 22px;
@@ -333,6 +343,6 @@
   }
 
   &:focus-visible {
-    box-shadow: var(--input-focus);
+    box-shadow: inset 0 0 0 1px var(--picker-border), var(--input-focus);
   }
 }
