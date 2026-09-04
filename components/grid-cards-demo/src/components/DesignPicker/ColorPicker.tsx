@@ -451,21 +451,21 @@ export function ColorPicker({
                     <Tooltip text="Flip">
                       {(tip) => (
                         <button type="button" className={styles.tool} onClick={flip} aria-label="Flip gradient" {...tip}>
-                          <IconArrowLeftRight size={14} aria-hidden />
+                          <IconArrowLeftRight size={16} aria-hidden />
                         </button>
                       )}
                     </Tooltip>
                     <Tooltip text="Turn 90°">
                       {(tip) => (
                         <button type="button" className={styles.tool} onClick={turn} aria-label="Turn gradient 90 degrees" {...tip}>
-                          <IconRotate size={14} aria-hidden />
+                          <IconRotate size={16} aria-hidden />
                         </button>
                       )}
                     </Tooltip>
                     <Tooltip text="Add stop">
                       {(tip) => (
                         <button type="button" className={styles.tool} onClick={addStop} aria-label="Add stop" {...tip}>
-                          <IconPlusSmall size={14} aria-hidden />
+                          <IconPlusSmall size={16} aria-hidden />
                         </button>
                       )}
                     </Tooltip>
@@ -478,14 +478,16 @@ export function ColorPicker({
                       className={clsx(styles.stopRow, s.i === sel && styles.stopRowOn)}
                       onPointerDown={() => setStop(s.i)}
                     >
-                      <input
-                        className={styles.stopAt}
-                        value={Math.round(s.at * 100)}
-                        inputMode="numeric"
-                        aria-label={`Stop ${s.i + 1} position`}
-                        onFocus={() => setStop(s.i)}
-                        onChange={(e) => setStopAt(s.i, e.target.value)}
-                      />
+                      <label className={styles.stopAt}>
+                        <input
+                          value={Math.round(s.at * 100)}
+                          inputMode="numeric"
+                          aria-label={`Stop ${s.i + 1} position`}
+                          onFocus={() => setStop(s.i)}
+                          onChange={(e) => setStopAt(s.i, e.target.value)}
+                        />
+                        <span aria-hidden>%</span>
+                      </label>
                       <span className={styles.stopColor}>
                         <span className={styles.stopSwatch} style={{ background: s.color }} aria-hidden />
                         <span className={styles.stopHex}>{s.color.slice(1).toUpperCase()}</span>
@@ -497,7 +499,7 @@ export function ColorPicker({
                         aria-label={`Remove stop ${s.i + 1}`}
                         onClick={() => removeStop(s.i)}
                       >
-                        <IconMinusSmall size={14} aria-hidden />
+                        <IconMinusSmall size={16} aria-hidden />
                       </button>
                     </div>
                   ))}

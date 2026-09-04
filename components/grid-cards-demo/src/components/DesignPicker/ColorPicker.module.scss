@@ -58,6 +58,8 @@
 .stopsBar {
   position: relative;
   height: 14px;
+  /* Inset by a handle's radius: the end stops sit within the popup's padding. */
+  margin-inline: 7px;
   corner-shape: var(--corner-shape);
   border-radius: var(--corner-radius-xs);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
@@ -75,6 +77,7 @@
   top: 50%;
   width: 14px;
   height: 14px;
+  corner-shape: round;
   border-radius: 50%;
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), var(--shadow-sm);
@@ -121,6 +124,8 @@
 .stopAt,
 .stopColor {
   @include input;
+  font-family: var(--font-family-mono);
+  font-weight: 480;
   font-size: 12px;
   height: 24px;
   box-sizing: border-box;
@@ -135,12 +140,22 @@
 }
 
 .stopAt {
-  width: 40px;
+  width: 48px;
   padding-inline: var(--spacing-2xs);
-  text-align: right;
-  outline: none;
+  gap: 1px;
+  justify-content: flex-end;
+  color: var(--text-secondary);
 
-  &:focus {
+  input {
+    all: unset;
+    font: inherit;
+    width: 3ch;
+    text-align: right;
+    color: var(--text-primary);
+    font-feature-settings: inherit;
+  }
+
+  &:focus-within {
     @include input-focus;
   }
 }
@@ -234,6 +249,7 @@
   width: 14px;
   height: 14px;
   top: 50%;
+  corner-shape: round;
   border-radius: 50%;
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), var(--shadow-sm);
@@ -263,6 +279,8 @@
   height: 28px;
   box-sizing: border-box;
   padding-inline: var(--spacing-xs);
+  font-family: var(--font-family-mono);
+  font-weight: 480;
   font-size: 12px;
   border: var(--stroke-sm) solid var(--border-primary);
   corner-shape: var(--corner-shape);
