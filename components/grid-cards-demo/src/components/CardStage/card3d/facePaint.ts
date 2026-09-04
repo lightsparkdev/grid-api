@@ -461,6 +461,21 @@ export function paintBareBack(ctx: CanvasRenderingContext2D, stock: CardStock) {
   ctx.fillRect(0, 0, TEX_W, TEX_H);
 }
 
+/** The print's base: its ground (color, gradient, or art) laid on the body,
+ *  before the graphics. The wipe's second layer. */
+export function paintBaseFront(ctx: CanvasRenderingContext2D, design: CardDesign, art: HTMLImageElement | null) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  paintBase(ctx, design, true, art);
+  paintChip(ctx, faceColorOf(design));
+}
+
+export function paintBaseBack(ctx: CanvasRenderingContext2D, design: CardDesign) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  paintBase(ctx, design, false, null);
+}
+
 /* ── Brand ─────────────────────────────────────────────────────────────────── */
 
 /** With no layout of its own, a wide logo is held to this (spec px), as the
@@ -469,8 +484,8 @@ const BRAND_DEFAULT_MAX_W = 410;
 /** A wordmark is set at this share of its box, so its caps sit inside it. */
 const BRAND_TEXT_EM = 0.8;
 /** Suisse's cap height, as a share of the em. */
-const BRAND_CAP = 0.72;
-const BRAND_TEXT_WEIGHT = 430;
+export const BRAND_CAP = 0.72;
+export const BRAND_TEXT_WEIGHT = 430;
 /** Spec px → texels, as a factor. */
 export const TEX_PER_SPEC = F(1);
 
@@ -488,7 +503,7 @@ function wordmarkOf(design: CardDesign): string {
 
 let measureCtx: CanvasRenderingContext2D | null = null;
 /** The wordmark's tracking, in em (the print sample sets -4%). */
-const BRAND_TRACKING = -0.04;
+export const BRAND_TRACKING = -0.04;
 
 function measureWordmark(text: string, px: number): number {
   measureCtx ??= makeCanvas(1, 1).getContext('2d')!;
@@ -684,6 +699,18 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   paintState(ctx, s.frozen, s.closed);
 }
 
+/** Where the cardholder's name sits on the back, in spec px: its em box on
+ *  the account block's first line, at least as wide as the specimen text. */
+export function backNameBox(design: CardDesign): SpecRect {
+  measureCtx ??= makeCanvas(1, 1).getContext('2d')!;
+  measureCtx.letterSpacing = '0px';
+  measureCtx.font = `400 ${F(57)}px ${FONT}`;
+  const text = design.cardholderName.trim() || 'Cardholder name';
+  const w = Math.max(measureCtx.measureText(text).width, measureCtx.measureText('Cardholder name').width) / TEX_PER_SPEC;
+  // Baseline at 476 + 41; the face's ascent is 85% of the em.
+  return { x: 56, y: 476 + 41 - 57 * 0.85, w, h: 57 };
+}
+
 export interface BackState {
   design: CardDesign;
   /** How far the personalization has printed (0 before ACTIVE, 1 once it has). */
@@ -710,6 +737,7 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   drawTinted(ctx, assets.contactless, TEX_W - F(54) - cw, F(470), cw, ch, ink);
 
   // Account block at (56, 476): name, PAN, EXP / CVV, on 41 px lines 32 apart.
+  // (`backNameBox` describes the name line's box for the stage.)
   // The name is the cardholder's as designed; the account data prints when the
   // card goes ACTIVE and stays masked until Reveal.
   const x = F(56);

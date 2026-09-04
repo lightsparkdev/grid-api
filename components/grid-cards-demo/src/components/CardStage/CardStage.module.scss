@@ -79,6 +79,25 @@
   cursor: default;
 }
 
+/* ── Typing on the card ─────────────────────────────────────────────────────
+   A transparent input laid over the painted text, in the card's face, size
+   and tracking (set inline), so only the caret and selection show; the paint
+   underneath is the text. */
+.textEdit {
+  all: unset;
+  position: absolute;
+  box-sizing: border-box;
+  color: transparent;
+  caret-color: var(--sel);
+  white-space: pre;
+  font-feature-settings: 'salt' 1, 'ss01' 1;
+  cursor: text;
+
+  &::selection {
+    background: rgba(13, 153, 255, 0.3);
+  }
+}
+
 /* ── The gradient's handles ─────────────────────────────────────────────────
    Figma's: a line between the ends, a ring at each end to drag, a dot per
    stop. Same blue and scale-compensated stroke as the selection box. */

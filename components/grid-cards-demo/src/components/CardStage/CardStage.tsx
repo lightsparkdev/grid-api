@@ -23,7 +23,8 @@ import {
 } from '@/data/design';
 import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/CardMesh';
-import type { SpecRect } from './card3d/facePaint';
+import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, type SpecRect } from './card3d/facePaint';
+import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { CardMotion } from './cardMotion';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
@@ -71,6 +72,8 @@ interface Live {
   reduceMotion: boolean;
   /** The brand is selected: the card holds flat under the selection box. */
   editing: boolean;
+  /** Text is being typed on a face: the card holds still on that face. */
+  freeze: boolean;
   /** Which face is toward the camera, from the last frame (+ front, - back). */
   facing: number;
   intro: Intro;
@@ -195,6 +198,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     wantBack: false,
     reduceMotion,
     editing: false,
+    freeze: false,
     facing: 1,
     intro: {
       t: -1,
@@ -248,6 +252,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     setPlaced(p);
   }, []);
   const pick = useRef<Pick | null>(null);
+  /** The same, for the back face (null while the front shows). */
+  const pickBack = useRef<Pick | null>(null);
   const brandEditable = !!onDesignChange;
   const setLayout = (layout: BrandLayout | null) => onDesignChange?.({ brandLayout: layout });
 
@@ -584,11 +590,84 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     hover(false);
     if (!drag.current) motion.clearTilt();
   };
-  // Double-click the brand to put it back where the print sample has it.
+  // ── Typing on the card ─────────────────────────────────────────────────────
+  // Double-click the wordmark (front) or the cardholder's name (back) to type
+  // it in place: a transparent input rides the hit box over the painted text,
+  // in the card's face, size, and tracking, so the caret sits in the paint.
+  // A logo has no text: double-clicking it puts it back where the sample has it.
+  const [textEdit, setTextEdit] = useState<'brand' | 'name' | null>(null);
+  live.current.freeze = textEdit !== null;
+  const textInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!textEdit) return;
+    const el = textInput.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, [textEdit]);
+  useEffect(() => {
+    if (phoneUp || !introDone) setTextEdit(null);
+  }, [phoneUp, introDone]);
+  const hitName = (clientX: number, clientY: number) => {
+    const p = pickBack.current?.(clientX, clientY);
+    if (!p) return false;
+    const b = backNameBox(design);
+    const m = 12;
+    return p.x >= b.x - m && p.x <= b.x + b.w + m && p.y >= b.y - m && p.y <= b.y + b.h + m;
+  };
   const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!brandEditable || live.current.t > 0) return;
-    if (hitBrand(e.clientX, e.clientY)) setLayout(null);
+    if (hitBrand(e.clientX, e.clientY)) {
+      if (design.logoUrl) setLayout(null);
+      else {
+        setSelected(false);
+        setTextEdit('brand');
+      }
+      return;
+    }
+    if (hitName(e.clientX, e.clientY)) setTextEdit('name');
   };
+  const onTextKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      e.preventDefault();
+      setTextEdit(null);
+    }
+  };
+  // The editor's box in card px: the wordmark's em box, right-anchored and
+  // wide enough to type into; or the name line on the back.
+  const k = CARD_PER_SPEC;
+  let textStyle: React.CSSProperties | undefined;
+  if (textEdit === 'brand' && placed) {
+    const b = placed.box;
+    const em = b.h * k;
+    textStyle = {
+      right: CARD_W - (b.x + b.w) * k,
+      top: b.y * k,
+      width: CARD_W * 0.6,
+      height: em,
+      fontSize: em,
+      fontWeight: BRAND_TEXT_WEIGHT,
+      letterSpacing: `${BRAND_TRACKING}em`,
+      textAlign: 'right',
+      // The paint centers the caps in the em box; the face's ascent is 85%.
+      lineHeight: `${em}px`,
+      transform: `translateY(${(0.5 + BRAND_CAP / 2 - 0.85) * em}px)`,
+    };
+  } else if (textEdit === 'name') {
+    const b = backNameBox(design);
+    const em = b.h * k;
+    textStyle = {
+      left: b.x * k,
+      top: b.y * k,
+      width: CARD_W - b.x * k - 40 * k,
+      height: em,
+      fontSize: em,
+      fontWeight: 400,
+      letterSpacing: 0,
+      textAlign: 'left',
+      lineHeight: `${em}px`,
+    };
+  }
 
   const pill = card.closed
     ? 'Closed'
@@ -601,7 +680,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           : null;
 
   // The selection box, in card px on the hit box.
-  const box = placed && (selected || overBrand) ? placed.box : null;
+  const box = placed && (selected || overBrand) && !textEdit ? placed.box : null;
   const boxStyle = box
     ? {
         left: box.x * CARD_PER_SPEC,
@@ -634,6 +713,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           live={live}
           motion={motion}
           pick={pick}
+          pickBack={pickBack}
           placement={placement}
           onBrandPlacement={onBrandPlacement}
           state={{ design, issued, frozen: card.frozen, closed: card.closed, shown }}
@@ -712,6 +792,24 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           />
         ))}
 
+        {textEdit && textStyle && (
+          <input
+            ref={textInput}
+            className={styles.textEdit}
+            style={{ ...textStyle, fontFamily: `"${CARD_FONT_FAMILY}"` }}
+            value={textEdit === 'brand' ? design.programName : design.cardholderName}
+            maxLength={textEdit === 'brand' ? 18 : 24}
+            aria-label={textEdit === 'brand' ? 'Brand name' : 'Cardholder name'}
+            onChange={(e) =>
+              onDesignChange?.(textEdit === 'brand' ? { programName: e.target.value } : { cardholderName: e.target.value })
+            }
+            onKeyDown={onTextKey}
+            onBlur={() => setTextEdit(null)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+          />
+        )}
+
         <span
           className={clsx(
             styles.hint,
@@ -785,6 +883,7 @@ interface CardRigProps {
   motion: CardMotion;
   /** Filled with a picker from the pointer to the front face (spec px). */
   pick: React.MutableRefObject<Pick | null>;
+  pickBack: React.MutableRefObject<Pick | null>;
   /** Where the brand last painted (for the dev hook). */
   placement: React.MutableRefObject<BrandPlacement | null>;
   onBrandPlacement: (p: BrandPlacement) => void;
@@ -792,7 +891,7 @@ interface CardRigProps {
 }
 
 /** Drives the mesh and the DOM hit box every frame. */
-function CardRig({ rootRef, hitRef, live, motion, pick, placement, onBrandPlacement, state }: CardRigProps) {
+function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onBrandPlacement, state }: CardRigProps) {
   // Carrier takes position and scale; the card inside it takes the spin.
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
@@ -826,10 +925,29 @@ function CardRig({ rootRef, hitRef, live, motion, pick, placement, onBrandPlacem
       g.worldToLocal(hit);
       return { x: (hit.x / CARD_W + 0.5) * FIGMA_CARD_W, y: (0.5 - hit.y / CARD_H) * FIGMA_FACE_H };
     };
+    // The back: the same plane seen from behind. Its paint is mirrored in u
+    // on the mesh, so seen from behind it reads the right way round and its
+    // canvas x runs against local x.
+    pickBack.current = (clientX, clientY) => {
+      const g = group.current;
+      if (!g) return null;
+      const { camera, gl } = get();
+      const r = gl.domElement.getBoundingClientRect();
+      ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      g.getWorldPosition(origin);
+      normal.set(0, 0, 1).applyQuaternion(g.getWorldQuaternion(q));
+      if (ray.ray.direction.dot(normal) <= 0) return null;
+      plane.setFromNormalAndCoplanarPoint(normal, origin);
+      if (!ray.ray.intersectPlane(plane, hit)) return null;
+      g.worldToLocal(hit);
+      return { x: (0.5 - hit.x / CARD_W) * FIGMA_CARD_W, y: (0.5 - hit.y / CARD_H) * FIGMA_FACE_H };
+    };
     return () => {
       pick.current = null;
+      pickBack.current = null;
     };
-  }, [get, pick]);
+  }, [get, pick, pickBack]);
 
   // Dev: expose the scene state and the pose for tracing from the console.
   useEffect(() => {
@@ -882,6 +1000,7 @@ function CardRig({ rootRef, hitRef, live, motion, pick, placement, onBrandPlacem
       // Held flat: parked in the phone, during the intro, or under the
       // brand's selection box (which is DOM, and must sit on the face).
       hold: t > 0 || !intro.done || live.current.editing,
+      freeze: live.current.freeze,
       reduceMotion: live.current.reduceMotion,
     });
     const bob = pose.dy * (1 - t);

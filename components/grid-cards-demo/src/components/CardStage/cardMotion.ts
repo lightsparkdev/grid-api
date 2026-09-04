@@ -147,11 +147,13 @@ export class CardMotion {
 
   /**
    * Advance one frame. `wantBack` (the reveal) turns the card to its back;
-   * `hold` (the phone is up) parks it front-up and still.
+   * `hold` (the phone is up) parks it front-up and still; `freeze` (text
+   * being typed on a face) parks it still on whichever face is showing.
    */
-  step(dt: number, opts: { wantBack: boolean; hold: boolean; reduceMotion: boolean }): Pose {
+  step(dt: number, opts: { wantBack: boolean; hold: boolean; freeze?: boolean; reduceMotion: boolean }): Pose {
     this.time += dt;
-    if (opts.hold) this.clearTilt();
+    const still = opts.hold || !!opts.freeze;
+    if (still) this.clearTilt();
     const k = 1 - Math.exp(-dt * TILT_RATE);
     this.tiltX += (this.tiltTX - this.tiltX) * k;
     this.tiltY += (this.tiltTY - this.tiltY) * k;
@@ -173,7 +175,7 @@ export class CardMotion {
       this.pitch += this.pitchV * dt;
     }
 
-    const floating = !opts.hold && !opts.reduceMotion;
+    const floating = !still && !opts.reduceMotion;
     this.bobEnv = floating ? this.bobEnv + (1 - this.bobEnv) * (1 - Math.exp(-dt / BOB_RISE_TAU)) : 0;
     const dy = this.bobEnv * BOB_AMPLITUDE * Math.sin((this.time / BOB_PERIOD) * Math.PI * 2);
     let dx = 0;
