@@ -49,7 +49,7 @@ properties:
   feeConfigs:
     type: array
     items:
-      $ref: ./FeeConfig.yaml
+      $ref: ./FeeConfigOneOf.yaml
     description: |
       Platform-collected fees that should be added on top of
       Grid-collected fees. Contains every currently-active fee config

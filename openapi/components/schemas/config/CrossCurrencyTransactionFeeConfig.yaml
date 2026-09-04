@@ -1,0 +1,17 @@
+allOf:
+  - $ref: ./FeeConfig.yaml
+  - type: object
+    properties:
+      feeType:
+        enum:
+          - CROSS_CURRENCY_TRANSACTION
+      sourceCurrency:
+        type: string
+        description: >-
+          Currency code of the sending side this fee applies to. Only `USD` is
+          accepted today; other currencies return a `NOT_IMPLEMENTED` error.
+        example: USD
+    required:
+      - sourceCurrency
+description: >-
+  A fee charged for a cross-currency transaction. There can be at most one cross-currency transaction fee config for a given source currency. The fee will apply to all cross-currency transactions that originate in the source currency.

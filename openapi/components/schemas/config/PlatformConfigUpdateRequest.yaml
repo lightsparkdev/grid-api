@@ -33,9 +33,10 @@ properties:
   feeConfigs:
     type: array
     items:
-      $ref: ./FeeConfig.yaml
+      $ref: ./FeeConfigOneOf.yaml
     description: |
-      Merge-by-key upsert of platform fee configs, keyed by
-      `(feeType, sourceCurrency)`. Setting variable and fixed fees to 0 for
-      an existing fee config deactivates it. Only `sourceCurrency: USD` is
-      accepted today. Omit this field to leave fee configs unchanged.
+      Merge-by-key upsert of platform fee configs. A cross-currency transaction
+      fee config is keyed by `(feeType, sourceCurrency)` and a rail fee config by
+      `(feeType, rail, direction, originator)`. Setting variable and fixed fees
+      to 0 for an existing config deactivates it. Omit this field to leave fee
+      configs unchanged.
