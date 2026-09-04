@@ -10,9 +10,13 @@
  * skeleton lands exactly where the face painter puts the chip and the brand.
  */
 
+import { cubicBezier } from 'motion';
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
 import { squirclePath } from '@/components/liquid-glass';
 import { CARD_R } from './card3d/cardGeometry';
+
+/** Every move in the intro: Out Quart, cubic-bezier(0.165, 0.84, 0.44, 1). */
+const ease = cubicBezier(0.165, 0.84, 0.44, 1);
 
 const W = CARD_W;
 const H = CARD_H;
@@ -159,10 +163,8 @@ const TICK_TRAVEL = 0.7;
 const REVEAL_AT = 2.55;
 const BLUEPRINT_OUT = 0.8;
 const CARD_IN = 1.0;
-/** As the card comes in, the ticks tuck toward it and the outer dimensions
- *  push away (card px). */
+/** As the card comes in, the ticks tuck toward it (card px). */
 const TICK_EXIT = 8;
-const DIM_EXIT = 10;
 /** Where the card starts, stage px of blur. */
 const CARD_BLUR = 16;
 /** Where the blueprint ends, card px of blur (it scales with the hit box, so
@@ -171,13 +173,11 @@ const BLUEPRINT_BLUR = 12;
 export const INTRO_END = REVEAL_AT + CARD_IN;
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
-const easeInOutCubic = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
-const easeOutCubic = (p: number) => 1 - Math.pow(1 - p, 3);
 
 /** The card's look at `t`: hidden until the reveal, then fading in as the blur clears. */
 export function introCard(t: number): { opacity: number; blur: number } {
-  const u = clamp01((t - REVEAL_AT) / CARD_IN);
-  return { opacity: easeOutCubic(u), blur: CARD_BLUR * (1 - easeInOutCubic(u)) };
+  const u = ease(clamp01((t - REVEAL_AT) / CARD_IN));
+  return { opacity: u, blur: CARD_BLUR * (1 - u) };
 }
 
 const cache = new WeakMap<Element, Map<string, SVGElement>>();
@@ -194,35 +194,31 @@ function elements(root: Element): Map<string, SVGElement> {
 
 /** Pose every blueprint element for time `t`. `root` is the overlay itself. */
 export function stepIntro(root: HTMLElement | SVGElement, t: number) {
-  const out = easeInOutCubic(clamp01((t - REVEAL_AT) / BLUEPRINT_OUT));
+  const out = ease(clamp01((t - REVEAL_AT) / BLUEPRINT_OUT));
   root.style.opacity = String(1 - out);
   root.style.filter = out > 0 ? `blur(${(BLUEPRINT_BLUR * out).toFixed(2)}px)` : '';
   const els = elements(root);
   for (const [key, cue] of Object.entries(CUES)) {
     const el = els.get(key);
     if (!el) continue;
-    const u = clamp01((t - cue.at) / cue.dur);
+    const u = ease(clamp01((t - cue.at) / cue.dur));
     if (cue.kind === 'draw') {
       el.style.opacity = u > 0 ? '1' : '0';
-      el.style.strokeDashoffset = String(1 - easeInOutCubic(u));
+      el.style.strokeDashoffset = String(1 - u);
     } else {
       const peak = Number(el.dataset.opacity ?? '1');
-      el.style.opacity = String(peak * easeOutCubic(u));
+      el.style.opacity = String(peak * u);
     }
   }
 
-  // Motion. Ticks: in from TICK_START of the way to the center as they fade
-  // in, then a small tuck toward the card on the reveal. Outer dimensions:
-  // a small push away on the reveal.
-  const exit = easeOutCubic(clamp01((t - REVEAL_AT) / BLUEPRINT_OUT));
+  // Ticks: in from TICK_START of the way to the center as they fade in, then
+  // a small tuck toward the card on the reveal.
   INTRO_GEOMETRY.tickVectors.forEach(([vx, vy], i) => {
     const el = els.get(`tick-${i}`);
     const cue = CUES[`tick-${i}`];
     if (!el || !cue) return;
-    const enter = 1 - easeOutCubic(clamp01((t - cue.at) / TICK_TRAVEL));
-    const k = TICK_START * enter + (TICK_EXIT / Math.hypot(vx, vy)) * exit;
+    const enter = 1 - ease(clamp01((t - cue.at) / TICK_TRAVEL));
+    const k = TICK_START * enter + (TICK_EXIT / Math.hypot(vx, vy)) * out;
     el.setAttribute('transform', `translate(${f(-vx * k)} ${f(-vy * k)})`);
   });
-  els.get('dims-w')?.setAttribute('transform', `translate(0 ${f(-DIM_EXIT * exit)})`);
-  els.get('dims-h')?.setAttribute('transform', `translate(${f(DIM_EXIT * exit)} 0)`);
 }

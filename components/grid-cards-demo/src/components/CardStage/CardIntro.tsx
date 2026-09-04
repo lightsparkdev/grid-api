@@ -42,30 +42,26 @@ export const CardIntro = forwardRef<SVGSVGElement, { brand: string }>(function C
         {/* The card */}
         <path data-intro="outline" d={G.outline} strokeWidth={MAIN} {...DRAW} />
 
-        {/* Dimensions. The outer two sit in groups so they can push away on the reveal. */}
-        <g data-intro="dims-w">
-          <path data-intro="dim-w" d={G.dimW} strokeWidth={CONSTRUCTION} {...DRAW} />
-          <path data-intro="ext-w" data-opacity="0.35" d={G.extW} strokeWidth={FINE} strokeDasharray="2 2" {...FADE} />
-          <text data-intro="label-w" className={styles.blueprintLabel} x={G.labelW.x} y={G.labelW.y} fontSize={G.fontDim} textAnchor="middle" {...FADE}>
-            1536 · 85.60 mm
-          </text>
-        </g>
-        <g data-intro="dims-h">
-          <path data-intro="dim-h" d={G.dimH} strokeWidth={CONSTRUCTION} {...DRAW} />
-          <path data-intro="ext-h" data-opacity="0.35" d={G.extH} strokeWidth={FINE} strokeDasharray="2 2" {...FADE} />
-          <text
-            data-intro="label-h"
-            className={styles.blueprintLabel}
-            x={G.labelH.x}
-            y={G.labelH.y}
-            fontSize={G.fontDim}
-            textAnchor="middle"
-            transform={`rotate(-90 ${G.labelH.x} ${G.labelH.y})`}
-            {...FADE}
-          >
-            963 · 53.98 mm
-          </text>
-        </g>
+        {/* Dimensions */}
+        <path data-intro="dim-w" d={G.dimW} strokeWidth={CONSTRUCTION} {...DRAW} />
+        <path data-intro="ext-w" data-opacity="0.35" d={G.extW} strokeWidth={FINE} strokeDasharray="2 2" {...FADE} />
+        <text data-intro="label-w" className={styles.blueprintLabel} x={G.labelW.x} y={G.labelW.y} fontSize={G.fontDim} textAnchor="middle" {...FADE}>
+          1536 · 85.60 mm
+        </text>
+        <path data-intro="dim-h" d={G.dimH} strokeWidth={CONSTRUCTION} {...DRAW} />
+        <path data-intro="ext-h" data-opacity="0.35" d={G.extH} strokeWidth={FINE} strokeDasharray="2 2" {...FADE} />
+        <text
+          data-intro="label-h"
+          className={styles.blueprintLabel}
+          x={G.labelH.x}
+          y={G.labelH.y}
+          fontSize={G.fontDim}
+          textAnchor="middle"
+          transform={`rotate(-90 ${G.labelH.x} ${G.labelH.y})`}
+          {...FADE}
+        >
+          963 · 53.98 mm
+        </text>
         <path data-intro="leader-r" d={G.leaderR} strokeWidth={CONSTRUCTION} {...DRAW} />
         <circle data-intro="circle-r" data-opacity="0.35" cx={G.circleR.cx} cy={G.circleR.cy} r={G.circleR.r} strokeWidth={FINE} strokeDasharray="1.5 1.5" {...FADE} />
         <text data-intro="label-r" className={styles.blueprintLabel} x={G.labelR.x} y={G.labelR.y} fontSize={G.fontSmall} textAnchor="end" {...FADE}>
