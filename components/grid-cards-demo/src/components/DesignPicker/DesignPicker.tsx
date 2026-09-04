@@ -92,19 +92,19 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
     };
     place(!placed);
     if (!placed) setPlaced(true);
-    // The row wraps at narrow widths; follow the checked swatch when it moves.
-    // ResizeObserver fires once on observe, so this must not jump, or it
-    // would cut the slide short on every change.
-    let first = true;
-    const ro = new ResizeObserver(() => {
-      if (first) {
-        first = false;
-        return;
-      }
-      place(false);
-    });
+    // The swatches move without a selection changing: the row wraps or the
+    // panel resizes, fonts swap in. Follow them (animated, never a jump, so
+    // the observer's own first call after observe() cannot cut a slide short).
+    const follow = () => place(false);
+    const ro = new ResizeObserver(follow);
     ro.observe(row);
-    return () => ro.disconnect();
+    for (const el of row.children) ro.observe(el);
+    document.fonts?.ready.then(follow);
+    window.addEventListener('resize', follow);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', follow);
+    };
   }, [active, placed, x, y, w, h, sx, sy]);
 
   return (

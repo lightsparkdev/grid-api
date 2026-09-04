@@ -445,6 +445,30 @@ export function brandBox(design: CardDesign, logo: HTMLImageElement | null): Spe
   return { x, y: l.y - h / 2, w, h };
 }
 
+/**
+ * The texels the brand can touch: its box turned by its rotation, with room
+ * for a wordmark's descenders and a relief's blur, clamped to the face. The
+ * surface bakes work inside this so a drag can rebake every frame.
+ */
+export function brandRegion(design: CardDesign, logo: HTMLImageElement | null): { x: number; y: number; w: number; h: number } {
+  const l = resolveBrandLayout(design, logo);
+  const b = brandBox(design, logo);
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  const c = Math.abs(Math.cos((l.rotation * Math.PI) / 180));
+  const s = Math.abs(Math.sin((l.rotation * Math.PI) / 180));
+  // Descenders reach below the em box; the relief blurs 6 texels each way.
+  const pad = (logo ? 0 : b.h * 0.3) + 24 / TEX_PER_SPEC;
+  const hw = (b.w * c + b.h * s) / 2 + pad;
+  const hh = (b.w * s + b.h * c) / 2 + pad;
+  const k = TEX_PER_SPEC;
+  const x0 = Math.max(0, Math.floor((cx - hw) * k));
+  const y0 = Math.max(0, Math.floor((cy - hh) * k));
+  const x1 = Math.min(TEX_W, Math.ceil((cx + hw) * k));
+  const y1 = Math.min(TEX_H, Math.ceil((cy + hh) * k));
+  return { x: x0, y: y0, w: Math.max(0, x1 - x0), h: Math.max(0, y1 - y0) };
+}
+
 /** Draw the brand (the logo as uploaded, or the wordmark in `ink`) into its
  *  box at the layout's opacity. */
 function drawBrand(ctx: CanvasRenderingContext2D, design: CardDesign, logo: HTMLImageElement | null, ink: string) {

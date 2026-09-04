@@ -267,9 +267,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected]);
 
-  // An edit in flight repaints the print live; the surface bake waits until
-  // the release.
-  const [brandDragging, setBrandDragging] = useState(false);
   const [guides, setGuides] = useState<Guides>({});
   const [overBrand, setOverBrand] = useState(false);
   const overBrandRef = useRef(false);
@@ -324,7 +321,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     brandDrag.current = { id: e.pointerId, mode, handle, start, layout0: pl.layout, box0: pl.box };
     motion.clearTilt();
     setSelected(true);
-    setBrandDragging(true);
     e.currentTarget.classList.add(styles.hitMoving);
   };
   const moveBrand = (bd: BrandDrag, p: Pt) => {
@@ -421,7 +417,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (bd) {
       if (e.pointerId !== bd.id) return;
       brandDrag.current = null;
-      setBrandDragging(false);
       setGuides({});
       e.currentTarget.classList.remove(styles.hitMoving);
       return;
@@ -487,7 +482,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           pick={pick}
           placement={placement}
           onBrandPlacement={onBrandPlacement}
-          state={{ design, issued, frozen: card.frozen, closed: card.closed, shown, brandDragging }}
+          state={{ design, issued, frozen: card.frozen, closed: card.closed, shown }}
         />
       </Canvas>
 
@@ -545,13 +540,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         >
           <IconRotate360Right size={14} />
           Drag to turn it over
-        </span>
-        {/* The brand, selected: what its box can do. */}
-        <span
-          className={clsx(styles.hint, (!selected || brandDragging || !introDone || phoneUp) && styles.hintGone)}
-          aria-hidden
-        >
-          Drag to move · Handles scale · Corners rotate · Double-click resets
         </span>
       </div>
     </div>

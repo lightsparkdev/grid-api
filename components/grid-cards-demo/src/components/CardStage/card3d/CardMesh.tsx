@@ -9,6 +9,7 @@ import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometr
 import { foilStudioTexture } from './CardEnv';
 import {
   brandBox,
+  brandRegion,
   K,
   loadFaceAssets,
   loadImage,
@@ -37,9 +38,6 @@ export interface CardMeshState {
   closed: boolean;
   /** PAN groups revealed on the back (0..4; 5 = expiry and CVV). */
   shown: number;
-  /** The brand is being dragged or resized on the stage: the print follows
-   *  live, the surface decoration (a per-texel bake) waits for the release. */
-  brandDragging?: boolean;
 }
 
 /** The brand's box on the front and the layout it was drawn with, so the
@@ -242,12 +240,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // art, laid over the front's cached maps per design.
   const { logoTreatment, artTreatment } = state.design;
   const decoTex = useRef<{ orm: THREE.Texture | null; normal: THREE.Texture | null }>({ orm: null, normal: null });
-  const brandDragging = state.brandDragging ?? false;
   useEffect(() => {
     if (!assets) return;
-    // The etch relief is a per-texel bake; while the brand is being dragged
-    // the decoration stays where it was and catches up on the release.
-    if (brandDragging) return;
     const front = materials[MAT_FRONT];
     const base = surfaceTex.current.get(`${surface}|front`);
     if (!base) return;
@@ -275,7 +269,11 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       front.metalnessMap = decorated;
     }
     if (brandT === 'etch' && brandMask) {
-      const relief = canvasTexture(decorateNormal(base.normal.image as HTMLCanvasElement, brandMask));
+      // The relief is a per-texel bake, confined to the brand's own texels so
+      // it keeps up with a drag.
+      const relief = canvasTexture(
+        decorateNormal(base.normal.image as HTMLCanvasElement, brandMask, brandRegion(state.design, logo)),
+      );
       decoTex.current.normal = relief;
       front.normalMap = relief;
     } else {
@@ -283,7 +281,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     }
     front.needsUpdate = true;
     invalidate();
-  }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, materials, invalidate, brandDragging]);
+  }, [assets, surface, state.design, logoTreatment, artTreatment, logo, art, materials, invalidate]);
 
   // Edge: the construction's layers, the printed skins in the print color (or
   // the stock's own face when nothing is printed).

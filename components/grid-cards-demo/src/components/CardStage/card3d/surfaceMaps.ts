@@ -167,21 +167,23 @@ function heightToNormal(height: HTMLCanvasElement, strength: number): HTMLCanvas
   const h = height.height;
   const src = height.getContext('2d')!.getImageData(0, 0, w, h).data;
   const out = new ImageData(w, h);
-  const at = (x: number, y: number) => {
-    const cx = x < 0 ? 0 : x >= w ? w - 1 : x;
-    const cy = y < 0 ? 0 : y >= h ? h - 1 : y;
-    return src[(cy * w + cx) * 4] / 255;
-  };
+  const o = out.data;
+  const k = strength / 255;
   for (let y = 0; y < h; y++) {
+    const up = (y > 0 ? y - 1 : 0) * w;
+    const down = (y < h - 1 ? y + 1 : h - 1) * w;
+    const row = y * w;
     for (let x = 0; x < w; x++) {
-      const dx = (at(x - 1, y) - at(x + 1, y)) * strength;
-      const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
-      const len = Math.hypot(dx, dy, 1);
-      const i = (y * w + x) * 4;
-      out.data[i] = ((dx / len) * 0.5 + 0.5) * 255;
-      out.data[i + 1] = ((dy / len) * 0.5 + 0.5) * 255;
-      out.data[i + 2] = ((1 / len) * 0.5 + 0.5) * 255;
-      out.data[i + 3] = 255;
+      const left = x > 0 ? x - 1 : 0;
+      const right = x < w - 1 ? x + 1 : w - 1;
+      const dx = (src[(row + left) * 4] - src[(row + right) * 4]) * k;
+      const dy = (src[(down + x) * 4] - src[(up + x) * 4]) * k;
+      const inv = 1 / Math.sqrt(dx * dx + dy * dy + 1);
+      const i = (row + x) * 4;
+      o[i] = (dx * inv * 0.5 + 0.5) * 255;
+      o[i + 1] = (dy * inv * 0.5 + 0.5) * 255;
+      o[i + 2] = (inv * 0.5 + 0.5) * 255;
+      o[i + 3] = 255;
     }
   }
   const c = makeCanvas(w, h);
@@ -346,36 +348,45 @@ export function decorateOrm(
  * chamfer. The Z card Sobels it at 2.5 under a normal scale of 1.6; ours is
  * 0.6, so the strength carries the difference. Built at texel size, not map size: the
  * wordmark's strokes are only a few texels wide, and a bevel wider than a
- * stroke smooths the whole mark away.
+ * stroke smooths the whole mark away. The per-texel work is confined to
+ * `region` (the texels the brand can touch), so a drag can rebake per frame.
  */
-export function decorateNormal(base: HTMLCanvasElement, brandMask: HTMLCanvasElement): HTMLCanvasElement {
+export function decorateNormal(
+  base: HTMLCanvasElement,
+  brandMask: HTMLCanvasElement,
+  region: { x: number; y: number; w: number; h: number } = { x: 0, y: 0, w: TEX_W, h: TEX_H },
+): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
   ctx.drawImage(base, 0, 0, TEX_W, TEX_H);
+  const { x: rx, y: ry, w: rw, h: rh } = region;
+  if (rw <= 0 || rh <= 0) return c;
   // Height in texels: flat mid-gray, the mark's floor a step down, the edge
   // softened over the bevel.
-  const height = makeCanvas(TEX_W, TEX_H);
+  const height = makeCanvas(rw, rh);
   const hc = height.getContext('2d')!;
   hc.fillStyle = '#808080';
-  hc.fillRect(0, 0, TEX_W, TEX_H);
+  hc.fillRect(0, 0, rw, rh);
   hc.filter = 'blur(6px)';
-  const m = makeCanvas(brandMask.width, brandMask.height);
+  const m = makeCanvas(rw, rh);
   const mc = m.getContext('2d')!;
-  mc.drawImage(brandMask, 0, 0);
+  const sx = brandMask.width / TEX_W;
+  const sy = brandMask.height / TEX_H;
+  mc.drawImage(brandMask, rx * sx, ry * sy, rw * sx, rh * sy, 0, 0, rw, rh);
   mc.globalCompositeOperation = 'source-in';
   mc.fillStyle = '#4d4d4d';
-  mc.fillRect(0, 0, m.width, m.height);
-  hc.drawImage(m, 0, 0, TEX_W, TEX_H);
+  mc.fillRect(0, 0, rw, rh);
+  hc.drawImage(m, 0, 0);
   hc.filter = 'none';
   const structure = heightToNormal(height, 2.5 * (1.6 / 0.6));
   const sctx = structure.getContext('2d')!;
-  const n = sctx.getImageData(0, 0, TEX_W, TEX_H);
-  const hd = hc.getImageData(0, 0, TEX_W, TEX_H).data;
+  const n = sctx.getImageData(0, 0, rw, rh);
+  const hd = hc.getImageData(0, 0, rw, rh).data;
   for (let i = 0; i < n.data.length; i += 4) {
     n.data[i + 3] = Math.abs(hd[i] - 128) > 1 ? 255 : 0;
   }
   sctx.putImageData(n, 0, 0);
-  ctx.drawImage(structure, 0, 0);
+  ctx.drawImage(structure, rx, ry);
   return c;
 }
 
