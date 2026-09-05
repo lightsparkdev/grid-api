@@ -4,8 +4,10 @@ post:
     Simulate a `RETURN_REVERSAL` against a card transaction with a posted
     return in the sandbox environment — reversing a previously settled
     return. The parent transaction must have a non-zero `refundedAmount`.
-    The resulting card operation is delivered asynchronously via the
-    issuer's events webhook.
+    A successful reversal is netted off `refundedAmount` (a full reversal
+    brings it back to `0`) and the status stays `SETTLED`. The resulting
+    card operation is delivered asynchronously via the issuer's events
+    webhook.
 
 
     Note: authorization reversal / void has no dedicated card-issuer simulate
