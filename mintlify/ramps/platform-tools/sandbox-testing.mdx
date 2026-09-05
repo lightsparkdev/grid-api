@@ -85,7 +85,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
   }'
 ```
 
-<Check>In sandbox, customers are automatically approved for testing.</Check>
+<Check>In sandbox, a `fullName` not ending in `001`, `002`, or `003` yields an approved customer rather than a real review. On a regulated platform, or with **Skip verification paperwork** on, that lands at creation and the customer is ready for the next step. On an unregulated platform the customer stays `UNVERIFIED` until you submit a complete verification — see [Sandbox testing](/api-reference/sandbox-testing) for that flow.</Check>
 
 ### Step 2: Create an external account for the destination wallet
 

@@ -164,7 +164,7 @@ The response field is named `kycUrl` for both customer types; for a `BUSINESS` c
 </Steps>
 
 <Warning>
-Testing the business flow in sandbox: a `businessInfo.registrationNumber` **not** ending in `001`, `002`, or `003` auto-approves the customer at its first verification submission, leaving the hosted flow nothing to verify — so it asks for no documents and no beneficial owners. Use a `003` suffix to exercise document and UBO collection. See [Sandbox testing](/api-reference/sandbox-testing).
+Testing the business flow in sandbox: by default the hosted flow collects the full packet, and a `businessInfo.registrationNumber` **not** ending in `001`, `002`, or `003` auto-approves the customer once that submission is complete. With **Skip verification paperwork** on, that suffix resolves before any packet validation, leaving the hosted flow nothing to verify — so it asks for no documents and no beneficial owners. Use a `003` suffix to exercise document and UBO collection. See [Sandbox testing](/api-reference/sandbox-testing).
 </Warning>
 
 ### Direct API Onboarding

@@ -7,10 +7,13 @@ Business customers are always created with `kybStatus: UNVERIFIED`. The **last 3
 | **002** | `kybStatus: REJECTED` (`verificationStatus: REJECTED`), skipping data and document validation |
 | **Any other** | `kybStatus: APPROVED` (`verificationStatus: APPROVED`), skipping data and document validation |
 
-On an **unregulated platform**, the packet is checked before any of these outcomes apply: a business with incomplete data returns `RESOLVE_ERRORS` whatever its suffix, and the suffix resolves only once the submission is complete. Turn on **Skip verification paperwork** in the sandbox dashboard's Configuration to resolve from the suffix alone.
+Business customers never resolve at creation — the outcome lands on the first `POST /verifications`. What happens on that submission depends on your platform:
+
+- **Unregulated platforms** (the default, with **Skip verification paperwork** off) — the packet is validated first. A business with incomplete data returns `RESOLVE_ERRORS` whatever its suffix, and the suffix resolves only once the submission is complete.
+- **Regulated platforms**, and unregulated platforms with **Skip verification paperwork** on — a final suffix (`002` or any non-`001`/`003` value) resolves before the packet is validated, so it lands even on an incomplete submission. `001` and `003` still require a complete packet.
 
 <Warning>
-Where the suffix resolves without a packet, a registration number that doesn't end in `001`, `002`, or `003` is **auto-approved at its first submission**. The hosted flow then has nothing left to verify, so it asks for no documents and no beneficial owners — which looks exactly like a broken KYB flow but isn't. Always use a `003` suffix when you want to exercise document and UBO collection.
+Where a final suffix resolves without packet validation — a regulated platform, or **Skip verification paperwork** on — a registration number that doesn't end in `001`, `002`, or `003` is **auto-approved at its first submission**. The hosted flow then has nothing left to verify, so it asks for no documents and no beneficial owners — which looks exactly like a broken KYB flow but isn't. Always use a `003` suffix when you want to exercise document and UBO collection.
 </Warning>
 
 Once a business customer is approved or rejected, further `POST /verifications` calls return `400`.
