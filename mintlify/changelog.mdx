@@ -42,6 +42,22 @@ submit, and resolve loop you run in production.
 See [sandbox testing](/api-reference/sandbox-testing) for the suffix values and the
 outcome each one produces.
 
+## Charge rail-based platform fees
+
+Platform fees now support a `RAIL` fee type alongside `CROSS_CURRENCY_TRANSACTION`, so
+you can charge your customers per-rail when their payments settle over ACH, RTP, FedNow,
+or wire.
+
+- Set a standing rail fee with `feeConfigs` on `PATCH /config`—specify the rail,
+  direction (`OUT`), and originator (`GRID` or `EXTERNAL`).
+- Both fee types can apply to the same transaction—for example, a cross-currency payment
+  that goes out over ACH. Your platform receives the sum of all applied fees.
+- Rail fees are keyed by `(feeType, rail, direction, originator)`, so you can set
+  different fees for different rails.
+
+See [Assessing fees](/payouts-and-b2b/payment-flow/assessing-fees) for configuration
+examples and how the fees are calculated.
+
 </Update>
 
 <Update label="August 2026">
