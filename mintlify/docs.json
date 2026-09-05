@@ -58,6 +58,17 @@
               "platform-overview/core-concepts/currencies-and-rails",
               "platform-overview/configuration"
             ]
+          },
+          {
+            "group": "Strong Customer Authentication",
+            "pages": [
+              "platform-overview/sca/overview",
+              "platform-overview/sca/per-transaction-authorization",
+              "platform-overview/sca/factor-enrollment",
+              "platform-overview/sca/login-and-sessions",
+              "platform-overview/sca/trusted-beneficiaries",
+              "platform-overview/sca/two-factor-reset"
+            ]
           }
         ]
       },
