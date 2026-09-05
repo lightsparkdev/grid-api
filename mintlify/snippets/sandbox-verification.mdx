@@ -9,8 +9,8 @@ The **last 3 characters** of the `fullName` on `POST /customers` (with `customer
 - **Unregulated platforms** — the customer is created `UNVERIFIED` and stays there until you submit with `POST /verifications`. The suffix decides the result once the submission is complete.
 - **Regulated platforms**, and any platform with **Skip verification paperwork** turned on in the sandbox dashboard's Configuration — the suffix resolves the customer at creation, with no documents required.
 
-| Suffix | `kycStatus` | Behavior on `POST /verifications` |
-|--------|-------------|-----------------------------------|
+| Suffix | Resolved `kycStatus` | Behavior on `POST /verifications` |
+|--------|----------------------|-----------------------------------|
 | **001** | `PENDING` | With complete data and an identity document: `verificationStatus: PENDING_MANUAL_REVIEW` — simulates an applicant waiting on manual review |
 | **002** | `REJECTED` | Returns `400` once resolved — the customer is terminally rejected |
 | **003** | `UNVERIFIED` | With complete data: `verificationStatus: RESOLVE_ERRORS` with a `POOR_QUALITY_DOCUMENT` error — simulates a correctable provider rejection |

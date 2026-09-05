@@ -337,7 +337,7 @@ While sandbox closely mimics production, there are some differences:
 
 - **Instant settlement**: All Bitcoin transfers complete instantly (success cases) or fail immediately (error cases), except timeout scenarios (005)
 - **Uses Regtest funds**: Spark bitcoin funds are regtest funds so that they're compatible with real regtest spark wallets.
-- **Simplified KYB**: KYB processes are simulated and complete instantly with automatic approval
+- **Simplified KYB**: KYB processes are simulated rather than reviewed for real, resolving at the first `POST /verifications` submission
 - **Fixed exchange rates**: Currency conversion rates may not reflect real-time market rates
 
 <Warning>
