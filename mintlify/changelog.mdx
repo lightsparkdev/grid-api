@@ -9,6 +9,41 @@ Follow along with the latest additions and improvements to the Grid API. For upc
 changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 [contact support](mailto:support@lightspark.com).
 
+<Update label="September 2026">
+
+## Sandbox KYC and KYB follow the production flow
+
+Unregulated sandbox platforms now resolve a customer's verification from a submitted
+packet rather than at create, so your sandbox integration rehearses the same collect,
+submit, and resolve loop you run in production.
+
+<Warning>
+  Behavior change. On an unregulated sandbox, a name suffix alone no longer sets the
+  result at create. New customers stay `UNVERIFIED` until you call `POST /verifications`.
+  Customers created before this change keep their status, and regulated sandbox platforms
+  are unaffected.
+</Warning>
+
+- Upload documents with `POST /documents`, register beneficial owners for a business, then
+  submit with `POST /verifications`. The suffix on `fullName`, `registrationNumber`, or a
+  beneficial owner's `lastName` still decides the outcome—it applies once the submission
+  is in rather than at create.
+- An incomplete submission returns `verificationStatus: RESOLVE_ERRORS` naming every
+  missing field and document, so you can fix and resubmit. A business whose
+  `registrationNumber` ends in `002` now reports those errors first rather than rejecting
+  outright.
+- Renaming a customer no longer overwrites a settled result—`APPROVED` and `REJECTED` stay
+  put. Create a new customer when you want to exercise a different outcome.
+- To keep the previous fast path, open **Configuration** in your sandbox dashboard and turn
+  on **Skip verification paperwork**. Results then come from the suffix with no documents:
+  individuals resolve at create, businesses at their first submission. Turn it off when you
+  want to test the full flow again.
+
+See [sandbox testing](/api-reference/sandbox-testing) for the suffix values and the
+outcome each one produces.
+
+</Update>
+
 <Update label="August 2026">
 
 ## `/transfer-in` and `/transfer-out` are deprecated
