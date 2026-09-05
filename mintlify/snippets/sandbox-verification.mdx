@@ -4,16 +4,21 @@ In sandbox, you can trigger specific KYC/KYB verification outcomes using magic s
 
 ### Individual customer verification (KYC)
 
-The **last 3 characters** of the `fullName` on `POST /customers` (with `customerType: INDIVIDUAL`) determine the customer's `kycStatus` **immediately at creation**:
+The **last 3 characters** of the `fullName` on `POST /customers` (with `customerType: INDIVIDUAL`) decide the customer's `kycStatus`. When that outcome applies depends on your platform:
 
-| Suffix | `kycStatus` at creation | Behavior on `POST /verifications` |
-|--------|-------------------------|-----------------------------------|
+- **Unregulated platforms** — the customer is created `UNVERIFIED` and stays there until you submit with `POST /verifications`. The suffix decides the result once the submission is complete.
+- **Regulated platforms**, and any platform with **Skip verification paperwork** turned on in the sandbox dashboard's Configuration — the suffix resolves the customer at creation, with no documents required.
+
+| Suffix | `kycStatus` | Behavior on `POST /verifications` |
+|--------|-------------|-----------------------------------|
 | **001** | `PENDING` | With complete data and an identity document: `verificationStatus: PENDING_MANUAL_REVIEW` — simulates an applicant waiting on manual review |
-| **002** | `REJECTED` | Returns `400` — the customer was terminally rejected at creation |
+| **002** | `REJECTED` | Returns `400` once resolved — the customer is terminally rejected |
 | **003** | `UNVERIFIED` | With complete data: `verificationStatus: RESOLVE_ERRORS` with a `POOR_QUALITY_DOCUMENT` error — simulates a correctable provider rejection |
-| **Any other** | `APPROVED` | Returns `400` — the customer was approved at creation |
+| **Any other** | `APPROVED` | Returns `400` once resolved — the customer is approved |
 
-Because terminal suffixes resolve at creation, only `001` and `003` customers can be submitted for verification. Use any non-suffixed name to mint ready-to-transact approved customers, and a `001` name to exercise the full submission flow.
+Once a customer reaches `APPROVED` or `REJECTED`, that status is final: further `POST /verifications` calls return `400`, and renaming the customer does not re-derive it. Create a new customer when you want to exercise a different outcome.
+
+Where the suffix resolves at creation, only `001` and `003` customers can be submitted for verification. Use any non-suffixed name to mint ready-to-transact approved customers, and a `001` name to exercise the full submission flow.
 
 Submitting for verification has the same data requirements as production: full name, birth date, nationality, `idType` + `identifier`, address, and an identity document uploaded via `POST /documents`. Anything missing comes back as `verificationStatus: RESOLVE_ERRORS` with one entry per problem in `errors`:
 
@@ -41,7 +46,7 @@ Fix-and-resubmit example — the standard integration loop:
 
 <Steps>
 <Step title="Create a customer with a 001 suffix">
-  A `fullName` ending in `001` keeps the customer `PENDING`, so submission is allowed. Persist the returned `id` for the following steps.
+  A `fullName` ending in `001` leaves the customer submittable rather than resolving it terminally — `UNVERIFIED` on an unregulated platform, `PENDING` where the suffix resolves at creation. Persist the returned `id` for the following steps.
 
   ```bash
   curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
@@ -108,7 +113,7 @@ Fix-and-resubmit example — the standard integration loop:
 
 <KybSandboxSuffixes />
 
-For direct API onboarding, `001` and `003` both require complete business information, business documents, and at least one beneficial owner before `POST /verifications` moves past `RESOLVE_ERRORS`. For the hosted flow, see [Configuring customers](/payouts-and-b2b/onboarding/configuring-customers#hosted-kyc-and-kyb-link-flow).
+For direct API onboarding, `001` and `003` both require complete business information, business documents, and at least one beneficial owner before `POST /verifications` moves past `RESOLVE_ERRORS`. On an unregulated platform every suffix goes through that check first, so an incomplete `002` business reports its missing data before it rejects. For the hosted flow, see [Configuring customers](/payouts-and-b2b/onboarding/configuring-customers#hosted-kyc-and-kyb-link-flow).
 
 ### Beneficial owner KYC
 
