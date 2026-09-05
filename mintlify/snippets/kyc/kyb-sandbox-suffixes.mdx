@@ -4,10 +4,10 @@ Business customers are always created with `kybStatus: UNVERIFIED`. The **last 3
 |--------|---------|
 | **003** | No auto-decision. Document and UBO verification run for real — the hosted flow asks for company documents and beneficial owners, and `POST /verifications` applies normal validation (`RESOLVE_ERRORS` until the data is complete). **Use this to test the link flow.** |
 | **001** | Same as `003` — no auto-decision, normal validation applies |
-| **002** | `kybStatus: REJECTED` (`verificationStatus: REJECTED`), skipping data and document validation |
-| **Any other** | `kybStatus: APPROVED` (`verificationStatus: APPROVED`), skipping data and document validation |
+| **002** | `kybStatus: REJECTED` (`verificationStatus: REJECTED`). Data and document validation is skipped only on a regulated platform or with **Skip verification paperwork** on; by default the packet is validated first |
+| **Any other** | `kybStatus: APPROVED` (`verificationStatus: APPROVED`). Data and document validation is skipped only on a regulated platform or with **Skip verification paperwork** on; by default the packet is validated first |
 
-Business customers never resolve at creation — the outcome lands on the first `POST /verifications`. What happens on that submission depends on your platform:
+Business customers never resolve at creation — the outcome lands on the first verification submission, whether you make it with `POST /verifications` or the applicant completes the hosted flow. What happens on that submission depends on your platform:
 
 - **Unregulated platforms** (the default, with **Skip verification paperwork** off) — the packet is validated first. A business with incomplete data returns `RESOLVE_ERRORS` whatever its suffix, and the suffix resolves only once the submission is complete.
 - **Regulated platforms**, and unregulated platforms with **Skip verification paperwork** on — a final suffix (`002` or any non-`001`/`003` value) resolves before the packet is validated, so it lands even on an incomplete submission. `001` and `003` still require a complete packet.

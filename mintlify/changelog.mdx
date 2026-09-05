@@ -35,9 +35,9 @@ submit, and resolve loop you run in production.
 - Renaming a customer no longer overwrites a settled result—`APPROVED` and `REJECTED` stay
   put. Create a new customer when you want to exercise a different outcome.
 - To keep the previous fast path, open **Configuration** in your sandbox dashboard and turn
-  on **Skip verification paperwork**. Results then come from the suffix with no documents:
-  individuals resolve at create, businesses at their first submission. Turn it off when you
-  want to test the full flow again.
+  on **Skip verification paperwork**. A terminal suffix then resolves with no documents:
+  individuals at create, businesses at their first submission. `001` and `003` still require
+  a complete packet. Turn it off when you want to test the full flow again.
 
 Walk through the fix-and-resubmit loop in [sandbox testing](/api-reference/sandbox-testing).
 
