@@ -20,7 +20,7 @@ Once a customer reaches `APPROVED` or `REJECTED`, that status is final: further 
 
 Where the suffix resolves at creation, only `001` and `003` customers can be submitted for verification. Use any non-suffixed name to mint ready-to-transact approved customers, and a `001` name to exercise the full submission flow.
 
-Submitting for verification has the same data requirements as production: full name, birth date, nationality, `idType` + `identifier`, address, and an identity document uploaded via `POST /documents`. Anything missing comes back as `verificationStatus: RESOLVE_ERRORS` with one entry per problem in `errors`:
+Where a submission is required — the default unregulated path, and `001`/`003` on any path — it carries the same data requirements as production: full name, birth date, nationality, `idType` + `identifier`, address, and an identity document uploaded via `POST /documents`. Anything missing comes back as `verificationStatus: RESOLVE_ERRORS` with one entry per problem in `errors`:
 
 ```json
 {
@@ -42,7 +42,7 @@ Submitting for verification has the same data requirements as production: full n
 }
 ```
 
-Fix-and-resubmit example — the standard integration loop:
+Fix-and-resubmit example — the standard integration loop on the default unregulated path, with **Skip verification paperwork** off. A `001` suffix behaves the same way where the suffix resolves at creation, since `001` and `003` always require a complete packet; a terminal suffix on that path resolves without one, and `POST /verifications` then returns `400`.
 
 <Steps>
 <Step title="Create a customer with a 001 suffix">
