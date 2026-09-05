@@ -5,8 +5,9 @@ post:
     `CardTransaction`. Fires when an authorization is approved
     (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it
     (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`),
-    when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and
-    when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`).
+    and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`).
+    A merchant return does not change the status: the webhook fires again
+    for the current status with the returned value in `refundedAmount`.
     The payload carries the full `CardTransaction` resource.
 
 
@@ -133,10 +134,10 @@ post:
                 createdAt: '2026-05-09T10:00:00Z'
                 updatedAt: '2026-05-09T15:42:11Z'
           refunded:
-            summary: Settled funds returned by the merchant
+            summary: Settled funds returned by the merchant (status stays SETTLED)
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000042
-              type: CARD_TRANSACTION.REFUNDED
+              type: CARD_TRANSACTION.SETTLED
               timestamp: '2026-05-10T09:15:00Z'
               data:
                 type: CARD
@@ -145,7 +146,7 @@ post:
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
                 issuerTransactionToken: lithic_txn_b81c2a4f
-                status: REFUNDED
+                status: SETTLED
                 direction: DEBIT
                 merchant:
                   descriptor: BLUE BOTTLE COFFEE SF

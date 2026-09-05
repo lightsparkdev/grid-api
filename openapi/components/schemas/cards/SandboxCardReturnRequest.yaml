@@ -5,8 +5,8 @@ required:
 description: >-
   Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/return`.
   Drives a `RETURN` event against an existing settled `CardTransaction`,
-  which creates a `CardRefund` and pushes the parent transaction towards
-  `REFUNDED` (full) or keeps it `SETTLED` (partial).
+  which creates a `CardRefund`. The parent stays `SETTLED`; the returned
+  value accumulates in `refundedAmount`.
 properties:
   cardTransactionId:
     type: string

@@ -100,8 +100,8 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
   }'
 ```
 
-A full refund flips the parent to `REFUNDED`; a partial refund keeps
-it `SETTLED` with a non-zero `refundedAmount`.
+A return keeps the parent `SETTLED`; the returned value accumulates in
+`refundedAmount`.
 
 ## End-to-end happy path
 

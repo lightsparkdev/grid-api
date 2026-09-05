@@ -22,9 +22,7 @@ on the parent.
 ## Status transitions
 
 ```text
-              ┌─────────────────────────────────────┐
-              │                                     ▼
-AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED ──► REFUNDED
+AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED
               │
               └──► EXCEPTION  (pull failed after settlement)
 ```
@@ -33,8 +31,7 @@ AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED ──► REFUNDED
 |--------|---------|
 | `AUTHORIZED` | Auth approved, hold placed, no clearings yet. |
 | `PARTIALLY_SETTLED` | At least one clearing landed, but more are still expected (split shipments, multi-leg trips). |
-| `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. |
-| `REFUNDED` | A `RETURN` was received and the net settled amount has been refunded in full or part. |
+| `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. A merchant `RETURN` leaves the status here and reports the returned value in `refundedAmount`. |
 | `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
 Every transition is delivered via the generic transaction webhook
