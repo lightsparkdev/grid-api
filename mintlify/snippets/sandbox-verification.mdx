@@ -7,7 +7,7 @@ In sandbox, you can trigger specific KYC/KYB verification outcomes using magic s
 The **last 3 characters** of the `fullName` on `POST /customers` (with `customerType: INDIVIDUAL`) decide the customer's `kycStatus`. When that outcome applies depends on your platform:
 
 - **Unregulated platforms** (the default, with **Skip verification paperwork** off) — the customer is created `UNVERIFIED` and stays there until you submit with `POST /verifications`. An incomplete submission returns `RESOLVE_ERRORS`; the suffix decides the result once the submission is complete.
-- **Regulated platforms**, and unregulated platforms with **Skip verification paperwork** turned on in the sandbox dashboard's Configuration — the suffix resolves the customer at creation, with no documents required.
+- **Regulated platforms**, and unregulated platforms with **Skip verification paperwork** turned on in the sandbox dashboard's Configuration — the suffix resolves the customer at creation, with no documents required. `002` and any value other than `001`/`003` are terminal there. `001` and `003` land at `PENDING` and `UNVERIFIED`, which you can still submit for verification — and that submission carries the full data and document requirements below.
 
 | Suffix | Resolved `kycStatus` | Behavior on `POST /verifications` |
 |--------|----------------------|-----------------------------------|
