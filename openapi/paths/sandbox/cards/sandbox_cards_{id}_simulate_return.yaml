@@ -3,8 +3,8 @@ post:
   description: >
     Simulate a merchant-initiated `RETURN` against an existing settled
     card transaction in the sandbox environment. Creates a `CardRefund` on
-    the parent and either flips the parent to `REFUNDED` (full refund) or
-    keeps it `SETTLED` with a non-zero `refundedAmount` (partial refund).
+    the parent; the parent stays `SETTLED` and the returned value
+    accumulates in `refundedAmount`.
 
 
     Production returns `404` on this path.

@@ -43,9 +43,8 @@ land.
 ## Refund
 
 A merchant-initiated `RETURN` against a settled transaction. Refunds
-flow back to the funding source. A full refund moves the parent
-transaction to `REFUNDED`; a partial refund keeps it `SETTLED` with a
-non-zero `refundedAmount`.
+flow back to the funding source. The parent transaction stays
+`SETTLED`; the returned value accumulates in `refundedAmount`.
 
 ## Exception
 

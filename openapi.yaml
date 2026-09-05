@@ -9083,7 +9083,7 @@ paths:
     post:
       summary: Simulate a card return
       description: |
-        Simulate a merchant-initiated `RETURN` against an existing settled card transaction in the sandbox environment. Creates a `CardRefund` on the parent and either flips the parent to `REFUNDED` (full refund) or keeps it `SETTLED` with a non-zero `refundedAmount` (partial refund).
+        Simulate a merchant-initiated `RETURN` against an existing settled card transaction in the sandbox environment. Creates a `CardRefund` on the parent; the parent stays `SETTLED` and the returned value accumulates in `refundedAmount`.
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardReturn
@@ -9596,7 +9596,7 @@ paths:
     post:
       summary: Simulate a card return reversal
       description: |
-        Simulate a `RETURN_REVERSAL` against an existing `REFUNDED` card transaction in the sandbox environment — reversing a previously settled return. The parent transaction must be in `REFUNDED` state. The resulting card operation is delivered asynchronously via the issuer's events webhook.
+        Simulate a `RETURN_REVERSAL` against a card transaction with a posted return in the sandbox environment — reversing a previously settled return. The parent transaction must have a non-zero `refundedAmount`. The resulting card operation is delivered asynchronously via the issuer's events webhook.
 
         Note: authorization reversal / void has no dedicated card-issuer simulate path (the void simulator emits a distinct `VOID` event), so — like authorization expiry — it is not exposed here.
 
@@ -11681,7 +11681,7 @@ webhooks:
     post:
       summary: Card transaction
       description: |
-        Webhook that is called on every state transition of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
+        Webhook that is called on every state transition of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). A merchant return does not change the status: the webhook fires again for the current status with the returned value in `refundedAmount`. The payload carries the full `CardTransaction` resource.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -11796,10 +11796,10 @@ webhooks:
                     createdAt: '2026-05-09T10:00:00Z'
                     updatedAt: '2026-05-09T15:42:11Z'
               refunded:
-                summary: Settled funds returned by the merchant
+                summary: Settled funds returned by the merchant (status stays SETTLED)
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000042
-                  type: CARD_TRANSACTION.REFUNDED
+                  type: CARD_TRANSACTION.SETTLED
                   timestamp: '2026-05-10T09:15:00Z'
                   data:
                     type: CARD
@@ -11808,7 +11808,7 @@ webhooks:
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
                     issuerTransactionToken: lithic_txn_b81c2a4f
-                    status: REFUNDED
+                    status: SETTLED
                     direction: DEBIT
                     merchant:
                       descriptor: BLUE BOTTLE COFFEE SF
@@ -23607,7 +23607,6 @@ components:
         - AUTHORIZED
         - PARTIALLY_SETTLED
         - SETTLED
-        - REFUNDED
         - EXCEPTION
       description: |
         Lifecycle status of a card transaction.
@@ -23616,8 +23615,7 @@ components:
         |--------|-------------|
         | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
         | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
-        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
-        | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
+        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. A merchant `RETURN` does not change the status; the returned value is reported in `refundedAmount`. |
         | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
     CardMerchant:
       type: object
@@ -26239,7 +26237,7 @@ components:
       required:
         - cardTransactionId
         - amount
-      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/return`. Drives a `RETURN` event against an existing settled `CardTransaction`, which creates a `CardRefund` and pushes the parent transaction towards `REFUNDED` (full) or keeps it `SETTLED` (partial).
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/return`. Drives a `RETURN` event against an existing settled `CardTransaction`, which creates a `CardRefund`. The parent stays `SETTLED`; the returned value accumulates in `refundedAmount`.
       properties:
         cardTransactionId:
           type: string
@@ -27087,7 +27085,6 @@ components:
         - CARD_TRANSACTION.AUTHORIZED
         - CARD_TRANSACTION.PARTIALLY_SETTLED
         - CARD_TRANSACTION.SETTLED
-        - CARD_TRANSACTION.REFUNDED
         - CARD_TRANSACTION.EXCEPTION
         - WALLET_OPERATION.COMPLETED
         - WALLET_OPERATION.FAILED
@@ -27345,7 +27342,6 @@ components:
                 - CARD_TRANSACTION.AUTHORIZED
                 - CARD_TRANSACTION.PARTIALLY_SETTLED
                 - CARD_TRANSACTION.SETTLED
-                - CARD_TRANSACTION.REFUNDED
                 - CARD_TRANSACTION.EXCEPTION
     WalletOperationCompletedData:
       title: Wallet Operation Completed Data

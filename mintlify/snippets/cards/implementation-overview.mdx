@@ -63,8 +63,9 @@ Each authorization on a card produces a parent `CardTransaction` row.
 Children (pulls, clearings, refunds) are reconciled against the parent
 and rolled up into `pullSummary`, `settlementSummary`, and
 `refundSummary` aggregates. The lifecycle status moves
-`AUTHORIZED → PARTIALLY_SETTLED → SETTLED → REFUNDED`, with
-`EXCEPTION` as the failure path for stuck post-hoc pulls.
+`AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `EXCEPTION` as the
+failure path for stuck post-hoc pulls. A merchant return does not
+change the status; it is reported in `refundedAmount`.
 
 The full event model is covered in
 [Reconciliation](/cards/transactions/reconciliation).
