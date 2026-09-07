@@ -30,8 +30,8 @@ Base URL: `https://api.lightspark.com/grid/2025-10-13` (same for Sandbox and Pro
 Configure your webhook endpoint to receive payment lifecycle events. Webhooks use asymmetric (public/private key) signatures; verify each webhook using the Grid public key available in your dashboard.
 
 - Expose a public HTTPS endpoint (for development, reverse proxies like ngrok can help). You'll also need to set your webhook endpoint in the Grid dashboard.
-- When receiving webhooks, verify the `X-Grid-Signature` header against the exact request body using the dashboard-provided public key
-- Process events idempotently and respond with 2xx on success
+- When receiving webhooks, verify the `X-Grid-Signature` header against the exact request body using the dashboard-provided public key.
+- Process events idempotently and respond with 2xx on success.
 
 You can trigger a test delivery from the API to validate your endpoint setup. The public key for verification is shown in the dashboard; rotate and update it when instructed by Lightspark.
 
