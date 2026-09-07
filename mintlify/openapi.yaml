@@ -5050,6 +5050,14 @@ paths:
                   cryptoNetwork: SOLANA
                   amount: 1000000
                   destinationAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+              estimateArbitrumWithdrawal:
+                summary: Estimate fee for USDC withdrawal on Arbitrum
+                value:
+                  internalAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  currency: USDC
+                  cryptoNetwork: ARBITRUM
+                  amount: 1000000
+                  destinationAddress: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
       responses:
         '200':
           description: Fee estimation returned successfully
@@ -11365,6 +11373,21 @@ webhooks:
                     accountInfo:
                       accountType: ETHEREUM_WALLET
                       address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+              arbitrumWalletActive:
+                summary: An Arbitrum wallet account became active
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000044
+                  type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: ExternalAccount:f95dcbd6-dced-4ec4-b756-3c3a9ea3d966
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: ACTIVE
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    accountInfo:
+                      accountType: ARBITRUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
               verificationFailed:
                 summary: A liveness check failed; a new challenge is needed to retry
                 value:
@@ -15091,6 +15114,7 @@ components:
         - SOLANA_WALLET
         - TRON_WALLET
         - PLASMA_WALLET
+        - ARBITRUM_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
@@ -16178,6 +16202,33 @@ components:
               type: string
               description: Type of asset
               enum:
+                - USDT
+    ArbitrumWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ARBITRUM_WALLET
+        address:
+          type: string
+          description: Arbitrum wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentArbitrumWalletInfo:
+      title: Arbitrum Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
                 - USDT
     PolygonWalletInfo:
       type: object
@@ -17725,6 +17776,7 @@ components:
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
             - $ref: '#/components/schemas/PaymentPlasmaWalletInfo'
+            - $ref: '#/components/schemas/PaymentArbitrumWalletInfo'
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
             - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
@@ -17754,6 +17806,7 @@ components:
               SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               PLASMA_WALLET: '#/components/schemas/PaymentPlasmaWalletInfo'
+              ARBITRUM_WALLET: '#/components/schemas/PaymentArbitrumWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
               ETHEREUM_WALLET: '#/components/schemas/PaymentEthereumWalletInfo'
@@ -18074,6 +18127,7 @@ components:
         - ETHEREUM_WALLET
         - LIGHTNING
         - PLASMA_WALLET
+        - ARBITRUM_WALLET
         - POLYGON_WALLET
         - SOLANA_WALLET
         - SPARK_WALLET
@@ -21070,6 +21124,13 @@ components:
         - $ref: '#/components/schemas/PlasmaWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+    ArbitrumWalletExternalAccountInfo:
+      title: Arbitrum Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -21301,6 +21362,7 @@ components:
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -21352,6 +21414,7 @@ components:
           LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+          ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -22245,6 +22308,7 @@ components:
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -22295,6 +22359,7 @@ components:
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+          ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -23004,6 +23069,7 @@ components:
         - POLYGON
         - TRON
         - PLASMA
+        - ARBITRUM
         - SPARK
       description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
       example: SOLANA
@@ -23996,7 +24062,7 @@ components:
               example: USD
             cryptoNetwork:
               type: string
-              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
+              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated.           Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
@@ -24358,7 +24424,7 @@ components:
           example: USDC
         cryptoNetwork:
           type: string
-          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, SPARK, LIGHTNING, BITCOIN.'
+          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, SPARK, LIGHTNING, BITCOIN.'
           example: SOLANA
         amount:
           type: integer

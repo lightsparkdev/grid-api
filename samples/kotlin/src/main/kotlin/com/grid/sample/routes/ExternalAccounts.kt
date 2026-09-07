@@ -19,6 +19,7 @@ import com.lightspark.grid.models.customers.externalaccounts.GbpBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.InrBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.MxnBeneficiary
 import com.lightspark.grid.models.customers.externalaccounts.PhpBeneficiary
+import com.lightspark.grid.models.customers.externalaccounts.ArbitrumWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.PlasmaWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.PolygonWalletInfo
 import com.lightspark.grid.models.customers.externalaccounts.SolanaWalletInfo
@@ -221,6 +222,13 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .address(accountInfo.requireText("address"))
                 .build()
             ExternalAccountCreate.AccountInfo.ofPlasmaWallet(info)
+        }
+        "ARBITRUM_WALLET" -> {
+            val info = ArbitrumWalletInfo.builder()
+                .accountType(ArbitrumWalletInfo.AccountType.ARBITRUM_WALLET)
+                .address(accountInfo.requireText("address"))
+                .build()
+            ExternalAccountCreate.AccountInfo.ofArbitrumWallet(info)
         }
         else -> throw IllegalArgumentException("Unsupported account type: $accountType")
     }

@@ -1838,6 +1838,38 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     }'
 ```
 
+**Arbitrum**
+
+Supported assets: USDC, USDT.
+
+```bash cURL USDC
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "USDC",
+      "platformAccountId": "arbitrum_usdc_001",
+      "accountInfo": {
+        "accountType": "ARBITRUM_WALLET",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }'
+```
+
+```bash cURL USDT
+curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-accounts' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+      "currency": "USDT",
+      "platformAccountId": "arbitrum_usdt_001",
+      "accountInfo": {
+        "accountType": "ARBITRUM_WALLET",
+        "address": "0xAbCDEF1234567890aBCdEf1234567890ABcDef12"
+      }
+    }'
+```
+
 **Lightning**
 
 Exactly one of `lightningAddress`, `invoice` (a single-use BOLT11 invoice) or `bolt12`
@@ -1858,8 +1890,8 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
 ```
 <Note>
   Crypto wallets don't require beneficiary information. Send only assets on the
-  named network — EVM addresses look identical across Ethereum, Base, Polygon and
-  Plasma, and funds sent on the wrong network are unrecoverable.
+  named network — EVM addresses look identical across Ethereum, Base, Polygon,
+  Plasma, and Arbitrum, and funds sent on the wrong network are unrecoverable.
 </Note>
 </Tab>
 </Tabs>
