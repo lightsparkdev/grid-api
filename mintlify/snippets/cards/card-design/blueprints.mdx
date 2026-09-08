@@ -81,11 +81,11 @@ export const CardBlueprint = ({ face }) => {
   };
   const chip = (
     <g className="bp-scaled" fill="none" stroke="var(--bp-ink)" strokeWidth={2.5}>
-      <rect x={152} y={324} width={236} height={164} rx={24} />
+      <rect x={152} y={324} width={236} height={164} rx={30.5} />
       {[338, 385, 432].map((y) => (
         <g key={y}>
-          <rect x={166} y={y} width={92} height={42} rx={8} />
-          <rect x={282} y={y} width={92} height={42} rx={8} />
+          <rect x={166} y={y} width={92} height={42} rx={21} />
+          <rect x={282} y={y} width={92} height={42} rx={21} />
         </g>
       ))}
     </g>

@@ -19,13 +19,13 @@
     <text x="107" y="268" font-size="18" fill="#FF21CC" stroke="none">Chip keep-clear: 107-415 x 279-533 px</text>
   </g>
   <g id="chip-module" stroke="#FF21CC" stroke-width="2">
-    <rect x="152" y="324" width="236" height="164" rx="24" />
-    <rect x="166" y="338" width="92" height="42" rx="8" stroke-width="1" />
-    <rect x="282" y="338" width="92" height="42" rx="8" stroke-width="1" />
-    <rect x="166" y="385" width="92" height="42" rx="8" stroke-width="1" />
-    <rect x="282" y="385" width="92" height="42" rx="8" stroke-width="1" />
-    <rect x="166" y="432" width="92" height="42" rx="8" stroke-width="1" />
-    <rect x="282" y="432" width="92" height="42" rx="8" stroke-width="1" />
+    <rect x="152" y="324" width="236" height="164" rx="30.5" />
+    <rect x="166" y="338" width="92" height="42" rx="21" stroke-width="1" />
+    <rect x="282" y="338" width="92" height="42" rx="21" stroke-width="1" />
+    <rect x="166" y="385" width="92" height="42" rx="21" stroke-width="1" />
+    <rect x="282" y="385" width="92" height="42" rx="21" stroke-width="1" />
+    <rect x="166" y="432" width="92" height="42" rx="21" stroke-width="1" />
+    <rect x="282" y="432" width="92" height="42" rx="21" stroke-width="1" />
     <text x="152" y="560" font-size="18" fill="#FF21CC" stroke="none">Chip module: 236 x 164 px at (152, 324). Placed by the manufacturer.</text>
   </g>
   <g id="logo-guide" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="8 8">
