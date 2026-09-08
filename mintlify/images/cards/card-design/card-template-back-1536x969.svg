@@ -10,6 +10,10 @@
   <g id="card-outline" stroke="#FF21CC" stroke-width="2">
     <rect x="1" y="1" width="1534" height="967" rx="56" />
   </g>
+  <g id="stripe-band" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="8 8">
+    <rect x="0" y="0" width="1536" height="300" />
+    <text x="24" y="44" font-size="18" fill="#FF21CC" stroke="none">Stripe band: y 0-300 px, full width, runs to the top edge</text>
+  </g>
   <g id="magnetic-stripe" stroke="#FF21CC" stroke-width="1.5">
     <rect x="0" y="72" width="1536" height="228" />
     <text x="24" y="196" font-size="20" fill="#FF21CC" stroke="none">Magnetic stripe: y 72-300 px, full width</text>
@@ -25,7 +29,7 @@
   <g id="visa-debit-lockup" stroke="#FF21CC" stroke-width="1.5">
     <rect x="1089" y="650" width="447" height="319" stroke-dasharray="4 8" />
     <rect x="1143" y="704" width="339" height="211" />
-    <text x="1073" y="676" font-size="18" fill="#FF21CC" stroke="none" text-anchor="end">Visa DEBIT lockup (silver foil): 339 x 211 px at (1143, 704), 54 px clear space</text>
+    <text x="1073" y="676" font-size="18" fill="#FF21CC" stroke="none" text-anchor="end">Visa DEBIT lockup, Premium Visa Brand Mark in silver foil: 339 x 211 px at (1143, 704), 54 px clear space</text>
   </g>
   <g id="service-and-issuer" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="8 8">
     <rect x="56" y="876" width="620" height="55" />
