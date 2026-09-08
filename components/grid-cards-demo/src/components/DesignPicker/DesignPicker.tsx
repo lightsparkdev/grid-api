@@ -329,16 +329,17 @@ function UploadRow({
         >
           <span className={styles.rowLabel}>{rowLabel}</span>
           <div className={styles.logoRow}>
-            {/* The button gives way to the preview and Remove, and back, with
-                a fade and a little scale rather than a cut. */}
+            {/* The button gives way to the preview and Remove, and back: the
+                new content slides in from the right as the old leaves to the
+                left, fading both ways. */}
             <AnimatePresence mode="popLayout" initial={false}>
               {url ? (
                 <motion.div
                   key="picked"
                   className={styles.logoPicked}
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.85 }}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -16 }}
                   transition={ROW_UNFOLD}
                 >
                   <span className={styles.logoPreview} style={previewStyle}>
@@ -357,9 +358,9 @@ function UploadRow({
                 <motion.div
                   key="upload"
                   className={styles.logoPicked}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -16 }}
                   transition={ROW_UNFOLD}
                 >
                   {/* The ref stays off the presence child: popLayout reads the
