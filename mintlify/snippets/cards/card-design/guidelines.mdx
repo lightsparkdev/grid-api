@@ -1,10 +1,10 @@
 import { CardBlueprint } from '/snippets/cards/card-design/blueprints.mdx';
 import { CardSamples } from '/snippets/cards/card-design/samples.mdx';
 
-Your physical card and its wallet art share one design: the front of the
-card. You design the front and choose a few options for the back. We supply
-the chip, the magnetic stripe, the Visa marks, the issuer statement, and the
-production files, and we take the design through Visa's review.
+Your physical card and its digital wallet art share one design: the front
+of the card. You design the front and choose a few options for the back. The
+chip, the magnetic stripe, the Visa marks, and the issuer statement are fixed.
+We prepare the production files and take the design through Visa's review.
 
 <Note>
 Physical cards are set up with your Lightspark contact as part of card
@@ -12,14 +12,14 @@ program onboarding. The Cards API issues virtual cards; see
 [Issuing cards](/cards/card-management/issuing-cards).
 </Note>
 
-## What you design and what we supply
+## What you choose and what is fixed
 
-| Surface | You design | We supply |
+| Surface | You choose | Fixed |
 | --- | --- | --- |
-| Front | Background color or artwork, your logo and where it sits | Chip module |
+| Front | Background color or artwork, your logo and where it sits | Chip position |
 | Back | Background color (usually the front's), personalization ink color and typeface, your support phone number and URL | Magnetic stripe, account block layout, contactless indicator, Visa DEBIT lockup in silver foil, "Issued by Lead Bank" statement |
-| Wallet art | Your app icon and logo, plus two colors | Card image derived from the front, Visa DEBIT lockup, submission to Visa and the wallets |
-| Carrier and envelope | Nothing: the standard carrier is used | Carrier letter, unbranded envelope, shipping |
+| Digital wallet art (Apple Pay, Google Pay) | Your app icon and logo, plus two colors | Card image, derived from your front; Visa DEBIT lockup placement |
+| Carrier and envelope | Nothing | Standard carrier letter and unbranded envelope |
 
 ## Card body
 
@@ -39,8 +39,8 @@ does not require the dove hologram, and the card has none.
 ## Canvas
 
 Work on a 1536 × 969 px artboard. It has the proportions of an ISO/IEC 7810
-ID-1 card, and it is also the size Visa requires for wallet art, so one file
-serves both.
+ID-1 card, and it is also the size Visa requires for digital wallet art, so
+one file serves both.
 
 | | Physical | On the artboard |
 | --- | --- | --- |
@@ -133,7 +133,7 @@ Print differs from screen in a few ways that affect card artwork:
 - Dark solid colors with a matte finish show surface scratches sooner than lighter or glossier cards.
 - Keep type in your artwork at 6 pt or larger and lines at 0.08 mm (0.25 pt) or thicker.
 
-## Wallet art
+## Digital wallet art
 
 When a cardholder adds the card to Apple Pay or Google Pay, the wallet shows
 a flat image of the card. We produce it from your front design.
@@ -179,14 +179,14 @@ Send the following to your Lightspark contact:
 - The front design on a 1536 × 969 artboard, as the layered source file (Figma, Illustrator, or Sketch) or a PDF with vectors preserved. Include the overlay template on a hidden layer.
 - Your choices for the back: background color, personalization ink, typeface, support phone number and URL.
 - The body: white stock or black core, and the finish for black core.
-- For the wallets: the app icon, the logo PNG, the overlay text color, and the card background color listed under wallet art.
+- For the digital wallets: the app icon, the logo PNG, the overlay text color, and the card background color listed under digital wallet art.
 
 <Steps>
 <Step title="Design review">
   We check the design against the rules on this page and send back anything that needs to change.
 </Step>
 <Step title="Production files">
-  We prepare the print files for both faces and the wallet art PNG, and place the Visa marks from Visa's supplied artwork.
+  We prepare the print files for both faces and the digital wallet art PNG, and place the Visa marks from Visa's supplied artwork.
 </Step>
 <Step title="Visa design approval">
   Visa reviews every card design before production. We submit and handle their feedback with you.
