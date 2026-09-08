@@ -535,14 +535,25 @@ div[class*="text-tooltip-foreground"][class*="bg-primary-dark"] {
   margin-left: 0 !important;
 }
 
+/* The Mintlify client ships Tailwind v4, where `space-x-*` sets
+   `margin-inline-end` on every child except the last (v3 set `margin-left`
+   on every child except the first), so the reset above no longer reaches
+   the `space-x-6` on the link list. Zero the list items directly so the
+   `gap` below is the only spacing between links. */
+#navbar .h-16 nav ul > li {
+  margin: 0 !important;
+}
+
 /* Navbar link buttons gap */
 #navbar .h-16 nav ul {
   gap: 8px !important;
 }
 
+/* Mintlify renders `<li class="navbar-link"><a>`. Style the anchor only;
+   matching `.navbar-link` here as well padded the `li` on top of the `a`
+   and doubled the hover opacity. */
 #navbar a.link:not(.nav-tabs-item),
-#navbar [class*="navbar"] a,
-.navbar-link {
+#navbar [class*="navbar"] a {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
@@ -559,8 +570,7 @@ div[class*="text-tooltip-foreground"][class*="bg-primary-dark"] {
 }
 
 #navbar a.link:not(.nav-tabs-item):hover,
-#navbar [class*="navbar"] a:hover,
-.navbar-link:hover {
+#navbar [class*="navbar"] a:hover {
   opacity: 0.7 !important;
 }
 
