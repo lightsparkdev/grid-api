@@ -82,13 +82,10 @@ allOf:
           or intra-network transfers, or non-direct-destination transactions)
           or before a rail is resolved.
       railSelectionMode:
-        anyOf:
-          - $ref: ../common/RailSelectionMode.yaml
-          - type: 'null'
+        $ref: ../common/RailSelectionMode.yaml
         description: >-
           How the rail was chosen — MANUAL when the platform specified a
-          paymentRail on the destination, AUTO when Lightspark selects it. Null
-          when no rail is resolved.
+          paymentRail on the destination, AUTO when Lightspark selects it.
       expectedSettlementAt:
         type:
           - string
