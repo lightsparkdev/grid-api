@@ -18,7 +18,7 @@ program onboarding. The Cards API issues virtual cards; see
 | --- | --- | --- |
 | Front | Background color or artwork, your logo and where it sits | Chip position |
 | Back | Background color (usually the front's), personalization ink color and typeface, your support phone number and URL | Magnetic stripe, account block layout, contactless indicator, Visa DEBIT lockup in silver foil, "Issued by Lead Bank" statement |
-| Digital wallet art (Apple Pay, Google Pay) | Your app icon and logo, plus two colors | Card image, derived from your front; Visa DEBIT lockup placement |
+| Digital wallet art (Apple Pay, Google Pay) | The card image, derived from your front by default or supplied by you; your app icon and logo; two colors | Visa DEBIT lockup placement; the image must be recognizably the same card as the physical one |
 
 ## Card body
 
@@ -142,7 +142,9 @@ including the figures on this page, are not color-accurate.
 ## Digital wallet art
 
 When a cardholder adds the card to Apple Pay or Google Pay, the wallet shows
-a flat image of the card. We produce it from your front design.
+a flat image of the card. By default we produce it from your front design.
+You can supply your own version instead, within the rules below; Visa and the
+wallets require it to be recognizably the same card as the physical one.
 
 <CardBlueprint face="wallet" />
 
@@ -158,7 +160,8 @@ may appear on it:
 If your logo sits right of the chip on the physical card, it lands in the
 upper right of the wallet art, which is allowed. A logo that depends on the
 chip for balance, or one placed in the lower left, needs an alternate
-placement for the wallet. Tell us if you want to supply one.
+placement for the wallet; that is the usual reason to supply your own
+version.
 
 The wallets also show your brand outside the card image, in notifications,
 transaction lists, and the card details screen. For that they need:
