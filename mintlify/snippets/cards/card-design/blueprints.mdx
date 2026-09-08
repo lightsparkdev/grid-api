@@ -162,8 +162,14 @@ export const CardBlueprint = ({ face }) => {
     drawing = (
       <g>
         {body(R)}
-        <path d={'M ' + R + ' 0 H ' + (W - R) + ' A ' + R + ' ' + R + ' 0 0 1 ' + W + ' ' + R + ' V 300 H 0 V ' + R + ' A ' + R + ' ' + R + ' 0 0 1 ' + R + ' 0 Z'} fill="var(--bp-fixed)" fillOpacity={0.55} />
-        <rect x={0} y={72} width={W} height={228} fill="var(--bp-fixed)" />
+        <clipPath id={'bp-card-' + face}>
+          <rect x={0} y={0} width={W} height={H} rx={R} />
+        </clipPath>
+        <g clipPath={'url(#bp-card-' + face + ')'}>
+          <rect x={0} y={0} width={W} height={300} fill="var(--bp-fixed)" fillOpacity={0.55} />
+          <rect x={0} y={72} width={W} height={228} fill="var(--bp-fixed)" />
+        </g>
+        <rect className="bp-object" stroke="var(--bp-ink)" x={0} y={0} width={W} height={H} rx={R} fill="none" />
         {zone(40, 460, 640, 220, 'yours')}
         <g fontFamily="'Suisse Intl', sans-serif" fontSize={57} fill="var(--bp-ink)">
           <text x={56} y={517}>
