@@ -4971,3 +4971,380 @@ html.dark .corridor-fields-empty {
   background-color: var(--ls-gray-925);
   border-color: var(--ls-white-06);
 }
+
+/* ===========================================
+   Card design blueprints and samples
+   (styles snippets/cards/card-design/*.mdx)
+   =========================================== */
+
+.ls-blueprint {
+  --bp-ink: var(--ls-gray-700);
+  --bp-ink-soft: var(--ls-gray-400);
+  --bp-paper: var(--ls-gray-025);
+  --bp-face: var(--ls-gray-075);
+  --bp-fixed: var(--ls-gray-200);
+  --bp-yours: var(--ls-sky-500);
+  --bp-keepout: var(--ls-orange-500);
+  margin: 24px 0;
+  padding: 20px;
+  background-color: var(--bp-paper);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+}
+
+html.dark .ls-blueprint {
+  --bp-ink: var(--ls-gray-300);
+  --bp-ink-soft: var(--ls-gray-600);
+  --bp-paper: var(--ls-gray-975);
+  --bp-face: var(--ls-gray-950);
+  --bp-fixed: var(--ls-gray-850);
+  border-color: var(--ls-white-06);
+}
+
+.ls-blueprint svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Pen weights. The site sets non-scaling strokes on every SVG, which is what
+   a drawing wants: object and dimension lines keep their weight at any scale.
+   Content that is part of the card (chip, contactless mark) scales instead. */
+.ls-blueprint .bp-object {
+  stroke-width: 1.75px;
+}
+
+.ls-blueprint .bp-thin,
+.ls-blueprint .bp-thin * {
+  stroke-width: 1px;
+}
+
+.ls-blueprint .bp-center {
+  stroke-width: 1px;
+  stroke-dasharray: 24 8 4 8;
+}
+
+.ls-blueprint .bp-scaled,
+.ls-blueprint .bp-scaled * {
+  vector-effect: none;
+}
+
+.ls-blueprint-label {
+  font-family: 'Suisse Intl Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  fill: var(--bp-ink);
+  stroke: none;
+}
+
+.ls-blueprint-foot {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ls-gray-600);
+}
+
+html.dark .ls-blueprint-foot {
+  color: var(--ls-gray-400);
+}
+
+.ls-blueprint-key {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  gap: 6px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ls-blueprint-key li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.ls-blueprint-key-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  font-family: 'Suisse Intl Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--bp-ink);
+  border: 1px solid var(--bp-ink);
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+.ls-blueprint-key li::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.ls-blueprint-key .is-yours::after {
+  background-color: var(--bp-yours);
+  opacity: 0.6;
+}
+
+.ls-blueprint-key .is-fixed::after {
+  background-color: var(--bp-fixed);
+}
+
+.ls-blueprint-key .is-keepout::after {
+  background-color: var(--bp-keepout);
+  opacity: 0.6;
+}
+
+.ls-blueprint-key .is-none::after {
+  display: none;
+}
+
+/* Units switch, styled like the flow builder's footer toggle: a squared pill
+   track with the active option as a raised tile that slides between the two. */
+.ls-blueprint-units {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  flex-shrink: 0;
+  padding: 2px;
+  background-color: var(--ls-gray-050);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+}
+
+html.dark .ls-blueprint-units {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+.ls-blueprint-units-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  height: calc(100% - 4px);
+  background-color: var(--ls-white);
+  border-radius: var(--ls-radius-sm);
+  box-shadow: 0 0 0 0.5px var(--ls-black-10);
+  transition: transform 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+
+html.dark .ls-blueprint-units-thumb {
+  background-color: var(--ls-gray-850);
+  box-shadow: 0 0 0 0.5px var(--ls-white-06);
+}
+
+.ls-blueprint-units[data-unit='mm'] .ls-blueprint-units-thumb {
+  transform: translateX(100%);
+}
+
+.ls-blueprint-units button {
+  position: relative;
+  z-index: 1;
+  min-width: 40px;
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 450;
+  color: var(--ls-gray-500);
+  background: transparent;
+  border: 0;
+  border-radius: var(--ls-radius-sm);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.ls-blueprint-units button:hover {
+  color: var(--ls-gray-900);
+}
+
+.ls-blueprint-units button[aria-pressed='true'] {
+  color: var(--ls-gray-900);
+  font-weight: 500;
+}
+
+html.dark .ls-blueprint-units button {
+  color: var(--ls-gray-400);
+}
+
+html.dark .ls-blueprint-units button:hover,
+html.dark .ls-blueprint-units button[aria-pressed='true'] {
+  color: var(--ls-gray-100);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls-blueprint-units-thumb,
+  .ls-blueprint-units button {
+    transition: none;
+  }
+}
+
+.ls-card-samples {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px 20px;
+  margin: 24px 0;
+}
+
+@media (max-width: 640px) {
+  .ls-card-samples {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ls-card-sample svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The samples are pictures of cards: strokes scale with the card, unlike the
+   site-wide non-scaling-stroke default. */
+.ls-card-sample svg,
+.ls-card-sample svg * {
+  vector-effect: none;
+}
+
+.ls-card-sample figcaption {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ls-gray-500);
+}
+
+html.dark .ls-card-sample figcaption {
+  color: var(--ls-gray-600);
+}
+
+/* Hairline at the card's edge so the body reads against the page in dark mode.
+   Non-scaling so it stays 0.5px on screen. */
+.ls-card-sample .ls-card-sample-edge {
+  stroke: var(--ls-black-10);
+  stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+html.dark .ls-card-sample .ls-card-sample-edge {
+  stroke: var(--ls-white-10);
+}
+
+/* ===========================================
+   Card design template downloads
+   (styles snippets/cards/card-design/downloads.mdx; matches .feature-card
+   and .image-card: 24px padding, 15/22 title, gray-950 on white)
+   =========================================== */
+
+.ls-template-downloads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+@media (max-width: 640px) {
+  .ls-template-downloads {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The whole tile is the download link; hover matches the site's link cards. */
+.ls-template-download {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ls-template-download:hover {
+  background-color: var(--ls-gray-025);
+  transform: scale(1.02);
+}
+
+.ls-template-download:focus-visible {
+  outline: 2px solid var(--ls-sky-500);
+  outline-offset: 2px;
+}
+
+html.dark .ls-template-download {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+html.dark .ls-template-download:hover {
+  background-color: var(--ls-gray-900);
+}
+
+.ls-template-download-preview {
+  display: block;
+  padding: 24px 24px 0;
+}
+
+.ls-template-download-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+.ls-template-download-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+}
+
+.ls-template-download-title {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500 !important; /* the site forces body weight on non-heading descendants */
+  color: var(--ls-gray-950);
+}
+
+html.dark .ls-template-download-title {
+  color: var(--ls-gray-050);
+}
+
+/* Primary button: the site's primary (gray-950) with white text; inverts in dark. */
+.ls-template-download-button {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500 !important;
+  color: var(--ls-white);
+  background-color: var(--ls-gray-950);
+  border-radius: var(--ls-radius-sm);
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.ls-template-download:hover .ls-template-download-button {
+  background-color: var(--ls-gray-800);
+}
+
+html.dark .ls-template-download-button {
+  color: var(--ls-gray-950);
+  background-color: var(--ls-gray-050);
+}
+
+html.dark .ls-template-download:hover .ls-template-download-button {
+  background-color: var(--ls-white);
+}

@@ -1,0 +1,28 @@
+export const TemplateDownloads = ({ id }) => {
+  const base = '/images/cards/card-design/card-template-';
+  const items = [
+    { face: 'front', title: 'Front template' },
+    { face: 'back', title: 'Back template' },
+  ];
+  return (
+    <div id={id} className="ls-template-downloads not-prose">
+      {items.map((it) => (
+        <a
+          key={it.face}
+          className="ls-template-download"
+          href={base + it.face + '-1536x969.svg'}
+          download={'grid-card-template-' + it.face + '.svg'}
+          aria-label={'Download the ' + it.title.toLowerCase() + ' as SVG'}
+        >
+          <span className="ls-template-download-preview">
+            <img src={base + it.face + '-1536x969.svg'} alt="" noZoom />
+          </span>
+          <span className="ls-template-download-row">
+            <span className="ls-template-download-title">{it.title}</span>
+            <span className="ls-template-download-button">Download SVG</span>
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+};
