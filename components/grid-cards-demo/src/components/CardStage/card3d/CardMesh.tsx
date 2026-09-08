@@ -74,14 +74,24 @@ export interface BrandPlacement {
 const PRINT_MS = 450;
 const PRINT_STEPS = 6;
 
-/** Per-surface material constants beyond the maps: the coat and the relief. */
-const SURFACE: Record<Surface, { clearcoat: number; clearcoatRoughness: number; normalScale: number }> = {
-  'print-matte': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.6 },
-  'print-gloss': { clearcoat: 1, clearcoatRoughness: 0.08, normalScale: 0.35 },
+/** The least of a feature that keeps its shader branch compiled in. */
+const SHADER_KEEP = 1e-4;
+
+/** Per-surface material constants beyond the maps: the coat, the base's own
+ *  specular, and the relief. A gloss laminate is one interface: the coat
+ *  reflects and the print under it only scatters, so the base's specular is
+ *  off and the color reads deep between the highlights. A matte laminate
+ *  scatters the room across its whole face, which lifts and dulls the color
+ *  a little: that is what matte looks like. */
+const SURFACE: Record<Surface, { clearcoat: number; clearcoatRoughness: number; specular: number; sheen: number; normalScale: number }> = {
+  // The sheen is the matte laminate's dusty scatter toward the eye at a
+  // glancing view: a faint white lift over the color, as a matte print has.
+  'print-matte': { clearcoat: 0, clearcoatRoughness: 0, specular: 1, sheen: 0.25, normalScale: 0.6 },
+  'print-gloss': { clearcoat: 1, clearcoatRoughness: 0.06, specular: 0, sheen: 0, normalScale: 0.35 },
   // The Z card runs its grain at 1.6, but under this studio's key that reads
   // as stucco; 0.6 is the same fine, even speckle its diffuse room gives.
-  'bare-matte': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.6 },
-  'bare-gloss': { clearcoat: 0, clearcoatRoughness: 0, normalScale: 0.4 },
+  'bare-matte': { clearcoat: 0, clearcoatRoughness: 0, specular: 1, sheen: 0, normalScale: 0.6 },
+  'bare-gloss': { clearcoat: 0, clearcoatRoughness: 0, specular: 1, sheen: 0, normalScale: 0.4 },
 };
 
 /** The image at `url` once loaded (null on failure or with no url), and
@@ -315,6 +325,27 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const surface = surfaceOf(bodyDesign);
   const bareSurface: Surface = state.design.material === 'metal' ? 'bare-gloss' : `print-${state.design.finish}`;
   const baseSurface = surfaceOf(state.design);
+  // Bake the other surfaces while the page is idle, one per slice, so the
+  // first switch to metal or gloss does not pay for its maps on the click.
+  useEffect(() => {
+    if (!assets) return;
+    const ric: (cb: () => void) => number =
+      typeof requestIdleCallback === 'function' ? (cb) => requestIdleCallback(cb, { timeout: 2000 }) : (cb) => window.setTimeout(cb, 250);
+    const cancel: (id: number) => void = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
+    const jobs: Array<[Surface, 'front' | 'back']> = [];
+    for (const s of ['print-matte', 'print-gloss', 'bare-matte', 'bare-gloss'] as Surface[]) {
+      for (const side of ['front', 'back'] as const) jobs.push([s, side]);
+    }
+    let id = 0;
+    const next = () => {
+      const job = jobs.shift();
+      if (!job) return;
+      getSurfaceMaps(job[0], job[1], assets);
+      id = ric(next);
+    };
+    id = ric(next);
+    return () => cancel(id);
+  }, [assets]);
   useEffect(() => {
     if (!assets) return;
     const c = SURFACE[surface];
@@ -338,8 +369,15 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       mat.metalnessMap = t.orm;
       mat.normalMap = t.normal;
       mat.normalScale.set(c.normalScale, c.normalScale);
-      mat.clearcoat = c.clearcoat;
+      // Never exactly zero: three compiles a different program when a coat
+      // or a sheen is present at all, and a recompile stalls the frame at a
+      // finish change. A trace of each keeps one program for every surface.
+      mat.clearcoat = Math.max(SHADER_KEEP, c.clearcoat);
       mat.clearcoatRoughness = c.clearcoatRoughness;
+      mat.specularIntensity = c.specular;
+      mat.sheen = Math.max(SHADER_KEEP, c.sheen);
+      mat.sheenRoughness = 0.9;
+      mat.sheenColor.set('#ffffff');
       mat.needsUpdate = true;
       // The blank and the base are the body before anything is laid on or
       // set into it: no stripe, no mark, no chip pocket. The chip arrives

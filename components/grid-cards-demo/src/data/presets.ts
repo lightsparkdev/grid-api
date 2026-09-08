@@ -6,7 +6,7 @@
 import { FIGMA_FACE_H } from '@/apps/card/cardMetrics';
 import { sameBrandLayout, sameGradient, type CardDesign } from './design';
 
-export type PresetId = 'creator' | 'social' | 'marketplace' | 'ondemand' | 'messaging' | 'finance';
+export type PresetId = 'finance' | 'creator' | 'social' | 'marketplace' | 'ondemand' | 'messaging';
 
 /** The design a preset fills in. The cardholder's name is the visitor's and
  *  is kept across presets. */
@@ -27,6 +27,28 @@ const MID_Y = FIGMA_FACE_H / 2;
 const MID_Y_CHIP = 334 + 149 / 2;
 
 export const PRESETS: CardPreset[] = [
+  {
+    id: 'finance',
+    label: 'Finance',
+    description: 'Financial app',
+    iconSrc: `${ASSETS}/app-icon-finance.png`,
+    // Aurora: the Global Accounts playground's fintech card, one still frame
+    // of its aurora (the GPU field the wallet demo's DebitCard renders, shot
+    // at the card's own size) as art, glossy, the wordmark in white at the
+    // right on the chip's row.
+    design: {
+      programName: 'Aurora',
+      material: 'plastic',
+      finish: 'gloss',
+      color: '#0196c9',
+      gradient: null,
+      logoUrl: null,
+      logoTreatment: 'print',
+      brandLayout: null,
+      backgroundUrl: `${ASSETS}/art-finance.webp`,
+      artTreatment: 'print',
+    },
+  },
   {
     id: 'creator',
     label: 'Creator',
@@ -126,28 +148,6 @@ export const PRESETS: CardPreset[] = [
       logoTreatment: 'print',
       brandLayout: { x: 1536 - 505, y: 475, h: 838, anchor: 'center', rotation: 0, opacity: 0.2 },
       backgroundUrl: null,
-      artTreatment: 'print',
-    },
-  },
-  {
-    id: 'finance',
-    label: 'Finance',
-    description: 'Financial app',
-    iconSrc: `${ASSETS}/app-icon-finance.png`,
-    // Aurora: the Global Accounts playground's fintech card, one still frame
-    // of its aurora (the GPU field the wallet demo's DebitCard renders, shot
-    // at the card's own size) as art, glossy, the wordmark in white at the
-    // right on the chip's row.
-    design: {
-      programName: 'Aurora',
-      material: 'plastic',
-      finish: 'gloss',
-      color: '#0196c9',
-      gradient: null,
-      logoUrl: null,
-      logoTreatment: 'print',
-      brandLayout: null,
-      backgroundUrl: `${ASSETS}/art-finance.webp`,
       artTreatment: 'print',
     },
   },

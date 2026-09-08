@@ -45,8 +45,10 @@ export const surfaceOf = (design: Pick<CardDesign, 'material' | 'color' | 'finis
 /** Field roughness and metalness per surface: soft-touch and laminated print,
   *  beadblast and polished metal. */
 const FIELD: Record<Surface, { rough: number; metal: number }> = {
-  'print-matte': { rough: 0.62, metal: 0 },
-  'print-gloss': { rough: 0.45, metal: 0 },
+  // Matte scatters broadly; under a gloss coat the print's own lobe is off
+  // (see CardMesh SURFACE), so its roughness only shapes what little remains.
+  'print-matte': { rough: 0.78, metal: 0 },
+  'print-gloss': { rough: 0.6, metal: 0 },
   'bare-matte': { rough: 0.7, metal: 1 },
   'bare-gloss': { rough: 0.12, metal: 1 },
 };

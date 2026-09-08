@@ -176,12 +176,12 @@ export interface DesignSwatch {
 }
 
 export const DESIGN_SWATCHES: DesignSwatch[] = [
-  { id: 'ink', label: 'Ink', color: '#151517' },
+  { id: 'black', label: 'Black', color: '#151517' },
   { id: 'white', label: 'White', color: '#ffffff' },
-  { id: 'ocean', label: 'Ocean', color: '#0b3d91' },
-  { id: 'forest', label: 'Forest', color: '#0c3b2e' },
-  { id: 'terracotta', label: 'Terracotta', color: '#b3472a' },
-  { id: 'lilac', label: 'Lilac', color: '#5b3fb8' },
+  { id: 'blue', label: 'Blue', color: '#0b3d91' },
+  { id: 'green', label: 'Green', color: '#0c3b2e' },
+  { id: 'red', label: 'Red', color: '#b3472a' },
+  { id: 'purple', label: 'Purple', color: '#5b3fb8' },
 ];
 
 /** No print: the bare stock shows on the face. */
@@ -205,14 +205,14 @@ export const FINISHES: Array<{ id: CardFinish; label: string }> = [
 ];
 
 export const LOGO_TREATMENTS: Array<{ id: LogoTreatment; label: string }> = [
-  { id: 'print', label: 'Ink' },
+  { id: 'print', label: 'Print' },
   { id: 'spotGloss', label: 'Gloss' },
   { id: 'foil', label: 'Foil' },
   { id: 'etch', label: 'Etch' },
 ];
 
 export const ART_TREATMENTS: Array<{ id: ArtTreatment; label: string }> = [
-  { id: 'print', label: 'Ink' },
+  { id: 'print', label: 'Print' },
   { id: 'spotGloss', label: 'Gloss' },
 ];
 

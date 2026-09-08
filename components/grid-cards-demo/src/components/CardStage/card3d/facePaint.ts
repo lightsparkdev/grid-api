@@ -779,10 +779,12 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
     ctx.restore();
   }
 
-  // Fine print at (56, 876), 22 px.
+  // Fine print, 22 px on 26 px lines, set in from the bottom edge by the
+  // same 56 it is set in from the left (its descenders 15% of the em).
   ctx.font = `400 ${F(22)}px ${FONT}`;
-  ctx.fillText('1-855-516-0103   lightspark.com/help', x, F(876) + F(16));
-  ctx.fillText('Issued by Lead Bank', x, F(876) + F(16) + F(26));
+  const fineLast = TEX_H - F(56) - F(22 * 0.15);
+  ctx.fillText('1-855-516-0103   lightspark.com/help', x, fineLast - F(26));
+  ctx.fillText('Issued by Lead Bank', x, fineLast);
 
   paintLockup(ctx, assets, foilIsBlack(s.design));
   paintState(ctx, s.frozen, s.closed);
