@@ -32,6 +32,20 @@ payments is a separate enum and is unaffected.
 
 See [Reconciliation](/cards/transactions/reconciliation).
 
+## Sandbox businesses resolve from the suffix at create
+
+With **Skip verification paperwork** on, a sandbox business on an unregulated platform now
+gets its result when you create it, the same way an individual does.
+
+- The last 3 characters of `businessInfo.registrationNumber` set `kybStatus` at create:
+  `001` → `PENDING`, `002` → `REJECTED`, `003` → `UNVERIFIED`, any other value →
+  `APPROVED`. No documents, beneficial owners, or `POST /verifications` call are needed.
+- Create emits the matching `CUSTOMER.KYB_*` webhook only. It creates no verification and
+  emits no `VERIFICATION.*` event.
+- With the switch off, and on regulated platforms, nothing changes.
+
+See the business suffix table in [sandbox testing](/api-reference/sandbox-testing).
+
 ## Sandbox KYC and KYB follow the production flow
 
 Unregulated sandbox platforms now resolve a customer's verification from a submitted
@@ -58,7 +72,8 @@ submit, and resolve loop you run in production.
 - To keep the previous fast path, open **Configuration** in your sandbox dashboard and turn
   on **Skip verification paperwork**. A terminal suffix then resolves with no documents:
   individuals at create, businesses at their first submission. `001` and `003` still require
-  a complete packet. Turn it off when you want to test the full flow again.
+  a complete packet (changed later in September 2026—see above). Turn it off when you want
+  to test the full flow again.
 
 Walk through the fix-and-resubmit loop in [sandbox testing](/api-reference/sandbox-testing).
 
