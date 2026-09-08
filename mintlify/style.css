@@ -5079,6 +5079,7 @@ html.dark .ls-blueprint-foot {
   color: var(--bp-ink);
   border: 1px solid var(--bp-ink);
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .ls-blueprint-key li::after {
@@ -5106,32 +5107,66 @@ html.dark .ls-blueprint-foot {
   display: none;
 }
 
+/* Units switch: a pill track with a thumb that slides between the two options. */
 .ls-blueprint-units {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
   flex-shrink: 0;
-  border: 0.5px solid var(--ls-black-10);
-  border-radius: 6px;
-  overflow: hidden;
+  padding: 2px;
+  background-color: var(--ls-gray-150);
+  border-radius: var(--ls-radius-round);
+  corner-shape: round;
 }
 
 html.dark .ls-blueprint-units {
-  border-color: var(--ls-white-10);
+  background-color: var(--ls-gray-900);
+}
+
+.ls-blueprint-units-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  height: calc(100% - 4px);
+  background-color: var(--ls-white);
+  border-radius: var(--ls-radius-round);
+  corner-shape: round;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 0.5px var(--ls-black-10);
+  transition: transform 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+
+html.dark .ls-blueprint-units-thumb {
+  background-color: var(--ls-gray-700);
+  box-shadow: 0 0 0 0.5px var(--ls-white-10);
+}
+
+.ls-blueprint-units[data-unit='mm'] .ls-blueprint-units-thumb {
+  transform: translateX(100%);
 }
 
 .ls-blueprint-units button {
-  padding: 3px 10px;
+  position: relative;
+  z-index: 1;
+  min-width: 44px;
+  padding: 3px 12px;
   font: inherit;
   font-size: 12px;
   line-height: 16px;
-  color: var(--ls-gray-600);
+  font-weight: 450;
+  color: var(--ls-gray-500);
   background: transparent;
   border: 0;
+  border-radius: var(--ls-radius-round);
+  corner-shape: round;
   cursor: pointer;
+  transition: color 180ms ease;
 }
 
 .ls-blueprint-units button[aria-pressed='true'] {
   color: var(--ls-gray-900);
-  background-color: var(--ls-gray-150);
+  font-weight: 500;
 }
 
 html.dark .ls-blueprint-units button {
@@ -5140,7 +5175,13 @@ html.dark .ls-blueprint-units button {
 
 html.dark .ls-blueprint-units button[aria-pressed='true'] {
   color: var(--ls-gray-100);
-  background-color: var(--ls-gray-850);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls-blueprint-units-thumb,
+  .ls-blueprint-units button {
+    transition: none;
+  }
 }
 
 .ls-card-samples {

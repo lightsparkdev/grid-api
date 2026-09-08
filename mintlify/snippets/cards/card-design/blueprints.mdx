@@ -261,7 +261,8 @@ export const CardBlueprint = ({ face }) => {
             </li>
           ))}
         </ol>
-        <div className="ls-blueprint-units" role="group" aria-label="Units">
+        <div className="ls-blueprint-units" role="group" aria-label="Units" data-unit={unit}>
+          <span className="ls-blueprint-units-thumb" aria-hidden="true" />
           <button type="button" aria-pressed={unit === 'px'} onClick={() => setUnit('px')}>
             px
           </button>
