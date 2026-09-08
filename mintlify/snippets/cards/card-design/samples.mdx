@@ -1,0 +1,92 @@
+export const CardSamples = () => {
+  const chip = (
+    <g>
+      <rect x={152} y={324} width={236} height={164} rx={24} fill="#c9c2b2" />
+      <g fill="none" stroke="rgba(0,0,0,0.28)" strokeWidth={3}>
+        {[338, 385, 432].map((y) => (
+          <g key={y}>
+            <rect x={166} y={y} width={92} height={42} rx={8} />
+            <rect x={282} y={y} width={92} height={42} rx={8} />
+          </g>
+        ))}
+      </g>
+    </g>
+  );
+  const contactless = (ink) => {
+    const h = 90;
+    const cy = 470 + h / 2;
+    const cx = 1482 - h * 0.75;
+    const a = (Math.PI / 180) * 40;
+    const arc = (r) =>
+      'M ' + (cx + r * Math.cos(-a)) + ' ' + (cy + r * Math.sin(-a)) + ' A ' + r + ' ' + r + ' 0 0 1 ' + (cx + r * Math.cos(a)) + ' ' + (cy + r * Math.sin(a));
+    return (
+      <g fill="none" stroke={ink} strokeWidth={h * 0.06} strokeLinecap="round">
+        {[0.12, 0.32, 0.52, 0.72].map((k) => (
+          <path key={k} d={arc(h * k)} />
+        ))}
+      </g>
+    );
+  };
+  const front = (color, ink, title) => (
+    <svg viewBox="0 0 1536 969" role="img" aria-label={title}>
+      <rect x={0} y={0} width={1536} height={969} rx={57} fill={color} />
+      {chip}
+      <text x={1384} y={440} fontSize={96} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} textAnchor="end" fill={ink}>
+        Your logo
+      </text>
+    </svg>
+  );
+  const back = (color, stripe, ink, bleed, title) => (
+    <svg viewBox="0 0 1536 969" role="img" aria-label={title}>
+      <rect x={0} y={0} width={1536} height={969} rx={57} fill={color} />
+      <rect x={0} y={bleed ? 0 : 72} width={1536} height={bleed ? 300 : 228} fill={stripe} />
+      <g fontFamily="'Suisse Intl', sans-serif" fontSize={57} fill={ink}>
+        <text x={56} y={517}>
+          Ana Hernandes
+        </text>
+        <text x={56} y={590}>
+          4000 1234 5678 9010
+        </text>
+        <text x={56} y={663}>
+          EXP 11/27
+        </text>
+        <text x={371} y={663}>
+          CVV 123
+        </text>
+      </g>
+      {contactless(ink)}
+      <image href="/images/cards/card-design/visa-debit-lockup.svg" x={1143} y={704} width={339} height={211} style={{ filter: 'brightness(0.8)' }} />
+      <g fontFamily="'Suisse Intl', sans-serif" fontSize={22} fill={ink}>
+        <text x={56} y={892}>
+          1-800-000-0000
+        </text>
+        <text x={300} y={892}>
+          yourbrand.com/help
+        </text>
+        <text x={56} y={918}>
+          Issued by Lead Bank
+        </text>
+      </g>
+    </svg>
+  );
+  return (
+    <div className="ls-card-samples not-prose">
+      <figure className="ls-card-sample">
+        {front('#111111', '#ffffff', 'Monochrome card, front: black body with a white logo right of the chip')}
+        <figcaption>Monochrome, front. Black core, logo in white ink or one spot color.</figcaption>
+      </figure>
+      <figure className="ls-card-sample">
+        {back('#111111', '#242426', '#ffffff', false, 'Monochrome card, back: white personalization and a silver foil Visa DEBIT lockup')}
+        <figcaption>Monochrome, back. White personalization, silver foil lockup.</figcaption>
+      </figure>
+      <figure className="ls-card-sample">
+        {front('#0b3d91', '#ffffff', 'Full-color card, front: a printed blue body with a white logo right of the chip')}
+        <figcaption>Full color, front. Any color or artwork, printed edge to edge.</figcaption>
+      </figure>
+      <figure className="ls-card-sample">
+        {back('#0b3d91', '#1a1a1a', '#ffffff', true, 'Full-color card, back: the color continues and the stripe band bleeds to the top edge')}
+        <figcaption>Full color, back. Your color continues; the stripe band bleeds to the top edge.</figcaption>
+      </figure>
+    </div>
+  );
+};

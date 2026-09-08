@@ -353,6 +353,12 @@
             ]
           },
           {
+            "group": "Card Design",
+            "pages": [
+              "cards/card-design/guidelines"
+            ]
+          },
+          {
             "group": "Card Management",
             "pages": [
               "cards/card-management/issuing-cards",

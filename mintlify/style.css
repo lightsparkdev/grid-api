@@ -4971,3 +4971,168 @@ html.dark .corridor-fields-empty {
   background-color: var(--ls-gray-925);
   border-color: var(--ls-white-06);
 }
+
+/* ===========================================
+   Card design blueprints and samples
+   (styles snippets/cards/card-design/*.mdx)
+   =========================================== */
+
+.ls-blueprint {
+  --bp-ink: var(--ls-gray-600);
+  --bp-ink-soft: var(--ls-gray-400);
+  --bp-face: var(--ls-gray-075);
+  --bp-fixed: var(--ls-gray-200);
+  --bp-yours: var(--ls-sky-500);
+  --bp-keepout: var(--ls-orange-500);
+  margin: 24px 0;
+  padding: 20px 20px 12px;
+  background-color: var(--ls-gray-025);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+}
+
+html.dark .ls-blueprint {
+  --bp-ink: var(--ls-gray-400);
+  --bp-ink-soft: var(--ls-gray-600);
+  --bp-face: var(--ls-gray-950);
+  --bp-fixed: var(--ls-gray-850);
+  background-color: var(--ls-gray-975);
+  border-color: var(--ls-white-06);
+}
+
+.ls-blueprint svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.ls-blueprint-label {
+  font-family: 'Suisse Intl Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  fill: var(--bp-ink);
+}
+
+.ls-blueprint-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ls-gray-600);
+}
+
+html.dark .ls-blueprint-foot {
+  color: var(--ls-gray-400);
+}
+
+.ls-blueprint-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.ls-blueprint-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border-radius: 2px;
+}
+
+.ls-blueprint-legend .is-yours::before {
+  background-color: var(--bp-yours);
+  opacity: 0.6;
+}
+
+.ls-blueprint-legend .is-fixed::before {
+  background-color: var(--bp-fixed);
+}
+
+.ls-blueprint-legend .is-keepout::before {
+  background-color: var(--bp-keepout);
+  opacity: 0.6;
+}
+
+.ls-blueprint-units {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+html.dark .ls-blueprint-units {
+  border-color: var(--ls-white-10);
+}
+
+.ls-blueprint-units button {
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ls-gray-600);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.ls-blueprint-units button[aria-pressed='true'] {
+  color: var(--ls-gray-900);
+  background-color: var(--ls-gray-150);
+}
+
+html.dark .ls-blueprint-units button {
+  color: var(--ls-gray-400);
+}
+
+html.dark .ls-blueprint-units button[aria-pressed='true'] {
+  color: var(--ls-gray-100);
+  background-color: var(--ls-gray-850);
+}
+
+.ls-card-samples {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+  margin: 24px 0;
+}
+
+@media (max-width: 640px) {
+  .ls-card-samples {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ls-card-sample svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 0 0.5px var(--ls-black-10);
+}
+
+/* The samples are pictures of cards: strokes scale with the card, unlike the
+   site-wide non-scaling-stroke default. */
+.ls-card-sample svg,
+.ls-card-sample svg * {
+  vector-effect: none;
+}
+
+html.dark .ls-card-sample svg {
+  box-shadow: 0 0 0 0.5px var(--ls-white-10);
+}
+
+.ls-card-sample figcaption {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ls-gray-600);
+}
+
+html.dark .ls-card-sample figcaption {
+  color: var(--ls-gray-400);
+}

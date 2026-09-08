@@ -1,0 +1,244 @@
+export const CardBlueprint = ({ face }) => {
+  const W = 1536;
+  const H = 969;
+  const R = 57;
+  const SAFE = 54;
+  const PX_PER_MM = 17.94;
+  const [unit, setUnit] = React.useState('px');
+  const f = (px) => (unit === 'mm' ? (px / PX_PER_MM).toFixed(2) + ' mm' : px + ' px');
+  const label = (x, y, text, opts = {}) => (
+    <text
+      className="ls-blueprint-label"
+      x={x}
+      y={y}
+      fontSize={opts.size || 24}
+      textAnchor={opts.anchor || 'start'}
+      opacity={opts.opacity || 1}
+      transform={opts.transform}
+    >
+      {text}
+    </text>
+  );
+  const hdim = (x1, x2, y, text) => (
+    <g stroke="var(--bp-ink)" strokeWidth={2} fill="none">
+      <line x1={x1} y1={y} x2={x2} y2={y} />
+      <line x1={x1} y1={y - 12} x2={x1} y2={y + 12} />
+      <line x1={x2} y1={y - 12} x2={x2} y2={y + 12} />
+      <text className="ls-blueprint-label" stroke="none" x={(x1 + x2) / 2} y={y - 16} fontSize={28} textAnchor="middle">
+        {text}
+      </text>
+    </g>
+  );
+  const vdim = (x, y1, y2, text, side) => {
+    const tx = side === 'left' ? x - 16 : x + 40;
+    const ty = (y1 + y2) / 2;
+    return (
+      <g stroke="var(--bp-ink)" strokeWidth={2} fill="none">
+        <line x1={x} y1={y1} x2={x} y2={y2} />
+        <line x1={x - 12} y1={y1} x2={x + 12} y2={y1} />
+        <line x1={x - 12} y1={y2} x2={x + 12} y2={y2} />
+        <text
+          className="ls-blueprint-label"
+          stroke="none"
+          x={tx}
+          y={ty}
+          fontSize={28}
+          textAnchor="middle"
+          transform={'rotate(-90 ' + tx + ' ' + ty + ')'}
+        >
+          {text}
+        </text>
+      </g>
+    );
+  };
+  const contactless = (right, top, h) => {
+    const cy = top + h / 2;
+    const cx = right - h * 0.75;
+    const a = (Math.PI / 180) * 40;
+    const arc = (r) =>
+      'M ' + (cx + r * Math.cos(-a)) + ' ' + (cy + r * Math.sin(-a)) + ' A ' + r + ' ' + r + ' 0 0 1 ' + (cx + r * Math.cos(a)) + ' ' + (cy + r * Math.sin(a));
+    return (
+      <g fill="none" stroke="var(--bp-ink)" strokeWidth={h * 0.06} strokeLinecap="round">
+        {[0.12, 0.32, 0.52, 0.72].map((k) => (
+          <path key={k} d={arc(h * k)} />
+        ))}
+      </g>
+    );
+  };
+  const chip = (
+    <g fill="none" stroke="var(--bp-ink)" strokeWidth={3}>
+      <rect x={152} y={324} width={236} height={164} rx={24} />
+      {[338, 385, 432].map((y) => (
+        <g key={y}>
+          <rect x={166} y={y} width={92} height={42} rx={8} />
+          <rect x={282} y={y} width={92} height={42} rx={8} />
+        </g>
+      ))}
+    </g>
+  );
+  const lockup = (
+    <g>
+      <rect x={1143} y={704} width={339} height={211} rx={6} fill="var(--bp-fixed)" stroke="var(--bp-ink)" strokeWidth={2} />
+      <g fontFamily="'Suisse Intl', sans-serif" fill="var(--bp-ink)" textAnchor="end">
+        <text x={1482} y={760} fontSize={40} fontWeight={500} letterSpacing={4}>
+          DEBIT
+        </text>
+        <text x={1482} y={890} fontSize={110} fontWeight={700} fontStyle="italic">
+          VISA
+        </text>
+      </g>
+    </g>
+  );
+  const hatch = (id) => (
+    <defs>
+      <pattern id={id} width={24} height={24} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1={0} y1={0} x2={0} y2={24} stroke="var(--bp-keepout)" strokeWidth={3} opacity={0.35} />
+      </pattern>
+    </defs>
+  );
+  const cardBody = (rx) => <rect x={0} y={0} width={W} height={H} rx={rx} fill="var(--bp-face)" stroke="var(--bp-ink)" strokeWidth={3} />;
+  const radiusNote = (rx) => (
+    <g>
+      {rx > 0 ? <path d={'M ' + rx + ' 0 A ' + rx + ' ' + rx + ' 0 0 0 0 ' + rx} fill="none" stroke="var(--bp-ink)" strokeWidth={3} /> : null}
+      <line x1={rx > 0 ? 17 : 0} y1={rx > 0 ? 17 : 0} x2={-40} y2={-40} stroke="var(--bp-ink)" strokeWidth={2} />
+      {label(-48, -52, 'R ' + (rx > 0 ? f(rx) : '0'), { size: 28, anchor: 'end' })}
+    </g>
+  );
+  let title = '';
+  let legend = [];
+  let drawing = null;
+  if (face === 'front') {
+    title = 'Front of card: dimensions, chip keep-clear zone, and logo placement';
+    legend = [
+      { key: 'is-yours', label: 'Yours' },
+      { key: 'is-fixed', label: 'Fixed' },
+      { key: 'is-keepout', label: 'Keep clear' },
+    ];
+    drawing = (
+      <g>
+        {hatch('bp-front-hatch')}
+        {cardBody(R)}
+        <rect x={SAFE} y={SAFE} width={W - 2 * SAFE} height={H - 2 * SAFE} rx={12} fill="none" stroke="var(--bp-ink-soft)" strokeWidth={2} strokeDasharray="10 10" />
+        {label(W / 2, H - SAFE - 18, 'safe margin ' + f(SAFE) + ' on every side', { anchor: 'middle', opacity: 0.8 })}
+        <rect x={107} y={279} width={308} height={254} rx={16} fill="url(#bp-front-hatch)" stroke="var(--bp-keepout)" strokeWidth={2} strokeDasharray="8 8" />
+        {chip}
+        {label(261, 572, 'chip ' + f(236) + ' × ' + f(164), { anchor: 'middle' })}
+        {label(261, 604, 'keep clear ' + f(308) + ' × ' + f(254), { anchor: 'middle', opacity: 0.8 })}
+        {hdim(0, 152, 250, f(152))}
+        {vdim(-70, 0, 324, f(324), 'left')}
+        <rect x={974} y={361} width={410} height={90} rx={8} fill="var(--bp-yours)" fillOpacity={0.12} stroke="var(--bp-yours)" strokeWidth={2} strokeDasharray="8 8" />
+        <text x={1384} y={430} fontSize={64} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} textAnchor="end" fill="var(--bp-yours)" opacity={0.9}>
+          Your logo
+        </text>
+        <line x1={388} y1={406} x2={974} y2={406} stroke="var(--bp-ink-soft)" strokeWidth={2} strokeDasharray="4 8" />
+        {label(681, 396, 'chip mid-line, y ' + f(406), { anchor: 'middle', opacity: 0.8 })}
+        {hdim(1384, W, 330, f(152))}
+        {hdim(0, W, -70, f(W))}
+        {vdim(W + 70, 0, H, f(H))}
+        {radiusNote(R)}
+      </g>
+    );
+  } else if (face === 'back') {
+    title = 'Back of card: the template with the magnetic stripe, account block, contactless indicator, Visa DEBIT lockup, and issuer statement';
+    legend = [
+      { key: 'is-yours', label: 'Yours: background, personalization ink and typeface, support line' },
+      { key: 'is-fixed', label: 'Fixed' },
+    ];
+    drawing = (
+      <g>
+        {cardBody(R)}
+        <rect x={0} y={72} width={W} height={228} fill="var(--bp-fixed)" />
+        {label(W / 2, 196, 'magnetic stripe', { size: 28, anchor: 'middle' })}
+        {vdim(W + 70, 0, 72, f(72))}
+        {vdim(W + 70, 72, 300, f(228))}
+        <rect x={40} y={460} width={640} height={220} rx={8} fill="var(--bp-yours)" fillOpacity={0.08} stroke="var(--bp-yours)" strokeWidth={2} strokeDasharray="8 8" />
+        <g fontFamily="'Suisse Intl', sans-serif" fontSize={57} fill="var(--bp-ink)">
+          <text x={56} y={517}>
+            Cardholder name
+          </text>
+          <text x={56} y={590}>
+            4000 1234 5678 9010
+          </text>
+          <text x={56} y={663}>
+            EXP 11/27
+          </text>
+          <text x={371} y={663}>
+            CVV 123
+          </text>
+        </g>
+        {hdim(0, 56, 440, f(56))}
+        {label(56, 720, 'name, number, expiry, and code: ' + f(57) + ' type, printed at personalization')}
+        {contactless(1482, 470, 90)}
+        {label(1482, 600, 'contactless indicator, ' + f(90) + ' tall', { anchor: 'end' })}
+        <rect x={1089} y={650} width={447} height={319} rx={8} fill="none" stroke="var(--bp-ink-soft)" strokeWidth={2} strokeDasharray="4 8" />
+        {lockup}
+        {label(1073, 676, 'clear space ' + f(SAFE), { anchor: 'end', opacity: 0.8 })}
+        {hdim(1482, W, 674, f(SAFE))}
+        <rect x={40} y={860} width={640} height={72} rx={8} fill="var(--bp-yours)" fillOpacity={0.08} stroke="var(--bp-yours)" strokeWidth={2} strokeDasharray="8 8" />
+        <g fontFamily="'Suisse Intl', sans-serif" fontSize={22} fill="var(--bp-ink)">
+          <text x={56} y={892}>
+            1-800-000-0000
+          </text>
+          <text x={300} y={892}>
+            yourbrand.com/help
+          </text>
+          <text x={56} y={918}>
+            Issued by Lead Bank
+          </text>
+        </g>
+        {label(700, 892, 'your support phone and URL')}
+        {label(700, 918, 'issuer statement, fixed')}
+        {hdim(0, W, -70, f(W))}
+        {vdim(W + 70, 0, H, f(H))}
+      </g>
+    );
+  } else {
+    title = 'Wallet card art: squared corners, the lower-left quadrant left empty, and the Visa DEBIT lockup in the lower right';
+    legend = [
+      { key: 'is-yours', label: 'Yours: the front design' },
+      { key: 'is-fixed', label: 'Fixed: Visa DEBIT lockup, added by us' },
+      { key: 'is-keepout', label: 'Leave empty' },
+    ];
+    drawing = (
+      <g>
+        {hatch('bp-wallet-hatch')}
+        <rect x={0} y={0} width={W} height={H} fill="var(--bp-yours)" fillOpacity={0.08} stroke="var(--bp-ink)" strokeWidth={3} />
+        <text x={SAFE} y={140} fontSize={64} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} fill="var(--bp-yours)" opacity={0.9}>
+          Your front design
+        </text>
+        {label(SAFE, 190, 'no chip, no name, no numbers, no expiry', { opacity: 0.8 })}
+        <rect x={0} y={H / 2} width={W / 2} height={H / 2} fill="url(#bp-wallet-hatch)" stroke="var(--bp-keepout)" strokeWidth={2} strokeDasharray="8 8" />
+        {label(SAFE, H / 2 + 70, 'leave empty', { size: 28 })}
+        {label(SAFE, H / 2 + 106, 'the wallet draws the last 4 digits here', { opacity: 0.8 })}
+        {lockup}
+        {radiusNote(0)}
+        {hdim(0, W, -70, f(W))}
+        {vdim(W + 70, 0, H, f(H))}
+      </g>
+    );
+  }
+  return (
+    <figure className="ls-blueprint not-prose">
+      <svg viewBox="-230 -150 1996 1180" role="img" aria-label={title}>
+        {drawing}
+      </svg>
+      <figcaption className="ls-blueprint-foot">
+        <div className="ls-blueprint-legend">
+          {legend.map((l) => (
+            <span key={l.key} className={l.key}>
+              {l.label}
+            </span>
+          ))}
+        </div>
+        <div className="ls-blueprint-units" role="group" aria-label="Units">
+          <button type="button" aria-pressed={unit === 'px'} onClick={() => setUnit('px')}>
+            px
+          </button>
+          <button type="button" aria-pressed={unit === 'mm'} onClick={() => setUnit('mm')}>
+            mm
+          </button>
+        </div>
+      </figcaption>
+    </figure>
+  );
+};

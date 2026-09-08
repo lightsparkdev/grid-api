@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Grid card design template: front.
+  Artboard 1536 x 969 px (ISO/IEC 7810 ID-1, 85.6 x 53.98 mm, 1 mm = 17.94 px).
+  Place this file on your artboard at (0, 0) and keep it on a hidden or
+  non-printing layer. Every group is a guide; nothing here prints.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="969" viewBox="0 0 1536 969" fill="none" font-family="Helvetica, Arial, sans-serif">
+  <g id="card-outline" stroke="#FF21CC" stroke-width="2">
+    <rect x="1" y="1" width="1534" height="967" rx="56" />
+    <text x="24" y="40" font-size="20" fill="#FF21CC" stroke="none">Card edge: 1536 x 969 px, R 57 px (85.6 x 53.98 mm, R 3.175 mm)</text>
+  </g>
+  <g id="safe-margin" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="10 10">
+    <rect x="54" y="54" width="1428" height="861" rx="12" />
+    <text x="70" y="900" font-size="18" fill="#FF21CC" stroke="none">Safe margin: 54 px (3 mm). Keep text and logos inside this line.</text>
+  </g>
+  <g id="chip-keep-clear" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="8 8">
+    <rect x="107" y="279" width="308" height="254" rx="16" />
+    <text x="107" y="268" font-size="18" fill="#FF21CC" stroke="none">Chip keep-clear: 107-415 x 279-533 px</text>
+  </g>
+  <g id="chip-module" stroke="#FF21CC" stroke-width="2">
+    <rect x="152" y="324" width="236" height="164" rx="24" />
+    <rect x="166" y="338" width="92" height="42" rx="8" stroke-width="1" />
+    <rect x="282" y="338" width="92" height="42" rx="8" stroke-width="1" />
+    <rect x="166" y="385" width="92" height="42" rx="8" stroke-width="1" />
+    <rect x="282" y="385" width="92" height="42" rx="8" stroke-width="1" />
+    <rect x="166" y="432" width="92" height="42" rx="8" stroke-width="1" />
+    <rect x="282" y="432" width="92" height="42" rx="8" stroke-width="1" />
+    <text x="152" y="560" font-size="18" fill="#FF21CC" stroke="none">Chip module: 236 x 164 px at (152, 324). Placed by the manufacturer.</text>
+  </g>
+  <g id="logo-guide" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="8 8">
+    <line x1="388" y1="406" x2="1384" y2="406" stroke-dasharray="4 8" />
+    <rect x="974" y="361" width="410" height="90" rx="8" />
+    <text x="1384" y="480" font-size="18" fill="#FF21CC" stroke="none" text-anchor="end">Logo guide: right edge 1384 px, centered on the chip mid-line (y 406)</text>
+  </g>
+</svg>
