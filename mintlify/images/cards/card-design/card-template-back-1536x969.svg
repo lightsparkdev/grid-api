@@ -24,12 +24,13 @@
   </g>
   <g id="contactless-indicator" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="8 8">
     <rect x="1415" y="470" width="67" height="90" />
-    <text x="1482" y="600" font-size="18" fill="#FF21CC" stroke="none" text-anchor="end">Contactless indicator: 90 px tall, right edge 1482</text>
+    <text x="1482" y="456" font-size="18" fill="#FF21CC" stroke="none" text-anchor="end">Contactless indicator: 90 px tall, right edge 1482</text>
   </g>
   <g id="visa-debit-lockup" stroke="#FF21CC" stroke-width="1.5">
     <rect x="1089" y="650" width="447" height="319" stroke-dasharray="4 8" />
     <rect x="1143" y="704" width="339" height="211" />
-    <text x="1073" y="676" font-size="18" fill="#FF21CC" stroke="none" text-anchor="end">Visa DEBIT lockup, Premium Visa Brand Mark in silver foil: 339 x 211 px at (1143, 704), 54 px clear space</text>
+    <text x="1061" y="770" font-size="18" fill="#FF21CC" stroke="none" text-anchor="end">Visa DEBIT lockup: Premium Visa Brand Mark, silver foil</text>
+    <text x="1061" y="792" font-size="18" fill="#FF21CC" stroke="none" text-anchor="end">339 x 211 px at (1143, 704), 54 px clear space</text>
   </g>
   <g id="service-and-issuer" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="8 8">
     <rect x="56" y="876" width="620" height="55" />
