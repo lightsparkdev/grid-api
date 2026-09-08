@@ -54,7 +54,10 @@ properties:
     $ref: ./CardTransactionStatus.yaml
   direction:
     $ref: ../transactions/TransactionDirection.yaml
-    description: Card transactions debit the customer's account.
+    description: >-
+      A purchase is a `DEBIT`. A standalone merchant refund with no purchase
+      to return against is a `CREDIT`, with the credited value in
+      `settledAmount`.
     example: DEBIT
   merchant:
     $ref: ./CardMerchant.yaml
