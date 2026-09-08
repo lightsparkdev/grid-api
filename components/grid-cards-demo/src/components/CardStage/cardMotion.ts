@@ -162,16 +162,15 @@ export class CardMotion {
     return this.dragging;
   }
 
-  /** Settled on a face: not being dragged, not spinning, not tilted. */
+  /** Settled on a face: not being dragged, not spinning. (The cursor tilt
+   *  is not motion; a hovered card is tilted and at rest.) */
   get atRest() {
     return (
       !this.dragging &&
       Math.abs(this.spinY - this.targetY) < 0.5 &&
       Math.abs(this.spinVY) < 2 &&
       Math.abs(this.pitch - this.targetX) < 0.5 &&
-      Math.abs(this.pitchV) < 2 &&
-      Math.abs(this.tiltX) < 0.5 &&
-      Math.abs(this.tiltY) < 0.5
+      Math.abs(this.pitchV) < 2
     );
   }
 
