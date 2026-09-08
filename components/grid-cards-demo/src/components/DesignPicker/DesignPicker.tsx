@@ -13,7 +13,7 @@ import {
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
-import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
+import { IconAddImage } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconAddImage';
 import {
   ART_TREATMENTS,
   brandColorOf,
@@ -345,7 +345,7 @@ function UploadRow({
               </>
             ) : (
               <button ref={uploadBtn} type="button" className={styles.logoUpload}>
-                <IconArrowUpSquare size={16} aria-hidden />
+                <IconAddImage size={16} aria-hidden />
                 {label}
               </button>
             )}
@@ -475,7 +475,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           url={design.backgroundUrl}
           accept="image/png,image/jpeg,image/webp"
           label="Upload card art"
-          hint={`PNG, JPG or WebP · ${TEX_W} × ${TEX_H} fills the face`}
+          hint={`${TEX_W} × ${TEX_H} fills the face`}
           onPick={(url) => onChange({ backgroundUrl: url })}
         />
         {/* The art's effect row unfolds under the art once there is some. */}
@@ -521,7 +521,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           url={design.logoUrl}
           accept="image/svg+xml,image/png,image/webp"
           label="Upload SVG or PNG"
-          hint="SVG, or a transparent PNG at least 512 px tall"
+          hint="Transparent, at least 512 px tall"
           previewStyle={swatchStyle(brand)}
           onPick={(url) => onChange({ logoUrl: url })}
         />
