@@ -543,7 +543,10 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           label="Upload logo"
           hint="Transparent, at least 512 px tall"
           previewStyle={swatchStyle(brand)}
-          onPick={(url) => onChange({ logoUrl: url })}
+          // The placement belongs to the artwork: a logo's layout (say, a
+          // watermark at 838 tall and 20%) is wrong for the wordmark that
+          // replaces it, and the other way round. Swapping resets it.
+          onPick={(url) => onChange({ logoUrl: url, brandLayout: null })}
         />
         <div className={styles.row}>
           <span className={styles.rowLabel}>Effect</span>
