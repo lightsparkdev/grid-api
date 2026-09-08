@@ -101,7 +101,9 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets, p
   // inside it. The foil is satin rather than a mirror: a mirror seen head-on
   // shows the graphite of the empty room behind the camera, while a satin
   // lobe gathers the studio lights and reads as lit silver from any angle.
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.5, 0.55), [0, LOCKUP_SPLIT]);
+  // The identifier is ink, not metal: a metallic lobe mirrored the gray room
+  // over it and made it read as gray on a saturated face.
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.5, 0), [0, LOCKUP_SPLIT]);
   drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.08, 0), FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.3, 1), [LOCKUP_SPLIT, 1]);
   return c;

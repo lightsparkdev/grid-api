@@ -324,7 +324,9 @@ export function foilTone(black: boolean): string {
 }
 
 function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: boolean) {
-  const identifier = black ? '#2a2a2e' : '#cfd0d5';
+  // The identifier prints as a translucent white on a dark or saturated
+  // face (a flat gray there reads as dirt), black with the black foil.
+  const identifier = black ? 'rgba(42, 42, 46, 1)' : 'rgba(255, 255, 255, 0.85)';
   drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);
   // The mark itself is the foil layer (`FoilMark`), which sits over this; the
   // clear carrier film around it is in the surface maps only (glossy, a hair
