@@ -4978,25 +4978,26 @@ html.dark .corridor-fields-empty {
    =========================================== */
 
 .ls-blueprint {
-  --bp-ink: var(--ls-gray-600);
+  --bp-ink: var(--ls-gray-700);
   --bp-ink-soft: var(--ls-gray-400);
+  --bp-paper: var(--ls-gray-025);
   --bp-face: var(--ls-gray-075);
   --bp-fixed: var(--ls-gray-200);
   --bp-yours: var(--ls-sky-500);
   --bp-keepout: var(--ls-orange-500);
   margin: 24px 0;
   padding: 20px 20px 12px;
-  background-color: var(--ls-gray-025);
+  background-color: var(--bp-paper);
   border: 0.5px solid var(--ls-black-10);
   border-radius: var(--ls-radius-md);
 }
 
 html.dark .ls-blueprint {
-  --bp-ink: var(--ls-gray-400);
+  --bp-ink: var(--ls-gray-300);
   --bp-ink-soft: var(--ls-gray-600);
+  --bp-paper: var(--ls-gray-975);
   --bp-face: var(--ls-gray-950);
   --bp-fixed: var(--ls-gray-850);
-  background-color: var(--ls-gray-975);
   border-color: var(--ls-white-06);
 }
 
@@ -5007,14 +5008,37 @@ html.dark .ls-blueprint {
   overflow: visible;
 }
 
+/* Pen weights. The site sets non-scaling strokes on every SVG, which is what
+   a drawing wants: object and dimension lines keep their weight at any scale.
+   Content that is part of the card (chip, contactless mark) scales instead. */
+.ls-blueprint .bp-object {
+  stroke-width: 1.75px;
+}
+
+.ls-blueprint .bp-thin,
+.ls-blueprint .bp-thin * {
+  stroke-width: 1px;
+}
+
+.ls-blueprint .bp-center {
+  stroke-width: 1px;
+  stroke-dasharray: 24 8 4 8;
+}
+
+.ls-blueprint .bp-scaled,
+.ls-blueprint .bp-scaled * {
+  vector-effect: none;
+}
+
 .ls-blueprint-label {
   font-family: 'Suisse Intl Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   fill: var(--bp-ink);
+  stroke: none;
 }
 
 .ls-blueprint-foot {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   margin-top: 12px;
@@ -5027,34 +5051,59 @@ html.dark .ls-blueprint-foot {
   color: var(--ls-gray-400);
 }
 
-.ls-blueprint-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
+.ls-blueprint-key {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  gap: 6px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.ls-blueprint-legend span::before {
+.ls-blueprint-key li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.ls-blueprint-key-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  font-family: 'Suisse Intl Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--bp-ink);
+  border: 1px solid var(--bp-ink);
+  border-radius: 50%;
+}
+
+.ls-blueprint-key li::after {
   content: '';
-  display: inline-block;
   width: 10px;
   height: 10px;
-  margin-right: 6px;
-  vertical-align: -1px;
   border-radius: 2px;
 }
 
-.ls-blueprint-legend .is-yours::before {
+.ls-blueprint-key .is-yours::after {
   background-color: var(--bp-yours);
   opacity: 0.6;
 }
 
-.ls-blueprint-legend .is-fixed::before {
+.ls-blueprint-key .is-fixed::after {
   background-color: var(--bp-fixed);
 }
 
-.ls-blueprint-legend .is-keepout::before {
+.ls-blueprint-key .is-keepout::after {
   background-color: var(--bp-keepout);
   opacity: 0.6;
+}
+
+.ls-blueprint-key .is-none::after {
+  display: none;
 }
 
 .ls-blueprint-units {

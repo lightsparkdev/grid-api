@@ -6,67 +6,81 @@ export const CardBlueprint = ({ face }) => {
   const PX_PER_MM = 17.94;
   const [unit, setUnit] = React.useState('px');
   const f = (px) => (unit === 'mm' ? (px / PX_PER_MM).toFixed(2) + ' mm' : px + ' px');
-  const label = (x, y, text, opts = {}) => (
-    <text
-      className="ls-blueprint-label"
-      x={x}
-      y={y}
-      fontSize={opts.size || 24}
-      textAnchor={opts.anchor || 'start'}
-      opacity={opts.opacity || 1}
-      transform={opts.transform}
-    >
-      {text}
-    </text>
-  );
-  const hdim = (x1, x2, y, text) => (
-    <g stroke="var(--bp-ink)" strokeWidth={2} fill="none">
-      <line x1={x1} y1={y} x2={x2} y2={y} />
-      <line x1={x1} y1={y - 12} x2={x1} y2={y + 12} />
-      <line x1={x2} y1={y - 12} x2={x2} y2={y + 12} />
-      <text className="ls-blueprint-label" stroke="none" x={(x1 + x2) / 2} y={y - 16} fontSize={28} textAnchor="middle">
-        {text}
-      </text>
+  const arrow = 'url(#bp-arrow-' + face + ')';
+  const GAP = 10;
+  const OVER = 14;
+  const TXT = 30;
+  const dimH = (x1, x2, y, edgeY) => (
+    <g className="bp-thin" stroke="var(--bp-ink)">
+      <line x1={x1} y1={edgeY + (y < edgeY ? -GAP : GAP)} x2={x1} y2={y + (y < edgeY ? -OVER : OVER)} />
+      <line x1={x2} y1={edgeY + (y < edgeY ? -GAP : GAP)} x2={x2} y2={y + (y < edgeY ? -OVER : OVER)} />
+      <line x1={x1} y1={y} x2={x2} y2={y} markerStart={arrow} markerEnd={arrow} />
+      {x2 - x1 < 140 ? (
+        <text className="ls-blueprint-label" x={x2 + 24} y={y + 10} fontSize={TXT} textAnchor="start">
+          {f(x2 - x1)}
+        </text>
+      ) : (
+        <text className="ls-blueprint-label" x={(x1 + x2) / 2} y={y - 10} fontSize={TXT} textAnchor="middle">
+          {f(x2 - x1)}
+        </text>
+      )}
     </g>
   );
-  const vdim = (x, y1, y2, text, side) => {
-    const tx = side === 'left' ? x - 16 : x + 40;
+  const dimV = (y1, y2, x, edgeX) => {
+    const tx = x + (x > edgeX ? 34 : -34);
     const ty = (y1 + y2) / 2;
     return (
-      <g stroke="var(--bp-ink)" strokeWidth={2} fill="none">
-        <line x1={x} y1={y1} x2={x} y2={y2} />
-        <line x1={x - 12} y1={y1} x2={x + 12} y2={y1} />
-        <line x1={x - 12} y1={y2} x2={x + 12} y2={y2} />
-        <text
-          className="ls-blueprint-label"
-          stroke="none"
-          x={tx}
-          y={ty}
-          fontSize={28}
-          textAnchor="middle"
-          transform={'rotate(-90 ' + tx + ' ' + ty + ')'}
-        >
-          {text}
+      <g className="bp-thin" stroke="var(--bp-ink)">
+        <line x1={edgeX + (x > edgeX ? GAP : -GAP)} y1={y1} x2={x + (x > edgeX ? OVER : -OVER)} y2={y1} />
+        <line x1={edgeX + (x > edgeX ? GAP : -GAP)} y1={y2} x2={x + (x > edgeX ? OVER : -OVER)} y2={y2} />
+        <line x1={x} y1={y1} x2={x} y2={y2} markerStart={arrow} markerEnd={arrow} />
+        <text className="ls-blueprint-label" x={tx} y={ty} fontSize={TXT} textAnchor="middle" transform={'rotate(-90 ' + tx + ' ' + ty + ')'}>
+          {f(y2 - y1)}
         </text>
       </g>
     );
   };
+  const balloon = (n, cx, cy, tx, ty) => {
+    const dx = tx - cx;
+    const dy = ty - cy;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const sx = cx + (dx / len) * 28;
+    const sy = cy + (dy / len) * 28;
+    return (
+      <g>
+        <line className="bp-thin" stroke="var(--bp-ink)" x1={sx} y1={sy} x2={tx} y2={ty} />
+        <circle className="bp-scaled" cx={tx} cy={ty} r={5} fill="var(--bp-ink)" stroke="none" />
+        <circle className="bp-thin" stroke="var(--bp-ink)" cx={cx} cy={cy} r={28} fill="var(--bp-paper)" />
+        <text className="ls-blueprint-label" x={cx} y={cy + 10} fontSize={28} textAnchor="middle">
+          {n}
+        </text>
+      </g>
+    );
+  };
+  const radius = (rx) => (
+    <g className="bp-thin" stroke="var(--bp-ink)">
+      <line x1={rx - rx * 0.7071} y1={rx - rx * 0.7071} x2={-70} y2={-70} markerStart={arrow} />
+      <text className="ls-blueprint-label" x={-80} y={-80} fontSize={TXT} textAnchor="end">
+        {'R ' + f(rx)}
+      </text>
+    </g>
+  );
   const contactless = (right, top, h) => {
     const cy = top + h / 2;
-    const cx = right - h * 0.75;
-    const a = (Math.PI / 180) * 40;
+    const cx = right - h * 0.72;
+    const a = (Math.PI / 180) * 38;
     const arc = (r) =>
       'M ' + (cx + r * Math.cos(-a)) + ' ' + (cy + r * Math.sin(-a)) + ' A ' + r + ' ' + r + ' 0 0 1 ' + (cx + r * Math.cos(a)) + ' ' + (cy + r * Math.sin(a));
     return (
-      <g fill="none" stroke="var(--bp-ink)" strokeWidth={h * 0.06} strokeLinecap="round">
-        {[0.12, 0.32, 0.52, 0.72].map((k) => (
+      <g className="bp-scaled" fill="none" stroke="var(--bp-ink)" strokeWidth={h * 0.055} strokeLinecap="round">
+        {[0.14, 0.33, 0.52, 0.71].map((k) => (
           <path key={k} d={arc(h * k)} />
         ))}
       </g>
     );
   };
   const chip = (
-    <g fill="none" stroke="var(--bp-ink)" strokeWidth={3}>
+    <g className="bp-scaled" fill="none" stroke="var(--bp-ink)" strokeWidth={2.5}>
       <rect x={152} y={324} width={236} height={164} rx={24} />
       {[338, 385, 432].map((y) => (
         <g key={y}>
@@ -77,81 +91,79 @@ export const CardBlueprint = ({ face }) => {
     </g>
   );
   const lockup = (
-    <g>
-      <rect x={1135} y={696} width={355} height={227} rx={6} fill="none" stroke="var(--bp-ink-soft)" strokeWidth={2} strokeDasharray="8 8" />
-      <g transform="translate(1143 704)" fill="var(--bp-ink)">
-        <path d="M187.303 0.5C195.977 0.5 201.982 2.51156 205.974 6.19727L205.976 6.19922C210.105 9.95807 212.53 15.2033 212.53 22.6846C212.53 29.9492 210.303 35.9923 206.293 40.1777L205.899 40.5771C201.592 44.8233 194.454 47.2139 185.403 47.2139C181.236 47.2139 177.839 47.097 174.814 46.7051V1.38281C178.438 0.851697 182.695 0.500023 187.303 0.5ZM187.621 4.25195C184.431 4.25195 182.043 4.50667 180.407 4.89941L180.024 4.99219V42.3096L179.42 42.9141L180.379 43.0742C181.95 43.336 184.216 43.333 186.604 43.333V43.334L186.605 43.333L186.607 43.334V43.333C193.193 43.3646 198.343 41.5333 201.844 38.0068C205.236 34.5911 207.017 29.6525 207.125 23.4766L207.13 22.875C207.161 17.2387 205.582 12.5648 202.302 9.30078C199.021 6.03669 194.11 4.25197 187.621 4.25195Z" />
-        <path d="M245.733 0.817132V4.88647H226.407V20.7136H244.593V24.783H226.407V42.7009H246.747V46.7703H221.261V0.817132H245.733Z" />
-        <path d="M266.193 0.5C272.223 0.50001 275.952 1.56878 278.675 3.80762L278.684 3.81543L278.694 3.82324C281.035 5.56455 282.485 8.20237 282.485 11.7227C282.484 16.1029 279.609 19.866 274.893 21.5811L274.564 21.7002V22.6338L274.945 22.7266C279.248 23.7716 284.258 27.3064 284.258 33.9629C284.258 37.8679 282.74 40.7825 280.359 43.042C277.268 45.8861 272.171 47.2764 264.545 47.2764C260.662 47.2764 257.615 47.0547 255.604 46.7725V1.47656C258.233 0.901112 262.234 0.5 266.193 0.5ZM260.623 43.208H261.156C262.457 43.3989 264.122 43.4609 266.256 43.4609C269.44 43.4609 272.559 42.8841 274.898 41.3857C277.269 39.8669 278.795 37.4264 278.795 33.8369C278.795 30.4979 277.33 28.0776 274.985 26.5137C272.664 24.9665 269.513 24.2754 266.129 24.2754H260.623V43.208ZM266.572 4.18945C263.768 4.18946 262.137 4.3796 261.066 4.64746L260.687 4.74219V20.3398H261.187V20.7764H266.699C269.954 20.7764 272.609 19.8977 274.46 18.3916C276.318 16.8798 277.338 14.7575 277.338 12.3564C277.338 9.48625 276.242 7.40658 274.293 6.06738C272.376 4.74972 269.692 4.18945 266.572 4.18945Z" />
-        <path d="M298.447 0.817132V46.8337H293.301V0.817132H298.447Z" />
-        <path d="M338.436 0.817132V4.94994H324.053V46.7703H318.906V5.51342H318.47V5.01342H304.649V0.817132H338.436Z" />
-        <path d="M128.693 103.538L84.3381 209.42H55.3806L33.5198 124.955C32.1892 119.759 31.0486 117.858 26.9933 115.64C20.4034 112.092 9.56804 108.734 0 106.643L0.633645 103.538H47.2699C53.2262 103.538 58.5488 107.466 59.8794 114.31L71.4118 175.583L99.9258 103.538H128.693ZM242.179 174.823C242.306 146.879 203.527 145.358 203.78 132.876C203.844 129.074 207.455 125.018 215.376 124.005C219.304 123.498 230.14 123.117 242.369 128.757L247.185 106.326C240.595 103.918 232.104 101.637 221.586 101.637C194.529 101.637 175.456 116.021 175.266 136.614C175.076 151.885 188.89 160.376 199.281 165.445C209.927 170.641 213.538 173.936 213.475 178.625C213.412 185.722 204.984 188.89 197.064 189.017C183.313 189.207 175.33 185.278 168.93 182.3L163.987 205.491C170.387 208.406 182.173 211.004 194.466 211.131C223.233 211.131 242.052 196.937 242.179 174.886M313.654 209.42H339L316.886 103.538H293.504C288.245 103.538 283.81 106.579 281.845 111.332L240.722 209.42H269.489L275.192 193.579H310.296L313.591 209.42H313.654ZM283.049 171.908L297.496 132.179L305.797 171.908H283.113H283.049ZM167.853 103.538L145.231 209.42H117.858L140.479 103.538H167.853Z" />
-      </g>
+    <g transform="translate(1143 704)" fill="var(--bp-ink)">
+      <path d="M187.303 0.5C195.977 0.5 201.982 2.51156 205.974 6.19727L205.976 6.19922C210.105 9.95807 212.53 15.2033 212.53 22.6846C212.53 29.9492 210.303 35.9923 206.293 40.1777L205.899 40.5771C201.592 44.8233 194.454 47.2139 185.403 47.2139C181.236 47.2139 177.839 47.097 174.814 46.7051V1.38281C178.438 0.851697 182.695 0.500023 187.303 0.5ZM187.621 4.25195C184.431 4.25195 182.043 4.50667 180.407 4.89941L180.024 4.99219V42.3096L179.42 42.9141L180.379 43.0742C181.95 43.336 184.216 43.333 186.604 43.333V43.334L186.605 43.333L186.607 43.334V43.333C193.193 43.3646 198.343 41.5333 201.844 38.0068C205.236 34.5911 207.017 29.6525 207.125 23.4766L207.13 22.875C207.161 17.2387 205.582 12.5648 202.302 9.30078C199.021 6.03669 194.11 4.25197 187.621 4.25195Z" />
+      <path d="M245.733 0.817132V4.88647H226.407V20.7136H244.593V24.783H226.407V42.7009H246.747V46.7703H221.261V0.817132H245.733Z" />
+      <path d="M266.193 0.5C272.223 0.50001 275.952 1.56878 278.675 3.80762L278.684 3.81543L278.694 3.82324C281.035 5.56455 282.485 8.20237 282.485 11.7227C282.484 16.1029 279.609 19.866 274.893 21.5811L274.564 21.7002V22.6338L274.945 22.7266C279.248 23.7716 284.258 27.3064 284.258 33.9629C284.258 37.8679 282.74 40.7825 280.359 43.042C277.268 45.8861 272.171 47.2764 264.545 47.2764C260.662 47.2764 257.615 47.0547 255.604 46.7725V1.47656C258.233 0.901112 262.234 0.5 266.193 0.5ZM260.623 43.208H261.156C262.457 43.3989 264.122 43.4609 266.256 43.4609C269.44 43.4609 272.559 42.8841 274.898 41.3857C277.269 39.8669 278.795 37.4264 278.795 33.8369C278.795 30.4979 277.33 28.0776 274.985 26.5137C272.664 24.9665 269.513 24.2754 266.129 24.2754H260.623V43.208ZM266.572 4.18945C263.768 4.18946 262.137 4.3796 261.066 4.64746L260.687 4.74219V20.3398H261.187V20.7764H266.699C269.954 20.7764 272.609 19.8977 274.46 18.3916C276.318 16.8798 277.338 14.7575 277.338 12.3564C277.338 9.48625 276.242 7.40658 274.293 6.06738C272.376 4.74972 269.692 4.18945 266.572 4.18945Z" />
+      <path d="M298.447 0.817132V46.8337H293.301V0.817132H298.447Z" />
+      <path d="M338.436 0.817132V4.94994H324.053V46.7703H318.906V5.51342H318.47V5.01342H304.649V0.817132H338.436Z" />
+      <path d="M128.693 103.538L84.3381 209.42H55.3806L33.5198 124.955C32.1892 119.759 31.0486 117.858 26.9933 115.64C20.4034 112.092 9.56804 108.734 0 106.643L0.633645 103.538H47.2699C53.2262 103.538 58.5488 107.466 59.8794 114.31L71.4118 175.583L99.9258 103.538H128.693ZM242.179 174.823C242.306 146.879 203.527 145.358 203.78 132.876C203.844 129.074 207.455 125.018 215.376 124.005C219.304 123.498 230.14 123.117 242.369 128.757L247.185 106.326C240.595 103.918 232.104 101.637 221.586 101.637C194.529 101.637 175.456 116.021 175.266 136.614C175.076 151.885 188.89 160.376 199.281 165.445C209.927 170.641 213.538 173.936 213.475 178.625C213.412 185.722 204.984 188.89 197.064 189.017C183.313 189.207 175.33 185.278 168.93 182.3L163.987 205.491C170.387 208.406 182.173 211.004 194.466 211.131C223.233 211.131 242.052 196.937 242.179 174.886M313.654 209.42H339L316.886 103.538H293.504C288.245 103.538 283.81 106.579 281.845 111.332L240.722 209.42H269.489L275.192 193.579H310.296L313.591 209.42H313.654ZM283.049 171.908L297.496 132.179L305.797 171.908H283.113H283.049ZM167.853 103.538L145.231 209.42H117.858L140.479 103.538H167.853Z" />
     </g>
   );
-  const hatch = (id) => (
-    <defs>
-      <pattern id={id} width={24} height={24} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <line x1={0} y1={0} x2={0} y2={24} stroke="var(--bp-keepout)" strokeWidth={3} opacity={0.35} />
-      </pattern>
-    </defs>
+  const body = (rx) => <rect className="bp-object" stroke="var(--bp-ink)" x={0} y={0} width={W} height={H} rx={rx} fill="var(--bp-face)" />;
+  const hatch = (
+    <pattern id={'bp-hatch-' + face} width={24} height={24} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1={0} y1={0} x2={0} y2={24} stroke="var(--bp-keepout)" strokeWidth={3} opacity={0.35} />
+    </pattern>
   );
-  const cardBody = (rx) => <rect x={0} y={0} width={W} height={H} rx={rx} fill="var(--bp-face)" stroke="var(--bp-ink)" strokeWidth={3} />;
-  const radiusNote = (rx) => (
-    <g>
-      {rx > 0 ? <path d={'M ' + rx + ' 0 A ' + rx + ' ' + rx + ' 0 0 0 0 ' + rx} fill="none" stroke="var(--bp-ink)" strokeWidth={3} /> : null}
-      <line x1={rx > 0 ? 17 : 0} y1={rx > 0 ? 17 : 0} x2={-40} y2={-40} stroke="var(--bp-ink)" strokeWidth={2} />
-      {label(-48, -52, 'R ' + (rx > 0 ? f(rx) : '0'), { size: 28, anchor: 'end' })}
-    </g>
-  );
+  const zone = (x, y, w, h, kind, rx = 8) =>
+    kind === 'keepout' ? (
+      <rect className="bp-thin" x={x} y={y} width={w} height={h} rx={rx} fill={'url(#bp-hatch-' + face + ')'} stroke="var(--bp-keepout)" strokeDasharray="8 8" />
+    ) : (
+      <rect className="bp-thin" x={x} y={y} width={w} height={h} rx={rx} fill="var(--bp-yours)" fillOpacity={0.1} stroke="var(--bp-yours)" strokeDasharray="8 8" />
+    );
   let title = '';
-  let legend = [];
+  let key = [];
   let drawing = null;
   if (face === 'front') {
-    title = 'Front of card: dimensions, chip keep-clear zone, and logo placement';
-    legend = [
-      { key: 'is-yours', label: 'Yours' },
-      { key: 'is-fixed', label: 'Fixed' },
-      { key: 'is-keepout', label: 'Keep clear' },
+    title = 'Front of card: overall dimensions, chip position and keep-clear zone, logo placement, and safe margin';
+    key = [
+      { n: 1, kind: 'fixed', label: 'Chip module, 236 × 164' },
+      { n: 2, kind: 'keepout', label: 'Keep-clear zone, 308 × 254' },
+      { n: 3, kind: 'yours', label: 'Logo, right of the chip on its mid-line' },
+      { n: 4, kind: 'none', label: 'Safe margin for text and logos' },
     ];
     drawing = (
       <g>
-        {hatch('bp-front-hatch')}
-        {cardBody(R)}
-        <rect x={SAFE} y={SAFE} width={W - 2 * SAFE} height={H - 2 * SAFE} rx={12} fill="none" stroke="var(--bp-ink-soft)" strokeWidth={2} strokeDasharray="10 10" />
-        {label(W / 2, H - SAFE - 18, 'safe margin ' + f(SAFE) + ' on every side', { anchor: 'middle', opacity: 0.8 })}
-        <rect x={107} y={279} width={308} height={254} rx={16} fill="url(#bp-front-hatch)" stroke="var(--bp-keepout)" strokeWidth={2} strokeDasharray="8 8" />
+        {body(R)}
+        <rect className="bp-thin" stroke="var(--bp-ink-soft)" x={SAFE} y={SAFE} width={W - 2 * SAFE} height={H - 2 * SAFE} rx={12} fill="none" strokeDasharray="14 10" />
+        {zone(107, 279, 308, 254, 'keepout', 16)}
         {chip}
-        {label(261, 572, 'chip ' + f(236) + ' × ' + f(164), { anchor: 'middle' })}
-        {label(261, 604, 'keep clear ' + f(308) + ' × ' + f(254), { anchor: 'middle', opacity: 0.8 })}
-        {hdim(0, 152, 250, f(152))}
-        {vdim(-70, 0, 324, f(324), 'left')}
-        <rect x={974} y={361} width={410} height={90} rx={8} fill="var(--bp-yours)" fillOpacity={0.12} stroke="var(--bp-yours)" strokeWidth={2} strokeDasharray="8 8" />
-        <text x={1384} y={430} fontSize={64} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} textAnchor="end" fill="var(--bp-yours)" opacity={0.9}>
+        <line className="bp-center" stroke="var(--bp-ink-soft)" x1={-40} y1={406} x2={W + 40} y2={406} />
+        {zone(974, 361, 410, 90, 'yours')}
+        <text x={1384} y={430} fontSize={64} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} textAnchor="end" fill="var(--bp-yours)">
           Your logo
         </text>
-        <line x1={388} y1={406} x2={974} y2={406} stroke="var(--bp-ink-soft)" strokeWidth={2} strokeDasharray="4 8" />
-        {label(681, 396, 'chip mid-line, y ' + f(406), { anchor: 'middle', opacity: 0.8 })}
-        {hdim(1384, W, 330, f(152))}
-        {hdim(0, W, -70, f(W))}
-        {vdim(W + 70, 0, H, f(H))}
-        {radiusNote(R)}
+        {dimH(0, W, -150, 0)}
+        {dimH(0, 152, -80, 0)}
+        {dimH(1384, W, -80, 0)}
+        {dimH(152, 388, H + 80, H)}
+        {dimV(0, H, W + 150, W)}
+        {dimV(H - SAFE, H, W + 80, W)}
+        {dimV(0, 324, -80, 0)}
+        {dimV(324, 488, -80, 0)}
+        {radius(R)}
+        {balloon(1, 261, 640, 300, 488)}
+        {balloon(2, 500, 250, 415, 290)}
+        {balloon(3, 1179, 560, 1179, 451)}
+        {balloon(4, 700, 800, 700, H - SAFE)}
       </g>
     );
   } else if (face === 'back') {
-    title = 'Back of card: the template with the magnetic stripe, account block, contactless indicator, Visa DEBIT lockup, and issuer statement';
-    legend = [
-      { key: 'is-yours', label: 'Yours: background, personalization ink and typeface, support line' },
-      { key: 'is-fixed', label: 'Fixed' },
+    title = 'Back of card: the fixed template with the magnetic stripe, account block, contactless indicator, Visa DEBIT lockup, support line, and issuer statement';
+    key = [
+      { n: 1, kind: 'fixed', label: 'Magnetic stripe' },
+      { n: 2, kind: 'yours', label: 'Account block: your ink and typeface' },
+      { n: 3, kind: 'fixed', label: 'Contactless indicator' },
+      { n: 4, kind: 'fixed', label: 'Visa DEBIT lockup, silver foil' },
+      { n: 5, kind: 'yours', label: 'Support phone and URL' },
+      { n: 6, kind: 'fixed', label: 'Issuer statement' },
     ];
     drawing = (
       <g>
-        {cardBody(R)}
-        <rect x={0} y={72} width={W} height={228} fill="var(--bp-fixed)" />
-        {label(W / 2, 196, 'magnetic stripe', { size: 28, anchor: 'middle' })}
-        {vdim(W + 70, 0, 72, f(72))}
-        {vdim(W + 70, 72, 300, f(228))}
-        <rect x={40} y={460} width={640} height={220} rx={8} fill="var(--bp-yours)" fillOpacity={0.08} stroke="var(--bp-yours)" strokeWidth={2} strokeDasharray="8 8" />
+        {body(R)}
+        <rect className="bp-object" x={0} y={72} width={W} height={228} fill="var(--bp-fixed)" stroke="none" />
+        {zone(40, 460, 640, 220, 'yours')}
         <g fontFamily="'Suisse Intl', sans-serif" fontSize={57} fill="var(--bp-ink)">
           <text x={56} y={517}>
             Cardholder name
@@ -166,15 +178,10 @@ export const CardBlueprint = ({ face }) => {
             CVV 123
           </text>
         </g>
-        {hdim(0, 56, 440, f(56))}
-        {label(56, 720, 'name, number, expiry, and code: ' + f(57) + ' type, printed at personalization')}
         {contactless(1482, 470, 90)}
-        {label(1482, 600, 'contactless indicator, ' + f(90) + ' tall', { anchor: 'end' })}
-        <rect x={1089} y={650} width={447} height={319} rx={8} fill="none" stroke="var(--bp-ink-soft)" strokeWidth={2} strokeDasharray="4 8" />
+        <rect className="bp-thin" stroke="var(--bp-ink-soft)" x={1089} y={650} width={447} height={319} rx={8} fill="none" strokeDasharray="14 10" />
         {lockup}
-        {label(1073, 676, 'clear space ' + f(SAFE), { anchor: 'end', opacity: 0.8 })}
-        {hdim(1482, W, 674, f(SAFE))}
-        <rect x={40} y={860} width={640} height={72} rx={8} fill="var(--bp-yours)" fillOpacity={0.08} stroke="var(--bp-yours)" strokeWidth={2} strokeDasharray="8 8" />
+        {zone(40, 862, 500, 70, 'yours')}
         <g fontFamily="'Suisse Intl', sans-serif" fontSize={22} fill="var(--bp-ink)">
           <text x={56} y={892}>
             1-800-000-0000
@@ -186,50 +193,76 @@ export const CardBlueprint = ({ face }) => {
             Issued by Lead Bank
           </text>
         </g>
-        {label(700, 892, 'your support phone and URL')}
-        {label(700, 918, 'issuer statement, fixed')}
-        {hdim(0, W, -70, f(W))}
-        {vdim(W + 70, 0, H, f(H))}
+        {dimH(0, W, -150, 0)}
+        {dimH(0, 56, -80, 0)}
+        {dimH(1143, 1482, H + 80, H)}
+        {dimH(1482, W, H + 80, H)}
+        {dimV(0, H, W + 150, W)}
+        {dimV(0, 72, W + 80, W)}
+        {dimV(72, 300, W + 80, W)}
+        {dimV(704, 915, W + 80, W)}
+        {dimV(915, H, W + 80, W)}
+        {dimV(0, 476, -80, 0)}
+        {dimV(476, 663, -80, 0)}
+        {balloon(1, 768, 400, 768, 300)}
+        {balloon(2, 800, 570, 680, 570)}
+        {balloon(3, 1300, 515, 1417, 515)}
+        {balloon(4, 980, 810, 1143, 810)}
+        {balloon(5, 640, 780, 380, 862)}
+        {balloon(6, 640, 940, 300, 918)}
       </g>
     );
   } else {
-    title = 'Wallet card art: squared corners, the lower-left quadrant left empty, and the Visa DEBIT lockup in the lower right';
-    legend = [
-      { key: 'is-yours', label: 'Yours: the front design' },
-      { key: 'is-fixed', label: 'Fixed: Visa DEBIT lockup, added by us' },
-      { key: 'is-keepout', label: 'Leave empty' },
+    title = 'Wallet card art: squared corners, the lower-left quadrant left empty for the wallet, and the Visa DEBIT lockup in the lower right';
+    key = [
+      { n: 1, kind: 'yours', label: 'Your front design' },
+      { n: 2, kind: 'keepout', label: 'Leave empty for the wallet\'s last 4 digits' },
+      { n: 3, kind: 'fixed', label: 'Visa DEBIT lockup, as on the back' },
     ];
     drawing = (
       <g>
-        {hatch('bp-wallet-hatch')}
-        <rect x={0} y={0} width={W} height={H} fill="var(--bp-yours)" fillOpacity={0.08} stroke="var(--bp-ink)" strokeWidth={3} />
-        <text x={SAFE} y={140} fontSize={64} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} fill="var(--bp-yours)" opacity={0.9}>
+        <rect className="bp-object" stroke="var(--bp-ink)" x={0} y={0} width={W} height={H} fill="var(--bp-yours)" fillOpacity={0.1} />
+        <text x={SAFE} y={140} fontSize={64} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} fill="var(--bp-yours)">
           Your front design
         </text>
-        {label(SAFE, 190, 'no chip, no name, no numbers, no expiry', { opacity: 0.8 })}
-        <rect x={0} y={H / 2} width={W / 2} height={H / 2} fill="url(#bp-wallet-hatch)" stroke="var(--bp-keepout)" strokeWidth={2} strokeDasharray="8 8" />
-        {label(SAFE, H / 2 + 70, 'leave empty', { size: 28 })}
-        {label(SAFE, H / 2 + 106, 'the wallet draws the last 4 digits here', { opacity: 0.8 })}
+        {zone(0, H / 2, W / 2, H / 2, 'keepout', 0)}
         {lockup}
-        {radiusNote(0)}
-        {hdim(0, W, -70, f(W))}
-        {vdim(W + 70, 0, H, f(H))}
+        {dimH(0, W, -150, 0)}
+        {dimH(0, W / 2, H + 80, H)}
+        {dimV(0, H, W + 150, W)}
+        {dimV(H / 2, H, W + 80, W)}
+        <g className="bp-thin" stroke="var(--bp-ink)">
+          <line x1={0} y1={0} x2={-70} y2={-70} markerStart={arrow} />
+          <text className="ls-blueprint-label" x={-80} y={-80} fontSize={TXT} textAnchor="end">
+            R 0
+          </text>
+        </g>
+        {balloon(1, 1100, 200, 900, 200)}
+        {balloon(2, 384, 400, 384, H / 2)}
+        {balloon(3, 980, 810, 1143, 810)}
       </g>
     );
   }
   return (
     <figure className="ls-blueprint not-prose">
-      <svg viewBox="-230 -150 1996 1180" role="img" aria-label={title}>
+      <svg viewBox="-260 -240 2060 1440" role="img" aria-label={title}>
+        <defs>
+          <marker id={'bp-arrow-' + face} viewBox="0 0 10 10" refX={10} refY={5} markerWidth={20} markerHeight={20} markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="var(--bp-ink)" />
+          </marker>
+          {hatch}
+        </defs>
         {drawing}
       </svg>
       <figcaption className="ls-blueprint-foot">
-        <div className="ls-blueprint-legend">
-          {legend.map((l) => (
-            <span key={l.key} className={l.key}>
-              {l.label}
-            </span>
+        <ol className="ls-blueprint-key">
+          {key.map((k) => (
+            <li key={k.n} className={'is-' + k.kind}>
+              <span className="ls-blueprint-key-n">{k.n}</span>
+              {k.label}
+            </li>
           ))}
-        </div>
+        </ol>
         <div className="ls-blueprint-units" role="group" aria-label="Units">
           <button type="button" aria-pressed={unit === 'px'} onClick={() => setUnit('px')}>
             px
