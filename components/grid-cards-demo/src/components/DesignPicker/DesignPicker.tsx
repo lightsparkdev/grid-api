@@ -10,7 +10,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconArrowUpSquare } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUpSquare';
@@ -44,6 +44,9 @@ const MAX_CARDHOLDER = 24;
 function swatchStyle(color: string) {
   return { background: color };
 }
+
+/** A row unfolding into (or out of) a group: the picker's spring. */
+const ROW_UNFOLD = { type: 'spring', stiffness: 380, damping: 34, mass: 0.8 } as const;
 
 /** How far the ring sits outside its swatch; the row's gap is twice this
  *  plus the stroke, so the ring clears its neighbors by the same distance. */
@@ -475,18 +478,30 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           hint={`PNG, JPG or WebP · ${TEX_W} × ${TEX_H} fills the face`}
           onPick={(url) => onChange({ backgroundUrl: url })}
         />
-        {design.backgroundUrl && (
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Effect</span>
-            <SampleSwatches
-              label="Art effect"
-              value={design.artTreatment}
-              options={ART_TREATMENTS}
-              onChange={(artTreatment) => onChange({ artTreatment })}
-              disabled={noSpotGloss}
-            />
-          </div>
-        )}
+        {/* The art's effect row unfolds under the art once there is some. */}
+        <AnimatePresence initial={false}>
+          {design.backgroundUrl && (
+            <motion.div
+              key="artEffect"
+              className={styles.rowUnfold}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={ROW_UNFOLD}
+            >
+              <div className={styles.row}>
+                <span className={styles.rowLabel}>Effect</span>
+                <SampleSwatches
+                  label="Art effect"
+                  value={design.artTreatment}
+                  options={ART_TREATMENTS}
+                  onChange={(artTreatment) => onChange({ artTreatment })}
+                  disabled={noSpotGloss}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className={styles.group}>

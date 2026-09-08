@@ -76,6 +76,18 @@
   }
 }
 
+/* Wraps a row that unfolds in: clips its height while it grows; the row
+   inside keeps its own padding, so the wrapper is the one to size. */
+.rowUnfold {
+  overflow: hidden;
+
+  /* The row above it loses its last-child status the instant this mounts;
+     its own bottom rule belongs to this wrapper so it can fade in with it. */
+  > .row {
+    border-bottom: none;
+  }
+}
+
 .rowLabel {
   @include label;
   flex: 0 0 56px;
