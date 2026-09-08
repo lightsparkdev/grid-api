@@ -98,7 +98,9 @@ export function useCardsDemoLogic() {
   const preset = useMemo(() => presetOf(design), [design]);
   const selectPreset = useCallback((id: PresetId) => {
     const next = PRESETS.find((p) => p.id === id)?.design;
-    if (next) setDesign((d) => applyPreset(next, d));
+    if (!next) return;
+    designed.current = true;
+    setDesign((d) => applyPreset(next, d));
   }, []);
 
   const [wallet, setWallet] = useState<WalletState>(initialWallet);

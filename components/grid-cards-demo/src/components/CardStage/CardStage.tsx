@@ -45,6 +45,8 @@ const CAMERA_Z = 2000;
 const ROLL_STEP_MS = 140;
 /** How far outside the brand's box (spec px) still grabs it. */
 const BRAND_GRAB_MARGIN = 24;
+/** A press that travels less than this (screen px) is a click. */
+const CLICK_SLOP = 4;
 /** A move snaps within this many screen px of a guide. */
 const SNAP_PX = 6;
 /** Rotation snaps to multiples of this, within SNAP_DEG. */
@@ -425,6 +427,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
 
   // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+  /** A press on the unselected brand: a click if it ends within CLICK_SLOP. */
+  const pendingSelect = useRef<{ id: number; x: number; y: number } | null>(null);
   const brandDrag = useRef<BrandDrag | null>(null);
   /** A gradient handle in flight: which end, from which pointer. */
   const gradDrag = useRef<{ id: number; end: 'from' | 'to' } | null>(null);
@@ -517,6 +521,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       motion.drag(e.clientX - drag.current.x, e.clientY - drag.current.y, e.timeStamp);
       drag.current.x = e.clientX;
       drag.current.y = e.clientY;
+      const ps = pendingSelect.current;
+      if (ps && Math.hypot(e.clientX - ps.x, e.clientY - ps.y) > CLICK_SLOP) pendingSelect.current = null;
       return;
     }
     if (live.current.t > 0) return;
@@ -549,15 +555,23 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         beginBrandDrag(e, p, handleEl.dataset.rotate ? 'rotate' : 'scale', handle);
         return;
       }
-      // The brand itself: select it and move it.
+      // The brand itself: selected, a drag moves it. Not yet selected, a
+      // click selects it and a drag spins the card, so turning a card over
+      // by its big logo does not carry the logo off.
       const hit = hitBrand(e.clientX, e.clientY);
       if (hit) {
-        beginBrandDrag(e, hit, 'move');
-        return;
+        if (selected) {
+          beginBrandDrag(e, hit, 'move');
+          return;
+        }
+        pendingSelect.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      } else {
+        setSelected(false);
       }
+    } else {
+      setSelected(false);
     }
-    // The card: deselect, and spin.
-    setSelected(false);
+    // The card: spin.
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     setDragged(true);
@@ -586,6 +600,12 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     drag.current = null;
     motion.endDrag(e.timeStamp);
     e.currentTarget.classList.remove(styles.hitDragging);
+    // A press on the brand that did not become a drag: select it.
+    if (pendingSelect.current?.id === e.pointerId) {
+      pendingSelect.current = null;
+      motion.clearTilt();
+      setSelected(true);
+    }
   };
   const onPointerLeave = () => {
     hover(false);

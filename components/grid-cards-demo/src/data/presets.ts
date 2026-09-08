@@ -6,7 +6,7 @@
 import { FIGMA_FACE_H } from '@/apps/card/cardMetrics';
 import { sameBrandLayout, sameGradient, type CardDesign } from './design';
 
-export type PresetId = 'creator' | 'social' | 'marketplace' | 'ondemand' | 'messaging';
+export type PresetId = 'creator' | 'social' | 'marketplace' | 'ondemand' | 'messaging' | 'finance';
 
 /** The design a preset fills in. The cardholder's name is the visitor's and
  *  is kept across presets. */
@@ -15,6 +15,8 @@ export type PresetDesign = Omit<CardDesign, 'cardholderName'>;
 export interface CardPreset {
   id: PresetId;
   label: string;
+  /** What kind of platform this is, for the tile's tooltip. */
+  description: string;
   iconSrc: string;
   design: PresetDesign;
 }
@@ -28,6 +30,7 @@ export const PRESETS: CardPreset[] = [
   {
     id: 'creator',
     label: 'Creator',
+    description: 'Creator platform',
     iconSrc: `${ASSETS}/app-icon-creator.png`,
     // Glitch: brand purple, the mark at the right on the chip's row, a little
     // larger than the sample's wordmark height.
@@ -47,6 +50,7 @@ export const PRESETS: CardPreset[] = [
   {
     id: 'social',
     label: 'Social',
+    description: 'Social app',
     iconSrc: `${ASSETS}/app-icon-social.png`,
     // The Z card: bare matte steel, the Z etched in, centered, 52% of the width.
     design: {
@@ -65,6 +69,7 @@ export const PRESETS: CardPreset[] = [
   {
     id: 'marketplace',
     label: 'Marketplace',
+    description: 'Travel marketplace',
     iconSrc: `${ASSETS}/app-icon-marketplace.png`,
     // Waterbnb: an illustrated stay across the card (a Hollywood Hills house
     // at golden hour, in the GA design gallery's gouache style), the house
@@ -85,6 +90,7 @@ export const PRESETS: CardPreset[] = [
   {
     id: 'ondemand',
     label: 'On-demand',
+    description: 'On-demand platform',
     iconSrc: `${ASSETS}/app-icon-ondemand.png`,
     // Super: matte black with the GA card's ambient dot grid across the face
     // (one frame of it, baked as art), the wordmark top-left as a spot-gloss
@@ -105,6 +111,7 @@ export const PRESETS: CardPreset[] = [
   {
     id: 'messaging',
     label: 'Messaging',
+    description: 'Messaging platform',
     iconSrc: `${ASSETS}/app-icon-messaging.png`,
     // ChatsApp: brand green, the bubble as an oversized watermark bleeding
     // off the edge, white at 20% (Figma 2650:11281 has it on the left; here
@@ -119,6 +126,28 @@ export const PRESETS: CardPreset[] = [
       logoTreatment: 'print',
       brandLayout: { x: 1536 - 505, y: 475, h: 838, anchor: 'center', rotation: 0, opacity: 0.2 },
       backgroundUrl: null,
+      artTreatment: 'print',
+    },
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    description: 'Financial app',
+    iconSrc: `${ASSETS}/app-icon-finance.png`,
+    // Aurora: the Global Accounts playground's fintech card, one still frame
+    // of its aurora (the GPU field the wallet demo's DebitCard renders, shot
+    // at the card's own size) as art, glossy, the wordmark in white at the
+    // right on the chip's row.
+    design: {
+      programName: 'Aurora',
+      material: 'plastic',
+      finish: 'gloss',
+      color: '#0196c9',
+      gradient: null,
+      logoUrl: null,
+      logoTreatment: 'print',
+      brandLayout: null,
+      backgroundUrl: `${ASSETS}/art-finance.webp`,
       artTreatment: 'print',
     },
   },

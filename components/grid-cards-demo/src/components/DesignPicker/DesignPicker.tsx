@@ -26,6 +26,7 @@ import {
 } from '@/data/design';
 import { PRESETS, type PresetId } from '@/data/presets';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
+import { TEX_H, TEX_W } from '@/components/CardStage/card3d/facePaint';
 import { ColorPicker } from './ColorPicker';
 import styles from './DesignPicker.module.scss';
 
@@ -271,6 +272,7 @@ function UploadRow({
   url,
   accept,
   label,
+  hint,
   previewStyle,
   onPick,
 }: {
@@ -278,9 +280,12 @@ function UploadRow({
   url: string | null;
   accept: string;
   label: string;
+  /** What to upload (formats, size), shown over the button while the row is hovered. */
+  hint: string;
   previewStyle?: CSSProperties;
   onPick: (url: string | null) => void;
 }) {
+  const uploadBtn = useRef<HTMLButtonElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const objectUrl = useRef<string | null>(null);
 
@@ -308,42 +313,51 @@ function UploadRow({
   };
 
   return (
-    <div
-      className={clsx(styles.row, !url && styles.rowPick)}
-      onClick={url ? undefined : () => fileRef.current?.click()}
-    >
-      <span className={styles.rowLabel}>{rowLabel}</span>
-      <div className={styles.logoRow}>
-        {url ? (
-          <>
-            <span className={styles.logoPreview} style={previewStyle}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" />
-            </span>
-            <Tooltip text="Remove">
-              {(tip) => (
-                <button type="button" className={styles.logoClear} onClick={clear} aria-label="Remove" {...tip}>
-                  <IconCrossMedium size={16} aria-hidden />
-                </button>
-              )}
-            </Tooltip>
-          </>
-        ) : (
-          <button type="button" className={styles.logoUpload}>
-            <IconArrowUpSquare size={16} aria-hidden />
-            {label}
-          </button>
-        )}
-        <input
-          ref={fileRef}
-          type="file"
-          accept={accept}
-          className={styles.fileInput}
-          onChange={onPicked}
-          tabIndex={-1}
-        />
-      </div>
-    </div>
+    <Tooltip text={hint}>
+      {(tip) => (
+        <div
+          className={clsx(styles.row, !url && styles.rowPick)}
+          onClick={url ? undefined : () => fileRef.current?.click()}
+          // The hint anchors to the button, whichever part of the row is hovered.
+          onMouseEnter={
+            url ? undefined : (e) => tip.onMouseEnter({ ...e, currentTarget: uploadBtn.current ?? e.currentTarget })
+          }
+          onMouseLeave={url ? undefined : tip.onMouseLeave}
+        >
+          <span className={styles.rowLabel}>{rowLabel}</span>
+          <div className={styles.logoRow}>
+            {url ? (
+              <>
+                <span className={styles.logoPreview} style={previewStyle}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" />
+                </span>
+                <Tooltip text="Remove">
+                  {(t) => (
+                    <button type="button" className={styles.logoClear} onClick={clear} aria-label="Remove" {...t}>
+                      <IconCrossMedium size={16} aria-hidden />
+                    </button>
+                  )}
+                </Tooltip>
+              </>
+            ) : (
+              <button ref={uploadBtn} type="button" className={styles.logoUpload}>
+                <IconArrowUpSquare size={16} aria-hidden />
+                {label}
+              </button>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept={accept}
+              className={styles.fileInput}
+              onChange={onPicked}
+              tabIndex={-1}
+            />
+          </div>
+        </div>
+      )}
+    </Tooltip>
   );
 }
 
@@ -371,13 +385,13 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           <span className={styles.rowLabel}>Preset</span>
           <SwatchRow label="Preset" active={preset}>
             {PRESETS.map((p) => (
-              <Tooltip key={p.id} text={p.design.programName}>
+              <Tooltip key={p.id} text={p.description}>
                 {(tip) => (
                   <button
                     type="button"
                     role="radio"
                     aria-checked={preset === p.id}
-                    aria-label={p.design.programName}
+                    aria-label={`${p.description} (${p.design.programName})`}
                     className={clsx(styles.swatch, styles.swatchIcon)}
                     onClick={() => onPresetSelect(p.id)}
                     {...tip}
@@ -458,6 +472,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           url={design.backgroundUrl}
           accept="image/png,image/jpeg,image/webp"
           label="Upload card art"
+          hint={`PNG, JPG or WebP · ${TEX_W} × ${TEX_H} fills the face`}
           onPick={(url) => onChange({ backgroundUrl: url })}
         />
         {design.backgroundUrl && (
@@ -491,6 +506,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           url={design.logoUrl}
           accept="image/svg+xml,image/png,image/webp"
           label="Upload SVG or PNG"
+          hint="SVG, or a transparent PNG at least 512 px tall"
           previewStyle={swatchStyle(brand)}
           onPick={(url) => onChange({ logoUrl: url })}
         />
