@@ -152,7 +152,7 @@ export const CardBlueprint = ({ face }) => {
   } else if (face === 'back') {
     title = 'Back of card: the fixed template with the magnetic stripe, account block, contactless indicator, Visa DEBIT lockup, support line, and issuer statement';
     key = [
-      { n: 1, kind: 'fixed', label: 'Magnetic stripe' },
+      { n: 1, kind: 'fixed', label: 'Magnetic stripe, band to the top edge' },
       { n: 2, kind: 'yours', label: 'Account block: your ink and typeface' },
       { n: 3, kind: 'fixed', label: 'Contactless indicator' },
       { n: 4, kind: 'fixed', label: 'Visa DEBIT lockup, silver foil' },
@@ -162,7 +162,8 @@ export const CardBlueprint = ({ face }) => {
     drawing = (
       <g>
         {body(R)}
-        <rect className="bp-object" x={0} y={72} width={W} height={228} fill="var(--bp-fixed)" stroke="none" />
+        <path d={'M ' + R + ' 0 H ' + (W - R) + ' A ' + R + ' ' + R + ' 0 0 1 ' + W + ' ' + R + ' V 300 H 0 V ' + R + ' A ' + R + ' ' + R + ' 0 0 1 ' + R + ' 0 Z'} fill="var(--bp-fixed)" fillOpacity={0.55} />
+        <rect x={0} y={72} width={W} height={228} fill="var(--bp-fixed)" />
         {zone(40, 460, 640, 220, 'yours')}
         <g fontFamily="'Suisse Intl', sans-serif" fontSize={57} fill="var(--bp-ink)">
           <text x={56} y={517}>
@@ -184,10 +185,7 @@ export const CardBlueprint = ({ face }) => {
         {zone(40, 862, 500, 70, 'yours')}
         <g fontFamily="'Suisse Intl', sans-serif" fontSize={22} fill="var(--bp-ink)">
           <text x={56} y={892}>
-            1-800-000-0000
-          </text>
-          <text x={300} y={892}>
-            yourbrand.com/help
+            {'1-800-000-0000\u00A0\u00A0\u00A0yourbrand.com/help'}
           </text>
           <text x={56} y={918}>
             Issued by Lead Bank

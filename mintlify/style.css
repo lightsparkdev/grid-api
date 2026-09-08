@@ -5160,8 +5160,6 @@ html.dark .ls-blueprint-units button[aria-pressed='true'] {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 8px;
-  box-shadow: 0 0 0 0.5px var(--ls-black-10);
 }
 
 /* The samples are pictures of cards: strokes scale with the card, unlike the
@@ -5169,10 +5167,6 @@ html.dark .ls-blueprint-units button[aria-pressed='true'] {
 .ls-card-sample svg,
 .ls-card-sample svg * {
   vector-effect: none;
-}
-
-html.dark .ls-card-sample svg {
-  box-shadow: 0 0 0 0.5px var(--ls-white-10);
 }
 
 .ls-card-sample figcaption {

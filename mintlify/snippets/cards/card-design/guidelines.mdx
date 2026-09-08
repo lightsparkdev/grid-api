@@ -21,16 +21,20 @@ program onboarding. The Cards API issues virtual cards; see
 | Wallet art | Your app icon and logo, plus two colors | Card image derived from the front, Visa DEBIT lockup, submission to Visa and the wallets |
 | Carrier and envelope | Nothing: the standard carrier is used | Carrier letter, unbranded envelope, shipping |
 
-## Two ways to make your card
+## Card body
 
-Cards are printed on one of two bodies. Pick the one that fits your brand.
+Cards print on white card stock. Any color, gradient, or artwork prints edge
+to edge on both faces in CMYK, and the card edge is white. A black-core body
+is also available for black cards.
 
 <CardSamples />
 
-- **Monochrome**: black-core plastic. Personalization prints in white. Your logo prints in white or in one spot color (give us a Pantone number or a hex value). Finishes: matte, gloss, or satin. The card edge is black. Best for a black, white, or one-color brand, and the shorter path to printed cards.
-- **Full color**: CMYK print on white-core plastic. Any color, gradient, or artwork, printed edge to edge on both faces. On the back, the stripe band bleeds to the top edge. The card edge is white. Best for brand colors, gradients, and photographic or illustrated artwork.
+- **White stock**: the standard body. Any color or artwork on the front; the same color continues on the back. The stripe band runs to the top edge of the back. Best for brand colors, gradients, and photographic or illustrated artwork.
+- **Black core**: black plastic through the card, so the edge is black. Personalization prints in white, and the logo prints in white or in one spot color (give us a Pantone number or a hex value). Finishes: matte, gloss, or satin. Best for a black or one-color brand.
 
-Both bodies carry the Visa DEBIT lockup as silver hot-stamped foil on the back.
+Both bodies carry the Visa DEBIT lockup as the Premium Visa Brand Mark: silver
+hot-stamped foil on the back. Because the card carries the premium mark, Visa
+does not require the dove hologram, and the card has none.
 
 ## Canvas
 
@@ -64,7 +68,7 @@ The front carries your brand and the chip. Nothing else.
 
 - **Chip**: the module sits at (152, 324) and measures 236 × 164 px. It is embedded after printing, so nothing prints over it. Keep the zone from x 107 to 415 and y 279 to 533 clear of logos and text; background color and artwork may run through it.
 - **Logo**: the samples put it right of the chip, centered on the chip's mid-line (y 406), with its right edge 152 px from the card edge, 90 px tall. A larger mark, a centered mark, or a bleeding watermark all work if they stay out of the chip zone and legible parts stay inside the safe margin.
-- **Artwork**: photographs, gradients, and patterns are fine on the full-color body. Supply vector artwork where you can. Raster artwork must be at least 1536 × 969 px at card size; larger is better.
+- **Artwork**: photographs, gradients, and patterns are fine on white stock. Supply vector artwork where you can. Raster artwork must be at least 1536 × 969 px at card size; larger is better.
 
 Do not put on the front:
 
@@ -96,17 +100,17 @@ positions; the back template has them as guides.
 
 | Element | What it is | Who sets it |
 | --- | --- | --- |
-| Magnetic stripe | Standard black band. On the full-color body it extends to the top edge. | Fixed |
+| Magnetic stripe | Standard black band. The band runs to the top edge of the card. | Fixed |
 | Account block | Cardholder name, card number, expiry, and security code, each on its own line in 9 pt type. Printed at personalization. | Layout fixed; ink and typeface yours |
 | Contactless indicator | EMVCo artwork, 5 mm tall. | Fixed |
-| Visa DEBIT lockup | Silver foil, with 3 mm clear space on every side kept free of text and logos. | Fixed |
+| Visa DEBIT lockup | Premium Visa Brand Mark in silver foil, with 3 mm clear space on every side kept free of text and logos. | Fixed |
 | Support line | Your support phone number and URL, in fine print. | Yours |
 | Issuer statement | "Issued by Lead Bank". | Fixed |
 
 Your choices on the back:
 
 - **Background**: the front's color or artwork, or a solid color from your palette. Keep the area under the lockup calm enough for silver foil to read.
-- **Personalization ink**: white or dark, whichever contrasts with the background. The monochrome body prints white only.
+- **Personalization ink**: white or dark, whichever contrasts with the background. The black-core body prints white only.
 - **Typeface**: a sans serif. The default is Suisse Intl Regular at 9 pt (57 px on the artboard; 1 pt = 6.33 px), the minimum Visa allows for a printed cardholder name; up to 12 pt is permitted.
 - **Support line**: the phone number and URL your cardholders should use.
 
@@ -117,8 +121,8 @@ at proof.
 ## Color
 
 - Everything printed must contrast with what is behind it. This is a Visa requirement for the cardholder name and a legibility requirement for everything else.
-- Give us brand colors as hex values, plus Pantone or CMYK values if your brand guide has them. Full-color cards print in CMYK, so screen colors shift slightly; Pantone references help us match.
-- The monochrome body allows one spot color for the logo. Give its Pantone number.
+- Give us brand colors as hex values, plus Pantone or CMYK values if your brand guide has them. Cards print in CMYK, so screen colors shift slightly; Pantone references help us match.
+- The black-core body allows one spot color for the logo. Give its Pantone number.
 - The Visa DEBIT lockup is always silver foil. You do not choose its color.
 
 Print differs from screen in a few ways that affect card artwork:
@@ -174,7 +178,7 @@ Send the following to your Lightspark contact:
 - Brand colors as hex values, plus Pantone or CMYK if you have them.
 - The front design on a 1536 × 969 artboard, as the layered source file (Figma, Illustrator, or Sketch) or a PDF with vectors preserved. Include the overlay template on a hidden layer.
 - Your choices for the back: background color, personalization ink, typeface, support phone number and URL.
-- The body: monochrome or full color, and the finish for monochrome.
+- The body: white stock or black core, and the finish for black core.
 - For the wallets: the app icon, the logo PNG, the overlay text color, and the card background color listed under wallet art.
 
 <Steps>
