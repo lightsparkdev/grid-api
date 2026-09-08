@@ -176,7 +176,7 @@ curl -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
   }'
 ```
 
-In sandbox, customers are automatically approved. In production, KYB verification may take several minutes.
+In sandbox, a `fullName` not ending in `001`, `002`, or `003` yields an approved customer rather than a real review. On an unregulated platform the customer stays `UNVERIFIED` until you submit a complete verification with `POST /verifications`; with **Skip verification paperwork** on, or on a regulated platform, the name resolves the customer at creation. In production, verification may take several minutes.
 
 ## Testing Insufficient Balance
 
@@ -337,7 +337,7 @@ While sandbox closely mimics production, there are some differences:
 
 - **Instant settlement**: All Bitcoin transfers complete instantly (success cases) or fail immediately (error cases), except timeout scenarios (005)
 - **Uses Regtest funds**: Spark bitcoin funds are regtest funds so that they're compatible with real regtest spark wallets.
-- **Simplified KYB**: KYB processes are simulated and complete instantly with automatic approval
+- **Simplified KYB**: KYB processes are simulated rather than reviewed for real. On an unregulated platform the result resolves after a complete packet is submitted; with **Skip verification paperwork** on, or on a regulated platform, a final suffix resolves on the first submission without packet validation
 - **Fixed exchange rates**: Currency conversion rates may not reflect real-time market rates
 
 <Warning>
