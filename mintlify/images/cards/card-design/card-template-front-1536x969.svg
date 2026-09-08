@@ -8,7 +8,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1536" height="969" viewBox="0 0 1536 969" fill="none" font-family="Helvetica, Arial, sans-serif">
   <g id="card-outline" stroke="#FF21CC" stroke-width="2">
     <rect x="1" y="1" width="1534" height="967" rx="56" />
-    <text x="24" y="40" font-size="20" fill="#FF21CC" stroke="none">Card edge: 1536 x 969 px, R 57 px (85.6 x 53.98 mm, R 3.175 mm)</text>
+    <text x="24" y="40" font-size="20" fill="#FF21CC" stroke="none">Card edge: 1536 x 969 px, R 57 px (85.6 x 53.98 mm, R 3.18 mm)</text>
   </g>
   <g id="safe-margin" stroke="#FF21CC" stroke-width="1.5" stroke-dasharray="10 10">
     <rect x="54" y="54" width="1428" height="861" rx="12" />
