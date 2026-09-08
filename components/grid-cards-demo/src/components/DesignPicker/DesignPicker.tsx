@@ -354,19 +354,21 @@ function UploadRow({
                   </Tooltip>
                 </motion.div>
               ) : (
-                <motion.button
+                <motion.div
                   key="upload"
-                  ref={uploadBtn}
-                  type="button"
-                  className={styles.logoUpload}
+                  className={styles.logoPicked}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={ROW_UNFOLD}
                 >
-                  <IconAddImage size={16} aria-hidden />
-                  {label}
-                </motion.button>
+                  {/* The ref stays off the presence child: popLayout reads the
+                      child's props.ref, which React warns about. */}
+                  <button ref={uploadBtn} type="button" className={styles.logoUpload}>
+                    <IconAddImage size={16} aria-hidden />
+                    {label}
+                  </button>
+                </motion.div>
               )}
             </AnimatePresence>
             <input
