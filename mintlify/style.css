@@ -4986,7 +4986,7 @@ html.dark .corridor-fields-empty {
   --bp-yours: var(--ls-sky-500);
   --bp-keepout: var(--ls-orange-500);
   margin: 24px 0;
-  padding: 20px 20px 12px;
+  padding: 20px;
   background-color: var(--bp-paper);
   border: 0.5px solid var(--ls-black-10);
   border-radius: var(--ls-radius-md);
@@ -5192,7 +5192,7 @@ html.dark .ls-blueprint-units button[aria-pressed='true'] {
 .ls-card-samples {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 20px;
+  gap: 32px 20px;
   margin: 24px 0;
 }
 
@@ -5216,12 +5216,135 @@ html.dark .ls-blueprint-units button[aria-pressed='true'] {
 }
 
 .ls-card-sample figcaption {
-  margin-top: 8px;
+  margin-top: 12px;
   font-size: 12px;
   line-height: 16px;
-  color: var(--ls-gray-600);
+  color: var(--ls-gray-500);
 }
 
 html.dark .ls-card-sample figcaption {
-  color: var(--ls-gray-400);
+  color: var(--ls-gray-600);
+}
+
+/* Hairline at the card's edge so the body reads against the page in dark mode.
+   Non-scaling so it stays 0.5px on screen. */
+.ls-card-sample .ls-card-sample-edge {
+  stroke: var(--ls-black-10);
+  stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+html.dark .ls-card-sample .ls-card-sample-edge {
+  stroke: var(--ls-white-10);
+}
+
+/* ===========================================
+   Card design template downloads
+   (styles snippets/cards/card-design/downloads.mdx; matches .feature-card
+   and .image-card: 24px padding, 15/22 title, gray-950 on white)
+   =========================================== */
+
+.ls-template-downloads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+@media (max-width: 640px) {
+  .ls-template-downloads {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The whole tile is the download link; hover matches the site's link cards. */
+.ls-template-download {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--ls-white);
+  border: 0.5px solid var(--ls-black-10);
+  border-radius: var(--ls-radius-md);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ls-template-download:hover {
+  background-color: var(--ls-gray-025);
+  transform: scale(1.02);
+}
+
+.ls-template-download:focus-visible {
+  outline: 2px solid var(--ls-sky-500);
+  outline-offset: 2px;
+}
+
+html.dark .ls-template-download {
+  background-color: var(--ls-gray-925);
+  border-color: var(--ls-white-06);
+}
+
+html.dark .ls-template-download:hover {
+  background-color: var(--ls-gray-900);
+}
+
+.ls-template-download-preview {
+  display: block;
+  padding: 24px 24px 0;
+}
+
+.ls-template-download-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+.ls-template-download-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+}
+
+.ls-template-download-title {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500 !important; /* the site forces body weight on non-heading descendants */
+  color: var(--ls-gray-950);
+}
+
+html.dark .ls-template-download-title {
+  color: var(--ls-gray-050);
+}
+
+/* Primary button: the site's primary (gray-950) with white text; inverts in dark. */
+.ls-template-download-button {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500 !important;
+  color: var(--ls-white);
+  background-color: var(--ls-gray-950);
+  border-radius: var(--ls-radius-sm);
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.ls-template-download:hover .ls-template-download-button {
+  background-color: var(--ls-gray-800);
+}
+
+html.dark .ls-template-download-button {
+  color: var(--ls-gray-950);
+  background-color: var(--ls-gray-050);
+}
+
+html.dark .ls-template-download:hover .ls-template-download-button {
+  background-color: var(--ls-white);
 }

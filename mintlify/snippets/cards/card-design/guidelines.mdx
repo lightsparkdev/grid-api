@@ -1,5 +1,6 @@
 import { CardBlueprint } from '/snippets/cards/card-design/blueprints.mdx';
 import { CardSamples } from '/snippets/cards/card-design/samples.mdx';
+import { TemplateDownloads } from '/snippets/cards/card-design/downloads.mdx';
 
 Your physical card and its digital wallet art share one design: the front
 of the card. You design the front and choose a few options for the back. The
@@ -11,6 +12,13 @@ Physical cards are set up with your Lightspark contact as part of card
 program onboarding. The Cards API issues virtual cards; see
 [Issuing cards](/cards/card-management/issuing-cards).
 </Note>
+
+Start from the templates. Each is a 1536 × 969 SVG overlay with the guides
+on their own layers; it opens as editable vectors in Figma, Illustrator,
+Sketch, and Affinity. Keep it on a hidden or non-printing layer while you
+design.
+
+<TemplateDownloads id="templates" />
 
 ## What you choose and what is fixed
 
@@ -56,12 +64,8 @@ stay legible (logos, text) stays inside a 54 px (3 mm) safe margin.
 
 <CardBlueprint face="front" />
 
-Overlay templates for your artboard, to keep on a hidden or non-printing
-layer. They are SVG, which Figma, Illustrator, Sketch, and Affinity open as
-editable vectors on a 1536 × 969 artboard.
-
-- [Front template](/images/cards/card-design/card-template-front-1536x969.svg)
-- [Back template](/images/cards/card-design/card-template-back-1536x969.svg)
+The [templates at the top of this page](#templates) carry every guide in
+this figure as a layer.
 
 ## Front
 
@@ -79,17 +83,12 @@ Do not put on the front:
 - Taglines, unless they are part of your trademarked logo.
 - URLs or phone numbers. The back carries your support line.
 
-Designs we cannot accept, on either face:
+Visa's rules also exclude, on either face:
 
 - The name or mark of another card network, or of a company you do not own.
-- A place name as the card's name, which implies a government or municipal card.
 - Advertising or promotional language.
 - Reproductions of banknotes, coins, or another payment card.
-- Political, religious, sexual, or violent imagery, and imagery of alcohol, tobacco, drugs, or firearms.
-- Celebrities, characters, or artwork you do not hold the rights to.
-
-Cryptocurrency and stablecoin references are allowed for stablecoin-funded
-card programs. We confirm any such reference with Visa in design review.
+- Artwork, characters, or likenesses you do not hold the rights to.
 
 ## Back
 
@@ -102,7 +101,7 @@ positions; the back template has them as guides.
 | Element | What it is | Who sets it |
 | --- | --- | --- |
 | Magnetic stripe | Standard black band. The band runs to the top edge of the card. | Fixed |
-| Account block | Cardholder name, card number, expiry, and security code, each on its own line in 9 pt type. Printed at personalization. | Layout fixed; ink and typeface yours |
+| Account block | Three lines in 9 pt type: cardholder name, card number, then expiry and security code. Printed at personalization. | Layout fixed; ink and typeface yours |
 | Contactless indicator | EMVCo artwork, 5 mm tall. | Fixed |
 | Visa DEBIT lockup | Premium Visa Brand Mark in silver foil, with 3 mm clear space on every side kept free of text and logos. | Fixed |
 | Support line | Your support phone number and URL, in fine print. | Yours |
@@ -166,7 +165,9 @@ placement for the wallet; that is the usual reason to supply your own
 version.
 
 The wallets also show your brand outside the card image, in notifications,
-transaction lists, and the card details screen. For that they need:
+transaction lists, and the card details screen. Visa Token Service, which
+provisions the card to Apple Pay and Google Pay, takes these assets with the
+card image:
 
 - An app icon, 100 × 100 px PNG.
 - Your logo, 1372 × 283 px PNG, on a transparent background.

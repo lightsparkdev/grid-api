@@ -10,33 +10,88 @@ export const CardBlueprint = ({ face }) => {
   const GAP = 10;
   const OVER = 14;
   const TXT = 30;
-  const dimH = (x1, x2, y, edgeY) => (
-    <g className="bp-thin" stroke="var(--bp-ink)">
-      <line x1={x1} y1={edgeY + (y < edgeY ? -GAP : GAP)} x2={x1} y2={y + (y < edgeY ? -OVER : OVER)} />
-      <line x1={x2} y1={edgeY + (y < edgeY ? -GAP : GAP)} x2={x2} y2={y + (y < edgeY ? -OVER : OVER)} />
-      <line x1={x1} y1={y} x2={x2} y2={y} markerStart={arrow} markerEnd={arrow} />
-      {x2 - x1 < 140 ? (
-        <text className="ls-blueprint-label" x={x2 + 24} y={y + 10} fontSize={TXT} textAnchor="start">
-          {f(x2 - x1)}
-        </text>
-      ) : (
-        <text className="ls-blueprint-label" x={(x1 + x2) / 2} y={y - 10} fontSize={TXT} textAnchor="middle">
-          {f(x2 - x1)}
-        </text>
-      )}
-    </g>
-  );
-  const dimV = (y1, y2, x, edgeX) => {
-    const tx = x + (x > edgeX ? 34 : -34);
-    const ty = (y1 + y2) / 2;
+  const textLen = (t) => t.length * TXT * 0.62 + 24;
+  const STEM = 50;
+  const dimH = (x1, x2, y, edgeY, side, note) => {
+    const out = y < edgeY ? -1 : 1;
+    const label = f(x2 - x1) + (note || '');
+    const gap = textLen(label);
+    const span = x2 - x1;
+    const mid = (x1 + x2) / 2;
+    const mode = span >= gap + 60 ? 'inline' : span >= gap ? 'beside' : 'leader';
+    const dir = side || (mid < W / 2 ? -1 : 1);
+    const from = dir > 0 ? x2 : x1;
+    const to = from + dir * STEM;
     return (
       <g className="bp-thin" stroke="var(--bp-ink)">
-        <line x1={edgeX + (x > edgeX ? GAP : -GAP)} y1={y1} x2={x + (x > edgeX ? OVER : -OVER)} y2={y1} />
-        <line x1={edgeX + (x > edgeX ? GAP : -GAP)} y1={y2} x2={x + (x > edgeX ? OVER : -OVER)} y2={y2} />
-        <line x1={x} y1={y1} x2={x} y2={y2} markerStart={arrow} markerEnd={arrow} />
-        <text className="ls-blueprint-label" x={tx} y={ty} fontSize={TXT} textAnchor="middle" transform={'rotate(-90 ' + tx + ' ' + ty + ')'}>
-          {f(y2 - y1)}
-        </text>
+        <line x1={x1} y1={edgeY + out * GAP} x2={x1} y2={y + out * OVER} />
+        <line x1={x2} y1={edgeY + out * GAP} x2={x2} y2={y + out * OVER} />
+        {mode === 'inline' ? (
+          <g>
+            <line x1={x1} y1={y} x2={mid - gap / 2} y2={y} markerStart={arrow} />
+            <line x1={mid + gap / 2} y1={y} x2={x2} y2={y} markerEnd={arrow} />
+            <text className="ls-blueprint-label" x={mid} y={y + 10} fontSize={TXT} textAnchor="middle">
+              {label}
+            </text>
+          </g>
+        ) : mode === 'beside' ? (
+          <g>
+            <line x1={x1} y1={y} x2={x2} y2={y} markerStart={arrow} markerEnd={arrow} />
+            <text className="ls-blueprint-label" x={mid} y={out < 0 ? y - 14 : y + 36} fontSize={TXT} textAnchor="middle">
+              {label}
+            </text>
+          </g>
+        ) : (
+          <g>
+            <line x1={x1} y1={y} x2={x2} y2={y} markerStart={arrow} markerEnd={arrow} />
+            <line x1={from} y1={y} x2={to} y2={y} />
+            <text className="ls-blueprint-label" x={to + dir * 8} y={y + 10} fontSize={TXT} textAnchor={dir > 0 ? 'start' : 'end'}>
+              {label}
+            </text>
+          </g>
+        )}
+      </g>
+    );
+  };
+  const dimV = (y1, y2, x, edgeX, side, note) => {
+    const out = x > edgeX ? 1 : -1;
+    const label = f(y2 - y1) + (note || '');
+    const gap = textLen(label);
+    const span = y2 - y1;
+    const mid = (y1 + y2) / 2;
+    const mode = span >= gap + 60 ? 'inline' : span >= gap ? 'beside' : 'leader';
+    const dir = side || (mid < H / 2 ? -1 : 1);
+    const from = dir > 0 ? y2 : y1;
+    const to = from + dir * STEM;
+    const bx = x + out * 28;
+    return (
+      <g className="bp-thin" stroke="var(--bp-ink)">
+        <line x1={edgeX + out * GAP} y1={y1} x2={x + out * OVER} y2={y1} />
+        <line x1={edgeX + out * GAP} y1={y2} x2={x + out * OVER} y2={y2} />
+        {mode === 'inline' ? (
+          <g>
+            <line x1={x} y1={y1} x2={x} y2={mid - gap / 2} markerStart={arrow} />
+            <line x1={x} y1={mid + gap / 2} x2={x} y2={y2} markerEnd={arrow} />
+            <text className="ls-blueprint-label" x={x} y={mid} fontSize={TXT} textAnchor="middle" dominantBaseline="middle" transform={'rotate(-90 ' + x + ' ' + mid + ')'}>
+              {label}
+            </text>
+          </g>
+        ) : mode === 'beside' ? (
+          <g>
+            <line x1={x} y1={y1} x2={x} y2={y2} markerStart={arrow} markerEnd={arrow} />
+            <text className="ls-blueprint-label" x={bx} y={mid} fontSize={TXT} textAnchor="middle" dominantBaseline="middle" transform={'rotate(-90 ' + bx + ' ' + mid + ')'}>
+              {label}
+            </text>
+          </g>
+        ) : (
+          <g>
+            <line x1={x} y1={y1} x2={x} y2={y2} markerStart={arrow} markerEnd={arrow} />
+            <line x1={x} y1={from} x2={x} y2={to} />
+            <text className="ls-blueprint-label" x={x} y={to + dir * 8} fontSize={TXT} textAnchor={dir > 0 ? 'end' : 'start'} dominantBaseline="middle" transform={'rotate(-90 ' + x + ' ' + (to + dir * 8) + ')'}>
+              {label}
+            </text>
+          </g>
+        )}
       </g>
     );
   };
@@ -134,14 +189,14 @@ export const CardBlueprint = ({ face }) => {
         <text x={1384} y={430} fontSize={64} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} textAnchor="end" fill="var(--bp-yours)">
           Your logo
         </text>
-        {dimH(0, W, -150, 0)}
-        {dimH(0, 152, -80, 0)}
+        {dimH(0, W, -170, 0)}
+        {dimH(0, 152, -80, 0, 1)}
         {dimH(1384, W, -80, 0)}
         {dimH(152, 388, H + 80, H)}
-        {dimV(0, H, W + 150, W)}
+        {dimV(0, H, W + 170, W)}
         {dimV(H - SAFE, H, W + 80, W)}
         {dimV(0, 324, -80, 0)}
-        {dimV(324, 488, -80, 0)}
+        {dimV(324, 488, -80, 0, 1)}
         {radius(R)}
         {balloon(1, 261, 640, 300, 488)}
         {balloon(2, 500, 250, 415, 290)}
@@ -170,7 +225,7 @@ export const CardBlueprint = ({ face }) => {
           <rect x={0} y={72} width={W} height={228} fill="var(--bp-fixed)" />
         </g>
         <rect className="bp-object" stroke="var(--bp-ink)" x={0} y={0} width={W} height={H} rx={R} fill="none" />
-        {zone(40, 460, 640, 220, 'yours')}
+        {zone(56, 476, 620, 187, 'yours')}
         <g fontFamily="'Suisse Intl', sans-serif" fontSize={57} fill="var(--bp-ink)">
           <text x={56} y={517}>
             Cardholder name
@@ -188,7 +243,7 @@ export const CardBlueprint = ({ face }) => {
         {contactless(1482, 470, 90)}
         <rect className="bp-thin" stroke="var(--bp-ink-soft)" x={1089} y={650} width={447} height={319} rx={8} fill="none" strokeDasharray="14 10" />
         {lockup}
-        {zone(40, 862, 500, 70, 'yours')}
+        {zone(56, 876, 620, 55, 'yours')}
         <g fontFamily="'Suisse Intl', sans-serif" fontSize={22} fill="var(--bp-ink)">
           <text x={56} y={892}>
             {'1-800-000-0000\u00A0\u00A0\u00A0yourbrand.com/help'}
@@ -197,23 +252,22 @@ export const CardBlueprint = ({ face }) => {
             Issued by Lead Bank
           </text>
         </g>
-        {dimH(0, W, -150, 0)}
+        {dimH(0, W, -170, 0)}
         {dimH(0, 56, -80, 0)}
         {dimH(1143, 1482, H + 80, H)}
-        {dimH(1482, W, H + 80, H)}
-        {dimV(0, H, W + 150, W)}
+        {dimH(1482, W, H + 80, H, 1, ' typ.')}
+        {dimV(0, H, W + 170, W)}
         {dimV(0, 72, W + 80, W)}
         {dimV(72, 300, W + 80, W)}
         {dimV(704, 915, W + 80, W)}
-        {dimV(915, H, W + 80, W)}
         {dimV(0, 476, -80, 0)}
         {dimV(476, 663, -80, 0)}
         {balloon(1, 768, 400, 768, 300)}
-        {balloon(2, 800, 570, 680, 570)}
+        {balloon(2, 800, 570, 676, 570)}
         {balloon(3, 1300, 515, 1417, 515)}
         {balloon(4, 980, 810, 1143, 810)}
-        {balloon(5, 640, 780, 380, 862)}
-        {balloon(6, 640, 940, 300, 918)}
+        {balloon(5, 720, 780, 460, 876)}
+        {balloon(6, 720, 940, 320, 923)}
       </g>
     );
   } else {
@@ -231,9 +285,9 @@ export const CardBlueprint = ({ face }) => {
         </text>
         {zone(0, H / 2, W / 2, H / 2, 'keepout', 0)}
         {lockup}
-        {dimH(0, W, -150, 0)}
+        {dimH(0, W, -170, 0)}
         {dimH(0, W / 2, H + 80, H)}
-        {dimV(0, H, W + 150, W)}
+        {dimV(0, H, W + 170, W)}
         {dimV(H / 2, H, -80, 0)}
         <g className="bp-thin" stroke="var(--bp-ink)">
           <line x1={0} y1={0} x2={-70} y2={-70} markerStart={arrow} />
@@ -249,7 +303,7 @@ export const CardBlueprint = ({ face }) => {
   }
   return (
     <figure className="ls-blueprint not-prose">
-      <svg viewBox="-260 -240 2060 1440" role="img" aria-label={title}>
+      <svg viewBox="-300 -260 2160 1460" role="img" aria-label={title}>
         <defs>
           <marker id={'bp-arrow-' + face} viewBox="0 0 10 10" refX={10} refY={5} markerWidth={20} markerHeight={20} markerUnits="userSpaceOnUse" orient="auto-start-reverse">
             <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="var(--bp-ink)" />

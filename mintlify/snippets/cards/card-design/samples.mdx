@@ -107,6 +107,7 @@ export const CardSamples = () => {
       <text x={1384} y={434} fontSize={80} fontFamily="'Suisse Intl', sans-serif" fontWeight={500} textAnchor="end" fill={ink}>
         Your logo
       </text>
+      <path className="ls-card-sample-edge" d={cardPath} fill="none" />
     </svg>
   );
   const back = (id, color, stripe, ink, title) => (
@@ -144,6 +145,7 @@ export const CardSamples = () => {
           Issued by Lead Bank
         </text>
       </g>
+      <path className="ls-card-sample-edge" d={cardPath} fill="none" />
     </svg>
   );
   return (
