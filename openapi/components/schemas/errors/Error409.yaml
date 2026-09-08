@@ -25,6 +25,7 @@ properties:
       | INVALID_STATE_TRANSITION | The requested card `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
       | CARD_ALREADY_CLOSED | `state: CLOSED` was requested for a card that is already `CLOSED` |
       | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
+      | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
       | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
       | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
     enum:
@@ -39,6 +40,7 @@ properties:
       - INVALID_STATE_TRANSITION
       - CARD_ALREADY_CLOSED
       - CARD_NOT_MUTABLE
+      - CARD_LIMIT_REACHED
       - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
       - CONFLICT
   message:
