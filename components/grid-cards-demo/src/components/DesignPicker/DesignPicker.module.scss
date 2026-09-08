@@ -348,6 +348,12 @@
   }
 }
 
+.logoPicked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* The preview and Remove are swatch-sized tiles; Remove is the color row's
    "+" tile with a cross. */
 .logoPreview,

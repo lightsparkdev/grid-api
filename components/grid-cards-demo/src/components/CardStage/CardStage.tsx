@@ -526,7 +526,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       return;
     }
     if (live.current.t > 0) return;
-    hover(brandEditable && e.pointerType === 'mouse' && hitBrand(e.clientX, e.clientY) !== null);
+    // The outline is for a card at rest: not while it turns or settles.
+    hover(brandEditable && e.pointerType === 'mouse' && motion.atRest && hitBrand(e.clientX, e.clientY) !== null);
     hoverName(brandEditable && e.pointerType === 'mouse' && !textEdit && hitName(e.clientX, e.clientY));
     if (reduceMotion || selected) return;
     const b = e.currentTarget.getBoundingClientRect();
@@ -571,7 +572,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     } else {
       setSelected(false);
     }
-    // The card: spin.
+    // The card: spin. The brand's outline comes off for the turn.
+    hover(false);
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     setDragged(true);

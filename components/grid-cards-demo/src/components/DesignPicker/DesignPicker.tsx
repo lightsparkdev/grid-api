@@ -329,26 +329,46 @@ function UploadRow({
         >
           <span className={styles.rowLabel}>{rowLabel}</span>
           <div className={styles.logoRow}>
-            {url ? (
-              <>
-                <span className={styles.logoPreview} style={previewStyle}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" />
-                </span>
-                <Tooltip text="Remove">
-                  {(t) => (
-                    <button type="button" className={styles.logoClear} onClick={clear} aria-label="Remove" {...t}>
-                      <IconCrossMedium size={16} aria-hidden />
-                    </button>
-                  )}
-                </Tooltip>
-              </>
-            ) : (
-              <button ref={uploadBtn} type="button" className={styles.logoUpload}>
-                <IconAddImage size={16} aria-hidden />
-                {label}
-              </button>
-            )}
+            {/* The button gives way to the preview and Remove, and back, with
+                a fade and a little scale rather than a cut. */}
+            <AnimatePresence mode="popLayout" initial={false}>
+              {url ? (
+                <motion.div
+                  key="picked"
+                  className={styles.logoPicked}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  transition={ROW_UNFOLD}
+                >
+                  <span className={styles.logoPreview} style={previewStyle}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" />
+                  </span>
+                  <Tooltip text="Remove">
+                    {(t) => (
+                      <button type="button" className={styles.logoClear} onClick={clear} aria-label="Remove" {...t}>
+                        <IconCrossMedium size={16} aria-hidden />
+                      </button>
+                    )}
+                  </Tooltip>
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="upload"
+                  ref={uploadBtn}
+                  type="button"
+                  className={styles.logoUpload}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={ROW_UNFOLD}
+                >
+                  <IconAddImage size={16} aria-hidden />
+                  {label}
+                </motion.button>
+              )}
+            </AnimatePresence>
             <input
               ref={fileRef}
               type="file"
@@ -520,7 +540,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           rowLabel="Logo"
           url={design.logoUrl}
           accept="image/svg+xml,image/png,image/webp"
-          label="Upload SVG or PNG"
+          label="Upload logo"
           hint="Transparent, at least 512 px tall"
           previewStyle={swatchStyle(brand)}
           onPick={(url) => onChange({ logoUrl: url })}
