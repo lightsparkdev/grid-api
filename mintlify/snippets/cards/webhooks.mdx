@@ -1,20 +1,23 @@
-Cards add one webhook event type on top of Grid's existing webhook
+Cards add five webhook event types on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
 [Webhooks](/api-reference/webhooks) for the underlying mechanics.
 
-Card-transaction lifecycle events are not card-specific webhooks —
-they ride on the generic transaction webhook stream (a follow-up
-extends the Transaction model with a card destination type).
+One covers the card itself; the other four cover a card transaction's
+lifecycle.
 
 ## Event types
 
 | Type | Fires on |
 |------|----------|
 | `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
+| `CARD_TRANSACTION.AUTHORIZED` | An authorization is approved and a hold is placed on the funding source. |
+| `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted, but more are still expected. |
+| `CARD_TRANSACTION.SETTLED` | All clearings have posted. Re-fires when a merchant return lands, with the returned value in `refundedAmount`. |
+| `CARD_TRANSACTION.EXCEPTION` | The transaction settled to the network but the pull from the funding source failed. |
 
-It carries the standard envelope:
+All of them carry the standard envelope:
 
 ```json
 {
@@ -74,11 +77,11 @@ Common branches to handle in your consumer:
 
 ## Card-transaction lifecycle
 
-Authorization, pull, clearing, refund, and `EXCEPTION` transitions are
-not delivered through a dedicated card webhook. They flow through
-the generic transaction webhook stream that already carries
-outgoing-payment lifecycle events; a follow-up PR adds the card
-destination type to that stream. See
+Each `CARD_TRANSACTION.*` event carries the full `CardTransaction`
+resource. Not every delivery changes `status`: a merchant return has no
+event type of its own and re-fires `CARD_TRANSACTION.SETTLED` with the
+same status, so treat a repeated `SETTLED` as a new update and read
+`refundedAmount` to tell it apart from the original settlement. See
 [Reconciliation](/cards/transactions/reconciliation) for the
 underlying event model.
 
