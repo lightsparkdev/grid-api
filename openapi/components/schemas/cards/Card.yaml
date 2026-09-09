@@ -7,6 +7,7 @@ required:
   - fundingSources
   - maxSpendPerTransaction
   - maxSpendPerDay
+  - maxTransactionsPerDay
   - createdAt
   - updatedAt
 properties:
@@ -92,6 +93,24 @@ properties:
       Refunds, reversals, and authorization expiries do not restore capacity
       during the day. Spend exactly equal to the effective limit is allowed.
     example: 25000
+  maxTransactionsPerDay:
+    anyOf:
+      - type: integer
+        format: int32
+        minimum: 1
+        maximum: 2147483647
+      - type: 'null'
+    description: >-
+      Card-specific cap on the number of transactions the card may authorize
+      during one UTC calendar day. The window resets at 00:00 UTC. Null means
+      the card has no card-specific daily transaction cap. When the platform
+      config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces
+      the lower of the two values without replacing this configured value.
+      Each approved authorization counts once for the day it was authorized;
+      refunds, reversals, and authorization expiries do not restore capacity
+      during the day. A transaction that brings the day's count exactly to the
+      effective limit is allowed.
+    example: 20
   currency:
     type: string
     description: >-
