@@ -12294,7 +12294,7 @@ components:
         fromName:
           type: string
           maxLength: 255
-          description: Sender display name.
+          description: Sender display name. Defaults to `displayName`.
           example: Acme Cards
         replyToAddress:
           type: string
@@ -12305,7 +12305,9 @@ components:
         subject:
           type: string
           maxLength: 255
-          description: Subject for the authentication email.
+          description: |
+            Subject for the authentication email. Defaults to
+            "Your {displayName} verification code".
           example: Your Acme card verification code
         bodyText:
           type: string
@@ -12313,7 +12315,8 @@ components:
           description: |
             Plain-text message content. Lightspark inserts the authentication code into
             a controlled text and HTML template; arbitrary HTML and template variables
-            are not supported.
+            are not supported. Defaults to "Use this code to finish adding your
+            {displayName} card to your wallet."
           example: Use this code to finish adding your Acme card to your digital wallet.
     CardTokenization2FASmsConfig:
       type: object
@@ -12331,7 +12334,8 @@ components:
           maxLength: 480
           description: |
             Plain-text fallback message used when Twilio Verify is unavailable for the
-            authentication code. Lightspark appends the code to this text.
+            authentication code. Lightspark appends the code to this text. Defaults to
+            "Your {displayName} verification code is:".
           example: Use this code to finish adding your Acme card to your digital wallet.
     CardTokenization2FAConfig:
       type: object
@@ -12340,7 +12344,9 @@ components:
         displayName:
           type: string
           maxLength: 255
-          description: Platform name displayed in authentication messages.
+          description: |
+            Name shown in authentication messages and used to build the default
+            subject, body, and sender name. Defaults to the platform's name.
           example: Acme
         logoUrl:
           type: string
