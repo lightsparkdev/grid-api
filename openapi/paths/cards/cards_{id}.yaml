@@ -119,9 +119,6 @@ patch:
     bindings are detached. Refunds already in flight still complete
     because Lightspark holds the card-reserve keys.
 
-    - `fundingSources` change: replaces the ordered binding. No webhook
-    fires for this; read the card back to confirm the new list.
-
 
     The `card.state_change` webhook fires on every successful `state`
     transition.

@@ -8771,7 +8771,6 @@ paths:
         - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
         - `state: ACTIVE`: normal authorization behavior resumes.
         - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. Funding-source bindings are detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
-        - `fundingSources` change: replaces the ordered binding. No webhook fires for this; read the card back to confirm the new list.
 
         The `card.state_change` webhook fires on every successful `state` transition.
       operationId: updateCardById
