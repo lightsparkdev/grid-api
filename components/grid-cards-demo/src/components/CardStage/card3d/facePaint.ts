@@ -95,9 +95,12 @@ export const FINE_PRINT_BASELINE = TEX_H - F(56) - F(22 * 0.15);
  */
 export const DOVE_MM = 9.5;
 export const DOVE_H = F(DOVE_MM * SPEC_PER_MM);
+/** The artwork's box has a little air under the tail; drop it this far (spec
+ *  px) so the tail itself sits on the baseline. */
+const DOVE_DROP = F(8);
 export function doveBox(dove: HTMLImageElement): { x: number; y: number; w: number; h: number } {
   const w = DOVE_H * ((dove.naturalWidth || 3) / (dove.naturalHeight || 4));
-  return { x: TEX_W - F(54) - w, y: FINE_PRINT_BASELINE - DOVE_H, w, h: DOVE_H };
+  return { x: TEX_W - F(54) - w, y: FINE_PRINT_BASELINE - DOVE_H + DOVE_DROP, w, h: DOVE_H };
 }
 
 /* ── Assets ───────────────────────────────────────────────────────────────── */
