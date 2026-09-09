@@ -11,6 +11,27 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## Card returns report as `SETTLED` with a `refundedAmount`
+
+`REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from
+the webhook types. A card transaction's status tracks settlement only—a return is
+reported through `direction` and `refundedAmount`, which together already carry it.
+
+- A settled purchase that the merchant later returns stays `SETTLED`, with the returned
+  value in `refundedAmount`. A standalone merchant refund arrives as `direction: CREDIT`
+  and `status: SETTLED`, with the credited value in `settledAmount`.
+- Returns no longer get a webhook type of their own—the transaction re-fires
+  `CARD_TRANSACTION.SETTLED` with the updated amounts.
+- The sandbox return reversal simulator requires a parent with a posted return (non-zero
+  `refundedAmount`) rather than a `REFUNDED` parent, which the previous docs described
+  and the server never produced.
+
+Nothing you have received changes: the status was always derived on read, so existing
+transactions already report `SETTLED`. `TransactionStatus.REFUNDED` on cross-border
+payments is a separate enum and is unaffected.
+
+See [Reconciliation](/cards/transactions/reconciliation).
+
 ## Sandbox KYC and KYB follow the production flow
 
 Unregulated sandbox platforms now resolve a customer's verification from a submitted

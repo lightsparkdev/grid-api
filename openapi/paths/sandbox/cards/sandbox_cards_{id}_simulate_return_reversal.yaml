@@ -1,10 +1,11 @@
 post:
   summary: Simulate a card return reversal
   description: >
-    Simulate a `RETURN_REVERSAL` against an existing `REFUNDED` card
-    transaction in the sandbox environment — reversing a previously settled
-    return. The parent transaction must be in `REFUNDED` state. The resulting
-    card operation is delivered asynchronously via the issuer's events webhook.
+    Simulate a `RETURN_REVERSAL` against an existing card transaction in the
+    sandbox environment — reversing a previously settled return. The parent
+    transaction must have a posted return (non-zero `refundedAmount`). The
+    resulting card operation is delivered asynchronously via the issuer's
+    events webhook.
 
 
     Note: authorization reversal / void has no dedicated card-issuer simulate
@@ -34,7 +35,7 @@ post:
           $ref: ../../../components/schemas/cards/SandboxCardTransactionRefRequest.yaml
         examples:
           returnReversal:
-            summary: Reverse a settled return on a refunded transaction
+            summary: Reverse a settled return on a transaction with a posted return
             value:
               cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
   responses:
