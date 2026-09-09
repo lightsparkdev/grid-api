@@ -37,10 +37,8 @@ A merchant `RETURN` does not move the status. The transaction stays
 | `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. A `RETURN` received afterwards keeps it `SETTLED` with the returned value in `refundedAmount`. |
 | `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
-Every transition is delivered via the generic transaction webhook
-stream carrying the post-change parent (a follow-up extends the
-Transaction model with a card destination type — see
-[Webhooks](/cards/platform-tools/webhooks)).
+Every transition is delivered as a `CARD_TRANSACTION.*` webhook carrying
+the post-change parent — see [Webhooks](/cards/platform-tools/webhooks).
 
 ## The over-auth path
 

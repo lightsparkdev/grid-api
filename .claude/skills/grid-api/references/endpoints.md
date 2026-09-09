@@ -332,7 +332,6 @@ Drive card lifecycle events in sandbox to test authorization, clearing, and retu
 - `verification-update`: Verification status change
 - `agent-action`: Agent action requires approval or changed status
 - `card-state-change`: Card state changed
-- `card-funding-source-change`: Card funding source changed
 - `card-transaction`: Card transaction event
 - `bulk-upload`: Bulk job completion
 - `invitation-claimed`: Invitation claimed
