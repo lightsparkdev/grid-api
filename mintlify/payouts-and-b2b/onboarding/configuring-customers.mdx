@@ -7,6 +7,9 @@ icon: "/images/icons/people.svg"
 
 import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
 import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx'
+import KycWebhooks from '/snippets/kyc/kyc-webhooks.mdx'
+import VerificationWebhooks from '/snippets/kyc/verification-webhooks.mdx'
+import CustomerDataRequirements from '/snippets/kyc/customer-data-requirements.mdx'
 
 This guide provides comprehensive information about customer configuration in the Grid API, including customer types, registration processes, management, and bank account information.
 
@@ -19,18 +22,27 @@ Your platform's configuration (retrieved via `GET /config`) includes a `supporte
 
 ## Customer Registration Process
 
-### Creating a New Customer
-
 When creating or updating customers, the `customerType` field must be specified as either `INDIVIDUAL` or `BUSINESS`. Depending if you are a regulated or unregulated platform your KYC/KYB requirements will vary.
 
-<AccordionGroup>
-    <Accordion title="Regulated Platforms" icon="">
-        <KycRegulated />
-    </Accordion>
-    <Accordion title="Unregulated Platforms" icon="">
-        <KycUnregulated />
-    </Accordion>
-</AccordionGroup>
+## What to Collect
+
+<CustomerDataRequirements />
+
+## Regulated Platforms
+
+<KycRegulated />
+
+## Unregulated Platforms
+
+<KycUnregulated />
+
+## Handling KYC/KYB Webhooks
+
+<KycWebhooks />
+
+### Handling Verification Issues
+
+<VerificationWebhooks />
 
 
 ## Customer Management
