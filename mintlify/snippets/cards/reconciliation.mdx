@@ -22,10 +22,15 @@ on the parent.
 ## Status transitions
 
 ```text
+auth refused ──────────────────────► DECLINED
+
 AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED
               │
               └──► DECLINED  (pull failed after settlement)
 ```
+
+A refused authorization opens the transaction directly in `DECLINED` —
+it never passes through `AUTHORIZED`.
 
 A merchant `RETURN` does not move the status. The transaction stays
 `SETTLED` and the returned value appears in `refundedAmount`.
