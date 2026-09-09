@@ -47,6 +47,7 @@ export const PRESETS: CardPreset[] = [
       brandLayout: null,
       backgroundUrl: `${ASSETS}/art-finance.webp`,
       artTreatment: 'print',
+      visaMark: 'back',
     },
   },
   {
@@ -67,6 +68,7 @@ export const PRESETS: CardPreset[] = [
       brandLayout: { x: 1536 - 152, y: MID_Y_CHIP, h: 180, anchor: 'right', rotation: 0, opacity: 1 },
       backgroundUrl: null,
       artTreatment: 'print',
+      visaMark: 'back',
     },
   },
   {
@@ -86,6 +88,7 @@ export const PRESETS: CardPreset[] = [
       brandLayout: { x: 768, y: MID_Y, h: 767, anchor: 'center', rotation: 0, opacity: 1 },
       backgroundUrl: null,
       artTreatment: 'print',
+      visaMark: 'back',
     },
   },
   {
@@ -107,6 +110,7 @@ export const PRESETS: CardPreset[] = [
       brandLayout: { x: 768, y: MID_Y, h: 343, anchor: 'center', rotation: 0, opacity: 1 },
       backgroundUrl: `${ASSETS}/art-marketplace.webp`,
       artTreatment: 'print',
+      visaMark: 'back',
     },
   },
   {
@@ -128,6 +132,7 @@ export const PRESETS: CardPreset[] = [
       brandLayout: { x: 95, y: 138, h: 125, anchor: 'left', rotation: 0, opacity: 1 },
       backgroundUrl: `${ASSETS}/art-ondemand.png`,
       artTreatment: 'print',
+      visaMark: 'back',
     },
   },
   {
@@ -149,6 +154,7 @@ export const PRESETS: CardPreset[] = [
       brandLayout: { x: 1536 - 505, y: 475, h: 838, anchor: 'center', rotation: 0, opacity: 0.2 },
       backgroundUrl: null,
       artTreatment: 'print',
+      visaMark: 'back',
     },
   },
 ];

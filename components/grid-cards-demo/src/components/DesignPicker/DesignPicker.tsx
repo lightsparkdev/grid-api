@@ -22,6 +22,7 @@ import {
   LOGO_TREATMENTS,
   MATERIALS,
   stockOf,
+  VISA_MARK_FACES,
   type CardDesign,
 } from '@/data/design';
 import { PRESETS, type PresetId } from '@/data/presets';
@@ -163,8 +164,9 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
 /**
  * A choice as a small sample of itself, the way the Color row shows colors:
  * plastic and steel; matte and gloss; ink flat, spot gloss with a shine, foil
- * silver with a bright run, an etch pressed in. Each names itself in a
- * tooltip on hover.
+ * silver with a bright run, an etch pressed in; for the Visa mark, a card's
+ * front (the chip) or back (the stripe) with the mark's spot on it. Each
+ * names itself in a tooltip on hover.
  */
 const SAMPLE: Record<string, string> = {
   plastic: styles.samplePlastic,
@@ -175,6 +177,8 @@ const SAMPLE: Record<string, string> = {
   spotGloss: styles.sampleGloss,
   foil: styles.sampleFoil,
   etch: styles.sampleEtch,
+  front: styles.sampleFront,
+  back: styles.sampleBack,
 };
 
 function SampleSwatches<T extends string>({
@@ -525,6 +529,17 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             </motion.div>
           )}
         </AnimatePresence>
+        {/* Front: the Visa mark printed flat, bottom right, with the dove
+            hologram on the back. Back: the foil mark, which needs no hologram. */}
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Visa</span>
+          <SampleSwatches
+            label="Visa mark"
+            value={design.visaMark}
+            options={VISA_MARK_FACES}
+            onChange={(visaMark) => onChange({ visaMark })}
+          />
+        </div>
       </div>
 
       <div className={styles.group}>

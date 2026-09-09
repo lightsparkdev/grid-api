@@ -14,6 +14,12 @@ export type CardFinish = 'matte' | 'gloss';
  *  on plastic. */
 export type LogoTreatment = 'print' | 'spotGloss' | 'foil' | 'etch';
 export type ArtTreatment = 'print' | 'spotGloss';
+/** Which face carries the Visa mark (Visa Physical Card Brand Standards,
+ *  January 2026). Back: the Premium Visa Brand Mark in foil, which carries its
+ *  own anti-counterfeit features, so no hologram. Front: the Visa Brand Mark
+ *  printed flat, bottom right; the back then carries the dove hologram the
+ *  standards require without the PVBM. */
+export type VisaMarkFace = 'front' | 'back';
 
 /** The card body under the print: PVC core in white or black, or stainless
  *  steel. Shows at the edge and on the face wherever nothing is printed. Not
@@ -167,6 +173,8 @@ export interface CardDesign {
    *  behind everything else. Null = the color (or the bare stock). */
   backgroundUrl: string | null;
   artTreatment: ArtTreatment;
+  /** Where the Visa mark sits, and with it whether the back has a hologram. */
+  visaMark: VisaMarkFace;
 }
 
 export interface DesignSwatch {
@@ -216,6 +224,11 @@ export const ART_TREATMENTS: Array<{ id: ArtTreatment; label: string }> = [
   { id: 'spotGloss', label: 'Gloss' },
 ];
 
+export const VISA_MARK_FACES: Array<{ id: VisaMarkFace; label: string }> = [
+  { id: 'front', label: 'Front' },
+  { id: 'back', label: 'Back' },
+];
+
 export const initialDesign: CardDesign = {
   // Empty: the field invites a name; the card and the app fall back to 'Your brand'.
   programName: '',
@@ -229,6 +242,7 @@ export const initialDesign: CardDesign = {
   brandLayout: null,
   backgroundUrl: null,
   artTreatment: 'print',
+  visaMark: 'back',
 };
 
 /** The starting design for a theme: the card is ink on dark, white on light,

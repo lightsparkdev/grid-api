@@ -288,6 +288,23 @@
     inset -1px -1px 2px rgba(255, 255, 255, 0.5);
 }
 
+/* Visa mark samples: a card face in the neutral tone with the mark's spot
+   lit at the bottom right. Front carries a chip at the left; back carries
+   the stripe across the top. */
+.sampleFront {
+  background:
+    linear-gradient(#e8e8ec, #e8e8ec) 84% 84% / 32% 18% no-repeat,
+    linear-gradient(#d0d0d4, #d0d0d4) 22% 42% / 24% 22% no-repeat,
+    #8e8e93;
+}
+
+.sampleBack {
+  background:
+    linear-gradient(#e8e8ec, #e8e8ec) 84% 84% / 32% 18% no-repeat,
+    linear-gradient(#5f5f64, #5f5f64) 0 18% / 100% 22% no-repeat,
+    #8e8e93;
+}
+
 .swatch:disabled {
   opacity: 0.35;
   cursor: not-allowed;
