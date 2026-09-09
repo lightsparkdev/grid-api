@@ -8771,9 +8771,9 @@ paths:
         - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
         - `state: ACTIVE`: normal authorization behavior resumes.
         - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. Funding-source bindings are detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
-        - `fundingSources` change: emits `card.funding_source_change` reflecting the new ordered binding.
+        - `fundingSources` change: replaces the ordered binding. No webhook fires for this; read the card back to confirm the new list.
 
-        The `card.state_change` webhook fires on every successful `state` transition; the `card.funding_source_change` webhook fires whenever `fundingSources` is updated.
+        The `card.state_change` webhook fires on every successful `state` transition.
       operationId: updateCardById
       tags:
         - Cards
@@ -11730,82 +11730,6 @@ webhooks:
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-09T09:00:00Z'
-      responses:
-        '200':
-          description: |
-            Webhook received successfully
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized - Signature validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '409':
-          description: Conflict - Webhook has already been processed (duplicate id)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
-  card-funding-source-change:
-    post:
-      summary: Card funding source change
-      description: |
-        Webhook that is called when the funding sources bound to a card change. Fires whenever `PATCH /cards/{id}` updates the `fundingSources` array. The payload carries the full `Card` resource with the post-change `fundingSources` array.
-
-        This endpoint should be implemented by clients of the Grid API.
-
-        ### Authentication
-
-        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
-        To verify the signature:
-        1. Get the Grid public key provided to you during integration
-        2. Decode the base64 signature from the header
-        3. Create a SHA-256 hash of the request body
-        4. Verify the signature using the public key and the hash
-
-        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
-      operationId: cardFundingSourceChangeWebhook
-      tags:
-        - Webhooks
-      security:
-        - WebhookSignature: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CardFundingSourceChangeWebhook'
-            examples:
-              fundingSourcesReplaced:
-                summary: Funding sources replaced via PATCH /cards/{id}
-                value:
-                  id: Webhook:019542f5-b3e7-1d02-0000-000000000030
-                  type: CARD.FUNDING_SOURCE_CHANGE
-                  timestamp: '2026-05-08T14:30:00Z'
-                  data:
-                    id: Card:019542f5-b3e7-1d02-0000-000000000010
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    state: ACTIVE
-                    stateReason: null
-                    brand: VISA
-                    form: VIRTUAL
-                    last4: '4242'
-                    expMonth: 12
-                    expYear: 2029
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
-                    maxSpendPerTransaction: null
-                    maxSpendPerDay: null
-                    currency: USD
-                    createdAt: '2026-05-08T14:10:00Z'
-                    updatedAt: '2026-05-08T14:30:00Z'
       responses:
         '200':
           description: |
@@ -27251,7 +27175,6 @@ components:
         - BULK_UPLOAD.FAILED
         - AGENT_ACTION.PENDING_APPROVAL
         - CARD.STATE_CHANGE
-        - CARD.FUNDING_SOURCE_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
         - CARD_TRANSACTION.PARTIALLY_SETTLED
         - CARD_TRANSACTION.SETTLED
@@ -27484,19 +27407,6 @@ components:
               type: string
               enum:
                 - CARD.STATE_CHANGE
-    CardFundingSourceChangeWebhook:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          required:
-            - data
-          properties:
-            data:
-              $ref: '#/components/schemas/Card'
-            type:
-              type: string
-              enum:
-                - CARD.FUNDING_SOURCE_CHANGE
     CardTransactionWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'

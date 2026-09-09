@@ -15,8 +15,8 @@ cards. Cards do not require new webhook endpoints or new API
 credentials — they reuse what's already configured for the rest of
 Grid. You'll only need to:
 
-- Subscribe to the new card-specific webhook types (`CARD.STATE_CHANGE`
-  and `CARD.FUNDING_SOURCE_CHANGE`). Card-transaction lifecycle events
+- Subscribe to the new card-specific webhook type (`CARD.STATE_CHANGE`).
+  Card-transaction lifecycle events
   ride on the generic transaction webhook stream that already covers
   outgoing-payment activity.
 - Confirm with your Lightspark contact that cards are enabled for your

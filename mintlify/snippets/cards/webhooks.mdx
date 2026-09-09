@@ -1,4 +1,4 @@
-Cards add two webhook event types on top of Grid's existing webhook
+Cards add one webhook event type on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
@@ -13,9 +13,8 @@ extends the Transaction model with a card destination type).
 | Type | Fires on |
 |------|----------|
 | `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
-| `CARD.FUNDING_SOURCE_CHANGE` | Whenever `PATCH /cards/{id}` updates the `fundingSources` array. |
 
-All three carry the standard envelope:
+It carries the standard envelope:
 
 ```json
 {
@@ -72,13 +71,6 @@ Common branches to handle in your consumer:
   your UI.
 - `state: "CLOSED"`, `stateReason: "CLOSED_BY_PLATFORM"` — close
   confirmed; stop showing the card.
-
-## CARD.FUNDING_SOURCE_CHANGE
-
-Fires whenever a `PATCH /cards/{id}` call changes the `fundingSources`
-array. The `data` payload is the full `Card` resource with the
-post-change `fundingSources`, so a consumer that only cares about the
-current set of bindings can replace state wholesale.
 
 ## Card-transaction lifecycle
 
