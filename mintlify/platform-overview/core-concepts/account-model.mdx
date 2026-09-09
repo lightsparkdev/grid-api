@@ -52,6 +52,8 @@ Grid uses two types of accounts: **internal accounts** (Grid-managed balances) a
   </Tab>
 
   <Tab title="IBAN (Europe)">
+    For create requests:
+
     ```json
     {
       "accountType": "EUR_ACCOUNT",
@@ -65,8 +67,9 @@ Grid uses two types of accounts: **internal accounts** (Grid-managed balances) a
     }
     ```
 
-    When you omit `swiftCode`, Grid derives it from the IBAN when possible.
-    Provide it when automatic derivation is unavailable.
+    Grid derives `swiftCode` from the IBAN when possible. If automatic derivation
+    is unavailable, provide it in the request. Responses may include the derived
+    value.
   </Tab>
 
   <Tab title="PIX (Brazil)">
