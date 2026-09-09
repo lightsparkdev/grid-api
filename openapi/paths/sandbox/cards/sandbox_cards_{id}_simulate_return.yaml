@@ -31,7 +31,7 @@ post:
           fullRefund:
             summary: Full refund of a $15.00 settled transaction
             value:
-              cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+              cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
               amount: 1500
   responses:
     '202':

@@ -41,12 +41,12 @@ post:
           tipOnTopClearing:
             summary: Clearing larger than auth — exercises post-hoc pull
             value:
-              cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+              cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
               amount: 1500
           authorizationExpiry:
             summary: Clearing of 0 — exercises authorization expiry
             value:
-              cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+              cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
               amount: 0
   responses:
     '202':

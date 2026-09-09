@@ -59,7 +59,7 @@ post:
               timestamp: '2026-05-09T10:00:00Z'
               data:
                 type: CARD
-                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
@@ -99,7 +99,7 @@ post:
               timestamp: '2026-05-09T15:42:11Z'
               data:
                 type: CARD
-                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
@@ -147,7 +147,7 @@ post:
               timestamp: '2026-05-10T09:15:00Z'
               data:
                 type: CARD
-                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
@@ -202,7 +202,7 @@ post:
               timestamp: '2026-05-09T16:05:00Z'
               data:
                 type: CARD
-                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000101
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
