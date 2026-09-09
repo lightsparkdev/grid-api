@@ -630,6 +630,7 @@ We follow the [IETF Idempotency-Key HTTP Header Field](https://datatracker.ietf.
 | `POST /quotes/{quoteId}/execute` | Executes a previously created quote |
 | `POST /transfer-in` | Initiates an inbound transfer |
 | `POST /transfer-out` | Initiates an outbound transfer |
+| `POST /cards` | Issues a new card for a cardholder |
 
 ### How It Works
 
