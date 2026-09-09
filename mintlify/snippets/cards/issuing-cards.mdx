@@ -101,6 +101,7 @@ URL. Every reveal is audit-logged.
 | 400 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
 | 400 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
 | 400 | `INVALID_INPUT` | Validation failure on the request body. |
+| 409 | `CARD_LIMIT_REACHED` | The platform has reached its maximum number of live cards, or the cardholder already holds a card and the platform is limited to one per cardholder. Close a card to free a slot, or contact Lightspark to raise the limit. |
 
 ## Changing funding sources later
 
