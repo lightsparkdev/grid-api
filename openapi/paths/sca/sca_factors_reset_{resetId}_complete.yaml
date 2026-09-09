@@ -18,8 +18,9 @@ post:
     Complete a 2FA reset once liveness has passed, clearing the lost factor so
     the customer can re-enroll.
 
-    For an `SMS_OTP` reset, supply the new `mobile` number in the body — completing
-    the reset enrolls it as the customer's number. Other factors need no body.
+    The body is required and must carry the end user's `endUserIpAddress`. For an
+    `SMS_OTP` reset, also supply the new `mobile` number — completing the reset
+    enrolls it as the customer's number; other factors need no `mobile`.
 
     This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
   operationId: completeTwoFactorReset
@@ -28,7 +29,7 @@ post:
   security:
     - BasicAuth: []
   requestBody:
-    required: false
+    required: true
     content:
       application/json:
         schema:

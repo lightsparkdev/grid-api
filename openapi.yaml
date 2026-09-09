@@ -1790,8 +1790,9 @@ paths:
         Complete a 2FA reset once liveness has passed, clearing the lost factor so
         the customer can re-enroll.
 
-        For an `SMS_OTP` reset, supply the new `mobile` number in the body — completing
-        the reset enrolls it as the customer's number. Other factors need no body.
+        The body is required and must carry the end user's `endUserIpAddress`. For an
+        `SMS_OTP` reset, also supply the new `mobile` number — completing the reset
+        enrolls it as the customer's number; other factors need no `mobile`.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: completeTwoFactorReset
@@ -1800,7 +1801,7 @@ paths:
       security:
         - BasicAuth: []
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -14805,6 +14806,7 @@ components:
       description: Records a client-side security event for the customer so Grid can maintain the customer's login-security state (SCA session revocation and failed-login lockout).
       required:
         - eventType
+        - endUserIpAddress
       properties:
         eventType:
           type: string
@@ -14819,6 +14821,10 @@ components:
             | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
             | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
           example: FAILED_LOGIN_ATTEMPT
+        endUserIpAddress:
+          type: string
+          description: The IP address of the end user's device the event was observed from, recorded against the event by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment and the adaptive-authentication signals derived from this event.
+          example: 203.0.113.42
     RecordSecurityEventResponse:
       type: object
       description: The customer's login-security state after recording the event, so the integrator can surface a lockout to the end user.
@@ -14850,13 +14856,18 @@ components:
           example: 5
     TwoFactorResetStartRequest:
       type: object
-      description: Selects which enrolled factor to reset via the liveness-gated recovery flow.
+      description: Selects which enrolled factor to reset via the liveness-gated recovery flow, and the IP address the end user is starting the reset from.
       required:
         - factor
+        - endUserIpAddress
       properties:
         factor:
           $ref: '#/components/schemas/ScaFactor'
           description: The enrolled factor to reset.
+        endUserIpAddress:
+          type: string
+          description: The IP address of the end user's device starting this reset, recorded against the reset by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment of the recovery.
+          example: 203.0.113.42
     TwoFactorResetStart:
       type: object
       description: The reset handle plus the opaque liveness handles a caller relays to the end-user device to complete the liveness check. `resetId` threads the ceremony together (status and complete reference it). `livenessAccessToken` and `verificationLink` are omitted when they are not returned.
@@ -14961,8 +14972,14 @@ components:
           example: null
     TwoFactorResetCompleteRequest:
       type: object
-      description: Optional body for completing a 2FA reset. Only needed when resetting the `SMS_OTP` factor to a new phone number; omit the body entirely otherwise.
+      description: Completes a 2FA reset. The body is required and carries the IP address the end user is completing the reset from; `mobile` is only needed when resetting the `SMS_OTP` factor to a new phone number.
+      required:
+        - endUserIpAddress
       properties:
+        endUserIpAddress:
+          type: string
+          description: The IP address of the end user's device completing this reset, recorded against the reset by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment of the recovery.
+          example: 203.0.113.42
         mobile:
           type: object
           description: For an `SMS_OTP` reset, the new mobile number to enroll as the customer completes the reset. Required for an `SMS_OTP` reset; ignored for `TOTP` / `PASSKEY` resets.
