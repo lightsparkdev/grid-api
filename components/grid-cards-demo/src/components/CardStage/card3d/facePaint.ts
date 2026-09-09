@@ -80,19 +80,24 @@ export const STRIPE = { y: 0, h: F(300) };
 /** Spec px per mm (1536 px across an 85.6 mm card). */
 export const SPEC_PER_MM = 1536 / 85.6;
 
+/** The fine print's last baseline ("Issued by Lead Bank"): 22 px type set in
+ *  from the bottom edge by the same 56 it is set in from the left, its
+ *  descenders 15% of the em. */
+export const FINE_PRINT_BASELINE = TEX_H - F(56) - F(22 * 0.15);
+
 /**
  * The dove hologram's box, in texels: the silhouetted dove is die-cut to its
  * own outline (no window), 9.5 mm tall as on a real card, right-aligned to
- * the back's 54 inset and centered on the height the foil mark sits at (it
- * stands in for the PVBM, which carries its own anti-counterfeit features).
- * Clear of the stripe above, the contactless indicator, the account block,
- * and the fine print. The width follows the artwork's aspect.
+ * the back's 54 inset with its bottom on the fine print's baseline, where
+ * the foil mark sits (it stands in for the PVBM, which carries its own
+ * anti-counterfeit features). Clear of the stripe above, the contactless
+ * indicator, and the account block. The width follows the artwork's aspect.
  */
 export const DOVE_MM = 9.5;
 export const DOVE_H = F(DOVE_MM * SPEC_PER_MM);
 export function doveBox(dove: HTMLImageElement): { x: number; y: number; w: number; h: number } {
   const w = DOVE_H * ((dove.naturalWidth || 3) / (dove.naturalHeight || 4));
-  return { x: TEX_W - F(54) - w, y: LOCKUP.y + LOCKUP.h / 2 - DOVE_H / 2, w, h: DOVE_H };
+  return { x: TEX_W - F(54) - w, y: FINE_PRINT_BASELINE - DOVE_H, w, h: DOVE_H };
 }
 
 /* ── Assets ───────────────────────────────────────────────────────────────── */
@@ -838,10 +843,9 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
     ctx.restore();
   }
 
-  // Fine print, 22 px on 26 px lines, set in from the bottom edge by the
-  // same 56 it is set in from the left (its descenders 15% of the em).
+  // Fine print, 22 px on 26 px lines (`FINE_PRINT_BASELINE`).
   ctx.font = `400 ${F(22)}px ${FONT}`;
-  const fineLast = TEX_H - F(56) - F(22 * 0.15);
+  const fineLast = FINE_PRINT_BASELINE;
   ctx.fillText('1-855-516-0103   lightspark.com/help', x, fineLast - F(26));
   ctx.fillText('Issued by Lead Bank', x, fineLast);
 
