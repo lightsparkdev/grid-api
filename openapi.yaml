@@ -8874,7 +8874,9 @@ paths:
     post:
       summary: Reveal card details
       description: |-
-        Mint a signed, short-lived URL for the card processor's iframe that displays the card's full PAN, CVV, and expiry to the cardholder. This is the only way to obtain a reveal URL — the `Card` resource never carries one.
+        For card programs where Grid makes authorization decisions, mint a signed, short-lived URL for the card processor's iframe that displays the card's full PAN, CVV, and expiry to the cardholder. The `Card` resource never carries a reveal URL.
+
+        Cards in programs where the card issuer makes authorization decisions use the card issuer's challenge-based hosted reveal flow instead and cannot be revealed through this endpoint.
 
         Request the reveal right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
 
@@ -8909,6 +8911,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The card belongs to a program where the card issuer makes authorization decisions, so Grid cannot mint a PAN reveal URL for it. Use the card issuer's challenge-based hosted reveal flow instead. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9003,6 +9011,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9081,6 +9095,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9150,6 +9170,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9221,6 +9247,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9297,6 +9329,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9373,6 +9411,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9449,6 +9493,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9518,6 +9568,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9594,6 +9650,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9662,6 +9724,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9737,6 +9805,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9807,6 +9881,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:

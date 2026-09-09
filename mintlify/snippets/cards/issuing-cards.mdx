@@ -86,8 +86,11 @@ renders the full credentials directly to the cardholder. The full PAN
 and CVV never cross your servers or Grid's.
 
 <Note>
-`POST /cards/{id}/reveal` is the **only** way to obtain a reveal URL —
-the `Card` resource never carries one (not in responses, not in webhook
+For cards in programs where Grid makes authorization decisions,
+`POST /cards/{id}/reveal` is the **only** way to obtain a reveal URL;
+cards in programs where the card issuer makes authorization decisions use
+the card issuer's challenge-based hosted reveal flow instead. The `Card`
+resource never carries one (not in responses, not in webhook
 payloads). The URL expires at `expiresAt` (within minutes), so request a
 fresh reveal each time the cardholder asks for their details,
 immediately before rendering the iframe. Never store, cache, or log the
@@ -101,6 +104,7 @@ URL. Every reveal is audit-logged.
 | 400 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
 | 400 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
 | 400 | `INVALID_INPUT` | Validation failure on the request body. |
+| 409 | `CONFLICT` | The card belongs to a program where the card issuer makes authorization decisions. Use the card issuer's challenge-based hosted reveal flow instead; retrying this endpoint will not help. |
 
 ## Changing funding sources later
 
