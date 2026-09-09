@@ -10,7 +10,7 @@ properties:
     description: >-
       The authorization to reverse. It must still be fully open, with
       nothing settled against it yet.
-    example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
   amount:
     type: integer
     format: int64

@@ -9043,12 +9043,12 @@ paths:
               tipOnTopClearing:
                 summary: Clearing larger than auth — exercises post-hoc pull
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 1500
               authorizationExpiry:
                 summary: Clearing of 0 — exercises authorization expiry
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 0
       responses:
         '202':
@@ -9117,7 +9117,7 @@ paths:
               fullRefund:
                 summary: Full refund of a $15.00 settled transaction
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 1500
       responses:
         '202':
@@ -9485,7 +9485,7 @@ paths:
               resizeUp:
                 summary: Re-size an open auth up to a new total of $20.00
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 2000
       responses:
         '202':
@@ -9630,7 +9630,7 @@ paths:
               returnReversal:
                 summary: Reverse a settled return on a transaction with a posted return
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
       responses:
         '202':
           description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
@@ -9700,11 +9700,11 @@ paths:
               fullReversal:
                 summary: Reverse the whole open authorization
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
               partialReversal:
                 summary: Reverse part of it and leave the rest authorized
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 500
       responses:
         '202':
@@ -9775,7 +9775,7 @@ paths:
               expiry:
                 summary: Expire an open authorization
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
       responses:
         '202':
           description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
@@ -11792,7 +11792,7 @@ webhooks:
                   timestamp: '2026-05-09T10:00:00Z'
                   data:
                     type: CARD
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
@@ -11832,7 +11832,7 @@ webhooks:
                   timestamp: '2026-05-09T15:42:11Z'
                   data:
                     type: CARD
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
@@ -11880,7 +11880,7 @@ webhooks:
                   timestamp: '2026-05-10T09:15:00Z'
                   data:
                     type: CARD
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
@@ -11935,7 +11935,7 @@ webhooks:
                   timestamp: '2026-05-09T16:05:00Z'
                   data:
                     type: CARD
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000101
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
@@ -23804,7 +23804,7 @@ components:
           type: string
           description: System-generated unique card transaction identifier
           readOnly: true
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         cardId:
           type: string
           description: The id of the `Card` this transaction was made on.
@@ -26319,7 +26319,7 @@ components:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` to clear against. Must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         amount:
           type: integer
           format: int64
@@ -26336,7 +26336,7 @@ components:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` to refund against. Must have at least one settled clearing.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         amount:
           type: integer
           format: int64
@@ -26361,7 +26361,7 @@ components:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` the advice re-sizes. Must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         amount:
           type: integer
           format: int64
@@ -26377,7 +26377,7 @@ components:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` to act against.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
     SandboxCardReversalRequest:
       type: object
       required:
@@ -26387,7 +26387,7 @@ components:
         cardTransactionId:
           type: string
           description: The authorization to reverse. It must still be fully open, with nothing settled against it yet.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         amount:
           type: integer
           format: int64
