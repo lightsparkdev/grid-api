@@ -179,7 +179,7 @@ rules:
       field: "@key"
       function: pattern
       functionOptions:
-        match: "^((\\/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+|\\/sandbox\\/cards\\/\\{id\\}\\/simulate\\/(balance_inquiry|credit_authorization|financial_authorization|financial_credit_authorization|authorization_advice|credit_authorization_advice|return_reversal))$"
+        match: "^((\\/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+|\\/sandbox\\/cards\\/\\{id\\}\\/simulate\\/(balance_inquiry|credit_authorization|financial_authorization|financial_credit_authorization|authorization_advice|credit_authorization_advice|return_reversal|authorization_reversal|authorization_expiry))$"
 
 # Per-property exemptions from the naming rules above.
 overrides:
