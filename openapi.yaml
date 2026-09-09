@@ -8559,7 +8559,7 @@ paths:
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` state do not count toward the limit.
 
-        New cards start in `state: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on each state transition, including the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
+        New cards start in `state: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on each state transition, including the transition to `ACTIVE`.
       operationId: createCard
       tags:
         - Cards
@@ -8590,7 +8590,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, and with `INVALID_INPUT` when a supplied funding source does not belong to the cardholder, is not denominated in a card-eligible currency, or for other invalid parameters.
           content:
             application/json:
               schema:
@@ -8649,7 +8649,7 @@ paths:
             type: string
         - name: state
           in: query
-          description: Filter by card state.
+          description: Filter by card state. Accepted values are `PROCESSING`, `ACTIVE`, `FROZEN`, and `CLOSED`. `PENDING_KYC` is reserved and is rejected as an invalid filter.
           required: false
           schema:
             $ref: '#/components/schemas/CardState'
@@ -8828,7 +8828,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, and for general invalid parameters.
+          description: Bad request. Returned with `INVALID_INPUT` when a supplied funding source does not belong to the cardholder, is not denominated in the card's currency, or for other invalid parameters.
           content:
             application/json:
               schema:
@@ -11636,7 +11636,7 @@ webhooks:
     post:
       summary: Card state change
       description: |
-        Webhook that is called when a card's lifecycle state changes. Fires on `PROCESSING → ACTIVE`, on `PROCESSING → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
+        Webhook that is called when a card's lifecycle state changes. Fires on `PROCESSING → ACTIVE` and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -11674,7 +11674,6 @@ webhooks:
                     platformCardId: card-emp-aary-001
                     state: ACTIVE
                     stateReason: null
-                    brand: VISA
                     form: VIRTUAL
                     last4: '4242'
                     expMonth: 12
@@ -11688,25 +11687,6 @@ webhooks:
                     issuerRef: lead_card_7a1b9c3d
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:11:00Z'
-              issuerRejected:
-                summary: Card rejected by issuer during provisioning
-                value:
-                  id: Webhook:019542f5-b3e7-1d02-0000-000000000021
-                  type: CARD.STATE_CHANGE
-                  timestamp: '2026-05-08T14:12:00Z'
-                  data:
-                    id: Card:019542f5-b3e7-1d02-0000-000000000011
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    state: CLOSED
-                    stateReason: ISSUER_REJECTED
-                    form: VIRTUAL
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    maxSpendPerTransaction: null
-                    maxSpendPerDay: null
-                    currency: USD
-                    createdAt: '2026-05-08T14:10:00Z'
-                    updatedAt: '2026-05-08T14:12:00Z'
               frozen:
                 summary: Card frozen by the platform
                 value:
@@ -11718,7 +11698,6 @@ webhooks:
                     cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     state: FROZEN
                     stateReason: null
-                    brand: VISA
                     form: VIRTUAL
                     last4: '4242'
                     expMonth: 12
@@ -26023,7 +26002,7 @@ components:
 
         | State | Description |
         |-------|-------------|
-        | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this state cannot transact. |
+        | `PENDING_KYC` | Reserved for generated SDK compatibility. Grid does not return this state, and `GET /cards` rejects it as a `state` filter. |
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
         | `ACTIVE` | The card is live and can authorize transactions. |
         | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `CARD_PAUSED`. Existing settlements and refunds continue to reconcile. |
@@ -26035,23 +26014,13 @@ components:
         - CLOSED_BY_PLATFORM
         - CLOSED_BY_GRID
       description: |
-        Reason a card reached a terminal or non-active state. Present on
-        `CLOSED` cards, and on cards that fail provisioning before reaching
-        `ACTIVE`.
+        Reason a card reached `CLOSED`.
 
         | Reason | Description |
         |--------|-------------|
-        | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PROCESSING`. |
+        | `ISSUER_REJECTED` | Reserved for generated SDK compatibility. Grid does not currently return this reason. |
         | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`state: CLOSED`) by the platform. |
         | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |
-    CardBrand:
-      type: string
-      enum:
-        - VISA
-        - MASTERCARD
-      description: |
-        Card network brand. Read-only — determined by Grid when the card is
-        provisioned with the issuer.
     CardForm:
       type: string
       enum:
@@ -26091,9 +26060,7 @@ components:
           anyOf:
             - $ref: '#/components/schemas/CardStateReason'
             - type: 'null'
-          description: Reason associated with the current `state`. Populated when the card is `CLOSED` or when provisioning was rejected; otherwise null.
-        brand:
-          $ref: '#/components/schemas/CardBrand'
+          description: Reason associated with the current `state`. Populated when the card is `CLOSED`; otherwise null.
         form:
           $ref: '#/components/schemas/CardForm'
         last4:
@@ -26206,7 +26173,7 @@ components:
           $ref: '#/components/schemas/CardForm'
         fundingSources:
           type: array
-          description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency; otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+          description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`.
           minItems: 1
           items:
             type: string

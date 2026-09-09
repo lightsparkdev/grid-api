@@ -37,10 +37,8 @@ one currency.
 
 ```text
 PROCESSING    ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSED
-       │             │                              ▲
-       │             └──────────────────────────────┘
-       │
-       └─► CLOSED (stateReason: ISSUER_REJECTED)
+                     │                              ▲
+                     └──────────────────────────────┘
 ```
 
 | State | When you see it |
@@ -48,10 +46,7 @@ PROCESSING    ──► ACTIVE ──► FROZEN ──► ACTIVE ──► CLOSE
 | `PROCESSING` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
 | `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATE_CHANGE` webhook. |
 | `FROZEN` | You called `PATCH /cards/{id}` with `state: "FROZEN"`. |
-| `CLOSED` | You called `PATCH /cards/{id}` with `state: "CLOSED"` (or the issuer rejected provisioning). Terminal. |
-
-`PENDING_KYC` is also a valid state but you should not see it in v1 —
-issuance is gated on KYC up front.
+| `CLOSED` | You called `PATCH /cards/{id}` with `state: "CLOSED"`. Terminal. |
 
 ## After issuance
 
@@ -59,10 +54,6 @@ issuance is gated on KYC up front.
 issuer provisions the card asynchronously; on success a
 `CARD.STATE_CHANGE` webhook fires with the activated `Card` resource
 including the populated `last4`, `expMonth`, and `expYear`.
-
-If the issuer rejects provisioning, the same webhook fires with
-`state: "CLOSED"` and `stateReason: "ISSUER_REJECTED"`. That card is
-terminal — issue a new one with a fresh `platformCardId` to retry.
 
 ## Revealing the PAN
 
@@ -99,8 +90,7 @@ URL. Every reveal is audit-logged.
 | Status | Code | What it means |
 |--------|------|---------------|
 | 400 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
-| 400 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
-| 400 | `INVALID_INPUT` | Validation failure on the request body. |
+| 400 | `INVALID_INPUT` | The supplied internal account doesn't belong to the cardholder, isn't denominated in a card-eligible currency, or another request-body validation failed. |
 
 ## Changing funding sources later
 

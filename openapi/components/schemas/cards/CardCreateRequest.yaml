@@ -37,7 +37,7 @@ properties:
       card must be bound to at least one source, and every source must
       belong to the cardholder and be denominated in a card-eligible
       currency; otherwise the request is rejected with
-      `FUNDING_SOURCE_INELIGIBLE`.
+      `INVALID_INPUT`.
     minItems: 1
     items:
       type: string
