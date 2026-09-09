@@ -9,21 +9,9 @@ POST /sandbox/cards/{id}/simulate/clearing
 POST /sandbox/cards/{id}/simulate/return
 ```
 
-Outcomes are deterministic — driven by magic-value suffixes on the
-relevant id. The same approach is used by
-`/sandbox/internal-accounts/{id}/fund`.
-
-## Issuance suffixes (platformCardId)
-
-The last three characters of `platformCardId` (or `cardholderId` when
-`platformCardId` is omitted) control how `POST /cards` resolves:
-
-| Suffix | Behavior |
-|--------|----------|
-| `001` | Stays `PROCESSING` indefinitely (test the polling path) |
-| `002` | Issuer provisioning rejected → `state: CLOSED`, `stateReason: "ISSUER_REJECTED"` |
-| `005` | Delayed activation (~30s) before the `CARD.STATE_CHANGE` webhook fires |
-| any other | Instant activation → `state: ACTIVE`, `last4` deterministic from the suffix |
+Authorization outcomes are deterministic and driven by magic-value suffixes
+on `merchant.descriptor`. Other Sandbox helpers use the identifier suffixes
+described in their sections, including `/sandbox/internal-accounts/{id}/fund`.
 
 ## Funding-source suffixes (accountId)
 
@@ -109,13 +97,12 @@ A simple Sandbox loop that exercises issue → activate → auth → clear
 → refund:
 
 ```bash
-# 1. Issue (suffix not in the magic set → instant activation)
+# 1. Issue a virtual card
 curl -X POST "$GRID_BASE_URL/cards" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
     "cardholderId": "Customer:...",
-    "platformCardId": "card-test-happy",
     "form": "VIRTUAL",
     "fundingSources": ["InternalAccount:..."]
   }'
