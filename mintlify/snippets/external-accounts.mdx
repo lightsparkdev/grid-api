@@ -314,7 +314,6 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     "accountInfo": {
       "accountType": "EUR_ACCOUNT",
       "iban": "DE89370400440532013000",
-      "swiftCode": "DEUTDEFF",
       "bankName": "Deutsche Bank",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
@@ -332,6 +331,9 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers/external-acco
     }
   }'
 ```
+
+When you omit `swiftCode`, Grid derives it from the IBAN when possible. Provide
+it when automatic derivation is unavailable.
 
 </Tab>
 
