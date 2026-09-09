@@ -3,7 +3,8 @@ required:
   - cardTransactionId
 description: >-
   Sandbox-only request body for simulate endpoints keyed only by an existing
-  card transaction — currently `POST /sandbox/cards/{id}/simulate/return_reversal`.
+  card transaction: `POST /sandbox/cards/{id}/simulate/return_reversal` and
+  `POST /sandbox/cards/{id}/simulate/authorization_expiry`.
 properties:
   cardTransactionId:
     type: string

@@ -1,15 +1,20 @@
 post:
-  summary: Simulate a card return reversal
+  summary: Simulate a card authorization expiry
   description: >
-    Simulate a `RETURN_REVERSAL` against an existing card transaction in the
-    sandbox environment — reversing a previously settled return. The parent
-    transaction must have a posted return (non-zero `refundedAmount`). The
-    resulting card operation is delivered asynchronously via the issuer's
-    events webhook.
+    Simulate an authorization the merchant never followed through on, so the
+    card network lets it lapse and releases the held funds. Use it to see how
+    your integration handles a hold that quietly goes away instead of
+    settling.
+
+    The transaction must still be fully open: once any part of it has
+    settled, it can no longer expire.
+
+    Grid processes the expiry in the background and sends a card transaction
+    webhook once it lands, the same as the other simulators.
 
 
     Production returns `404` on this path.
-  operationId: sandboxSimulateCardReturnReversal
+  operationId: sandboxSimulateCardAuthorizationExpiry
   tags:
     - Sandbox
   security:
@@ -18,7 +23,7 @@ post:
     - name: id
       in: path
       required: true
-      description: The id of the card the return reversal applies to.
+      description: The id of the card the expiry applies to.
       schema:
         type: string
       example: Card:019542f5-b3e7-1d02-0000-000000000010
@@ -29,8 +34,8 @@ post:
         schema:
           $ref: ../../../components/schemas/cards/SandboxCardTransactionRefRequest.yaml
         examples:
-          returnReversal:
-            summary: Reverse a settled return on a transaction with a posted return
+          expiry:
+            summary: Expire an open authorization
             value:
               cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
   responses:
@@ -44,7 +49,9 @@ post:
           schema:
             $ref: ../../../components/schemas/cards/SandboxCardSimulationResponse.yaml
     '400':
-      description: Bad request - Invalid parameters
+      description: >-
+        Bad request - Invalid parameters, or the transaction is not an open
+        authorization
       content:
         application/json:
           schema:

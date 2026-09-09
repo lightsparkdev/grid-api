@@ -368,6 +368,10 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_credit_authorization_advice.yaml
   /sandbox/cards/{id}/simulate/return_reversal:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_return_reversal.yaml
+  /sandbox/cards/{id}/simulate/authorization_reversal:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization_reversal.yaml
+  /sandbox/cards/{id}/simulate/authorization_expiry:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization_expiry.yaml
   /stablecoins:
     $ref: paths/stablecoins/stablecoins.yaml
   /stablecoins/{stablecoinId}:

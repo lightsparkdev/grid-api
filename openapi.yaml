@@ -9606,8 +9606,6 @@ paths:
       description: |
         Simulate a `RETURN_REVERSAL` against an existing card transaction in the sandbox environment — reversing a previously settled return. The parent transaction must have a posted return (non-zero `refundedAmount`). The resulting card operation is delivered asynchronously via the issuer's events webhook.
 
-        Note: authorization reversal / void has no dedicated card-issuer simulate path (the void simulator emits a distinct `VOID` event), so — like authorization expiry — it is not exposed here.
-
         Production returns `404` on this path.
       operationId: sandboxSimulateCardReturnReversal
       tags:
@@ -9642,6 +9640,151 @@ paths:
                 $ref: '#/components/schemas/SandboxCardSimulationResponse'
         '400':
           description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/authorization_reversal:
+    post:
+      summary: Simulate a card authorization reversal
+      description: |
+        Simulate a merchant cancelling a card authorization before it settles — a hotel releasing a hold, or a store voiding a purchase that never went through. Use it to see how your integration handles an authorization that disappears without ever clearing.
+        Send `amount` to reverse only part of the authorization, or leave it out to reverse all of it. The transaction must still be fully open: once any part of it has settled, it can no longer be reversed.
+        Grid processes the reversal in the background and sends a card transaction webhook once it lands, the same as the other simulators.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardAuthorizationReversal
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the reversal applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardReversalRequest'
+            examples:
+              fullReversal:
+                summary: Reverse the whole open authorization
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+              partialReversal:
+                summary: Reverse part of it and leave the rest authorized
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 500
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters, or the transaction is not an open authorization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/authorization_expiry:
+    post:
+      summary: Simulate a card authorization expiry
+      description: |
+        Simulate an authorization the merchant never followed through on, so the card network lets it lapse and releases the held funds. Use it to see how your integration handles a hold that quietly goes away instead of settling.
+        The transaction must still be fully open: once any part of it has settled, it can no longer expire.
+        Grid processes the expiry in the background and sends a card transaction webhook once it lands, the same as the other simulators.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardAuthorizationExpiry
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the expiry applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardTransactionRefRequest'
+            examples:
+              expiry:
+                summary: Expire an open authorization
+                value:
+                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters, or the transaction is not an open authorization
           content:
             application/json:
               schema:
@@ -26289,12 +26432,28 @@ components:
       type: object
       required:
         - cardTransactionId
-      description: Sandbox-only request body for simulate endpoints keyed only by an existing card transaction — currently `POST /sandbox/cards/{id}/simulate/return_reversal`.
+      description: 'Sandbox-only request body for simulate endpoints keyed only by an existing card transaction: `POST /sandbox/cards/{id}/simulate/return_reversal` and `POST /sandbox/cards/{id}/simulate/authorization_expiry`.'
       properties:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` to act against.
           example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+    SandboxCardReversalRequest:
+      type: object
+      required:
+        - cardTransactionId
+      description: 'Request body for `POST /sandbox/cards/{id}/simulate/authorization_reversal`: which authorization to reverse, and optionally how much of it.'
+      properties:
+        cardTransactionId:
+          type: string
+          description: The authorization to reverse. It must still be fully open, with nothing settled against it yet.
+          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: How much to reverse, in the smallest unit of the transaction's currency (cents for USD). Leave it out to reverse the whole authorization. Send an amount to reverse only that much and leave the rest on hold.
+          exclusiveMinimum: 0
+          example: 1250
     StablecoinIssuanceStatus:
       type: string
       enum:
