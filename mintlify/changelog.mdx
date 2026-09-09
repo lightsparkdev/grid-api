@@ -11,6 +11,20 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## The `EXCEPTION` card transaction status is now `DECLINED`
+
+`CardTransactionStatus.EXCEPTION` is renamed to `DECLINED`, and the matching webhook
+type `CARD_TRANSACTION.EXCEPTION` to `CARD_TRANSACTION.DECLINED`. The status covers
+every way a card transaction fails to move money — an auth the issuer refused as well
+as a settlement whose funding-source pull failed — and `DECLINED` names that plainly,
+where `EXCEPTION` suggested an error condition rather than a transaction outcome.
+
+Only the name changes; the transitions that reach it, the payload shape, and the
+alerting posture are the same. Update any comparison against the `EXCEPTION` string
+and any subscription to `CARD_TRANSACTION.EXCEPTION`.
+
+See [Reconciliation](/cards/transactions/reconciliation).
+
 ## Card returns report as `SETTLED` with a `refundedAmount`
 
 `REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from

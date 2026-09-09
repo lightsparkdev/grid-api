@@ -23,5 +23,5 @@ properties:
       Number of pulls still in the `PENDING` state. Drops to zero when every
       pull has reached a terminal state. Non-zero values that persist beyond
       the expected settlement window are an early signal for the
-      `EXCEPTION` path.
+      `DECLINED` path.
     example: 0

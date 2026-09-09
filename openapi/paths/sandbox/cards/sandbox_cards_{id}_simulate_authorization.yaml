@@ -17,7 +17,7 @@ post:
     | `002`  | Decline — `INSUFFICIENT_FUNDS` (the pull on the funding source fails) |
     | `003`  | Decline — `CARD_PAUSED` (intended to verify a frozen card refuses auths) |
     | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path |
-    | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert |
+    | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `DECLINED` alert |
     | any other | Approved |
 
 
