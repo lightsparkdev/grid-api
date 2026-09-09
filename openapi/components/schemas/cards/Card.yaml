@@ -33,7 +33,7 @@ properties:
       - type: 'null'
     description: >-
       Reason associated with the current `state`. Populated when the card is
-      `CLOSED` or when provisioning was rejected; otherwise null.
+      `CLOSED`; otherwise null.
   brand:
     $ref: ./CardBrand.yaml
   form:

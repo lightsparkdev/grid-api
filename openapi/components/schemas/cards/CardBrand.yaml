@@ -3,5 +3,5 @@ enum:
   - VISA
   - MASTERCARD
 description: |
-  Card network brand. Read-only — determined by Grid when the card is
-  provisioned with the issuer.
+  Card network brand. Reserved for generated SDK compatibility. Grid does not
+  currently populate the `brand` field.

@@ -21,7 +21,6 @@ The last three characters of `platformCardId` (or `cardholderId` when
 | Suffix | Behavior |
 |--------|----------|
 | `001` | Stays `PROCESSING` indefinitely (test the polling path) |
-| `002` | Issuer provisioning rejected → `state: CLOSED`, `stateReason: "ISSUER_REJECTED"` |
 | `005` | Delayed activation (~30s) before the `CARD.STATE_CHANGE` webhook fires |
 | any other | Instant activation → `state: ACTIVE`, `last4` deterministic from the suffix |
 
@@ -32,8 +31,8 @@ of `accountId`:
 
 | Suffix | Behavior |
 |--------|----------|
-| `002` | `FUNDING_SOURCE_INELIGIBLE` (insufficient balance check) |
-| `003` | `FUNDING_SOURCE_INELIGIBLE` (account closed) |
+| `002` | `INVALID_INPUT` (insufficient balance check) |
+| `003` | `INVALID_INPUT` (account closed) |
 | any other | Success |
 
 ## Authorization simulate

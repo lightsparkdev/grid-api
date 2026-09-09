@@ -4,12 +4,10 @@ enum:
   - CLOSED_BY_PLATFORM
   - CLOSED_BY_GRID
 description: |
-  Reason a card reached a terminal or non-active state. Present on
-  `CLOSED` cards, and on cards that fail provisioning before reaching
-  `ACTIVE`.
+  Reason a card reached `CLOSED`.
 
   | Reason | Description |
   |--------|-------------|
-  | `ISSUER_REJECTED` | The card issuer rejected provisioning during `PROCESSING`. |
+  | `ISSUER_REJECTED` | Reserved for generated SDK compatibility. Grid does not currently return this reason. |
   | `CLOSED_BY_PLATFORM` | The card was closed via `PATCH /cards/{id}` (`state: CLOSED`) by the platform. |
   | `CLOSED_BY_GRID` | The card was closed by Grid (e.g. compliance or risk action). |

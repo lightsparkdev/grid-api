@@ -32,8 +32,7 @@ post:
 
     New cards start in `state: "PROCESSING"` while the card issuer
     provisions the card. The `card.state_change` webhook fires on each state
-    transition, including the transition to `ACTIVE` (or to `CLOSED` with
-    `stateReason: "ISSUER_REJECTED"` if provisioning fails).
+    transition, including the transition to `ACTIVE`.
   operationId: createCard
   tags:
     - Cards
@@ -70,10 +69,10 @@ post:
     '400':
       description: >-
         Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
-        cardholder's KYC status is not `APPROVED`, with
-        `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does
-        not belong to the cardholder or is not denominated in a
-        card-eligible currency, and for general invalid parameters.
+        cardholder's KYC status is not `APPROVED`, and with `INVALID_INPUT`
+        when a supplied funding source does not belong to the cardholder,
+        is not denominated in a card-eligible currency, or for other invalid
+        parameters.
       content:
         application/json:
           schema:
@@ -145,7 +144,10 @@ get:
         type: string
     - name: state
       in: query
-      description: Filter by card state.
+      description: >-
+        Filter by card state. Accepted values are `PROCESSING`, `ACTIVE`,
+        `FROZEN`, and `CLOSED`. `PENDING_KYC` is reserved and is rejected as
+        an invalid filter.
       required: false
       schema:
         $ref: ../../components/schemas/cards/CardState.yaml
