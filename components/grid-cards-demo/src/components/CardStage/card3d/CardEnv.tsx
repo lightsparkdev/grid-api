@@ -26,7 +26,7 @@ interface Light {
   color: [number, number, number];
 }
 
-const LIGHTS: Light[] = [
+export const STUDIO_LIGHTS: Light[] = [
   // Key: above and a little left, more in front than overhead, so a polished
   // region (an etched mark's floor, the chip) shows it from a head-on view.
   { dir: [-0.22, 0.3, 0.93], radius: 0.22, intensity: 3.1, color: [1, 0.995, 0.98] },
@@ -59,7 +59,7 @@ function base(y: number): [number, number, number] {
 
 function studioTexture(): THREE.DataTexture {
   const data = new Float32Array(ENV_W * ENV_H * 4);
-  const lights = LIGHTS.map((l) => {
+  const lights = STUDIO_LIGHTS.map((l) => {
     const n = Math.hypot(...l.dir);
     return { ...l, dir: l.dir.map((c) => c / n) as [number, number, number] };
   });
@@ -210,6 +210,34 @@ function panelStudio(panels: Panel[], base: (y: number) => number, w: number, h:
 
 export function foilStudioTexture(): THREE.DataTexture {
   return panelStudio(FOIL_PANELS, foilBase, 512, 256);
+}
+
+/**
+ * The room the dove hologram reflects: the foil's room with more strip
+ * lights across the head-on cone, so the silver base under the rainbow
+ * shows a light or two at every angle (a hologram's metallic layer is
+ * brighter than foil and never reads as flat), and a lighter floor. The
+ * rainbow itself is not in the room; the shader adds it from the key and
+ * fill directions.
+ */
+const HOLO_PANELS: Panel[] = [
+  // The window behind the camera at half strength: head-on, it is what the
+  // whole hologram reflects, and at the foil's strength it blew out white.
+  ...FOIL_PANELS.map((p, i) => (i === 1 ? { ...p, intensity: p.intensity * 0.5 } : p)),
+  { lon: Math.PI * 0.56, lat: 0.42, w: 0.6, h: 0.03, intensity: 1.4, color: [1, 1, 1] },
+  { lon: Math.PI * 0.5, lat: -0.12, w: 0.7, h: 0.025, intensity: 1.2, color: [1, 1, 1] },
+  { lon: Math.PI * 0.38, lat: 0.62, w: 0.4, h: 0.03, intensity: 1.3, color: [1, 1, 1] },
+];
+
+function holoBase(y: number): number {
+  // Darker than the foil's room: the rainbow is added over the base, and
+  // over a near-white base it goes pastel. Silver between the lights.
+  const t = (y + 1) / 2;
+  return 0.22 + 0.4 * t;
+}
+
+export function holoStudioTexture(): THREE.DataTexture {
+  return panelStudio(HOLO_PANELS, holoBase, 512, 256);
 }
 
 /**

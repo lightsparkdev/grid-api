@@ -67,7 +67,13 @@ function texelSpace(c: HTMLCanvasElement): CanvasRenderingContext2D {
 
 /** Full texel resolution: the foil's edges must land exactly where the albedo
  *  paints them, or a half-texel of "metal" leaks around each letter. */
-function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets, plain: boolean): HTMLCanvasElement {
+function bakeOrm(
+  surface: Surface,
+  side: 'front' | 'back',
+  assets: FaceAssets,
+  plain: boolean,
+  mark: boolean,
+): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = texelSpace(c);
   const f = FIELD[surface];
@@ -80,6 +86,9 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets, p
   if (side === 'back') {
     ctx.fillStyle = orm(0.78, 0);
     ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
+    // With the mark on the front, the back carries the hologram instead,
+    // which is its own layer (`HoloDove`) with its own surface.
+    if (!mark) return c;
   } else {
     // The pocket's gap is bare core plastic, dull; the plate is polished
     // silver plating, its grooves rougher.
@@ -111,7 +120,13 @@ function bakeOrm(surface: Surface, side: 'front' | 'back', assets: FaceAssets, p
 
 /* ── Relief ───────────────────────────────────────────────────────────────── */
 
-function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets, plain: boolean): HTMLCanvasElement {
+function bakeHeight(
+  surface: Surface,
+  side: 'front' | 'back',
+  assets: FaceAssets,
+  plain: boolean,
+  mark: boolean,
+): HTMLCanvasElement {
   const c = makeCanvas(MAP_W, MAP_H);
   const ctx = c.getContext('2d')!;
   ctx.fillStyle = '#808080';
@@ -157,7 +172,7 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
     ctx.fillStyle = '#848484';
     ctx.fillRect(0, STRIPE.y * S, MAP_W, STRIPE.h * S);
   }
-  if (side === 'back') {
+  if (side === 'back' && mark) {
     // Hot-stamped foil is a film laid on the face: the clear carrier sits a
     // hair proud, following the mark's geometry about a millimeter out, and
     // the metal on top of that. Both steps catch light at their edges. The
@@ -173,7 +188,7 @@ function bakeHeight(surface: Surface, side: 'front' | 'back', assets: FaceAssets
 
 /** Sobel height → tangent-space normal. Canvas y runs down while v runs up, so
  *  the vertical gradient is flipped. */
-function heightToNormal(height: HTMLCanvasElement, strength: number): HTMLCanvasElement {
+export function heightToNormal(height: HTMLCanvasElement, strength: number): HTMLCanvasElement {
   const w = height.width;
   const h = height.height;
   const src = height.getContext('2d')!.getImageData(0, 0, w, h).data;
@@ -313,6 +328,9 @@ export function decorateOrm(
   artMask: HTMLCanvasElement | null,
   /** Whether the card is metal: an etched mark reaches the steel there. */
   metal = false,
+  /** Flat ink printed on bare stock (the front Visa lockup on steel): the
+   *  print's surface, not the metal's. */
+  inkMask: HTMLCanvasElement | null = null,
 ): HTMLCanvasElement {
   const c = makeCanvas(base.width, base.height);
   const ctx = c.getContext('2d')!;
@@ -326,6 +344,7 @@ export function decorateOrm(
     mc.fillRect(0, 0, m.width, m.height);
     ctx.drawImage(m, 0, 0, c.width, c.height);
   };
+  if (inkMask) stamp(inkMask, orm(0.55, 0));
   if (artMask) stamp(artMask, orm(0.06, 0));
   if (brandMask && brandTreatment) {
     const fill =
@@ -398,16 +417,30 @@ export function decorateNormal(
 
 const surfaceCache = new Map<string, SurfaceMaps>();
 
+/** One key per bake variant, shared with the mesh's texture cache. */
+export function surfaceKey(surface: Surface, side: 'front' | 'back', plain: boolean, mark: boolean): string {
+  return `${surface}|${side}|${plain ? 'plain' : 'full'}|${mark ? 'mark' : 'nomark'}`;
+}
+
 /** `plain`: the body before anything is laid on or set into it (no stripe,
  *  no mark, no chip pocket), for the blank and base layers of a material
- *  change; a polished plain blank is lightly brushed. */
-export function getSurfaceMaps(surface: Surface, side: 'front' | 'back', assets: FaceAssets, plain = false): SurfaceMaps {
-  const key = `${surface}|${side}|${plain ? 'plain' : 'full'}`;
+ *  change; a polished plain blank is lightly brushed. `mark`: whether the
+ *  back carries the foil mark's carrier and metal (false when the Visa mark
+ *  is printed on the front; the front is the same either way, since ink is
+ *  the print's own surface). */
+export function getSurfaceMaps(
+  surface: Surface,
+  side: 'front' | 'back',
+  assets: FaceAssets,
+  plain = false,
+  mark = true,
+): SurfaceMaps {
+  const key = surfaceKey(surface, side, plain, mark);
   let maps = surfaceCache.get(key);
   if (!maps) {
-    const height = bakeHeight(surface, side, assets, plain);
+    const height = bakeHeight(surface, side, assets, plain, mark);
     maps = {
-      orm: bakeOrm(surface, side, assets, plain),
+      orm: bakeOrm(surface, side, assets, plain, mark),
       normal: surface === 'bare-matte' ? beadblastNormal(height, assets) : heightToNormal(height, 1.6),
     };
     surfaceCache.set(key, maps);

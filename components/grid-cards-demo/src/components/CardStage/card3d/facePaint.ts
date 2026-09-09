@@ -3,7 +3,9 @@
  * cardholder data. Layout follows the Figma card spec (1536-wide artboard):
  * the front carries only the brand and the chip (the physical front spec,
  * "chip only"); the back follows the Thales print sample (1:116) and carries
- * the name, number, expiry, code, and the Visa mark.
+ * the name, number, expiry, code, and the Visa mark. With the mark printed on
+ * the front instead (`visaMark: 'front'`), the back carries the dove
+ * hologram where the mark was.
  */
 
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
@@ -63,6 +65,9 @@ export const CHIP_CONTACTS = {
 };
 const LOCKUP_W = F(339);
 const LOCKUP_H = F(211.067);
+/** The Visa lockup's box: 339 wide at 54 from the right and bottom, the same
+ *  on both faces (the spec has it on both), so the front canvas, which is
+ *  not mirrored, puts it in the same bottom-right corner seen from the front. */
 export const LOCKUP = {
   w: LOCKUP_W,
   h: LOCKUP_H,
@@ -72,10 +77,30 @@ export const LOCKUP = {
 /** The mag stripe bleeds from the top edge to 300 (72 of bleed plus the 228 stripe). */
 export const STRIPE = { y: 0, h: F(300) };
 
+/** Spec px per mm (1536 px across an 85.6 mm card). */
+export const SPEC_PER_MM = 1536 / 85.6;
+
+/**
+ * The dove hologram's box, in texels: the silhouetted dove is die-cut to its
+ * own outline (no window), 9.5 mm tall as on a real card, right-aligned to
+ * the back's 54 inset and centered on the height the foil mark sits at (it
+ * stands in for the PVBM, which carries its own anti-counterfeit features).
+ * Clear of the stripe above, the contactless indicator, the account block,
+ * and the fine print. The width follows the artwork's aspect.
+ */
+export const DOVE_MM = 9.5;
+export const DOVE_H = F(DOVE_MM * SPEC_PER_MM);
+export function doveBox(dove: HTMLImageElement): { x: number; y: number; w: number; h: number } {
+  const w = DOVE_H * ((dove.naturalWidth || 3) / (dove.naturalHeight || 4));
+  return { x: TEX_W - F(54) - w, y: LOCKUP.y + LOCKUP.h / 2 - DOVE_H / 2, w, h: DOVE_H };
+}
+
 /* ── Assets ───────────────────────────────────────────────────────────────── */
 
 export interface FaceAssets {
   lockup: HTMLImageElement;
+  /** The silo dove silhouette, for the hologram layer. */
+  dove: HTMLImageElement;
   contactless: HTMLImageElement;
   /** The Z card's beadblast grain, as tileable normal and roughness patches
    *  (pure noise has no spatial correlation, so the tiling is invisible). */
@@ -97,13 +122,14 @@ export function loadFaceAssets(): Promise<FaceAssets> {
   if (!assetsPromise) {
     assetsPromise = Promise.all([
       loadImage('/assets/card/visa-debit-lockup.svg'),
+      loadImage('/assets/card/visa-dove.svg'),
       loadImage('/assets/card/contactless.svg'),
       loadImage('/assets/card/grain-normal.png'),
       loadImage('/assets/card/grain-rough.png'),
       loadCardFont().catch(() => undefined),
-    ]).then(([lockup, contactless, grainNormal, grainRough]) => {
-      if (!lockup || !contactless || !grainNormal || !grainRough) throw new Error('card face assets missing');
-      return { lockup, contactless, grainNormal, grainRough };
+    ]).then(([lockup, dove, contactless, grainNormal, grainRough]) => {
+      if (!lockup || !dove || !contactless || !grainNormal || !grainRough) throw new Error('card face assets missing');
+      return { lockup, dove, contactless, grainNormal, grainRough };
     });
   }
   return assetsPromise;
@@ -346,6 +372,32 @@ export function paintLockupMask(assets: FaceAssets): HTMLCanvasElement {
   const ctx = c.getContext('2d')!;
   drawTinted(ctx, assets.lockup, 0, 0, LOCKUP.w, LOCKUP.h, '#ffffff', [LOCKUP_SPLIT, 1]);
   return c;
+}
+
+/**
+ * The Visa Brand Mark and DEBIT printed flat on the front, in the face's ink
+ * (the standards allow the VBM in white or black in any corner, front or
+ * back), in the corner the foil mark takes on the back. No foil and no
+ * carrier film: this is ink on the print.
+ */
+function paintFrontLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, ink: string) {
+  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, ink);
+}
+
+/** The front lockup's shape, white on transparent at face size, for the
+ *  surface bake: on bare steel the ink is a flat print, not metal. */
+export function paintFrontLockupMask(assets: FaceAssets): HTMLCanvasElement {
+  const c = makeCanvas(TEX_W, TEX_H);
+  const ctx = c.getContext('2d')!;
+  paintFrontLockup(ctx, assets, '#ffffff');
+  return c;
+}
+
+/** Under the hologram layer (`HoloDove`), the dove's outline in its silver,
+ *  so the layer's anti-aliased edge blends into the face. */
+function paintDoveGround(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
+  const b = doveBox(assets.dove);
+  drawTinted(ctx, assets.dove, b.x, b.y, b.w, b.h, '#c9c9ce');
 }
 
 /** The foil's reflectance: silver or black lacquer, even; its room does the
@@ -663,7 +715,7 @@ export interface FrontState {
   closed: boolean;
 }
 
-export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
+export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets: FaceAssets) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
   paintBase(ctx, s.design, true, s.art);
@@ -693,6 +745,7 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState) {
   paintChip(ctx, faceColorOf(s.design));
   // The front carries nothing personal: the number, name, and codes are all
   // on the back, as the Figma physical front spec ("chip only") has it.
+  if (s.design.visaMark === 'front') paintFrontLockup(ctx, assets, ink);
 
   paintState(ctx, s.frozen, s.closed);
 }
@@ -792,7 +845,10 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   ctx.fillText('1-855-516-0103   lightspark.com/help', x, fineLast - F(26));
   ctx.fillText('Issued by Lead Bank', x, fineLast);
 
-  paintLockup(ctx, assets, foilIsBlack(s.design));
+  // The foil mark, or, with the mark printed on the front, the hologram
+  // window the standards require in its place.
+  if (s.design.visaMark === 'back') paintLockup(ctx, assets, foilIsBlack(s.design));
+  else paintDoveGround(ctx, assets);
   paintState(ctx, s.frozen, s.closed);
 }
 

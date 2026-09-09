@@ -13,8 +13,10 @@ import {
   type CardMaterial,
   type CardStock,
 } from '@/data/design';
+import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
+import { doveCenter, HoloDove } from './HoloDove';
 import {
   cellAt,
   createSwapUniforms,
@@ -45,6 +47,7 @@ import {
   paintFoilAlbedo,
   paintFoilNormal,
   paintFront,
+  paintFrontLockupMask,
   paintLockupMask,
   resolveBrandLayout,
   TEX_H,
@@ -52,7 +55,15 @@ import {
   type FaceAssets,
   type SpecRect,
 } from './facePaint';
-import { bakeEdge, decorateNormal, decorateOrm, getSurfaceMaps, surfaceOf, type Surface } from './surfaceMaps';
+import {
+  bakeEdge,
+  decorateNormal,
+  decorateOrm,
+  getSurfaceMaps,
+  surfaceKey,
+  surfaceOf,
+  type Surface,
+} from './surfaceMaps';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -119,15 +130,6 @@ function useLoadedImage(url: string | null): { img: HTMLImageElement | null; pen
   return { img: settled ? state.img : null, pending: !!url && !settled };
 }
 
-function canvasTexture(c: HTMLCanvasElement, srgb = false): THREE.CanvasTexture {
-  const t = new THREE.CanvasTexture(c);
-  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  t.generateMipmaps = true;
-  t.minFilter = THREE.LinearMipmapLinearFilter;
-  return t;
-}
-
 /**
  * The Visa mark's silver foil, as the layer it is: a film stamped onto the
  * back, a hair proud of the face, with its own material. It is a mirror, and
@@ -152,11 +154,15 @@ function FoilMark({
   assets,
   backZ,
   black,
+  visible,
   materialRef,
 }: {
   assets: FaceAssets;
   backZ: number;
   black: boolean;
+  /** Hidden, not unmounted, when the mark is printed on the front: the
+   *  program and maps stay ready for the switch back. */
+  visible: boolean;
   /** A material change prints the foil with the graphics. */
   materialRef: React.MutableRefObject<THREE.MeshPhysicalMaterial | null>;
 }) {
@@ -194,7 +200,12 @@ function FoilMark({
   const w = LOCKUP.w / K;
   const h = LOCKUP.h / K;
   return (
-    <mesh position={[FOIL_CENTER.x, FOIL_CENTER.y, backZ - 0.08]} rotation={[0, Math.PI, 0]} material={material}>
+    <mesh
+      position={[FOIL_CENTER.x, FOIL_CENTER.y, backZ - 0.08]}
+      rotation={[0, Math.PI, 0]}
+      material={material}
+      visible={visible}
+    >
       <planeGeometry args={[w, h]} />
     </mesh>
   );
@@ -332,28 +343,33 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const ric: (cb: () => void) => number =
       typeof requestIdleCallback === 'function' ? (cb) => requestIdleCallback(cb, { timeout: 2000 }) : (cb) => window.setTimeout(cb, 250);
     const cancel: (id: number) => void = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
-    const jobs: Array<[Surface, 'front' | 'back']> = [];
+    const jobs: Array<[Surface, 'front' | 'back', boolean]> = [];
     for (const s of ['print-matte', 'print-gloss', 'bare-matte', 'bare-gloss'] as Surface[]) {
-      for (const side of ['front', 'back'] as const) jobs.push([s, side]);
+      for (const side of ['front', 'back'] as const) jobs.push([s, side, true]);
+      // The back without the foil mark, for a front-marked card.
+      jobs.push([s, 'back', false]);
     }
     let id = 0;
     const next = () => {
       const job = jobs.shift();
       if (!job) return;
-      getSurfaceMaps(job[0], job[1], assets);
+      getSurfaceMaps(job[0], job[1], assets, false, job[2]);
       id = ric(next);
     };
     id = ric(next);
     return () => cancel(id);
   }, [assets]);
+  // The back carries the foil mark's carrier and metal only while the mark
+  // is there; with the mark on the front, the hologram layer has its own.
+  const backMark = bodyDesign.visaMark === 'back';
   useEffect(() => {
     if (!assets) return;
     const c = SURFACE[surface];
-    const maps = (s: Surface, side: 'front' | 'back', plain = false) => {
-      const key = `${s}|${side}|${plain}`;
+    const maps = (s: Surface, side: 'front' | 'back', plain = false, mark = true) => {
+      const key = surfaceKey(s, side, plain, mark);
       let t = surfaceTex.current.get(key);
       if (!t) {
-        const m = getSurfaceMaps(s, side, assets, plain);
+        const m = getSurfaceMaps(s, side, assets, plain, mark);
         t = { orm: canvasTexture(m.orm), normal: canvasTexture(m.normal) };
         surfaceTex.current.set(key, t);
       }
@@ -363,7 +379,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       ['front', MAT_FRONT, swapU.front],
       ['back', MAT_BACK, swapU.back],
     ] as const) {
-      const t = maps(surface, side);
+      const t = maps(surface, side, false, side === 'front' || backMark);
       const mat = materials[idx];
       mat.roughnessMap = t.orm;
       mat.metalnessMap = t.orm;
@@ -390,7 +406,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       u.uBaseNormal.value = base.normal;
     }
     invalidate();
-  }, [assets, surface, bareSurface, baseSurface, materials, swapU, invalidate]);
+  }, [assets, surface, bareSurface, baseSurface, backMark, materials, swapU, invalidate]);
 
   // The blank's room, as a PMREM in the scene environment's layout, so
   // polished steel has something to reflect.
@@ -423,13 +439,15 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   }, [assets, newStock, bareFrontCanvas, bareBackCanvas, bareFrontMap, bareBackMap]);
 
   // Decoration: spot gloss, foil, or etch on the brand, spot gloss on the
-  // art, laid over the front's cached maps per design.
+  // art, and the front Visa lockup's ink on bare steel, laid over the
+  // front's cached maps per design.
   const { logoTreatment, artTreatment } = state.design;
+  const frontInk = !backMark && surface.startsWith('bare');
   const decoTex = useRef<{ orm: THREE.Texture | null; normal: THREE.Texture | null }>({ orm: null, normal: null });
   useEffect(() => {
     if (!assets || frontPending) return;
     const front = materials[MAT_FRONT];
-    const base = surfaceTex.current.get(`${surface}|front|false`);
+    const base = surfaceTex.current.get(surfaceKey(surface, 'front', false, true));
     if (!base) return;
     decoTex.current.orm?.dispose();
     decoTex.current.normal?.dispose();
@@ -437,7 +455,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const brandT = logoTreatment === 'print' ? null : logoTreatment;
     const artT = art && artTreatment === 'spotGloss';
     const brandMask = brandT ? paintBrandMask(bodyDesign, logo) : null;
-    if (!brandT && !artT) {
+    if (!brandT && !artT && !frontInk) {
       front.roughnessMap = base.orm;
       front.metalnessMap = base.orm;
     } else {
@@ -448,6 +466,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
           brandT,
           artT && art ? paintArtMask(art) : null,
           cardMaterial === 'metal',
+          frontInk ? paintFrontLockupMask(assets) : null,
         ),
       );
       decoTex.current.orm = decorated;
@@ -467,7 +486,20 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     }
     front.needsUpdate = true;
     invalidate();
-  }, [assets, surface, bodyDesign, cardMaterial, logoTreatment, artTreatment, logo, art, frontPending, materials, invalidate]);
+  }, [
+    assets,
+    surface,
+    bodyDesign,
+    cardMaterial,
+    logoTreatment,
+    artTreatment,
+    frontInk,
+    logo,
+    art,
+    frontPending,
+    materials,
+    invalidate,
+  ]);
 
   // Edge: the construction's layers, the printed skins in the print color (or
   // the stock's own face when nothing is printed).
@@ -524,13 +556,17 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const ready = useRef(false);
   useEffect(() => {
     if (!assets || frontPending) return;
-    paintFront(frontCanvas.getContext('2d')!, {
-      design: bodyDesign,
-      logo,
-      art,
-      frozen: state.frozen,
-      closed: state.closed,
-    });
+    paintFront(
+      frontCanvas.getContext('2d')!,
+      {
+        design: bodyDesign,
+        logo,
+        art,
+        frozen: state.frozen,
+        closed: state.closed,
+      },
+      assets,
+    );
     frontMap.needsUpdate = true;
     invalidate();
     onBrandPlacement?.({ box: brandBox(bodyDesign, logo), layout: resolveBrandLayout(bodyDesign, logo) });
@@ -579,7 +615,17 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const swarm = useMemo(() => new MaterialSwarm(), []);
   useEffect(() => () => swarm.dispose(), [swarm]);
   const swap = useRef<Swap | null>(null);
+  // The back's layers (the foil mark, the hologram): each prints with the
+  // graphics at its own cell's moment.
   const foilMaterial = useRef<THREE.MeshPhysicalMaterial | null>(null);
+  const doveMaterial = useRef<THREE.MeshPhysicalMaterial | null>(null);
+  const layers = useMemo(
+    () => [
+      { ref: foilMaterial, center: FOIL_CENTER },
+      { ref: doveMaterial, center: assets ? doveCenter(assets) : FOIL_CENTER },
+    ],
+    [assets],
+  );
   const targetMaterial = state.design.material;
 
   useEffect(() => {
@@ -591,7 +637,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       shared.uFront.value = FRONT_REST;
       shared.uBase.value = FRONT_REST;
       shared.uPrint.value = FRONT_REST;
-      if (foilMaterial.current) foilMaterial.current.opacity = 1;
+      for (const l of layers) if (l.ref.current) l.ref.current.opacity = 1;
     };
     if (targetMaterial === bodyMaterial) {
       // Changed back before the body was rebuilt: nothing to do after all.
@@ -634,6 +680,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     swapU,
     swarm,
     swapContext,
+    layers,
   ]);
 
   useFrame((frame, delta) => {
@@ -658,11 +705,12 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       sw.committed = true;
       setBodyMaterial(sw.to);
     }
-    // The foil prints with the graphics, at its cell's moment.
-    const foil = foilMaterial.current;
-    if (foil) {
-      const cell = cellAt(grain(), FOIL_CENTER.x, FOIL_CENTER.y);
-      foil.opacity = 1 - passed(shared.uFront.value, cell, sw.dir) + passed(shared.uPrint.value, cell, sw.dir);
+    // The back's layers print with the graphics, each at its cell's moment.
+    for (const l of layers) {
+      const m = l.ref.current;
+      if (!m) continue;
+      const cell = cellAt(grain(), l.center.x, l.center.y);
+      m.opacity = 1 - passed(shared.uFront.value, cell, sw.dir) + passed(shared.uPrint.value, cell, sw.dir);
     }
     if (pass(2) >= 1) {
       swap.current = null;
@@ -670,7 +718,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       shared.uFront.value = FRONT_REST;
       shared.uBase.value = FRONT_REST;
       shared.uPrint.value = FRONT_REST;
-      if (foil) foil.opacity = 1;
+      for (const l of layers) if (l.ref.current) l.ref.current.opacity = 1;
     }
     invalidate();
   });
@@ -709,7 +757,16 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     <group ref={ref}>
       <mesh geometry={geometry} material={materials} visible={assets !== null} />
       {assets && (
-        <FoilMark assets={assets} backZ={backZ} black={foilIsBlack(bodyDesign)} materialRef={foilMaterial} />
+        <>
+          <FoilMark
+            assets={assets}
+            backZ={backZ}
+            black={foilIsBlack(bodyDesign)}
+            visible={backMark}
+            materialRef={foilMaterial}
+          />
+          <HoloDove assets={assets} backZ={backZ} visible={!backMark} materialRef={doveMaterial} />
+        </>
       )}
       <primitive object={swarm.stock} />
       <primitive object={swarm.dust} />
