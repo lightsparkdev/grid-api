@@ -1,13 +1,13 @@
 type: object
 description: >-
   Update request for `PATCH /cards/{id}`. At least one of `state`,
-  `fundingSources`, `maxSpendPerTransaction`, or `maxSpendPerDay` must be
-  supplied. `state`
+  `fundingSources`, `maxSpendPerTransaction`, `maxSpendPerDay`, or
+  `maxTransactionsPerDay` must be supplied. `state`
   transitions are limited to `ACTIVE ⇄ FROZEN` and
   `ACTIVE | FROZEN → CLOSED`; any other transition returns
   `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and
-  cannot be combined with `fundingSources`, `maxSpendPerTransaction`, or
-  `maxSpendPerDay`.
+  cannot be combined with `fundingSources`, `maxSpendPerTransaction`,
+  `maxSpendPerDay`, or `maxTransactionsPerDay`.
   `fundingSources`, when supplied, fully replaces the card's bound
   funding sources — the array order determines the priority Authorization
   Decisioning tries them in.
@@ -72,3 +72,21 @@ properties:
       programs whose authorization decisions are made by Grid. Cannot be
       supplied alongside `state: CLOSED`.
     example: 25000
+  maxTransactionsPerDay:
+    anyOf:
+      - type: integer
+        format: int32
+        minimum: 1
+        maximum: 2147483647
+      - type: 'null'
+    description: >-
+      Replacement card-specific cap on the number of transactions the card may
+      authorize during one UTC calendar day. Omit this field to leave the
+      current cap unchanged, supply null to clear it, or supply a positive
+      integer to set it. When the platform config also supplies
+      `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two
+      values. Refunds, reversals, and authorization expiries do not restore
+      capacity during the day. Supported only for card programs whose
+      authorization decisions are made by Grid. Cannot be supplied alongside
+      `state: CLOSED`.
+    example: 20
