@@ -211,9 +211,13 @@ export function chipContactsPath(ctx: CanvasRenderingContext2D) {
 
 /** Draw `img` covering the whole face (object-fit: cover, centered). */
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
-  const r = Math.max(TEX_W / img.width, TEX_H / img.height);
-  const w = img.width * r;
-  const h = img.height * r;
+  // An SVG with no intrinsic size reports 0 (or a 300 x 150 default); it is
+  // vector, so let it take the face's own proportions and fill it.
+  const iw = img.naturalWidth || TEX_W;
+  const ih = img.naturalHeight || TEX_H;
+  const r = Math.max(TEX_W / iw, TEX_H / ih);
+  const w = iw * r;
+  const h = ih * r;
   ctx.drawImage(img, (TEX_W - w) / 2, (TEX_H - h) / 2, w, h);
 }
 

@@ -496,7 +496,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         <UploadRow
           rowLabel="Art"
           url={design.backgroundUrl}
-          accept="image/png,image/jpeg,image/webp"
+          accept="image/svg+xml,image/png,image/jpeg,image/webp"
           label="Upload card art"
           hint={`${TEX_W} × ${TEX_H} fills the face`}
           onPick={(url) => onChange({ backgroundUrl: url })}
