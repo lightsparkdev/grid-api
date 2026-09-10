@@ -320,7 +320,7 @@ SIG=$(chain_helper sign-message --message-file msg.txt --private-key "$OTHER" | 
 Submit it to verify.
 
 **Expected:** `400 INVALID_INPUT` — "The wallet signature is invalid or has
-expired." Striga returns `42005`; the switch closes the attempt `FAILED` and the
+expired." Striga returns `42015`; the switch closes the attempt `FAILED` and the
 trigger writes the account to `UNVERIFIED`.
 
 **Assert:** a follow-up GET shows `UNVERIFIED`.
@@ -358,10 +358,11 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
   "$GRID_BASE_URL/$OWNERSHIP_TREE/external-accounts/$TR_NEG_ID/verify"
 ```
 
-**Expected — and this is the point of the test:** Striga's `42005` covers *both*
-a refused signature and an invalid payload, but the switch treats `42005` as
-"Striga judged the signature and refused it" (the constant is literally named
-`_STRIGA_INVALID_SIGNATURE_CODE`). So a malformed request is likely to close the
+**Expected — and this is the point of the test:** Striga's `42015` covers *both*
+a refused signature and an invalid payload, but the switch acts on it as though
+it only meant the former (the constant is still named
+`_STRIGA_INVALID_SIGNATURE_CODE`, though its comment now records the dual
+meaning). So a malformed request is likely to close the
 attempt `FAILED` and burn the account to `UNVERIFIED`, when it should have been a
 `400` that left the challenge intact.
 
@@ -515,14 +516,24 @@ returned to the caller.
 | `42008` | VASP counterparty user info missing | Create the counterparty and retry |
 | `42046` | Address already declared | See the wallet-roles warning above |
 
-**This mapping does not exist yet.** It needs
-`EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED` on sparkcore's `ErrorCode`, which
-grid-api publishes but sparkcore does not define. So expect these to surface as a
-generic error today.
+**`42002` is mapped as of #34639** (webdev, 2026-09-09): it returns
+`EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED` with a message naming the ownership
+challenge as the remedy. `SwitchErrorCode.EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED`
+now exists in `sparkcore/umaaas/exceptions.py`, and grid-api publishes it in
+`Error400`.
 
-TR24 is therefore a **documentation test**: capture exactly what a caller sees for
-each code, so the mapping can be written against real responses rather than
-guessed. It is the last substantive piece of work in this area.
+**`42004` and `42008` are still unmapped** — `_STRIGA_DETERMINISTIC_ERROR_CODES`
+carries `42002` alone, so those two still surface as a generic error. Assert
+`42002`'s mapped shape, and capture the raw response for the other two.
+
+Do not confuse `42008` with the deposit-side hold. #34603 auto-links counterparty
+user info when a *deposit* is held on `VASP_COUNTERPARTY_USER_INFO_REQUIRED`; that
+is the inbound webhook path. `42008` here is the outbound refusal on a send, and
+nothing maps it.
+
+TR24 is therefore largely a **documentation test**: capture exactly what a caller
+sees for each code, so the two remaining mappings can be written against real
+responses rather than guessed.
 
 ---
 
@@ -535,7 +546,7 @@ as failures:
 |---|---|---|---|
 | 1 | Re-issuing a challenge abandons the in-flight one | Returns the same pending challenge unchanged | TR16 |
 | 2 | An `UNVERIFIED` account returns to `PENDING_OWNERSHIP_VERIFICATION` on a new challenge | Stays `UNVERIFIED` until the retry settles | TR13 |
-| 3 | `42005` means an invalid signature | Also fires on an invalid payload, so a malformed request burns the account to `UNVERIFIED` | TR14 |
+| 3 | `42015` is handled as an invalid signature | Also fires on an invalid payload, so a malformed request burns the account to `UNVERIFIED`. The code comment acknowledges this; the behaviour is unchanged | TR14 |
 
 ## Results
 
