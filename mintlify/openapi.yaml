@@ -15339,7 +15339,7 @@ components:
           pattern: ^[0-9]{9}$
         bankName:
           type: string
-          description: The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message.
+          description: The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message. Not checked against `GET /discoveries`.
           minLength: 1
           maxLength: 140
           example: Chase Bank
@@ -15556,6 +15556,7 @@ components:
       example:
         accountType: EUR_ACCOUNT
         iban: DE89370400440532013000
+        swiftCode: DEUTDEFF
     EurAccountInfo:
       allOf:
         - $ref: '#/components/schemas/EurAccountInfoBase'
@@ -15624,18 +15625,12 @@ components:
           minLength: 1
           maxLength: 32
           example: NEFT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
       example:
         accountType: INR_ACCOUNT
         vpa: user@upi
         accountNumber: '000111222333'
         ifsc: HDFC0001234
         rail: NEFT
-        bankName: Example Bank
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -15676,13 +15671,14 @@ components:
           pattern: ^[0-9]{10}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Access Bank
       example:
         accountType: NGN_ACCOUNT
         accountNumber: '0123456789'
-        bankName: Example Bank
+        bankName: Access Bank
     NgnAccountInfo:
       allOf:
         - $ref: '#/components/schemas/NgnAccountInfoBase'
@@ -15827,7 +15823,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - swiftCode
       properties:
@@ -15837,9 +15832,10 @@ components:
             - HKD_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation. Not checked against `GET /discoveries`.
           minLength: 1
           maxLength: 255
+          example: HSBC Hong Kong
         accountNumber:
           type: string
           description: Hong Kong bank account number
@@ -15855,7 +15851,7 @@ components:
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: HKD_ACCOUNT
-        bankName: Example Bank
+        bankName: HSBC Hong Kong
         accountNumber: '123456789012'
         swiftCode: HSBCHKHHHKH
     HkdAccountInfo:
@@ -15899,10 +15895,10 @@ components:
             - IDR_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
-          example: Bank Central Asia
+          example: Bank Central Asia (BCA)
         accountNumber:
           type: string
           description: Indonesian bank account number
@@ -15925,7 +15921,7 @@ components:
           pattern: ^\+62[0-9]{9,12}$
       example:
         accountType: IDR_ACCOUNT
-        bankName: Bank Central Asia
+        bankName: Bank Central Asia (BCA)
         accountNumber: '1234567890'
         swiftCode: CENAIDJA
         phoneNumber: '+6281234567890'
@@ -15969,9 +15965,10 @@ components:
             - MYR_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Maybank
         accountNumber:
           type: string
           description: Malaysian bank account number
@@ -15987,7 +15984,7 @@ components:
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: MYR_ACCOUNT
-        bankName: Example Bank
+        bankName: Maybank
         accountNumber: '1234567890'
         swiftCode: MABORUMMYYY
     MyrAccountInfo:
@@ -16035,10 +16032,10 @@ components:
           example: INSTAPAY
         bankName:
           type: string
-          description: Name of the beneficiary's bank
+          description: Name of the beneficiary's bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
-          example: BDO Unibank
+          example: Bank of the Philippine Islands (BPI)
         accountNumber:
           type: string
           description: Bank account number
@@ -16049,7 +16046,7 @@ components:
       example:
         accountType: PHP_ACCOUNT
         rail: INSTAPAY
-        bankName: BDO Unibank
+        bankName: Bank of the Philippine Islands (BPI)
         accountNumber: '001234567890'
     PhpAccountInfo:
       allOf:
@@ -16090,7 +16087,7 @@ components:
             - SGD_ACCOUNT
         bankName:
           type: string
-          description: Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation.
+          description: Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation. Not checked against `GET /discoveries`.
           minLength: 1
           maxLength: 255
           example: DBS Bank Ltd
@@ -16154,9 +16151,10 @@ components:
             - THB_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Bangkok Bank Public Company Limited
         accountNumber:
           type: string
           description: Thai bank account number
@@ -16172,7 +16170,7 @@ components:
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: THB_ACCOUNT
-        bankName: Example Bank
+        bankName: Bangkok Bank Public Company Limited
         accountNumber: '1234567890'
         swiftCode: BKKBTHBK
     ThbAccountInfo:
@@ -16215,9 +16213,10 @@ components:
             - VND_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Vietcombank
         accountNumber:
           type: string
           description: Vietnamese bank account number
@@ -16233,7 +16232,7 @@ components:
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: VND_ACCOUNT
-        bankName: Example Bank
+        bankName: Vietcombank
         accountNumber: '1234567890'
         swiftCode: BFTVVNVX
     VndAccountInfo:
@@ -16893,13 +16892,14 @@ components:
           pattern: ^[0-9]{9,13}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Standard Bank (South Africa)
       example:
         accountType: ZAR_ACCOUNT
         accountNumber: '1234567890'
-        bankName: Example Bank
+        bankName: Standard Bank (South Africa)
     ZarAccountInfo:
       allOf:
         - $ref: '#/components/schemas/ZarAccountInfoBase'
@@ -17117,9 +17117,10 @@ components:
           maxLength: 34
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: BRAC Bank
         branchCode:
           type: string
           description: The branch code
@@ -17143,7 +17144,7 @@ components:
       example:
         accountType: BDT_ACCOUNT
         accountNumber: '1234567890'
-        bankName: Example Bank
+        bankName: BRAC Bank
         branchCode: '11111'
         swiftCode: DEUTDEFF
         phoneNumber: '+1234567890'
@@ -17233,9 +17234,10 @@ components:
           pattern: ^EG[0-9]{27}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: BANQUE MISR
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -17246,7 +17248,7 @@ components:
       example:
         accountType: EGP_ACCOUNT
         iban: EG380019000500000000263180002
-        bankName: Example Bank
+        bankName: BANQUE MISR
         phoneNumber: '+1234567890'
     EgpAccountInfo:
       allOf:
@@ -17296,9 +17298,10 @@ components:
           maxLength: 34
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Gcb Bank Ltd
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -17309,7 +17312,7 @@ components:
       example:
         accountType: GHS_ACCOUNT
         accountNumber: '1234567890'
-        bankName: Example Bank
+        bankName: Gcb Bank Ltd
         phoneNumber: '+1234567890'
     GhsAccountInfo:
       allOf:
@@ -17363,14 +17366,15 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the beneficiary's bank
+          description: The name of the beneficiary's bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Banco Industrial
       example:
         accountType: GTQ_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
-        bankName: Example Bank
+        bankName: Banco Industrial
     GtqAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GtqAccountInfoBase'
@@ -17475,15 +17479,16 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: National Commercial Bank Ja Ltd
       example:
         accountType: JMD_ACCOUNT
         accountNumber: '1234567890'
         branchCode: '11111'
         bankAccountType: CHECKING
-        bankName: Example Bank
+        bankName: National Commercial Bank Ja Ltd
     JmdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/JmdAccountInfoBase'
@@ -17526,9 +17531,10 @@ components:
             - PKR_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Habib Bank Limited
         accountNumber:
           type: string
           description: The account number of the bank
@@ -17550,7 +17556,7 @@ components:
           pattern: ^\+[0-9]{6,14}$
       example:
         accountType: PKR_ACCOUNT
-        bankName: Example Bank
+        bankName: Habib Bank Limited
         accountNumber: '1234567890'
         iban: PK36SCBL0000001123456702
         phoneNumber: '+1234567890'
@@ -17778,9 +17784,10 @@ components:
           maxLength: 34
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: China Construction Bank
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -17791,7 +17798,7 @@ components:
       example:
         accountType: CNY_ACCOUNT
         accountNumber: '1234567890'
-        bankName: Example Bank
+        bankName: China Construction Bank
         phoneNumber: '+1234567890'
     CnyAccountInfo:
       allOf:
@@ -17840,13 +17847,14 @@ components:
           pattern: ^IL[0-9]{21}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Bank Leumi Le-Israel B.M
       example:
         accountType: ILS_ACCOUNT
         iban: IL620108000000099999999
-        bankName: Example Bank
+        bankName: Bank Leumi Le-Israel B.M
     IlsAccountInfo:
       allOf:
         - $ref: '#/components/schemas/IlsAccountInfoBase'
@@ -18760,9 +18768,10 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Banco de Colombia (Bancolombia)
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -18774,7 +18783,7 @@ components:
         accountType: COP_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
-        bankName: Example Bank
+        bankName: Banco de Colombia (Bancolombia)
         phoneNumber: '+1234567890'
     CopAccountInfo:
       allOf:
