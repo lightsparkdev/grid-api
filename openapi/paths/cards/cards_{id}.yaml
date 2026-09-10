@@ -68,7 +68,11 @@ patch:
     Decisioning tries them in. Each id must belong to the cardholder and
     be denominated in the card's currency; the list must contain at least
     one source. `fundingSources` cannot be supplied alongside
-    `state: CLOSED`.
+    `state: CLOSED`. On card programs where the card issuer makes authorization
+    decisions, `fundingSources` cannot be combined with any `state` change, so
+    send the changes as separate requests. On card programs where Grid makes
+    the authorization decision, the combination remains valid for `state`
+    changes other than `CLOSED`.
 
     - `maxSpendPerTransaction`, when supplied, replaces the card-specific
     per-transaction cap. Supply a positive integer in the smallest unit of the
@@ -189,8 +193,10 @@ patch:
       description: >-
         Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a
         supplied funding source does not belong to the cardholder or is
-        not denominated in the card's currency, and for general invalid
-        parameters.
+        not denominated in the card's currency, with `INVALID_INPUT` when
+        `fundingSources` is combined with any `state` change on a card program
+        where the card issuer makes authorization decisions, and for general
+        invalid parameters.
       content:
         application/json:
           schema:
