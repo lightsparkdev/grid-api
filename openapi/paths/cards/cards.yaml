@@ -51,7 +51,7 @@ post:
           virtualCard:
             summary: Issue a virtual card with one funding source
             value:
-              cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
               platformCardId: card-emp-aary-001
               form: VIRTUAL
               fundingSources:
@@ -126,9 +126,9 @@ get:
   security:
     - BasicAuth: []
   parameters:
-    - name: cardholderId
+    - name: customerId
       in: query
-      description: Filter by cardholder (customer) id.
+      description: Filter by customer id.
       required: false
       schema:
         type: string
