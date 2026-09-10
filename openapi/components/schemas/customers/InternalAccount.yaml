@@ -51,6 +51,16 @@ properties:
       Whether wallet privacy is enabled for the Embedded Wallet. Only present
       for `EMBEDDED_WALLET` internal accounts.
     example: true
+  cardCapabilities:
+    $ref: ../cards/CardCapabilities.yaml
+    description: >-
+      Actions supported for a card issued now with this account as the first
+      funding source. They can change if the platform's card routing changes
+      and do not describe cards already issued using the account.
+      When a create request supplies several funding sources, the first entry
+      selects the issuer and therefore the resulting card's
+      capabilities; read this field from that account. Absent when this account
+      cannot fund a card.
   createdAt:
     type: string
     format: date-time

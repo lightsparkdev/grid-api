@@ -14,12 +14,12 @@ post:
     Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and
     `maxTransactionsPerDay` values set the card-specific caps on one
     transaction, on spend during one UTC calendar day, and on the number of
-    transactions during one UTC calendar day. The limits
-    are enforced by Grid for card programs where Grid makes the authorization
-    decision, whether the card is funded by an Embedded Wallet account or
-    custodial fiat. If the platform config sets the corresponding
-    `cardConfigs` value, Grid enforces the lower of the card and platform caps.
-    Amounts use the smallest unit of the card's currency.
+    transactions during one UTC calendar day. Check the funding-source internal
+    account's `cardCapabilities.supportsSpendLimits` before supplying either
+    spend limit, and `cardCapabilities.supportsTransactionCountLimit` before
+    supplying the transaction count limit. If the platform config sets the
+    corresponding `cardConfigs` value, Grid enforces the lower of the card and
+    platform caps. Amounts use the smallest unit of the card's currency.
 
 
     If any funding source is an Embedded Wallet internal account, the
@@ -91,10 +91,11 @@ post:
       description: >-
         Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
         cardholder's KYC status is not `APPROVED`, with `INVALID_INPUT` when
-        the `Idempotency-Key` header is missing or exceeds 255 characters, with
-        `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does
-        not belong to the cardholder or is not denominated in a
-        card-eligible currency, and for general invalid parameters.
+        the `Idempotency-Key` header is missing or exceeds 255 characters or
+        when a required `threeDSecurePassword` is missing, empty, or
+        whitespace-only, with `FUNDING_SOURCE_INELIGIBLE` when the supplied
+        funding source does not belong to the cardholder or is not denominated
+        in a card-eligible currency, and for general invalid parameters.
       content:
         application/json:
           schema:
