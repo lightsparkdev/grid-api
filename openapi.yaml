@@ -11678,7 +11678,6 @@ webhooks:
                     cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCardId: card-emp-aary-001
                     state: ACTIVE
-                    stateReason: null
                     brand: VISA
                     form: VIRTUAL
                     last4: '4242'
@@ -11724,7 +11723,6 @@ webhooks:
                     id: Card:019542f5-b3e7-1d02-0000-000000000010
                     cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     state: FROZEN
-                    stateReason: null
                     brand: VISA
                     form: VIRTUAL
                     last4: '4242'
@@ -26112,10 +26110,8 @@ components:
         state:
           $ref: '#/components/schemas/CardState'
         stateReason:
-          anyOf:
-            - $ref: '#/components/schemas/CardStateReason'
-            - type: 'null'
-          description: Reason associated with the current `state`. Populated when the card is `CLOSED` or when provisioning was rejected; otherwise null.
+          $ref: '#/components/schemas/CardStateReason'
+          description: Reason associated with the current `state`. Present when the card is `CLOSED` or when provisioning was rejected; absent otherwise.
         brand:
           $ref: '#/components/schemas/CardBrand'
         form:
