@@ -332,12 +332,12 @@ paths:
                   summary: Payment rails for Philippines (PHP)
                   value:
                     data:
-                      - bankName: BDO Unibank
-                        displayName: BDO Unibank
+                      - bankName: Bank of the Philippine Islands (BPI)
+                        displayName: Bank of the Philippine Islands (BPI)
                         country: PH
                         currency: PHP
-                      - bankName: BPI
-                        displayName: Bank of the Philippine Islands
+                      - bankName: BDO Network Bank
+                        displayName: BDO Network Bank / One Network Bank
                         country: PH
                         currency: PHP
         '400':
