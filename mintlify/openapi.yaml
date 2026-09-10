@@ -12168,7 +12168,8 @@ components:
       enum:
         - INCOMING
         - OUTGOING
-      description: Type of transaction (incoming payment or outgoing payment)
+        - CARD
+      description: Type of transaction
     PlatformCurrencyConfig:
       type: object
       properties:
