@@ -6,7 +6,7 @@ describe("cards list", () => {
     const { request } = await runCli([
       "cards",
       "list",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
       "--state",
       "ACTIVE",
@@ -14,7 +14,7 @@ describe("cards list", () => {
 
     expect(request?.path).toBe("/grid/v1/cards");
     expect(request?.query).toMatchObject({
-      cardholderId: "Customer:abc",
+      customerId: "Customer:abc",
       state: "ACTIVE",
     });
   });
@@ -25,7 +25,7 @@ describe("cards create", () => {
     const { request } = await runCli([
       "cards",
       "create",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
       "--funding-sources",
       "InternalAccount:1,InternalAccount:2",
@@ -34,7 +34,7 @@ describe("cards create", () => {
     expect(request?.method).toBe("POST");
     expect(request?.path).toBe("/grid/v1/cards");
     expect(request?.body).toMatchObject({
-      cardholderId: "Customer:abc",
+      customerId: "Customer:abc",
       form: "VIRTUAL",
       fundingSources: ["InternalAccount:1", "InternalAccount:2"],
     });
@@ -44,7 +44,7 @@ describe("cards create", () => {
     const { request } = await runCli([
       "cards",
       "create",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
       "--funding-sources",
       "InternalAccount:1",
@@ -60,7 +60,7 @@ describe("cards create", () => {
       runCli([
         "cards",
         "create",
-        "--cardholder-id",
+        "--customer-id",
         "Customer:abc",
         "--funding-sources",
         "InternalAccount:1",

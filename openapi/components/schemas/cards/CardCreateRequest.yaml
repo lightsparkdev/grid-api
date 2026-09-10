@@ -1,10 +1,10 @@
 type: object
 required:
-  - cardholderId
+  - customerId
   - form
   - fundingSources
 properties:
-  cardholderId:
+  customerId:
     type: string
     description: >-
       The id of the `Customer` to issue the card to. The customer must have

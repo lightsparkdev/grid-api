@@ -47,7 +47,7 @@ post:
           virtualCard:
             summary: Issue a virtual card with one funding source
             value:
-              cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
               platformCardId: card-emp-001
               form: VIRTUAL
               fundingSources:
@@ -112,7 +112,7 @@ post:
 get:
   summary: List cards
   description: >
-    Retrieve a paginated list of cards. Cards can be filtered by cardholder,
+    Retrieve a paginated list of cards. Cards can be filtered by customer,
     bound funding-source internal account, state, and platform-specific
     card identifier. If no filters are provided, returns all cards visible
     to the caller.
@@ -122,9 +122,9 @@ get:
   security:
     - BasicAuth: []
   parameters:
-    - name: cardholderId
+    - name: customerId
       in: query
-      description: Filter by cardholder (customer) id.
+      description: Filter by the `Customer` id of the cardholder.
       required: false
       schema:
         type: string

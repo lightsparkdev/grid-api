@@ -7,7 +7,7 @@ import { parseList } from "../parse";
 
 interface Card {
   id: string;
-  cardholderId: string;
+  customerId: string;
   platformCardId?: string;
   state: "PENDING_KYC" | "PROCESSING" | "ACTIVE" | "FROZEN" | "CLOSED";
   form: "VIRTUAL";
@@ -48,7 +48,7 @@ export function registerCardsCommand(
   cardsCmd
     .command("list")
     .description("List cards")
-    .option("--cardholder-id <id>", "Filter by cardholder (customer) ID")
+    .option("--customer-id <id>", "Filter by customer ID")
     .option("--account-id <id>", "Filter by a bound funding-source account ID")
     .option("--platform-card-id <id>", "Filter by platform card ID")
     .option("--state <state>", "Filter by state (PENDING_KYC, PROCESSING, ACTIVE, FROZEN, CLOSED)")
@@ -68,7 +68,7 @@ export function registerCardsCommand(
       }
 
       const params: Record<string, string | number | undefined> = {
-        cardholderId: options.cardholderId,
+        customerId: options.customerId,
         accountId: options.accountId,
         platformCardId: options.platformCardId,
         state: options.state,
@@ -96,7 +96,7 @@ export function registerCardsCommand(
   cardsCmd
     .command("create")
     .description("Issue a card")
-    .requiredOption("--cardholder-id <id>", "Cardholder (customer) ID")
+    .requiredOption("--customer-id <id>", "Customer ID of the cardholder")
     .requiredOption("--funding-sources <list>", "Comma-separated internal account IDs, in priority order")
     .option("--form <form>", "Card form (VIRTUAL)", "VIRTUAL")
     .option("--platform-card-id <id>", "Your platform's identifier for the card")
@@ -118,7 +118,7 @@ export function registerCardsCommand(
       }
 
       const body: Record<string, unknown> = {
-        cardholderId: options.cardholderId,
+        customerId: options.customerId,
         form: options.form,
         fundingSources,
       };

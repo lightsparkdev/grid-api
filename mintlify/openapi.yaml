@@ -8576,7 +8576,7 @@ paths:
               virtualCard:
                 summary: Issue a virtual card with one funding source
                 value:
-                  cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                   platformCardId: card-emp-001
                   form: VIRTUAL
                   fundingSources:
@@ -8624,16 +8624,16 @@ paths:
     get:
       summary: List cards
       description: |
-        Retrieve a paginated list of cards. Cards can be filtered by cardholder, bound funding-source internal account, state, and platform-specific card identifier. If no filters are provided, returns all cards visible to the caller.
+        Retrieve a paginated list of cards. Cards can be filtered by customer, bound funding-source internal account, state, and platform-specific card identifier. If no filters are provided, returns all cards visible to the caller.
       operationId: listCards
       tags:
         - Cards
       security:
         - BasicAuth: []
       parameters:
-        - name: cardholderId
+        - name: customerId
           in: query
-          description: Filter by cardholder (customer) id.
+          description: Filter by the `Customer` id of the cardholder.
           required: false
           schema:
             type: string
@@ -11675,7 +11675,7 @@ webhooks:
                   timestamp: '2026-05-08T14:11:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000010
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCardId: card-emp-001
                     state: ACTIVE
                     brand: VISA
@@ -11701,7 +11701,7 @@ webhooks:
                   timestamp: '2026-05-08T14:12:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000011
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     state: CLOSED
                     stateReason: ISSUER_REJECTED
                     form: VIRTUAL
@@ -11721,7 +11721,7 @@ webhooks:
                   timestamp: '2026-05-09T09:00:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000010
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     state: FROZEN
                     brand: VISA
                     form: VIRTUAL
@@ -26084,7 +26084,7 @@ components:
       type: object
       required:
         - id
-        - cardholderId
+        - customerId
         - state
         - form
         - fundingSources
@@ -26098,7 +26098,7 @@ components:
           type: string
           description: System-generated unique card identifier
           example: Card:019542f5-b3e7-1d02-0000-000000000010
-        cardholderId:
+        customerId:
           type: string
           description: The id of the `Customer` who holds this card.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
@@ -26209,11 +26209,11 @@ components:
     CardCreateRequest:
       type: object
       required:
-        - cardholderId
+        - customerId
         - form
         - fundingSources
       properties:
-        cardholderId:
+        customerId:
           type: string
           description: The id of the `Customer` to issue the card to. The customer must have KYC status `APPROVED`; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
