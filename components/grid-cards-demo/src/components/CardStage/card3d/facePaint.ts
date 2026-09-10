@@ -114,19 +114,18 @@ export function chipBox(o: Orientation): SpecRect {
  * The back's composition per orientation, in spec px: where the account
  * block starts, how the PAN wraps, where the CVV goes, the contactless
  * indicator, and the fine print's lines. Landscape is the Thales sample:
- * the block at (56, 476) under the stripe, four PAN groups on one line, the
- * CVV after the expiry. Upright, the stripe takes the left 300, so the
- * column starts 56 in from it; the four groups need 596 and the column has
- * 551, so the PAN stacks one group to a line, and the expiry and the CVV
- * each take their own; the fine print takes three lines, a step smaller,
- * to clear the lockup beside it.
+ * the block at (56, 476) under the stripe in 57 px type, four PAN groups on
+ * one line, the CVV after the expiry. Upright, the stripe takes the left
+ * 300, so the column starts 56 in from it; the four groups need 596 at 57
+ * and the column has 551, so the block is set at 48 (the groups take 502)
+ * and keeps its three lines; the fine print takes three lines, a step
+ * smaller, to clear the lockup beside it.
  */
 export interface BackLayout {
   x: number;
   y: number;
-  panPerRow: number;
-  /** The CVV after the expiry with a gap, or on the line below it. */
-  cvv: 'inline' | 'stacked';
+  /** The account block's type size, spec px; its leading follows. */
+  em: number;
   contactless: { right: number; y: number };
   finePrint: string[];
   /** The fine print's type size and leading, spec px. */
@@ -139,8 +138,7 @@ export function backLayout(o: Orientation): BackLayout {
     return {
       x: 56,
       y: 476,
-      panPerRow: 4,
-      cvv: 'inline',
+      em: 57,
       contactless: { right: face.w - 54, y: 470 },
       finePrint: ['1-855-516-0103   lightspark.com/help', 'Issued by Lead Bank'],
       finePrintPx: 22,
@@ -148,11 +146,10 @@ export function backLayout(o: Orientation): BackLayout {
     };
   }
   return {
-    // Seven lines (name, four groups, expiry, code), centered on the face.
+    // Three lines at 48 (name, number, expiry and code), centered on the face.
     x: STRIPE_SPEC + 56,
-    y: 528,
-    panPerRow: 1,
-    cvv: 'stacked',
+    y: 690,
+    em: 48,
     contactless: { right: face.w - 54, y: 54 },
     finePrint: ['1-855-516-0103', 'lightspark.com/help', 'Issued by Lead Bank'],
     finePrintPx: 20,
@@ -869,23 +866,23 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets:
   paintState(ctx, s.frozen, s.closed);
 }
 
-/** The account block's type and leading, spec px. */
-const BACK_EM = 57;
-const BACK_LINE = 41;
-const BACK_GAP = 32;
+/** The account block's leading, as shares of its em (41 px lines 32 apart at
+ *  the sample's 57). */
+const BACK_LINE = 41 / 57;
+const BACK_GAP = 32 / 57;
 
 /** Where the cardholder's name sits on the back, in the composed face's spec
  *  px: its em box on the account block's first line, at least as wide as the
  *  specimen text. */
 export function backNameBox(design: CardDesign): SpecRect {
+  const L = backLayout(design.orientation);
   measureCtx ??= makeCanvas(1, 1).getContext('2d')!;
   measureCtx.letterSpacing = '0px';
-  measureCtx.font = `400 ${BACK_EM}px ${FONT}`;
+  measureCtx.font = `400 ${L.em}px ${FONT}`;
   const text = design.cardholderName.trim() || 'Cardholder name';
   const w = Math.max(measureCtx.measureText(text).width, measureCtx.measureText('Cardholder name').width);
-  const L = backLayout(design.orientation);
-  // Baseline at the block's top + 41; the face's ascent is 85% of the em.
-  return { x: L.x, y: L.y + BACK_LINE - BACK_EM * 0.85, w, h: BACK_EM };
+  // Baseline at the block's top + the line; the face's ascent is 85% of the em.
+  return { x: L.x, y: L.y + L.em * BACK_LINE - L.em * 0.85, w, h: L.em };
 }
 
 export interface BackState {
@@ -916,18 +913,20 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   const cw = ch * (67.3435 / 90);
   drawTinted(ctx, assets.contactless, L.contactless.right - cw, L.contactless.y, cw, ch, ink);
 
-  // Account block: name, PAN, EXP / CVV, on 41 px lines 32 apart.
+  // Account block: name, PAN, EXP / CVV, on three lines (41 px lines 32
+  // apart at the sample's 57; the leading follows the layout's em).
   // (`backNameBox` describes the name line's box for the stage.)
   // The name is the cardholder's as designed; the account data prints in
   // full when the card goes ACTIVE, as a physical card's does.
   const x = L.x;
-  const line = BACK_LINE;
-  const gap = BACK_GAP;
+  const em = L.em;
+  const line = em * BACK_LINE;
+  const gap = em * BACK_GAP;
   let y = L.y + line;
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
   ctx.letterSpacing = '0px';
-  ctx.font = `400 ${BACK_EM}px ${FONT}`;
+  ctx.font = `400 ${em}px ${FONT}`;
   ctx.fillStyle = ink;
   // Until the visitor types a name the line reads as a specimen's does.
   const name = s.design.cardholderName.trim();
@@ -940,22 +939,14 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
     ctx.save();
     ctx.globalAlpha = Math.min(1, s.personalized);
     const groupW = ctx.measureText('0000').width;
-    const groupGap = BACK_EM * 0.28;
-    PAN_GROUPS.forEach((g, i) => {
-      if (i % L.panPerRow === 0) y += line + gap;
-      ctx.fillText(g, x + (i % L.panPerRow) * (groupW + groupGap), y);
-    });
+    const groupGap = em * 0.28;
+    y += line + gap;
+    PAN_GROUPS.forEach((g, i) => ctx.fillText(g, x + i * (groupW + groupGap), y));
 
     y += line + gap;
     ctx.fillText(`EXP ${CARD_EXP}`, x, y);
-    // The CVV follows the expiry with a gap, or, in the narrow column of an
-    // upright back, takes the next line.
-    if (L.cvv === 'stacked') {
-      y += line + gap;
-      ctx.fillText(`CVV ${CARD_CVV}`, x, y);
-    } else {
-      ctx.fillText(`CVV ${CARD_CVV}`, x + ctx.measureText('EXP 11/27').width + 64, y);
-    }
+    // The CVV follows the expiry with a gap (64 at the sample's 57).
+    ctx.fillText(`CVV ${CARD_CVV}`, x + ctx.measureText('EXP 11/27').width + em * (64 / 57), y);
     ctx.restore();
   }
 
