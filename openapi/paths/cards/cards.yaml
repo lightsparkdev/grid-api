@@ -8,14 +8,10 @@ post:
 
 
     Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and
-    `maxTransactionsPerDay` values set the card-specific caps on one
-    transaction, on spend during one UTC calendar day, and on the number of
-    transactions during one UTC calendar day. The limits
-    are enforced by Grid for card programs where Grid makes the authorization
-    decision, whether the card is funded by an Embedded Wallet account or
-    custodial fiat. If the platform config sets the corresponding
-    `cardConfigs` value, Grid enforces the lower of the card and platform caps.
-    Amounts use the smallest unit of the card's currency.
+    `maxTransactionsPerDay` set card-level caps; amounts use the smallest unit
+    of the card's currency. Grid enforces the lower of the card cap and the
+    platform `cardConfigs` cap, for card programs where Grid makes the
+    authorization decision.
 
 
     If any funding source is an Embedded Wallet internal account, the
@@ -52,7 +48,7 @@ post:
             summary: Issue a virtual card with one funding source
             value:
               cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
-              platformCardId: card-emp-aary-001
+              platformCardId: card-emp-001
               form: VIRTUAL
               fundingSources:
                 - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
