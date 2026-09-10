@@ -28,12 +28,10 @@ properties:
   state:
     $ref: ./CardState.yaml
   stateReason:
-    anyOf:
-      - $ref: ./CardStateReason.yaml
-      - type: 'null'
+    $ref: ./CardStateReason.yaml
     description: >-
-      Reason associated with the current `state`. Populated when the card is
-      `CLOSED` or when provisioning was rejected; otherwise null.
+      Reason associated with the current `state`. Present when the card is
+      `CLOSED` or when provisioning was rejected; absent otherwise.
   brand:
     $ref: ./CardBrand.yaml
   form:
