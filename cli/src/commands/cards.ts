@@ -3,7 +3,6 @@ import { GridClient, PaginatedResponse } from "../client";
 import { outputResponse, formatError, output } from "../output";
 import { GlobalOptions } from "../index";
 import { addSignedOptions, signedHeaders, validateSignedOptions } from "../signed";
-import { parseList } from "../parse";
 
 interface Card {
   id: string;
@@ -12,7 +11,7 @@ interface Card {
   state: "PENDING_KYC" | "PROCESSING" | "ACTIVE" | "FROZEN" | "CLOSED";
   form: "VIRTUAL";
   last4?: string;
-  fundingSources: string[];
+  fundingSource: string;
   maxSpendPerTransaction: number | null;
   currency?: string;
   createdAt: string;
@@ -37,6 +36,16 @@ function parseMaxSpendPerTransaction(value: string): number {
     );
   }
   return amount;
+}
+
+function parseAccountId(value: string): string {
+  const accountId = value.trim();
+  if (accountId === "") {
+    throw new InvalidArgumentError(
+      "--funding-source must be a non-empty internal account ID"
+    );
+  }
+  return accountId;
 }
 
 export function registerCardsCommand(
@@ -97,7 +106,11 @@ export function registerCardsCommand(
     .command("create")
     .description("Issue a card")
     .requiredOption("--cardholder-id <id>", "Cardholder (customer) ID")
-    .requiredOption("--funding-sources <list>", "Comma-separated internal account IDs, in priority order")
+    .requiredOption(
+      "--funding-source <id>",
+      "Internal account ID that funds the card",
+      parseAccountId
+    )
     .option("--form <form>", "Card form (VIRTUAL)", "VIRTUAL")
     .option("--platform-card-id <id>", "Your platform's identifier for the card")
     .option(
@@ -110,17 +123,10 @@ export function registerCardsCommand(
       const client = getClient(opts);
       if (!client) return;
 
-      const fundingSources = parseList(options.fundingSources);
-      if (!fundingSources) {
-        output(formatError("--funding-sources must list at least one internal account ID"));
-        process.exitCode = 1;
-        return;
-      }
-
       const body: Record<string, unknown> = {
         cardholderId: options.cardholderId,
         form: options.form,
-        fundingSources,
+        fundingSource: options.fundingSource,
       };
       if (options.platformCardId) body.platformCardId = options.platformCardId;
       if (options.maxSpendPerTransaction !== undefined) {
@@ -135,10 +141,14 @@ export function registerCardsCommand(
     cardsCmd
       .command("update <cardId>")
       .description(
-        "Update a card (freeze/unfreeze, replace funding sources, set a spending limit, or close)"
+        "Update a card (freeze/unfreeze, replace the funding source, set a spending limit, or close)"
       )
       .option("--state <state>", "Target state: ACTIVE, FROZEN, or CLOSED")
-      .option("--funding-sources <list>", "Comma-separated internal account IDs (fully replaces the binding)")
+      .option(
+        "--funding-source <id>",
+        "Replace the card's funding source",
+        parseAccountId
+      )
       .option(
         "--max-spend-per-transaction <amount>",
         "Set the maximum amount per transaction in the card currency's smallest unit",
@@ -160,25 +170,17 @@ export function registerCardsCommand(
       return;
     }
 
-    const fundingSources = parseList(options.fundingSources);
     if (
       !options.state &&
-      options.fundingSources === undefined &&
+      options.fundingSource === undefined &&
       options.maxSpendPerTransaction === undefined &&
       !options.clearMaxSpendPerTransaction
     ) {
       output(
         formatError(
-          "Provide --state, --funding-sources, --max-spend-per-transaction, and/or --clear-max-spend-per-transaction"
+          "Provide --state, --funding-source, --max-spend-per-transaction, and/or --clear-max-spend-per-transaction"
         )
       );
-      process.exitCode = 1;
-      return;
-    }
-    // A non-empty flag that parses to nothing (e.g. --funding-sources ",") would
-    // otherwise drop the required field and fire an empty PATCH.
-    if (options.fundingSources !== undefined && !fundingSources) {
-      output(formatError("--funding-sources must list at least one internal account ID"));
       process.exitCode = 1;
       return;
     }
@@ -196,7 +198,7 @@ export function registerCardsCommand(
     }
     if (
       options.state === "CLOSED" &&
-      (options.fundingSources !== undefined ||
+      (options.fundingSource !== undefined ||
         options.maxSpendPerTransaction !== undefined ||
         options.clearMaxSpendPerTransaction)
     ) {
@@ -211,7 +213,9 @@ export function registerCardsCommand(
 
     const body: Record<string, unknown> = {};
     if (options.state) body.state = options.state;
-    if (fundingSources) body.fundingSources = fundingSources;
+    if (options.fundingSource !== undefined) {
+      body.fundingSource = options.fundingSource;
+    }
     if (options.maxSpendPerTransaction !== undefined) {
       body.maxSpendPerTransaction = options.maxSpendPerTransaction;
     } else if (options.clearMaxSpendPerTransaction) {

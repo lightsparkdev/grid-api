@@ -318,14 +318,14 @@ grid cards get <cardId>
 # Issue a virtual card
 grid cards create \
   --cardholder-id <customerId> \
-  --funding-sources "InternalAccount:1,InternalAccount:2" \
+  --funding-source "InternalAccount:1" \
   --max-spend-per-transaction 5000
 
-# Freeze / unfreeze / close, replace funding sources, or change the spending limit
+# Freeze / unfreeze / close, replace the funding source, or change the spending limit
 grid cards update <cardId> --state FROZEN
 grid cards update <cardId> --state ACTIVE
 grid cards update <cardId> --state CLOSED
-grid cards update <cardId> --funding-sources "InternalAccount:3"
+grid cards update <cardId> --funding-source "InternalAccount:3"
 grid cards update <cardId> --max-spend-per-transaction 10000
 grid cards update <cardId> --clear-max-spend-per-transaction
 
