@@ -6,7 +6,7 @@ describe("cards list", () => {
     const { request } = await runCli([
       "cards",
       "list",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
       "--state",
       "ACTIVE",
@@ -14,29 +14,29 @@ describe("cards list", () => {
 
     expect(request?.path).toBe("/grid/v1/cards");
     expect(request?.query).toMatchObject({
-      cardholderId: "Customer:abc",
+      customerId: "Customer:abc",
       state: "ACTIVE",
     });
   });
 });
 
 describe("cards create", () => {
-  it("builds the create body with funding sources and default form", async () => {
+  it("builds the create body with a funding source and default form", async () => {
     const { request } = await runCli([
       "cards",
       "create",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
-      "--funding-sources",
-      "InternalAccount:1,InternalAccount:2",
+      "--funding-source",
+      "InternalAccount:1",
     ]);
 
     expect(request?.method).toBe("POST");
     expect(request?.path).toBe("/grid/v1/cards");
     expect(request?.body).toMatchObject({
-      cardholderId: "Customer:abc",
+      customerId: "Customer:abc",
       form: "VIRTUAL",
-      fundingSources: ["InternalAccount:1", "InternalAccount:2"],
+      fundingSource: "InternalAccount:1",
     });
   });
 
@@ -44,9 +44,9 @@ describe("cards create", () => {
     const { request } = await runCli([
       "cards",
       "create",
-      "--cardholder-id",
+      "--customer-id",
       "Customer:abc",
-      "--funding-sources",
+      "--funding-source",
       "InternalAccount:1",
       "--max-spend-per-transaction",
       "5000",
@@ -60,13 +60,13 @@ describe("cards create", () => {
       runCli([
         "cards",
         "create",
-        "--cardholder-id",
+        "--customer-id",
         "Customer:abc",
-        "--funding-sources",
+        "--funding-source",
         "InternalAccount:1",
         "--max-spend-per-transaction",
         "0",
-      ])
+      ]),
     ).rejects.toThrow();
   });
 });
@@ -126,7 +126,42 @@ describe("cards update", () => {
     expect(request?.body).toEqual({ maxSpendPerTransaction: null });
   });
 
-  it("rejects an update with no state or funding sources", async () => {
+  it("replaces the funding source", async () => {
+    const { request } = await runCli([
+      "cards",
+      "update",
+      "Card:1",
+      "--funding-source",
+      "InternalAccount:2",
+    ]);
+
+    expect(request?.body).toEqual({ fundingSource: "InternalAccount:2" });
+  });
+
+  it("rejects an update with an empty funding source", async () => {
+    const { calls } = await runCli([
+      "cards",
+      "update",
+      "Card:1",
+      "--funding-source",
+      "",
+    ]);
+    expect(calls).toBe(0);
+  });
+
+  it("rejects a create with an empty funding source", async () => {
+    const { calls } = await runCli([
+      "cards",
+      "create",
+      "--customer-id",
+      "Customer:abc",
+      "--funding-source",
+      "",
+    ]);
+    expect(calls).toBe(0);
+  });
+
+  it("rejects an update with no state or funding source", async () => {
     const { calls } = await runCli(["cards", "update", "Card:1"]);
     expect(calls).toBe(0);
   });
@@ -138,17 +173,6 @@ describe("cards update", () => {
       "Card:1",
       "--state",
       "PENDING_KYC",
-    ]);
-    expect(calls).toBe(0);
-  });
-
-  it("rejects an empty --funding-sources value", async () => {
-    const { calls } = await runCli([
-      "cards",
-      "update",
-      "Card:1",
-      "--funding-sources",
-      ",",
     ]);
     expect(calls).toBe(0);
   });
@@ -166,14 +190,14 @@ describe("cards update", () => {
     expect(calls).toBe(0);
   });
 
-  it("rejects CLOSED combined with funding sources", async () => {
+  it("rejects CLOSED combined with a funding source", async () => {
     const { calls } = await runCli([
       "cards",
       "update",
       "Card:1",
       "--state",
       "CLOSED",
-      "--funding-sources",
+      "--funding-source",
       "InternalAccount:1",
     ]);
     expect(calls).toBe(0);
