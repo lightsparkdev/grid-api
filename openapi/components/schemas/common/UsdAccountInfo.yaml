@@ -10,6 +10,7 @@ allOf:
         type: string
         enum:
         - ACH
+        - ACH_SAME_DAY
         - WIRE
         - RTP
         - FEDNOW
