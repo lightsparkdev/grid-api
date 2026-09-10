@@ -19,9 +19,12 @@ properties:
     maxLength: 34
   bankName:
     type: string
-    description: The name of the bank
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
     minLength: 1
     maxLength: 255
+    example: BRAC Bank
   branchCode:
     type: string
     description: The branch code
@@ -45,7 +48,7 @@ properties:
 example:
   accountType: BDT_ACCOUNT
   accountNumber: '1234567890'
-  bankName: Example Bank
+  bankName: BRAC Bank
   branchCode: '11111'
   swiftCode: DEUTDEFF
   phoneNumber: '+1234567890'
