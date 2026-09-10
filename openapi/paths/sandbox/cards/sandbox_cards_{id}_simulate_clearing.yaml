@@ -82,6 +82,16 @@ post:
         application/json:
           schema:
             $ref: ../../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. The simulation targets a card in a program where the card
+        issuer makes authorization decisions. These sandbox simulators support
+        only card programs where Grid makes authorization decisions. This is a
+        property of the card's program, so retrying will not help.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:
