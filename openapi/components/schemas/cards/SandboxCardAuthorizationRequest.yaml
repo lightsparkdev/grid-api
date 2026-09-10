@@ -25,3 +25,7 @@ properties:
     $ref: ../common/Currency.yaml
   merchant:
     $ref: ./CardMerchant.yaml
+    description: >-
+      The simulated merchant. `descriptor` and `mcc` are passed to the issuer's
+      simulator and come back on the resulting transaction. `country` is
+      ignored: the issuer resolves the merchant location from its own data.

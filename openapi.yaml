@@ -26345,6 +26345,7 @@ components:
           $ref: '#/components/schemas/Currency'
         merchant:
           $ref: '#/components/schemas/CardMerchant'
+          description: 'The simulated merchant. `descriptor` and `mcc` are passed to the issuer''s simulator and come back on the resulting transaction. `country` is ignored: the issuer resolves the merchant location from its own data.'
     SandboxCardSimulationResponse:
       type: object
       required:
