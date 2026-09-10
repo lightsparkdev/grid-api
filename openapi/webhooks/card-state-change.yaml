@@ -49,7 +49,7 @@ post:
               timestamp: '2026-05-08T14:11:00Z'
               data:
                 id: Card:019542f5-b3e7-1d02-0000-000000000010
-                cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCardId: card-emp-aary-001
                 state: ACTIVE
                 stateReason: null
@@ -76,7 +76,7 @@ post:
               timestamp: '2026-05-08T14:12:00Z'
               data:
                 id: Card:019542f5-b3e7-1d02-0000-000000000011
-                cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 state: CLOSED
                 stateReason: ISSUER_REJECTED
                 form: VIRTUAL
@@ -96,7 +96,7 @@ post:
               timestamp: '2026-05-09T09:00:00Z'
               data:
                 id: Card:019542f5-b3e7-1d02-0000-000000000010
-                cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 state: FROZEN
                 stateReason: null
                 brand: VISA
