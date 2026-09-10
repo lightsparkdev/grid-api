@@ -25,8 +25,8 @@ import {
   PopoverRoot,
   PopoverTrigger,
 } from '@lightsparkdev/origin/popover';
-import { FIGMA_CARD_W, FIGMA_FACE_H } from '@/apps/card/cardMetrics';
-import { gradientCss, type CardGradient, type GradientStop } from '@/data/design';
+import { faceSize } from '@/apps/card/cardMetrics';
+import { gradientCss, type CardGradient, type GradientStop, type Orientation } from '@/data/design';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { setGradientEditing } from './gradientEditing';
 import styles from './ColorPicker.module.scss';
@@ -115,21 +115,22 @@ function colorAt(stops: GradientStop[], at: number): string {
 }
 
 /** A first gradient from a solid: the color, then a lighter or darker
- *  version of it, top to bottom, as Figma's default fill. */
-function gradientFrom(color: string, type: CardGradient['type']): CardGradient {
+ *  version of it, top to bottom of the face as held, as Figma's default fill. */
+function gradientFrom(color: string, type: CardGradient['type'], orientation: Orientation): CardGradient {
   const hsv = hexToHsv(color) ?? { h: 0, s: 0, v: 0.5 };
   const second = hsvToHex({
     ...hsv,
     v: clamp01(hsv.v < 0.5 ? hsv.v + 0.35 : hsv.v - 0.35),
   });
+  const face = faceSize(orientation);
   return {
     type,
     stops: [
       { at: 0, color },
       { at: 1, color: second },
     ],
-    from: { x: FIGMA_CARD_W / 2, y: 0 },
-    to: { x: FIGMA_CARD_W / 2, y: FIGMA_FACE_H },
+    from: { x: face.w / 2, y: 0 },
+    to: { x: face.w / 2, y: face.h },
   };
 }
 
@@ -246,6 +247,8 @@ interface ColorPickerProps {
   /** The current color, #rrggbb: the solid, or the gradient's first stop. */
   value: string;
   gradient: CardGradient | null;
+  /** The face a new gradient is laid across (its default line runs top to bottom). */
+  orientation: Orientation;
   onChange: (color: string, gradient: CardGradient | null) => void;
   /** The trigger; rendered as the popover's anchor. */
   children: ReactNode;
@@ -269,6 +272,7 @@ interface ColorPickerProps {
 export function ColorPicker({
   value,
   gradient,
+  orientation,
   onChange,
   children,
   triggerClassName,
@@ -335,7 +339,7 @@ export function ColorPicker({
     if (gradient) setGradient({ ...gradient, type: m });
     else {
       setStop(0);
-      setGradient(gradientFrom(value, m));
+      setGradient(gradientFrom(value, m, orientation));
     }
   };
 

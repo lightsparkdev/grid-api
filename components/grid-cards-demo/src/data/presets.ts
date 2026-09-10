@@ -1,7 +1,8 @@
 /* The Global Accounts playground's platforms, as card designs made with the
    Design controls: the same marks, colors, and placements as their cards
    there. Picking one fills the controls; the selection is read back off the
-   design, so any edit is the visitor's own design again. */
+   design, so any edit is the visitor's own design again. Every preset is a
+   landscape card, as the Global Accounts cards are. */
 
 import { FIGMA_FACE_H } from '@/apps/card/cardMetrics';
 import { sameBrandLayout, sameGradient, type CardDesign } from './design';
@@ -48,6 +49,7 @@ export const PRESETS: CardPreset[] = [
       backgroundUrl: `${ASSETS}/art-finance.webp`,
       artTreatment: 'print',
       visaMark: 'back',
+      orientation: 'landscape',
     },
   },
   {
@@ -69,6 +71,7 @@ export const PRESETS: CardPreset[] = [
       backgroundUrl: null,
       artTreatment: 'print',
       visaMark: 'back',
+      orientation: 'landscape',
     },
   },
   {
@@ -89,6 +92,7 @@ export const PRESETS: CardPreset[] = [
       backgroundUrl: null,
       artTreatment: 'print',
       visaMark: 'back',
+      orientation: 'landscape',
     },
   },
   {
@@ -111,6 +115,7 @@ export const PRESETS: CardPreset[] = [
       backgroundUrl: `${ASSETS}/art-marketplace.webp`,
       artTreatment: 'print',
       visaMark: 'back',
+      orientation: 'landscape',
     },
   },
   {
@@ -133,6 +138,7 @@ export const PRESETS: CardPreset[] = [
       backgroundUrl: `${ASSETS}/art-ondemand.png`,
       artTreatment: 'print',
       visaMark: 'back',
+      orientation: 'landscape',
     },
   },
   {
@@ -155,6 +161,7 @@ export const PRESETS: CardPreset[] = [
       backgroundUrl: null,
       artTreatment: 'print',
       visaMark: 'back',
+      orientation: 'landscape',
     },
   },
 ];

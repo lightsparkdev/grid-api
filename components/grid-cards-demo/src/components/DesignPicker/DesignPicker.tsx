@@ -21,6 +21,8 @@ import {
   FINISHES,
   LOGO_TREATMENTS,
   MATERIALS,
+  ORIENTATIONS,
+  reorientDesign,
   stockOf,
   VISA_MARK_FACES,
   type CardDesign,
@@ -165,8 +167,9 @@ function SwatchRow({ label, active, children }: { label: string; active: string 
  * A choice as a small sample of itself, the way the Color row shows colors:
  * plastic and steel; matte and gloss; ink flat, spot gloss with a shine, foil
  * silver with a bright run, an etch pressed in; for the Visa mark, a card's
- * front (the chip) or back (the stripe) with the mark's spot on it. Each
- * names itself in a tooltip on hover.
+ * front (the chip) or back (the stripe) with the mark's spot on it; for the
+ * orientation, a card held flat or upright. Each names itself in a tooltip
+ * on hover.
  */
 const SAMPLE: Record<string, string> = {
   plastic: styles.samplePlastic,
@@ -179,6 +182,8 @@ const SAMPLE: Record<string, string> = {
   etch: styles.sampleEtch,
   front: styles.sampleFront,
   back: styles.sampleBack,
+  landscape: styles.sampleLandscape,
+  portrait: styles.samplePortrait,
 };
 
 function SampleSwatches<T extends string>({
@@ -443,6 +448,21 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             onChange={(material) => onChange({ material })}
           />
         </div>
+        {/* The same blank held flat or upright. The brand's placement and the
+            gradient's line belong to a face, so the switch carries the design
+            over (`reorientDesign`) rather than the coordinates. */}
+        <div className={styles.row}>
+          <span className={styles.rowLabel}>Orientation</span>
+          <SampleSwatches
+            label="Card orientation"
+            value={design.orientation}
+            options={ORIENTATIONS}
+            onChange={(orientation) => {
+              const next = reorientDesign(design, orientation);
+              onChange({ orientation, brandLayout: next.brandLayout, gradient: next.gradient });
+            }}
+          />
+        </div>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Finish</span>
           <SampleSwatches
@@ -487,6 +507,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             <ColorPicker
               value={design.color ?? brand}
               gradient={design.gradient}
+              orientation={design.orientation}
               onChange={(color, gradient) => onChange({ color, gradient })}
               triggerClassName={clsx(styles.swatch, styles.swatchCustom)}
               triggerActive={custom}
@@ -502,7 +523,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           url={design.backgroundUrl}
           accept="image/svg+xml,image/png,image/jpeg,image/webp"
           label="Upload card art"
-          hint={`${TEX_W} × ${TEX_H} fills the face`}
+          hint={design.orientation === 'portrait' ? `${TEX_H} × ${TEX_W} fills the face` : `${TEX_W} × ${TEX_H} fills the face`}
           onPick={(url) => onChange({ backgroundUrl: url })}
         />
         {/* The art's effect row unfolds under the art once there is some. */}

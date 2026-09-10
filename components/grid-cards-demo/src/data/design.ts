@@ -2,6 +2,8 @@
    (plastic or metal), a coat (finish), a print (color or art, logo), and
    decoration on the print (spot gloss, foil). */
 
+import { faceSize, FIGMA_CARD_W } from '@/apps/card/cardMetrics';
+
 /** What the card is made of: a laminated PVC card, or a metal sheet with thin
  *  laminated skins. Sets the thickness and the edge layers. */
 export type CardMaterial = 'plastic' | 'metal';
@@ -20,6 +22,11 @@ export type ArtTreatment = 'print' | 'spotGloss';
  *  printed flat, bottom right; the back then carries the dove hologram the
  *  standards require without the PVBM. */
 export type VisaMarkFace = 'front' | 'back';
+/** How the blank is held. Portrait is the same ISO ID-1 blank turned a
+ *  quarter turn clockwise and held upright: the chip lands at the top, right
+ *  of center, and the back's mag stripe runs down the left edge. The artwork
+ *  is composed for the tall face. */
+export type Orientation = 'landscape' | 'portrait';
 
 /** The card body under the print: PVC core in white or black, or stainless
  *  steel. Shows at the edge and on the face wherever nothing is printed. Not
@@ -83,16 +90,38 @@ export interface BrandLayout {
  *  the brand is right-aligned to in the print sample. The stage snaps to it. */
 export const BRAND_MARGIN = 152;
 
+/** The Visa lockup's box on either face: 339 × 211.067, 54 from the near
+ *  edges (`LOCKUP` in facePaint). */
+const LOCKUP_INSET = 54;
+const LOCKUP_H = 211.067;
+
 /** The print sample's placement: on the chip's row, right-aligned to the
  *  chip's own inset (152), 90 tall (Thales sample, Figma 1:97). */
 export const BRAND_DEFAULT_LAYOUT: BrandLayout = {
-  x: 1536 - BRAND_MARGIN,
+  x: FIGMA_CARD_W - BRAND_MARGIN,
   y: 334 + 149 / 2,
   h: 90,
   anchor: 'right',
   rotation: 0,
   opacity: 1,
 };
+
+/** The vertical card's placement: bottom left on the print margin, centered
+ *  on the Visa lockup's row (the brand and the mark share the bottom, as
+ *  vertical cards have it), clear of the chip at the top. */
+export const BRAND_DEFAULT_LAYOUT_PORTRAIT: BrandLayout = {
+  x: BRAND_MARGIN,
+  y: FIGMA_CARD_W - LOCKUP_INSET - LOCKUP_H / 2,
+  h: 90,
+  anchor: 'left',
+  rotation: 0,
+  opacity: 1,
+};
+
+/** The layout the brand takes with none of its own, per orientation. */
+export function brandDefaultLayout(orientation: Orientation): BrandLayout {
+  return orientation === 'portrait' ? BRAND_DEFAULT_LAYOUT_PORTRAIT : BRAND_DEFAULT_LAYOUT;
+}
 
 export const BRAND_MIN_H = 24;
 export const BRAND_MAX_H = 1400;
@@ -145,6 +174,23 @@ export function sameGradient(a: CardGradient | null, b: CardGradient | null): bo
   );
 }
 
+/**
+ * The gradient's line carried to the other orientation: each end scaled
+ * from one face's proportions to the other's, so a gradient that runs top to
+ * bottom still does, and a diagonal is still a diagonal. (A rotation would
+ * turn a vertical gradient sideways.) The stops and type are kept.
+ */
+export function reorientGradient(g: CardGradient, from: Orientation, to: Orientation): CardGradient {
+  if (from === to) return g;
+  const a = faceSize(from);
+  const b = faceSize(to);
+  const map = (p: { x: number; y: number }) => ({
+    x: Math.round((p.x * b.w) / a.w),
+    y: Math.round((p.y * b.h) / a.h),
+  });
+  return { ...g, from: map(g.from), to: map(g.to) };
+}
+
 /** The CSS for a gradient's stops, left to right (for a swatch or a bar). */
 export function gradientCss(g: CardGradient, angle = '90deg'): string {
   const stops = [...g.stops].sort((a, b) => a.at - b.at).map((s) => `${s.color} ${s.at * 100}%`);
@@ -175,6 +221,8 @@ export interface CardDesign {
   artTreatment: ArtTreatment;
   /** Where the Visa mark sits, and with it whether the back has a hologram. */
   visaMark: VisaMarkFace;
+  /** How the blank is held; the artwork is composed for that face. */
+  orientation: Orientation;
 }
 
 export interface DesignSwatch {
@@ -229,6 +277,27 @@ export const VISA_MARK_FACES: Array<{ id: VisaMarkFace; label: string }> = [
   { id: 'back', label: 'Back' },
 ];
 
+export const ORIENTATIONS: Array<{ id: Orientation; label: string }> = [
+  { id: 'landscape', label: 'Landscape' },
+  { id: 'portrait', label: 'Portrait' },
+];
+
+/**
+ * The design held the other way: the same card (material, finish, color,
+ * brand assets, effects), with the brand back at that orientation's default
+ * (its layout was in the other face's coordinates, around a chip that has
+ * moved) and the gradient's line carried across.
+ */
+export function reorientDesign(design: CardDesign, orientation: Orientation): CardDesign {
+  if (design.orientation === orientation) return design;
+  return {
+    ...design,
+    orientation,
+    brandLayout: null,
+    gradient: design.gradient && reorientGradient(design.gradient, design.orientation, orientation),
+  };
+}
+
 export const initialDesign: CardDesign = {
   // Empty: the field invites a name; the card and the app fall back to 'Your brand'.
   programName: '',
@@ -243,6 +312,7 @@ export const initialDesign: CardDesign = {
   backgroundUrl: null,
   artTreatment: 'print',
   visaMark: 'back',
+  orientation: 'landscape',
 };
 
 /** The starting design for a theme: the card is ink on dark, white on light,
