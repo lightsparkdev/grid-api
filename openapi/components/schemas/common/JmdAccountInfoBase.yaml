@@ -29,12 +29,15 @@ properties:
     - SAVINGS
   bankName:
     type: string
-    description: The name of the bank
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
     minLength: 1
     maxLength: 255
+    example: National Commercial Bank Ja Ltd
 example:
   accountType: JMD_ACCOUNT
   accountNumber: '1234567890'
   branchCode: '11111'
   bankAccountType: CHECKING
-  bankName: Example Bank
+  bankName: National Commercial Bank Ja Ltd

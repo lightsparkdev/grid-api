@@ -24,7 +24,7 @@ properties:
     type: string
     description: The name of the financial institution holding the account. Optional
       on every rail, and recommended for wires, where it identifies the beneficiary's
-      institution on the payment message.
+      institution on the payment message. Not checked against `GET /discoveries`.
     minLength: 1
     maxLength: 140
     example: Chase Bank

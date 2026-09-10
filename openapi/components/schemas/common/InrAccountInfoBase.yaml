@@ -42,15 +42,9 @@ properties:
     minLength: 1
     maxLength: 32
     example: NEFT
-  bankName:
-    type: string
-    description: The name of the bank
-    minLength: 1
-    maxLength: 255
 example:
   accountType: INR_ACCOUNT
   vpa: user@upi
   accountNumber: '000111222333'
   ifsc: HDFC0001234
   rail: NEFT
-  bankName: Example Bank
