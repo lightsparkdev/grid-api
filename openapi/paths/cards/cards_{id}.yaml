@@ -101,7 +101,7 @@ patch:
     Effects:
 
     - `state: FROZEN`: Authorization Decisioning declines new auths with
-    `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue —
+    `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing pulls and in-flight reconciliation continue —
     freezing does not pause the lifecycle of authorizations that already
     passed.
 

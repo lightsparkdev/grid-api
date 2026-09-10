@@ -21,7 +21,8 @@ identifies this account.
 The real-time request from the card network ("can this card spend
 $12.50 at Blue Bottle Coffee?"). {` `}Grid runs Authorization Decisioning
 against the funding source and either approves the auth (placing a hold)
-or declines it (`INSUFFICIENT_FUNDS`, `CARD_PAUSED`, etc.).
+or creates a terminal card transaction with `status: "DECLINED"` and a
+`cardDeclinedReason`. No funds are pulled for a declined authorization.
 
 ## Pull
 
@@ -47,7 +48,7 @@ it is full or partial.
 ## Exception
 
 A transaction that settled to the card network but whose corresponding
-pull from the funding source failed — for example, the cardholder's
+pull from the funding source failed. For example, the cardholder's
 balance no longer covers a post-hoc tip clearing. Exceptions are the
 high-urgency reconciliation alerts and are surfaced as
 `status: "EXCEPTION"` on the parent `CardTransaction`.

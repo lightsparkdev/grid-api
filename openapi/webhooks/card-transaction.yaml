@@ -2,10 +2,12 @@ post:
   summary: Card transaction
   description: >
     Webhook that is called on every lifecycle update of a card
-    `CardTransaction`. Fires when an authorization is approved
-    (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it
+    `CardTransaction`. Fires when an authorization is approved or declined
+    (`CARD_TRANSACTION.AUTHORIZED`, `CARD_TRANSACTION.DECLINED`), as clearings
+    settle against it
     (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), and
-    when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`).
+    when a transaction settles to the card network but the funding-source pull
+    fails (`CARD_TRANSACTION.EXCEPTION`).
     The payload carries the full `CardTransaction` resource.
 
 
@@ -91,6 +93,47 @@ post:
                 authorizedAt: '2026-05-09T10:00:00Z'
                 createdAt: '2026-05-09T10:00:00Z'
                 updatedAt: '2026-05-09T10:00:00Z'
+          declined:
+            summary: Authorization declined for insufficient funds
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000044
+              type: CARD_TRANSACTION.DECLINED
+              timestamp: '2026-05-09T10:05:00Z'
+              data:
+                type: CARD
+                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000102
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_d14e6c8b
+                status: DECLINED
+                cardDeclinedReason: INSUFFICIENT_FUNDS
+                direction: DEBIT
+                merchant:
+                  descriptor: AMAZON RETAIL US
+                  mcc: '5942'
+                  country: US
+                authorizedAmount:
+                  amount: 50000
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                pullSummary:
+                  count: 0
+                  totalAmount: 0
+                  pendingCount: 0
+                refundSummary:
+                  count: 0
+                  totalAmount: 0
+                settlementSummary:
+                  count: 0
+                  totalAmount: 0
+                authorizedAt: '2026-05-09T10:05:00Z'
+                createdAt: '2026-05-09T10:05:00Z'
+                updatedAt: '2026-05-09T10:05:00Z'
           settled:
             summary: All clearings posted
             value:

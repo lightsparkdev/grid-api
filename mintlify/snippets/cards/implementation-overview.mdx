@@ -67,7 +67,9 @@ Children (pulls, clearings, refunds) are reconciled against the parent
 and rolled up into `pullSummary`, `settlementSummary`, and
 `refundSummary` aggregates. The lifecycle status moves
 `AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `EXCEPTION` as the
-failure path for stuck post-hoc pulls. A merchant return keeps the
+high-urgency path when the network settled but the funding-source pull
+failed. A declined authorization starts and ends in `DECLINED`, with no
+funds pulled. A merchant return keeps the
 transaction `SETTLED` and reports the returned value in
 `refundedAmount`.
 

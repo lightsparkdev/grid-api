@@ -1,7 +1,7 @@
-A card transaction is not a single event — it's a parent row plus a
+A card transaction is not a single event. It is a parent row plus a
 stream of child events from the card network. This page covers the
-event model, the status transitions, and how to handle the
-`EXCEPTION` path.
+event model, status transitions, and declined authorizations. It also
+explains how to handle the `EXCEPTION` path.
 
 ## The event model
 
@@ -21,24 +21,37 @@ on the parent.
 
 ## Status transitions
 
-```text
-AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED
-              │
-              └──► EXCEPTION  (pull failed after settlement)
+```mermaid
+stateDiagram-v2
+    [*] --> AUTHORIZED: authorization approved
+    [*] --> DECLINED: declined at authorization
+    AUTHORIZED --> PARTIALLY_SETTLED: clearing
+    AUTHORIZED --> SETTLED: final clearing
+    AUTHORIZED --> SETTLED: full reversal or expiry, settled for zero
+    PARTIALLY_SETTLED --> SETTLED: final clearing
+    AUTHORIZED --> EXCEPTION: pull failed
+    PARTIALLY_SETTLED --> EXCEPTION: pull failed
+    SETTLED --> EXCEPTION: pull failed
 ```
 
 A merchant `RETURN` does not move the status. The transaction stays
 `SETTLED` and the returned value appears in `refundedAmount`.
+A partial authorization reversal releases part of the hold and lowers
+`authorizedAmount`; the transaction stays `AUTHORIZED`. A full reversal or
+an expiry releases the whole hold and resolves the transaction as `SETTLED`
+with `settledAmount` of zero.
 
 | Status | Meaning |
 |--------|---------|
 | `AUTHORIZED` | Auth approved, hold placed, no clearings yet. |
+| `DECLINED` | The authorization was declined. Nothing was pulled from the funding source, and the status is terminal. See `cardDeclinedReason`. |
 | `PARTIALLY_SETTLED` | At least one clearing landed, but more are still expected (split shipments, multi-leg trips). |
 | `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. A `RETURN` received afterwards keeps it `SETTLED` with the returned value in `refundedAmount`. |
-| `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
+| `EXCEPTION` | The transaction settled to the card network, but the pull from the funding source failed. This high-urgency state needs operator reconciliation. |
 
-Every transition is delivered as a `CARD_TRANSACTION.*` webhook carrying
-the post-change parent — see [Webhooks](/cards/platform-tools/webhooks).
+Every transition is delivered by the card transaction webhook, which
+carries the post-change `CardTransaction`. For the event types, see
+[Webhooks](/cards/platform-tools/webhooks).
 
 ## The over-auth path
 

@@ -8770,7 +8770,7 @@ paths:
         This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
         Effects:
-        - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
+        - `state: FROZEN`: Authorization Decisioning declines new auths with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
         - `state: ACTIVE`: normal authorization behavior resumes.
         - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. The funding source is detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
         - `fundingSource` change: returns the updated card with the new binding and fires no webhook.
@@ -8929,7 +8929,7 @@ paths:
 
         The decisioning outcome is controlled by the last three characters of `merchant.descriptor`:
 
-        | Suffix | Outcome | | ------ | ------- | | `002`  | Decline — `INSUFFICIENT_FUNDS` (the pull on the funding source fails) | | `003`  | Decline — `CARD_PAUSED` (intended to verify a frozen card refuses auths) | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
+        | Suffix | Outcome | | ------ | ------- | | `002`  | Decline: `DECLINED`, `cardDeclinedReason: INSUFFICIENT_FUNDS` | | `003`  | Decline: `DECLINED`, `cardDeclinedReason: CARD_NOT_ACTIVE` (verifies a frozen card refuses auths) | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Network settlement succeeds but the funding-source pull fails: `EXCEPTION` | | any other | Approved |
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardAuthorization
@@ -11754,7 +11754,7 @@ webhooks:
     post:
       summary: Card transaction
       description: |
-        Webhook that is called on every lifecycle update of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
+        Webhook that is called on every lifecycle update of a card `CardTransaction`. Fires when an authorization is approved or declined (`CARD_TRANSACTION.AUTHORIZED`, `CARD_TRANSACTION.DECLINED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), and when a transaction settles to the card network but the funding-source pull fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
 
         Not every delivery changes `status`. A merchant return has no event type of its own: it re-fires `CARD_TRANSACTION.SETTLED` with the same status as the settlement that preceded it, and only the amounts move. Treat a repeated `CARD_TRANSACTION.SETTLED` as a new update rather than a duplicate, and read `refundedAmount` and `refundSummary` to tell a return apart from the original settlement.
 
@@ -11822,6 +11822,47 @@ webhooks:
                     authorizedAt: '2026-05-09T10:00:00Z'
                     createdAt: '2026-05-09T10:00:00Z'
                     updatedAt: '2026-05-09T10:00:00Z'
+              declined:
+                summary: Authorization declined for insufficient funds
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000044
+                  type: CARD_TRANSACTION.DECLINED
+                  timestamp: '2026-05-09T10:05:00Z'
+                  data:
+                    type: CARD
+                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000102
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_d14e6c8b
+                    status: DECLINED
+                    cardDeclinedReason: INSUFFICIENT_FUNDS
+                    direction: DEBIT
+                    merchant:
+                      descriptor: AMAZON RETAIL US
+                      mcc: '5942'
+                      country: US
+                    authorizedAmount:
+                      amount: 50000
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    pullSummary:
+                      count: 0
+                      totalAmount: 0
+                      pendingCount: 0
+                    refundSummary:
+                      count: 0
+                      totalAmount: 0
+                    settlementSummary:
+                      count: 0
+                      totalAmount: 0
+                    authorizedAt: '2026-05-09T10:05:00Z'
+                    createdAt: '2026-05-09T10:05:00Z'
+                    updatedAt: '2026-05-09T10:05:00Z'
               settled:
                 summary: All clearings posted
                 value:
@@ -23711,20 +23752,44 @@ components:
       type: string
       enum:
         - AUTHORIZED
+        - DECLINED
         - PARTIALLY_SETTLED
         - SETTLED
         - EXCEPTION
       description: |
-        Lifecycle status of a card transaction. The status tracks settlement only —
-        a return is reported through `direction` and `refundedAmount`, not through a
-        status of its own.
+        Lifecycle status of a card transaction. The status tracks the authorization
+        outcome and settlement. A return is reported through `direction` and
+        `refundedAmount`, not through a status of its own.
 
         | Status | Description |
         |--------|-------------|
         | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
+        | `DECLINED` | The authorization was declined; see `cardDeclinedReason`. Nothing was pulled from the funding source. Terminal. |
         | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
         | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. A `RETURN` received afterwards keeps the transaction `SETTLED` and reports the returned value in `refundedAmount`. |
-        | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
+        | `EXCEPTION` | The transaction settled to the card network, but the pull from the funding source failed. For example, the balance may no longer cover a post-hoc clearing. This is a high-urgency state that needs operator reconciliation. |
+    CardDeclinedReason:
+      type: string
+      enum:
+        - CARD_NOT_ACTIVE
+        - SPEND_LIMIT_EXCEEDED
+        - INSUFFICIENT_FUNDS
+        - NO_ELIGIBLE_FUNDING_SOURCE
+        - BLOCKED
+        - UNSUPPORTED_NETWORK
+        - OTHER
+      description: |
+        Reason a card authorization was declined.
+
+        | Reason | Description |
+        |--------|-------------|
+        | `CARD_NOT_ACTIVE` | The card is `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED`. |
+        | `SPEND_LIMIT_EXCEEDED` | The amount exceeds `maxSpendPerTransaction`, `maxSpendPerDay`, or the platform cap. |
+        | `INSUFFICIENT_FUNDS` | The funding source balance does not cover the authorization. |
+        | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
+        | `BLOCKED` | The merchant category or the transaction is blocked by program rules. |
+        | `UNSUPPORTED_NETWORK` | The network or transaction type is not supported. |
+        | `OTHER` | Any other reason. |
     CardMerchant:
       type: object
       required:
@@ -23838,6 +23903,9 @@ components:
           readOnly: true
         status:
           $ref: '#/components/schemas/CardTransactionStatus'
+        cardDeclinedReason:
+          $ref: '#/components/schemas/CardDeclinedReason'
+          description: Why the authorization was declined. Present only when `status` is `DECLINED`.
         direction:
           $ref: '#/components/schemas/TransactionDirection'
           description: A purchase is a `DEBIT`. A standalone merchant refund with no purchase to return against is a `CREDIT`, with the credited value in `settledAmount`.
@@ -23863,7 +23931,7 @@ components:
         authorizedAt:
           type: string
           format: date-time
-          description: When the auth was approved.
+          description: When the authorization was approved or declined.
           example: '2026-05-08T14:30:00Z'
         lastEventAt:
           type: string
@@ -26040,7 +26108,7 @@ components:
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this state cannot transact. |
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
         | `ACTIVE` | The card is live and can authorize transactions. |
-        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `CARD_PAUSED`. Existing settlements and refunds continue to reconcile. |
+        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible state. |
     CardStateReason:
       type: string
@@ -27202,6 +27270,7 @@ components:
         - AGENT_ACTION.PENDING_APPROVAL
         - CARD.STATE_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
+        - CARD_TRANSACTION.DECLINED
         - CARD_TRANSACTION.PARTIALLY_SETTLED
         - CARD_TRANSACTION.SETTLED
         - CARD_TRANSACTION.EXCEPTION
@@ -27446,6 +27515,7 @@ components:
               type: string
               enum:
                 - CARD_TRANSACTION.AUTHORIZED
+                - CARD_TRANSACTION.DECLINED
                 - CARD_TRANSACTION.PARTIALLY_SETTLED
                 - CARD_TRANSACTION.SETTLED
                 - CARD_TRANSACTION.EXCEPTION

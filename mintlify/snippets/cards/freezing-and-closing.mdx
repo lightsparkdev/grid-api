@@ -40,7 +40,7 @@ The response is `200 OK` with the updated `Card` and a
 Setting a card to `FROZEN`:
 
 - Causes Authorization Decisioning to decline new auths with
-  `CARD_PAUSED`.
+  `cardDeclinedReason: CARD_NOT_ACTIVE`.
 - Does **not** pause the lifecycle of authorizations that already
   passed. Pulls, clearings, and refunds against existing transactions
   continue to reconcile normally.
