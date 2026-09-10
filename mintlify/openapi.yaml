@@ -26159,8 +26159,8 @@ components:
       enum:
         - VIRTUAL
       description: |
-        Physical form factor of the card. Only `VIRTUAL` is supported in v1;
-        `PHYSICAL` will be added in a later release.
+        Form factor of the card. Only `VIRTUAL` is supported; physical cards are
+        not offered.
     Card:
       type: object
       required:
