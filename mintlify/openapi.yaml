@@ -8554,6 +8554,8 @@ paths:
       description: |
         Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
+        Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Retries must carry the same key.
+
         Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and `maxTransactionsPerDay` values set the card-specific caps on one transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. The limits are enforced by Grid for card programs where Grid makes the authorization decision, whether the card is funded by an Embedded Wallet account or custodial fiat. If the platform config sets the corresponding `cardConfigs` value, Grid enforces the lower of the card and platform caps. Amounts use the smallest unit of the card's currency.
 
         If any funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
@@ -8566,6 +8568,16 @@ paths:
         - Cards
       security:
         - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: |
+            A unique identifier for the request, up to 255 characters. A retry carrying the same key returns the card created by the first request; reusing a key for a materially different card request is rejected with `409`.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
         content:
@@ -8592,7 +8604,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, with `INVALID_INPUT` when the `Idempotency-Key` header is missing or exceeds 255 characters, with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
           content:
             application/json:
               schema:
