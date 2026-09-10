@@ -2,6 +2,7 @@ type: string
 enum:
   - ACH
   - ACH_COLOMBIA
+  - ACH_SAME_DAY
   - BANK_TRANSFER
   - BRE_B
   - CIPS
@@ -25,5 +26,8 @@ enum:
   - WIRE
 description: >-
   The payment rail used for the transfer. Payment rails represent the underlying
-  payment network or system used to move funds between accounts.
+  payment network or system used to move funds between accounts. `ACH` settles on
+  the standard next-business-day schedule. `ACH_SAME_DAY` requests same-business-day
+  settlement and is priced separately; it is subject to the NACHA per-entry same-day
+  limit, and a request above that limit is rejected.
 example: ACH

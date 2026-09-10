@@ -11,6 +11,21 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## Same-day ACH is its own payment rail
+
+`ACH_SAME_DAY` joins `ACH` in `PaymentRail`. Pin it on a quote's destination to request
+same-business-day settlement for a USD payout. `ACH` continues to settle on the
+standard next-business-day schedule.
+
+- Grid never selects `ACH_SAME_DAY` for you. It is only used when you name it, so
+  existing integrations that omit `paymentRail` are unaffected.
+- The two rails are priced separately. A `RailFeeConfig` with `rail: ACH_SAME_DAY`
+  prices same-day sends; your existing `ACH` config keeps pricing standard sends.
+- A same-day request above the NACHA per-entry limit is rejected at quote time,
+  rather than silently settling next day.
+
+See [Assessing fees](/payouts-and-b2b/payment-flow/assessing-fees).
+
 ## Card returns report as `SETTLED` with a `refundedAmount`
 
 `REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from
