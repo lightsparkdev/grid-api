@@ -12464,6 +12464,7 @@ components:
       enum:
         - ACH
         - ACH_COLOMBIA
+        - ACH_SAME_DAY
         - BANK_TRANSFER
         - BRE_B
         - CIPS
@@ -12485,7 +12486,7 @@ components:
         - UNIONPAY
         - UPI
         - WIRE
-      description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
+      description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts. `ACH` settles on the standard next-business-day schedule. `ACH_SAME_DAY` requests same-business-day settlement and is priced separately; it is subject to the NACHA per-entry same-day limit, and a request above that limit is rejected.
       example: ACH
     RailFeeConfig:
       allOf:
@@ -12497,7 +12498,7 @@ components:
                 - RAIL
             rail:
               $ref: '#/components/schemas/PaymentRail'
-              description: The rail used in the transaction. `ACH`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
+              description: The rail used in the transaction. `ACH`, `ACH_SAME_DAY`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
             direction:
               type: string
               enum:
@@ -12516,7 +12517,7 @@ components:
             - rail
             - direction
             - originator
-      description: 'A fee charged when a transaction uses the specified rail. There can be at most one for a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT, originator: GRID will charge a fee on all outgoing ACH transactions.'
+      description: 'A fee charged when a transaction uses the specified rail. There can be at most one for a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT, originator: GRID will charge a fee on all outgoing ACH transactions. `ACH` and `ACH_SAME_DAY` are separate rails, so price each one with its own config.'
     FeeConfigOneOf:
       oneOf:
         - $ref: '#/components/schemas/CrossCurrencyTransactionFeeConfig'

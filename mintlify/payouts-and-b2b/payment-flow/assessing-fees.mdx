@@ -49,7 +49,8 @@ Both fee types may apply to the same transaction, e.g. a cross-currency payment 
 only, and the fixed fee must be in that same currency — other currencies return
 `NOT_IMPLEMENTED`.
 
-Rail fees cover `ACH`, `RTP`, `FEDNOW` and `WIRE`, going `OUT`, with the fixed fee in USD.
+Rail fees cover `ACH`, `ACH_SAME_DAY`, `RTP`, `FEDNOW` and `WIRE`, going `OUT`, with the fixed fee in USD.
+`ACH` and `ACH_SAME_DAY` are separate rails, so price each one with its own config.
 Anything else returns `NOT_IMPLEMENTED`.
 
 Both are expanding — support for stablecoin sending currencies such as USDC is planned.

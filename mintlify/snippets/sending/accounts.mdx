@@ -68,7 +68,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/quotes' \
 </Info>
 
 <Tip>
-  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer.
+  The `paymentRail` field is optional. If omitted, Grid selects a default rail for the destination. Specify a rail (e.g., `ACH`, `ACH_SAME_DAY`, `WIRE`, `RTP`, `FEDNOW`) when you need to control which payment network processes the transfer. `ACH_SAME_DAY` is never selected for you: it requests same-business-day settlement, is priced separately, and is rejected above the NACHA per-entry limit.
 </Tip>
 
 <Info>
