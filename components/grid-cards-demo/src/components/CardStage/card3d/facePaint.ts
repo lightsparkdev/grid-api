@@ -6,12 +6,17 @@
  * the name, number, expiry, code, and the Visa mark. With the mark printed on
  * the front instead (`visaMark: 'front'`), the back carries the dove
  * hologram where the mark was.
+ *
+ * Everything composed is drawn in the spec px of the face as it is held
+ * (`faceSize`), through the frame in `faceFrame.ts`, so a portrait card is
+ * the same painters on a tall face. The chip and the mag stripe are physical
+ * and paint in the blank's texels whatever the orientation.
  */
 
-import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
+import { faceSize } from '@/apps/card/cardMetrics';
 import { CARD_CVV, CARD_EXP, PAN_GROUPS } from '@/apps/shared/card/cardholder';
 import {
-  BRAND_DEFAULT_LAYOUT,
+  brandDefaultLayout,
   isBare,
   luminance,
   materialOf,
@@ -20,15 +25,12 @@ import {
   type CardDesign,
   type CardGradient,
   type CardStock,
+  type Orientation,
 } from '@/data/design';
 import { CARD_FONT_FAMILY, loadCardFont } from './cardFont';
+import { F, K, specSpace, TEX_H, TEX_PER_SPEC, TEX_W, texelBounds, texelSpace, type Side, type SpecRect } from './faceFrame';
 
-export const TEX_W = 2048;
-export const TEX_H = Math.round((TEX_W * CARD_H) / CARD_W);
-/** Card px → texels. */
-export const K = TEX_W / CARD_W;
-/** Figma spec px → texels. */
-export const F = (px: number) => fig(px) * K;
+export { F, K, TEX_H, TEX_PER_SPEC, TEX_W, type SpecRect };
 
 const FONT = `"${CARD_FONT_FAMILY}"`;
 
@@ -42,7 +44,7 @@ const FONT = `"${CARD_FONT_FAMILY}"`;
  * contact positions: left column 10.25–12.25 mm from the left edge, right
  * column 17.87–19.87, so the module is centered at x 15.06 mm; rows C1–C3 put
  * its center at about y 22.8 mm. At 17.94 px/mm on the spec artboard that is
- * a 197 × 149 module at (172, 334).
+ * a 197 × 149 module at (172, 334). Physical: in the blank's frame, texels.
  */
 const CHIP_W = F(197);
 export const CHIP_H = F(149);
@@ -52,6 +54,9 @@ export const CHIP = {
   w: CHIP_W,
   r: CHIP_W * (19.5 / 151),
 };
+/** The chip's box in the blank's spec px, for the composed layouts to keep
+ *  clear of (`chipBox` gives it in the composed face). */
+export const CHIP_SPEC = { x: 172, y: 334, w: 197, h: 149 };
 /** Z card chip geometry (viewBox 151 × 101), fitted to the module: a little
  *  taller than drawn, as 6-contact pads are. */
 export const CHIP_SCALE = CHIP.w / 151;
@@ -63,44 +68,119 @@ export const CHIP_CONTACTS = {
   h: 24.3633,
   r: 12.1816,
 };
-const LOCKUP_W = F(339);
-const LOCKUP_H = F(211.067);
-/** The Visa lockup's box: 339 wide at 54 from the right and bottom, the same
- *  on both faces (the spec has it on both), so the front canvas, which is
- *  not mirrored, puts it in the same bottom-right corner seen from the front. */
-export const LOCKUP = {
-  w: LOCKUP_W,
-  h: LOCKUP_H,
-  x: TEX_W - F(54) - LOCKUP_W,
-  y: TEX_H - F(54) - LOCKUP_H,
-};
-/** The mag stripe bleeds from the top edge to 300 (72 of bleed plus the 228 stripe). */
+/** The Visa lockup's box: 339 × 211.067 spec px, 54 from the right and
+ *  bottom on either face (`lockupBox`). `LOCKUP` is its size in texels, for
+ *  the foil layer's own canvases. */
+export const LOCKUP_SPEC = { w: 339, h: 211.067, inset: 54 };
+export const LOCKUP = { w: F(LOCKUP_SPEC.w), h: F(LOCKUP_SPEC.h) };
+export function lockupBox(o: Orientation): SpecRect {
+  const face = faceSize(o);
+  return {
+    w: LOCKUP_SPEC.w,
+    h: LOCKUP_SPEC.h,
+    x: face.w - LOCKUP_SPEC.inset - LOCKUP_SPEC.w,
+    y: face.h - LOCKUP_SPEC.inset - LOCKUP_SPEC.h,
+  };
+}
+/** The mag stripe bleeds from the top edge to 300 (72 of bleed plus the 228
+ *  stripe). Physical: the blank's top edge, texels; on a portrait back it
+ *  runs down the left edge (`STRIPE_SPEC` in from that edge). */
 export const STRIPE = { y: 0, h: F(300) };
+export const STRIPE_SPEC = 300;
 
 /** Spec px per mm (1536 px across an 85.6 mm card). */
 export const SPEC_PER_MM = 1536 / 85.6;
 
-/** The fine print's last baseline ("Issued by Lead Bank"): 22 px type set in
+/** The fine print's last baseline ("Issued by Lead Bank"): its type set in
  *  from the bottom edge by the same 56 it is set in from the left, its
- *  descenders 15% of the em. */
-export const FINE_PRINT_BASELINE = TEX_H - F(56) - F(22 * 0.15);
+ *  descenders 15% of the em. Spec px of the composed face. */
+export function finePrintBaseline(o: Orientation): number {
+  return faceSize(o).h - 56 - backLayout(o).finePrintPx * 0.15;
+}
 
 /**
- * The dove hologram's box, in texels: the silhouetted dove is die-cut to its
- * own outline (no window), 9.5 mm tall as on a real card, right-aligned to
- * the back's 54 inset with its bottom on the fine print's baseline, where
- * the foil mark sits (it stands in for the PVBM, which carries its own
- * anti-counterfeit features). Clear of the stripe above, the contactless
- * indicator, and the account block. The width follows the artwork's aspect.
+ * The chip's box in the composed face's spec px: where the blank puts it,
+ * seen the way the card is held. Upright, it is at the top, right of center,
+ * its contacts running down.
+ */
+export function chipBox(o: Orientation): SpecRect {
+  const c = CHIP_SPEC;
+  if (o === 'landscape') return { x: c.x, y: c.y, w: c.w, h: c.h };
+  const face = faceSize(o);
+  return { x: face.w - (c.y + c.h), y: c.x, w: c.h, h: c.w };
+}
+
+/**
+ * The back's composition per orientation, in spec px: where the account
+ * block starts, how the PAN wraps, where the CVV goes, the contactless
+ * indicator, and the fine print's lines. Landscape is the Thales sample:
+ * the block at (56, 476) under the stripe, four PAN groups on one line, the
+ * CVV after the expiry. Upright, the stripe takes the left 300, so the
+ * column starts 56 in from it; the four groups need 596 and the column has
+ * 551, so the PAN wraps to two lines of two and the CVV is right-aligned to
+ * the column; the fine print takes three lines, a step smaller, to clear the
+ * lockup beside it.
+ */
+export interface BackLayout {
+  x: number;
+  y: number;
+  panPerRow: number;
+  /** The CVV's right edge, or null to follow the expiry with a gap. */
+  cvvRight: number | null;
+  contactless: { right: number; y: number };
+  finePrint: string[];
+  /** The fine print's type size and leading, spec px. */
+  finePrintPx: number;
+  finePrintLead: number;
+}
+export function backLayout(o: Orientation): BackLayout {
+  const face = faceSize(o);
+  if (o === 'landscape') {
+    return {
+      x: 56,
+      y: 476,
+      panPerRow: 4,
+      cvvRight: null,
+      contactless: { right: face.w - 54, y: 470 },
+      finePrint: ['1-855-516-0103   lightspark.com/help', 'Issued by Lead Bank'],
+      finePrintPx: 22,
+      finePrintLead: 26,
+    };
+  }
+  return {
+    x: STRIPE_SPEC + 56,
+    y: 640,
+    panPerRow: 2,
+    cvvRight: face.w - 56,
+    contactless: { right: face.w - 54, y: 54 },
+    finePrint: ['1-855-516-0103', 'lightspark.com/help', 'Issued by Lead Bank'],
+    finePrintPx: 20,
+    finePrintLead: 24,
+  };
+}
+
+/**
+ * The dove hologram's box, in the composed face's spec px: the silhouetted
+ * dove is die-cut to its own outline (no window), 9.5 mm tall as on a real
+ * card, right-aligned to the back's 54 inset with its bottom on the fine
+ * print's baseline, where the foil mark sits (it stands in for the PVBM,
+ * which carries its own anti-counterfeit features). Clear of the stripe, the
+ * contactless indicator, and the account block. The width follows the
+ * artwork's aspect.
  */
 export const DOVE_MM = 9.5;
-export const DOVE_H = F(DOVE_MM * SPEC_PER_MM);
+export const DOVE_H = DOVE_MM * SPEC_PER_MM;
 /** The artwork's box has a little air under the tail; drop it this far (spec
  *  px) so the tail itself sits on the baseline. */
-const DOVE_DROP = F(8);
-export function doveBox(dove: HTMLImageElement): { x: number; y: number; w: number; h: number } {
-  const w = DOVE_H * ((dove.naturalWidth || 3) / (dove.naturalHeight || 4));
-  return { x: TEX_W - F(54) - w, y: FINE_PRINT_BASELINE - DOVE_H + DOVE_DROP, w, h: DOVE_H };
+const DOVE_DROP = 8;
+/** The dove's size in spec px, from the artwork's aspect. */
+export function doveSize(dove: HTMLImageElement): { w: number; h: number } {
+  return { w: DOVE_H * ((dove.naturalWidth || 3) / (dove.naturalHeight || 4)), h: DOVE_H };
+}
+export function doveBox(dove: HTMLImageElement, o: Orientation): SpecRect {
+  const { w, h } = doveSize(dove);
+  const face = faceSize(o);
+  return { x: face.w - LOCKUP_SPEC.inset - w, y: finePrintBaseline(o) - h + DOVE_DROP, w, h };
 }
 
 /* ── Assets ───────────────────────────────────────────────────────────────── */
@@ -152,9 +232,18 @@ export function makeCanvas(w: number, h: number): HTMLCanvasElement {
   return c;
 }
 
+/** The uniform scale of `ctx`'s current transform: how many device px one
+ *  of its units is, so an intermediate canvas can be built at full
+ *  resolution whatever frame the caller draws in. */
+function ctmScale(ctx: CanvasRenderingContext2D): number {
+  const m = ctx.getTransform();
+  return Math.hypot(m.a, m.b) || 1;
+}
+
 /** Draw `img` scaled into `w × h`, filled with `color` (alpha from the image).
  *  `band` limits the draw to a vertical slice of the image, as fractions of
- *  its height, so one artwork can carry two materials. */
+ *  its height, so one artwork can carry two materials. Units are the
+ *  context's; the tinted copy is rendered at the context's resolution. */
 export function drawTinted(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -165,21 +254,24 @@ export function drawTinted(
   color: string | ((t: CanvasRenderingContext2D, w: number, h: number) => string | CanvasGradient),
   band: [number, number] = [0, 1],
 ) {
-  const c = makeCanvas(Math.ceil(w), Math.ceil(h));
+  const s = ctmScale(ctx);
+  const cw = Math.ceil(w * s);
+  const chh = Math.ceil(h * s);
+  const c = makeCanvas(cw, chh);
   const t = c.getContext('2d')!;
-  t.drawImage(img, 0, 0, w, h);
+  t.drawImage(img, 0, 0, w * s, h * s);
   t.globalCompositeOperation = 'source-in';
-  t.fillStyle = typeof color === 'function' ? color(t, w, h) : color;
-  t.fillRect(0, 0, c.width, c.height);
-  const y0 = Math.round(h * band[0]);
-  const y1 = Math.round(h * band[1]);
-  ctx.drawImage(c, 0, y0, c.width, y1 - y0, x, y + y0, c.width, y1 - y0);
+  t.fillStyle = typeof color === 'function' ? color(t, cw, chh) : color;
+  t.fillRect(0, 0, cw, chh);
+  const y0 = Math.round(h * s * band[0]);
+  const y1 = Math.round(h * s * band[1]);
+  ctx.drawImage(c, 0, y0, cw, y1 - y0, x, y + y0 / s, cw / s, (y1 - y0) / s);
 }
 
 /** The lockup artwork is DEBIT (top) over VISA (bottom); the split between them. */
 export const LOCKUP_SPLIT = 0.36;
 
-/** Draw `img`'s alpha grown outward by `radius` (in the destination's units),
+/** Draw `img`'s alpha grown outward by `radius` (in the context's units),
  *  filled with `color`: the union of the shape shifted around a circle. */
 export function drawDilated(
   ctx: CanvasRenderingContext2D,
@@ -201,8 +293,8 @@ export function drawDilated(
 }
 
 /** The foil's carrier: a clear layer around the mark, this far outside it
- *  (0.65 mm in spec px), where the stamp laid the film. */
-export const FOIL_CARRIER = F(0.65 * 17.94);
+ *  (0.65 mm, spec px), where the stamp laid the film. */
+export const FOIL_CARRIER = 0.65 * SPEC_PER_MM;
 
 function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -243,26 +335,33 @@ export function chipContactsPath(ctx: CanvasRenderingContext2D) {
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
 
-/** Draw `img` covering the whole face (object-fit: cover, centered). */
-function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement) {
+/** Draw `img` covering the whole composed face (object-fit: cover, centered);
+ *  the context is in the face's spec px. */
+function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, face: { w: number; h: number }) {
   // An SVG with no intrinsic size reports 0 (or a 300 x 150 default); it is
   // vector, so let it take the face's own proportions and fill it.
-  const iw = img.naturalWidth || TEX_W;
-  const ih = img.naturalHeight || TEX_H;
-  const r = Math.max(TEX_W / iw, TEX_H / ih);
+  const iw = img.naturalWidth || face.w;
+  const ih = img.naturalHeight || face.h;
+  const r = Math.max(face.w / iw, face.h / ih);
   const w = iw * r;
   const h = ih * r;
-  ctx.drawImage(img, (TEX_W - w) / 2, (TEX_H - h) / 2, w, h);
+  ctx.drawImage(img, (face.w - w) / 2, (face.h - h) / 2, w, h);
 }
 
 /**
  * The face's ground. With no print, the bare stock shows: PVC in its own
  * color, or the steel. A printed face is the solid color, or the uploaded art
- * on the front. The studio does all the shading.
+ * on the front. The studio does all the shading. Leaves the context in
+ * texels.
  */
-function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, front: boolean, art: HTMLImageElement | null) {
-  if (art && front) {
-    drawCover(ctx, art);
+function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, side: Side, art: HTMLImageElement | null) {
+  const o = design.orientation;
+  const face = faceSize(o);
+  texelSpace(ctx);
+  if (art && side === 'front') {
+    specSpace(ctx, o, side);
+    drawCover(ctx, art, face);
+    texelSpace(ctx);
     return;
   }
   if (isBare(design)) {
@@ -274,19 +373,26 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, front: boo
   ctx.fillStyle = design.color!;
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   if (design.gradient) {
-    ctx.fillStyle = gradientPaint(ctx, design.gradient, front);
-    ctx.fillRect(0, 0, TEX_W, TEX_H);
+    specSpace(ctx, o, side);
+    ctx.fillStyle = gradientPaint(ctx, design.gradient, face, side);
+    ctx.fillRect(0, 0, face.w, face.h);
+    texelSpace(ctx);
   }
 }
 
 /**
- * The gradient print as a canvas gradient in texels. The back's texture is
- * mirrored in u on the mesh, so its x is flipped here and the gradient reads
- * the same way round from either side, as a card printed with one artwork
- * on both faces does.
+ * The gradient print as a canvas gradient in the composed face's spec px.
+ * The back is seen from behind, so its x is flipped here and the gradient
+ * reads the same way round from either side, as a card printed with one
+ * artwork on both faces does.
  */
-function gradientPaint(ctx: CanvasRenderingContext2D, g: CardGradient, front: boolean): CanvasGradient {
-  const px = (p: { x: number; y: number }) => ({ x: front ? F(p.x) : TEX_W - F(p.x), y: F(p.y) });
+function gradientPaint(
+  ctx: CanvasRenderingContext2D,
+  g: CardGradient,
+  face: { w: number; h: number },
+  side: Side,
+): CanvasGradient {
+  const px = (p: { x: number; y: number }) => ({ x: side === 'front' ? p.x : face.w - p.x, y: p.y });
   const a = px(g.from);
   const b = px(g.to);
   const grad =
@@ -322,7 +428,9 @@ export function inkFor(design: CardDesign, art: HTMLImageElement | null): string
   return luminance(design.color!) > 0.6 ? '#26262b' : '#ffffff';
 }
 
+/** Whole-face washes, in texels. */
 function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: boolean) {
+  texelSpace(ctx);
   if (closed) {
     ctx.globalCompositeOperation = 'saturation';
     ctx.fillStyle = '#808080';
@@ -361,20 +469,25 @@ export function foilTone(black: boolean): string {
   return black ? '#26262a' : '#f4f4f6';
 }
 
-function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: boolean) {
+/** The lockup on the back, in the composed face's spec px. */
+function paintLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, black: boolean, o: Orientation) {
+  const L = lockupBox(o);
+  specSpace(ctx, o, 'back');
   // The identifier prints as a translucent white on a dark or saturated
   // face (a flat gray there reads as dirt), black with the black foil.
   const identifier = black ? 'rgba(42, 42, 46, 1)' : 'rgba(255, 255, 255, 0.85)';
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, identifier, [0, LOCKUP_SPLIT]);
+  drawTinted(ctx, assets.lockup, L.x, L.y, L.w, L.h, identifier, [0, LOCKUP_SPLIT]);
   // The mark itself is the foil layer (`FoilMark`), which sits over this; the
   // clear carrier film around it is in the surface maps only (glossy, a hair
   // proud), not in the print. Under the foil, paint its tone so its
   // anti-aliased edge blends.
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, black ? '#1c1c20' : '#d8d8dc', [LOCKUP_SPLIT, 1]);
+  drawTinted(ctx, assets.lockup, L.x, L.y, L.w, L.h, black ? '#1c1c20' : '#d8d8dc', [LOCKUP_SPLIT, 1]);
+  texelSpace(ctx);
 }
 
 /** The Visa mark's shape alone (the foil band of the lockup), white on
- *  transparent at texel size, for the foil layer's alpha. */
+ *  transparent at texel size, for the foil layer's alpha. The layer's plane
+ *  turns with the card, so this is the same either way up. */
 export function paintLockupMask(assets: FaceAssets): HTMLCanvasElement {
   const c = makeCanvas(Math.ceil(LOCKUP.w), Math.ceil(LOCKUP.h));
   const ctx = c.getContext('2d')!;
@@ -386,26 +499,32 @@ export function paintLockupMask(assets: FaceAssets): HTMLCanvasElement {
  * The Visa Brand Mark and DEBIT printed flat on the front, in the face's ink
  * (the standards allow the VBM in white or black in any corner, front or
  * back), in the corner the foil mark takes on the back. No foil and no
- * carrier film: this is ink on the print.
+ * carrier film: this is ink on the print. Never chip-aligned, so the PVBM
+ * rule for that configuration does not arise on either face.
  */
-function paintFrontLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, ink: string) {
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, ink);
+function paintFrontLockup(ctx: CanvasRenderingContext2D, assets: FaceAssets, ink: string, o: Orientation) {
+  const L = lockupBox(o);
+  specSpace(ctx, o, 'front');
+  drawTinted(ctx, assets.lockup, L.x, L.y, L.w, L.h, ink);
+  texelSpace(ctx);
 }
 
 /** The front lockup's shape, white on transparent at face size, for the
  *  surface bake: on bare steel the ink is a flat print, not metal. */
-export function paintFrontLockupMask(assets: FaceAssets): HTMLCanvasElement {
+export function paintFrontLockupMask(assets: FaceAssets, o: Orientation): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
-  paintFrontLockup(ctx, assets, '#ffffff');
+  paintFrontLockup(ctx, assets, '#ffffff', o);
   return c;
 }
 
 /** Under the hologram layer (`HoloDove`), the dove's outline in its silver,
  *  so the layer's anti-aliased edge blends into the face. */
-function paintDoveGround(ctx: CanvasRenderingContext2D, assets: FaceAssets) {
-  const b = doveBox(assets.dove);
+function paintDoveGround(ctx: CanvasRenderingContext2D, assets: FaceAssets, o: Orientation) {
+  const b = doveBox(assets.dove, o);
+  specSpace(ctx, o, 'back');
   drawTinted(ctx, assets.dove, b.x, b.y, b.w, b.h, '#c9c9ce');
+  texelSpace(ctx);
 }
 
 /** The foil's reflectance: silver or black lacquer, even; its room does the
@@ -482,8 +601,10 @@ export function paintFoilNormal(assets: FaceAssets): HTMLCanvasElement {
 }
 
 /** Silver (nickel-plated) contact module set in its pocket; the material
- *  makes the plate metal. `face` is the card color the pocket is cut into. */
+ *  makes the plate metal. `face` is the card color the pocket is cut into.
+ *  Physical: the blank's texels. */
 function paintChip(ctx: CanvasRenderingContext2D, face: string) {
+  texelSpace(ctx);
   // The gap looks down into the pocket: the card's core in shadow, darkest
   // under the lit (upper left) side of the plate, a little lighter where the
   // far wall catches light.
@@ -514,7 +635,7 @@ function paintChip(ctx: CanvasRenderingContext2D, face: string) {
  *  and nothing set into it yet (the chip's pocket is milled after the
  *  print). A material change's first layer. */
 export function paintBare(ctx: CanvasRenderingContext2D, stock: CardStock) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  texelSpace(ctx);
   ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = stock.face;
   ctx.fillRect(0, 0, TEX_W, TEX_H);
@@ -523,37 +644,28 @@ export function paintBare(ctx: CanvasRenderingContext2D, stock: CardStock) {
 /** The print's base: its ground (color, gradient, or art) laid on the body,
  *  before the graphics. The second layer. */
 export function paintBaseFront(ctx: CanvasRenderingContext2D, design: CardDesign, art: HTMLImageElement | null) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  texelSpace(ctx);
   ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, design, true, art);
+  paintBase(ctx, design, 'front', art);
 }
 
 export function paintBaseBack(ctx: CanvasRenderingContext2D, design: CardDesign) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  texelSpace(ctx);
   ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, design, false, null);
+  paintBase(ctx, design, 'back', null);
 }
 
 /* ── Brand ─────────────────────────────────────────────────────────────────── */
 
 /** With no layout of its own, a wide logo is held to this (spec px), as the
- *  print sample has it. */
-const BRAND_DEFAULT_MAX_W = 410;
+ *  print sample has it; upright, a little less, so it clears the lockup
+ *  beside it on the bottom row. */
+const BRAND_DEFAULT_MAX_W: Record<Orientation, number> = { landscape: 410, portrait: 370 };
 /** A wordmark is set at this share of its box, so its caps sit inside it. */
 const BRAND_TEXT_EM = 0.8;
 /** Suisse's cap height, as a share of the em. */
 export const BRAND_CAP = 0.72;
 export const BRAND_TEXT_WEIGHT = 430;
-/** Spec px → texels, as a factor. */
-export const TEX_PER_SPEC = F(1);
-
-/** A box on the front, in spec px. */
-export interface SpecRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
 
 function wordmarkOf(design: CardDesign): string {
   return design.programName.trim() || 'Your brand';
@@ -563,6 +675,7 @@ let measureCtx: CanvasRenderingContext2D | null = null;
 /** The wordmark's tracking, in em (the print sample sets -4%). */
 export const BRAND_TRACKING = -0.04;
 
+/** The wordmark's width at `px` (spec px), measured at that size. */
 function measureWordmark(text: string, px: number): number {
   measureCtx ??= makeCanvas(1, 1).getContext('2d')!;
   measureCtx.font = `${BRAND_TEXT_WEIGHT} ${px}px ${FONT}`;
@@ -572,22 +685,22 @@ function measureWordmark(text: string, px: number): number {
 }
 
 /**
- * The layout the brand is drawn with: the design's own, or the print sample's
- * placement, where a wide logo is held to 410 wide by lowering its height.
- * This is the layout a drag starts from.
+ * The layout the brand is drawn with: the design's own, or the orientation's
+ * default placement, where a wide logo is held to its width by lowering its
+ * height. This is the layout a drag starts from.
  */
 export function resolveBrandLayout(design: CardDesign, logo: HTMLImageElement | null): BrandLayout {
   if (design.brandLayout) return design.brandLayout;
-  const d = BRAND_DEFAULT_LAYOUT;
+  const d = brandDefaultLayout(design.orientation);
   if (!logo) return d;
-  const h = Math.min(d.h, (BRAND_DEFAULT_MAX_W * logo.height) / logo.width);
+  const h = Math.min(d.h, (BRAND_DEFAULT_MAX_W[design.orientation] * logo.height) / logo.width);
   return h === d.h ? d : { ...d, h };
 }
 
 /**
- * The brand's box in spec px: the logo fitted to the layout's height, or the
- * wordmark's em box with its caps centered. The stage hit-tests this; the
- * painters draw into it.
+ * The brand's box in the composed face's spec px: the logo fitted to the
+ * layout's height, or the wordmark's em box with its caps centered. The
+ * stage hit-tests this; the painters draw into it.
  */
 export function brandBox(design: CardDesign, logo: HTMLImageElement | null): SpecRect {
   const l = resolveBrandLayout(design, logo);
@@ -598,7 +711,7 @@ export function brandBox(design: CardDesign, logo: HTMLImageElement | null): Spe
     w = (logo.width / logo.height) * h;
   } else {
     h = l.h * BRAND_TEXT_EM;
-    w = measureWordmark(wordmarkOf(design), h * TEX_PER_SPEC) / TEX_PER_SPEC;
+    w = measureWordmark(wordmarkOf(design), h);
   }
   const x = l.anchor === 'left' ? l.x : l.anchor === 'center' ? l.x - w / 2 : l.x - w;
   return { x, y: l.y - h / 2, w, h };
@@ -620,42 +733,38 @@ export function brandRegion(design: CardDesign, logo: HTMLImageElement | null): 
   const pad = (logo ? 0 : b.h * 0.3) + 24 / TEX_PER_SPEC;
   const hw = (b.w * c + b.h * s) / 2 + pad;
   const hh = (b.w * s + b.h * c) / 2 + pad;
-  const k = TEX_PER_SPEC;
-  const x0 = Math.max(0, Math.floor((cx - hw) * k));
-  const y0 = Math.max(0, Math.floor((cy - hh) * k));
-  const x1 = Math.min(TEX_W, Math.ceil((cx + hw) * k));
-  const y1 = Math.min(TEX_H, Math.ceil((cy + hh) * k));
-  return { x: x0, y: y0, w: Math.max(0, x1 - x0), h: Math.max(0, y1 - y0) };
+  return texelBounds(design.orientation, 'front', { x: cx - hw, y: cy - hh, w: hw * 2, h: hh * 2 });
 }
 
 /** Draw the brand (the logo as uploaded, or the wordmark in `ink`) into its
- *  box at the layout's opacity. */
+ *  box at the layout's opacity, in the composed face's spec px. */
 function drawBrand(ctx: CanvasRenderingContext2D, design: CardDesign, logo: HTMLImageElement | null, ink: string) {
   const l = resolveBrandLayout(design, logo);
   const b = brandBox(design, logo);
-  const k = TEX_PER_SPEC;
   ctx.save();
+  specSpace(ctx, design.orientation, 'front');
   ctx.globalAlpha = l.opacity;
   if (l.rotation) {
-    const cx = (b.x + b.w / 2) * k;
-    const cy = (b.y + b.h / 2) * k;
+    const cx = b.x + b.w / 2;
+    const cy = b.y + b.h / 2;
     ctx.translate(cx, cy);
     ctx.rotate((l.rotation * Math.PI) / 180);
     ctx.translate(-cx, -cy);
   }
   if (logo) {
-    ctx.drawImage(logo, b.x * k, b.y * k, b.w * k, b.h * k);
+    ctx.drawImage(logo, b.x, b.y, b.w, b.h);
   } else {
-    const em = b.h * k;
+    const em = b.h;
     ctx.fillStyle = ink;
     ctx.font = `${BRAND_TEXT_WEIGHT} ${em}px ${FONT}`;
     ctx.letterSpacing = `${em * BRAND_TRACKING}px`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     // The caps centered in the em box: baseline half a cap below its middle.
-    ctx.fillText(wordmarkOf(design), b.x * k, (b.y + b.h / 2) * k + (em * BRAND_CAP) / 2);
+    ctx.fillText(wordmarkOf(design), b.x, b.y + b.h / 2 + (em * BRAND_CAP) / 2);
   }
   ctx.restore();
+  texelSpace(ctx);
 }
 
 /**
@@ -676,19 +785,20 @@ export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null
   return c;
 }
 
-/** The art's alpha as a mask (cover-fit), for spot gloss over art. */
-export function paintArtMask(art: HTMLImageElement): HTMLCanvasElement {
+/** The art's alpha as a mask (cover-fit on the composed face), for spot
+ *  gloss over art. */
+export function paintArtMask(art: HTMLImageElement, o: Orientation): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
-  drawCover(ctx, art);
+  specSpace(ctx, o, 'front');
+  drawCover(ctx, art, faceSize(o));
+  texelSpace(ctx);
   ctx.globalCompositeOperation = 'source-in';
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, TEX_W, TEX_H);
   return c;
 }
 
-/** Foil reflectance for a hot-stamped logo, silver or gold, with the
- *  bright-to-dark run a foil shows at one angle. */
 /** Silver foil reflectance for a hot-stamped logo, with the bright-to-dark
  *  run a foil shows at one angle. */
 function foilGradient(ctx: CanvasRenderingContext2D): CanvasGradient {
@@ -724,9 +834,9 @@ export interface FrontState {
 }
 
 export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets: FaceAssets) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  texelSpace(ctx);
   ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, s.design, true, s.art);
+  paintBase(ctx, s.design, 'front', s.art);
   const ink = inkFor(s.design, s.art);
 
   // Brand: the logo as uploaded, or the wordmark in ink; a foil treatment
@@ -753,21 +863,28 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets:
   paintChip(ctx, faceColorOf(s.design));
   // The front carries nothing personal: the number, name, and codes are all
   // on the back, as the Figma physical front spec ("chip only") has it.
-  if (s.design.visaMark === 'front') paintFrontLockup(ctx, assets, ink);
+  if (s.design.visaMark === 'front') paintFrontLockup(ctx, assets, ink, s.design.orientation);
 
   paintState(ctx, s.frozen, s.closed);
 }
 
-/** Where the cardholder's name sits on the back, in spec px: its em box on
- *  the account block's first line, at least as wide as the specimen text. */
+/** The account block's type and leading, spec px. */
+const BACK_EM = 57;
+const BACK_LINE = 41;
+const BACK_GAP = 32;
+
+/** Where the cardholder's name sits on the back, in the composed face's spec
+ *  px: its em box on the account block's first line, at least as wide as the
+ *  specimen text. */
 export function backNameBox(design: CardDesign): SpecRect {
   measureCtx ??= makeCanvas(1, 1).getContext('2d')!;
   measureCtx.letterSpacing = '0px';
-  measureCtx.font = `400 ${F(57)}px ${FONT}`;
+  measureCtx.font = `400 ${BACK_EM}px ${FONT}`;
   const text = design.cardholderName.trim() || 'Cardholder name';
-  const w = Math.max(measureCtx.measureText(text).width, measureCtx.measureText('Cardholder name').width) / TEX_PER_SPEC;
-  // Baseline at 476 + 41; the face's ascent is 85% of the em.
-  return { x: 56, y: 476 + 41 - 57 * 0.85, w, h: 57 };
+  const w = Math.max(measureCtx.measureText(text).width, measureCtx.measureText('Cardholder name').width);
+  const L = backLayout(design.orientation);
+  // Baseline at the block's top + 41; the face's ascent is 85% of the em.
+  return { x: L.x, y: L.y + BACK_LINE - BACK_EM * 0.85, w, h: BACK_EM };
 }
 
 export interface BackState {
@@ -781,31 +898,37 @@ export interface BackState {
 }
 
 export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: FaceAssets) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const o = s.design.orientation;
+  const L = backLayout(o);
+  texelSpace(ctx);
   ctx.globalCompositeOperation = 'source-over';
-  paintBase(ctx, s.design, false, null);
+  paintBase(ctx, s.design, 'back', null);
   const ink = inkFor(s.design, null);
 
-  // Mag stripe, bleeding to the top edge (Thales sample 1:116).
+  // Mag stripe, bleeding to the top edge (Thales sample 1:116). Physical: on
+  // an upright card it runs down the left edge of the back.
   ctx.fillStyle = stripeFor(s.design);
   ctx.fillRect(0, STRIPE.y, TEX_W, STRIPE.h);
 
-  // Contactless indicator: right-aligned at 54, 90 tall.
-  const ch = F(90);
-  const cw = ch * (67.3435 / 90);
-  drawTinted(ctx, assets.contactless, TEX_W - F(54) - cw, F(470), cw, ch, ink);
+  specSpace(ctx, o, 'back');
 
-  // Account block at (56, 476): name, PAN, EXP / CVV, on 41 px lines 32 apart.
+  // Contactless indicator: right-aligned at 54, 90 tall.
+  const ch = 90;
+  const cw = ch * (67.3435 / 90);
+  drawTinted(ctx, assets.contactless, L.contactless.right - cw, L.contactless.y, cw, ch, ink);
+
+  // Account block: name, PAN, EXP / CVV, on 41 px lines 32 apart.
   // (`backNameBox` describes the name line's box for the stage.)
   // The name is the cardholder's as designed; the account data prints when the
   // card goes ACTIVE and stays masked until Reveal.
-  const x = F(56);
-  const line = F(41);
-  const gap = F(32);
-  let y = F(476) + line;
+  const x = L.x;
+  const line = BACK_LINE;
+  const gap = BACK_GAP;
+  let y = L.y + line;
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
-  ctx.font = `400 ${F(57)}px ${FONT}`;
+  ctx.letterSpacing = '0px';
+  ctx.font = `400 ${BACK_EM}px ${FONT}`;
   ctx.fillStyle = ink;
   // Until the visitor types a name the line reads as a specimen's does.
   const name = s.design.cardholderName.trim();
@@ -817,12 +940,12 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   if (s.personalized > 0) {
     ctx.save();
     ctx.globalAlpha = Math.min(1, s.personalized);
-    y += line + gap;
     const groupW = ctx.measureText('0000').width;
-    const groupGap = F(57) * 0.28;
+    const groupGap = BACK_EM * 0.28;
     const last = PAN_GROUPS.length - 1;
     PAN_GROUPS.forEach((g, i) => {
-      const gx = x + i * (groupW + groupGap);
+      if (i % L.panPerRow === 0) y += line + gap;
+      const gx = x + (i % L.panPerRow) * (groupW + groupGap);
       if (i < s.shown || i === last) ctx.fillText(g, gx, y);
       else dots(ctx, 4, gx, y, groupW);
     });
@@ -838,7 +961,12 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
       ctx.fillText('/', cx + dw, y);
       dots(ctx, 2, cx + dw + ctx.measureText('/').width, y, dw);
     }
-    cx = x + ctx.measureText('EXP 11/27').width + F(64);
+    // The CVV follows the expiry with a gap, or, in the narrow column of an
+    // upright back, sits right-aligned to the column.
+    cx =
+      L.cvvRight === null
+        ? x + ctx.measureText('EXP 11/27').width + 64
+        : L.cvvRight - ctx.measureText('CVV ').width - ctx.measureText('000').width;
     ctx.fillText('CVV ', cx, y);
     cx += ctx.measureText('CVV ').width;
     if (tail) ctx.fillText(CARD_CVV, cx, y);
@@ -846,23 +974,26 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
     ctx.restore();
   }
 
-  // Fine print, 22 px on 26 px lines (`FINE_PRINT_BASELINE`).
-  ctx.font = `400 ${F(22)}px ${FONT}`;
-  const fineLast = FINE_PRINT_BASELINE;
-  ctx.fillText('1-855-516-0103   lightspark.com/help', x, fineLast - F(26));
-  ctx.fillText('Issued by Lead Bank', x, fineLast);
+  // Fine print (22 px on 26 px lines flat), the last line on `finePrintBaseline`.
+  ctx.font = `400 ${L.finePrintPx}px ${FONT}`;
+  const fineLast = finePrintBaseline(o);
+  L.finePrint.forEach((text, i) => {
+    ctx.fillText(text, x, fineLast - L.finePrintLead * (L.finePrint.length - 1 - i));
+  });
+  texelSpace(ctx);
 
   // The foil mark, or, with the mark printed on the front, the hologram
   // window the standards require in its place.
-  if (s.design.visaMark === 'back') paintLockup(ctx, assets, foilIsBlack(s.design));
-  else paintDoveGround(ctx, assets);
+  if (s.design.visaMark === 'back') paintLockup(ctx, assets, foilIsBlack(s.design), o);
+  else paintDoveGround(ctx, assets, o);
   paintState(ctx, s.frozen, s.closed);
 }
 
+/** Masking dots in place of digits, in the composed face's spec px. */
 function dots(ctx: CanvasRenderingContext2D, n: number, x: number, baseline: number, width: number) {
   const step = width / n;
-  const r = F(57) * 0.09;
+  const r = BACK_EM * 0.09;
   ctx.beginPath();
-  for (let i = 0; i < n; i++) ctx.arc(x + step * (i + 0.5), baseline - F(57) * 0.26, r, 0, Math.PI * 2);
+  for (let i = 0; i < n; i++) ctx.arc(x + step * (i + 0.5), baseline - BACK_EM * 0.26, r, 0, Math.PI * 2);
   ctx.fill();
 }

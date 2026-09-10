@@ -6,7 +6,7 @@
  * design's colors never touch them.
  */
 
-import { isBare, materialOf, type CardDesign, type CardFinish, type CardMaterial } from '@/data/design';
+import { isBare, materialOf, type CardDesign, type CardFinish, type CardMaterial, type Orientation } from '@/data/design';
 import {
   chipContactsPath,
   chipPlatePath,
@@ -15,7 +15,7 @@ import {
   drawTinted,
   FOIL_CARRIER,
   K,
-  LOCKUP,
+  lockupBox,
   LOCKUP_SPLIT,
   makeCanvas,
   STRIPE,
@@ -24,6 +24,7 @@ import {
   TEX_W,
   type FaceAssets,
 } from './facePaint';
+import { specSpace, texelSpace as blankSpace } from './faceFrame';
 
 export const MAP_W = 1024;
 export const MAP_H = Math.round((MAP_W * TEX_H) / TEX_W);
@@ -73,6 +74,7 @@ function bakeOrm(
   assets: FaceAssets,
   plain: boolean,
   mark: boolean,
+  orientation: Orientation,
 ): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = texelSpace(c);
@@ -111,10 +113,14 @@ function bakeOrm(
   // shows the graphite of the empty room behind the camera, while a satin
   // lobe gathers the studio lights and reads as lit silver from any angle.
   // The identifier is ink, not metal: a metallic lobe mirrored the gray room
-  // over it and made it read as gray on a saturated face.
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.5, 0), [0, LOCKUP_SPLIT]);
-  drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.08, 0), FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
-  drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, orm(0.3, 1), [LOCKUP_SPLIT, 1]);
+  // over it and made it read as gray on a saturated face. The lockup is
+  // composed, so it is drawn in the face's own frame (spec px).
+  const L = lockupBox(orientation);
+  specSpace(ctx, orientation, 'back');
+  drawTinted(ctx, assets.lockup, L.x, L.y, L.w, L.h, orm(0.5, 0), [0, LOCKUP_SPLIT]);
+  drawDilated(ctx, assets.lockup, L.x, L.y, L.w, L.h, orm(0.08, 0), FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
+  drawTinted(ctx, assets.lockup, L.x, L.y, L.w, L.h, orm(0.3, 1), [LOCKUP_SPLIT, 1]);
+  blankSpace(ctx);
   return c;
 }
 
@@ -126,6 +132,7 @@ function bakeHeight(
   assets: FaceAssets,
   plain: boolean,
   mark: boolean,
+  orientation: Orientation,
 ): HTMLCanvasElement {
   const c = makeCanvas(MAP_W, MAP_H);
   const ctx = c.getContext('2d')!;
@@ -177,10 +184,11 @@ function bakeHeight(
     // hair proud, following the mark's geometry about a millimeter out, and
     // the metal on top of that. Both steps catch light at their edges. The
     // foil itself is flat (a mirror), so no grain under the lockup.
-    ctx.setTransform(S, 0, 0, S, 0, 0);
-    drawDilated(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#8a8a8a', FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
-    drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#929292', [LOCKUP_SPLIT, 1]);
-    drawTinted(ctx, assets.lockup, LOCKUP.x, LOCKUP.y, LOCKUP.w, LOCKUP.h, '#808080', [0, LOCKUP_SPLIT]);
+    const L = lockupBox(orientation);
+    specSpace(ctx, orientation, 'back', S);
+    drawDilated(ctx, assets.lockup, L.x, L.y, L.w, L.h, '#8a8a8a', FOIL_CARRIER, [LOCKUP_SPLIT, 1]);
+    drawTinted(ctx, assets.lockup, L.x, L.y, L.w, L.h, '#929292', [LOCKUP_SPLIT, 1]);
+    drawTinted(ctx, assets.lockup, L.x, L.y, L.w, L.h, '#808080', [0, LOCKUP_SPLIT]);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
   return c;
@@ -417,9 +425,23 @@ export function decorateNormal(
 
 const surfaceCache = new Map<string, SurfaceMaps>();
 
+/** The orientation a bake depends on: only the back with the foil mark is
+ *  composed (the mark moves with the face); the chip and the stripe are
+ *  physical, so everything else is one bake for both. */
+function bakeOrientation(side: 'front' | 'back', plain: boolean, mark: boolean, orientation: Orientation): Orientation {
+  return side === 'back' && mark && !plain ? orientation : 'landscape';
+}
+
 /** One key per bake variant, shared with the mesh's texture cache. */
-export function surfaceKey(surface: Surface, side: 'front' | 'back', plain: boolean, mark: boolean): string {
-  return `${surface}|${side}|${plain ? 'plain' : 'full'}|${mark ? 'mark' : 'nomark'}`;
+export function surfaceKey(
+  surface: Surface,
+  side: 'front' | 'back',
+  plain: boolean,
+  mark: boolean,
+  orientation: Orientation = 'landscape',
+): string {
+  const o = bakeOrientation(side, plain, mark, orientation);
+  return `${surface}|${side}|${plain ? 'plain' : 'full'}|${mark ? 'mark' : 'nomark'}|${o}`;
 }
 
 /** `plain`: the body before anything is laid on or set into it (no stripe,
@@ -427,20 +449,23 @@ export function surfaceKey(surface: Surface, side: 'front' | 'back', plain: bool
  *  change; a polished plain blank is lightly brushed. `mark`: whether the
  *  back carries the foil mark's carrier and metal (false when the Visa mark
  *  is printed on the front; the front is the same either way, since ink is
- *  the print's own surface). */
+ *  the print's own surface). `orientation`: where the mark sits on the
+ *  composed back. */
 export function getSurfaceMaps(
   surface: Surface,
   side: 'front' | 'back',
   assets: FaceAssets,
   plain = false,
   mark = true,
+  orientation: Orientation = 'landscape',
 ): SurfaceMaps {
-  const key = surfaceKey(surface, side, plain, mark);
+  const o = bakeOrientation(side, plain, mark, orientation);
+  const key = surfaceKey(surface, side, plain, mark, o);
   let maps = surfaceCache.get(key);
   if (!maps) {
-    const height = bakeHeight(surface, side, assets, plain, mark);
+    const height = bakeHeight(surface, side, assets, plain, mark, o);
     maps = {
-      orm: bakeOrm(surface, side, assets, plain, mark),
+      orm: bakeOrm(surface, side, assets, plain, mark, o),
       normal: surface === 'bare-matte' ? beadblastNormal(height, assets) : heightToNormal(height, 1.6),
     };
     surfaceCache.set(key, maps);

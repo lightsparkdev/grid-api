@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
+import type { Orientation } from '@/data/design';
 import { canvasTexture } from './canvasTexture';
 import { holoStudioTexture, STUDIO_LIGHTS } from './CardEnv';
 import { paintDoveMaps } from './dovePaint';
-import { doveBox, TEX_H, TEX_W, type FaceAssets } from './facePaint';
+import { layerFrame } from './faceFrame';
+import { doveBox, type FaceAssets } from './facePaint';
 
 /**
  * The dove hologram: the security element the Visa standards require on the
@@ -49,14 +50,10 @@ const HOLO = {
   lightSpread: 0.45,
 };
 
-/** The dove's center in the mesh's frame. The back's texture is mirrored in
- *  u, so canvas x runs toward local -x. */
-export function doveCenter(assets: FaceAssets): { x: number; y: number } {
-  const b = doveBox(assets.dove);
-  return {
-    x: -((b.x + b.w / 2) / TEX_W - 0.5) * CARD_W,
-    y: (0.5 - (b.y + b.h / 2) / TEX_H) * CARD_H,
-  };
+/** The dove's plane on the mesh: center (card px), size, and roll, for the
+ *  card as held. */
+export function doveFrame(assets: FaceAssets, orientation: Orientation) {
+  return layerFrame(orientation, 'back', doveBox(assets.dove, orientation));
 }
 
 interface HoloUniforms {
@@ -155,11 +152,14 @@ const LIGHT_I = new THREE.Vector2(1, STUDIO_LIGHTS[1].intensity / STUDIO_LIGHTS[
 export function HoloDove({
   assets,
   backZ,
+  orientation,
   visible,
   materialRef,
 }: {
   assets: FaceAssets;
   backZ: number;
+  /** The plane moves and turns with the composed back. */
+  orientation: Orientation;
   visible: boolean;
   /** A material change prints the hologram with the graphics. */
   materialRef: React.MutableRefObject<THREE.MeshPhysicalMaterial | null>;
@@ -228,19 +228,16 @@ export function HoloDove({
     uniforms.uLight1.value.copy(WORLD_LIGHTS[1]).transformDirection(inv);
   });
 
-  const box = doveBox(assets.dove);
-  const center = doveCenter(assets);
-  const w = box.w / (TEX_W / CARD_W);
-  const h = box.h / (TEX_W / CARD_W);
+  const frame = doveFrame(assets, orientation);
   return (
     <mesh
       ref={mesh}
-      position={[center.x, center.y, backZ - 0.08]}
-      rotation={[0, Math.PI, 0]}
+      position={[frame.x, frame.y, backZ - 0.08]}
+      rotation={[0, Math.PI, frame.rotZ]}
       material={material}
       visible={visible}
     >
-      <planeGeometry args={[w, h]} />
+      <planeGeometry args={[frame.w, frame.h]} />
     </mesh>
   );
 }

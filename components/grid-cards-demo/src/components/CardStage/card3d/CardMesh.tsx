@@ -3,7 +3,6 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
 import {
   materialOf,
   STOCKS,
@@ -12,11 +11,13 @@ import {
   type CardDesign,
   type CardMaterial,
   type CardStock,
+  type Orientation,
 } from '@/data/design';
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
-import { doveCenter, HoloDove } from './HoloDove';
+import { layerFrame } from './faceFrame';
+import { doveFrame, HoloDove } from './HoloDove';
 import {
   cellAt,
   createSwapUniforms,
@@ -32,10 +33,9 @@ import { MaterialSwarm } from './MaterialSwarm';
 import {
   brandBox,
   brandRegion,
-  K,
   loadFaceAssets,
   loadImage,
-  LOCKUP,
+  lockupBox,
   makeCanvas,
   paintArtMask,
   paintBack,
@@ -143,23 +143,25 @@ function useLoadedImage(url: string | null): { img: HTMLImageElement | null; pen
  * its gloss and bevel.
  */
 const FOIL = { roughness: 0.04, envMapIntensity: 1.1, normalScale: 1 };
-/** The mark's center in the mesh's frame. The back's texture is mirrored in
- *  u, so canvas x runs toward local -x. */
-const FOIL_CENTER = {
-  x: -((LOCKUP.x + LOCKUP.w / 2) / TEX_W - 0.5) * CARD_W,
-  y: (0.5 - (LOCKUP.y + LOCKUP.h / 2) / TEX_H) * CARD_H,
-};
+/** The mark's plane on the mesh (center in card px, size, roll) for the card
+ *  as held: the back's texture is mirrored in u and the composed back turns
+ *  with the card, both of which `layerFrame` accounts for. */
+function foilFrame(orientation: Orientation) {
+  return layerFrame(orientation, 'back', lockupBox(orientation));
+}
 
 function FoilMark({
   assets,
   backZ,
   black,
+  orientation,
   visible,
   materialRef,
 }: {
   assets: FaceAssets;
   backZ: number;
   black: boolean;
+  orientation: Orientation;
   /** Hidden, not unmounted, when the mark is printed on the front: the
    *  program and maps stay ready for the switch back. */
   visible: boolean;
@@ -197,16 +199,15 @@ function FoilMark({
     },
     [material],
   );
-  const w = LOCKUP.w / K;
-  const h = LOCKUP.h / K;
+  const frame = foilFrame(orientation);
   return (
     <mesh
-      position={[FOIL_CENTER.x, FOIL_CENTER.y, backZ - 0.08]}
-      rotation={[0, Math.PI, 0]}
+      position={[frame.x, frame.y, backZ - 0.08]}
+      rotation={[0, Math.PI, frame.rotZ]}
       material={material}
       visible={visible}
     >
-      <planeGeometry args={[w, h]} />
+      <planeGeometry args={[frame.w, frame.h]} />
     </mesh>
   );
 }
@@ -225,7 +226,8 @@ interface CardMeshProps {
   onBrandPlacement?: (placement: BrandPlacement) => void;
   /** Whether a material change may play out (the card is floating, the intro
    *  is over, motion is allowed), and whether the back is showing (the wipe
-   *  runs left to right on screen either way). Absent, the body swaps at once. */
+   *  runs along the card's long axis, left to right on screen for a flat card
+   *  whichever face shows). Absent, the body swaps at once. */
   swapContext?: () => { animate: boolean; backShowing: boolean };
 }
 
@@ -343,17 +345,19 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const ric: (cb: () => void) => number =
       typeof requestIdleCallback === 'function' ? (cb) => requestIdleCallback(cb, { timeout: 2000 }) : (cb) => window.setTimeout(cb, 250);
     const cancel: (id: number) => void = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
-    const jobs: Array<[Surface, 'front' | 'back', boolean]> = [];
+    const jobs: Array<[Surface, 'front' | 'back', boolean, Orientation]> = [];
     for (const s of ['print-matte', 'print-gloss', 'bare-matte', 'bare-gloss'] as Surface[]) {
-      for (const side of ['front', 'back'] as const) jobs.push([s, side, true]);
-      // The back without the foil mark, for a front-marked card.
-      jobs.push([s, 'back', false]);
+      for (const side of ['front', 'back'] as const) jobs.push([s, side, true, 'landscape']);
+      // The back with the mark on an upright card, and without the foil mark
+      // (for a front-marked card; the same either way up).
+      jobs.push([s, 'back', true, 'portrait']);
+      jobs.push([s, 'back', false, 'landscape']);
     }
     let id = 0;
     const next = () => {
       const job = jobs.shift();
       if (!job) return;
-      getSurfaceMaps(job[0], job[1], assets, false, job[2]);
+      getSurfaceMaps(job[0], job[1], assets, false, job[2], job[3]);
       id = ric(next);
     };
     id = ric(next);
@@ -362,14 +366,15 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // The back carries the foil mark's carrier and metal only while the mark
   // is there; with the mark on the front, the hologram layer has its own.
   const backMark = bodyDesign.visaMark === 'back';
+  const orientation = bodyDesign.orientation;
   useEffect(() => {
     if (!assets) return;
     const c = SURFACE[surface];
     const maps = (s: Surface, side: 'front' | 'back', plain = false, mark = true) => {
-      const key = surfaceKey(s, side, plain, mark);
+      const key = surfaceKey(s, side, plain, mark, orientation);
       let t = surfaceTex.current.get(key);
       if (!t) {
-        const m = getSurfaceMaps(s, side, assets, plain, mark);
+        const m = getSurfaceMaps(s, side, assets, plain, mark, orientation);
         t = { orm: canvasTexture(m.orm), normal: canvasTexture(m.normal) };
         surfaceTex.current.set(key, t);
       }
@@ -406,7 +411,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       u.uBaseNormal.value = base.normal;
     }
     invalidate();
-  }, [assets, surface, bareSurface, baseSurface, backMark, materials, swapU, invalidate]);
+  }, [assets, surface, bareSurface, baseSurface, backMark, orientation, materials, swapU, invalidate]);
 
   // The blank's room, as a PMREM in the scene environment's layout, so
   // polished steel has something to reflect.
@@ -447,7 +452,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   useEffect(() => {
     if (!assets || frontPending) return;
     const front = materials[MAT_FRONT];
-    const base = surfaceTex.current.get(surfaceKey(surface, 'front', false, true));
+    const base = surfaceTex.current.get(surfaceKey(surface, 'front', false, true, orientation));
     if (!base) return;
     decoTex.current.orm?.dispose();
     decoTex.current.normal?.dispose();
@@ -464,9 +469,9 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
           base.orm.image as HTMLCanvasElement,
           brandMask,
           brandT,
-          artT && art ? paintArtMask(art) : null,
+          artT && art ? paintArtMask(art, orientation) : null,
           cardMaterial === 'metal',
-          frontInk ? paintFrontLockupMask(assets) : null,
+          frontInk ? paintFrontLockupMask(assets, orientation) : null,
         ),
       );
       decoTex.current.orm = decorated;
@@ -490,6 +495,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     assets,
     surface,
     bodyDesign,
+    orientation,
     cardMaterial,
     logoTreatment,
     artTreatment,
@@ -619,13 +625,13 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // graphics at its own cell's moment.
   const foilMaterial = useRef<THREE.MeshPhysicalMaterial | null>(null);
   const doveMaterial = useRef<THREE.MeshPhysicalMaterial | null>(null);
-  const layers = useMemo(
-    () => [
-      { ref: foilMaterial, center: FOIL_CENTER },
-      { ref: doveMaterial, center: assets ? doveCenter(assets) : FOIL_CENTER },
-    ],
-    [assets],
-  );
+  const layers = useMemo(() => {
+    const foil = foilFrame(orientation);
+    return [
+      { ref: foilMaterial, center: foil },
+      { ref: doveMaterial, center: assets ? doveFrame(assets, orientation) : foil },
+    ];
+  }, [assets, orientation]);
   const targetMaterial = state.design.material;
 
   useEffect(() => {
@@ -651,7 +657,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       setBodyMaterial(targetMaterial);
       return;
     }
-    const dir = ctx.backShowing ? -1 : 1;
+    // The sweep runs along local +x. Flat, that is screen-right on the front
+    // and screen-left on the back, so the back's is reversed to read left to
+    // right; upright, local +x points down the screen from either side.
+    const dir = ctx.backShowing && state.design.orientation === 'landscape' ? -1 : 1;
     shared.uDir.value = dir;
     // The base layer is the new design's ground, painted for this change.
     paintBaseFront(baseFrontCanvas.getContext('2d')!, state.design, art);
@@ -661,7 +670,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     // Redirected mid-wipe: the fronts carry on where they are, and the body
     // is rebuilt again for the new target.
     const t = cur ? cur.t : 0;
-    swarm.begin(targetMaterial, newStock.face, dir, [frontCanvas, backCanvas]);
+    swarm.begin(targetMaterial, newStock.face, dir, state.design.orientation, [frontCanvas, backCanvas]);
     shared.uBareSteel.value = targetMaterial === 'metal' ? 1 : 0;
     swap.current = { t, to: targetMaterial, dir, committed: false };
   }, [
@@ -762,10 +771,17 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
             assets={assets}
             backZ={backZ}
             black={foilIsBlack(bodyDesign)}
+            orientation={orientation}
             visible={backMark}
             materialRef={foilMaterial}
           />
-          <HoloDove assets={assets} backZ={backZ} visible={!backMark} materialRef={doveMaterial} />
+          <HoloDove
+            assets={assets}
+            backZ={backZ}
+            orientation={orientation}
+            visible={!backMark}
+            materialRef={doveMaterial}
+          />
         </>
       )}
       <primitive object={swarm.stock} />

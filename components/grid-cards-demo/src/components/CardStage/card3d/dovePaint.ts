@@ -12,7 +12,7 @@
  * run across, their pitch, and how much foil is there.
  */
 
-import { DOVE_MM, doveBox, makeCanvas, type FaceAssets } from './facePaint';
+import { DOVE_MM, doveSize, makeCanvas, type FaceAssets } from './facePaint';
 import { heightToNormal } from './surfaceMaps';
 
 export const DOVE_TEX_H = 1024;
@@ -53,7 +53,7 @@ function blurred(src: HTMLCanvasElement, radius: number): Uint8ClampedArray {
 }
 
 export function paintDoveMaps(assets: FaceAssets): DoveMaps {
-  const box = doveBox(assets.dove);
+  const box = doveSize(assets.dove);
   const h = DOVE_TEX_H;
   const w = Math.round((h * box.w) / box.h);
   const n = w * h;

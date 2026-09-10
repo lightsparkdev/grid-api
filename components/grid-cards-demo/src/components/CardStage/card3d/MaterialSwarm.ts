@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
-import type { CardMaterial } from '@/data/design';
+import type { CardMaterial, Orientation } from '@/data/design';
 import { CARD_R, faceZOf } from './cardGeometry';
 import { FRONT_REST, grain, GRAIN_H, GRAIN_W, turnOf } from './materialSwap';
 
@@ -19,7 +19,9 @@ import { FRONT_REST, grain, GRAIN_H, GRAIN_W, turnOf } from './materialSwap';
  * color the face had there, and floats up and away with a little sway,
  * thinning as it goes.
  *
- * In the card's frame, so they tilt and scale with it.
+ * In the card's frame, so they tilt and scale with it; "up" is the screen's,
+ * given to the shader in the card's frame (`uUp`), since an upright card's
+ * local y runs across the screen.
  */
 
 const CELLS = GRAIN_W * GRAIN_H;
@@ -60,6 +62,7 @@ attribute float aTurn;
 attribute float aSeed;
 uniform float uFront;
 uniform float uDir;
+uniform vec2 uUp;
 uniform float uMode;
 uniform float uSize;
 uniform float uViewportH;
@@ -92,7 +95,7 @@ void main() {
 			float settle = min(1.0, u / (LEAD / span));
 			float ease = 1.0 - (1.0 - settle) * (1.0 - settle);
 			p.x += -uDir * (4.0 + hash(aSeed, 1.0) * 10.0) * (1.0 - ease);
-			p.y += DROP * (0.6 + hash(aSeed, 2.0) * 0.8) * (1.0 - ease);
+			p.xy += uUp * DROP * (0.6 + hash(aSeed, 2.0) * 0.8) * (1.0 - ease);
 			p.z += side * (LIFT * (1.0 - ease) + 0.5);
 			alpha = smoothstep(0.0, 0.15, u) * (1.0 - smoothstep((LEAD + REST) / span, 1.0, u));
 		}
@@ -102,7 +105,7 @@ void main() {
 			float rise = 1.0 - (1.0 - v) * (1.0 - v);
 			float sway = sin(v * 9.0 + aSeed * 6.2831) * 3.0 * v;
 			p.x += uDir * ALONG * (0.65 + hash(aSeed, 3.0) * 0.7) * rise + sway;
-			p.y += RISE * (0.6 + hash(aSeed, 4.0) * 0.8) * rise;
+			p.xy += uUp * RISE * (0.6 + hash(aSeed, 4.0) * 0.8) * rise;
 			p.z += side * (OFF * (0.5 + hash(aSeed, 5.0)) * rise + 0.5);
 			alpha = 1.0 - smoothstep(0.3, 1.0, v);
 		}
@@ -142,6 +145,7 @@ function pointsMaterial(mode: number): THREE.ShaderMaterial {
     uniforms: {
       uFront: { value: -1 },
       uDir: { value: 1 },
+      uUp: { value: new THREE.Vector2(0, 1) },
       uMode: { value: mode },
       uSize: { value: SIZE },
       uViewportH: { value: 1000 },
@@ -207,8 +211,15 @@ export class MaterialSwarm {
   }
 
   /** Lay out both sets for a change to `material`: the stock in its color,
-   *  the dust in the colors of the faces as painted. */
-  begin(material: CardMaterial, color: string, dir: number, faces: [HTMLCanvasElement, HTMLCanvasElement]) {
+   *  the dust in the colors of the faces as painted. `orientation` says which
+   *  way is up in the card's frame. */
+  begin(
+    material: CardMaterial,
+    color: string,
+    dir: number,
+    orientation: Orientation,
+    faces: [HTMLCanvasElement, HTMLCanvasElement],
+  ) {
     const z = faceZOf(material);
     const { cells } = grain();
     const colors = faceColors(faces[0], faces[1]);
@@ -242,9 +253,12 @@ export class MaterialSwarm {
     this.turn.needsUpdate = true;
     this.stockColor.needsUpdate = true;
     this.dustColor.needsUpdate = true;
+    // Upright (a quarter turn clockwise), the screen's up is the card's -x.
+    const up = orientation === 'portrait' ? [-1, 0] : [0, 1];
     for (const points of [this.stock, this.dust]) {
       const m = points.material as THREE.ShaderMaterial;
       m.uniforms.uDir.value = dir;
+      (m.uniforms.uUp.value as THREE.Vector2).set(up[0], up[1]);
       m.uniforms.uFront.value = -1;
       points.visible = true;
     }
