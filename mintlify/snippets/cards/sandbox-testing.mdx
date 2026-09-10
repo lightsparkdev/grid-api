@@ -49,7 +49,7 @@ Outcomes are controlled by the last three characters of
 | `002` | Decline — `INSUFFICIENT_FUNDS` (the pull on the funding source fails) |
 | `003` | Decline — `CARD_PAUSED` (use against a `FROZEN` card to verify) |
 | `005` | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path |
-| `006` | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert |
+| `006` | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `DECLINED` alert |
 | any other | Approved |
 
 The response is the resulting `CardTransaction`.
@@ -74,7 +74,7 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
 Suffix-driven outcomes on the parent transaction's id govern whether
 the post-hoc pull succeeds — use them with the
 [merchant descriptor suffixes](#authorization-simulate) above to
-construct deterministic exception scenarios.
+construct deterministic decline scenarios.
 
 ## Return simulate
 

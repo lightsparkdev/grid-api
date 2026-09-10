@@ -18,7 +18,7 @@ Grid. You'll only need to:
 - Subscribe to the card webhook types: `CARD.STATE_CHANGE` for card
   state, and `CARD_TRANSACTION.AUTHORIZED`,
   `CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`, and
-  `CARD_TRANSACTION.EXCEPTION` for the transaction lifecycle.
+  `CARD_TRANSACTION.DECLINED` for the transaction lifecycle.
 - Confirm with your Lightspark contact that cards are enabled for your
   platform — issuance requires an issuer-side onboarding.
 - If your program includes physical cards, start the artwork early:
@@ -66,10 +66,10 @@ Each authorization on a card produces a parent `CardTransaction` row.
 Children (pulls, clearings, refunds) are reconciled against the parent
 and rolled up into `pullSummary`, `settlementSummary`, and
 `refundSummary` aggregates. The lifecycle status moves
-`AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `EXCEPTION` as the
-failure path for stuck post-hoc pulls. A merchant return keeps the
-transaction `SETTLED` and reports the returned value in
-`refundedAmount`.
+`AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `DECLINED` as the
+failure path for refused auths and stuck post-hoc pulls. A merchant
+return keeps the transaction `SETTLED` and reports the returned value
+in `refundedAmount`.
 
 The full event model is covered in
 [Reconciliation](/cards/transactions/reconciliation).
@@ -94,7 +94,7 @@ When you're ready to go live:
 - Complete card-issuer onboarding through your Lightspark contact.
 - Confirm webhook security, monitoring, and alerting cover the
   `CARD.*` and `CARD_TRANSACTION.*` event types.
-- Build the `EXCEPTION` dashboard view from `CARD_TRANSACTION.EXCEPTION`
+- Build the `DECLINED` dashboard view from `CARD_TRANSACTION.DECLINED`
   webhooks and wire it
   into on-call alerting.
 
