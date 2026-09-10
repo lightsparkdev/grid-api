@@ -47,13 +47,11 @@ properties:
         maximum: 9007199254740991
       - type: 'null'
     description: >-
-      Replacement card-specific per-transaction cap, in the smallest unit of
-      the card's currency. Omit this field to leave the current cap unchanged,
-      supply null to clear it, or supply a positive integer to set it. When the
-      platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid
-      enforces the lower of the two values. Supported only for card programs
-      whose authorization decisions are made by Grid. Cannot be supplied
-      alongside `state: CLOSED`.
+      Replacement cap for one transaction, in the smallest unit of the card's
+      currency. Omit to keep the current cap; send null to clear it. When the
+      platform config also sets `cardConfigs.maxSpendPerTransaction`, the lower
+      value applies. Enforced only for card programs where Grid makes the
+      authorization decision. Cannot be supplied alongside `state: CLOSED`.
     example: 10000
   maxSpendPerDay:
     anyOf:
@@ -63,14 +61,11 @@ properties:
         maximum: 9007199254740991
       - type: 'null'
     description: >-
-      Replacement card-specific UTC-calendar-day cap, in the smallest unit of
-      the card's currency. Omit this field to leave the current cap unchanged,
-      supply null to clear it, or supply a positive integer to set it. When the
-      platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
-      the lower of the two values. Refunds, reversals, and authorization
-      expiries do not restore capacity during the day. Supported only for card
-      programs whose authorization decisions are made by Grid. Cannot be
-      supplied alongside `state: CLOSED`.
+      Replacement cap for cumulative new spend in one UTC day, in the smallest
+      unit of the card's currency. Omit to keep the current cap; send null to
+      clear it. When the platform config also sets `cardConfigs.maxSpendPerDay`,
+      the lower value applies. Enforced only for card programs where Grid makes
+      the authorization decision. Cannot be supplied alongside `state: CLOSED`.
     example: 25000
   maxTransactionsPerDay:
     anyOf:
