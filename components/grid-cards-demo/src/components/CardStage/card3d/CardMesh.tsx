@@ -70,8 +70,6 @@ export interface CardMeshState {
   issued: boolean;
   frozen: boolean;
   closed: boolean;
-  /** PAN groups revealed on the back (0..4; 5 = expiry and CVV). */
-  shown: number;
 }
 
 /** The brand's box on the front and the layout it was drawn with, so the
@@ -603,7 +601,6 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       {
         design: bodyDesign,
         personalized,
-        shown: state.shown,
         frozen: state.frozen,
         closed: state.closed,
       },
@@ -611,7 +608,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     );
     backMap.needsUpdate = true;
     invalidate();
-  }, [assets, bodyDesign, personalized, state.shown, state.frozen, state.closed, backCanvas, backMap, invalidate]);
+  }, [assets, bodyDesign, personalized, state.frozen, state.closed, backCanvas, backMap, invalidate]);
 
   // ── Material change ────────────────────────────────────────────────────────
   // Three fronts wipe the face left to right, the way a card is made: the

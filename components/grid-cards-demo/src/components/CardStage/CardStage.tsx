@@ -8,7 +8,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
-import { PAN_GROUPS, type CardHome } from '@/apps/shared/card';
+import type { CardHome } from '@/apps/shared/card';
 import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useGradientEditing } from '@/components/DesignPicker/gradientEditing';
@@ -43,8 +43,6 @@ const GUTTER_Y = 120;
 const GLIDE_TAU = 0.14;
 /** Camera distance, stage px. Scene units are stage px at z = 0. */
 const CAMERA_Z = 2000;
-/** PAN groups roll in at this pace on Reveal. */
-const ROLL_STEP_MS = 140;
 /** How far outside the brand's box (spec px) still grabs it. */
 const BRAND_GRAB_MARGIN = 24;
 /** A press that travels less than this (screen px) is a click. */
@@ -236,23 +234,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   useEffect(() => {
     if (isDeclined) motion.shake();
   }, [isDeclined, motion]);
-
-  // Reveal: the PAN rolls in group by group on the back, then expiry and CVV.
-  const rolling = revealed && card.revealed;
-  const [shown, setShown] = useState(0);
-  useEffect(() => {
-    if (!rolling) {
-      setShown(0);
-      return;
-    }
-    let i = 0;
-    const id = window.setInterval(() => {
-      i += 1;
-      setShown(i);
-      if (i > PAN_GROUPS.length) window.clearInterval(id);
-    }, ROLL_STEP_MS);
-    return () => window.clearInterval(id);
-  }, [rolling]);
 
   // ── The brand on the card ──────────────────────────────────────────────────
   // The mesh reports the brand's box after each front paint (a ref for the
@@ -799,7 +780,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           pickBack={pickBack}
           placement={placement}
           onBrandPlacement={onBrandPlacement}
-          state={{ design, issued, frozen: card.frozen, closed: card.closed, shown }}
+          state={{ design, issued, frozen: card.frozen, closed: card.closed }}
         />
       </Canvas>
 

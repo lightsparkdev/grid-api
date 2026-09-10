@@ -117,16 +117,16 @@ export function chipBox(o: Orientation): SpecRect {
  * the block at (56, 476) under the stripe, four PAN groups on one line, the
  * CVV after the expiry. Upright, the stripe takes the left 300, so the
  * column starts 56 in from it; the four groups need 596 and the column has
- * 551, so the PAN wraps to two lines of two and the CVV is right-aligned to
- * the column; the fine print takes three lines, a step smaller, to clear the
- * lockup beside it.
+ * 551, so the PAN stacks one group to a line, and the expiry and the CVV
+ * each take their own; the fine print takes three lines, a step smaller,
+ * to clear the lockup beside it.
  */
 export interface BackLayout {
   x: number;
   y: number;
   panPerRow: number;
-  /** The CVV's right edge, or null to follow the expiry with a gap. */
-  cvvRight: number | null;
+  /** The CVV after the expiry with a gap, or on the line below it. */
+  cvv: 'inline' | 'stacked';
   contactless: { right: number; y: number };
   finePrint: string[];
   /** The fine print's type size and leading, spec px. */
@@ -140,7 +140,7 @@ export function backLayout(o: Orientation): BackLayout {
       x: 56,
       y: 476,
       panPerRow: 4,
-      cvvRight: null,
+      cvv: 'inline',
       contactless: { right: face.w - 54, y: 470 },
       finePrint: ['1-855-516-0103   lightspark.com/help', 'Issued by Lead Bank'],
       finePrintPx: 22,
@@ -148,10 +148,11 @@ export function backLayout(o: Orientation): BackLayout {
     };
   }
   return {
+    // Seven lines (name, four groups, expiry, code), centered on the face.
     x: STRIPE_SPEC + 56,
-    y: 640,
-    panPerRow: 2,
-    cvvRight: face.w - 56,
+    y: 528,
+    panPerRow: 1,
+    cvv: 'stacked',
     contactless: { right: face.w - 54, y: 54 },
     finePrint: ['1-855-516-0103', 'lightspark.com/help', 'Issued by Lead Bank'],
     finePrintPx: 20,
@@ -891,8 +892,6 @@ export interface BackState {
   design: CardDesign;
   /** How far the personalization has printed (0 before ACTIVE, 1 once it has). */
   personalized: number;
-  /** PAN groups revealed so far (0..4); 5 = expiry and CVV too. */
-  shown: number;
   frozen: boolean;
   closed: boolean;
 }
@@ -919,8 +918,8 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
 
   // Account block: name, PAN, EXP / CVV, on 41 px lines 32 apart.
   // (`backNameBox` describes the name line's box for the stage.)
-  // The name is the cardholder's as designed; the account data prints when the
-  // card goes ACTIVE and stays masked until Reveal.
+  // The name is the cardholder's as designed; the account data prints in
+  // full when the card goes ACTIVE, as a physical card's does.
   const x = L.x;
   const line = BACK_LINE;
   const gap = BACK_GAP;
@@ -942,35 +941,21 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
     ctx.globalAlpha = Math.min(1, s.personalized);
     const groupW = ctx.measureText('0000').width;
     const groupGap = BACK_EM * 0.28;
-    const last = PAN_GROUPS.length - 1;
     PAN_GROUPS.forEach((g, i) => {
       if (i % L.panPerRow === 0) y += line + gap;
-      const gx = x + (i % L.panPerRow) * (groupW + groupGap);
-      if (i < s.shown || i === last) ctx.fillText(g, gx, y);
-      else dots(ctx, 4, gx, y, groupW);
+      ctx.fillText(g, x + (i % L.panPerRow) * (groupW + groupGap), y);
     });
 
     y += line + gap;
-    const tail = s.shown > PAN_GROUPS.length;
-    ctx.fillText('EXP ', x, y);
-    let cx = x + ctx.measureText('EXP ').width;
-    if (tail) ctx.fillText(CARD_EXP, cx, y);
-    else {
-      const dw = ctx.measureText('00').width;
-      dots(ctx, 2, cx, y, dw);
-      ctx.fillText('/', cx + dw, y);
-      dots(ctx, 2, cx + dw + ctx.measureText('/').width, y, dw);
-    }
+    ctx.fillText(`EXP ${CARD_EXP}`, x, y);
     // The CVV follows the expiry with a gap, or, in the narrow column of an
-    // upright back, sits right-aligned to the column.
-    cx =
-      L.cvvRight === null
-        ? x + ctx.measureText('EXP 11/27').width + 64
-        : L.cvvRight - ctx.measureText('CVV ').width - ctx.measureText('000').width;
-    ctx.fillText('CVV ', cx, y);
-    cx += ctx.measureText('CVV ').width;
-    if (tail) ctx.fillText(CARD_CVV, cx, y);
-    else dots(ctx, 3, cx, y, ctx.measureText('000').width);
+    // upright back, takes the next line.
+    if (L.cvv === 'stacked') {
+      y += line + gap;
+      ctx.fillText(`CVV ${CARD_CVV}`, x, y);
+    } else {
+      ctx.fillText(`CVV ${CARD_CVV}`, x + ctx.measureText('EXP 11/27').width + 64, y);
+    }
     ctx.restore();
   }
 
@@ -987,13 +972,4 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   if (s.design.visaMark === 'back') paintLockup(ctx, assets, foilIsBlack(s.design), o);
   else paintDoveGround(ctx, assets, o);
   paintState(ctx, s.frozen, s.closed);
-}
-
-/** Masking dots in place of digits, in the composed face's spec px. */
-function dots(ctx: CanvasRenderingContext2D, n: number, x: number, baseline: number, width: number) {
-  const step = width / n;
-  const r = BACK_EM * 0.09;
-  ctx.beginPath();
-  for (let i = 0; i < n; i++) ctx.arc(x + step * (i + 0.5), baseline - BACK_EM * 0.26, r, 0, Math.PI * 2);
-  ctx.fill();
 }
