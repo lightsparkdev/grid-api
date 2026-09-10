@@ -61,7 +61,9 @@ properties:
     type: array
     items:
       $ref: ../transactions/TransactionType.yaml
-    description: List of transaction types that are enabled for this currency.
+    description: >-
+      Payment types that are enabled for this currency. Card transactions are
+      enabled through the card program, not through this list.
     example:
       - OUTGOING
       - INCOMING

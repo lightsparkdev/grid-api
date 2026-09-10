@@ -12168,7 +12168,8 @@ components:
       enum:
         - INCOMING
         - OUTGOING
-      description: Type of transaction (incoming payment or outgoing payment)
+        - CARD
+      description: Type of transaction. `INCOMING` and `OUTGOING` are payments; `CARD` is a card transaction, listed alongside payments in `GET /transactions`.
     PlatformCurrencyConfig:
       type: object
       properties:
@@ -12222,7 +12223,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TransactionType'
-          description: List of transaction types that are enabled for this currency.
+          description: Payment types that are enabled for this currency. Card transactions are enabled through the card program, not through this list.
           example:
             - OUTGOING
             - INCOMING
