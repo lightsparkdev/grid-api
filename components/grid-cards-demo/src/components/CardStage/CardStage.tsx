@@ -6,24 +6,26 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import { useReducedMotion } from 'motion/react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CARD_H, CARD_W, FIGMA_CARD_W, FIGMA_FACE_H } from '@/apps/card/cardMetrics';
+import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import { PAN_GROUPS, type CardHome } from '@/apps/shared/card';
 import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useGradientEditing } from '@/components/DesignPicker/gradientEditing';
 import {
-  BRAND_DEFAULT_LAYOUT,
+  brandDefaultLayout,
   BRAND_MARGIN,
   BRAND_MAX_H,
   BRAND_MIN_H,
   type BrandLayout,
   type CardDesign,
   type CardGradient,
+  type Orientation,
 } from '@/data/design';
 import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/CardMesh';
-import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, type SpecRect } from './card3d/facePaint';
+import { localToSpec } from './card3d/faceFrame';
+import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { CardMotion } from './cardMotion';
 import { resizeCursor, rotateCursor } from './cursors';
@@ -52,10 +54,12 @@ const SNAP_PX = 6;
 /** Rotation snaps to multiples of this, within SNAP_DEG. */
 const ROTATE_STEP = 15;
 const SNAP_DEG = 3;
-/** Spec px → card px, the hit box's unit. */
+/** Spec px → card px, the hit box's unit (the same along either axis). */
 const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
-/** The chip module's center x (spec px; see `CHIP` in facePaint). */
-const CHIP_CENTER_X = 172 + 197 / 2;
+/** Upright, the blank has been turned a quarter turn clockwise: the roll the
+ *  mesh carries about its own normal, degrees (three's positive z is
+ *  counterclockwise seen from the front). */
+const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 };
 
 // Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
@@ -78,6 +82,8 @@ interface Live {
   freeze: boolean;
   /** Which face is toward the camera, from the last frame (+ front, - back). */
   facing: number;
+  /** How the card is held: the footprint, the roll, and the pick's frame. */
+  orientation: Orientation;
   intro: Intro;
 }
 
@@ -202,6 +208,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     editing: false,
     freeze: false,
     facing: 1,
+    orientation: design.orientation,
     intro: {
       t: -1,
       done: false,
@@ -220,6 +227,10 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   live.current.t = easeInOutCubic(bootProgress);
   live.current.wantBack = revealed;
   live.current.reduceMotion = reduceMotion;
+  live.current.orientation = design.orientation;
+  // The composed face and the card's footprint on screen, for the card as held.
+  const face = faceSize(design.orientation);
+  const foot = footprint(design.orientation);
 
   // Decline: shake once per bounce.
   useEffect(() => {
@@ -325,27 +336,47 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     setOverBrand(over);
   };
 
-  /** Snap a moved box to the card's center, the chip's row, and the print
-   *  margins; a turned box snaps by its center only. Each snap comes with
-   *  its guide and the points it aligned: on the brand, and on the card
-   *  feature (its center, the chip) when there is one to mark. */
-  const snapMove = (box: SpecRect, rotation: number): { dx: number; dy: number; guides: Guides } => {
+  /** The composed face's landmarks, in its spec px: its center, the chip's
+   *  center (its row and its column), and the row the brand sits on by
+   *  default (the chip's row flat; the lockup's row upright). */
+  const landmarks = () => {
+    const chip = chipBox(design.orientation);
+    return {
+      cardCenter: { x: face.w / 2, y: face.h / 2 } as Pt,
+      chipCenter: { x: chip.x + chip.w / 2, y: chip.y + chip.h / 2 } as Pt,
+      brandRow: brandDefaultLayout(design.orientation).y,
+    };
+  };
+  /** A screen distance in the face's spec px. */
+  const snapTolerance = () => {
     const hit = hitRef.current;
-    const tol = hit ? (SNAP_PX * FIGMA_CARD_W) / hit.getBoundingClientRect().width : 0;
+    return hit ? (SNAP_PX * face.w) / hit.getBoundingClientRect().width : 0;
+  };
+
+  /** Snap a moved box to the card's center, the chip's row and column, the
+   *  brand's default row, and the print margins; a turned box snaps by its
+   *  center only. Each snap comes with its guide and the points it aligned:
+   *  on the brand, and on the card feature (its center, the chip) when there
+   *  is one to mark. */
+  const snapMove = (box: SpecRect, rotation: number): { dx: number; dy: number; guides: Guides } => {
+    const tol = snapTolerance();
     const turned = Math.abs(rotation) > 0.5;
     const c = center(box);
-    const cardCenter: Pt = { x: FIGMA_CARD_W / 2, y: FIGMA_FACE_H / 2 };
-    const chipCenter: Pt = { x: CHIP_CENTER_X, y: BRAND_DEFAULT_LAYOUT.y };
+    const { cardCenter, chipCenter, brandRow } = landmarks();
     // [from, to, the feature's point to mark, if any]
     type Pair = [number, number, Pt | null];
-    const xs: Pair[] = [[c.x, cardCenter.x, cardCenter]];
+    const xs: Pair[] = [
+      [c.x, cardCenter.x, cardCenter],
+      [c.x, chipCenter.x, chipCenter],
+    ];
     const ys: Pair[] = [
       [c.y, cardCenter.y, cardCenter],
       [c.y, chipCenter.y, chipCenter],
+      [c.y, brandRow, null],
     ];
     if (!turned) {
-      xs.push([box.x, BRAND_MARGIN, null], [box.x + box.w, FIGMA_CARD_W - BRAND_MARGIN, null]);
-      ys.push([box.y, BRAND_MARGIN, null], [box.y + box.h, FIGMA_FACE_H - BRAND_MARGIN, null]);
+      xs.push([box.x, BRAND_MARGIN, null], [box.x + box.w, face.w - BRAND_MARGIN, null]);
+      ys.push([box.y, BRAND_MARGIN, null], [box.y + box.h, face.h - BRAND_MARGIN, null]);
     }
     const best = (pairs: Pair[]) => {
       let d = 0;
@@ -386,13 +417,11 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
    *  chip's row, and the line's other end (so the line can be held straight),
    *  with the same guides a brand move shows. */
   const snapPoint = (p: Pt, other: Pt): { p: Pt; guides: Guides } => {
-    const hit = hitRef.current;
-    const tol = hit ? (SNAP_PX * FIGMA_CARD_W) / hit.getBoundingClientRect().width : 0;
-    const cardCenter: Pt = { x: FIGMA_CARD_W / 2, y: FIGMA_FACE_H / 2 };
-    const chipCenter: Pt = { x: CHIP_CENTER_X, y: BRAND_DEFAULT_LAYOUT.y };
+    const tol = snapTolerance();
+    const { cardCenter, chipCenter } = landmarks();
     type Target = [number, Pt | null];
-    const xs: Target[] = [[cardCenter.x, cardCenter], [0, null], [FIGMA_CARD_W, null], [other.x, other]];
-    const ys: Target[] = [[cardCenter.y, cardCenter], [chipCenter.y, chipCenter], [0, null], [FIGMA_FACE_H, null], [other.y, other]];
+    const xs: Target[] = [[cardCenter.x, cardCenter], [chipCenter.x, chipCenter], [0, null], [face.w, null], [other.x, other]];
+    const ys: Target[] = [[cardCenter.y, cardCenter], [chipCenter.y, chipCenter], [0, null], [face.h, null], [other.y, other]];
     const best = (v: number, targets: Target[]) => {
       let at: number | undefined;
       let feature: Pt | null = null;
@@ -679,22 +708,30 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       setTextEdit(null);
     }
   };
-  // The editor's box in card px: the wordmark's em box, right-anchored and
-  // wide enough to type into; or the name line on the back.
+  // The editor's box in card px: the wordmark's em box, anchored the way its
+  // layout is and wide enough to type into; or the name line on the back.
   const k = CARD_PER_SPEC;
   let textStyle: React.CSSProperties | undefined;
   if (textEdit === 'brand' && placed) {
     const b = placed.box;
     const em = b.h * k;
+    const anchor = placed.layout.anchor;
+    const width = foot.w * 0.6;
+    const placeX: React.CSSProperties =
+      anchor === 'right'
+        ? { right: foot.w - (b.x + b.w) * k }
+        : anchor === 'center'
+          ? { left: (b.x + b.w / 2) * k - width / 2 }
+          : { left: b.x * k };
     textStyle = {
-      right: CARD_W - (b.x + b.w) * k,
+      ...placeX,
       top: b.y * k,
-      width: CARD_W * 0.6,
+      width,
       height: em,
       fontSize: em,
       fontWeight: BRAND_TEXT_WEIGHT,
       letterSpacing: `${BRAND_TRACKING}em`,
-      textAlign: 'right',
+      textAlign: anchor,
       // The paint centers the caps in the em box; the face's ascent is 85%.
       lineHeight: `${em}px`,
       transform: `translateY(${(0.5 + BRAND_CAP / 2 - 0.85) * em}px)`,
@@ -705,7 +742,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     textStyle = {
       left: b.x * k,
       top: b.y * k,
-      width: CARD_W - b.x * k - 40 * k,
+      width: foot.w - b.x * k - 40 * k,
       height: em,
       fontSize: em,
       fontWeight: 400,
@@ -766,12 +803,14 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         />
       </Canvas>
 
-      {/* Rides with the card: pointer input, the state pill, the accessible name. */}
+      {/* Rides with the card: pointer input, the state pill, the accessible
+          name. Its box is the card's footprint as held, so everything laid on
+          it is the composed face in card px. */}
       <div
         ref={hitRef}
         className={clsx(styles.hit, overBrand && styles.hitOverBrand, overName && styles.hitOverName)}
         data-card-hit
-        style={{ width: CARD_W, height: CARD_H, pointerEvents: phoneUp || !introDone ? 'none' : 'auto' }}
+        style={{ width: foot.w, height: foot.h, pointerEvents: phoneUp || !introDone ? 'none' : 'auto' }}
         onPointerMove={onPointerMove}
         onPointerDown={onPointerDown}
         onPointerUp={endDrag}
@@ -780,7 +819,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         onDoubleClick={onDoubleClick}
       >
         <span className={styles.srOnly} role="img" aria-label={`${programNameOf(design)} card`} />
-        {!introDone && <CardIntro ref={overlayRef} brand={programNameOf(design)} />}
+        {!introDone && <CardIntro ref={overlayRef} brand={programNameOf(design)} orientation={design.orientation} />}
         {pill && (
           <span className={clsx(styles.pill, card.closed && styles.pillClosed, issuing && styles.pillProcessing)}>
             {pill}
@@ -953,9 +992,12 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
   const get = useThree((s) => s.get);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
 
-  // Pointer → the card's front plane → spec px. The plane, not the mesh, so a
-  // drag can carry the brand past the card's edge; null when the back faces
-  // the camera.
+  // Pointer → the card's plane → the composed face's spec px. The plane, not
+  // the mesh, so a drag can carry the brand past the card's edge; null when
+  // the other face is toward the camera. The back is the same plane seen from
+  // behind (its paint is mirrored in u on the mesh, so seen from behind it
+  // reads the right way round); `localToSpec` knows both frames and the
+  // card's orientation.
   useEffect(() => {
     const ray = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
@@ -964,7 +1006,7 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     const normal = new THREE.Vector3();
     const q = new THREE.Quaternion();
     const hit = new THREE.Vector3();
-    pick.current = (clientX, clientY) => {
+    const pickSide = (side: 'front' | 'back'): Pick => (clientX, clientY) => {
       const g = group.current;
       if (!g) return null;
       const { camera, gl } = get();
@@ -973,35 +1015,20 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       ray.setFromCamera(ndc, camera);
       g.getWorldPosition(origin);
       normal.set(0, 0, 1).applyQuaternion(g.getWorldQuaternion(q));
-      if (ray.ray.direction.dot(normal) >= 0) return null;
+      const toward = ray.ray.direction.dot(normal);
+      if (side === 'front' ? toward >= 0 : toward <= 0) return null;
       plane.setFromNormalAndCoplanarPoint(normal, origin);
       if (!ray.ray.intersectPlane(plane, hit)) return null;
       g.worldToLocal(hit);
-      return { x: (hit.x / CARD_W + 0.5) * FIGMA_CARD_W, y: (0.5 - hit.y / CARD_H) * FIGMA_FACE_H };
+      return localToSpec(live.current.orientation, side, hit);
     };
-    // The back: the same plane seen from behind. Its paint is mirrored in u
-    // on the mesh, so seen from behind it reads the right way round and its
-    // canvas x runs against local x.
-    pickBack.current = (clientX, clientY) => {
-      const g = group.current;
-      if (!g) return null;
-      const { camera, gl } = get();
-      const r = gl.domElement.getBoundingClientRect();
-      ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
-      ray.setFromCamera(ndc, camera);
-      g.getWorldPosition(origin);
-      normal.set(0, 0, 1).applyQuaternion(g.getWorldQuaternion(q));
-      if (ray.ray.direction.dot(normal) <= 0) return null;
-      plane.setFromNormalAndCoplanarPoint(normal, origin);
-      if (!ray.ray.intersectPlane(plane, hit)) return null;
-      g.worldToLocal(hit);
-      return { x: (0.5 - hit.x / CARD_W) * FIGMA_CARD_W, y: (0.5 - hit.y / CARD_H) * FIGMA_FACE_H };
-    };
+    pick.current = pickSide('front');
+    pickBack.current = pickSide('back');
     return () => {
       pick.current = null;
       pickBack.current = null;
     };
-  }, [get, pick, pickBack]);
+  }, [get, live, pick, pickBack]);
 
   // Dev: expose the scene state and the pose for tracing from the console.
   useEffect(() => {
@@ -1022,11 +1049,14 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     if (!g || !c || !root) return;
     const dt = Math.min(0.05, delta);
     const r = root.getBoundingClientRect();
+    // The card's footprint on screen: flat or upright.
+    const { orientation } = live.current;
+    const foot = footprint(orientation);
     // Rest position: centered on the stage, scaled to fit it.
     const rest = {
       x: r.width / 2,
       y: r.height / 2,
-      s: Math.max(MIN_SCALE, Math.min(MAX_SCALE, (r.width - GUTTER_X * 2) / CARD_W, (r.height - GUTTER_Y) / CARD_H)),
+      s: Math.max(MIN_SCALE, Math.min(MAX_SCALE, (r.width - GUTTER_X * 2) / foot.w, (r.height - GUTTER_Y) / foot.h)),
     };
     // Glide toward rest (exponential approach), snapping on the first frame.
     const k = pos.current ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
@@ -1035,7 +1065,9 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     p.y += (rest.y - p.y) * k;
     p.s += (rest.s - p.s) * k;
     pos.current = p;
-    // Phone up: interpolate toward the phone's live card slot and park there.
+    // Phone up: interpolate toward the phone's live card slot and park there,
+    // at the scale that fits the slot (its width or its height, whichever
+    // the footprint needs).
     let { x, y, s } = p;
     const { t } = live.current;
     if (t > 0) {
@@ -1044,7 +1076,7 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
         const b = slot.getBoundingClientRect();
         x += (b.left + b.width / 2 - r.left - x) * t;
         y += (b.top + b.height / 2 - r.top - y) * t;
-        s += (b.width / CARD_W - s) * t;
+        s += (Math.min(b.width / foot.w, b.height / foot.h) - s) * t;
       }
     }
 
@@ -1088,16 +1120,19 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       }
     }
     // Euler XYZ: Rx(pitch) · Ry(spin) · Rz(roll), the roll innermost so it
-    // turns the faces about the card's own normal.
+    // turns the faces about the card's own normal. An upright card carries a
+    // quarter turn in the same roll, so the spin stays about the screen's
+    // vertical (its long axis now) and a flop still brings the back up the
+    // right way: Rx(180)·Rz(180 − 90) = Ry(180)·Rz(−90).
     g.rotation.set(
       THREE.MathUtils.degToRad(pose.rotX),
       THREE.MathUtils.degToRad(pose.rotY),
-      THREE.MathUtils.degToRad(pose.rotZ),
+      THREE.MathUtils.degToRad(pose.rotZ + ORIENT_ROLL[orientation]),
     );
 
     const hit = hitRef.current;
     if (hit) {
-      hit.style.transform = `translate(${x + pose.dx * s - CARD_W / 2}px, ${y + bob - CARD_H / 2}px) scale(${s})`;
+      hit.style.transform = `translate(${x + pose.dx * s - foot.w / 2}px, ${y + bob - foot.h / 2}px) scale(${s})`;
       // The pill belongs to the front; hide it while the back is showing.
       hit.style.setProperty('--pill-opacity', pose.facing > 0.3 ? '1' : '0');
       // The hit box scales with the card; text riding on it undoes that.

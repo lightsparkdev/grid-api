@@ -2,6 +2,7 @@
 
 import { forwardRef } from 'react';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
+import type { Orientation } from '@/data/design';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { INTRO_GEOMETRY as G, INTRO_PAD } from './introTimeline';
 import styles from './CardStage.module.scss';
@@ -18,14 +19,25 @@ const FADE = { style: { opacity: 0 } } as const;
  * The blueprint, laid out in card px inside the card's hit box. Every element
  * that animates carries `data-intro`; `stepIntro` poses them per frame and
  * blurs and fades the whole drawing out as the card comes into focus beneath it.
+ * It is a drawing of the blank, so held upright it turns with the blank: a
+ * quarter turn clockwise, centered on the (now tall) hit box.
  */
-export const CardIntro = forwardRef<SVGSVGElement, { brand: string }>(function CardIntro({ brand }, ref) {
+export const CardIntro = forwardRef<SVGSVGElement, { brand: string; orientation: Orientation }>(function CardIntro(
+  { brand, orientation },
+  ref,
+) {
+  const w = CARD_W + INTRO_PAD * 2;
+  const h = CARD_H + INTRO_PAD * 2;
+  const placement: React.CSSProperties =
+    orientation === 'portrait'
+      ? { left: (CARD_H - CARD_W) / 2 - INTRO_PAD, top: (CARD_W - CARD_H) / 2 - INTRO_PAD, transform: 'rotate(90deg)' }
+      : { inset: -INTRO_PAD };
   return (
     <svg
       ref={ref}
       className={styles.blueprint}
       viewBox={G.viewBox}
-      style={{ inset: -INTRO_PAD, width: CARD_W + INTRO_PAD * 2, height: CARD_H + INTRO_PAD * 2 }}
+      style={{ ...placement, width: w, height: h }}
       aria-hidden
     >
       <g fill="none" stroke="var(--card-blueprint)" strokeLinecap="round" strokeLinejoin="round">

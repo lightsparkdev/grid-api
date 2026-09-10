@@ -134,8 +134,12 @@ export function CardScreen({ home }: CardScreenProps) {
       >
         <div className={styles.cardArea}>
           {/* An empty slot: THE card (the one on the stage, never a copy) flies
-              in and parks exactly here. CardStage measures this box. */}
-          <div data-card-slot className={styles.cardSlot} />
+              in and parks exactly here. CardStage measures this box and fits
+              the card to it, so an upright card gets a tall slot. */}
+          <div
+            data-card-slot
+            className={clsx(styles.cardSlot, design.orientation === 'portrait' && styles.cardSlotPortrait)}
+          />
         </div>
 
         {/* Hub content below the card, or the tap-to-pay reader status. popLayout
