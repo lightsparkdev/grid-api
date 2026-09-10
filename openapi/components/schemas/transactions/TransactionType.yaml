@@ -3,6 +3,4 @@ enum:
   - INCOMING
   - OUTGOING
   - CARD
-description: >-
-  Type of transaction. `INCOMING` and `OUTGOING` are payments; `CARD` is a
-  card transaction, listed alongside payments in `GET /transactions`.
+description: Type of transaction
