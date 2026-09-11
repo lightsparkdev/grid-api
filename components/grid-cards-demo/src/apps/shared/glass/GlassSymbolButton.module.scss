@@ -52,14 +52,3 @@
     height: 40px;
   }
 }
-
-/* Small enough to sit in the phone's bezel corner (the stage's close). */
-.size28 {
-  width: 28px;
-  height: 28px;
-  @include shadow.glass-button-press(28px);
-
-  .glyph {
-    height: 28px;
-  }
-}

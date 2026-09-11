@@ -49,33 +49,21 @@
   overflow: hidden;
 }
 
-/* In the phone's bezel, in its top-right corner, which is cut tighter than the
-   others (CLOSE_CORNER_RADIUS) to hold it: a 28 glass button centered in the
-   pocket between the 32 corner and the screen's 73 curve (its center 23px in
-   from the outer edges). The bezel grows 2px on hover (--shell-grow, from
-   AppShell); the button moves with it so it stays centered in the pocket. In
-   the phone's own box (AppShell's stage chrome layer, which carries the fit
-   transform). The glass refracts the stage's dot grid, as the bezel does, so
-   it reads as the same material; the glyph takes the docs' text color. */
+/* Tucked into the phone's top-right corner, in the void its rounded corner
+   leaves: the button's center sits 4px in from the box's corner, so a 44
+   circle just meets the bezel's curve. The bezel grows 2px on hover
+   (--shell-grow, from AppShell); the button moves with it so it keeps its
+   place against the corner. In the phone's own box (AppShell's stage chrome
+   layer, which carries the fit transform). */
 .back {
   position: absolute;
-  top: calc(9px - var(--shell-grow, 0px));
-  right: calc(9px - var(--shell-grow, 0px));
+  top: calc(-18px - var(--shell-grow, 0px));
+  right: calc(-18px - var(--shell-grow, 0px));
   pointer-events: auto;
-  --glass-symbol-glyph: var(--text-secondary);
-  --stage-glass-backdrop: var(--dot-grid-bg)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='8.75' y='8.75' width='2.5' height='2.5' fill='%23deded9'/%3E%3C/svg%3E")
-    8px 8px repeat;
   transition:
     opacity 400ms ease,
     top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
     right 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-
-  :global([data-theme='dark']) & {
-    --stage-glass-backdrop: var(--dot-grid-bg)
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='8.75' y='8.75' width='2.5' height='2.5' fill='%232d2d2a'/%3E%3C/svg%3E")
-      8px 8px repeat;
-  }
 }
 
 .backHidden {

@@ -5,29 +5,12 @@ import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import { CardStage } from '@/components/CardStage/CardStage';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton } from '@/apps/shared/glass';
+import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useCardHome, type UseCardHomeOptions, type WalletEntry } from '@/apps/shared/card';
 import type { CardDesign } from '@/data/design';
-import type { GlassConfig } from '@/components/liquid-glass';
+import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './AppPanel.module.scss';
-
-/** The stage close's glass, the phone bezel's material at button size: the
- *  shell's surface (edge, glow, specular, lift, chroma) over the symbol
- *  button's small-lens optics. */
-const BEZEL_BUTTON_GLASS: Partial<GlassConfig> = {
-  brightness: PHONE_SHELL_GLASS.brightness,
-  edgeStrength: PHONE_SHELL_GLASS.edgeStrength,
-  edgeWidth: PHONE_SHELL_GLASS.edgeWidth,
-  edgeExponent: PHONE_SHELL_GLASS.edgeExponent,
-  glowStrength: PHONE_SHELL_GLASS.glowStrength,
-  glowSpread: PHONE_SHELL_GLASS.glowSpread,
-  glowExponent: PHONE_SHELL_GLASS.glowExponent,
-  specularStrength: PHONE_SHELL_GLASS.specularStrength,
-  specularRotation: PHONE_SHELL_GLASS.specularRotation,
-  chromaticAberration: PHONE_SHELL_GLASS.chromaticAberration,
-  blur: 1,
-};
 
 export interface AppPanelProps {
   design: CardDesign;
@@ -77,6 +60,7 @@ function StageHost({
     card: cardOptions,
     onSettled,
   });
+  const theme = useThemeMode();
   // Two states only: the card floats alone, or it is in the phone. The first
   // flow brings the phone in and the card flies into its slot; the phone stays
   // through later flows until the visitor sends it away.
@@ -89,12 +73,9 @@ function StageHost({
     <span className={clsx(styles.back, !showBack && styles.backHidden)} aria-hidden={!showBack}>
       <GlassSymbolButton
         aria-label="Back to the card"
-        size={28}
+        size={44}
         type="button"
-        // The bezel's glass, not the screen's symbol glass: it refracts the
-        // stage's dot grid behind it, with the shell's edge, glow, and lift.
-        backdrop="var(--stage-glass-backdrop)"
-        glass={BEZEL_BUTTON_GLASS}
+        glass={{ brightness: headerGlassBrightness(theme) }}
         tabIndex={showBack ? 0 : -1}
         onClick={() => {
           // Whatever a flow left up (the Card Numbers page) goes with the phone.
@@ -102,7 +83,7 @@ function StageHost({
           onDismissPhone?.();
         }}
       >
-        <SfSymbol name="xmark" size={12} />
+        <SfSymbol name="xmark" size={16} />
       </GlassSymbolButton>
     </span>
   );
