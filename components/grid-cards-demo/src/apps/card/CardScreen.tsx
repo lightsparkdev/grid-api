@@ -39,7 +39,7 @@ const PAGE_RIGHT = { x: '100%', opacity: 1 };
 const PAGE_LEFT = { x: '-30%', opacity: 0.4 };
 const PAGE_REST = { x: 0, opacity: 1 };
 /** The pushed pages' header titles. */
-const PAGE_TITLE = { numbers: 'Card Numbers', limits: 'Spending Limits' } as const;
+const PAGE_TITLE = { numbers: 'Card numbers', limits: 'Spending limits' } as const;
 
 /**
  * The card hub — the whole app. Header (back, card numbers, limits and lock),
