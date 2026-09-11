@@ -103,3 +103,10 @@ properties:
     description: Last update timestamp.
     readOnly: true
     example: '2026-05-08T15:42:11Z'
+  receiptDeliveryConfirmedAt:
+    type: string
+    format: date-time
+    description: >-
+      The time at which the platform confirmed delivery of the receipt to their
+      customer.
+    example: '2026-05-08T15:45:00Z'
