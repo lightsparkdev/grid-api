@@ -235,7 +235,7 @@ curl -X POST "$GRID_BASE_URL/quotes" \
 
 ### 7. Authenticate and sign
 
-The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with. With `EMAIL_OTP`, the client generates a TEK (Target Encryption Key) pair, HPKE-encrypts the OTP code, and uses the TEK private key both to complete login and to sign the quote payload.
+The customer has an outstanding quote with a `payloadToSign`. Now we need a session signing key to sign it with. With `EMAIL_OTP`, the client generates an ephemeral P-256 key pair, HPKE-encrypts the OTP code, and uses the private key both to complete login and to sign the quote payload.
 
 <Steps>
   <Step title="Your backend requests a fresh OTP">
@@ -263,7 +263,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     Return `otpEncryptionTargetBundle` to the client.
   </Step>
   <Step title="Client encrypts the OTP and verifies">
-    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 key pair (the TEK)</a>, <a href="client-keys#encrypt-the-otp-code-email_otp-only">HPKE-encrypts</a> `{otp_code, public_key}` under `otpEncryptionTargetBundle`, and sends the encrypted bundle to your backend. In sandbox, use OTP code `000000`.
+    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 key pair</a>, <a href="client-keys#encrypt-the-otp-code-email_otp-only">HPKE-encrypts</a> `{otp_code, public_key}` under `otpEncryptionTargetBundle`, and sends the encrypted bundle to your backend. In sandbox, use OTP code `000000`.
 
     Your backend calls verify with the encrypted bundle:
 
@@ -291,7 +291,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     Return `payloadToSign` and `requestId` to the client.
   </Step>
   <Step title="Client signs the verification token and completes login">
-    The client <a href="client-keys#4-sign-a-payloadtosign">stamps</a> `payloadToSign` with the TEK private key and sends the stamp back to your backend.
+    The client <a href="client-keys#4-sign-a-payloadtosign">stamps</a> `payloadToSign` with the private key it generated and sends the stamp back to your backend.
 
     Your backend retries the same request with the stamp:
 
@@ -321,10 +321,10 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     }
     ```
 
-    The TEK public key is now the session API key. The TEK private key **is** the session signing key — the client already has it.
+    The client's public key is now the session API key. That private key **is** the session signing key — the client already has it.
   </Step>
   <Step title="Client stamps the quote payload">
-    The client <a href="client-keys#4-sign-a-payloadtosign">signs the quote's `payloadToSign`</a> with the same TEK private key. Return the full Grid wallet signature to your backend.
+    The client <a href="client-keys#4-sign-a-payloadtosign">signs the quote's `payloadToSign`</a> with the same private key. Return the full Grid wallet signature to your backend.
   </Step>
 </Steps>
 

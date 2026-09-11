@@ -19,7 +19,7 @@ description: >-
   credential / session management retries, sign with the session API
   keypair of an existing verified credential on the same internal
   account. For OTP verify retries, sign with the ephemeral
-  Target Encryption Key (TEK) the client generated for this login —
+  keypair the client generated for this login —
   its public key is the one carried inside the `encryptedOtpBundle`
   and bound into the `verificationToken`, and it becomes the client's
   session API key on successful completion.
