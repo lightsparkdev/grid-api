@@ -22,6 +22,9 @@ export interface WalletEntry {
   provision?: { issued?: boolean };
   /** Which sheet/view to open after provisioning. */
   open?: WalletEntryTarget;
+  /** The phone is already on stage from an earlier flow: start at once
+   *  instead of waiting for it to land. */
+  phoneUp?: boolean;
 }
 
 /** Merchant category for a tap-to-pay / transaction row. WalletListItem maps it to an icon. */

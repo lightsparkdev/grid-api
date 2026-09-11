@@ -59,12 +59,14 @@ function newGroupId() {
  * cardholder is a Customer the platform already onboarded, so the phone boots
  * straight into the app.
  */
-/** The phone stays up this long after a flow settles, then dismisses. */
-const PHONE_DISMISS_HOLD_MS = 600;
-
 export function useCardsDemoLogic() {
-  // The flow the phone is up for; null = the card floats alone.
+  // The flow playing out on the phone; null between flows.
   const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
+  // The cardholder's phone is on stage with the card in it. The first flow
+  // brings it in; it stays through the flows that follow, so their residue
+  // (rows settling, notifications, the card's state) is there to see, until
+  // the visitor sends it away to get back to the card alone.
+  const [phoneUp, setPhoneUp] = useState(false);
   const theme = useThemeMode();
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   // Until the visitor designs something, the card is the theme's default:
@@ -249,36 +251,40 @@ export function useCardsDemoLogic() {
       // Fast-forward: every flow but Issue needs a card, so silently provision
       // one from any starting point. STATE only — no API calls are logged for
       // the provisioning and it earns no checkmark. Each flow logs only its own
-      // calls when the user actually runs it. Any flow brings the phone in.
+      // calls when the user actually runs it. The first flow brings the phone
+      // in; the brain starts a later one at once since the phone is already up.
       const needsCard = id !== 'card' && !wallet.hasCard;
       if (needsCard) setWallet({ ...wallet, hasCard: true });
-      clearTimeout(dismissTimer.current);
       setActiveFlow(id);
+      setPhoneUp(true);
       setWalletEntry({
         nonce: Date.now(),
         provision: needsCard ? { issued: true } : undefined,
         open: id,
+        phoneUp,
       });
     },
-    [wallet],
+    [wallet, phoneUp],
   );
 
-  // The phone brain reports the flow has played out; hold a beat, then dismiss.
-  const dismissTimer = useRef<ReturnType<typeof setTimeout>>();
-  const onSettled = useCallback(() => {
-    clearTimeout(dismissTimer.current);
-    dismissTimer.current = setTimeout(() => setActiveFlow(null), PHONE_DISMISS_HOLD_MS);
-  }, []);
-  useEffect(() => () => clearTimeout(dismissTimer.current), []);
+  // The phone brain reports the flow has played out; the tiles unlock. The
+  // phone stays.
+  const onSettled = useCallback(() => setActiveFlow(null), []);
+
+  // Back to the card alone. Not while a flow is playing.
+  const dismissPhone = useCallback(() => {
+    if (activeFlow !== null) return;
+    setPhoneUp(false);
+  }, [activeFlow]);
 
   const reset = useCallback(() => {
     pendingTimers.current.forEach((t) => clearTimeout(t));
     pendingTimers.current.clear();
-    clearTimeout(dismissTimer.current);
     spendRefs.current.clear();
     limitsRef.current = {};
     setWallet(initialWallet);
     setActiveFlow(null);
+    setPhoneUp(false);
     setCompleted(initialCompleted);
     setEntries([]);
     setWalletEntry(undefined);
@@ -289,6 +295,8 @@ export function useCardsDemoLogic() {
     activeFlow,
     // A flow is playing out on the phone; the panel holds tiles and Reset.
     running: activeFlow !== null,
+    phoneUp,
+    dismissPhone,
     design,
     updateDesign,
     preset,

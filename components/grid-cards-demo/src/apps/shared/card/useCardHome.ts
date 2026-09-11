@@ -61,7 +61,7 @@ export interface UseCardHomeOptions {
   onTapDeclined?: (reason: DeclineReason, cents: number, merchant: string) => void;
   /** Card-control events (freeze, close, limits, reveal, wallet, settle, refund). */
   card?: UseCardControlsOptions;
-  /** The current flow has played out on the phone; the stage can dismiss it. */
+  /** The current flow has played out on the phone; the next one can start. */
   onSettled?: () => void;
 }
 
@@ -255,10 +255,11 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   };
 
   // Apply a sidebar jump command exactly once (nonce-guarded so re-renders and
-  // StrictMode's double-invoke don't replay it). The phone slides in for the
-  // flow; once it has landed, the flow plays out on its own — the cardholder's
-  // taps (Face ID, Add to Apple Wallet) are scripted — and reports `onSettled`
-  // so the stage can dismiss the phone again.
+  // StrictMode's double-invoke don't replay it). The first flow brings the
+  // phone in; once it has landed (or at once, if it is already up), the flow
+  // plays out on its own — the cardholder's taps (Face ID, Add to Apple
+  // Wallet) are scripted — and reports `onSettled` so the playground can
+  // unlock the tiles. The phone stays up until the visitor sends it away.
   const lastEntryNonce = useRef(0);
   useEffect(() => {
     if (!entry || entry.nonce === lastEntryNonce.current) return;
@@ -366,13 +367,14 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
       }
     };
 
-    // Clear whatever the previous flow left up, then run once the phone lands.
+    // Clear whatever the previous flow left up, then run: once the phone lands,
+    // or at once when it is already up from an earlier flow.
     const busy = card.sheet !== 'none' || revealPending || tapPhase !== 'idle';
     setTapPhase('idle');
     card.closeSheet();
     setRevealPending(false);
     setNotice(null);
-    later(run, busy ? PHONE_IN_MS + ENTRY_HOME_SETTLE_MS : PHONE_IN_MS);
+    later(run, (entry.phoneUp ? 0 : PHONE_IN_MS) + (busy ? ENTRY_HOME_SETTLE_MS : 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry]);
 

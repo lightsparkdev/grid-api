@@ -129,7 +129,9 @@ export default function Page() {
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
           <AppPanel
-            activeFlow={logic.activeFlow}
+            phoneUp={logic.phoneUp}
+            running={logic.running}
+            onDismissPhone={logic.dismissPhone}
             design={logic.design}
             onDesignChange={logic.updateDesign}
             session={logic.session}
