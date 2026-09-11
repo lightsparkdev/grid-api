@@ -138,7 +138,17 @@
   }
 }
 
-/* A page over the whole body, the card's slot included (Spending Limits).
+/* The card slot and the content under it, pushed aside as one by a page
+   over the body. */
+.stack {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* A page over the whole body, the card's slot included (Spending limits).
    Under the header (the body is its own stacking context below it), so the
    back button and title stay on top. */
 .pageCover {

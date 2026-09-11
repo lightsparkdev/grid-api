@@ -191,78 +191,86 @@ export function CardScreen({ home }: CardScreenProps) {
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={BODY_TRANSITION}
       >
-        <div className={styles.cardArea}>
-          {/* An empty slot: THE card (the one on the stage, never a copy) flies
+        {/* The card and everything under it. Spending limits pushes it: it
+            slides a third of the way out to the left as the page comes in from
+            the right, iOS's push. The stage follows the slot's live rect, so
+            the card rides along; the page's leading edge then covers it. */}
+        <motion.div
+          className={styles.stack}
+          initial={false}
+          animate={{ x: card.page === 'limits' ? '-30%' : '0%' }}
+          transition={reduceMotion ? { duration: 0 } : PUSH}
+        >
+          <div className={styles.cardArea}>
+            {/* An empty slot: THE card (the one on the stage, never a copy) flies
               in and parks exactly here. CardStage measures this box and fits
               the card to it, so an upright card gets a tall slot. */}
-          <div
-            data-card-slot
-            className={clsx(styles.cardSlot, design.orientation === 'portrait' && styles.cardSlotPortrait)}
-          />
-        </div>
+            <div
+              data-card-slot
+              className={clsx(styles.cardSlot, design.orientation === 'portrait' && styles.cardSlotPortrait)}
+            />
+          </div>
 
-        {/* Below the card: the home (actions, transactions), Card Numbers
+          {/* Below the card: the home (actions, transactions), Card Numbers
             pushed over it, or the tap-to-pay reader status. popLayout so an
             exiting block leaves the flex flow immediately. */}
-        <AnimatePresence mode="popLayout" initial={false}>
-          {!isTap && !onNumbers && (
-            <motion.div
-              key="home"
-              className={styles.homeContent}
-              initial={reduceMotion ? false : fromNumbers ? PAGE_LEFT : CONTENT_HIDDEN}
-              animate={
-                reduceMotion
-                  ? PAGE_REST
-                  : { ...PAGE_REST, filter: 'blur(0px)', transition: fromNumbers ? PUSH : CONTENT_IN }
-              }
-              exit={
-                reduceMotion
-                  ? { opacity: 0 }
-                  : onNumbers
-                    ? { ...PAGE_LEFT, transition: PUSH }
-                    : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }
-              }
-            >
-              <div className={styles.homeScroll}>
-                <CardHomeContent
-                  transactions={transactions}
-                  card={card}
-                  onTapToPay={startTapToPay}
-                  onAddToWallet={startAddToWallet}
-                />
-              </div>
-            </motion.div>
-          )}
-          {!isTap && onNumbers && (
-            <motion.div
-              key="numbers"
-              className={styles.homeContent}
-              initial={reduceMotion ? false : PAGE_RIGHT}
-              animate={reduceMotion ? PAGE_REST : { ...PAGE_REST, transition: PUSH }}
-              exit={reduceMotion ? { opacity: 0 } : { ...PAGE_RIGHT, transition: PUSH }}
-            >
-              <div className={styles.homeScroll}>
-                <CardNumbersContent card={card} />
-              </div>
-            </motion.div>
-          )}
-          {isTap && (
-            <motion.div
-              key="tap"
-              className={styles.tapStatus}
-              initial={reduceMotion ? false : CONTENT_HIDDEN}
-              animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
-              exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
-            >
-              <TapToPayStatus
-                phase={tapPhase === 'idle' ? 'hold' : tapPhase}
-                declineReason={card.lastDecline}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {!isTap && !onNumbers && (
+              <motion.div
+                key="home"
+                className={styles.homeContent}
+                initial={reduceMotion ? false : fromNumbers ? PAGE_LEFT : CONTENT_HIDDEN}
+                animate={
+                  reduceMotion
+                    ? PAGE_REST
+                    : { ...PAGE_REST, filter: 'blur(0px)', transition: fromNumbers ? PUSH : CONTENT_IN }
+                }
+                exit={
+                  reduceMotion
+                    ? { opacity: 0 }
+                    : onNumbers
+                      ? { ...PAGE_LEFT, transition: PUSH }
+                      : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }
+                }
+              >
+                <div className={styles.homeScroll}>
+                  <CardHomeContent
+                    transactions={transactions}
+                    card={card}
+                    onTapToPay={startTapToPay}
+                    onAddToWallet={startAddToWallet}
+                  />
+                </div>
+              </motion.div>
+            )}
+            {!isTap && onNumbers && (
+              <motion.div
+                key="numbers"
+                className={styles.homeContent}
+                initial={reduceMotion ? false : PAGE_RIGHT}
+                animate={reduceMotion ? PAGE_REST : { ...PAGE_REST, transition: PUSH }}
+                exit={reduceMotion ? { opacity: 0 } : { ...PAGE_RIGHT, transition: PUSH }}
+              >
+                <div className={styles.homeScroll}>
+                  <CardNumbersContent card={card} />
+                </div>
+              </motion.div>
+            )}
+            {isTap && (
+              <motion.div
+                key="tap"
+                className={styles.tapStatus}
+                initial={reduceMotion ? false : CONTENT_HIDDEN}
+                animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
+                exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
+              >
+                <TapToPayStatus phase={tapPhase === 'idle' ? 'hold' : tapPhase} declineReason={card.lastDecline} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
-        {/* Spending Limits: a page over the whole body, the card included. It
+        {/* Spending limits: a page over the whole body, the card included. It
             carries data-covers-card="left" so the stage clips the card to its
             leading edge as it slides. */}
         <AnimatePresence initial={false}>
