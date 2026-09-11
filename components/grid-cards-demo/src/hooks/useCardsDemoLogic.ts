@@ -172,7 +172,8 @@ export function useCardsDemoLogic() {
     // POST /cards lands now (card is PROCESSING); CARD.STATE_CHANGE lands when
     // the phone brain flips the card to ACTIVE.
     pushWithWebhook(cardCalls(limitsRef.current), GROUP_LABEL.card, CARD_ACTIVE_DELAY_MS);
-    setWallet((w) => ({ ...w, hasCard: true }));
+    // A new card: not frozen, whatever the last one was.
+    setWallet((w) => ({ ...w, hasCard: true, frozen: false }));
     markDone('card');
   }, [pushWithWebhook, markDone]);
 
@@ -202,6 +203,7 @@ export function useCardsDemoLogic() {
       onStateChange: (state) => {
         const label = state === 'CLOSED' ? GROUP_LABEL.close : GROUP_LABEL.freeze;
         pushWithWebhook(stateChangeCalls(state, limitsRef.current), label);
+        setWallet((w) => ({ ...w, frozen: state === 'FROZEN' }));
         markDone(state === 'CLOSED' ? 'close' : 'freeze');
       },
       onCloseRejected: () => pushCalls([closeRejectedCall()], GROUP_LABEL.close),

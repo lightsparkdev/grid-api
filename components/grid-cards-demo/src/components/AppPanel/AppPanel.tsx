@@ -84,7 +84,11 @@ function StageHost({
             <button
               type="button"
               className={clsx(styles.back, !showBack && styles.backHidden)}
-              onClick={onDismissPhone}
+              onClick={() => {
+                // A sheet left open (the revealed details) goes with the phone.
+                home.card.closeSheet();
+                onDismissPhone?.();
+              }}
               tabIndex={showBack ? 0 : -1}
               aria-hidden={!showBack}
             >

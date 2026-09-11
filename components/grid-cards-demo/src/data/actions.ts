@@ -6,6 +6,8 @@
 export interface WalletState {
   hasCard: boolean;
   balanceCents: number;
+  /** The card is FROZEN; the Freeze tile reads Unfreeze. */
+  frozen: boolean;
 }
 
 /** Opening balance of the card's funding source (Checking •••• 2502), cents. */
@@ -14,6 +16,7 @@ export const FUNDING_SOURCE_CENTS = 500_000;
 export const initialWallet: WalletState = {
   hasCard: false,
   balanceCents: FUNDING_SOURCE_CENTS,
+  frozen: false,
 };
 
 /** Sticky "done at least once" markers for the sidebar flow checkmarks. Kept
@@ -97,7 +100,7 @@ export const ACTIONS: ActionDef[] = [
   {
     id: 'freeze',
     label: 'Freeze',
-    desc: 'Pause the card',
+    desc: 'Pause the card, or resume it',
     icon: 'freeze',
     available: () => true,
     done: (c) => c.freeze,

@@ -41,6 +41,8 @@ export function FlowPicker({ wallet, running, onAction }: FlowPickerProps) {
       {actions.map((action) => {
         const Icon = FLOW_ICONS[action.id];
         const enabled = action.available(wallet) && !running;
+        // Freeze toggles: a frozen card's tile offers the way back.
+        const label = action.id === 'freeze' && wallet.frozen ? 'Unfreeze' : GRID_LABELS[action.id];
 
         return (
           <button
@@ -53,7 +55,7 @@ export function FlowPicker({ wallet, running, onAction }: FlowPickerProps) {
             <span className={styles.optionIcon}>
               <Icon size={24} />
             </span>
-            <span className={styles.optionLabel}>{GRID_LABELS[action.id]}</span>
+            <span className={styles.optionLabel}>{label}</span>
           </button>
         );
       })}

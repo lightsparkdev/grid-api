@@ -86,6 +86,9 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     perDayCents: null,
   });
   const [sheet, setSheet] = useState<CardSheet>('none');
+  // The Limits sheet's working copy, here so the scripted cardholder (the
+  // Limits flow) can pick the steps the same way a tap on the sheet does.
+  const [limitsDraft, setLimitsDraft] = useState<SpendLimits>(limits);
   const [revealedAt, setRevealedAt] = useState<number | null>(null);
   const [walletPhase, setWalletPhase] = useState<WalletAddPhase>('idle');
   const [inWallet, setInWallet] = useState(false);
@@ -175,6 +178,12 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     [onLimitsChange],
   );
 
+  /** The Limits sheet, its draft seeded from the card's caps. */
+  const openLimits = useCallback(() => {
+    setLimitsDraft(limits);
+    setSheet('limits');
+  }, [limits]);
+
   /** Called once Face ID passes; the sheet shows the details for REVEAL_TTL. */
   const reveal = useCallback(() => {
     setRevealedAt(Date.now());
@@ -262,6 +271,9 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     frozen,
     closed,
     limits,
+    limitsDraft,
+    setLimitsDraft,
+    openLimits,
     spentTodayCents,
     dailyUsedCents,
     sheet,

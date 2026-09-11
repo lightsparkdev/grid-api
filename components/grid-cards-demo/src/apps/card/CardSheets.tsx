@@ -255,7 +255,7 @@ export function WalletAddSheet({ card }: { card: CardControls }) {
 
 /* ── Spending limits ──────────────────────────────────────────────────────── */
 
-const PER_TXN_STEPS = [null, 2_500, 5_000, 10_000, 25_000, 50_000] as const;
+const PER_TXN_STEPS = [null, 2_500, 5_000, 7_500, 10_000, 25_000] as const;
 const PER_DAY_STEPS = [null, 5_000, 10_000, 25_000, 50_000, 100_000] as const;
 
 function LimitPicker({
@@ -300,11 +300,9 @@ function LimitPicker({
 
 export function LimitsSheet({ card }: { card: CardControls }) {
   const open = card.sheet === 'limits';
-  const [draft, setDraft] = useState<SpendLimits>(card.limits);
-  // Re-seed the draft each time the sheet opens.
-  useEffect(() => {
-    if (open) setDraft(card.limits);
-  }, [open, card.limits]);
+  // The draft lives in the controls (seeded by `openLimits`) so the Limits
+  // flow can pick the steps the way the cardholder would.
+  const { limitsDraft: draft, setLimitsDraft: setDraft } = card;
   const dirty =
     draft.perTransactionCents !== card.limits.perTransactionCents ||
     draft.perDayCents !== card.limits.perDayCents;
@@ -323,14 +321,14 @@ export function LimitsSheet({ card }: { card: CardControls }) {
           hint="maxSpendPerTransaction — a single authorization can't exceed this."
           steps={PER_TXN_STEPS}
           value={draft.perTransactionCents}
-          onChange={(v) => setDraft((d) => ({ ...d, perTransactionCents: v }))}
+          onChange={(v) => setDraft((d: SpendLimits) => ({ ...d, perTransactionCents: v }))}
         />
         <LimitPicker
           label="Per day"
           hint={`maxSpendPerDay — resets at 00:00 UTC. Spent today: ${formatUsdCents(used)}. Refunds don't restore capacity.`}
           steps={PER_DAY_STEPS}
           value={draft.perDayCents}
-          onChange={(v) => setDraft((d) => ({ ...d, perDayCents: v }))}
+          onChange={(v) => setDraft((d: SpendLimits) => ({ ...d, perDayCents: v }))}
         />
         <div className={styles.actions}>
           <ContentAreaButton

@@ -13,7 +13,6 @@ import {
 import type { SpendLimits } from './useCardControls';
 import type { TapPhase, WalletEntry, WalletListItemData } from './types';
 import { TAP_MERCHANTS, parseCents } from './merchants';
-import { formatUsdCents } from './format';
 
 /** POST /cards → PROCESSING; the ACTIVE webhook lands after this. */
 const ISSUE_MS = 2700;
@@ -27,16 +26,20 @@ const TAP_INSERT_DELAY_MS = 900;
 const ENTRY_HOME_SETTLE_MS = 350;
 /** The phone slides in for a flow; the flow starts once it has landed. */
 const PHONE_IN_MS = 750;
-/** Dwell on the revealed details before the sheet closes. */
-const REVEAL_HOLD_MS = 4200;
+/** The reveal has played (sheet up, digits rolled); the sheet stays open. */
+const REVEAL_SETTLE_MS = 1400;
 /** "Cardholder" taps Add to Apple Wallet this long after the sheet opens. */
 const WALLET_CONFIRM_MS = 1200;
 /** Dwell on the transaction sheet before the refund runs. */
 const REFUND_START_MS = 1100;
 /** Dwell after a refund before the sheet closes. */
 const REFUND_HOLD_MS = 2200;
-/** Simple state changes (freeze, limits, close) settle after the notification. */
+/** Simple state changes (freeze, close) settle after the notification. */
 const NOTICE_SETTLE_MS = 1400;
+/** Limits: the sheet opens, the cardholder picks a step, then the next, then saves. */
+const LIMITS_PICK_MS = 1000;
+const LIMITS_PICK_GAP_MS = 700;
+const LIMITS_SAVE_MS = 2700;
 /** Push notification hold. */
 const NOTICE_MS = 3600;
 /** The Limits flow applies these caps (platform-side PATCH). */
@@ -253,7 +256,9 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     setTapPhase('done');
   };
 
-  /** Reveal details: Face ID first, then the details sheet. */
+  /** Reveal details: Face ID first, then the details sheet, which stays up
+   *  (the card on its back behind it) until the cardholder closes it or the
+   *  next flow starts. */
   const startReveal = () => {
     if (card.closed) return;
     setRevealPending(true);
@@ -261,10 +266,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   const finishRevealAuth = () => {
     setRevealPending(false);
     card.reveal();
-    later(() => {
-      cardRef.current.closeSheet();
-      settle(500);
-    }, REVEAL_HOLD_MS);
+    settle(REVEAL_SETTLE_MS);
   };
 
   // The merchant is picked when the tap STARTS — the balance guard, the charge,
@@ -358,12 +360,28 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           break;
         }
         case 'limits': {
-          card.saveLimits(PRESET_LIMITS);
-          notify(
-            'Spending limits updated',
-            `${formatUsdCents(PRESET_LIMITS.perTransactionCents ?? 0)} per purchase · ${formatUsdCents(PRESET_LIMITS.perDayCents ?? 0)} per day`,
+          if (card.closed) {
+            notify('Card closed', 'Limits can’t be changed on a closed card.');
+            settle(NOTICE_SETTLE_MS);
+            break;
+          }
+          // The cardholder opens Spending limits, picks the per-purchase cap,
+          // then the daily cap, and saves; the sheet closes on the save.
+          card.openLimits();
+          later(
+            () => cardRef.current.setLimitsDraft((d) => ({ ...d, perTransactionCents: PRESET_LIMITS.perTransactionCents })),
+            LIMITS_PICK_MS,
           );
-          settle(NOTICE_SETTLE_MS);
+          later(
+            () => cardRef.current.setLimitsDraft((d) => ({ ...d, perDayCents: PRESET_LIMITS.perDayCents })),
+            LIMITS_PICK_MS + LIMITS_PICK_GAP_MS,
+          );
+          later(() => {
+            const c = cardRef.current;
+            c.saveLimits(c.limitsDraft);
+            c.closeSheet();
+            settle(500);
+          }, LIMITS_SAVE_MS);
           break;
         }
         case 'refund': {
@@ -454,7 +472,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
         c.setSheet('wallet');
         break;
       case 'limits':
-        c.setSheet('limits');
+        c.openLimits();
         break;
       case 'transaction': {
         let row = c.rows[0];
