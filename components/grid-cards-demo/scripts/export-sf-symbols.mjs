@@ -45,6 +45,14 @@ const WEIGHT_BY_SYMBOL = {
   // Widest tab-bar glyph — the 24px fit-scale is the smallest of the set, so
   // lighter weights read ~20% thinner than the neighbors; semibold compensates.
   'person.2': 'semibold',
+  // Card home header pill (limits, lock) and the actions row under the card.
+  'lock.fill': 'medium',
+  'lock.open.fill': 'medium',
+  'gauge.with.dots.needle.bottom.50percent': 'medium',
+  'wave.3.right': 'medium',
+  'wallet.pass.fill': 'medium',
+  // Wallet's Card Numbers page: the security code rotates.
+  'clock.arrow.trianglehead.counterclockwise.rotate.90': 'medium',
 };
 
 const outDir = path.join(root, 'public/assets/symbols');
