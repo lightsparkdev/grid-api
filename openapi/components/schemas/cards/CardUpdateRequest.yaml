@@ -51,8 +51,8 @@ properties:
       the card's currency. Omit this field to leave the current cap unchanged,
       supply null to clear it, or supply a positive integer to set it. When the
       platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid
-      enforces the lower of the two values. Supported only for card programs
-      whose authorization decisions are made by Grid. Cannot be supplied
+      enforces the lower of the two values. Accepted only when the card's
+      `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied
       alongside `state: CLOSED`.
     example: 10000
   maxSpendPerDay:
@@ -68,9 +68,9 @@ properties:
       supply null to clear it, or supply a positive integer to set it. When the
       platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
       the lower of the two values. Refunds, reversals, and authorization
-      expiries do not restore capacity during the day. Supported only for card
-      programs whose authorization decisions are made by Grid. Cannot be
-      supplied alongside `state: CLOSED`.
+      expiries do not restore capacity during the day. Accepted only when the
+      card's `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied
+      alongside `state: CLOSED`.
     example: 25000
   maxTransactionsPerDay:
     anyOf:
@@ -86,7 +86,7 @@ properties:
       integer to set it. When the platform config also supplies
       `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two
       values. Refunds, reversals, and authorization expiries do not restore
-      capacity during the day. Supported only for card programs whose
-      authorization decisions are made by Grid. Cannot be supplied alongside
-      `state: CLOSED`.
+      capacity during the day. Accepted only when the card's
+      `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be
+      supplied alongside `state: CLOSED`.
     example: 20

@@ -1,0 +1,35 @@
+type: object
+description: Actions supported by the card program associated with this resource.
+required:
+  - supportsSpendLimits
+  - supportsTransactionCountLimit
+  - supports3dSecurePassword
+  - supportsPanReveal
+properties:
+  supportsSpendLimits:
+    type: boolean
+    description: >-
+      Whether cards in this program accept `maxSpendPerTransaction` and
+      `maxSpendPerDay`.
+    readOnly: true
+    example: true
+  supportsTransactionCountLimit:
+    type: boolean
+    description: >-
+      Whether cards in this program accept `maxTransactionsPerDay`.
+    readOnly: true
+    example: true
+  supports3dSecurePassword:
+    type: boolean
+    description: >-
+      Whether cards in this program accept a caller-supplied
+      `threeDSecurePassword`.
+    readOnly: true
+    example: false
+  supportsPanReveal:
+    type: boolean
+    description: >-
+      Whether cards in this program can be revealed through
+      `POST /cards/{id}/reveal`.
+    readOnly: true
+    example: true
