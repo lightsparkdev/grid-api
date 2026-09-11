@@ -49,7 +49,8 @@ const WEIGHT_BY_SYMBOL = {
   'lock.fill': 'medium',
   'lock.open.fill': 'medium',
   'gauge.with.dots.needle.bottom.50percent': 'medium',
-  'wave.3.right': 'medium',
+  // Follows the button label (Headline, 590).
+  'wave.3.right': 'semibold',
   'wallet.pass.fill': 'medium',
   // Wallet's Card Numbers page: the security code rotates.
   'clock.arrow.trianglehead.counterclockwise.rotate.90': 'medium',
