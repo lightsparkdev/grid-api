@@ -30,6 +30,9 @@ interface AppShellProps {
   children?: ReactNode;
   /** Full-screen overlay above the status bar (e.g. Face ID blur + island). */
   screenOverlay?: ReactNode;
+  /** Stage controls laid out against the phone's outer box, above the stage
+   *  (e.g. a close at its top-right corner, outside the bezel). */
+  stageChrome?: ReactNode;
   /** Light status bar icons/time on dark or colored backgrounds. */
   screenTone?: 'default' | 'light';
   /** Extra inline style on the screen root — the playground sets the
@@ -49,6 +52,7 @@ export function AppShell({
   bezelOverlay = null,
   children,
   screenOverlay,
+  stageChrome,
   screenTone = 'default',
   screenStyle,
 }: AppShellProps) {
@@ -345,6 +349,7 @@ export function AppShell({
           className={`${styles.overStageScreen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
           style={screenStyle}
         />
+        {stageChrome ? <div className={styles.overStageChrome}>{stageChrome}</div> : null}
       </div>
     </div>
   );

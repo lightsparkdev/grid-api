@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { CardScreen } from '@/apps/card';
 import { AppShell } from '@/apps/shared/AppShell';
@@ -19,6 +20,8 @@ interface DemoPhoneProps {
   showGlassOutline?: boolean;
   glassDemoBg?: boolean;
   externalGlass?: boolean;
+  /** Stage controls against the phone's outer box (see AppShell). */
+  stageChrome?: ReactNode;
 }
 
 /** The cardholder's phone — the card app inside the shared glass shell, tinted by the design. */
@@ -30,6 +33,7 @@ export function DemoPhone({
   showGlassOutline,
   glassDemoBg,
   externalGlass,
+  stageChrome,
 }: DemoPhoneProps) {
   return (
     <OverlayGlassProvider value={overlayGlass ?? DEFAULT_OVERLAY_GLASS}>
@@ -40,6 +44,7 @@ export function DemoPhone({
           glassDemoBg={glassDemoBg}
           externalGlass={externalGlass}
           screenStyle={brandVars(brandColorOf(design))}
+          stageChrome={stageChrome}
         >
           <div className={styles.flow}>
             <CardScreen home={home} />

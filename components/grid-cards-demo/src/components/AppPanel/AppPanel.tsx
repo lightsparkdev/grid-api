@@ -66,6 +66,28 @@ function StageHost({
   // through later flows until the visitor sends it away.
   const showBack = phoneUp && !running;
 
+  // At the phone's top-right corner, outside the bezel, between flows: back
+  // to the card alone. The phone is the cardholder's; this control is the
+  // developer's, so it sits on the stage against the phone, not on the screen.
+  const closePhone = (
+    <span className={clsx(styles.back, !showBack && styles.backHidden)} aria-hidden={!showBack}>
+      <GlassSymbolButton
+        aria-label="Back to the card"
+        size={44}
+        type="button"
+        glass={{ brightness: headerGlassBrightness(theme) }}
+        tabIndex={showBack ? 0 : -1}
+        onClick={() => {
+          // Whatever a flow left up (the Card Numbers page) goes with the phone.
+          home.card.resetSurfaces();
+          onDismissPhone?.();
+        }}
+      >
+        <SfSymbol name="xmark" size={16} />
+      </GlassSymbolButton>
+    </span>
+  );
+
   return (
     <section className={styles.panel}>
       <div className={styles.body}>
@@ -78,27 +100,9 @@ function StageHost({
               overlayGlass={DEFAULT_OVERLAY_GLASS}
               glassDemoBg
               externalGlass
+              stageChrome={closePhone}
             />
             <CardStage design={design} home={home} onDesignChange={onDesignChange} />
-            {/* The stage's top-left corner, between flows: back to the card
-                alone. The phone is the cardholder's; this control is the
-                developer's, so it sits on the stage, outside the phone. */}
-            <span className={clsx(styles.back, !showBack && styles.backHidden)} aria-hidden={!showBack}>
-              <GlassSymbolButton
-                aria-label="Back to the card"
-                size={44}
-                type="button"
-                glass={{ brightness: headerGlassBrightness(theme) }}
-                tabIndex={showBack ? 0 : -1}
-                onClick={() => {
-                  // Whatever a flow left up (the Card Numbers page) goes with the phone.
-                  home.card.resetSurfaces();
-                  onDismissPhone?.();
-                }}
-              >
-                <SfSymbol name="xmark" size={16} />
-              </GlassSymbolButton>
-            </span>
           </DotGridCanvas>
         </div>
       </div>

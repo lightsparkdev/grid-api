@@ -172,6 +172,21 @@
   pointer-events: none;
   font-family: var(--ios-font-family);
   font-feature-settings: normal;
+  --ios-font-family: var(--font-family-sf-pro);
+
+  /* The screen's tokens, for what is portaled here from the screen. */
+  @include ios-colors.tokens;
+  @include app-colors.tokens;
+  --app-tint: var(--brand-color, #0083c3);
+}
+
+/* Controls that belong to the stage but sit against the phone (the close at
+   its top-right corner, outside the bezel): laid out in the phone's own box,
+   so they track it at any fit scale. */
+.overStageChrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .screenBody {

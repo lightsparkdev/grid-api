@@ -49,15 +49,13 @@
   overflow: hidden;
 }
 
-/* The stage's top-left corner, outside the phone: a glass close, above the
-   card stage so it can be clicked. The glyph takes the docs' text color (the
-   phone's iOS tokens don't reach here). */
+/* Against the phone's top-right corner, outside the bezel, in the phone's own
+   box (AppShell's stage chrome layer, which carries the fit transform). */
 .back {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 4;
-  --glass-symbol-glyph: var(--text-primary);
+  top: 0;
+  right: -60px;
+  pointer-events: auto;
   transition: opacity 400ms ease;
 }
 
