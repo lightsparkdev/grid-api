@@ -21,7 +21,16 @@ Present the combined terms in your onboarding or consent flow, and require each 
 
 ## Record each acceptance
 
-Send the evidence of acceptance as `endUserTermsConsent` when you create the customer. Collect it for **both `INDIVIDUAL` and `BUSINESS` customers**.
+Send the evidence of acceptance as `agreementConsents` when you create the customer — a list with one entry per agreement, each tagged with its `type`. Collect it for **both `INDIVIDUAL` and `BUSINESS` customers**.
+
+Call `GET /customers/end-user-terms` to list every agreement Grid supports with its current `version` and hosted `url`, and send that `version` as `termsVersion` when you record an acceptance.
+
+<Note>
+If you already send `endUserTermsConsent`, it keeps working — it is deprecated but still
+accepted, and is equivalent to one `agreementConsents` entry of type
+`LIGHTSPARK_END_USER_TERMS`. Consent you have already recorded is migrated for you, so
+there is nothing to re-collect for that agreement. Don't send both fields in one request.
+</Note>
 
 <Warning>
 Until a customer's acceptance is on file, Grid does not provision their internal accounts, and customer-scoped transactions are rejected with `403 END_USER_TERMS_NOT_ACCEPTED`.
@@ -35,23 +44,27 @@ curl -sS -X POST "https://api.lightspark.com/grid/2025-10-13/customers" \
     "customerType": "INDIVIDUAL",
     "platformCustomerId": "9f84e0c2a72c4fa",
     "fullName": "Jane Doe",
-    "endUserTermsConsent": {
-      "acceptedAt": "2025-10-03T12:00:00Z",
-      "ipAddress": "198.51.100.24",
-      "termsVersion": "V1",
-      "acceptanceMethod": "CHECKBOX"
-    }
+    "agreementConsents": [
+      {
+        "type": "LIGHTSPARK_END_USER_TERMS",
+        "acceptedAt": "2025-10-03T12:00:00Z",
+        "ipAddress": "198.51.100.24",
+        "termsVersion": "2025-10-13",
+        "acceptanceMethod": "CHECKBOX"
+      }
+    ]
   }'
 ```
 
 | Field | Description |
 | --- | --- |
+| `type` | Which agreement was accepted. Accepting one agreement never implies acceptance of another. |
 | `acceptedAt` | When the customer accepted the terms (ISO 8601). |
 | `ipAddress` | IP address of the device the customer accepted from. |
-| `termsVersion` | Version identifier of the End User Terms the customer accepted. Send the version they actually accepted — Grid rejects a version it doesn't recognize with `400 END_USER_TERMS_VERSION_NOT_FOUND`. |
+| `termsVersion` | Version identifier of the agreement the customer accepted, as returned for that `type` by `GET /customers/end-user-terms`. Send the version they actually accepted — Grid rejects a version it doesn't recognize for that type with `400 END_USER_TERMS_VERSION_NOT_FOUND`. |
 | `acceptanceMethod` | How the customer accepted: `CHECKBOX` or `CLICK_TO_ACCEPT`. |
 
-The same field is accepted on `PATCH /customers/{customerId}`, so you can record consent for a customer that already exists — including customers you created before you started collecting it. `customerType` is required on the update:
+The same field is accepted on `PATCH /customers/{customerId}`, so you can record consent for a customer that already exists — including customers you created before you started collecting it. Send only the agreements you are recording now; acceptances already on file for other types are left untouched. `customerType` is required on the update:
 
 ```bash
 curl -sS -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{customerId}" \
@@ -59,16 +72,19 @@ curl -sS -X PATCH "https://api.lightspark.com/grid/2025-10-13/customers/{custome
   -H "Content-Type: application/json" \
   -d '{
     "customerType": "INDIVIDUAL",
-    "endUserTermsConsent": {
-      "acceptedAt": "2025-10-03T12:00:00Z",
-      "ipAddress": "198.51.100.24",
-      "termsVersion": "V1",
-      "acceptanceMethod": "CLICK_TO_ACCEPT"
-    }
+    "agreementConsents": [
+      {
+        "type": "LIGHTSPARK_END_USER_TERMS",
+        "acceptedAt": "2025-10-03T12:00:00Z",
+        "ipAddress": "198.51.100.24",
+        "termsVersion": "2025-10-13",
+        "acceptanceMethod": "CLICK_TO_ACCEPT"
+      }
+    ]
   }'
 ```
 
-Customer responses include the recorded `endUserTermsConsent` object once acceptance is on file, and omit it until then — read it back with `GET /customers/{customerId}` to confirm which customers still need consent.
+Customer responses include an `agreementConsents` list holding the most recent acceptance recorded for each type, and an empty list until the first acceptance — read it back with `GET /customers/{customerId}` to confirm which customers still need consent.
 
 Regulated platforms rely on their own end user agreements and don't send this field.
 

@@ -1,0 +1,22 @@
+type: object
+required:
+  - type
+  - version
+  - url
+properties:
+  type:
+    $ref: ./AgreementType.yaml
+  version:
+    type: string
+    description: >-
+      Current version identifier of this agreement. Supply it as `termsVersion`
+      when recording the customer's acceptance. Versions are independent per
+      type.
+    example: '2025-10-13'
+  url:
+    type: string
+    format: uri
+    description: >-
+      URL where Grid hosts this version of the agreement. Platform-specific
+      agreements resolve to a URL for the authenticated platform.
+    example: https://www.lightspark.com/legal/grid/enduserterms

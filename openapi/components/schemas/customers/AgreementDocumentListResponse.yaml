@@ -1,0 +1,12 @@
+type: object
+required:
+  - data
+properties:
+  data:
+    type: array
+    description: >-
+      Every agreement Grid supports, one entry per type. The list is a catalog of
+      available agreements, not a list of the agreements a given customer is
+      required to accept.
+    items:
+      $ref: ./AgreementDocument.yaml
