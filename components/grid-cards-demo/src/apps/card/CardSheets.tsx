@@ -3,7 +3,6 @@
 import clsx from 'clsx';
 import { useEffect, useState, type ReactNode } from 'react';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
-import { IconGauge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGauge';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconArrowUndoUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUndoUp';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
@@ -11,7 +10,7 @@ import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { GlassSymbolButton, headerGlassBrightness, SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useBrand } from '@/apps/shared/brand/BrandContext';
-import { CATEGORY_LABEL, formatUsdCents, type CardControls, type SpendLimits } from '@/apps/shared/card';
+import { CATEGORY_LABEL, type CardControls } from '@/apps/shared/card';
 import NumericText from '@/components/NumericText';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './CardSheets.module.scss';
@@ -79,101 +78,6 @@ export function WalletAgainSheet({ card }: { card: CardControls }) {
         <ContentAreaButton type="button" variant="filled" onClick={card.closeSheet}>
           Done
         </ContentAreaButton>
-      </div>
-    </SheetShell>
-  );
-}
-
-/* ── Spending limits ──────────────────────────────────────────────────────── */
-
-const PER_TXN_STEPS = [null, 2_500, 5_000, 7_500, 10_000, 25_000] as const;
-const PER_DAY_STEPS = [null, 5_000, 10_000, 25_000, 50_000, 100_000] as const;
-
-function LimitPicker({
-  label,
-  hint,
-  steps,
-  value,
-  onChange,
-}: {
-  label: string;
-  hint: string;
-  steps: readonly (number | null)[];
-  value: number | null;
-  onChange: (v: number | null) => void;
-}) {
-  return (
-    <div className={styles.limitBlock}>
-      <div className={styles.limitHead}>
-        <span className={styles.limitLabel}>{label}</span>
-        <span className={styles.limitValue}>
-          {value === null ? 'No cap' : <NumericText value={value / 100} format={{ style: 'currency', currency: 'USD', maximumFractionDigits: 0 }} />}
-        </span>
-      </div>
-      <div className={styles.steps} role="radiogroup" aria-label={label}>
-        {steps.map((s) => (
-          <button
-            key={String(s)}
-            type="button"
-            role="radio"
-            aria-checked={value === s}
-            className={clsx(styles.step, value === s && styles.stepOn)}
-            onClick={() => onChange(s)}
-          >
-            {s === null ? 'Off' : `$${s / 100}`}
-          </button>
-        ))}
-      </div>
-      <p className={styles.fine}>{hint}</p>
-    </div>
-  );
-}
-
-export function LimitsSheet({ card }: { card: CardControls }) {
-  const open = card.sheet === 'limits';
-  // The draft lives in the controls (seeded by `openLimits`) so the Limits
-  // flow can pick the steps the way the cardholder would.
-  const { limitsDraft: draft, setLimitsDraft: setDraft } = card;
-  const dirty =
-    draft.perTransactionCents !== card.limits.perTransactionCents ||
-    draft.perDayCents !== card.limits.perDayCents;
-  const used = card.dailyUsedCents;
-  return (
-    <SheetShell
-      open={open}
-      onDismiss={card.closeSheet}
-      icon={<IconGauge size={28} />}
-      title="Spending limits"
-      sub="Purchases over a cap are declined at the terminal."
-    >
-      <div className={styles.limitsBody}>
-        <LimitPicker
-          label="Per purchase"
-          hint="maxSpendPerTransaction — a single authorization can't exceed this."
-          steps={PER_TXN_STEPS}
-          value={draft.perTransactionCents}
-          onChange={(v) => setDraft((d: SpendLimits) => ({ ...d, perTransactionCents: v }))}
-        />
-        <LimitPicker
-          label="Per day"
-          hint={`maxSpendPerDay — resets at 00:00 UTC. Spent today: ${formatUsdCents(used)}. Refunds don't restore capacity.`}
-          steps={PER_DAY_STEPS}
-          value={draft.perDayCents}
-          onChange={(v) => setDraft((d: SpendLimits) => ({ ...d, perDayCents: v }))}
-        />
-        <div className={styles.actions}>
-          <ContentAreaButton
-            type="button"
-            variant="filled"
-            disabled={!dirty}
-            onClick={() => {
-              card.saveLimits(draft);
-              card.closeSheet();
-            }}
-          >
-            Save limits
-          </ContentAreaButton>
-        </div>
       </div>
     </SheetShell>
   );

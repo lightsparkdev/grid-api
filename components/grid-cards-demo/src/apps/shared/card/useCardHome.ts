@@ -40,7 +40,7 @@ const REFUND_START_MS = 1100;
 const REFUND_HOLD_MS = 2200;
 /** Simple state changes (freeze, close) settle after the notification. */
 const NOTICE_SETTLE_MS = 1400;
-/** Limits: the sheet opens, the cardholder picks a step, then the next, then saves. */
+/** Limits: the page opens, the cardholder picks a step, then the next, then saves. */
 const LIMITS_PICK_MS = 1000;
 const LIMITS_PICK_GAP_MS = 700;
 const LIMITS_SAVE_MS = 2700;
@@ -397,8 +397,8 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
             settle(NOTICE_SETTLE_MS);
             break;
           }
-          // The cardholder opens Spending limits, picks the per-purchase cap,
-          // then the daily cap, and saves; the sheet closes on the save.
+          // The cardholder opens Spending Limits, picks the per-purchase cap,
+          // then the daily cap, and saves; the page pops on the save.
           card.openLimits();
           later(
             () => cardRef.current.setLimitsDraft((d) => ({ ...d, perTransactionCents: PRESET_LIMITS.perTransactionCents })),
@@ -411,7 +411,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           later(() => {
             const c = cardRef.current;
             c.saveLimits(c.limitsDraft);
-            c.closeSheet();
+            c.popPage();
             settle(500);
           }, LIMITS_SAVE_MS);
           break;

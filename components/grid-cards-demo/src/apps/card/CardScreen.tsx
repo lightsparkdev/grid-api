@@ -19,7 +19,8 @@ import type { CardScreenProps } from '@/apps/types';
 import { ApplePayAddCard, WalletAddedScreen } from './AddToWalletFlow';
 import { CardHomeContent } from './CardHomeContent';
 import { CardNumbersContent } from './CardNumbersContent';
-import { CloseCardSheet, LimitsSheet, TransactionSheet, WalletAgainSheet } from './CardSheets';
+import { CloseCardSheet, TransactionSheet, WalletAgainSheet } from './CardSheets';
+import { LimitsContent } from './LimitsContent';
 import styles from './CardScreen.module.scss';
 
 const HEADER_DURATION = 0.2;
@@ -37,6 +38,8 @@ const PUSH = motionTransition(easeOutSnappy, 0.45);
 const PAGE_RIGHT = { x: '100%', opacity: 1 };
 const PAGE_LEFT = { x: '-30%', opacity: 0.4 };
 const PAGE_REST = { x: 0, opacity: 1 };
+/** The pushed pages' header titles. */
+const PAGE_TITLE = { numbers: 'Card Numbers', limits: 'Spending Limits' } as const;
 
 /**
  * The card hub — the whole app. Header (back, card numbers, limits and lock),
@@ -67,11 +70,11 @@ export function CardScreen({ home }: CardScreenProps) {
     startAddToWallet,
     startTapToPay,
   } = home;
-  const onNumbers = card.page === 'numbers';
+  const onPage = card.page !== 'home';
   // The home comes back from under the pushed page (a pop, sliding in from
   // the left) or after tap-to-pay (the blur-in), depending on where it was.
   const prevPage = useRef(card.page);
-  const fromNumbers = prevPage.current === 'numbers' && !onNumbers;
+  const fromPage = prevPage.current !== 'home' && !onPage;
   useEffect(() => {
     prevPage.current = card.page;
   }, [card.page]);
@@ -113,13 +116,13 @@ export function CardScreen({ home }: CardScreenProps) {
   return (
     <div className={styles.root}>
       {/* Header. Home: back (the app's, a no-op here), card numbers, and the
-          limits + lock pill. Card Numbers: back, and the title. Hidden during
-          tap-to-pay. */}
+          limits + lock pill. A pushed page: back, and its title. Hidden
+          during tap-to-pay. */}
       <header className={styles.header}>
         <AnimatePresence initial={false} mode="popLayout">
           {!isTap && (
             <motion.div
-              key={onNumbers ? 'numbers' : 'home'}
+              key={card.page}
               className={styles.headerInner}
               initial={reduceMotion ? false : CONTENT_HIDDEN}
               animate={CONTENT_VISIBLE}
@@ -131,12 +134,12 @@ export function CardScreen({ home }: CardScreenProps) {
                 size={40}
                 type="button"
                 glass={{ brightness }}
-                onClick={onNumbers ? card.popPage : undefined}
+                onClick={onPage ? card.popPage : undefined}
               >
                 <SfSymbol name="chevron.left" size={17} />
               </GlassSymbolButton>
-              {onNumbers ? (
-                <h1 className={styles.title}>Card Numbers</h1>
+              {card.page !== 'home' ? (
+                <h1 className={styles.title}>{PAGE_TITLE[card.page]}</h1>
               ) : (
                 <div className={styles.headerActions}>
                   <GlassSymbolButton
@@ -193,24 +196,25 @@ export function CardScreen({ home }: CardScreenProps) {
           />
         </div>
 
-        {/* Below the card: the home (actions, transactions), the Card Numbers
-            page pushed over it, or the tap-to-pay reader status. popLayout so
-            an exiting block leaves the flex flow immediately. */}
+        {/* Below the card: the home (actions, transactions), a page pushed
+            over it (Card Numbers, Spending Limits), or the tap-to-pay reader
+            status. popLayout so an exiting block leaves the flex flow
+            immediately. */}
         <AnimatePresence mode="popLayout" initial={false}>
-          {!isTap && !onNumbers && (
+          {!isTap && !onPage && (
             <motion.div
               key="home"
               className={styles.homeContent}
-              initial={reduceMotion ? false : fromNumbers ? PAGE_LEFT : CONTENT_HIDDEN}
+              initial={reduceMotion ? false : fromPage ? PAGE_LEFT : CONTENT_HIDDEN}
               animate={
                 reduceMotion
                   ? PAGE_REST
-                  : { ...PAGE_REST, filter: 'blur(0px)', transition: fromNumbers ? PUSH : CONTENT_IN }
+                  : { ...PAGE_REST, filter: 'blur(0px)', transition: fromPage ? PUSH : CONTENT_IN }
               }
               exit={
                 reduceMotion
                   ? { opacity: 0 }
-                  : onNumbers
+                  : onPage
                     ? { ...PAGE_LEFT, transition: PUSH }
                     : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }
               }
@@ -225,16 +229,16 @@ export function CardScreen({ home }: CardScreenProps) {
               </div>
             </motion.div>
           )}
-          {!isTap && onNumbers && (
+          {!isTap && onPage && (
             <motion.div
-              key="numbers"
+              key={card.page}
               className={styles.homeContent}
               initial={reduceMotion ? false : PAGE_RIGHT}
               animate={reduceMotion ? PAGE_REST : { ...PAGE_REST, transition: PUSH }}
               exit={reduceMotion ? { opacity: 0 } : { ...PAGE_RIGHT, transition: PUSH }}
             >
               <div className={styles.homeScroll}>
-                <CardNumbersContent card={card} />
+                {card.page === 'numbers' ? <CardNumbersContent card={card} /> : <LimitsContent card={card} />}
               </div>
             </motion.div>
           )}
@@ -255,8 +259,7 @@ export function CardScreen({ home }: CardScreenProps) {
         </AnimatePresence>
       </motion.div>
 
-      {/* Bottom sheets — limits, transaction, close, already in Apple Wallet. */}
-      <LimitsSheet card={card} />
+      {/* Bottom sheets — transaction, close, already in Apple Wallet. */}
       <TransactionSheet card={card} />
       <CloseCardSheet card={card} />
       <WalletAgainSheet card={card} />

@@ -1,0 +1,75 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+
+/* Spending Limits page: two grouped pickers and the save. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 16px 24px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-bg-grouped-secondary, #ffffff);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.label {
+  @include ios.ios-text-body;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+}
+
+.value {
+  @include ios.ios-text-body;
+  font-variant-numeric: tabular-nums;
+  color: var(--ios-label-secondary);
+}
+
+.steps {
+  display: flex;
+  gap: 6px;
+}
+
+.step {
+  flex: 1;
+  margin: 0;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 10px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-fill-quaternary, rgba(120, 120, 128, 0.08));
+  color: var(--ios-label-primary);
+  @include ios.ios-text-caption-1;
+  font-weight: 590;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.stepOn {
+  background: var(--app-tint, var(--ios-tint));
+  color: #ffffff;
+}
+
+.hint {
+  margin: 0;
+  @include ios.ios-text-caption-1;
+  color: var(--ios-label-tertiary);
+  text-wrap: pretty;
+}
+
+.actions {
+  padding-top: 4px;
+}

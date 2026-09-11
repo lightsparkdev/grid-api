@@ -20,11 +20,12 @@ export interface SpendLimits {
 
 /** Which of the card hub's bottom sheets is up. `walletAgain` says the card is
  *  already in Apple Wallet. */
-export type CardSheet = 'none' | 'limits' | 'transaction' | 'close' | 'walletAgain';
+export type CardSheet = 'none' | 'transaction' | 'close' | 'walletAgain';
 
-/** The page pushed over the card home. `numbers` is Wallet's Card Numbers
- *  page (the reveal); the card stays in its slot, turned to its back. */
-export type CardPage = 'home' | 'numbers';
+/** The page pushed over the card home; the card stays in its slot above.
+ *  `numbers` is Wallet's Card Numbers page (the reveal; the card turns to its
+ *  back), `limits` is Spending Limits. */
+export type CardPage = 'home' | 'numbers' | 'limits';
 
 /** Add to Apple Wallet, as Apple's full-screen add-card flow: `intro` is "Add
  *  Card to Apple Pay" waiting on Continue; `contacting` and `setup` are the
@@ -96,8 +97,8 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   });
   const [sheet, setSheet] = useState<CardSheet>('none');
   const [page, setPage] = useState<CardPage>('home');
-  // The Limits sheet's working copy, here so the scripted cardholder (the
-  // Limits flow) can pick the steps the same way a tap on the sheet does.
+  // The Spending Limits page's working copy, here so the scripted cardholder
+  // (the Limits flow) can pick the steps the same way a tap on the page does.
   const [limitsDraft, setLimitsDraft] = useState<SpendLimits>(limits);
   const [revealedAt, setRevealedAt] = useState<number | null>(null);
   const [walletPhase, setWalletPhase] = useState<WalletAddPhase>('idle');
@@ -190,10 +191,10 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     [onLimitsChange],
   );
 
-  /** The Limits sheet, its draft seeded from the card's caps. */
+  /** The Spending Limits page, its draft seeded from the card's caps. */
   const openLimits = useCallback(() => {
     setLimitsDraft(limits);
-    setSheet('limits');
+    setPage('limits');
   }, [limits]);
 
   /** Called once Face ID passes; the Card Numbers page shows the details, with
