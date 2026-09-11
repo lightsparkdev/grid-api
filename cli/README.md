@@ -164,6 +164,7 @@ grid accounts external create \
   --account-type USD_ACCOUNT \
   --account-number "123456789" \
   --routing-number "021000021" \
+  --bank-account-type CHECKING \
   --beneficiary-type INDIVIDUAL \
   --beneficiary-name "John Doe"
 

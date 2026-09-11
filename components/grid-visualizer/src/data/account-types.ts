@@ -16,6 +16,7 @@ export const accountTypeSpecs: Record<string, AccountTypeSpec> = {
     fields: [
       { name: 'accountNumber', example: '123456789' },
       { name: 'routingNumber', example: '021000021' },
+      { name: 'bankAccountType', example: 'CHECKING', description: 'CHECKING or SAVINGS' },
     ],
     beneficiaryRequired: true,
   },

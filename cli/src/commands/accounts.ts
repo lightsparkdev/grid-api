@@ -162,6 +162,10 @@ export function registerAccountsCommand(
     )
     .option("--account-number <number>", "Bank account number")
     .option("--routing-number <number>", "ABA routing number (USD)")
+    .option(
+      "--bank-account-type <type>",
+      "CHECKING or SAVINGS (required for USD_ACCOUNT)"
+    )
     .option("--clabe <number>", "CLABE number (MXN)")
     .option("--pix-key <key>", "PIX key (BRL)")
     .option("--pix-key-type <type>", "PIX key type: CPF, CNPJ, EMAIL, PHONE, RANDOM (BRL)")
@@ -202,6 +206,9 @@ export function registerAccountsCommand(
       if (options.beneficiaryBirthDate) {
         validations.push(validateDate(options.beneficiaryBirthDate, "beneficiary-birth-date"));
       }
+      if (options.bankAccountType) {
+        validations.push(validateBankAccountType(options.bankAccountType));
+      }
       const validation = validateAll(validations);
       if (!validation.valid) {
         output(formatError(validation.error!));
@@ -217,6 +224,7 @@ export function registerAccountsCommand(
       };
       setInfo("accountNumber", options.accountNumber);
       setInfo("routingNumber", options.routingNumber);
+      setInfo("bankAccountType", options.bankAccountType);
       setInfo("clabeNumber", options.clabe);
       setInfo("pixKey", options.pixKey);
       setInfo("pixKeyType", options.pixKeyType);
@@ -244,6 +252,16 @@ export function registerAccountsCommand(
         return;
       }
 
+      if (options.accountType === "USD_ACCOUNT" && !options.bankAccountType) {
+        output(
+          formatError(
+            "--bank-account-type is required for USD_ACCOUNT. Pass CHECKING or SAVINGS."
+          )
+        );
+        process.exitCode = 1;
+        return;
+      }
+
       const body: Record<string, unknown> = {
         customerId: options.customerId,
         currency: options.currency,
@@ -260,6 +278,18 @@ export function registerAccountsCommand(
       );
       outputResponse(response);
     });
+}
+
+const VALID_BANK_ACCOUNT_TYPES = new Set(["CHECKING", "SAVINGS"]);
+
+function validateBankAccountType(value: string): ValidationResult {
+  if (!VALID_BANK_ACCOUNT_TYPES.has(value)) {
+    return {
+      valid: false,
+      error: `--bank-account-type must be CHECKING or SAVINGS (got: ${value})`,
+    };
+  }
+  return { valid: true };
 }
 
 function isFiatAccountType(accountType: string): boolean {
