@@ -44,6 +44,22 @@ interface DesignPickerProps {
 const MAX_NAME = 18;
 const MAX_CARDHOLDER = 24;
 
+/**
+ * Whether the picker shows the rows the public playground leads without:
+ * Orientation and the Visa mark's face. Every preset is landscape with the
+ * mark on the back, which is the recommendation; the alternatives are
+ * decisions a customer makes in the card design tool, against the
+ * manufacturer's constraints. `?design=full` brings the rows back for a
+ * walkthrough. Read after mount so the server and first client render agree.
+ */
+function useFullDesignControls(): boolean {
+  const [full, setFull] = useState(false);
+  useEffect(() => {
+    setFull(new URLSearchParams(window.location.search).get('design') === 'full');
+  }, []);
+  return full;
+}
+
 function swatchStyle(color: string) {
   return { background: color };
 }
@@ -403,6 +419,7 @@ function UploadRow({
  * logo, and how the mark is applied once there is one. Name: the cardholder's.
  */
 export function DesignPicker({ design, onChange, preset, onPresetSelect }: DesignPickerProps) {
+  const fullControls = useFullDesignControls();
   const stock = stockOf(design);
   const activeSwatch =
     design.color && !design.gradient ? DESIGN_SWATCHES.find((s) => s.color === design.color) : undefined;
@@ -451,18 +468,20 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         {/* The same blank held flat or upright. The brand's placement and the
             gradient's line belong to a face, so the switch carries the design
             over (`reorientDesign`) rather than the coordinates. */}
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Orientation</span>
-          <SampleSwatches
-            label="Card orientation"
-            value={design.orientation}
-            options={ORIENTATIONS}
-            onChange={(orientation) => {
-              const next = reorientDesign(design, orientation);
-              onChange({ orientation, brandLayout: next.brandLayout, gradient: next.gradient });
-            }}
-          />
-        </div>
+        {fullControls && (
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Orientation</span>
+            <SampleSwatches
+              label="Card orientation"
+              value={design.orientation}
+              options={ORIENTATIONS}
+              onChange={(orientation) => {
+                const next = reorientDesign(design, orientation);
+                onChange({ orientation, brandLayout: next.brandLayout, gradient: next.gradient });
+              }}
+            />
+          </div>
+        )}
         <div className={styles.row}>
           <span className={styles.rowLabel}>Finish</span>
           <SampleSwatches
@@ -552,15 +571,17 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         </AnimatePresence>
         {/* Front: the Visa mark printed flat, bottom right, with the dove
             hologram on the back. Back: the foil mark, which needs no hologram. */}
-        <div className={styles.row}>
-          <span className={styles.rowLabel}>Visa</span>
-          <SampleSwatches
-            label="Visa mark"
-            value={design.visaMark}
-            options={VISA_MARK_FACES}
-            onChange={(visaMark) => onChange({ visaMark })}
-          />
-        </div>
+        {fullControls && (
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Visa</span>
+            <SampleSwatches
+              label="Visa mark"
+              value={design.visaMark}
+              options={VISA_MARK_FACES}
+              onChange={(visaMark) => onChange({ visaMark })}
+            />
+          </div>
+        )}
       </div>
 
       <div className={styles.group}>
