@@ -36,6 +36,8 @@ properties:
     $ref: ./CardBrand.yaml
   form:
     $ref: ./CardForm.yaml
+  pinStatus:
+    $ref: ./CardPinStatus.yaml
   last4:
     type: string
     description: Last four digits of the card PAN.

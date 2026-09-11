@@ -1,0 +1,74 @@
+parameters:
+  - name: id
+    in: path
+    description: System-generated unique card identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Unblock a card PIN
+  description: >-
+    Clear a `BLOCKED` PIN, restoring the cardholder's existing PIN without
+    changing it. A PIN blocks after three consecutive incorrect entries;
+    until it is cleared, PIN-verified transactions decline.
+
+
+    Unblocking is idempotent and safe to call on a card whose `pinStatus` is
+    already `OK`. It has no effect on a card with no PIN set, which returns
+    `409` — set a PIN with `POST /cards/{id}/pin` instead.
+
+
+    Every call is audit-logged with the requesting actor.
+  operationId: unblockCardPin
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: PIN unblocked.
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. The session has no attributable actor to audit the change
+        against (for example, an impersonated dashboard session).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CARD_ALREADY_CLOSED` for a `CLOSED` card,
+        with `PIN_NOT_SET` for a card that has no PIN to unblock, and with
+        `UNSUPPORTED_CARD_OPERATION` when the card's processor does not
+        offer PIN management.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Not implemented in this environment. Cards are not enabled for
+        every Grid deployment; environments without a configured card
+        issuer return `501 NOT_IMPLEMENTED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

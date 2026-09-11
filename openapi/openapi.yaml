@@ -348,6 +348,12 @@ paths:
     $ref: paths/cards/cards_{id}.yaml
   /cards/{id}/reveal:
     $ref: paths/cards/cards_{id}_reveal.yaml
+  /cards/{id}/pin:
+    $ref: paths/cards/cards_{id}_pin.yaml
+  /cards/{id}/pin/session:
+    $ref: paths/cards/cards_{id}_pin_session.yaml
+  /cards/{id}/pin/unblock:
+    $ref: paths/cards/cards_{id}_pin_unblock.yaml
   /sandbox/cards/{id}/simulate/authorization:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization.yaml
   /sandbox/cards/{id}/simulate/clearing:

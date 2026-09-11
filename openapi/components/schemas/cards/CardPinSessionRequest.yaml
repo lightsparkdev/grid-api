@@ -1,0 +1,13 @@
+type: object
+required:
+  - targetOrigin
+properties:
+  targetOrigin:
+    type: string
+    format: uri
+    description: >-
+      Canonical HTTPS origin of the page that will frame the returned
+      `pinEmbedUrl`. The processor refuses to render the iframe on any other
+      origin, so this must match the embedding page's origin exactly —
+      scheme and host, no path or trailing slash.
+    example: https://app.example.com

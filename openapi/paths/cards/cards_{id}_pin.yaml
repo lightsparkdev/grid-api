@@ -1,0 +1,94 @@
+parameters:
+  - name: id
+    in: path
+    description: System-generated unique card identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Set a card PIN
+  description: >-
+    Set or replace the card's PIN from a PIN block your client encrypted for
+    the card processor. Grid forwards the block verbatim and never sees the
+    PIN: it is not stored, not logged, and not readable by Grid at any point.
+
+
+    Use this when you operate your own PIN-entry UI. To hand PIN entry to
+    the processor's hosted iframe instead, use
+    `POST /cards/{id}/pin/session` — the two are alternatives, and a card may
+    use either at any time.
+
+
+    Setting a PIN clears a `BLOCKED` PIN, so a cardholder locked out by
+    incorrect attempts can recover by choosing a new PIN without a separate
+    unblock. On success the card's `pinStatus` becomes `OK`.
+
+
+    Every call is audit-logged with the requesting actor.
+  operationId: setCardPin
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/cards/CardPinSetRequest.yaml
+  responses:
+    '204':
+      description: PIN set.
+    '400':
+      description: >-
+        Bad request. Returned with `INVALID_INPUT` when `encryptedPinBlock`
+        is absent, is not valid base64, or is rejected by the card
+        processor as a malformed or mis-encrypted PIN block.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. The session has no attributable actor to audit the change
+        against (for example, an impersonated dashboard session).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CARD_ALREADY_CLOSED` for a `CLOSED` card,
+        and with `UNSUPPORTED_CARD_OPERATION` when the card's processor does
+        not offer PIN management.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Not implemented in this environment. Cards are not enabled for
+        every Grid deployment; environments without a configured card
+        issuer return `501 NOT_IMPLEMENTED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

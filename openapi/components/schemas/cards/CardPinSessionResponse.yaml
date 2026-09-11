@@ -1,0 +1,29 @@
+type: object
+required:
+  - sessionToken
+  - expiresAt
+properties:
+  sessionToken:
+    type: string
+    description: >-
+      Opaque, short-lived credential that loads the card processor's
+      PIN-entry iframe. Hand it to the processor's embed SDK in your client:
+      the cardholder types the PIN directly into the processor's iframe, so
+      it crosses neither your servers nor Grid's.
+
+
+      Treat it as a bearer secret — use it immediately, and never store,
+      cache, or log it. It is a session credential, not a URL; Grid returns
+      no URL because the processor's embed SDK builds one from this token.
+
+
+      Grid does not observe whether the cardholder completed PIN entry. Read
+      `pinStatus` on the `Card` afterwards to confirm.
+    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      When the session token stops working. Request a new session rather
+      than reusing an expired token.
+    example: '2026-05-08T14:16:00Z'
