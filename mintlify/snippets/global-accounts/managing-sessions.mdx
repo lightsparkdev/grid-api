@@ -40,6 +40,10 @@ The list endpoint returns all **active** sessions; expired sessions are not incl
 
 Session refresh creates a new session signing key from an existing active session. Use this when the customer is still present and the current session is close to expiration. If the session has already expired, reauthenticate with the original credential instead. Refresh uses the same <a href="authentication#the-signed-retry-pattern">signed-retry pattern</a> as credential management, including the possibility of a <a href="authentication#handling-a-still-processing-response">still-processing `200` response</a> on the signed retry — re-send the same request until you get the `201` below.
 
+<Note>
+  The examples below show the legacy flow with `encryptedSessionSigningKey`. For new integrations, use the recommended [client-held-key flow](/snippets/global-accounts/client-keys#client-held-session-key) by sending a compressed `clientPublicKey` (66 hex characters), which avoids the decrypt step entirely.
+</Note>
+
 <Steps>
   <Step title="First call — receive the challenge">
     ```bash

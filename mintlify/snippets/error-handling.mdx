@@ -231,6 +231,7 @@ When a transaction fails, the `failureReason` field provides specific details:
 - `PAYMENT_APPROVAL_WEBHOOK_ERROR` - Webhook returned an error
 - `OFFRAMP_FAILED` - Failed to convert and send funds to destination
 - `QUOTE_EXPIRED` - Quote expired during processing
+- `COLLECTION_FAILED` - Inbound bank-rail collection deposit failed after arrival and did not credit; funds returned to sender
 
 ## Handling failures
 
