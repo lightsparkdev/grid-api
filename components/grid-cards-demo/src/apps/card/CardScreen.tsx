@@ -71,10 +71,15 @@ export function CardScreen({ home }: CardScreenProps) {
     startTapToPay,
   } = home;
   const onPage = card.page !== 'home';
-  // The home comes back from under the pushed page (a pop, sliding in from
-  // the left) or after tap-to-pay (the blur-in), depending on where it was.
+  // Card Numbers pushes over the content below the card (the card stays,
+  // turned over); Spending Limits pushes over the whole body, card included
+  // (the stage clips the card to its leading edge), and the home stays put
+  // underneath.
+  const onNumbers = card.page === 'numbers';
+  // The home comes back from under the Card Numbers page (a pop, sliding in
+  // from the left) or after tap-to-pay (the blur-in), depending on where it was.
   const prevPage = useRef(card.page);
-  const fromPage = prevPage.current !== 'home' && !onPage;
+  const fromNumbers = prevPage.current === 'numbers' && !onNumbers;
   useEffect(() => {
     prevPage.current = card.page;
   }, [card.page]);
@@ -196,25 +201,24 @@ export function CardScreen({ home }: CardScreenProps) {
           />
         </div>
 
-        {/* Below the card: the home (actions, transactions), a page pushed
-            over it (Card Numbers, Spending Limits), or the tap-to-pay reader
-            status. popLayout so an exiting block leaves the flex flow
-            immediately. */}
+        {/* Below the card: the home (actions, transactions), Card Numbers
+            pushed over it, or the tap-to-pay reader status. popLayout so an
+            exiting block leaves the flex flow immediately. */}
         <AnimatePresence mode="popLayout" initial={false}>
-          {!isTap && !onPage && (
+          {!isTap && !onNumbers && (
             <motion.div
               key="home"
               className={styles.homeContent}
-              initial={reduceMotion ? false : fromPage ? PAGE_LEFT : CONTENT_HIDDEN}
+              initial={reduceMotion ? false : fromNumbers ? PAGE_LEFT : CONTENT_HIDDEN}
               animate={
                 reduceMotion
                   ? PAGE_REST
-                  : { ...PAGE_REST, filter: 'blur(0px)', transition: fromPage ? PUSH : CONTENT_IN }
+                  : { ...PAGE_REST, filter: 'blur(0px)', transition: fromNumbers ? PUSH : CONTENT_IN }
               }
               exit={
                 reduceMotion
                   ? { opacity: 0 }
-                  : onPage
+                  : onNumbers
                     ? { ...PAGE_LEFT, transition: PUSH }
                     : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }
               }
@@ -229,16 +233,16 @@ export function CardScreen({ home }: CardScreenProps) {
               </div>
             </motion.div>
           )}
-          {!isTap && onPage && (
+          {!isTap && onNumbers && (
             <motion.div
-              key={card.page}
+              key="numbers"
               className={styles.homeContent}
               initial={reduceMotion ? false : PAGE_RIGHT}
               animate={reduceMotion ? PAGE_REST : { ...PAGE_REST, transition: PUSH }}
               exit={reduceMotion ? { opacity: 0 } : { ...PAGE_RIGHT, transition: PUSH }}
             >
               <div className={styles.homeScroll}>
-                {card.page === 'numbers' ? <CardNumbersContent card={card} /> : <LimitsContent card={card} />}
+                <CardNumbersContent card={card} />
               </div>
             </motion.div>
           )}
@@ -254,6 +258,26 @@ export function CardScreen({ home }: CardScreenProps) {
                 phase={tapPhase === 'idle' ? 'hold' : tapPhase}
                 declineReason={card.lastDecline}
               />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Spending Limits: a page over the whole body, the card included. It
+            carries data-covers-card="left" so the stage clips the card to its
+            leading edge as it slides. */}
+        <AnimatePresence initial={false}>
+          {!isTap && card.page === 'limits' && (
+            <motion.div
+              key="limits"
+              className={styles.pageCover}
+              data-covers-card="left"
+              initial={reduceMotion ? { opacity: 0 } : PAGE_RIGHT}
+              animate={reduceMotion ? { opacity: 1 } : { ...PAGE_REST, transition: PUSH }}
+              exit={reduceMotion ? { opacity: 0 } : { ...PAGE_RIGHT, transition: PUSH }}
+            >
+              <div className={styles.homeScroll}>
+                <LimitsContent card={card} />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

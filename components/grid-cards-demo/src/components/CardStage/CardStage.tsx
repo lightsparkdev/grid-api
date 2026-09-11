@@ -1120,17 +1120,23 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       hit.style.setProperty('--card-scale', s.toFixed(4));
     }
 
-    // A full-screen presentation on the phone (Apple's add-card flow) slides
-    // up over the parked card. The stage paints above the phone, so the card
-    // is clipped to the cover's top edge as it rises: it goes under, the way
-    // it would on the phone, and is never unmounted.
+    // A presentation on the phone slides over the parked card: Apple's
+    // add-card flow up from the bottom, a pushed page in from the right
+    // (`data-covers-card="left"`). The stage paints above the phone, so the
+    // card is clipped to the cover's leading edge as it moves: it goes under,
+    // the way it would on the phone, and is never unmounted.
     let coverTop = Infinity;
+    let coverLeft = Infinity;
     if (t > 0) {
       root.ownerDocument.querySelectorAll<HTMLElement>('[data-covers-card]').forEach((el) => {
-        coverTop = Math.min(coverTop, el.getBoundingClientRect().top - r.top);
+        const b = el.getBoundingClientRect();
+        if (el.dataset.coversCard === 'left') coverLeft = Math.min(coverLeft, b.left - r.left);
+        else coverTop = Math.min(coverTop, b.top - r.top);
       });
     }
-    const clip = coverTop < r.height ? `inset(0 0 ${Math.max(0, r.height - coverTop).toFixed(1)}px 0)` : '';
+    const bottom = coverTop < r.height ? Math.max(0, r.height - coverTop) : 0;
+    const right = coverLeft < r.width ? Math.max(0, r.width - coverLeft) : 0;
+    const clip = bottom || right ? `inset(0 ${right.toFixed(1)}px ${bottom.toFixed(1)}px 0)` : '';
     if (root.style.clipPath !== clip) root.style.clipPath = clip;
   });
 

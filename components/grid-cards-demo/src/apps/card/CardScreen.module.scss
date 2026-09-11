@@ -138,6 +138,19 @@
   }
 }
 
+/* A page over the whole body, the card's slot included (Spending Limits).
+   Under the header (the body is its own stacking context below it), so the
+   back button and title stay on top. */
+.pageCover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--wallet-header-height);
+  background: var(--wallet-bg);
+}
+
 /* Tap-to-pay reader status — fills below the raised card; glyph + label sit just
    beneath it (Figma 2143:41178 section pt 50). */
 .tapStatus {
