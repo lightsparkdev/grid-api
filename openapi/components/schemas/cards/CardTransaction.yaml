@@ -14,10 +14,11 @@ required:
   - createdAt
   - updatedAt
 description: >-
-  Parent transaction row for a card authorization and all of the
-  pulls / settlements / refunds that reconcile against it. Child events are
-  rolled up into the `settledAmount` and `refundedAmount` totals.
-  Delivered as the payload of the generic transaction
+  One row per cardholder-visible card transaction. A purchase row rolls its
+  clearings up into `settledAmount`; a merchant return is its own dated
+  `CREDIT` row linked back to the purchase via `originalTransactionId` rather
+  than a rollup on the parent, so statements can list purchases and refunds
+  as separate dated lines. Delivered as the payload of the generic transaction
   webhook stream (extends the Transaction model with a card
   destination type) on every transition.
 properties:
@@ -55,10 +56,18 @@ properties:
   direction:
     $ref: ../transactions/TransactionDirection.yaml
     description: >-
-      A purchase is a `DEBIT`. A standalone merchant refund with no purchase
-      to return against is a `CREDIT`, with the credited value in
-      `settledAmount`.
+      A purchase is a `DEBIT`. A merchant refund is a `CREDIT` with the
+      credited value in `settledAmount`; when the refund returns against a
+      known purchase, `originalTransactionId` identifies it.
     example: DEBIT
+  originalTransactionId:
+    type: string
+    description: >-
+      On a refund row (`direction: CREDIT`), the id of the purchase this
+      return credits back against. Absent on purchases and on standalone
+      credits with no matching purchase.
+    readOnly: true
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000099
   merchant:
     $ref: ./CardMerchant.yaml
   authorizedAmount:

@@ -7,32 +7,37 @@ event model, the status transitions, and how to handle the
 
 For each card authorization, Grid produces:
 
-1. **One parent `CardTransaction`** — created at auth time, persists for
-   the life of the transaction.
+1. **One `CardTransaction` per purchase** — created at auth time, persists
+   for the life of the transaction.
 2. **Pulls** — debits against the funding source that fund approved
    auths and any post-hoc settlements.
 3. **Clearings** — the network's confirmation that funds have moved.
-4. **Refunds** — merchant-initiated `RETURN` events.
+4. **Refunds** — merchant-initiated `RETURN` events. A return against a
+   known purchase opens its own dated `CardTransaction` row
+   (`direction: CREDIT`) linked to the purchase via
+   `originalTransactionId`, so statements can list it as its own line.
 
-Children are reconciled against the parent and rolled up into the
-`settledAmount` and `refundedAmount` totals.
+Clearings are reconciled against the purchase and rolled up into its
+`settledAmount` total; the returned value lives on the refund row.
 
 ## Status transitions
 
 ```text
 AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED
-              │
-              └──► EXCEPTION  (pull failed after settlement)
+    │
+    ├──► DECLINED   (auth declined, no money moved)
+    └──► EXCEPTION  (pull failed after settlement)
 ```
 
-A merchant `RETURN` does not move the status. The transaction stays
-`SETTLED` and the returned value appears in `refundedAmount`.
+A merchant `RETURN` does not move the purchase's status. The purchase stays
+`SETTLED`; the return posts as its own `CREDIT` transaction.
 
 | Status | Meaning |
 |--------|---------|
 | `AUTHORIZED` | Auth approved, hold placed, no clearings yet. |
 | `PARTIALLY_SETTLED` | At least one clearing landed, but more are still expected (split shipments, multi-leg trips). |
-| `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. A `RETURN` received afterwards keeps it `SETTLED` with the returned value in `refundedAmount`. |
+| `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. A `RETURN` received afterwards keeps it `SETTLED`; the return appears as its own `CREDIT` transaction. |
+| `DECLINED` | The authorization was declined before any money moved. Declines must be excluded from cardholder statements. |
 | `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
 Every transition is delivered as a `CARD_TRANSACTION.*` webhook carrying

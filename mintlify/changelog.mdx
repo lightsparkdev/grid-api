@@ -11,6 +11,26 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## Card refunds post as their own rows, declines report as `DECLINED`
+
+Two card-statement corrections to `CardTransaction`:
+
+- **Refunds are their own dated rows.** A merchant `RETURN` against a purchase now opens
+  its own `CardTransaction` (`direction: CREDIT`, credited value in `settledAmount`)
+  linked back to the purchase via the new `originalTransactionId` field, instead of
+  folding into the purchase's `refundedAmount`. The purchase stays `SETTLED`; the refund
+  fires its own `CARD_TRANSACTION.*` webhooks on the refund row. To reverse a sandbox
+  return, pass the refund row's id to `POST /sandbox/cards/{id}/simulate/return_reversal`.
+- **`DECLINED` status.** An authorization declined before any money moved now reports
+  `DECLINED` (and fires `CARD_TRANSACTION.DECLINED`) instead of `EXCEPTION`, which is
+  reserved for settlement anomalies. Declines must be excluded from cardholder
+  statements.
+- Card rows now carry the same full currency metadata (`decimals`, `name`, `symbol`) as
+  payment rows, and `merchant` gains `city` and `state` when the network reports them.
+- `GET /transactions` accepts a `cardId` filter (`Card:` LSID or UUID) for listing one
+  card of a multi-card cardholder, and rejects `status` combined with `type=CARD` with a
+  400—`status` applies to payment transactions only.
+
 ## Card returns report as `SETTLED` with a `refundedAmount`
 
 `REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from

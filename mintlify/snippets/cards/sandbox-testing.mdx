@@ -88,8 +88,9 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
   }'
 ```
 
-A refund keeps the parent `SETTLED` with a non-zero `refundedAmount`,
-whether it is full or partial.
+A refund posts as its own dated `CREDIT` `CardTransaction` linked to the
+purchase via `originalTransactionId`; the purchase keeps its `SETTLED`
+status, whether the refund is full or partial.
 
 ## End-to-end happy path
 

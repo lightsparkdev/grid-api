@@ -17,7 +17,8 @@ Grid. You'll only need to:
 
 - Subscribe to the card webhook types: `CARD.STATE_CHANGE` for card
   state, and `CARD_TRANSACTION.AUTHORIZED`,
-  `CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`, and
+  `CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`,
+  `CARD_TRANSACTION.DECLINED`, and
   `CARD_TRANSACTION.EXCEPTION` for the transaction lifecycle.
 - Confirm with your Lightspark contact that cards are enabled for your
   platform — issuance requires an issuer-side onboarding.
@@ -62,14 +63,14 @@ pattern as Embedded Wallet credential revocation). See
 
 ## Transactions and reconciliation
 
-Each authorization on a card produces a parent `CardTransaction` row.
-Children (pulls, clearings, refunds) are reconciled against the parent
-and rolled up into the `settledAmount` and `refundedAmount` totals.
+Each authorization on a card produces a `CardTransaction` row, with
+clearings reconciled against it and rolled up into `settledAmount`.
 The lifecycle status moves
-`AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `EXCEPTION` as the
-failure path for stuck post-hoc pulls. A merchant return keeps the
-transaction `SETTLED` and reports the returned value in
-`refundedAmount`.
+`AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `DECLINED` for auths
+refused before any money moved and `EXCEPTION` as the failure path for
+stuck post-hoc pulls. A merchant return is its own dated `CREDIT`
+`CardTransaction` row linked to the purchase via
+`originalTransactionId`; the purchase keeps its `SETTLED` status.
 
 The full event model is covered in
 [Reconciliation](/cards/transactions/reconciliation).
