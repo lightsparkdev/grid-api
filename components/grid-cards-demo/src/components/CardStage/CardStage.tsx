@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { useReducedMotion } from 'motion/react';
+import { cancelFrame, frame, useReducedMotion } from 'motion/react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
@@ -761,13 +761,17 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         ref={canvasRef}
         className={styles.canvas}
         dpr={[1, 2]}
-        frameloop="always"
+        // Stepped by StageClock from Motion's frame loop, not R3F's own: the
+        // rig reads the phone's DOM (the slot, the pages) every frame, and
+        // must read it after Motion has written that frame's transforms.
+        frameloop="never"
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 0, CAMERA_Z], near: 200, far: 6000 }}
         onCreated={({ gl }) => {
           gl.toneMapping = NEUTRAL_TONE_MAPPING;
         }}
       >
+        <StageClock />
         <StageCamera dark={dark} />
         <CardEnv />
         <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
@@ -933,6 +937,23 @@ function GradientHandles({ gradient: g }: { gradient: CardGradient }) {
       <span className={styles.gradientEnd} style={{ left: b.x, top: b.y }} data-grad="to" />
     </div>
   );
+}
+
+/**
+ * Advances the R3F frame from Motion's loop, in its `postRender` step, so the
+ * rig's per-frame reads of the phone (the slot's rect, a page's edge) see the
+ * transforms Motion wrote this frame and the card paints in step with the
+ * DOM. Two independent rAF loops would leave the card a frame behind whenever
+ * R3F's happened to run first, which showed on a fast push.
+ */
+function StageClock() {
+  const advance = useThree((s) => s.advance);
+  useEffect(() => {
+    const step = ({ timestamp }: { timestamp: number }) => advance(timestamp);
+    frame.postRender(step, true);
+    return () => cancelFrame(step);
+  }, [advance]);
+  return null;
 }
 
 /** Perspective camera whose view at z = 0 is exactly the stage in px. */
