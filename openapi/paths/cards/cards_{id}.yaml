@@ -54,7 +54,7 @@ get:
 patch:
   summary: Update a card
   description: >
-    Update a card's `state`, bound `fundingSources`, and / or
+    Update a card's `state`, bound `fundingSource`, and / or
     `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
     At least one field must be supplied.
 
@@ -63,13 +63,12 @@ patch:
     `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible.
     Any other transition returns `409 INVALID_STATE_TRANSITION`.
 
-    - `fundingSources`, when supplied, fully replaces the card's bound
-    funding sources. Array order determines the priority Authorization
-    Decisioning tries them in. Each id must belong to the cardholder and
-    be denominated in the card's currency; the list must contain at least
-    one source. `fundingSources` cannot be supplied alongside
+    - `fundingSource`, when supplied, replaces the card's bound internal
+    account. It must belong to the cardholder and be denominated in the card's
+    currency. To stop a card from spending without rebinding it, set
+    `state: FROZEN` instead. `fundingSource` cannot be supplied alongside
     `state: CLOSED`. On card programs where the card issuer makes authorization
-    decisions, `fundingSources` cannot be combined with any `state` change, so
+    decisions, `fundingSource` cannot be combined with any `state` change, so
     send the changes as separate requests. On card programs where Grid makes
     the authorization decision, the combination remains valid for `state`
     changes other than `CLOSED`.
@@ -129,8 +128,8 @@ patch:
     reconcile to a terminal state via the existing reconcile primitive.
     Inbound clearings received after close follow the standard
     force-post / late-presentment path — Lightspark absorbs the loss if
-    a post-hoc pull on the now-unbound source fails. Funding-source
-    bindings are detached. Refunds already in flight still complete
+    a post-hoc pull on the now-unbound source fails. The funding source is
+    detached. Refunds already in flight still complete
     because Lightspark holds the card-reserve keys.
 
 
@@ -156,12 +155,10 @@ patch:
             summary: Unfreeze a frozen card
             value:
               state: ACTIVE
-          updateFundingSources:
-            summary: Replace the card's bound funding sources
+          updateFundingSource:
+            summary: Replace the card's bound funding source
             value:
-              fundingSources:
-                - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+              fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
           setSpendingLimit:
             summary: Set the card's spending and transaction limits
             value:
@@ -174,12 +171,13 @@ patch:
               maxSpendPerTransaction: null
               maxSpendPerDay: null
               maxTransactionsPerDay: null
-          freezeAndUpdateSources:
-            summary: Freeze the card and replace its funding sources in one call
+          freezeAndUpdateSource:
+            summary: >-
+              Freeze the card and replace its funding source in one call
+              (card programs where Grid decides authorizations)
             value:
               state: FROZEN
-              fundingSources:
-                - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
           close:
             summary: Permanently close the card
             value:
@@ -196,7 +194,7 @@ patch:
         Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a
         supplied funding source does not belong to the cardholder or is
         not denominated in the card's currency, with `INVALID_INPUT` when
-        `fundingSources` is combined with any `state` change on a card program
+        `fundingSource` is combined with any `state` change on a card program
         where the card issuer makes authorization decisions, and for general
         invalid parameters.
       content:

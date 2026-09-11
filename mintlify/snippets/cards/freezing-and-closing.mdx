@@ -3,11 +3,11 @@ Freeze, close, and other card updates use a single authenticated
 
 
 `PATCH /cards/{id}` covers freeze / unfreeze (`state`), funding source
-updates (`fundingSources`), per-transaction spending limits
+updates (`fundingSource`), per-transaction spending limits
 (`maxSpendPerTransaction`), UTC-calendar-day spending limits
 (`maxSpendPerDay`), and UTC-calendar-day transaction limits
 (`maxTransactionsPerDay`). See
-[Funding sources](/cards/card-management/funding-sources) for the
+[Funding source](/cards/card-management/funding-sources) for the
 funding-source-only flow.
 
 ## Valid state transitions
@@ -23,7 +23,9 @@ particular, you cannot un-freeze a `CLOSED` card — close is terminal.
 
 
 You can also combine a state change with a funding source replacement
-in one PATCH — just include both fields in the body.
+in one PATCH — just include both fields in the body. On card programs
+where the card issuer makes the authorization decision, send them as
+separate requests instead.
 
 ```bash
 curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
@@ -57,7 +59,7 @@ setting `state: "CLOSED"`. The operation is permanent:
 - Card state transitions to `CLOSED`, `stateReason: "CLOSED_BY_PLATFORM"`.
 - All pending authorizations reconcile to a terminal state via the
   existing reconcile primitive.
-- Funding-source bindings are detached. Refunds already in flight
+- The funding source is detached. Refunds already in flight
   continue to complete because Lightspark holds the card-reserve keys.
 - Inbound clearings received after close follow the standard
   force-post / late-presentment path — Lightspark absorbs the loss if
@@ -71,7 +73,7 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   -d '{ "state": "CLOSED" }'
 ```
 
-`fundingSources` cannot be supplied alongside `state: CLOSED`.
+`fundingSource` cannot be supplied alongside `state: CLOSED`.
 `409 CARD_ALREADY_CLOSED` is returned if the card is already in the
 terminal `CLOSED` state.
 

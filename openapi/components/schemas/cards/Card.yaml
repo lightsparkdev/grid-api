@@ -4,7 +4,7 @@ required:
   - customerId
   - state
   - form
-  - fundingSources
+  - fundingSource
   - maxSpendPerTransaction
   - maxSpendPerDay
   - maxTransactionsPerDay
@@ -50,17 +50,12 @@ properties:
     type: integer
     description: Card expiration year (four digits).
     example: 2029
-  fundingSources:
-    type: array
+  fundingSource:
+    type: string
     description: >-
-      Internal account ids bound to this card as funding sources, in priority
-      order — the first entry is tried first by Authorization Decisioning.
-      Every card has at least one funding source.
-    items:
-      type: string
-    example:
-      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-      - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+      Internal account id bound to this card as its funding source.
+      Authorization Decisioning pulls from this account.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   cardCapabilities:
     $ref: ./CardCapabilities.yaml
     description: >-
@@ -119,8 +114,7 @@ properties:
     type: string
     description: >-
       Currency the card transacts in (ISO 4217 for fiat, tickers for crypto).
-      Derived from the funding sources at issue time — all funding sources
-      bound to a card must be denominated in the same card-eligible currency.
+      Derived from the funding source at issue time.
     example: USD
     readOnly: true
   processorRef:

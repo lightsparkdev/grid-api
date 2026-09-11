@@ -34,17 +34,17 @@ cardholder hasn't completed KYC, `POST /cards` returns
 [Cardholder setup](/cards/onboarding/cardholder-setup) for how to drive
 KYC to completion before issuing.
 
-## Funding sources
+## Funding source
 
-Every card is bound to at least one `InternalAccount` as its funding
-source at issue time. Authorization Decisioning checks the source's
-balance before approving each auth, so:
+Every card is bound to one `InternalAccount` as its funding source at
+issue time. Authorization Decisioning checks the source's balance before
+approving each auth, so:
 
 - Top up the funding source before you expect transactions.
 - Use existing funding instructions (ACH, SEPA, wires, stablecoin) the
   same way you would for any other internal account.
-- See [Funding sources](/cards/card-management/funding-sources) for
-  rules around binding, unbinding, and the future multi-source path.
+- See [Funding source](/cards/card-management/funding-sources) for the
+  rules around binding and rebinding.
 
 ## Issuing and lifecycle
 

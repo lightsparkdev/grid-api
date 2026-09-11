@@ -57,8 +57,7 @@ post:
                 last4: '4242'
                 expMonth: 12
                 expYear: 2029
-                fundingSources:
-                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 maxSpendPerTransaction: 5000
                 maxSpendPerDay: 25000
                 maxTransactionsPerDay: 20
@@ -79,8 +78,7 @@ post:
                 state: CLOSED
                 stateReason: ISSUER_REJECTED
                 form: VIRTUAL
-                fundingSources:
-                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 maxSpendPerTransaction: null
                 maxSpendPerDay: null
                 maxTransactionsPerDay: null
@@ -102,8 +100,7 @@ post:
                 last4: '4242'
                 expMonth: 12
                 expYear: 2029
-                fundingSources:
-                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 maxSpendPerTransaction: 5000
                 maxSpendPerDay: 25000
                 maxTransactionsPerDay: 20

@@ -296,7 +296,7 @@ The `/agents/me/*` endpoints are called by an agent using its own credentials (A
 | POST | `/cards` | Issue a card |
 | GET | `/cards` | List cards |
 | GET | `/cards/{id}` | Get a card |
-| PATCH | `/cards/{id}` | Update a card (freeze/unfreeze, rebind funding sources, close) |
+| PATCH | `/cards/{id}` | Update a card (freeze/unfreeze, rebind the funding source, close) |
 | POST | `/cards/{id}/reveal` | Reveal card details |
 
 ### Sandbox Card Simulation

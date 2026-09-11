@@ -1,16 +1,15 @@
 type: object
 description: >-
   Update request for `PATCH /cards/{id}`. At least one of `state`,
-  `fundingSources`, `maxSpendPerTransaction`, `maxSpendPerDay`, or
+  `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or
   `maxTransactionsPerDay` must be supplied. `state`
   transitions are limited to `ACTIVE ⇄ FROZEN` and
   `ACTIVE | FROZEN → CLOSED`; any other transition returns
   `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and
-  cannot be combined with `fundingSources`, `maxSpendPerTransaction`,
+  cannot be combined with `fundingSource`, `maxSpendPerTransaction`,
   `maxSpendPerDay`, or `maxTransactionsPerDay`.
-  `fundingSources`, when supplied, fully replaces the card's bound
-  funding sources — the array order determines the priority Authorization
-  Decisioning tries them in.
+  `fundingSource`, when supplied, replaces the internal account the card
+  draws on.
 properties:
   state:
     type: string
@@ -24,21 +23,15 @@ properties:
       terminal and irreversible; once closed, the card stays in the
       system for audit and reconciliation but cannot transact again.
     example: FROZEN
-  fundingSources:
-    type: array
+  fundingSource:
+    type: string
     description: >-
-      New ordered list of internal account ids to bind as funding sources.
-      Fully replaces the previous binding. Each id must belong to the
-      cardholder and be denominated in the card's currency. The list must
-      contain at least one source — to stop a card from spending without
-      removing all sources, transition it to `FROZEN` instead. Cannot be
-      supplied alongside `state: CLOSED`.
-    minItems: 1
-    items:
-      type: string
-    example:
-      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-      - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+      Internal account id to bind as the card's funding source, replacing the
+      previous binding. It must belong to the cardholder and be denominated in
+      the card's currency. To stop a card from spending without rebinding it,
+      transition it to `FROZEN` instead. Cannot be supplied alongside
+      `state: CLOSED`.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
   maxSpendPerTransaction:
     anyOf:
       - type: integer
