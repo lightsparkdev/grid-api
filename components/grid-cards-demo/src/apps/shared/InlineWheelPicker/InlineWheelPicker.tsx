@@ -9,6 +9,10 @@ import styles from './InlineWheelPicker.module.scss';
  *  and a half rows, the chosen one centered in a highlight). */
 export const WHEEL_ITEM_H = 38;
 export const WHEEL_H = 208;
+/** The drum's radius: rows sit on a cylinder seen from the side, so a row
+ *  `d` steps from the center is at angle d·(pitch / R), placed at R·sin and
+ *  squashed to cos. UIPickerView's drum is about this deep for its window. */
+const WHEEL_R = 118;
 /** Pointer travel under this is a tap, not a drag. */
 const TAP_SLOP = 4;
 /** A fling carries this far past the release (rows per row/s). */
@@ -138,19 +142,24 @@ export function InlineWheelPicker<T>({ options, value, onChange, open, 'aria-lab
   );
 }
 
-/** One row of the drum, placed off the drum's position each frame. */
+/** One row of the drum, placed off the drum's position each frame: on the
+ *  cylinder, so it rises by the sine of its angle and squashes to the cosine
+ *  (a flat projection, the way UIPickerView draws it), and grays as it turns
+ *  away. Past a quarter turn it is on the far side, and hidden. */
 function WheelRow({ index, pos, label, selected }: { index: number; pos: MotionValue<number>; label: string; selected: boolean }) {
-  const d = useTransform(pos, (p) => index - p);
-  const y = useTransform(d, (v) => v * WHEEL_ITEM_H);
-  const scale = useTransform(d, (v) => Math.max(0.62, 1 - Math.abs(v) * 0.13));
-  const opacity = useTransform(d, (v) => Math.max(0, 1 - Math.abs(v) * 0.42));
-  const rotateX = useTransform(d, (v) => -v * 22);
+  const angle = useTransform(pos, (p) => ((index - p) * WHEEL_ITEM_H) / WHEEL_R);
+  const y = useTransform(angle, (a) => WHEEL_R * Math.sin(Math.max(-Math.PI / 2, Math.min(Math.PI / 2, a))));
+  const scaleY = useTransform(angle, (a) => Math.max(0, Math.cos(a)));
+  const opacity = useTransform(angle, (a) => (Math.abs(a) >= Math.PI / 2 ? 0 : 1));
+  const color = useTransform(angle, (a) =>
+    Math.abs(a) < 0.12 ? 'var(--ios-label-primary)' : 'var(--ios-label-tertiary)',
+  );
   return (
     <motion.span
       className={styles.row}
       role="option"
       aria-selected={selected}
-      style={{ y, scale, opacity, rotateX }}
+      style={{ y, scaleY, opacity, color }}
     >
       {label}
     </motion.span>

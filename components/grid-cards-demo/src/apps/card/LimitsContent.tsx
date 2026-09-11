@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
+import { GlassTextButton } from '@/apps/shared/glass';
 import { InlineWheelPicker, type WheelOption } from '@/apps/shared/InlineWheelPicker';
 import type { CardControls, LimitsRow, SpendLimits } from '@/apps/shared/card';
 import styles from './LimitsContent.module.scss';
@@ -75,10 +75,11 @@ export function LimitsContent({ card }: { card: CardControls }) {
           onChange={(v) => setDraft((d: SpendLimits) => ({ ...d, perDayCents: v }))}
         />
       </div>
-      <div className={styles.actions}>
-        <ContentAreaButton
-          type="button"
-          variant="filled"
+      {/* Pinned to the page's bottom over a fade of the page's background, the
+          sheets' CTA footer. */}
+      <div className={styles.bottomCtaWrap}>
+        <GlassTextButton
+          variant="primary"
           disabled={!dirty}
           onClick={() => {
             card.saveLimits(draft);
@@ -86,7 +87,7 @@ export function LimitsContent({ card }: { card: CardControls }) {
           }}
         >
           Save limits
-        </ContentAreaButton>
+        </GlassTextButton>
       </div>
     </div>
   );

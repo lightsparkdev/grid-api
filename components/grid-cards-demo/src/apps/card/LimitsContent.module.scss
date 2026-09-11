@@ -1,12 +1,24 @@
 @use '../shared/typography/ios-type-mixins' as ios;
-@use '../shared/glass/glass-button-shadow' as shadow;
 
-/* Spending limits page: the grouped settings card, and Save. */
+/* Spending limits page: the grouped settings card, and Save pinned below. The
+   bottom padding keeps the card clear of the footer when it scrolls. */
 .root {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 8px 16px 24px;
+  padding: 8px 16px 128px;
+}
+
+/* The sheets' CTA footer: anchored to the page's bottom, 32px all around, on
+   a fade of the page's background so content scrolls cleanly under it. */
+.bottomCtaWrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 32px;
+  background: linear-gradient(to top, var(--wallet-bg), var(--wallet-bg) 56%, transparent);
 }
 
 /* Apple Cash's Auto Reload card: rows with their values in pills; a row's
@@ -67,8 +79,4 @@
 
 .pillOpen {
   color: var(--ios-tint, #007aff);
-}
-
-.actions {
-  padding-top: 4px;
 }

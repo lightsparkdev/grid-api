@@ -6,15 +6,17 @@
 }
 
 /* The drum's window: rows are placed off the drum's position, the chosen one
-   at the center over the highlight. */
+   at the center over the highlight. The window fades out at its top and
+   bottom, the way the drum disappears into the picker's edges. */
 .wheel {
   position: relative;
   height: 208px;
-  perspective: 600px;
   cursor: grab;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%);
 
   &:active {
     cursor: grabbing;
@@ -25,8 +27,8 @@
 .highlight {
   position: absolute;
   top: calc(50% - 19px);
-  left: 4px;
-  right: 4px;
+  left: 0;
+  right: 0;
   height: 38px;
   border-radius: 12px;
   corner-shape: var(--corner-shape);
@@ -42,9 +44,10 @@
   align-items: center;
   justify-content: center;
   height: 38px;
+  /* UIPickerView's rows: 23pt regular. */
   @include ios.ios-text-title-2;
-  font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+  font-weight: 400;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
   font-variant-numeric: tabular-nums;
   color: var(--ios-label-primary);
   pointer-events: none;
