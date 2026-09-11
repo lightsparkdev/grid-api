@@ -5,11 +5,29 @@ import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import { CardStage } from '@/components/CardStage/CardStage';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { DEFAULT_OVERLAY_GLASS } from '@/apps/shared/glass';
+import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useCardHome, type UseCardHomeOptions, type WalletEntry } from '@/apps/shared/card';
 import type { CardDesign } from '@/data/design';
+import type { GlassConfig } from '@/components/liquid-glass';
 import styles from './AppPanel.module.scss';
+
+/** The stage close's glass, the phone bezel's material at button size: the
+ *  shell's surface (edge, glow, specular, lift, chroma) over the symbol
+ *  button's small-lens optics. */
+const BEZEL_BUTTON_GLASS: Partial<GlassConfig> = {
+  brightness: PHONE_SHELL_GLASS.brightness,
+  edgeStrength: PHONE_SHELL_GLASS.edgeStrength,
+  edgeWidth: PHONE_SHELL_GLASS.edgeWidth,
+  edgeExponent: PHONE_SHELL_GLASS.edgeExponent,
+  glowStrength: PHONE_SHELL_GLASS.glowStrength,
+  glowSpread: PHONE_SHELL_GLASS.glowSpread,
+  glowExponent: PHONE_SHELL_GLASS.glowExponent,
+  specularStrength: PHONE_SHELL_GLASS.specularStrength,
+  specularRotation: PHONE_SHELL_GLASS.specularRotation,
+  chromaticAberration: PHONE_SHELL_GLASS.chromaticAberration,
+  blur: 1,
+};
 
 export interface AppPanelProps {
   design: CardDesign;
@@ -68,20 +86,25 @@ function StageHost({
   // to the card alone. The phone is the cardholder's; this control is the
   // developer's, so it sits on the stage against the phone, not on the screen.
   const closePhone = (
-    <button
-      type="button"
-      className={clsx(styles.back, !showBack && styles.backHidden)}
-      aria-label="Back to the card"
-      aria-hidden={!showBack}
-      tabIndex={showBack ? 0 : -1}
-      onClick={() => {
-        // Whatever a flow left up (the Card Numbers page) goes with the phone.
-        home.card.resetSurfaces();
-        onDismissPhone?.();
-      }}
-    >
-      <SfSymbol name="xmark" size={13} />
-    </button>
+    <span className={clsx(styles.back, !showBack && styles.backHidden)} aria-hidden={!showBack}>
+      <GlassSymbolButton
+        aria-label="Back to the card"
+        size={28}
+        type="button"
+        // The bezel's glass, not the screen's symbol glass: it refracts the
+        // stage's dot grid behind it, with the shell's edge, glow, and lift.
+        backdrop="var(--stage-glass-backdrop)"
+        glass={BEZEL_BUTTON_GLASS}
+        tabIndex={showBack ? 0 : -1}
+        onClick={() => {
+          // Whatever a flow left up (the Card Numbers page) goes with the phone.
+          home.card.resetSurfaces();
+          onDismissPhone?.();
+        }}
+      >
+        <SfSymbol name="xmark" size={12} />
+      </GlassSymbolButton>
+    </span>
   );
 
   return (

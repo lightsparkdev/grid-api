@@ -1125,18 +1125,33 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     // (`data-covers-card="left"`). The stage paints above the phone, so the
     // card is clipped to the cover's leading edge as it moves: it goes under,
     // the way it would on the phone, and is never unmounted.
-    let coverTop = Infinity;
-    let coverLeft = Infinity;
+    // Parked, the card is screen content: it is also clipped to the phone's
+    // screen, so a push that slides its slot past the bezel takes it out of
+    // sight the way the screen's edge would. (Not during the flight in or out,
+    // when it crosses the bezel on purpose.)
+    let top = 0;
+    let right = 0;
+    let bottom = 0;
+    let left = 0;
     if (t > 0) {
       root.ownerDocument.querySelectorAll<HTMLElement>('[data-covers-card]').forEach((el) => {
         const b = el.getBoundingClientRect();
-        if (el.dataset.coversCard === 'left') coverLeft = Math.min(coverLeft, b.left - r.left);
-        else coverTop = Math.min(coverTop, b.top - r.top);
+        if (el.dataset.coversCard === 'left') right = Math.max(right, r.right - b.left);
+        else bottom = Math.max(bottom, r.bottom - b.top);
       });
+      if (t >= 0.999) {
+        const screen = root.ownerDocument.querySelector<HTMLElement>('[data-screen-body]');
+        if (screen) {
+          const b = screen.getBoundingClientRect();
+          top = Math.max(top, b.top - r.top);
+          right = Math.max(right, r.right - b.right);
+          bottom = Math.max(bottom, r.bottom - b.bottom);
+          left = Math.max(left, b.left - r.left);
+        }
+      }
     }
-    const bottom = coverTop < r.height ? Math.max(0, r.height - coverTop) : 0;
-    const right = coverLeft < r.width ? Math.max(0, r.width - coverLeft) : 0;
-    const clip = bottom || right ? `inset(0 ${right.toFixed(1)}px ${bottom.toFixed(1)}px 0)` : '';
+    const ins = (v: number) => Math.max(0, Math.min(v, Math.max(r.width, r.height))).toFixed(1);
+    const clip = top || right || bottom || left ? `inset(${ins(top)}px ${ins(right)}px ${ins(bottom)}px ${ins(left)}px)` : '';
     if (root.style.clipPath !== clip) root.style.clipPath = clip;
   });
 
