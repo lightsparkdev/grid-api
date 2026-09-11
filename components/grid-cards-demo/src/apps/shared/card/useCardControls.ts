@@ -58,7 +58,6 @@ export interface UseCardControlsOptions {
   onRefund?: (row: CardTransactionRow) => void;
 }
 
-const REVEAL_TTL_MS = 60_000;
 /** Apple's add-card waits: "Contacting the Card Issuer…", then "Setting up
  *  Card for Apple Pay…", then the check holds before the app's own screen. */
 const WALLET_CONTACTING_MS = 1500;
@@ -197,20 +196,18 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setSheet('limits');
   }, [limits]);
 
-  /** Called once Face ID passes; the Card Numbers page shows the details for
-   *  REVEAL_TTL, with the card turned to its back behind it. */
+  /** Called once Face ID passes; the Card Numbers page shows the details, with
+   *  the card turned to its back behind it, until the page is popped. */
   const reveal = useCallback(() => {
     setRevealedAt(Date.now());
     setPage('numbers');
     onReveal?.();
   }, [onReveal]);
-  useEffect(() => {
-    if (revealedAt === null) return;
-    const t = window.setTimeout(() => setRevealedAt(null), REVEAL_TTL_MS);
-    return () => window.clearTimeout(t);
-  }, [revealedAt]);
-  /** Back from the pushed page. */
-  const popPage = useCallback(() => setPage('home'), []);
+  /** Back from the pushed page; the numbers are hidden again. */
+  const popPage = useCallback(() => {
+    setPage('home');
+    setRevealedAt(null);
+  }, []);
 
   /** Apple's add-card flow comes up. Already added: the sheet says so instead. */
   const startAddToWallet = useCallback(() => {
@@ -309,6 +306,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   const resetSurfaces = useCallback(() => {
     setSheet('none');
     setPage('home');
+    setRevealedAt(null);
     clearWalletTimers();
     setWalletPhase('idle');
   }, [clearWalletTimers]);

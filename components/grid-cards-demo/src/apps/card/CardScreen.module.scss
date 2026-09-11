@@ -89,12 +89,10 @@
   z-index: 3;
 }
 
-/* Card slot — pinned at the top; the hub scrolls beneath it. The top margin
-   clears a dropped-in notification capsule (NOTIFICATION_TOP_PX 64 + 78 tall),
-   since the parked card paints above the phone's overlays. */
+/* Card slot — pinned at the top; the hub scrolls beneath it. */
 .cardArea {
   flex-shrink: 0;
-  padding: 26px 16px 8px;
+  padding: 10px 16px 8px;
 }
 
 /* The card's footprint (DebitCard is 232 tall at the screen width minus gutters). */
