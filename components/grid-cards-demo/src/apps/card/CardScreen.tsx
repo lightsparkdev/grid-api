@@ -37,7 +37,7 @@ const CONTENT_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
 
 /**
  * The card hub — the whole app. Header (program name + settings), the card,
- * the funding line, actions, controls, and transactions; tap-to-pay lifts the
+ * and transactions; tap-to-pay lifts the
  * card under the status bar. The brain arrives as a prop (hosted above).
  */
 export function CardScreen({ home }: CardScreenProps) {
@@ -53,7 +53,6 @@ export function CardScreen({ home }: CardScreenProps) {
     transactions,
     toast,
     setToast,
-    availableCents,
     isTap,
     card,
     revealPending,
@@ -154,7 +153,7 @@ export function CardScreen({ home }: CardScreenProps) {
               exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
             >
               <div className={styles.homeScroll}>
-                <CardHomeContent transactions={transactions} card={card} availableCents={availableCents} />
+                <CardHomeContent transactions={transactions} card={card} />
               </div>
             </motion.div>
           )}
