@@ -62,8 +62,10 @@ export function AppShell({
   const screenBodyRef = useRef<HTMLDivElement>(null);
   const statusBarRef = useRef<HTMLElement>(null);
   const statusBarTone = useAdaptiveStatusBarTone(screenRef, screenBodyRef, statusBarRef);
-  // Overlay layer node (above the status bar) handed to descendants so they can
-  // portal status-bar-frosting overlays (e.g. Face ID) into it.
+  // Overlay layer node handed to descendants so they can portal Face ID, the
+  // notification, and the toast into it. It is the phone's twin above the
+  // stage (`.overStage`), not a child of the screen: the stage's card canvas
+  // covers the phone, and these must paint over the card parked in the slot.
   const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null);
 
   // The glass shell sits REST_INSET px inset at rest and lifts back out
@@ -179,18 +181,19 @@ export function AppShell({
     return () => cancelAnimationFrame(raf);
   }, [phoneVisible, bootOpacity, realignLens]);
 
+  const bootStyle: CSSProperties = {
+    ['--fit-scale' as string]: scale,
+    ['--boot-scale' as string]: bootScale,
+    ['--boot-y' as string]: `${bootY}px`,
+    opacity: showPhone ? bootOpacity : 0,
+    filter: showPhone && bootOpacity < 1 ? `blur(${(1 - bootOpacity) * 48}px)` : undefined,
+  };
+
   return (
     <div className={styles.stage} ref={wrapRef}>
       <div
         className={styles.scaled}
-        style={{
-          ['--fit-scale' as string]: scale,
-          ['--boot-scale' as string]: bootScale,
-          ['--boot-y' as string]: `${bootY}px`,
-          opacity: showPhone ? bootOpacity : 0,
-          filter: showPhone && bootOpacity < 1 ? `blur(${(1 - bootOpacity) * 48}px)` : undefined,
-          pointerEvents: bootOpacity >= 1 ? 'auto' : 'none',
-        }}
+        style={{ ...bootStyle, pointerEvents: bootOpacity >= 1 ? 'auto' : 'none' }}
         aria-hidden={!phoneVisible}
       >
         <div
@@ -296,11 +299,7 @@ export function AppShell({
             }}
           >
             <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
-            {/* Always present so it can double as the portal target for overlays
-                that need to frost the status bar (it sits above it). */}
-            <div ref={setOverlayEl} className={styles.screenOverlay}>
-              {screenOverlay}
-            </div>
+            <div className={styles.screenOverlay}>{screenOverlay}</div>
             {children ? (
               <ScreenOverlayContext.Provider value={overlayEl}>
                 <div ref={screenBodyRef} className={styles.screenBody} data-screen-body>
@@ -336,6 +335,16 @@ export function AppShell({
             }}
           />
         )}
+      </div>
+      {/* The screen's overlay layer, above the stage: rides the same boot
+          transform as the phone, clipped to the screen, and holds what must
+          paint over the card in the slot (Face ID, notifications, the toast). */}
+      <div className={styles.overStage} style={bootStyle} aria-hidden={!phoneVisible}>
+        <div
+          ref={setOverlayEl}
+          className={`${styles.overStageScreen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
+          style={screenStyle}
+        />
       </div>
     </div>
   );

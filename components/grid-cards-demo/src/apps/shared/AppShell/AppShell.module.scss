@@ -140,6 +140,40 @@
   overflow: visible;
 }
 
+/* The screen's overlay layer as a twin above the stage. The card's canvas
+   covers the whole stage above the phone (CardStage `.root`, z-index 3), so
+   Face ID, the notification, and the toast are portaled here, at z-index 4,
+   under the same boot transform as `.scaled`. Clipped to the screen with a
+   radius rather than the screen's clip-path: a clip-path would make this a
+   backdrop root, and the overlays' frost would then see nothing behind it. */
+.overStage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: var(--app-shell-width);
+  height: var(--app-shell-height);
+  transform-origin: center center;
+  transform: translate(-50%, -50%) translateY(var(--boot-y, 0px))
+    scale(calc(var(--fit-scale, 1) * var(--boot-scale, 1)));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.overStageScreen {
+  position: absolute;
+  top: var(--app-shell-padding);
+  left: var(--app-shell-padding);
+  width: var(--app-screen-width);
+  height: var(--app-screen-height);
+  border-radius: var(--corner-radius-phone-screen);
+  corner-shape: var(--corner-shape);
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--ios-font-family);
+  font-feature-settings: normal;
+}
+
 .screenBody {
   position: absolute;
   inset: 0;
