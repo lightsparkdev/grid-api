@@ -11,6 +11,17 @@
   min-width: 0;
 }
 
+/* Label, then the contactless mark, with no gap between. */
+.tapLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+
+  svg {
+    display: block;
+  }
+}
+
 /* Apple's Wallet app icon (public/assets/icon-apple-wallet.png, 512 × 379),
    at the glyph's height. */
 .walletIcon {

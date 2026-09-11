@@ -17,15 +17,12 @@ interface CardHomeActionsProps {
 export function CardHomeActions({ onTapToPay, onAddToWallet, inWallet, disabled }: CardHomeActionsProps) {
   return (
     <div className={styles.row}>
-      <ContentAreaButton
-        className={styles.button}
-        type="button"
-        variant="bordered"
-        icon={<SfSymbol name="wave.3.right" size={20} />}
-        onClick={onTapToPay}
-        disabled={disabled}
-      >
-        Tap to Pay
+      <ContentAreaButton className={styles.button} type="button" variant="bordered" onClick={onTapToPay} disabled={disabled}>
+        {/* The contactless mark follows the label, as on a reader. */}
+        <span className={styles.tapLabel}>
+          Tap to Pay
+          <SfSymbol name="wave.3.right" size={20} />
+        </span>
       </ContentAreaButton>
       <ContentAreaButton
         className={styles.button}

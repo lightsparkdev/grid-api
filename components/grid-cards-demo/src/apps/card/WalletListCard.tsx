@@ -40,6 +40,9 @@ interface WalletListCardProps {
   cta?: ReactNode;
   /** Hug the phone bezel with concentric bottom corners (wallet home activity). */
   concentricBottom?: boolean;
+  /** Run into the phone's bottom edge: no bottom inset, square bottom corners,
+   *  and the screen's own squircle clips it (card-home transactions). */
+  flushBottom?: boolean;
   /** Real rows to render; falls back to the skeleton + empty state when absent. */
   items?: WalletListItemData[];
   /** Grow with content (so a scrolling parent scrolls) instead of fill + clip. */
@@ -60,6 +63,7 @@ export function WalletListCard({
   emptySub,
   cta,
   concentricBottom = false,
+  flushBottom = false,
   items,
   grow = false,
   roundGraphic = false,
@@ -111,14 +115,16 @@ export function WalletListCard({
   const wrapRef = useCallback(
     (el: HTMLElement | null) => {
       roRef.current?.disconnect();
-      if (!el || !concentricBottom) return;
+      if (!el || !(concentricBottom || flushBottom)) return;
       const measure = () => {
         const cs = getComputedStyle(el);
         const screenRaw = cs.getPropertyValue('--screen-corner-radius').trim();
         const screenR = screenRaw ? Number.parseFloat(screenRaw) : Number.NaN;
         const topR = readCssVarPx(el, '--corner-radius-wallet-card-squircle');
         const inset = Number.parseFloat(cs.paddingLeft.trim());
-        if (Number.isFinite(screenR) && Number.isFinite(topR) && Number.isFinite(inset)) {
+        if (flushBottom && Number.isFinite(topR)) {
+          setCornerRadii([topR, topR, 0, 0]);
+        } else if (Number.isFinite(screenR) && Number.isFinite(topR) && Number.isFinite(inset)) {
           const bottom = Math.max(0, screenR - inset);
           setCornerRadii([topR, topR, bottom, bottom]);
         } else {
@@ -129,7 +135,7 @@ export function WalletListCard({
       roRef.current = new ResizeObserver(measure);
       roRef.current.observe(el);
     },
-    [concentricBottom],
+    [concentricBottom, flushBottom],
   );
 
   const cardClip = useSquircleClip({ cornerRadii });
