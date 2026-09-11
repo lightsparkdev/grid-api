@@ -31,7 +31,7 @@ export function CardHomeActions({ onTapToPay, onAddToWallet, inWallet, disabled 
         className={styles.button}
         type="button"
         variant="bordered"
-        icon={<SfSymbol name="wallet.pass.fill" size={20} />}
+        icon={<img className={styles.walletIcon} src="/assets/icon-apple-wallet.png" alt="" draggable={false} />}
         onClick={onAddToWallet}
         disabled={disabled}
       >
