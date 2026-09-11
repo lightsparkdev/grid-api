@@ -69,7 +69,7 @@ post:
             summary: Issue a virtual card with one funding source
             value:
               customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-              platformCardId: card-emp-aary-001
+              platformCardId: card-emp-001
               form: VIRTUAL
               fundingSources:
                 - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
