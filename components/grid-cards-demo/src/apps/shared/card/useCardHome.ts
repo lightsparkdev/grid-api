@@ -26,10 +26,14 @@ const TAP_INSERT_DELAY_MS = 900;
 const ENTRY_HOME_SETTLE_MS = 350;
 /** The phone slides in for a flow; the flow starts once it has landed. */
 const PHONE_IN_MS = 750;
-/** The reveal has played (sheet up, digits rolled); the sheet stays open. */
+/** The reveal has played (page pushed, digits rolled); the page stays. */
 const REVEAL_SETTLE_MS = 1400;
-/** "Cardholder" taps Add to Apple Wallet this long after the sheet opens. */
-const WALLET_CONFIRM_MS = 1200;
+/** The cardholder reads Apple's "Add Card to Apple Pay" this long, then taps
+ *  Continue; and reads the app's "added" screen this long, then taps Done. */
+const WALLET_CONTINUE_MS = 1400;
+const WALLET_DONE_MS = 2200;
+/** Apple's waits, from Continue to the app's own screen (see useCardControls). */
+const WALLET_ADDING_MS = 1500 + 1500 + 1100;
 /** Dwell on the transaction sheet before the refund runs. */
 const REFUND_START_MS = 1100;
 /** Dwell after a refund before the sheet closes. */
@@ -49,8 +53,9 @@ export const PRESET_LIMITS: SpendLimits = { perTransactionCents: 7_500, perDayCe
 export type CardPose =
   | 'home'
   | 'faceid'
-  | 'details'
+  | 'numbers'
   | 'wallet'
+  | 'walletAgain'
   | 'limits'
   | 'transaction'
   | 'close'
@@ -59,7 +64,8 @@ export type CardPose =
   | 'toast';
 
 export interface CardPoseOptions {
-  /** `wallet`: 'sheet' | 'adding' | 'done'; `tap`: 'hold' | 'auth' | 'done' | 'declined'. */
+  /** `wallet`: 'intro' | 'contacting' | 'setup' | 'added' | 'confirm';
+   *  `tap`: 'hold' | 'auth' | 'done' | 'declined'. */
   phase?: WalletAddPhase | TapPhase;
   /** `tap` at 'declined': why. */
   reason?: DeclineReason;
@@ -256,17 +262,71 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     setTapPhase('done');
   };
 
-  /** Reveal details: Face ID first, then the details sheet, which stays up
-   *  (the card on its back behind it) until the cardholder closes it or the
-   *  next flow starts. */
+  // ── The flows. Each is what a tile runs, and what the cardholder's own tap
+  // on the phone runs (the header buttons, the row under the card). `settle`
+  // tells the playground a tile's flow is over; from the phone it is a no-op.
+
+  /** A flow is starting for real: a dev pose no longer holds the phone. */
+  const arm = () => {
+    posed.current = false;
+  };
+
+  /** Reveal details: Face ID first, then the Card Numbers page is pushed and
+   *  the card turns to its back. The page stays until Back or the next flow. */
   const startReveal = () => {
-    if (card.closed) return;
+    arm();
+    if (card.closed) {
+      notify('Card closed', 'Details are no longer available for this card.');
+      settle(NOTICE_SETTLE_MS);
+      return;
+    }
     setRevealPending(true);
   };
   const finishRevealAuth = () => {
     setRevealPending(false);
     card.reveal();
     settle(REVEAL_SETTLE_MS);
+  };
+
+  /** Freeze, or unfreeze: the PATCH and its webhook, and a push on the phone. */
+  const toggleFreeze = () => {
+    arm();
+    if (card.closed) {
+      notify('Card closed', 'A closed card can’t be frozen or unfrozen.');
+      settle(NOTICE_SETTLE_MS);
+      return;
+    }
+    const next = !card.frozen;
+    card.setFrozen(next);
+    notify(
+      next ? 'Card frozen' : 'Card unfrozen',
+      next ? 'Purchases will be declined until you unfreeze it.' : 'Your card is active again.',
+    );
+    settle(NOTICE_SETTLE_MS);
+  };
+
+  /** Add to Apple Wallet: Apple's add-card flow comes up; the cardholder's
+   *  Continue and Done are scripted (a real tap first wins, the script's is
+   *  then a no-op). Already added: a sheet says so. */
+  const startAddToWallet = () => {
+    arm();
+    if (card.closed) {
+      notify('Card closed', 'A closed card can’t be added to Apple Wallet.');
+      settle(NOTICE_SETTLE_MS);
+      return;
+    }
+    if (card.inWallet) {
+      card.startAddToWallet(); // the "already in your wallet" sheet
+      settle(NOTICE_SETTLE_MS);
+      return;
+    }
+    card.startAddToWallet();
+    later(() => cardRef.current.confirmAddToWallet(), WALLET_CONTINUE_MS);
+    later(() => {
+      const c = cardRef.current;
+      if (c.walletPhase === 'confirm') c.finishAddToWallet();
+      settle(400);
+    }, WALLET_CONTINUE_MS + WALLET_ADDING_MS + WALLET_DONE_MS);
   };
 
   // The merchant is picked when the tap STARTS — the balance guard, the charge,
@@ -277,6 +337,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   const merchantDeck = useRef<typeof TAP_MERCHANTS>([]);
   const pendingTapTx = useRef(TAP_MERCHANTS[0]);
   const startTapToPay = () => {
+    arm();
     if (merchantDeck.current.length === 0) {
       const deck = [...TAP_MERCHANTS];
       for (let i = deck.length - 1; i > 0; i--) {
@@ -322,43 +383,14 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           startTapToPay();
           break;
         case 'reveal':
-          if (card.closed) {
-            notify('Card closed', 'Details are no longer available for this card.');
-            settle(NOTICE_SETTLE_MS);
-            break;
-          }
           startReveal();
           break;
         case 'wallet':
-          if (card.closed || card.inWallet) {
-            notify(
-              card.closed ? 'Card closed' : 'Already in Apple Wallet',
-              card.closed ? 'A closed card can’t be added to Apple Wallet.' : 'This card is already on your iPhone.',
-            );
-            settle(NOTICE_SETTLE_MS);
-            break;
-          }
-          card.startAddToWallet();
-          // The cardholder taps Add to Apple Wallet; the controls run the pass.
-          later(() => cardRef.current.confirmAddToWallet(), WALLET_CONFIRM_MS);
-          // sheet (1200) + adding (1600) + done (1400)
-          settle(WALLET_CONFIRM_MS + 1600 + 1400 + 500);
+          startAddToWallet();
           break;
-        case 'freeze': {
-          if (card.closed) {
-            notify('Card closed', 'A closed card can’t be frozen or unfrozen.');
-            settle(NOTICE_SETTLE_MS);
-            break;
-          }
-          const next = !card.frozen;
-          card.setFrozen(next);
-          notify(
-            next ? 'Card frozen' : 'Card unfrozen',
-            next ? 'Purchases will be declined until you unfreeze it.' : 'Your card is active again.',
-          );
-          settle(NOTICE_SETTLE_MS);
+        case 'freeze':
+          toggleFreeze();
           break;
-        }
         case 'limits': {
           if (card.closed) {
             notify('Card closed', 'Limits can’t be changed on a closed card.');
@@ -430,9 +462,9 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
 
     // Clear whatever the previous flow left up, then run: once the phone lands,
     // or at once when it is already up from an earlier flow.
-    const busy = card.sheet !== 'none' || revealPending || tapPhase !== 'idle';
+    const busy = card.surfaceUp || revealPending || tapPhase !== 'idle';
     setTapPhase('idle');
-    card.closeSheet();
+    card.resetSurfaces();
     setRevealPending(false);
     setNotice(null);
     later(run, (entry.phoneUp ? 0 : PHONE_IN_MS) + (busy ? ENTRY_HOME_SETTLE_MS : 0));
@@ -442,7 +474,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   // Dev: pose the phone in any flow moment and hold it there, so a screen can
   // be tuned without replaying its timed sequence. Nothing is logged. From the
   // console, with the phone up (`__cardsDemo.phone(true)`):
-  //   __cardHome.pose('wallet', { phase: 'adding' })
+  //   __cardHome.pose('wallet', { phase: 'contacting' })
   //   __cardHome.pose('tap', { phase: 'declined', reason: 'OVER_PER_TXN_LIMIT' })
   //   __cardHome.pose('transaction', { status: 'AUTHORIZED' })
   //   __cardHome.pose('notice', { title: 'Card frozen', body: '…' })
@@ -455,7 +487,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     setNotice(null);
     setToast(null);
     c.setLastDecline(null);
-    c.closeSheet();
+    c.resetSurfaces();
     setTapPhase('idle');
     switch (target) {
       case 'home':
@@ -463,13 +495,15 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
       case 'faceid':
         setRevealPending(true);
         break;
-      case 'details':
+      case 'numbers':
         c.markRevealed();
-        c.setSheet('details');
+        c.openNumbers();
         break;
       case 'wallet':
-        c.setWalletPhase((opts.phase as WalletAddPhase | undefined) ?? 'sheet');
-        c.setSheet('wallet');
+        c.setWalletPhase((opts.phase as WalletAddPhase | undefined) ?? 'intro');
+        break;
+      case 'walletAgain':
+        c.setSheet('walletAgain');
         break;
       case 'limits':
         c.openLimits();
@@ -540,13 +574,15 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     // Card controls (freeze / close / limits / reveal / wallet / transactions)
     card,
     revealPending,
-    startReveal,
     finishRevealAuth,
     finishTapAuth,
     // Derived view flags
     isTap,
     isDeclined,
-    // Handlers
+    // The flows, for the cardholder's own taps on the phone
+    startReveal,
+    toggleFreeze,
+    startAddToWallet,
     startTapToPay,
   };
 }

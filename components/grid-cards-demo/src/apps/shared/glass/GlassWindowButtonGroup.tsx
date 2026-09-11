@@ -11,7 +11,7 @@ const SHEET_SURFACE_BACKDROP = 'var(--glass-symbol-backdrop)';
 
 export type GlassWindowButtonGroupSymbol =
   | SfSymbolName
-  | { name: SfSymbolName; size?: number; label?: string };
+  | { name: SfSymbolName; size?: number; label?: string; onClick?: () => void; disabled?: boolean };
 
 interface GlassWindowButtonGroupProps {
   /** SF Symbol entries left-to-right inside the capsule. */
@@ -34,12 +34,16 @@ function normalizeSymbol(entry: GlassWindowButtonGroupSymbol, defaultSize: numbe
       name: entry,
       size: defaultSize,
       label: DEFAULT_SYMBOL_LABELS[entry] ?? entry,
+      onClick: undefined,
+      disabled: false,
     };
   }
   return {
     name: entry.name,
     size: entry.size ?? defaultSize,
     label: entry.label ?? DEFAULT_SYMBOL_LABELS[entry.name] ?? entry.name,
+    onClick: entry.onClick,
+    disabled: entry.disabled ?? false,
   };
 }
 
@@ -64,13 +68,15 @@ export function GlassWindowButtonGroup({
       >
         <div className={styles.inner}>
           {symbols.map((entry) => {
-            const { name, size, label } = normalizeSymbol(entry, iconSize);
+            const { name, size, label, onClick, disabled } = normalizeSymbol(entry, iconSize);
             return (
               <button
-                key={name}
+                key={label}
                 type="button"
                 className={styles.iconButton}
                 aria-label={label}
+                onClick={onClick}
+                disabled={disabled}
               >
                 <SfSymbol name={name} size={size} />
               </button>

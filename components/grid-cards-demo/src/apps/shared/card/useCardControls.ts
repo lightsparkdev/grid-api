@@ -18,12 +18,19 @@ export interface SpendLimits {
   perDayCents: number | null;
 }
 
-/** Which of the card hub's sheets is up. */
-export type CardSheet = 'none' | 'details' | 'wallet' | 'limits' | 'transaction' | 'close';
+/** Which of the card hub's bottom sheets is up. `walletAgain` says the card is
+ *  already in Apple Wallet. */
+export type CardSheet = 'none' | 'limits' | 'transaction' | 'close' | 'walletAgain';
 
-/** Apple Wallet add flow. `sheet` is Apple's add-card sheet; `adding` is the
- *  spinner; `done` shows the card in the pass stack. */
-export type WalletAddPhase = 'idle' | 'sheet' | 'adding' | 'done';
+/** The page pushed over the card home. `numbers` is Wallet's Card Numbers
+ *  page (the reveal); the card stays in its slot, turned to its back. */
+export type CardPage = 'home' | 'numbers';
+
+/** Add to Apple Wallet, as Apple's full-screen add-card flow: `intro` is "Add
+ *  Card to Apple Pay" waiting on Continue; `contacting` and `setup` are the
+ *  two "Adding Card" waits; `added` shows the check; `confirm` is the app's
+ *  own "added to Apple Pay" screen, until Done. */
+export type WalletAddPhase = 'idle' | 'intro' | 'contacting' | 'setup' | 'added' | 'confirm';
 
 export type TransactionStatus = 'AUTHORIZED' | 'SETTLED' | 'REFUNDED';
 
@@ -52,8 +59,11 @@ export interface UseCardControlsOptions {
 }
 
 const REVEAL_TTL_MS = 60_000;
-const WALLET_ADDING_MS = 1600;
-const WALLET_DONE_MS = 1400;
+/** Apple's add-card waits: "Contacting the Card Issuer…", then "Setting up
+ *  Card for Apple Pay…", then the check holds before the app's own screen. */
+const WALLET_CONTACTING_MS = 1500;
+const WALLET_SETUP_MS = 1500;
+const WALLET_ADDED_MS = 1100;
 /** Authorizations clear a few seconds after they land (the sandbox clearing). */
 const SETTLE_MS = 4500;
 const REFUND_MS = 900;
@@ -86,6 +96,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     perDayCents: null,
   });
   const [sheet, setSheet] = useState<CardSheet>('none');
+  const [page, setPage] = useState<CardPage>('home');
   // The Limits sheet's working copy, here so the scripted cardholder (the
   // Limits flow) can pick the steps the same way a tap on the sheet does.
   const [limitsDraft, setLimitsDraft] = useState<SpendLimits>(limits);
@@ -154,6 +165,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     }
     setLifecycle('CLOSED');
     setSheet('none');
+    setPage('home');
     setRevealedAt(null);
     onStateChange?.('CLOSED');
   }, [closed, onStateChange, onCloseRejected]);
@@ -168,6 +180,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setRevealedAt(null);
     setLastDecline(null);
     setSheet('none');
+    setPage('home');
   }, []);
 
   const saveLimits = useCallback(
@@ -184,10 +197,11 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setSheet('limits');
   }, [limits]);
 
-  /** Called once Face ID passes; the sheet shows the details for REVEAL_TTL. */
+  /** Called once Face ID passes; the Card Numbers page shows the details for
+   *  REVEAL_TTL, with the card turned to its back behind it. */
   const reveal = useCallback(() => {
     setRevealedAt(Date.now());
-    setSheet('details');
+    setPage('numbers');
     onReveal?.();
   }, [onReveal]);
   useEffect(() => {
@@ -195,24 +209,53 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     const t = window.setTimeout(() => setRevealedAt(null), REVEAL_TTL_MS);
     return () => window.clearTimeout(t);
   }, [revealedAt]);
+  /** Back from the pushed page. */
+  const popPage = useCallback(() => setPage('home'), []);
 
+  /** Apple's add-card flow comes up. Already added: the sheet says so instead. */
   const startAddToWallet = useCallback(() => {
-    if (closed || inWallet) return;
-    setWalletPhase('sheet');
-    setSheet('wallet');
+    if (closed) return;
+    if (inWallet) {
+      setSheet('walletAgain');
+      return;
+    }
+    setWalletPhase('intro');
   }, [closed, inWallet]);
+  /** Continue on Apple's sheet: the issuer is contacted, the card set up, the
+   *  check lands, then the app's own screen takes over. Only from `intro`, so
+   *  the scripted tap and a real one can't both run it. */
+  const walletPhaseRef = useRef(walletPhase);
+  walletPhaseRef.current = walletPhase;
+  // Apple's waits, so an X mid-way can cancel them.
+  const walletTimers = useRef<Set<number>>(new Set());
+  const clearWalletTimers = useCallback(() => {
+    walletTimers.current.forEach((t) => window.clearTimeout(t));
+    walletTimers.current.clear();
+  }, []);
+  useEffect(() => clearWalletTimers, [clearWalletTimers]);
   const confirmAddToWallet = useCallback(() => {
-    setWalletPhase('adding');
-    later(() => {
-      setWalletPhase('done');
+    if (walletPhaseRef.current !== 'intro') return;
+    setWalletPhase('contacting');
+    const at = (fn: () => void, ms: number) => {
+      const t = window.setTimeout(() => {
+        walletTimers.current.delete(t);
+        fn();
+      }, ms);
+      walletTimers.current.add(t);
+    };
+    at(() => setWalletPhase('setup'), WALLET_CONTACTING_MS);
+    at(() => setWalletPhase('added'), WALLET_CONTACTING_MS + WALLET_SETUP_MS);
+    at(() => {
+      setWalletPhase('confirm');
       setInWallet(true);
       onAddToWallet?.();
-      later(() => {
-        setSheet('none');
-        setWalletPhase('idle');
-      }, WALLET_DONE_MS);
-    }, WALLET_ADDING_MS);
-  }, [later, onAddToWallet]);
+    }, WALLET_CONTACTING_MS + WALLET_SETUP_MS + WALLET_ADDED_MS);
+  }, [onAddToWallet]);
+  /** Done on the app's screen (or X on Apple's): back to the card home. */
+  const finishAddToWallet = useCallback(() => {
+    clearWalletTimers();
+    setWalletPhase('idle');
+  }, [clearWalletTimers]);
 
   /** Record an approved authorization; it settles on its own a few seconds later. */
   const recordAuthorization = useCallback(
@@ -261,10 +304,15 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     if (selectedRowId) refundRow(selectedRowId);
   }, [selectedRowId, refundRow]);
 
-  const closeSheet = useCallback(() => {
+  const closeSheet = useCallback(() => setSheet('none'), []);
+  /** Everything a flow may have left up comes down: sheet, page, Apple's flow. */
+  const resetSurfaces = useCallback(() => {
     setSheet('none');
-    if (walletPhase !== 'idle' && walletPhase !== 'done') setWalletPhase('idle');
-  }, [walletPhase]);
+    setPage('home');
+    clearWalletTimers();
+    setWalletPhase('idle');
+  }, [clearWalletTimers]);
+  const surfaceUp = sheet !== 'none' || page !== 'home' || walletPhase !== 'idle';
 
   return {
     lifecycle,
@@ -279,11 +327,17 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     sheet,
     setSheet,
     closeSheet,
+    page,
+    popPage,
+    /** Dev posing: the Card Numbers page, without the reveal call. */
+    openNumbers: () => setPage('numbers'),
+    resetSurfaces,
+    surfaceUp,
     revealed: revealedAt !== null,
     /** Dev posing: the details as revealed, without the reveal call. */
     markRevealed: () => setRevealedAt(Date.now()),
     walletPhase,
-    /** Dev posing: the Apple Wallet sheet at a given phase. */
+    /** Dev posing: Apple's add-card flow at a given phase. */
     setWalletPhase,
     inWallet,
     rows,
@@ -298,6 +352,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     reveal,
     startAddToWallet,
     confirmAddToWallet,
+    finishAddToWallet,
     recordAuthorization,
     seedSettledRow,
     openTransaction,

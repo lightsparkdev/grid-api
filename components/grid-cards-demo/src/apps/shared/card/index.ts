@@ -14,6 +14,7 @@ export {
   useCardControls,
   type CardControls,
   type CardLifecycle,
+  type CardPage,
   type CardSheet,
   type CardTransactionRow,
   type DeclineReason,
