@@ -49,14 +49,15 @@
   overflow: hidden;
 }
 
-/* Tucked into the phone's top-right corner, in the void its rounded corner
-   leaves: the button's center sits 4px in from the box's corner, so a 44
-   circle just meets the bezel's 60 curve. In the phone's own box (AppShell's
-   stage chrome layer, which carries the fit transform). */
+/* On the phone's bezel, in its top-right corner: a 32 circle centered on the
+   bezel band's diagonal midpoint (23px in from the outer corner), so it rides
+   the corner's curve, half on the frame and half over the screen's corner. In
+   the phone's own box (AppShell's stage chrome layer, which carries the fit
+   transform). */
 .back {
   position: absolute;
-  top: -18px;
-  right: -18px;
+  top: 7px;
+  right: 7px;
   pointer-events: auto;
   transition: opacity 400ms ease;
 }

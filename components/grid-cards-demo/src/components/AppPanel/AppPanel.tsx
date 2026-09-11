@@ -73,7 +73,7 @@ function StageHost({
     <span className={clsx(styles.back, !showBack && styles.backHidden)} aria-hidden={!showBack}>
       <GlassSymbolButton
         aria-label="Back to the card"
-        size={44}
+        size={32}
         type="button"
         glass={{ brightness: headerGlassBrightness(theme) }}
         tabIndex={showBack ? 0 : -1}
@@ -83,7 +83,7 @@ function StageHost({
           onDismissPhone?.();
         }}
       >
-        <SfSymbol name="xmark" size={16} />
+        <SfSymbol name="xmark" size={12} />
       </GlassSymbolButton>
     </span>
   );
