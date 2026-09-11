@@ -16,10 +16,9 @@ required:
 description: >-
   Parent transaction row for a card authorization and all of the
   pulls / settlements / refunds that reconcile against it. Child events are
-  rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary`
-  aggregates. Delivered as the payload of the generic transaction
-  webhook stream (extends the Transaction model with a card
-  destination type) on every transition.
+  rolled up into `settledAmount` and `refundedAmount`. Delivered as the
+  payload of the generic transaction webhook stream (extends the
+  Transaction model with a card destination type) on every transition.
 properties:
   type:
     type: string
@@ -73,24 +72,11 @@ properties:
       Internal account id that funded this transaction (the funding source
       selected by Authorization Decisioning at auth time).
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-  pullSummary:
-    $ref: ./CardPullSummary.yaml
-  refundSummary:
-    $ref: ./CardRefundSummary.yaml
-  settlementSummary:
-    $ref: ./CardSettlementSummary.yaml
   authorizedAt:
     type: string
     format: date-time
     description: When the auth was approved.
     example: '2026-05-08T14:30:00Z'
-  lastEventAt:
-    type: string
-    format: date-time
-    description: >-
-      Timestamp of the most recent reconcile event (pull / clearing / refund)
-      against this transaction.
-    example: '2026-05-08T15:42:11Z'
   createdAt:
     type: string
     format: date-time
