@@ -13,8 +13,8 @@ post:
     of its own: it re-fires `CARD_TRANSACTION.SETTLED` with the same status as
     the settlement that preceded it, and only the amounts move. Treat a
     repeated `CARD_TRANSACTION.SETTLED` as a new update rather than a
-    duplicate, and read `refundedAmount` and `refundSummary` to tell a return
-    apart from the original settlement.
+    duplicate, and read `refundedAmount` to tell a return apart from the
+    original settlement.
 
 
     This endpoint should be implemented by clients of the Grid API.
@@ -78,16 +78,6 @@ post:
                     symbol: $
                     decimals: 2
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                pullSummary:
-                  count: 1
-                  totalAmount: 12550
-                  pendingCount: 1
-                refundSummary:
-                  count: 0
-                  totalAmount: 0
-                settlementSummary:
-                  count: 0
-                  totalAmount: 0
                 authorizedAt: '2026-05-09T10:00:00Z'
                 createdAt: '2026-05-09T10:00:00Z'
                 updatedAt: '2026-05-09T10:00:00Z'
@@ -125,18 +115,7 @@ post:
                     symbol: $
                     decimals: 2
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                pullSummary:
-                  count: 1
-                  totalAmount: 12550
-                  pendingCount: 0
-                refundSummary:
-                  count: 0
-                  totalAmount: 0
-                settlementSummary:
-                  count: 1
-                  totalAmount: 12550
                 authorizedAt: '2026-05-09T10:00:00Z'
-                lastEventAt: '2026-05-09T15:42:11Z'
                 createdAt: '2026-05-09T10:00:00Z'
                 updatedAt: '2026-05-09T15:42:11Z'
           returned:
@@ -180,18 +159,7 @@ post:
                     symbol: $
                     decimals: 2
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                pullSummary:
-                  count: 1
-                  totalAmount: 12550
-                  pendingCount: 0
-                refundSummary:
-                  count: 1
-                  totalAmount: 12550
-                settlementSummary:
-                  count: 1
-                  totalAmount: 12550
                 authorizedAt: '2026-05-09T10:00:00Z'
-                lastEventAt: '2026-05-10T09:15:00Z'
                 createdAt: '2026-05-09T10:00:00Z'
                 updatedAt: '2026-05-10T09:15:00Z'
           exception:
@@ -228,18 +196,7 @@ post:
                     symbol: $
                     decimals: 2
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                pullSummary:
-                  count: 1
-                  totalAmount: 0
-                  pendingCount: 0
-                refundSummary:
-                  count: 0
-                  totalAmount: 0
-                settlementSummary:
-                  count: 1
-                  totalAmount: 4200
                 authorizedAt: '2026-05-09T15:30:00Z'
-                lastEventAt: '2026-05-09T16:05:00Z'
                 createdAt: '2026-05-09T15:30:00Z'
                 updatedAt: '2026-05-09T16:05:00Z'
   responses:

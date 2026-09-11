@@ -395,9 +395,6 @@ resources:
               return: post /sandbox/cards/{id}/simulate/return
             models:
               card_merchant: "#/components/schemas/CardMerchant"
-              card_pull_summary: "#/components/schemas/CardPullSummary"
-              card_refund_summary: "#/components/schemas/CardRefundSummary"
-              card_settlement_summary: "#/components/schemas/CardSettlementSummary"
               authorization_request: "#/components/schemas/SandboxCardAuthorizationRequest"
               clearing_request: "#/components/schemas/SandboxCardClearingRequest"
               refund_request: "#/components/schemas/SandboxCardReturnRequest"

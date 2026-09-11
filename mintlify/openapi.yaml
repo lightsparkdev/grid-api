@@ -11856,7 +11856,7 @@ webhooks:
       description: |
         Webhook that is called on every lifecycle update of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
 
-        Not every delivery changes `status`. A merchant return has no event type of its own: it re-fires `CARD_TRANSACTION.SETTLED` with the same status as the settlement that preceded it, and only the amounts move. Treat a repeated `CARD_TRANSACTION.SETTLED` as a new update rather than a duplicate, and read `refundedAmount` and `refundSummary` to tell a return apart from the original settlement.
+        Not every delivery changes `status`. A merchant return has no event type of its own: it re-fires `CARD_TRANSACTION.SETTLED` with the same status as the settlement that preceded it, and only the amounts move. Treat a repeated `CARD_TRANSACTION.SETTLED` as a new update rather than a duplicate, and read `refundedAmount` to tell a return apart from the original settlement.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -11909,16 +11909,6 @@ webhooks:
                         symbol: $
                         decimals: 2
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 12550
-                      pendingCount: 1
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 0
-                      totalAmount: 0
                     authorizedAt: '2026-05-09T10:00:00Z'
                     createdAt: '2026-05-09T10:00:00Z'
                     updatedAt: '2026-05-09T10:00:00Z'
@@ -11956,18 +11946,7 @@ webhooks:
                         symbol: $
                         decimals: 2
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 12550
-                      pendingCount: 0
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 1
-                      totalAmount: 12550
                     authorizedAt: '2026-05-09T10:00:00Z'
-                    lastEventAt: '2026-05-09T15:42:11Z'
                     createdAt: '2026-05-09T10:00:00Z'
                     updatedAt: '2026-05-09T15:42:11Z'
               returned:
@@ -12011,18 +11990,7 @@ webhooks:
                         symbol: $
                         decimals: 2
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 12550
-                      pendingCount: 0
-                    refundSummary:
-                      count: 1
-                      totalAmount: 12550
-                    settlementSummary:
-                      count: 1
-                      totalAmount: 12550
                     authorizedAt: '2026-05-09T10:00:00Z'
-                    lastEventAt: '2026-05-10T09:15:00Z'
                     createdAt: '2026-05-09T10:00:00Z'
                     updatedAt: '2026-05-10T09:15:00Z'
               exception:
@@ -12059,18 +12027,7 @@ webhooks:
                         symbol: $
                         decimals: 2
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 0
-                      pendingCount: 0
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 1
-                      totalAmount: 4200
                     authorizedAt: '2026-05-09T15:30:00Z'
-                    lastEventAt: '2026-05-09T16:05:00Z'
                     createdAt: '2026-05-09T15:30:00Z'
                     updatedAt: '2026-05-09T16:05:00Z'
       responses:
@@ -23883,55 +23840,6 @@ components:
           type: string
           description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
           example: US
-    CardPullSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Total number of pulls (debits) executed against the funding source for this transaction. `> 1` indicates one or more post-hoc pulls — e.g. restaurant tip / over-auth clearings.
-          example: 2
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all pull amounts in the smallest unit of the funding source's currency.
-          example: 1500
-        pendingCount:
-          type: integer
-          description: Number of pulls still in the `PENDING` state. Drops to zero when every pull has reached a terminal state. Non-zero values that persist beyond the expected settlement window are an early signal for the `EXCEPTION` path.
-          example: 0
-    CardRefundSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Number of refund (return) events received for this transaction.
-          example: 0
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all refund amounts in the smallest unit of the funding source's currency.
-          example: 0
-    CardSettlementSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Number of settlement (clearing) events received for this transaction.
-          example: 1
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all settled amounts in the smallest unit of the funding source's currency.
-          example: 1500
     CardTransaction:
       title: Card Transaction
       type: object
@@ -23948,7 +23856,7 @@ components:
         - authorizedAt
         - createdAt
         - updatedAt
-      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
+      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into `settledAmount` and `refundedAmount`. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
       properties:
         type:
           type: string
@@ -23995,22 +23903,11 @@ components:
           type: string
           description: Internal account id that funded this transaction (the funding source selected by Authorization Decisioning at auth time).
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        pullSummary:
-          $ref: '#/components/schemas/CardPullSummary'
-        refundSummary:
-          $ref: '#/components/schemas/CardRefundSummary'
-        settlementSummary:
-          $ref: '#/components/schemas/CardSettlementSummary'
         authorizedAt:
           type: string
           format: date-time
           description: When the auth was approved.
           example: '2026-05-08T14:30:00Z'
-        lastEventAt:
-          type: string
-          format: date-time
-          description: Timestamp of the most recent reconcile event (pull / clearing / refund) against this transaction.
-          example: '2026-05-08T15:42:11Z'
         createdAt:
           type: string
           format: date-time
