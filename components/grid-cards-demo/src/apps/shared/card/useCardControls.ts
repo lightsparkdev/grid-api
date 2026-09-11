@@ -210,8 +210,8 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
 
   /** Fast-forward helper: a settled purchase that exists without having been
    *  tapped (state only, no callbacks), so Refund has something to act on. */
-  const seedSettledRow = useCallback((row: Omit<CardTransactionRow, 'status'>) => {
-    setRows((prev) => [{ ...row, status: 'SETTLED' }, ...prev]);
+  const seedSettledRow = useCallback((row: Omit<CardTransactionRow, 'status'>, status: TransactionStatus = 'SETTLED') => {
+    setRows((prev) => [{ ...row, status }, ...prev]);
   }, []);
 
   const openTransaction = useCallback((id: string) => {
@@ -255,7 +255,11 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setSheet,
     closeSheet,
     revealed: revealedAt !== null,
+    /** Dev posing: the details as revealed, without the reveal call. */
+    markRevealed: () => setRevealedAt(Date.now()),
     walletPhase,
+    /** Dev posing: the Apple Wallet sheet at a given phase. */
+    setWalletPhase,
     inWallet,
     rows,
     selectedRow: rows.find((r) => r.id === selectedRowId) ?? null,

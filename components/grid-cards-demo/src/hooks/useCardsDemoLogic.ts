@@ -277,6 +277,17 @@ export function useCardsDemoLogic() {
     setPhoneUp(false);
   }, [activeFlow]);
 
+  // Dev: bring the phone up or send it away from the console, for posing its
+  // screens with `__cardHome.pose(...)` (see useCardHome).
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    const w = window as unknown as Record<string, unknown>;
+    w.__cardsDemo = { phone: (up = true) => setPhoneUp(up) };
+    return () => {
+      delete w.__cardsDemo;
+    };
+  }, []);
+
   const reset = useCallback(() => {
     pendingTimers.current.forEach((t) => clearTimeout(t));
     pendingTimers.current.clear();

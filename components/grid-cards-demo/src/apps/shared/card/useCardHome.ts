@@ -6,7 +6,9 @@ import type { ToastData } from '@/apps/shared/Toast';
 import {
   useCardControls,
   type DeclineReason,
+  type TransactionStatus,
   type UseCardControlsOptions,
+  type WalletAddPhase,
 } from './useCardControls';
 import type { SpendLimits } from './useCardControls';
 import type { TapPhase, WalletEntry, WalletListItemData } from './types';
@@ -39,6 +41,31 @@ const NOTICE_SETTLE_MS = 1400;
 const NOTICE_MS = 3600;
 /** The Limits flow applies these caps (platform-side PATCH). */
 export const PRESET_LIMITS: SpendLimits = { perTransactionCents: 7_500, perDayCents: 25_000 };
+
+/** A phone moment the dev hook can pose and hold (see `pose` below). */
+export type CardPose =
+  | 'home'
+  | 'faceid'
+  | 'details'
+  | 'wallet'
+  | 'limits'
+  | 'transaction'
+  | 'close'
+  | 'tap'
+  | 'notice'
+  | 'toast';
+
+export interface CardPoseOptions {
+  /** `wallet`: 'sheet' | 'adding' | 'done'; `tap`: 'hold' | 'auth' | 'done' | 'declined'. */
+  phase?: WalletAddPhase | TapPhase;
+  /** `tap` at 'declined': why. */
+  reason?: DeclineReason;
+  /** `transaction`: seeds a row in this status. */
+  status?: TransactionStatus;
+  /** `notice`: its lines; `toast`: its text (title). */
+  title?: string;
+  body?: string;
+}
 
 /** A push notification on the cardholder's phone. */
 export interface CardNotice {
@@ -151,9 +178,12 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   };
   useEffect(() => () => window.clearTimeout(issueTimer.current), []);
 
+  // Dev posing holds a tap phase in place: the auto-advances below stand down.
+  const posed = useRef(false);
+
   // Tap-to-pay: Hold Near Reader dwells, then Face ID runs.
   useEffect(() => {
-    if (tapPhase !== 'hold') return;
+    if (tapPhase !== 'hold' || posed.current) return;
     const t = window.setTimeout(() => setTapPhase('auth'), TAP_HOLD_MS);
     return () => window.clearTimeout(t);
   }, [tapPhase]);
@@ -164,7 +194,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   // the effect re-runs on the idle flip, and a cleanup there would kill it.
   const insertTimer = useRef(0);
   useEffect(() => {
-    if (tapPhase !== 'done') return;
+    if (tapPhase !== 'done' || posed.current) return;
     const t = window.setTimeout(() => {
       const tx = pendingTapTx.current; // the merchant picked at tap start
       const rowId = `tap-${Date.now()}`;
@@ -189,7 +219,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   // Declined: hold the reason on screen, then resolve back to the hub with no
   // charge and no row. The decline itself is logged when the phase flips.
   useEffect(() => {
-    if (tapPhase !== 'declined') return;
+    if (tapPhase !== 'declined' || posed.current) return;
     const t = window.setTimeout(() => {
       setTapPhase('idle');
       card.setLastDecline(null);
@@ -265,6 +295,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     if (!entry || entry.nonce === lastEntryNonce.current) return;
     lastEntryNonce.current = entry.nonce;
     clearFlowTimers();
+    posed.current = false;
 
     if (entry.provision?.issued) setIssued(true);
 
@@ -377,6 +408,90 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     later(run, (entry.phoneUp ? 0 : PHONE_IN_MS) + (busy ? ENTRY_HOME_SETTLE_MS : 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry]);
+
+  // Dev: pose the phone in any flow moment and hold it there, so a screen can
+  // be tuned without replaying its timed sequence. Nothing is logged. From the
+  // console, with the phone up (`__cardsDemo.phone(true)`):
+  //   __cardHome.pose('wallet', { phase: 'adding' })
+  //   __cardHome.pose('tap', { phase: 'declined', reason: 'OVER_PER_TXN_LIMIT' })
+  //   __cardHome.pose('transaction', { status: 'AUTHORIZED' })
+  //   __cardHome.pose('notice', { title: 'Card frozen', body: '…' })
+  // The next flow from a tile takes over as usual.
+  const pose = (target: CardPose, opts: CardPoseOptions = {}) => {
+    clearFlowTimers();
+    posed.current = true;
+    const c = cardRef.current;
+    setRevealPending(false);
+    setNotice(null);
+    setToast(null);
+    c.setLastDecline(null);
+    c.closeSheet();
+    setTapPhase('idle');
+    switch (target) {
+      case 'home':
+        break;
+      case 'faceid':
+        setRevealPending(true);
+        break;
+      case 'details':
+        c.markRevealed();
+        c.setSheet('details');
+        break;
+      case 'wallet':
+        c.setWalletPhase((opts.phase as WalletAddPhase | undefined) ?? 'sheet');
+        c.setSheet('wallet');
+        break;
+      case 'limits':
+        c.setSheet('limits');
+        break;
+      case 'transaction': {
+        let row = c.rows[0];
+        if (!row || opts.status) {
+          const seed = TAP_MERCHANTS[0];
+          const seeded = { ...seed, id: `pose-${Date.now()}`, timestamp: Date.now(), cents: parseCents(seed.amount) };
+          c.seedSettledRow(seeded, opts.status ?? 'SETTLED');
+          row = { ...seeded, status: opts.status ?? 'SETTLED' };
+        }
+        c.openTransaction(row.id);
+        break;
+      }
+      case 'close':
+        c.setSheet('close');
+        break;
+      case 'tap': {
+        const phase = (opts.phase as TapPhase | undefined) ?? 'hold';
+        if (phase === 'declined') c.setLastDecline(opts.reason ?? 'CARD_PAUSED');
+        setTapPhase(phase);
+        break;
+      }
+      case 'notice':
+        window.clearTimeout(noticeTimer.current);
+        setNotice({ id: Date.now(), title: opts.title ?? 'Card frozen', body: opts.body ?? 'Purchases will be declined until you unfreeze it.' });
+        break;
+      case 'toast':
+        setToast({ id: Date.now(), text: opts.title ?? 'Not enough balance' });
+        break;
+      default: {
+        const never: never = target;
+        throw new Error(`Unknown pose ${String(never)}`);
+      }
+    }
+  };
+  const poseRef = useRef(pose);
+  poseRef.current = pose;
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    const w = window as unknown as Record<string, unknown>;
+    w.__cardHome = {
+      pose: (target: CardPose, opts?: CardPoseOptions) => poseRef.current(target, opts),
+      get card() {
+        return cardRef.current;
+      },
+    };
+    return () => {
+      delete w.__cardHome;
+    };
+  }, []);
 
   return {
     // Card / tap state
