@@ -1,5 +1,19 @@
 /** Tap-to-pay merchant pool + amount parsing shared by the card brain and faces. */
-import type { WalletListItemData } from './types';
+import type { MerchantCategory, WalletListItemData } from './types';
+
+/** How a merchant category reads on the phone. */
+export const CATEGORY_LABEL: Record<MerchantCategory, string> = {
+  coffee: 'Coffee shop',
+  'fast-food': 'Fast food',
+  convenience: 'Convenience store',
+  cafe: 'Café',
+  fashion: 'Fashion',
+  apparel: 'Apparel',
+  accessories: 'Accessories',
+  furniture: 'Furniture',
+  homeware: 'Homeware',
+  grocery: 'Grocery',
+};
 
 // Globally recognizable chains with FIXED, plausible charges (deterministic per
 // merchant) so repeat taps read as real purchases around town.

@@ -155,6 +155,18 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     onStateChange?.('CLOSED');
   }, [closed, onStateChange, onCloseRejected]);
 
+  /** A new card is being issued (flows are replayable): it starts ACTIVE, out
+   *  of the wallet, unrevealed. State only; POST /cards is the caller's log.
+   *  The transactions stay: they are the cardholder's, not the card's. */
+  const reissue = useCallback(() => {
+    setLifecycle('ACTIVE');
+    setInWallet(false);
+    setWalletPhase('idle');
+    setRevealedAt(null);
+    setLastDecline(null);
+    setSheet('none');
+  }, []);
+
   const saveLimits = useCallback(
     (next: SpendLimits) => {
       setLimitsState(next);
@@ -220,15 +232,16 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   }, []);
 
   /** Merchant returns the purchase `id`; the row flips to REFUNDED after a beat.
-   *  Reads the row at fire time (functional update) so delayed callers can't
-   *  act on a stale list. */
+   *  Only a settled purchase can be returned (a pending one has nothing to
+   *  return against). Reads the row at fire time (functional update) so
+   *  delayed callers can't act on a stale list. */
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
   const refundRow = useCallback(
     (id: string) => {
       later(() => {
         const row = rowsRef.current.find((r) => r.id === id);
-        if (!row || row.status === 'REFUNDED') return;
+        if (!row || row.status !== 'SETTLED') return;
         setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'REFUNDED' } : r)));
         onRefund?.({ ...row, status: 'REFUNDED' });
       }, REFUND_MS);
@@ -268,6 +281,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     declineReasonFor,
     setFrozen,
     closeCard,
+    reissue,
     saveLimits,
     reveal,
     startAddToWallet,

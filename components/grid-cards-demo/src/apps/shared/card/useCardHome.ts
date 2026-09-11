@@ -101,7 +101,30 @@ export interface UseCardHomeOptions {
 export function useCardHome(options: UseCardHomeOptions = {}) {
   const { entry, onCardIssued, onTapToPay, onTapDeclined, card: cardOptions, onSettled } = options;
 
-  const card = useCardControls(cardOptions);
+  // Push notification on the phone (freeze, limits, close, refund).
+  const [notice, setNotice] = useState<CardNotice | null>(null);
+  const noticeTimer = useRef(0);
+  const notify = (title: string, body: string) => {
+    setNotice({ id: Date.now(), title, body });
+    window.clearTimeout(noticeTimer.current);
+    noticeTimer.current = window.setTimeout(() => setNotice(null), NOTICE_MS);
+  };
+  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
+
+  // Funding source balance: opening balance less card spend this session.
+  const [deltaCents, setDeltaCents] = useState(0);
+  const availableCents = FUNDING_SOURCE_CENTS + deltaCents;
+
+  const card = useCardControls({
+    ...cardOptions,
+    // The refund lands: the money is back on the funding source, the phone
+    // says so, and the playground logs it, all on the same beat.
+    onRefund: (row) => {
+      setDeltaCents((c) => c + row.cents);
+      notify(`Refund from ${row.title}`, `+${row.amount} back on your card`);
+      cardOptions?.onRefund?.(row);
+    },
+  });
   // Delayed flow steps read the LATEST controls, not the render they were
   // scheduled in (the controls' callbacks close over state like `rows`).
   const cardRef = useRef(card);
@@ -114,9 +137,6 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   const [tapPhase, setTapPhase] = useState<TapPhase>('idle');
   // Reveal needs Face ID first; the view shows the overlay while this is set.
   const [revealPending, setRevealPending] = useState(false);
-  // Funding source balance: opening balance less card spend this session.
-  const [deltaCents, setDeltaCents] = useState(0);
-  const availableCents = FUNDING_SOURCE_CENTS + deltaCents;
 
   // Card transactions are the control brain's rows, labelled by lifecycle.
   const transactions: WalletListItemData[] = useMemo(
@@ -134,16 +154,6 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
 
   const isTap = tapPhase !== 'idle';
   const isDeclined = tapPhase === 'declined';
-
-  // Push notification on the phone (freeze, limits, close, refund).
-  const [notice, setNotice] = useState<CardNotice | null>(null);
-  const noticeTimer = useRef(0);
-  const notify = (title: string, body: string) => {
-    setNotice({ id: Date.now(), title, body });
-    window.clearTimeout(noticeTimer.current);
-    noticeTimer.current = window.setTimeout(() => setNotice(null), NOTICE_MS);
-  };
-  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
 
   // Flow timers (auto-run beats). Cleared when a new entry arrives or on unmount.
   const flowTimers = useRef<Set<number>>(new Set());
@@ -168,6 +178,8 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     if (issuing) return;
     setIssued(false);
     setIssuing(true);
+    // A closed or frozen card is not brought back; this is a new one.
+    card.reissue();
     onCardIssued?.();
     window.clearTimeout(issueTimer.current);
     issueTimer.current = window.setTimeout(() => {
@@ -355,9 +367,10 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           break;
         }
         case 'refund': {
-          // Nothing to refund yet: provision a settled purchase (state only,
-          // like the other fast-forwards) so the flow has something to act on.
-          let target = card.rows.find((r) => r.status !== 'REFUNDED');
+          // Only a settled purchase can be returned. None yet: provision one
+          // (state only, like the other fast-forwards; it was spent from the
+          // funding source) so the flow has something to act on.
+          let target = card.rows.find((r) => r.status === 'SETTLED');
           if (!target) {
             const seed = TAP_MERCHANTS[0];
             target = {
@@ -368,13 +381,12 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
               status: 'SETTLED',
             };
             card.seedSettledRow(target);
+            setDeltaCents((c) => c - target!.cents);
           }
           const row = target;
           card.openTransaction(row.id);
-          later(() => {
-            cardRef.current.refundRow(row.id);
-            notify(`Refund from ${row.title}`, `+${row.amount} back on your card`);
-          }, REFUND_START_MS);
+          // The notice and the balance follow the row's flip (onRefund above).
+          later(() => cardRef.current.refundRow(row.id), REFUND_START_MS);
           later(() => {
             cardRef.current.closeSheet();
             settle(500);

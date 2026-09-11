@@ -18,6 +18,7 @@ import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
 import {
   CARD_CVV,
   CARD_EXP,
+  CATEGORY_LABEL,
   formatUsdCents,
   PAN_GROUPS,
   type CardControls,
@@ -384,7 +385,7 @@ export function TransactionSheet({ card }: { card: CardControls }) {
             <dt>Merchant</dt>
             <dd>{row.title.toUpperCase()}</dd>
             <dt>Category</dt>
-            <dd>{row.category ?? 'Retail'}</dd>
+            <dd>{row.category ? CATEGORY_LABEL[row.category] : 'Retail'}</dd>
           </dl>
           <div className={styles.actions}>
             <ContentAreaButton
