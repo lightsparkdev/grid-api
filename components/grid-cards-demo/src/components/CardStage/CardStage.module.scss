@@ -10,13 +10,19 @@
   --ios-font-family: var(--font-family-sf-pro);
 }
 
-/* The three.js canvas: transparent, the whole stage. */
+/* The three.js canvas: transparent, the whole stage. R3F sets position, size,
+   and pointer-events: auto inline on its wrapper; all three are overridden so
+   the canvas stays click-through and the phone under it takes the pointer. */
 .canvas {
   position: absolute !important;
   inset: 0;
   width: 100% !important;
   height: 100% !important;
-  pointer-events: none;
+  pointer-events: none !important;
+
+  canvas {
+    pointer-events: none !important;
+  }
 }
 
 /* Rides with the mesh (transform set per frame): pointer input for tilt and
