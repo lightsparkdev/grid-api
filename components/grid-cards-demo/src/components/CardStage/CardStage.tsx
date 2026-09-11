@@ -189,7 +189,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const motion = useMemo(() => new CardMotion(), []);
 
   const { issued, issuing, card, isDeclined } = home;
-  const revealed = card.sheet === 'details';
+  const revealed = card.page === 'numbers';
   const phoneUp = bootProgress > 0;
 
   // The intro plays once, when the card first appears: the blueprint draws,
@@ -1119,6 +1119,19 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       // The hit box scales with the card; text riding on it undoes that.
       hit.style.setProperty('--card-scale', s.toFixed(4));
     }
+
+    // A full-screen presentation on the phone (Apple's add-card flow) slides
+    // up over the parked card. The stage paints above the phone, so the card
+    // is clipped to the cover's top edge as it rises: it goes under, the way
+    // it would on the phone, and is never unmounted.
+    let coverTop = Infinity;
+    if (t > 0) {
+      root.ownerDocument.querySelectorAll<HTMLElement>('[data-covers-card]').forEach((el) => {
+        coverTop = Math.min(coverTop, el.getBoundingClientRect().top - r.top);
+      });
+    }
+    const clip = coverTop < r.height ? `inset(0 0 ${Math.max(0, r.height - coverTop).toFixed(1)}px 0)` : '';
+    if (root.style.clipPath !== clip) root.style.clipPath = clip;
   });
 
   // The blueprint starts drawing once the front has painted.

@@ -1,0 +1,269 @@
+@use '../shared/typography/ios-type-mixins' as ios;
+@use '../shared/glass/glass-button-shadow' as shadow;
+
+/* Apple's blue: the Continue pill and the tinted glyphs (iOS systemBlue). */
+$apple-blue: #007aff;
+
+/* ── Apple's add-card flow ─────────────────────────────────────────────── */
+
+/* Full-screen presentation over the card home, under the status bar. iOS's
+   own surface: the system grouped background, not the app's. */
+.cover {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 62px 0 34px;
+  background: var(--ios-bg-grouped-primary, #f2f2f7);
+  color: var(--ios-label-primary);
+  overflow: hidden;
+}
+
+.top {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px;
+}
+
+/* Apple's close, 44, at the screen's top-left under the status bar. */
+.close {
+  position: absolute;
+  top: 6px;
+  left: 20px;
+  z-index: 1;
+}
+
+.titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Room for the X row above. */
+  padding: 72px 14px 0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  @include ios.ios-text-title-2;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'wdth' 100, 'opsz' var(--ios-type-title-2-opsz);
+  color: var(--ios-label-primary);
+}
+
+.titleText {
+  display: inline-block;
+}
+
+.titleCheck {
+  display: inline-flex;
+  color: $apple-blue;
+
+  svg {
+    display: block;
+  }
+}
+
+.subtitle {
+  margin: 0;
+  @include ios.ios-text-title-2;
+  color: var(--ios-label-secondary);
+  text-wrap: pretty;
+}
+
+/* The inset grouped form: Name, Card Number. */
+.group {
+  display: flex;
+  flex-direction: column;
+  margin-top: 40px;
+  padding: 0 16px;
+  border-radius: 24px;
+  corner-shape: var(--corner-shape);
+  background: var(--ios-bg-grouped-secondary, #ffffff);
+
+  :global([data-theme='dark']) & {
+    background: var(--ios-bg-grouped-secondary, #1c1c1e);
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 14px 0;
+  border-bottom: 0.5px solid var(--ios-separator);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.rowLabel {
+  @include ios.ios-text-body;
+  font-weight: 590;
+  color: var(--ios-label-primary);
+  white-space: nowrap;
+}
+
+.rowValue {
+  @include ios.ios-text-body;
+  color: var(--ios-label-primary);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowNumber {
+  font-variant-numeric: tabular-nums;
+}
+
+.bottom {
+  display: flex;
+  flex-direction: column;
+  padding: 0 38px;
+}
+
+/* Apple's privacy glyph, from the system sheet, as a tinted mask (two tones
+   in its alpha). Blue while the sheet waits on Continue, gray once it is adding. */
+.privacy {
+  display: block;
+  width: 31px;
+  height: 25px;
+  margin: 0 0 10px;
+  background: $apple-blue;
+  mask: url('/assets/apple-pay-privacy-3x.png') center / contain no-repeat;
+  -webkit-mask: url('/assets/apple-pay-privacy-3x.png') center / contain no-repeat;
+  transition: background-color 220ms ease;
+}
+
+.privacyDim {
+  background: var(--ios-label-tertiary);
+}
+
+.legal {
+  margin: 0 0 20px;
+  @include ios.ios-text-caption-1;
+  color: var(--ios-label-secondary);
+  text-wrap: pretty;
+}
+
+.legalLink {
+  color: $apple-blue;
+  transition: color 220ms ease;
+}
+
+.legalLinkDim {
+  color: var(--ios-label-tertiary);
+}
+
+/* Apple's Continue: a full-width blue pill; gray with a spinner while adding. */
+.continue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  margin: 0;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: $apple-blue;
+  color: #ffffff;
+  @include ios.ios-text-headline;
+  font-weight: 590;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 220ms ease, color 220ms ease;
+  @include shadow.glass-button-press-scale(1.02);
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.continueDim {
+  background: var(--ios-fill-secondary);
+  color: var(--ios-label-tertiary);
+
+  &:active:not(:disabled) {
+    filter: none;
+  }
+}
+
+/* Apple's activity indicator: eight spokes, fading around. */
+.spinner {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg, var(--ios-label-tertiary) 0deg, transparent 300deg) content-box;
+  mask: repeating-conic-gradient(from -7deg, #000 0deg 14deg, transparent 14deg 45deg), radial-gradient(circle, transparent 42%, #000 44%);
+  -webkit-mask: repeating-conic-gradient(from -7deg, #000 0deg 14deg, transparent 14deg 45deg), radial-gradient(circle, transparent 42%, #000 44%);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+  animation: spin 0.9s steps(8) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── The app's screen: added ───────────────────────────────────────────── */
+
+.confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 62px 0 34px;
+  background: var(--wallet-bg, #f9f9f9);
+  color: var(--ios-label-primary);
+}
+
+.confirmBody {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 72px 20px 0;
+}
+
+/* The check, iOS green: the card's own color is often white or black. */
+.confirmCheck {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--ios-system-green, #34c759);
+  color: #ffffff;
+
+  svg {
+    display: block;
+  }
+}
+
+.confirmTitle {
+  margin: 0;
+  @include ios.ios-text-large-title;
+  font-weight: 590;
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-large-title-opsz);
+  letter-spacing: -0.01em;
+  color: var(--ios-label-primary);
+  text-wrap: pretty;
+}
+
+.confirmActions {
+  padding: 0 20px;
+}

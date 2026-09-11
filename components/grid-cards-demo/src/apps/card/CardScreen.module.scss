@@ -42,15 +42,29 @@
   width: auto;
 }
 
-/* Figma 90:13587 — Title3/Emphasized. */
+/* The pushed page's title, centered in the header the way Wallet's is; the
+   back button sits over it at the left. */
 .title {
-  flex: 1 1 0;
-  min-width: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
   margin: 0;
-  @include ios.ios-text-title-3;
+  @include ios.ios-text-headline;
   font-weight: 590;
-  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+  font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-headline-opsz);
   color: var(--ios-label-primary);
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Card numbers on its own, then the limits + lock pill (Wallet's card header). */
+.headerActions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 /* ── Body ─────────────────────────────────────────────────────────────────── */

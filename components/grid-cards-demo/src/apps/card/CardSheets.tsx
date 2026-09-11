@@ -2,31 +2,18 @@
 
 import clsx from 'clsx';
 import { useEffect, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { IconEyeOpen } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyeOpen';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
 import { IconGauge } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconGauge';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconArrowUndoUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUndoUp';
-import { IconClipboard } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconClipboard';
-import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { GlassSymbolButton, headerGlassBrightness, SHEET_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
-import { programNameOf, useBrand } from '@/apps/shared/brand/BrandContext';
-import {
-  CARD_CVV,
-  CARD_EXP,
-  CATEGORY_LABEL,
-  formatUsdCents,
-  PAN_GROUPS,
-  type CardControls,
-  type SpendLimits,
-} from '@/apps/shared/card';
+import { useBrand } from '@/apps/shared/brand/BrandContext';
+import { CATEGORY_LABEL, formatUsdCents, type CardControls, type SpendLimits } from '@/apps/shared/card';
 import NumericText from '@/components/NumericText';
 import { useThemeMode } from '@/hooks/useThemeMode';
-import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import styles from './CardSheets.module.scss';
 
 /* ── Shared shell (the SendReceiveSheet dress: icon tile + glass X, title, sub) ── */
@@ -74,180 +61,24 @@ function SheetShell({ open, onDismiss, icon, title, sub, children, tone = 'defau
   );
 }
 
-/* ── Details (PAN reveal) ─────────────────────────────────────────────────── */
+/* ── Already in Apple Wallet ─────────────────────────────────────────────── */
 
-const EXP = CARD_EXP;
-const CVV = CARD_CVV;
-
-function CopyField({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
-  const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    if (!copied) return;
-    const t = window.setTimeout(() => setCopied(false), 1400);
-    return () => window.clearTimeout(t);
-  }, [copied]);
-  return (
-    <button
-      type="button"
-      className={clsx(styles.field, wide && styles.fieldWide)}
-      onClick={() => {
-        navigator.clipboard?.writeText(value.replace(/\s/g, '')).catch(() => {});
-        setCopied(true);
-      }}
-    >
-      <span className={styles.fieldLabel}>{label}</span>
-      <span className={styles.fieldValue}>{value}</span>
-      <span className={styles.fieldCopy} aria-hidden>
-        {copied ? <IconCheckmark1 size={14} /> : <IconClipboard size={14} />}
-      </span>
-    </button>
-  );
-}
-
-/** Digits roll in one group at a time (SwiftUI numericText), like the PAN
- *  arriving from the processor's iframe. */
-function RollingPan({ armed }: { armed: boolean }) {
-  const [shown, setShown] = useState(0);
-  useEffect(() => {
-    if (!armed) {
-      setShown(0);
-      return;
-    }
-    let i = 0;
-    const id = window.setInterval(() => {
-      i += 1;
-      setShown(i);
-      if (i >= PAN_GROUPS.length) window.clearInterval(id);
-    }, 140);
-    return () => window.clearInterval(id);
-  }, [armed]);
-  return (
-    <span className={styles.pan} aria-label={PAN_GROUPS.join(' ')}>
-      {PAN_GROUPS.map((g, i) => (
-        <span key={g} className={styles.panGroup}>
-          <NumericText value={i < shown ? Number(g) : 0} format={{ minimumIntegerDigits: 4, useGrouping: false }} />
-        </span>
-      ))}
-    </span>
-  );
-}
-
-export function CardDetailsSheet({ card }: { card: CardControls }) {
-  const open = card.sheet === 'details';
-  const name = programNameOf(useBrand());
-  return (
-    <SheetShell
-      open={open}
-      onDismiss={card.closeSheet}
-      icon={<IconEyeOpen size={28} />}
-      title="Card details"
-      sub={`Rendered by the card processor. ${name} never sees or stores these.`}
-    >
-      <div className={styles.detailsBody}>
-        <div className={styles.panRow}>
-          <span className={styles.fieldLabel}>Card number</span>
-          <RollingPan armed={open && card.revealed} />
-        </div>
-        <div className={styles.fieldGrid}>
-          <CopyField label="Number" value={PAN_GROUPS.join(' ')} wide />
-          <CopyField label="Expires" value={EXP} />
-          <CopyField label="CVV" value={CVV} />
-        </div>
-        <p className={styles.fine}>Details hide automatically after 60 seconds.</p>
-      </div>
-    </SheetShell>
-  );
-}
-
-/* ── Apple Wallet add ─────────────────────────────────────────────────────── */
-
-const WALLET_FADE = motionTransition(easeOutQuick, 0.3);
-
-export function WalletAddSheet({ card }: { card: CardControls }) {
-  const open = card.sheet === 'wallet';
-  const reduceMotion = useReducedMotion();
-  const name = programNameOf(useBrand());
-  const phase = card.walletPhase;
+/** A second Add to Wallet: the card is already on this iPhone. */
+export function WalletAgainSheet({ card }: { card: CardControls }) {
+  const open = card.sheet === 'walletAgain';
+  const brand = useBrand().programName.trim();
   return (
     <SheetShell
       open={open}
       onDismiss={card.closeSheet}
       icon={<IconWallet1 size={28} />}
-      title={phase === 'done' ? 'Card added' : 'Add to Apple Wallet'}
-      sub={
-        phase === 'done'
-          ? `Your ${name} card is ready to use with Apple Pay.`
-          : `Pay in stores, in apps, and online with your ${name} card.`
-      }
+      title="Already in Apple Wallet"
+      sub={`Your ${brand ? `${brand} card` : 'card'} is in your Apple Wallet and ready to use.`}
     >
-      <div className={styles.walletBody}>
-        {/* The Wallet pass slides into the stack as it's added. The card itself
-            is on the stage — this is its pass, not a second card. */}
-        <div className={styles.passStack} aria-hidden>
-          <span className={clsx(styles.pass, styles.passBack)} />
-          <span className={clsx(styles.pass, styles.passMid)} />
-          <motion.div
-            className={clsx(styles.pass, styles.passFront)}
-            initial={false}
-            animate={
-              phase === 'done'
-                ? { y: 0, scale: 1, rotateX: 0 }
-                : phase === 'adding'
-                  ? { y: -6, scale: 0.98, rotateX: 4 }
-                  : { y: -28, scale: 1.02, rotateX: 8 }
-            }
-            transition={reduceMotion ? { duration: 0 } : motionTransition(easeOutSnappy, 0.6)}
-          >
-            <span className={styles.passName}>{name}</span>
-            <span className={styles.passPay}>
-              <span className={styles.appleMark}></span> Pay
-            </span>
-          </motion.div>
-        </div>
-
-        <AnimatePresence mode="wait" initial={false}>
-          {phase === 'adding' ? (
-            <motion.p
-              key="adding"
-              className={styles.walletStatus}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: WALLET_FADE }}
-              exit={{ opacity: 0, transition: WALLET_FADE }}
-            >
-              <span className={styles.spinner} aria-hidden />
-              Adding card…
-            </motion.p>
-          ) : phase === 'done' ? (
-            <motion.p
-              key="done"
-              className={clsx(styles.walletStatus, styles.walletDone)}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0, transition: WALLET_FADE }}
-              exit={{ opacity: 0, transition: WALLET_FADE }}
-            >
-              <IconCheckmark1 size={16} />
-              Added to Apple Wallet
-            </motion.p>
-          ) : (
-            <motion.div
-              key="cta"
-              className={styles.walletActions}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: WALLET_FADE }}
-              exit={{ opacity: 0, transition: WALLET_FADE }}
-            >
-              <button type="button" className={styles.appleBtn} onClick={card.confirmAddToWallet}>
-                <span className={styles.appleMark} aria-hidden>
-                  
-                </span>
-                Add to Apple Wallet
-              </button>
-              <p className={styles.fine}>
-                Apple Wallet asks for a one-time code. {name} sends it with your name and logo.
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className={styles.actions}>
+        <ContentAreaButton type="button" variant="filled" onClick={card.closeSheet}>
+          Done
+        </ContentAreaButton>
       </div>
     </SheetShell>
   );

@@ -49,40 +49,16 @@
   overflow: hidden;
 }
 
-/* Under the phone (it keeps a 48px band clear at the stage's bottom), in the
-   stage hint's type; above the card stage so it can be clicked. */
+/* The stage's top-left corner, outside the phone: a glass close, above the
+   card stage so it can be clicked. The glyph takes the docs' text color (the
+   phone's iOS tokens don't reach here). */
 .back {
-  all: unset;
-  box-sizing: border-box;
   position: absolute;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 20px;
+  left: 20px;
   z-index: 4;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--font-leading-18);
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  font-feature-settings: 'salt' 1;
-  cursor: pointer;
-  transition:
-    opacity 400ms ease,
-    color 150ms ease;
-
-  svg {
-    display: block;
-  }
-
-  @media (hover: hover) {
-    &:hover {
-      color: var(--text-primary);
-    }
-  }
+  --glass-symbol-glyph: var(--text-primary);
+  transition: opacity 400ms ease;
 }
 
 .backHidden {
