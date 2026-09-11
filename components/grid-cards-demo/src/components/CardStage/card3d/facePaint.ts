@@ -938,10 +938,15 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   if (s.personalized > 0) {
     ctx.save();
     ctx.globalAlpha = Math.min(1, s.personalized);
-    const groupW = ctx.measureText('0000').width;
+    // Each group follows the last by its own width: the digits are
+    // proportional (a 1 is narrow), so a fixed slot would gap after "7715".
     const groupGap = em * 0.28;
     y += line + gap;
-    PAN_GROUPS.forEach((g, i) => ctx.fillText(g, x + i * (groupW + groupGap), y));
+    let gx = x;
+    PAN_GROUPS.forEach((g) => {
+      ctx.fillText(g, gx, y);
+      gx += ctx.measureText(g).width + groupGap;
+    });
 
     y += line + gap;
     ctx.fillText(`EXP ${CARD_EXP}`, x, y);

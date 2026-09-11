@@ -155,7 +155,17 @@ export class CardMotion {
     if (this.restAny && !hold && !wantBack) return nearestWithParity(from, 0, 180);
     const pitchParity = Math.abs(Math.round(this.targetX / 180)) % 2;
     const backParity = wantBack ? 1 : 0;
-    return nearestWithParity(from, ((pitchParity + backParity) % 2) as 0 | 1);
+    const target = nearestWithParity(from, ((pitchParity + backParity) % 2) as 0 | 1);
+    // From rest, either half turn is as near, and the settled angle sits a
+    // hair off the face, so rounding would pick a side at random. The reveal
+    // turns the card over with its right edge coming toward the viewer (a
+    // negative spin) and returns the way it came (positive).
+    const d = target - from;
+    if (Math.abs(Math.abs(d) - 180) < 1) {
+      if (wantBack && d > 0) return target - 360;
+      if (!wantBack && d < 0) return target + 360;
+    }
+    return target;
   }
 
   get isDragging() {
