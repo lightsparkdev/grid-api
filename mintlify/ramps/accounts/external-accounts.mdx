@@ -19,7 +19,7 @@ External accounts represent crypto wallet destinations:
 
 - **Spark wallets**: Lightning Network wallets for instant Bitcoin delivery
 - **Self-custody**: User-controlled wallets for full ownership
-- **No beneficiary required**: Crypto wallets don't need compliance information
+- **Beneficiary optional**: First-party wallets use the customer's verified identity; third-party wallets may require beneficiary info for Travel Rule compliance
 
 <Tip>
   Spark wallets are the recommended destination for on-ramps due to instant
@@ -285,7 +285,7 @@ if (await verifySparkWallet(sparkAddress)) {
 ### On-ramp destinations
 
 - **Instant delivery**: Spark wallets receive Bitcoin within seconds
-- **No KYC required**: Self-custody wallets don't need beneficiary info
+- **Beneficiary optional**: First-party wallets use the customer's verified identity
 - **Reusable addresses**: Store and reuse Spark addresses for multiple conversions
 - **No minimum**: Send any amount supported by Lightning Network
 
