@@ -1,7 +1,7 @@
 A card transaction is not a single event — it's a parent row plus a
 stream of child events from the card network. This page covers the
 event model, the status transitions, and how to handle the
-`EXCEPTION` path.
+`DECLINED` path.
 
 ## The event model
 
@@ -22,7 +22,7 @@ Children are reconciled against the parent and rolled up into the
 ```text
 AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED
               │
-              └──► EXCEPTION  (pull failed after settlement)
+              └──► DECLINED  (pull failed after settlement)
 ```
 
 A merchant `RETURN` does not move the status. The transaction stays
@@ -33,7 +33,7 @@ A merchant `RETURN` does not move the status. The transaction stays
 | `AUTHORIZED` | Auth approved, hold placed, no clearings yet. |
 | `PARTIALLY_SETTLED` | At least one clearing landed, but more are still expected (split shipments, multi-leg trips). |
 | `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. A `RETURN` received afterwards keeps it `SETTLED` with the returned value in `refundedAmount`. |
-| `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
+| `DECLINED` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
 Every transition is delivered as a `CARD_TRANSACTION.*` webhook carrying
 the post-change parent — see [Webhooks](/cards/platform-tools/webhooks).
@@ -50,22 +50,22 @@ tip). The auth comes in at $12.50, but the merchant clears for $15.00.
 The post-settlement parent carries `authorizedAmount: 1250` and
 `settledAmount: 1500`.
 
-## The EXCEPTION path
+## The DECLINED path
 
-An exception happens when the card network has already moved funds for
+A decline happens when the card network has already moved funds for
 a settlement but Grid can't pull the matching amount from the funding
 source — typically because the cardholder's balance no longer covers
 the post-hoc difference.
 
-Signal to watch: a transaction webhook with `status: "EXCEPTION"` for
+Signal to watch: a transaction webhook with `status: "DECLINED"` for
 a card-destination transaction. The payload includes the full parent
-record, so your dashboard's exception view is driven entirely by
+record, so your dashboard's decline view is driven entirely by
 webhook deliveries — there's no list endpoint to poll.
 
-Exceptions don't roll back automatically. The standard response is to
+Declines don't roll back automatically. The standard response is to
 top up the funding source (or move the customer to a state where their
 balance can be collected) and contact Lightspark support to drive the
-exception to resolution.
+decline to resolution.
 
 ## Idempotency on webhooks
 
