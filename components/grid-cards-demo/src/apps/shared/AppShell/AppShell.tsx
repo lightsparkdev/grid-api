@@ -350,7 +350,11 @@ export function AppShell({
       {/* The screen's overlay layer, above the stage: rides the same boot
           transform as the phone, clipped to the screen, and holds what must
           paint over the card in the slot (Face ID, notifications, the toast). */}
-      <div className={styles.overStage} style={bootStyle} aria-hidden={!phoneVisible}>
+      <div
+        className={styles.overStage}
+        style={{ ...bootStyle, ['--shell-grow' as string]: `${growOut}px` }}
+        aria-hidden={!phoneVisible}
+      >
         <div
           ref={setOverlayEl}
           className={`${styles.overStageScreen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}

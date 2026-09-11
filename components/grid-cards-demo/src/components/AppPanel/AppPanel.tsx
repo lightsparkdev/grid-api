@@ -5,11 +5,10 @@ import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import { CardStage } from '@/components/CardStage/CardStage';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
-import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
+import { DEFAULT_OVERLAY_GLASS } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useCardHome, type UseCardHomeOptions, type WalletEntry } from '@/apps/shared/card';
 import type { CardDesign } from '@/data/design';
-import { useThemeMode } from '@/hooks/useThemeMode';
 import styles from './AppPanel.module.scss';
 
 export interface AppPanelProps {
@@ -60,7 +59,6 @@ function StageHost({
     card: cardOptions,
     onSettled,
   });
-  const theme = useThemeMode();
   // Two states only: the card floats alone, or it is in the phone. The first
   // flow brings the phone in and the card flies into its slot; the phone stays
   // through later flows until the visitor sends it away.
@@ -70,22 +68,20 @@ function StageHost({
   // to the card alone. The phone is the cardholder's; this control is the
   // developer's, so it sits on the stage against the phone, not on the screen.
   const closePhone = (
-    <span className={clsx(styles.back, !showBack && styles.backHidden)} aria-hidden={!showBack}>
-      <GlassSymbolButton
-        aria-label="Back to the card"
-        size={28}
-        type="button"
-        glass={{ brightness: headerGlassBrightness(theme) }}
-        tabIndex={showBack ? 0 : -1}
-        onClick={() => {
-          // Whatever a flow left up (the Card Numbers page) goes with the phone.
-          home.card.resetSurfaces();
-          onDismissPhone?.();
-        }}
-      >
-        <SfSymbol name="xmark" size={12} />
-      </GlassSymbolButton>
-    </span>
+    <button
+      type="button"
+      className={clsx(styles.back, !showBack && styles.backHidden)}
+      aria-label="Back to the card"
+      aria-hidden={!showBack}
+      tabIndex={showBack ? 0 : -1}
+      onClick={() => {
+        // Whatever a flow left up (the Card Numbers page) goes with the phone.
+        home.card.resetSurfaces();
+        onDismissPhone?.();
+      }}
+    >
+      <SfSymbol name="xmark" size={13} />
+    </button>
   );
 
   return (

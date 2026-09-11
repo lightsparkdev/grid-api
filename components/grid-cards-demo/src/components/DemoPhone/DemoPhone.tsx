@@ -13,7 +13,7 @@ import styles from './DemoPhone.module.scss';
 
 /** The shell's top-right corner is tighter than the others: it makes room in
  *  the bezel for the stage's close (AppPanel), tangent to the screen's curve. */
-export const CLOSE_CORNER_RADIUS = 40;
+export const CLOSE_CORNER_RADIUS = 32;
 
 interface DemoPhoneProps {
   design: CardDesign;

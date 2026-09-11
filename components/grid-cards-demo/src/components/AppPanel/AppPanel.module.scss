@@ -50,16 +50,42 @@
 }
 
 /* In the phone's bezel, in its top-right corner, which is cut tighter than the
-   others (CLOSE_CORNER_RADIUS) to hold it: a 28 circle 13px in from the outer
-   edges sits tangent to the screen's 73 curve and inside the 40 corner. In the
-   phone's own box (AppShell's stage chrome layer, which carries the fit
-   transform). */
+   others (CLOSE_CORNER_RADIUS) to hold it: the glyph alone on a 28 tap target,
+   centered in the pocket between the 32 corner and the screen's 73 curve (its
+   center 23px in from the outer edges). The bezel grows 2px on hover
+   (--shell-grow, from AppShell); the target moves with it so it stays centered
+   in the pocket. In the phone's own box (AppShell's stage chrome layer, which
+   carries the fit transform). */
 .back {
+  all: unset;
+  box-sizing: border-box;
   position: absolute;
-  top: 13px;
-  right: 13px;
+  top: calc(9px - var(--shell-grow, 0px));
+  right: calc(9px - var(--shell-grow, 0px));
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  corner-shape: round;
+  color: var(--text-tertiary);
+  cursor: pointer;
   pointer-events: auto;
-  transition: opacity 400ms ease;
+  transition:
+    opacity 400ms ease,
+    color 150ms ease,
+    top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    right 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+
+  svg {
+    display: block;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
 }
 
 .backHidden {
