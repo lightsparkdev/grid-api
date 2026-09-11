@@ -21,14 +21,14 @@ describe("cards list", () => {
 });
 
 describe("cards create", () => {
-  it("builds the create body with funding sources and default form", async () => {
+  it("builds the create body with a funding source and default form", async () => {
     const { request } = await runCli([
       "cards",
       "create",
       "--cardholder-id",
       "Customer:abc",
-      "--funding-sources",
-      "InternalAccount:1,InternalAccount:2",
+      "--funding-source",
+      "InternalAccount:1",
     ]);
 
     expect(request?.method).toBe("POST");
@@ -36,8 +36,20 @@ describe("cards create", () => {
     expect(request?.body).toMatchObject({
       cardholderId: "Customer:abc",
       form: "VIRTUAL",
-      fundingSources: ["InternalAccount:1", "InternalAccount:2"],
+      fundingSource: "InternalAccount:1",
     });
+  });
+
+  it("rejects a blank --funding-source value", async () => {
+    const { calls } = await runCli([
+      "cards",
+      "create",
+      "--cardholder-id",
+      "Customer:abc",
+      "--funding-source",
+      "  ",
+    ]);
+    expect(calls).toBe(0);
   });
 
   it("sets a per-transaction spending limit", async () => {
@@ -46,7 +58,7 @@ describe("cards create", () => {
       "create",
       "--cardholder-id",
       "Customer:abc",
-      "--funding-sources",
+      "--funding-source",
       "InternalAccount:1",
       "--max-spend-per-transaction",
       "5000",
@@ -62,7 +74,7 @@ describe("cards create", () => {
         "create",
         "--cardholder-id",
         "Customer:abc",
-        "--funding-sources",
+        "--funding-source",
         "InternalAccount:1",
         "--max-spend-per-transaction",
         "0",
@@ -126,7 +138,20 @@ describe("cards update", () => {
     expect(request?.body).toEqual({ maxSpendPerTransaction: null });
   });
 
-  it("rejects an update with no state or funding sources", async () => {
+  it("replaces the funding source", async () => {
+    const { request } = await runCli([
+      "cards",
+      "update",
+      "Card:1",
+      "--funding-source",
+      "InternalAccount:3",
+    ]);
+
+    expect(request?.method).toBe("PATCH");
+    expect(request?.body).toEqual({ fundingSource: "InternalAccount:3" });
+  });
+
+  it("rejects an update with no state or funding source", async () => {
     const { calls } = await runCli(["cards", "update", "Card:1"]);
     expect(calls).toBe(0);
   });
@@ -142,13 +167,13 @@ describe("cards update", () => {
     expect(calls).toBe(0);
   });
 
-  it("rejects an empty --funding-sources value", async () => {
+  it("rejects a blank --funding-source value", async () => {
     const { calls } = await runCli([
       "cards",
       "update",
       "Card:1",
-      "--funding-sources",
-      ",",
+      "--funding-source",
+      "  ",
     ]);
     expect(calls).toBe(0);
   });
@@ -166,14 +191,14 @@ describe("cards update", () => {
     expect(calls).toBe(0);
   });
 
-  it("rejects CLOSED combined with funding sources", async () => {
+  it("rejects CLOSED combined with a funding source", async () => {
     const { calls } = await runCli([
       "cards",
       "update",
       "Card:1",
       "--state",
       "CLOSED",
-      "--funding-sources",
+      "--funding-source",
       "InternalAccount:1",
     ]);
     expect(calls).toBe(0);

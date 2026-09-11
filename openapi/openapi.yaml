@@ -90,7 +90,7 @@ tags:
   - name: Cards
     description: >-
       Card management endpoints. Issue debit cards against an internal
-      account, freeze / unfreeze, close, manage card funding sources, and
+      account, freeze / unfreeze, close, change a card's funding source, and
       list card transactions.
   - name: Stablecoins
     description: >-

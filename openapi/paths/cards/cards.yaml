@@ -1,10 +1,12 @@
 post:
   summary: Issue a card
   description: >
-    Issue a new card for a cardholder. Every card must be bound to at least
-    one funding source at create time. The cardholder must have KYC status
-    `APPROVED` before a card can be issued; otherwise the request is rejected
-    with `CARDHOLDER_KYC_NOT_APPROVED`.
+    Issue a new card for a cardholder. Every card is bound to one internal
+    account, `fundingSource`, at create time. The account must belong to the
+    cardholder and be denominated in a card-eligible currency; otherwise the
+    request is rejected with `FUNDING_SOURCE_INELIGIBLE`. The cardholder must
+    have KYC status `APPROVED` before a card can be issued; otherwise the
+    request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
 
     Card issuance is fee-bearing and cannot be reversed, so an
@@ -22,7 +24,7 @@ post:
     platform caps. Amounts use the smallest unit of the card's currency.
 
 
-    If any funding source is an Embedded Wallet internal account, the
+    If the funding source is an Embedded Wallet internal account, the
     cardholder must authorize Grid to sign Spark token transactions for that
     card funding source by completing the delegated-key creation flow with
     `POST /auth/delegated-keys`. Until an active delegated key exists for that
@@ -71,8 +73,7 @@ post:
               customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
               platformCardId: card-emp-aary-001
               form: VIRTUAL
-              fundingSources:
-                - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
               maxSpendPerTransaction: 5000
               maxSpendPerDay: 25000
               maxTransactionsPerDay: 20
@@ -154,8 +155,8 @@ get:
     - name: accountId
       in: query
       description: >-
-        Filter by internal account id. Returns cards whose `fundingSources`
-        array contains the given internal account id.
+        Filter by internal account id. Returns cards whose `fundingSource` is
+        the given internal account id.
       required: false
       schema:
         type: string

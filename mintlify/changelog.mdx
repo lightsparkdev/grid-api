@@ -11,6 +11,29 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## A card is funded by one account, `fundingSource`
+
+The `fundingSources` array is replaced by a single `fundingSource` string on the
+`Card` resource, on `POST /cards`, and on `PATCH /cards/{id}`.
+
+<Warning>
+  Breaking change with no alias. Send `fundingSource` as a string; an array is
+  rejected. Update your card create and update calls before the new version
+  ships.
+</Warning>
+
+- The docs described an ordered array that Authorization Decisioning would try
+  in priority order. It never did — a card draws on one account, and a failed
+  hold does not fall through to another. The contract now says so.
+- `PATCH /cards/{id}` takes a `fundingSource` string that replaces the bound
+  account. It still cannot be supplied alongside `state: CLOSED`.
+- `GET /cards?accountId=` returns cards whose `fundingSource` is that account,
+  rather than cards whose array contained it.
+- Grid CLI: `--funding-sources <list>` becomes `--funding-source <id>` on
+  `grid cards create` and `grid cards update`.
+
+See [Funding source](/cards/card-management/funding-sources).
+
 ## Card returns report as `SETTLED` with a `refundedAmount`
 
 `REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from
@@ -214,7 +237,7 @@ See [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecyc
 You can now issue cards directly in the sandbox environment. Test the full card
 lifecycle—[cardholder setup](/cards/onboarding/cardholder-setup),
 [issuing cards](/cards/card-management/issuing-cards),
-[funding sources](/cards/card-management/funding-sources), and
+[funding source](/cards/card-management/funding-sources), and
 [freezing and closing](/cards/card-management/freezing-and-closing)—end to end
 before going live, without touching production.
 

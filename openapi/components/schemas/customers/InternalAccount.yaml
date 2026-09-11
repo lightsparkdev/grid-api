@@ -54,13 +54,11 @@ properties:
   cardCapabilities:
     $ref: ../cards/CardCapabilities.yaml
     description: >-
-      Actions supported for a card issued now with this account as the first
+      Actions supported for a card issued now with this account as its
       funding source. They can change if the platform's card routing changes
-      and do not describe cards already issued using the account.
-      When a create request supplies several funding sources, the first entry
-      selects the issuer and therefore the resulting card's
-      capabilities; read this field from that account. Absent when this account
-      cannot fund a card.
+      and do not describe cards already issued using the account. The funding
+      source selects the issuer and therefore the resulting card's
+      capabilities. Absent when this account cannot fund a card.
   createdAt:
     type: string
     format: date-time
