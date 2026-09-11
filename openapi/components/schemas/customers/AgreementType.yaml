@@ -1,0 +1,15 @@
+type: string
+description: >-
+  Identifies which Grid agreement a consent record or document refers to. Values
+  are stable identifiers: a document's hosted URL or version may change, but its
+  type does not. Accepting one agreement never implies acceptance of another,
+  even when two agreements share a hosted page.
+enum:
+  - LIGHTSPARK_END_USER_TERMS
+  - LIGHTSPARK_E_SIGN_CONSENT
+  - LIGHTSPARK_PRIVACY_POLICY
+  - LEAD_E_SIGN_CONSENT
+  - LEAD_ACCOUNTHOLDER_AGREEMENT
+  - LEAD_PRIVACY_POLICY
+  - LEAD_CARDHOLDER_AGREEMENT
+example: LIGHTSPARK_END_USER_TERMS

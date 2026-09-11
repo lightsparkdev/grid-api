@@ -1,0 +1,31 @@
+type: object
+required:
+  - type
+  - acceptedAt
+  - ipAddress
+  - termsVersion
+  - acceptanceMethod
+properties:
+  type:
+    $ref: ./AgreementType.yaml
+  acceptedAt:
+    type: string
+    format: date-time
+    description: >-
+      Date and time when the customer accepted this agreement. Must include a
+      timezone offset and must not be in the future.
+  ipAddress:
+    type: string
+    maxLength: 45
+    description: >-
+      IP address of the device the customer used when accepting this agreement.
+    example: 198.51.100.24
+  termsVersion:
+    type: string
+    description: >-
+      Version identifier of the accepted agreement, as returned for this type by
+      the agreement documents endpoint. A version is scoped to its type; a
+      version valid for one agreement is not valid for another.
+    example: '2025-10-13'
+  acceptanceMethod:
+    $ref: ./AgreementAcceptanceMethod.yaml

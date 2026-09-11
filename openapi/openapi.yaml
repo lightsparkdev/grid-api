@@ -149,6 +149,8 @@ paths:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
+  /customers/agreements:
+    $ref: paths/customers/customers_agreements.yaml
   /customers/end-user-terms:
     $ref: paths/customers/customers_end-user-terms.yaml
   /customers/{customerId}/kyc-link:
