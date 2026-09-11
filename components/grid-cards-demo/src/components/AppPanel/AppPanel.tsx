@@ -73,7 +73,7 @@ function StageHost({
     <span className={clsx(styles.back, !showBack && styles.backHidden)} aria-hidden={!showBack}>
       <GlassSymbolButton
         aria-label="Back to the card"
-        size={32}
+        size={28}
         type="button"
         glass={{ brightness: headerGlassBrightness(theme) }}
         tabIndex={showBack ? 0 : -1}

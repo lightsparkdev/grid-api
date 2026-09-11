@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { GlassConfig } from '@/components/liquid-glass';
+import { PHONE_SHELL_GLASS, type GlassConfig } from '@/components/liquid-glass';
 import { CardScreen } from '@/apps/card';
 import { AppShell } from '@/apps/shared/AppShell';
 import { BrandProvider } from '@/apps/shared/brand/BrandContext';
@@ -10,6 +10,10 @@ import type { CardHome } from '@/apps/shared/card';
 import { OverlayGlassProvider, DEFAULT_OVERLAY_GLASS, type OverlayGlassPresets } from '@/apps/shared/glass';
 import { brandColorOf, type CardDesign } from '@/data/design';
 import styles from './DemoPhone.module.scss';
+
+/** The shell's top-right corner is tighter than the others: it makes room in
+ *  the bezel for the stage's close (AppPanel), tangent to the screen's curve. */
+export const CLOSE_CORNER_RADIUS = 40;
 
 interface DemoPhoneProps {
   design: CardDesign;
@@ -35,6 +39,7 @@ export function DemoPhone({
   externalGlass,
   stageChrome,
 }: DemoPhoneProps) {
+  const shell = glassConfig ?? PHONE_SHELL_GLASS;
   return (
     <OverlayGlassProvider value={overlayGlass ?? DEFAULT_OVERLAY_GLASS}>
       <BrandProvider value={design}>
@@ -45,6 +50,7 @@ export function DemoPhone({
           externalGlass={externalGlass}
           screenStyle={brandVars(brandColorOf(design))}
           stageChrome={stageChrome}
+          shellRadii={[shell.radius, CLOSE_CORNER_RADIUS, shell.radius, shell.radius]}
         >
           <div className={styles.flow}>
             <CardScreen home={home} />

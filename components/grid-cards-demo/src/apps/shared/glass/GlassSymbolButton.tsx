@@ -14,8 +14,8 @@ const SHEET_SURFACE_BACKDROP = 'var(--glass-symbol-backdrop)';
 interface GlassSymbolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   /** Button diameter in px — Figma wallet header uses 40, passkey close uses
-   *  44; 32 fits the phone's bezel corner. */
-  size?: 32 | 40 | 44;
+   *  44; 28 fits the phone's bezel corner. */
+  size?: 28 | 40 | 44;
   /** Per-instance glass tuning — merged over the overlay symbol preset. */
   glass?: Partial<GlassConfig>;
   /** CSS background the lens refracts — overrides the neutral sheet surface. A
@@ -48,7 +48,7 @@ export function GlassSymbolButton({
   return (
     <button
       type={type}
-      className={clsx(styles.root, size === 40 && styles.size40, size === 32 && styles.size32, className)}
+      className={clsx(styles.root, size === 40 && styles.size40, size === 28 && styles.size28, className)}
       {...rest}
     >
       <GlassOver

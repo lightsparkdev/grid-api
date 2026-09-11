@@ -155,7 +155,7 @@ uniform sampler2D uTex;
 uniform vec2 uRes;            // canvas device px
 uniform vec4 uLens;          // x,y,w,h (top-down device px)
 uniform float uCornerExp;
-uniform float uRadius;       // device px
+uniform vec4 uRadii;         // corner radii, device px: top-left, top-right, bottom-right, bottom-left
 uniform float uDepth;        // device px
 uniform float uScale;        // device px refraction
 uniform float uDomeOn;
@@ -267,7 +267,9 @@ void main(){
   vec2 p = rel - lensHalf;            // from lens centre
   float ax = abs(p.x);
   float ay = abs(p.y);
-  float corner = min(uRadius, min(lensHalf.x, lensHalf.y));
+  // Each quadrant takes its own corner (the shell's top-right is tighter).
+  float r = p.x < 0.0 ? (p.y < 0.0 ? uRadii.x : uRadii.w) : (p.y < 0.0 ? uRadii.y : uRadii.z);
+  float corner = min(r, min(lensHalf.x, lensHalf.y));
 
   float qx = ax - lensHalf.x + corner;
   float qy = ay - lensHalf.y + corner;
@@ -487,7 +489,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       const U = (n: string) => gl!.getUniformLocation(prog, n);
       u = {
         tex: U('uTex'), res: U('uRes'), lens: U('uLens'), cornerExp: U('uCornerExp'),
-        radius: U('uRadius'), depth: U('uDepth'), scale: U('uScale'), domeOn: U('uDomeOn'),
+        radii: U('uRadii'), depth: U('uDepth'), scale: U('uScale'), domeOn: U('uDomeOn'),
         domeR: U('uDomeR'), domeS: U('uDomeS'), edgeStr: U('uEdgeStr'), edgeW: U('uEdgeW'),
         specStr: U('uSpecStr'), specDir: U('uSpecDir'), blur: U('uBlur'),
         chroma: U('uChroma'), splay: U('uSplay'), glowStr: U('uGlowStr'),
@@ -545,7 +547,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     let lastLy = NaN;
     let lastLw = NaN;
     let lastLh = NaN;
-    let lastRadius = NaN;
+    let lastRadii: number[] | null = null;
     let targetEl: Element | null = null;
     let shellBound: Element | null = null;
     const SETTLE_FRAMES = 3;
@@ -585,17 +587,26 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       }
       const g = lw / c.designWidth; // device px per design px
 
-      // Lens radius tracks the shell's ACTUAL rounded corner so the refracted bezel
-      // stays concentric (and keeps tracking through the hover bloom). getComputedStyle
-      // is costly, so re-read it only when the rect changed (bloom/resize); otherwise
-      // reuse the cached value. Scale the DOM radius by the shell's own px ratio.
+      // Lens radii track the shell's ACTUAL rounded corners (each its own) so the
+      // refracted bezel stays concentric (and keeps tracking through the hover
+      // bloom). getComputedStyle is costly, so re-read it only when the rect
+      // changed (bloom/resize); otherwise reuse the cached value. Scale the DOM
+      // radii by the shell's own px ratio.
       const rectChanged = lx !== lastLx || ly !== lastLy || lw !== lastLw || lh !== lastLh;
-      let radiusDevicePx = Number.isNaN(lastRadius) ? c.radius * g : lastRadius;
-      if (target && (rectChanged || Number.isNaN(lastRadius))) {
+      let radiiDevicePx = lastRadii ?? [c.radius * g, c.radius * g, c.radius * g, c.radius * g];
+      if (target && (rectChanged || !lastRadii)) {
         const cs = getComputedStyle(target);
-        const br = parseFloat(cs.borderTopLeftRadius);
         const pw = parseFloat(cs.width);
-        radiusDevicePx = br > 0 && pw > 0 ? br * (lw / pw) : c.radius * g;
+        const corner = (v: string) => {
+          const br = parseFloat(v);
+          return br > 0 && pw > 0 ? br * (lw / pw) : c.radius * g;
+        };
+        radiiDevicePx = [
+          corner(cs.borderTopLeftRadius),
+          corner(cs.borderTopRightRadius),
+          corner(cs.borderBottomRightRadius),
+          corner(cs.borderBottomLeftRadius),
+        ];
       }
       const exp = 2 + Math.max(0, Math.min(1, c.cornerSmoothing)) * 4;
       const dome = c.domeDepth > 0 ? computeDomeConstants(c.domeDepth, c.designWidth / 2, (c.designWidth / 2) * (lh / lw)) : null;
@@ -605,7 +616,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       gl.uniform2f(u.res, canvas.width, canvas.height);
       gl.uniform4f(u.lens, lx, ly, lw, lh);
       gl.uniform1f(u.cornerExp, exp);
-      gl.uniform1f(u.radius, radiusDevicePx);
+      gl.uniform4f(u.radii, radiiDevicePx[0], radiiDevicePx[1], radiiDevicePx[2], radiiDevicePx[3]);
       gl.uniform1f(u.depth, c.depth * g);
       gl.uniform1f(u.scale, c.scale * g);
       gl.uniform1f(u.domeOn, dome ? 1 : 0);
@@ -638,12 +649,12 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-      const moved = rectChanged || radiusDevicePx !== lastRadius;
+      const moved = rectChanged || !lastRadii || radiiDevicePx.some((v, i) => v !== lastRadii![i]);
       lastLx = lx;
       lastLy = ly;
       lastLw = lw;
       lastLh = lh;
-      lastRadius = radiusDevicePx;
+      lastRadii = radiiDevicePx;
       return moved;
     };
 
@@ -723,7 +734,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       if (initGL()) {
         pendingResize = false;
         applyResizeBuffers();
-        lastRadius = NaN;
+        lastRadii = null;
         invalidate(true);
       }
     };
@@ -773,7 +784,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
         // at the wide breakpoint), so a resize can change it too.
         palette = readDotGridPalette(offCtx);
         markResize();
-        lastRadius = NaN;
+        lastRadii = null;
         invalidate(true);
       });
       ro.observe(canvas);

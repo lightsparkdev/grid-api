@@ -31,8 +31,12 @@ interface AppShellProps {
   /** Full-screen overlay above the status bar (e.g. Face ID blur + island). */
   screenOverlay?: ReactNode;
   /** Stage controls laid out against the phone's outer box, above the stage
-   *  (e.g. a close at its top-right corner, outside the bezel). */
+   *  (e.g. a close in its top-right corner). */
   stageChrome?: ReactNode;
+  /** The shell's outer corner radii (top-left, top-right, bottom-right,
+   *  bottom-left), when they differ from `glassConfig.radius`: a tighter
+   *  corner makes room in the bezel for a control. The screen keeps its own. */
+  shellRadii?: [number, number, number, number];
   /** Light status bar icons/time on dark or colored backgrounds. */
   screenTone?: 'default' | 'light';
   /** Extra inline style on the screen root — the playground sets the
@@ -53,6 +57,7 @@ export function AppShell({
   children,
   screenOverlay,
   stageChrome,
+  shellRadii,
   screenTone = 'default',
   screenStyle,
 }: AppShellProps) {
@@ -82,7 +87,9 @@ export function AppShell({
   const HOVER_GROW = 2; // lift back out on hover
   const growOut = externalGlass ? (hovered ? HOVER_GROW : 0) - REST_INSET : 0;
   const shellInset = -growOut;
-  const shellRadius = glassConfig.radius + growOut;
+  // Each outer corner grows with the bloom; the lens reads them back off the DOM.
+  const baseRadii = shellRadii ?? [glassConfig.radius, glassConfig.radius, glassConfig.radius, glassConfig.radius];
+  const shellCorners = baseRadii.map((r) => Math.max(0, r + growOut)) as [number, number, number, number];
   const shadowScaleX = (APP_SHELL_OUTER_WIDTH + 2 * growOut) / APP_SHELL_OUTER_WIDTH;
   const shadowScaleY = (APP_SHELL_OUTER_HEIGHT + 2 * growOut) / APP_SHELL_OUTER_HEIGHT;
 
@@ -143,7 +150,7 @@ export function AppShell({
   const shellPath = squirclePath(
     APP_SHELL_OUTER_WIDTH,
     APP_SHELL_OUTER_HEIGHT,
-    glassConfig.radius,
+    baseRadii,
     glassConfig.cornerSmoothing,
   );
 
@@ -244,7 +251,7 @@ export function AppShell({
                   // Grows GROW px outward on hover (inset < 0) with radius +GROW so the
                   // corner stays concentric with the fixed screen; the lens follows.
                   inset: shellInset,
-                  borderRadius: `${shellRadius}px`,
+                  borderRadius: shellCorners.map((r) => `${r}px`).join(' '),
                   cornerShape,
                 }}
                 aria-hidden
