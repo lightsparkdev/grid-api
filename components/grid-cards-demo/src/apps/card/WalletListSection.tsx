@@ -18,8 +18,6 @@ interface WalletListSectionProps {
   cta?: { label: string; onClick?: () => void };
   /** Hug the phone bezel with concentric bottom corners (wallet home). */
   concentricBottom?: boolean;
-  /** Run into the phone's bottom edge (see WalletListCard). */
-  flushBottom?: boolean;
   /** Real rows; when present the card renders them instead of the empty state. */
   items?: WalletListItemData[];
   /** Grow with content past the available height (the page scrolls) instead of
@@ -42,7 +40,6 @@ export function WalletListSection({
   emptySub,
   cta,
   concentricBottom = false,
-  flushBottom = false,
   items,
   grow = false,
   roundGraphic = false,
@@ -53,7 +50,6 @@ export function WalletListSection({
       {!hideTitle && <h2 className={styles.title}>{title}</h2>}
       <WalletListCard
         concentricBottom={concentricBottom}
-        flushBottom={flushBottom}
         grow={grow}
         roundGraphic={roundGraphic}
         items={items}

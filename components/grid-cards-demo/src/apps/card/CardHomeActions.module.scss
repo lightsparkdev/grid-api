@@ -11,11 +11,14 @@
   min-width: 0;
 }
 
-/* Label, then the contactless mark, with no gap between. */
+/* Label, then the contactless mark, with no gap between. The mark's strokes
+   lean right in their box, so the pair sits 6px right of geometric center to
+   read centered. */
 .tapLabel {
   display: inline-flex;
   align-items: center;
   gap: 0;
+  margin-left: 12px;
 
   svg {
     display: block;

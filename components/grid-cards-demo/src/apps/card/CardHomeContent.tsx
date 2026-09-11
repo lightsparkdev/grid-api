@@ -34,7 +34,7 @@ export function CardHomeContent({ transactions, card, onTapToPay, onAddToWallet 
         }
         items={transactions}
         onItemClick={card.openTransaction}
-        flushBottom
+        concentricBottom
         grow
       />
     </>
