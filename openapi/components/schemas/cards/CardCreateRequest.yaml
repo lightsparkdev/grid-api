@@ -54,13 +54,12 @@ properties:
     minimum: 1
     maximum: 9007199254740991
     description: >-
-      Optional card-specific cap on a single transaction, in the smallest unit
-      of the card currency derived from its funding sources. Omit this field
-      for no card-specific cap. When the platform config also supplies
-      `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two
-      values. Accepted only when the funding-source internal account's
-      `cardCapabilities.supportsSpendLimits` is true. A transaction for
-      exactly the effective limit is allowed.
+      The most this card can spend on a single transaction, in the smallest
+      unit of its currency (cents for USD). Omit the field to set no limit. If
+      your platform config also sets `cardConfigs.maxSpendPerTransaction`, the
+      lower of the two applies. A transaction for exactly whichever limit
+      applies is allowed. You can only send this when the funding-source
+      internal account's `cardCapabilities.supportsSpendLimits` is true.
     example: 5000
   maxSpendPerDay:
     type: integer

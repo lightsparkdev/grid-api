@@ -47,13 +47,15 @@ properties:
         maximum: 9007199254740991
       - type: 'null'
     description: >-
-      Replacement card-specific per-transaction cap, in the smallest unit of
-      the card's currency. Omit this field to leave the current cap unchanged,
-      supply null to clear it, or supply a positive integer to set it. When the
-      platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid
-      enforces the lower of the two values. Accepted only when the card's
-      `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied
-      alongside `state: CLOSED`.
+      A new limit on what this card can spend on a single transaction, in the
+      smallest unit of its currency (cents for USD). Send a positive integer
+      to set the limit, `null` to remove it, or omit the field to leave it
+      unchanged. If your platform config also sets
+      `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. A
+      transaction for exactly whichever limit applies is allowed. You can only
+      send this when the card's
+      `cardCapabilities.supportsSpendLimits` is true, and not together with
+      `state: CLOSED`.
     example: 10000
   maxSpendPerDay:
     anyOf:

@@ -74,12 +74,12 @@ patch:
     the authorization decision, the combination remains valid for `state`
     changes other than `CLOSED`.
 
-    - `maxSpendPerTransaction`, when supplied, replaces the card-specific
-    per-transaction cap. Supply a positive integer in the smallest unit of the
-    card's currency to set it or null to clear it. If the platform config sets
-    `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card
-    and platform values. The card's `cardCapabilities.supportsSpendLimits`
-    must be true. `maxSpendPerTransaction` cannot be supplied alongside
+    - `maxSpendPerTransaction` sets the most the card can spend on a single
+    transaction. Send a positive integer in the smallest unit of the card's
+    currency (cents for USD) to set the limit, or null to remove it. If your
+    platform config sets `cardConfigs.maxSpendPerTransaction`, the lower of the
+    two applies. You can only send this when the card's
+    `cardCapabilities.supportsSpendLimits` is true, and not together with
     `state: CLOSED`.
 
     - `maxSpendPerDay`, when supplied, replaces the card-specific cap on
