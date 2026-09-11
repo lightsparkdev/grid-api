@@ -18,6 +18,7 @@ export {
   type CardSheet,
   type CardTransactionRow,
   type DeclineReason,
+  type LimitsRow,
   type SpendLimits,
   type TransactionStatus,
   type WalletAddPhase,

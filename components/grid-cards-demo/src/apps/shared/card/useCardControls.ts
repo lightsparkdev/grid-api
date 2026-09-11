@@ -27,6 +27,9 @@ export type CardSheet = 'none' | 'transaction' | 'close' | 'walletAgain';
  *  back), `limits` is Spending Limits. */
 export type CardPage = 'home' | 'numbers' | 'limits';
 
+/** The Spending limits row whose wheel is open (one at a time). */
+export type LimitsRow = 'perTransaction' | 'perDay';
+
 /** Add to Apple Wallet, as Apple's full-screen add-card flow: `intro` is "Add
  *  Card to Apple Pay" waiting on Continue; `contacting` and `setup` are the
  *  two "Adding Card" waits; `added` shows the check; `confirm` is the app's
@@ -100,6 +103,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   // The Spending Limits page's working copy, here so the scripted cardholder
   // (the Limits flow) can pick the steps the same way a tap on the page does.
   const [limitsDraft, setLimitsDraft] = useState<SpendLimits>(limits);
+  const [limitsRow, setLimitsRow] = useState<LimitsRow | null>(null);
   const [revealedAt, setRevealedAt] = useState<number | null>(null);
   const [walletPhase, setWalletPhase] = useState<WalletAddPhase>('idle');
   const [inWallet, setInWallet] = useState(false);
@@ -194,6 +198,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   /** The Spending Limits page, its draft seeded from the card's caps. */
   const openLimits = useCallback(() => {
     setLimitsDraft(limits);
+    setLimitsRow(null);
     setPage('limits');
   }, [limits]);
 
@@ -320,6 +325,8 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     limits,
     limitsDraft,
     setLimitsDraft,
+    limitsRow,
+    setLimitsRow,
     openLimits,
     spentTodayCents,
     dailyUsedCents,

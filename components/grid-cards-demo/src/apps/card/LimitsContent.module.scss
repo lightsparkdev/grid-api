@@ -1,73 +1,72 @@
 @use '../shared/typography/ios-type-mixins' as ios;
+@use '../shared/glass/glass-button-shadow' as shadow;
 
-/* Spending Limits page: two grouped pickers and the save. */
+/* Spending limits page: the grouped settings card, and Save. */
 .root {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   padding: 8px 16px 24px;
 }
 
-.block {
+/* Apple Cash's Auto Reload card: rows with their values in pills; a row's
+   wheel opens beneath it. */
+.group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  border-radius: 20px;
+  padding: 0 16px;
+  border-radius: 24px;
   corner-shape: var(--corner-shape);
   background: var(--ios-bg-grouped-secondary, #ffffff);
 }
 
-.head {
+.setting {
+  border-bottom: 0.5px solid var(--ios-separator);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 56px;
+  margin: 0;
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  color: var(--ios-label-primary);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .label {
   @include ios.ios-text-body;
-  font-weight: 590;
   color: var(--ios-label-primary);
 }
 
-.value {
+/* The value, in a quiet pill; the open row's reads in the tint. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 1000px;
+  corner-shape: round;
+  background: var(--ios-fill-quaternary, rgba(120, 120, 128, 0.08));
   @include ios.ios-text-body;
   font-variant-numeric: tabular-nums;
-  color: var(--ios-label-secondary);
-}
-
-.steps {
-  display: flex;
-  gap: 6px;
-}
-
-.step {
-  flex: 1;
-  margin: 0;
-  padding: 8px 0;
-  border: 0;
-  border-radius: 10px;
-  corner-shape: var(--corner-shape);
-  background: var(--ios-fill-quaternary, rgba(120, 120, 128, 0.08));
   color: var(--ios-label-primary);
-  @include ios.ios-text-caption-1;
-  font-weight: 590;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background-color 160ms ease, color 160ms ease;
+  transition: color 160ms ease;
 }
 
-.stepOn {
-  background: var(--app-tint, var(--ios-tint));
-  color: #ffffff;
-}
-
-.hint {
-  margin: 0;
-  @include ios.ios-text-caption-1;
-  color: var(--ios-label-tertiary);
-  text-wrap: pretty;
+.pillOpen {
+  color: var(--ios-tint, #007aff);
 }
 
 .actions {

@@ -40,10 +40,12 @@ const REFUND_START_MS = 1100;
 const REFUND_HOLD_MS = 2200;
 /** Simple state changes (freeze, close) settle after the notification. */
 const NOTICE_SETTLE_MS = 1400;
-/** Limits: the page opens, the cardholder picks a step, then the next, then saves. */
-const LIMITS_PICK_MS = 1000;
-const LIMITS_PICK_GAP_MS = 700;
-const LIMITS_SAVE_MS = 2700;
+/** Limits: the page opens; the cardholder opens Per purchase, turns its wheel,
+ *  opens Per day (the first closes), turns that one, and saves. */
+const LIMITS_OPEN_ROW_MS = 800;
+const LIMITS_TURN_MS = 900;
+const LIMITS_NEXT_ROW_MS = 1000;
+const LIMITS_SAVE_MS = 1100;
 /** Push notification hold. */
 const NOTICE_MS = 3600;
 /** The Limits flow applies these caps (platform-side PATCH). */
@@ -397,23 +399,27 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
             settle(NOTICE_SETTLE_MS);
             break;
           }
-          // The cardholder opens Spending Limits, picks the per-purchase cap,
-          // then the daily cap, and saves; the page pops on the save.
+          // The cardholder opens Spending limits, opens Per purchase and turns
+          // its wheel to the cap, then Per day, then saves; the page pops.
           card.openLimits();
+          let at = LIMITS_OPEN_ROW_MS;
+          later(() => cardRef.current.setLimitsRow('perTransaction'), at);
+          at += LIMITS_TURN_MS;
           later(
             () => cardRef.current.setLimitsDraft((d) => ({ ...d, perTransactionCents: PRESET_LIMITS.perTransactionCents })),
-            LIMITS_PICK_MS,
+            at,
           );
-          later(
-            () => cardRef.current.setLimitsDraft((d) => ({ ...d, perDayCents: PRESET_LIMITS.perDayCents })),
-            LIMITS_PICK_MS + LIMITS_PICK_GAP_MS,
-          );
+          at += LIMITS_NEXT_ROW_MS;
+          later(() => cardRef.current.setLimitsRow('perDay'), at);
+          at += LIMITS_TURN_MS;
+          later(() => cardRef.current.setLimitsDraft((d) => ({ ...d, perDayCents: PRESET_LIMITS.perDayCents })), at);
+          at += LIMITS_SAVE_MS;
           later(() => {
             const c = cardRef.current;
             c.saveLimits(c.limitsDraft);
             c.popPage();
             settle(500);
-          }, LIMITS_SAVE_MS);
+          }, at);
           break;
         }
         case 'refund': {
