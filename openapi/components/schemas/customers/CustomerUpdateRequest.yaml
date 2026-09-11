@@ -50,8 +50,21 @@ properties:
       This is an optional identifier to route payments to the customer.
     example: $john.doe@uma.domain.com
   endUserTermsConsent:
-    $ref: ./EndUserTermsConsentRequest.yaml
+    deprecated: true
+    allOf:
+      - $ref: ./EndUserTermsConsent.yaml
     description: >-
-      Evidence that the customer accepted the Grid End User Terms. Unregulated
-      platforms must provide this before initiating customer-scoped
-      transactions; those transactions fail until consent is recorded.
+      Deprecated; send `agreementConsents` instead. Supplying this records
+      acceptance of the Lightspark End User Terms, equivalent to a single
+      `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying
+      both fields in one request is rejected.
+  agreementConsents:
+    type: array
+    maxItems: 7
+    description: >-
+      Evidence that the customer accepted one or more Grid agreements, at most
+      one entry per type. Supplying this records additional acceptances; it
+      never withdraws or replaces evidence already recorded for other types.
+      Omitting the field leaves recorded consents unchanged.
+    items:
+      $ref: ./AgreementConsentRequest.yaml
