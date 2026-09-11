@@ -11,6 +11,27 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## The card `EXCEPTION` status is now `DECLINED`
+
+`CardTransactionStatus.EXCEPTION` is renamed to `DECLINED`, and the
+`CARD_TRANSACTION.EXCEPTION` webhook type to `CARD_TRANSACTION.DECLINED`. The status
+describes a transaction the card network settled but whose funding-source pull failed—a
+decline, in the term the rest of the card industry uses for it.
+
+<Warning>
+  Breaking change. The value is renamed, not aliased: `EXCEPTION` is no longer emitted or
+  accepted. Update any status comparison and any webhook subscription or router that keys
+  on `CARD_TRANSACTION.EXCEPTION`.
+</Warning>
+
+- Meaning, behavior, and the conditions that produce the status are unchanged—only the
+  name moves.
+- `GET /transactions` returns `status: DECLINED` for transactions that previously reported
+  `EXCEPTION`, including ones created before this change. The status is derived on read,
+  so nothing is backfilled.
+
+See [Reconciliation](/cards/transactions/reconciliation).
+
 ## Card returns report as `SETTLED` with a `refundedAmount`
 
 `REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from

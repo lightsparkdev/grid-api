@@ -15,7 +15,7 @@ lifecycle.
 | `CARD_TRANSACTION.AUTHORIZED` | An authorization is approved and a hold is placed on the funding source. |
 | `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted, but more are still expected. |
 | `CARD_TRANSACTION.SETTLED` | All clearings have posted. Re-fires when a merchant return lands, with the returned value in `refundedAmount`. |
-| `CARD_TRANSACTION.EXCEPTION` | The transaction settled to the network but the pull from the funding source failed. |
+| `CARD_TRANSACTION.DECLINED` | The transaction settled to the network but the pull from the funding source failed. |
 
 All of them carry the standard envelope:
 
