@@ -64,8 +64,8 @@ pattern as Embedded Wallet credential revocation). See
 
 Each authorization on a card produces a parent `CardTransaction` row.
 Children (pulls, clearings, refunds) are reconciled against the parent
-and rolled up into `pullSummary`, `settlementSummary`, and
-`refundSummary` aggregates. The lifecycle status moves
+and rolled up into the `settledAmount` and `refundedAmount` totals.
+The lifecycle status moves
 `AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `EXCEPTION` as the
 failure path for stuck post-hoc pulls. A merchant return keeps the
 transaction `SETTLED` and reports the returned value in

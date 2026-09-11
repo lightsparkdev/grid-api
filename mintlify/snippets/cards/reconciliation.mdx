@@ -14,10 +14,9 @@ For each card authorization, Grid produces:
 3. **Clearings** — the network's confirmation that funds have moved.
 4. **Refunds** — merchant-initiated `RETURN` events.
 
-Children are reconciled against the parent and rolled up into three
-aggregates: `pullSummary`, `settlementSummary`, and `refundSummary`.
-You don't see per-child rows on the list endpoint — they're summarized
-on the parent.
+Children are reconciled against the parent and rolled up into the
+`settledAmount` and `refundedAmount` totals. You don't see per-child
+rows on the list endpoint — they're summarized on the parent.
 
 ## Status transitions
 
@@ -47,11 +46,10 @@ tip). The auth comes in at $12.50, but the merchant clears for $15.00.
 
 1. Auth approved → one pull for $12.50 → parent is `AUTHORIZED`.
 2. Clearing for $15.00 → second post-hoc pull for $2.50 → parent is
-   `SETTLED` with `pullSummary.count = 2`,
-   `settlementSummary.totalAmount = 1500`.
+   `SETTLED` with `settledAmount: 1500`.
 
-The post-settlement parent carries `authorizedAmount: 1250`,
-`settledAmount: 1500`, and two pulls in its `pullSummary`.
+The post-settlement parent carries `authorizedAmount: 1250` and
+`settledAmount: 1500`.
 
 ## The EXCEPTION path
 
