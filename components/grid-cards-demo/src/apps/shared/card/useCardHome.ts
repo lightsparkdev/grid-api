@@ -28,11 +28,8 @@ const ENTRY_HOME_SETTLE_MS = 350;
 const PHONE_IN_MS = 750;
 /** The reveal has played (page pushed, digits rolled); the page stays. */
 const REVEAL_SETTLE_MS = 1400;
-/** The cardholder reads Apple's "Add Card to Apple Pay" this long, then taps
- *  Continue. */
-const WALLET_CONTINUE_MS = 1400;
-/** Apple's waits, from Continue to its flow going (see useCardControls). */
-const WALLET_ADDING_MS = 1500 + 1500 + 1100;
+/** Apple's add-card flow has risen; the rest is the cardholder's. */
+const WALLET_COVER_IN_MS = 600;
 /** The app's toast lands as Apple's flow finishes sliding away. */
 const WALLET_TOAST_MS = 350;
 /** Dwell on the transaction sheet before the refund runs. */
@@ -346,10 +343,10 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     settle(NOTICE_SETTLE_MS);
   };
 
-  /** Add to Apple Wallet: Apple's add-card flow comes up; the cardholder's
-   *  Continue is scripted (a real tap first wins, the script's is then a
-   *  no-op); when Apple's flow goes, a toast says the card was added.
-   *  Already added: a sheet says so. */
+  /** Add to Apple Wallet: Apple's add-card flow comes up and waits for the
+   *  cardholder's Continue (or X); once it is up the flow has done its part
+   *  and the tiles unlock. When Apple's flow goes, a toast says the card was
+   *  added. Already added: a sheet says so. */
   const startAddToWallet = () => {
     arm();
     if (card.closed) {
@@ -363,8 +360,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
       return;
     }
     card.startAddToWallet();
-    later(() => cardRef.current.confirmAddToWallet(), WALLET_CONTINUE_MS);
-    settle(WALLET_CONTINUE_MS + WALLET_ADDING_MS + WALLET_TOAST_MS + 600);
+    settle(WALLET_COVER_IN_MS);
   };
 
   // The merchant is picked when the tap STARTS — the balance guard, the charge,

@@ -82,6 +82,9 @@ const WALLET_ADDED_MS = 1100;
 /** Authorizations clear a few seconds after they land (the sandbox clearing). */
 const SETTLE_MS = 4500;
 const REFUND_MS = 900;
+/** A sheet's dismiss, a page's pop, or Apple's cover sliding away, plus a
+ *  beat: an event from behind one of them shows in Activity after this. */
+const EVENT_SETTLE_MS = 550;
 
 function startOfUtcDay(t: number) {
   const d = new Date(t);
@@ -141,6 +144,13 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     const set = timers.current;
     return () => set.forEach((t) => window.clearTimeout(t));
   }, []);
+  /** An event whose surface is on its way out (a sheet, a page, Apple's
+   *  cover) lands in Activity once that surface has gone, so the row slides
+   *  in on its own instead of already sitting there when the home reappears. */
+  const recordEventSettled = useCallback(
+    (kind: ActivityKind, detail?: string) => later(() => recordEvent(kind, detail), EVENT_SETTLE_MS),
+    [later, recordEvent],
+  );
 
   const frozen = lifecycle === 'FROZEN';
   const closed = lifecycle === 'CLOSED';
@@ -174,10 +184,10 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
       if (closed) return;
       const state: CardLifecycle = next ? 'FROZEN' : 'ACTIVE';
       setLifecycle(state);
-      recordEvent(next ? 'frozen' : 'unfrozen');
+      recordEventSettled(next ? 'frozen' : 'unfrozen');
       onStateChange?.(state);
     },
-    [closed, onStateChange, recordEvent],
+    [closed, onStateChange, recordEventSettled],
   );
 
   const closeCard = useCallback(() => {
@@ -189,9 +199,9 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setSheet('none');
     setPage('home');
     setRevealedAt(null);
-    recordEvent('closed');
+    recordEventSettled('closed');
     onStateChange?.('CLOSED');
-  }, [closed, onStateChange, onCloseRejected, recordEvent]);
+  }, [closed, onStateChange, onCloseRejected, recordEventSettled]);
 
   /** A new card is being issued (flows are replayable): it starts ACTIVE, out
    *  of the wallet, unrevealed. State only; POST /cards is the caller's log.
@@ -211,10 +221,10 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
       setLimitsState(next);
       const cap = (c: number | null, per: string) => (c === null ? null : `$${c / 100} ${per}`);
       const parts = [cap(next.perTransactionCents, 'per purchase'), cap(next.perDayCents, 'per day')].filter(Boolean);
-      recordEvent('limits', parts.length ? parts.join(' · ') : 'No caps');
+      recordEventSettled('limits', parts.length ? parts.join(' · ') : 'No caps');
       onLimitsChange?.(next);
     },
-    [onLimitsChange, recordEvent],
+    [onLimitsChange, recordEventSettled],
   );
 
   /** The Spending Limits page, its draft seeded from the card's caps. */
@@ -273,10 +283,10 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     at(() => {
       setWalletPhase('idle');
       setInWallet(true);
-      recordEvent('wallet');
+      recordEventSettled('wallet');
       onAddToWallet?.();
     }, WALLET_CONTACTING_MS + WALLET_SETUP_MS + WALLET_ADDED_MS);
-  }, [onAddToWallet, recordEvent]);
+  }, [onAddToWallet, recordEventSettled]);
   /** X on Apple's flow: back to the card home, nothing added. */
   const finishAddToWallet = useCallback(() => {
     clearWalletTimers();

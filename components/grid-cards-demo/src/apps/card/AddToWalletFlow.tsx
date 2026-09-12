@@ -83,9 +83,14 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
               )}
             </AnimatePresence>
 
+            {/* popLayout: an outgoing title or subtitle leaves the flow the
+                moment it starts fading, so the layout change lands in the
+                same render as the phase change and the group below animates
+                up to meet it (with mode="wait" it left later, in a render
+                the group didn't take part in, and the group jumped). */}
             <motion.div className={styles.titles} layout transition={SWAP}>
               <h1 className={styles.title}>
-                <AnimatePresence mode="wait" initial={false}>
+                <AnimatePresence mode="popLayout" initial={false}>
                   <motion.span
                     key={intro ? 'add' : 'adding'}
                     className={styles.titleText}
@@ -110,7 +115,7 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
                   )}
                 </AnimatePresence>
               </h1>
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence mode="popLayout" initial={false}>
                 {subtitle && (
                   <motion.p
                     key={subtitle}

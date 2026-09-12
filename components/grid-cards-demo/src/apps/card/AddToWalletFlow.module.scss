@@ -38,6 +38,9 @@ $apple-blue: #007aff;
 }
 
 .titles {
+  /* The outgoing title and subtitle are popped out of the flow to fade
+     (position absolute): they hold their place against this box. */
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -46,6 +49,7 @@ $apple-blue: #007aff;
 }
 
 .title {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
