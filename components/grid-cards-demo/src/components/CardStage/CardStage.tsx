@@ -936,7 +936,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     : undefined;
 
   return (
-    <div ref={rootRef} className={styles.root}>
+    <div ref={rootRef} className={styles.root} data-phone-up={phoneUp || undefined}>
       <Canvas
         ref={canvasRef}
         className={clsx(styles.canvas, dimmed && styles.canvasDimmed)}

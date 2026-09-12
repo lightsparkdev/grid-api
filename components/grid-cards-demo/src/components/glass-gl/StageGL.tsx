@@ -85,9 +85,11 @@ const DOT_BLEED = 48;
 // true to restore plain click-to-ripple (and drop the press dimple).
 const RIPPLE_ON_PRESS = false;
 
-// Presses that begin on the phone UI (this wraps the whole phone) don't touch the
-// backdrop — only presses that start on the backdrop do.
-const FOREGROUND_SELECTOR = '[class*="AppShell_scaled"]';
+// Presses that begin on the phone don't touch the backdrop; only presses that
+// start on the backdrop do. The phone is its shell, its content layer above
+// the card's canvas (the screen's buttons, lists, sheets, and the stage chrome
+// beside it), and, while the phone is up, the card itself in its slot.
+const FOREGROUND_SELECTOR = '[class*="AppShell_scaled"], [class*="AppShell_overStage"], [data-phone-up]';
 
 /**
  * Even grid with a clean, symmetric edge gutter that's a hair SMALLER than the gap
