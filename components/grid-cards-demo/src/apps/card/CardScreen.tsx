@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, animate, motion, useReducedMotion } from 'motion/react';
 import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
@@ -29,6 +29,8 @@ const TAP_LIFT = -56; // Lift the body by the header height so the card sits und
 const CARD_ISSUANCE_SCALE = 338 / 370;
 
 const BODY_TRANSITION = motionTransition(easeOutSnappy, 0.5);
+/** The page scroll's return to the top ahead of tap-to-pay or a page. */
+const SCROLL_HOME = motionTransition(easeOutSnappy, 0.4);
 const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.2 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
 const CONTENT_HIDDEN = { opacity: 0, filter: 'blur(8px)' };
@@ -104,9 +106,41 @@ export function CardScreen({ home }: CardScreenProps) {
   // place under the page) brings it back to the top first.
   const stackRef = useRef<HTMLDivElement>(null);
   const canScroll = !creating && !isTap && card.page === 'home';
+  const canScrollRef = useRef(canScroll);
+  canScrollRef.current = canScroll;
+
+  // The card is drawn by the stage from the slot's rect each frame, on the
+  // main thread. Native wheel scrolling happens on the compositor thread ahead
+  // of any script, so the content would move a frame before the card did and
+  // the card would trail it. The wheel is taken here instead and the scroll
+  // applied synchronously: the content and the card then move in the same
+  // frame. (The stage forwards the wheel over the card the same way.)
   useEffect(() => {
-    if (canScroll || card.page === 'limits') return;
-    stackRef.current?.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    const el = stackRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!canScrollRef.current || e.ctrlKey) return;
+      e.preventDefault();
+      const unit =
+        e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? el.clientHeight : 1;
+      el.scrollTop += e.deltaY * unit;
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Back to the top before tap-to-pay or a page: driven from here, frame by
+  // frame, for the same reason (a native smooth scroll runs off the main
+  // thread and the card would lag it).
+  useEffect(() => {
+    const el = stackRef.current;
+    if (!el || canScroll || card.page === 'limits' || el.scrollTop === 0) return;
+    if (reduceMotion) {
+      el.scrollTop = 0;
+      return;
+    }
+    const controls = animate(el.scrollTop, 0, { ...SCROLL_HOME, onUpdate: (v) => (el.scrollTop = v) });
+    return () => controls.stop();
   }, [canScroll, card.page, reduceMotion]);
 
   // App icon for push notifications — a brand-tinted rounded square.
