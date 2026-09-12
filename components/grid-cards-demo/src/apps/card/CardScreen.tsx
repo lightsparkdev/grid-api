@@ -183,8 +183,8 @@ export function CardScreen({ home }: CardScreenProps) {
       {/* Scroll edge: content riding up under the status bar and header is
           progressively blurred and faded into the surface. Before the header
           in the DOM so the header's buttons paint over it. The stage reads
-          this strip (data-card-fade) to fade the card, which is out of the
-          blur's reach in its own layer, over the same band. */}
+          this strip (data-card-fade) to blur the card, which is out of the
+          backdrop filter's reach in its own layer, over the same band. */}
       {!creating && (
         <div className={styles.topFade} data-card-fade aria-hidden>
           <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />

@@ -98,7 +98,7 @@
 
 /* Card slot. It scrolls with the content (not Aurora's pinned card: the
    home's surface is the screen's, so a surface sliding over the card read as
-   the card being cut off), fading out under the header as it goes. */
+   the card being cut off), blurring under the header as it goes. */
 .cardArea {
   flex-shrink: 0;
   display: flex;

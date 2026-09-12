@@ -24,6 +24,7 @@ import {
 } from '@/data/design';
 import { CardEnv } from './card3d/CardEnv';
 import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/CardMesh';
+import { EDGE_BLUR_RAMP_END, ScrollEdgeBlur, type EdgeBlurBand } from './card3d/ScrollEdgeBlur';
 import { localToSpec } from './card3d/faceFrame';
 import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
@@ -58,6 +59,10 @@ const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
  *  mesh carries about its own normal, degrees (three's positive z is
  *  counterclockwise seen from the front). */
 const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 };
+/** Stage px above the parked card's top edge (its hover tilt) that still count
+ *  as the card being under the screen's scroll-edge strip. Small enough that a
+ *  card at rest, 10px under the header, stays clear of it. */
+const EDGE_BLUR_MARGIN = 8;
 
 // Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
@@ -193,6 +198,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const dark = useThemeMode() === 'dark';
   const rootRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
+  /** The screen's scroll-edge strip while the parked card is under it (the
+   *  rig writes it each frame; the blur pass reads it). */
+  const edgeBand = useRef<EdgeBlurBand | null>(null);
   const motion = useMemo(() => new CardMotion(), []);
 
   const { issued, issuing, card, isDeclined } = home;
@@ -839,9 +847,11 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         <StageCamera dark={dark} />
         <CardEnv />
         <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
+        <ScrollEdgeBlur band={edgeBand} />
         <CardRig
           rootRef={rootRef}
           hitRef={hitRef}
+          edgeBand={edgeBand}
           live={live}
           motion={motion}
           pick={pick}
@@ -1040,6 +1050,7 @@ function StageCamera({ dark }: { dark: boolean }) {
 interface CardRigProps {
   rootRef: React.RefObject<HTMLDivElement>;
   hitRef: React.RefObject<HTMLDivElement>;
+  edgeBand: React.MutableRefObject<EdgeBlurBand | null>;
   live: React.MutableRefObject<Live>;
   motion: CardMotion;
   /** Filled with a picker from the pointer to the front face (spec px). */
@@ -1052,7 +1063,18 @@ interface CardRigProps {
 }
 
 /** Drives the mesh and the DOM hit box every frame. */
-function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onBrandPlacement, state }: CardRigProps) {
+function CardRig({
+  rootRef,
+  hitRef,
+  edgeBand,
+  live,
+  motion,
+  pick,
+  pickBack,
+  placement,
+  onBrandPlacement,
+  state,
+}: CardRigProps) {
   // Carrier takes position and scale; the card inside it takes the spin.
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
@@ -1214,11 +1236,12 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     // that slides its slot past the bezel can't show it over the shell. (Not
     // during the flight in or out, when it crosses the bezel on purpose.)
     // The screen's scroll edge ([data-card-fade], the strip under the status
-    // bar and header) blurs and tints the content scrolling under it; the card
-    // is in this layer, out of the blur's reach, so it fades out over the
-    // strip instead as the page scroll carries it up there.
+    // bar and header) blurs the content scrolling under it with a backdrop
+    // filter the card is out of reach of; when the page scroll carries the
+    // card up into the strip, the blur pass (ScrollEdgeBlur) does the same to
+    // the card. The strip is handed over only while the card is in it.
     let clip = '';
-    let mask = '';
+    let band: EdgeBlurBand | null = null;
     if (t >= CARD_PARKED_T) {
       const doc = root.ownerDocument;
       const screen = doc.querySelector<HTMLElement>('[data-screen-body]');
@@ -1230,13 +1253,18 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       const fade = doc.querySelector<HTMLElement>('[data-card-fade]');
       if (fade) {
         const f = fade.getBoundingClientRect();
-        const from = (f.top - r.top).toFixed(1);
-        const to = (f.top - r.top + f.height * 0.8).toFixed(1);
-        mask = `linear-gradient(to bottom, transparent ${from}px, #000 ${to}px)`;
+        const top = f.top - r.top;
+        // The card's edges on stage, with room for its tilt: in the strip
+        // when its top is above where the blur has ramped to nothing and its
+        // bottom hasn't left through the top (scrolled clear off the screen).
+        const half = (foot.h * s) / 2 + EDGE_BLUR_MARGIN;
+        const cardTop = y + bob - half;
+        const cardBottom = y + bob + half;
+        if (cardTop < top + f.height * EDGE_BLUR_RAMP_END && cardBottom > top) band = { top, height: f.height };
       }
     }
     if (root.style.clipPath !== clip) root.style.clipPath = clip;
-    if (root.style.maskImage !== mask) root.style.maskImage = mask;
+    edgeBand.current = band;
   });
 
   // The blueprint starts drawing once the front has painted.
