@@ -195,7 +195,6 @@
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
   scrollbar-width: none;
 
   /* Blocks keep their height; the list below them grows and the column scrolls. */
@@ -222,7 +221,9 @@
    padding stands in for the status bar and header the body now underlaps. */
 .stackScroll {
   overflow-y: auto;
-  overscroll-behavior: contain;
+  /* No overscroll-behavior: contain here (or on a page's scroll): at the
+     home's end the wheel must go on to the page around the phone, and
+     contain would stop it there even when the home has nothing to scroll. */
   scrollbar-width: none;
   padding-top: calc(62px + var(--wallet-header-height));
 
