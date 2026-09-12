@@ -15,7 +15,7 @@ Grid uses standard HTTP status codes to indicate the success or failure of reque
 | `401 Unauthorized`          | Authentication failed   | Invalid or missing API credentials                      |
 | `403 Forbidden`             | Permission denied       | Insufficient permissions or customer not ready          |
 | `404 Not Found`             | Resource not found      | Customer, transaction, or quote doesn't exist           |
-| `409 Conflict`              | Resource conflict       | Quote already executed, external account already exists |
+| `409 Conflict`              | Resource conflict       | Quote already executed, external account already exists, bank account still being validated |
 | `412 Precondition Failed`   | UMA version mismatch    | Counterparty doesn't support required UMA version       |
 | `429 Too Many Requests`     | Rate/volume limited     | Rate limit hit or daily volume limit exceeded           |
 | `422 Unprocessable Entity`  | Missing info            | Additional counterparty information required            |
@@ -99,6 +99,27 @@ async function safeSendPayment(accountId, amount) {
   }
 
   return await createQuote({ accountId, amount });
+}
+```
+
+</Accordion>
+
+<Accordion title="BANK_ACCOUNT_VALIDATION_PENDING">
+**Cause:** Grid is still validating the US bank account on this request
+
+**Solution:** Wait and retry. Grid validates a newly added ACH account by sending a micro-entry to the bank and waiting out the return window, which takes a few banking days. The account has not been rejected, so do not ask the customer to re-enter their details.
+
+```javascript
+async function createQuoteWhenAccountIsReady({ accountId, amount }) {
+  try {
+    return await createQuote({ accountId, amount });
+  } catch (error) {
+    if (error.code === "BANK_ACCOUNT_VALIDATION_PENDING") {
+      // Surface the wait to the customer; the account is fine.
+      return { status: "AWAITING_ACCOUNT_VALIDATION" };
+    }
+    throw error;
+  }
 }
 ```
 
@@ -443,6 +464,8 @@ function getUserFriendlyMessage(error) {
     INSUFFICIENT_BALANCE: "You don't have enough funds for this payment.",
     INVALID_BANK_ACCOUNT:
       "Bank account details are invalid. Please check and try again.",
+    BANK_ACCOUNT_VALIDATION_PENDING:
+      "We're still verifying this bank account. This usually takes a few business days.",
     PAYMENT_APPROVAL_TIMED_OUT: "Payment approval timed out. Please try again.",
     AMOUNT_OUT_OF_RANGE: "Payment amount is too high or too low.",
     INVALID_CURRENCY: "This currency is not supported.",
