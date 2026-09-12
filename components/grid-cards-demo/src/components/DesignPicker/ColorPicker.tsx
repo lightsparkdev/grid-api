@@ -293,6 +293,7 @@ export function ColorPicker({
 
   const [hsv, setHsv] = useState<Hsv>(() => hexToHsv(edited) ?? { h: 0, s: 0, v: 0 });
   const [hexText, setHexText] = useState(edited);
+  const hexJustFocused = useRef(false);
   const lastEmitted = useRef(edited);
 
   // Follow the edited color when something else set it (a swatch, a preset,
@@ -761,6 +762,17 @@ export function ColorPicker({
                   spellCheck={false}
                   autoComplete="off"
                   aria-label="Hex color"
+                  // A hex is replaced whole, not edited: focusing selects all of
+                  // it. The focusing click's mouseup would collapse that to a
+                  // caret, so it is swallowed once; later clicks place a caret.
+                  onFocus={(e) => {
+                    e.currentTarget.select();
+                    hexJustFocused.current = true;
+                  }}
+                  onMouseUp={(e) => {
+                    if (hexJustFocused.current) e.preventDefault();
+                    hexJustFocused.current = false;
+                  }}
                   onChange={(e) => setHexText(e.target.value)}
                   onBlur={applyHex}
                   onKeyDown={(e) => {
