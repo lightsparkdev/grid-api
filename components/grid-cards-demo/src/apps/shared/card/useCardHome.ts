@@ -141,6 +141,11 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     noticeTimer.current = window.setTimeout(() => setNotice(null), NOTICE_MS);
   };
   useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
+  /** The cardholder swipes the notification away before its hold is up. */
+  const dismissNotice = () => {
+    window.clearTimeout(noticeTimer.current);
+    setNotice(null);
+  };
 
   // Glass toast (overlay layer): the tap-to-pay balance guard, the wallet add.
   const [toast, setToast] = useState<ToastData | null>(null);
@@ -614,6 +619,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     setToast,
     showToast,
     notice,
+    dismissNotice,
     // Card controls (freeze / close / limits / reveal / wallet / transactions)
     card,
     revealPending,

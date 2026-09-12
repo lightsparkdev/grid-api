@@ -51,6 +51,9 @@ const LENS_SHOWN = {
   transitionEnd: { filter: 'none' as const },
 };
 const LENS_DISMISSED = { ...DISMISSED, filter: 'blur(8px)' };
+/** A swipe up dismisses once it has come this far, or is this quick. */
+const SWIPE_DISMISS_PX = 40;
+const SWIPE_DISMISS_VELOCITY = 500;
 
 interface GlassNotificationProps {
   show: boolean;
@@ -87,6 +90,9 @@ interface GlassNotificationProps {
     onUnavailable: () => void;
   }) => ReactNode;
   onTap?: () => void;
+  /** The cardholder swipes the capsule up: the caller clears `show`. Without
+   *  it the capsule doesn't drag. */
+  onDismiss?: () => void;
 }
 
 /**
@@ -106,6 +112,7 @@ export function GlassNotification({
   backdropNode,
   renderSafariLens,
   onTap,
+  onDismiss,
 }: GlassNotificationProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
@@ -176,7 +183,18 @@ export function GlassNotification({
                 : { ...(lensMode ? LENS_DISMISSED : DISMISSED), transition: EXIT_TUCK }
             }
             transition={ENTER_TRANSITION}
-            onClick={onTap}
+            // iOS: the banner swipes up and away. Free upward, a stiff rubber
+            // band downward; a short release settles it back in its slot. A
+            // tap (not a drag) is the tap.
+            drag={onDismiss ? 'y' : false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 1, bottom: 0.08 }}
+            dragMomentum={false}
+            dragSnapToOrigin
+            onDragEnd={(_, info) => {
+              if (info.offset.y < -SWIPE_DISMISS_PX || info.velocity.y < -SWIPE_DISMISS_VELOCITY) onDismiss?.();
+            }}
+            onTap={onTap}
           >
             {/* Blur on the OUTER span, clip on the INNER: clip-path applies
                 after filters, so clipping the blurred element itself would

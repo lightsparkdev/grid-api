@@ -77,6 +77,7 @@ export function CardScreen({ home }: CardScreenProps) {
     finishRevealAuth,
     finishTapAuth,
     notice,
+    dismissNotice,
     startReveal,
     toggleFreeze,
     startAddToWallet,
@@ -133,6 +134,7 @@ export function CardScreen({ home }: CardScreenProps) {
         title={notice?.title ?? ''}
         body={notice?.body ?? ''}
         bodyLines={2}
+        onDismiss={dismissNotice}
       />
     </>
   );
