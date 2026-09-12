@@ -16,6 +16,12 @@
   -webkit-tap-highlight-color: transparent;
   @include shadow.glass-button-shadow;
   @include shadow.glass-button-press(44px);
+  opacity: 1;
+  /* The press mixin's transitions, plus the ease between enabled and disabled. */
+  transition:
+    transform shadow.$glass-button-press-duration shadow.$glass-button-press-ease,
+    filter shadow.$glass-button-press-duration shadow.$glass-button-press-ease,
+    opacity shadow.$glass-button-press-duration shadow.$glass-button-press-ease;
 
   &:disabled {
     opacity: 0.45;

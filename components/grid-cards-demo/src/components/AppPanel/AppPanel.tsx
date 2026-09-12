@@ -64,11 +64,13 @@ function StageHost({
   // Two states only: the card floats alone, or it is in the phone. The first
   // flow brings the phone in and the card flies into its slot; the phone stays
   // through later flows until the visitor sends it away.
-  const showBack = phoneUp && !running;
+  const showBack = phoneUp;
 
-  // At the phone's top-right corner, outside the bezel, between flows: back
-  // to the card alone. The phone is the cardholder's; this control is the
-  // developer's, so it sits on the stage against the phone, not on the screen.
+  // At the phone's top-right corner, outside the bezel, whenever the phone is
+  // up: back to the card alone. Disabled, not hidden, while a flow plays (it
+  // used to vanish for every flow and return after, a flicker on every tile).
+  // The phone is the cardholder's; this control is the developer's, so it
+  // sits on the stage against the phone, not on the screen.
   const closePhone = (
     <span className={clsx(styles.back, !showBack && styles.backHidden)} aria-hidden={!showBack}>
       <GlassSymbolButton
@@ -77,6 +79,7 @@ function StageHost({
         type="button"
         glass={{ brightness: headerGlassBrightness(theme) }}
         tabIndex={showBack ? 0 : -1}
+        disabled={running}
         onClick={() => {
           // Whatever a flow left up (the Card Numbers page) goes with the phone.
           home.card.resetSurfaces();
