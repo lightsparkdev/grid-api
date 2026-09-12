@@ -43,9 +43,10 @@ land.
 ## Refund
 
 A merchant-initiated `RETURN` against a settled transaction. Refunds
-flow back to the funding source. A refund keeps the parent transaction
-`SETTLED` and reports the returned value in `refundedAmount`, whether
-it is full or partial.
+flow back to the funding source. A refund against a known purchase is its
+own dated `CardTransaction` row (`direction: CREDIT`) linked to the
+purchase via `originalTransactionId`; the purchase keeps its `SETTLED`
+status.
 
 ## Exception
 

@@ -49,7 +49,11 @@ get:
         type: string
     - name: status
       in: query
-      description: Filter by transaction status
+      description: >-
+        Filter by transaction status. Applies to payment transactions only: card
+        transactions carry a card lifecycle status (see `CardTransactionStatus`)
+        and are excluded from status-filtered queries. Combining `status` with
+        `type=CARD` is rejected with a 400.
       required: false
       schema:
         $ref: ../../components/schemas/transactions/TransactionStatus.yaml
@@ -59,6 +63,17 @@ get:
       required: false
       schema:
         $ref: ../../components/schemas/transactions/TransactionType.yaml
+    - name: cardId
+      in: query
+      description: >-
+        Filter to card transactions made on a single card. Accepts a `Card:`
+        LSID or a bare UUID. Only card transactions match, so this implies
+        `type=CARD` and can be combined with `customerId` to list one card of a
+        multi-card cardholder.
+      required: false
+      schema:
+        type: string
+        example: Card:019542f5-b3e7-1d02-0000-000000000010
     - name: reference
       in: query
       description: Filter by reference

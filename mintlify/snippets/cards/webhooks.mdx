@@ -4,7 +4,7 @@ retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
 [Webhooks](/api-reference/webhooks) for the underlying mechanics.
 
-One covers the card itself; the other four cover a card transaction's
+One covers the card itself; the others cover a card transaction's
 lifecycle.
 
 ## Event types
@@ -14,7 +14,8 @@ lifecycle.
 | `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD_TRANSACTION.AUTHORIZED` | An authorization is approved and a hold is placed on the funding source. |
 | `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted, but more are still expected. |
-| `CARD_TRANSACTION.SETTLED` | All clearings have posted. Re-fires when a merchant return lands, with the returned value in `refundedAmount`. |
+| `CARD_TRANSACTION.SETTLED` | All clearings have posted. Also fires for a merchant return, which posts as its own `CREDIT` row linked via `originalTransactionId`. |
+| `CARD_TRANSACTION.DECLINED` | The authorization was declined before any money moved. |
 | `CARD_TRANSACTION.EXCEPTION` | The transaction settled to the network but the pull from the funding source failed. |
 
 All of them carry the standard envelope:

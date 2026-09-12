@@ -13,6 +13,16 @@ properties:
     description: >-
       Merchant Category Code (ISO 18245) — four-digit numeric string.
     example: '5814'
+  city:
+    type: string
+    description: >-
+      Merchant city as reported by the card network, when present.
+    example: San Francisco
+  state:
+    type: string
+    description: >-
+      Merchant state or region as reported by the card network, when present.
+    example: CA
   country:
     type: string
     description: >-

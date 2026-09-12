@@ -1,11 +1,11 @@
 post:
   summary: Simulate a card return reversal
   description: >
-    Simulate a `RETURN_REVERSAL` against an existing card transaction in the
-    sandbox environment — reversing a previously settled return. The parent
-    transaction must have a posted return (non-zero `refundedAmount`). The
-    resulting card operation is delivered asynchronously via the issuer's
-    events webhook.
+    Simulate a `RETURN_REVERSAL` against an existing refund in the sandbox
+    environment — reversing a previously posted return. Pass the refund
+    row's own id (the `CREDIT` `CardTransaction` linked to the purchase via
+    `originalTransactionId`) as `cardTransactionId`. The resulting card
+    operation is delivered asynchronously via the issuer's events webhook.
 
 
     Production returns `404` on this path.
