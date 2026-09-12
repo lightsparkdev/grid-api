@@ -15,12 +15,16 @@ cards. Cards do not require new webhook endpoints or new API
 credentials — they reuse what's already configured for the rest of
 Grid. You'll only need to:
 
-- Subscribe to the new card-specific webhook types (`CARD.STATE_CHANGE`
-  and `CARD.FUNDING_SOURCE_CHANGE`). Card-transaction lifecycle events
-  ride on the generic transaction webhook stream that already covers
-  outgoing-payment activity.
+- Subscribe to the card webhook types: `CARD.STATE_CHANGE` for card
+  state, and `CARD_TRANSACTION.AUTHORIZED`,
+  `CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`,
+  `CARD_TRANSACTION.DECLINED`, and
+  `CARD_TRANSACTION.EXCEPTION` for the transaction lifecycle.
 - Confirm with your Lightspark contact that cards are enabled for your
   platform — issuance requires an issuer-side onboarding.
+- If your program includes physical cards, start the artwork early:
+  design review, Visa approval, and manufacturing run for weeks. See
+  [Card design guidelines](/cards/card-design/guidelines).
 
 ## Cardholder readiness
 
@@ -33,15 +37,15 @@ KYC to completion before issuing.
 
 ## Funding sources
 
-Every card is bound to at least one `InternalAccount` as its funding
-source at issue time. Authorization Decisioning checks the source's
+Every card is bound to one `InternalAccount` as its funding source at
+issue time. Authorization Decisioning checks the source's
 balance before approving each auth, so:
 
 - Top up the funding source before you expect transactions.
 - Use existing funding instructions (ACH, SEPA, wires, stablecoin) the
   same way you would for any other internal account.
 - See [Funding sources](/cards/card-management/funding-sources) for
-  rules around binding, unbinding, and the future multi-source path.
+  rules around binding and replacing the source.
 
 ## Issuing and lifecycle
 
@@ -59,12 +63,14 @@ pattern as Embedded Wallet credential revocation). See
 
 ## Transactions and reconciliation
 
-Each authorization on a card produces a parent `CardTransaction` row.
-Children (pulls, clearings, refunds) are reconciled against the parent
-and rolled up into `pullSummary`, `settlementSummary`, and
-`refundSummary` aggregates. The lifecycle status moves
-`AUTHORIZED → PARTIALLY_SETTLED → SETTLED → REFUNDED`, with
-`EXCEPTION` as the failure path for stuck post-hoc pulls.
+Each authorization on a card produces a `CardTransaction` row, with
+clearings reconciled against it and rolled up into `settledAmount`.
+The lifecycle status moves
+`AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `DECLINED` for auths
+refused before any money moved and `EXCEPTION` as the failure path for
+stuck post-hoc pulls. A merchant return is its own dated `CREDIT`
+`CardTransaction` row linked to the purchase via
+`originalTransactionId`; the purchase keeps its `SETTLED` status.
 
 The full event model is covered in
 [Reconciliation](/cards/transactions/reconciliation).
@@ -88,10 +94,9 @@ When you're ready to go live:
 
 - Complete card-issuer onboarding through your Lightspark contact.
 - Confirm webhook security, monitoring, and alerting cover the
-  `CARD.*` event types plus card-destination transactions on the
-  generic transaction webhook stream.
-- Build the `EXCEPTION` dashboard view from card-destination
-  transaction webhooks (filter by `status: "EXCEPTION"`) and wire it
+  `CARD.*` and `CARD_TRANSACTION.*` event types.
+- Build the `EXCEPTION` dashboard view from `CARD_TRANSACTION.EXCEPTION`
+  webhooks and wire it
   into on-call alerting.
 
 <Check>

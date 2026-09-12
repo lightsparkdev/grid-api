@@ -8,22 +8,31 @@ icon: "/images/icons/people.svg"
 import KycRegulated from '/snippets/kyc/kyc-regulated.mdx'
 import KycUnregulated from '/snippets/kyc/kyc-unregulated.mdx'
 import KycWebhooks from '/snippets/kyc/kyc-webhooks.mdx'
+import VerificationWebhooks from '/snippets/kyc/verification-webhooks.mdx'
+import CustomerDataRequirements from '/snippets/kyc/customer-data-requirements.mdx'
 import { FeatureCard, FeatureCardGrid } from '/snippets/feature-card.mdx'
 
 Customers must complete identity verification before processing conversions. The required information varies based on your platform's regulatory status.
 
-<AccordionGroup>
-    <Accordion title="Regulated Platforms" icon="">
-        <KycRegulated />
-    </Accordion>
-    <Accordion title="Unregulated Platforms" icon="">
-        <KycUnregulated />
-    </Accordion>
-</AccordionGroup>
+## What to collect
+
+<CustomerDataRequirements />
+
+## Regulated platforms
+
+<KycRegulated />
+
+## Unregulated platforms
+
+<KycUnregulated />
 
 ## Monitor verification status
 
 <KycWebhooks />
+
+### Handling verification issues
+
+<VerificationWebhooks />
 
 <Tip>
   Only customers with `APPROVED` status can create quotes and process

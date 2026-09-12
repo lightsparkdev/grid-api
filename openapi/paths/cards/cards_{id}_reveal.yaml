@@ -8,10 +8,15 @@ parameters:
 post:
   summary: Reveal card details
   description: >-
-    Mint a signed, short-lived URL for the card processor's iframe that
-    displays the card's full PAN, CVV, and expiry to the cardholder. This is
-    the only way to obtain a reveal URL — the `Card` resource never carries
-    one.
+    When the card's `cardCapabilities.supportsPanReveal` is true, mint a
+    signed, short-lived URL for the card processor's iframe that displays the
+    card's full PAN, CVV, and expiry to the cardholder. The `Card` resource
+    never carries a reveal URL.
+
+
+    When `cardCapabilities.supportsPanReveal` is false, this endpoint cannot
+    reveal the card. Use the card issuer's challenge-based hosted reveal flow
+    instead.
 
 
     Request the reveal right before rendering the iframe and render the
@@ -54,6 +59,16 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. The card's `cardCapabilities.supportsPanReveal` is false, so
+        Grid cannot mint a PAN reveal URL for it. Use the card issuer's
+        challenge-based hosted reveal flow instead. This capability is fixed
+        for the card, so retrying will not help.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:

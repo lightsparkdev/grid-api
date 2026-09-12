@@ -27,15 +27,16 @@ properties:
     $ref: ./CardConfig.yaml
     description: >-
       Update platform-level card settings. Fields omitted from the nested
-      object are left unchanged. For either spending limit, supply null to
+      object are left unchanged. For any card limit, supply null to
       clear the platform cap or a positive integer to set it. Omit this field
       at the top level to leave all card settings unchanged.
   feeConfigs:
     type: array
     items:
-      $ref: ./FeeConfig.yaml
+      $ref: ./FeeConfigOneOf.yaml
     description: |
-      Merge-by-key upsert of platform fee configs, keyed by
-      `(feeType, sourceCurrency)`. Setting variable and fixed fees to 0 for
-      an existing fee config deactivates it. Only `sourceCurrency: USD` is
-      accepted today. Omit this field to leave fee configs unchanged.
+      Merge-by-key upsert of platform fee configs. A cross-currency transaction
+      fee config is keyed by `(feeType, sourceCurrency)` and a rail fee config by
+      `(feeType, rail, direction, originator)`. Setting variable and fixed fees
+      to 0 for an existing config deactivates it. Omit this field to leave fee
+      configs unchanged.

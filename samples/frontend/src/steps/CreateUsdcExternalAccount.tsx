@@ -19,6 +19,12 @@ const NETWORK_CONFIGS: Record<string, {
   address: string
   description: string
 }> = {
+  ARBITRUM: {
+    label: "Arbitrum",
+    accountType: "ARBITRUM_WALLET",
+    address: "0xAbCDEF1234567890aBCdEf1234567890ABcDef12",
+    description: "USDC on Arbitrum",
+  },
   BASE: {
     label: "Base",
     accountType: "BASE_WALLET",

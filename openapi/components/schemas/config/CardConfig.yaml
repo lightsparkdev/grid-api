@@ -33,3 +33,21 @@ properties:
       restore capacity during the day. The cap applies to existing cards and
       cards issued later. Provider-decided card programs are unaffected.
     example: 50000
+  maxTransactionsPerDay:
+    anyOf:
+      - type: integer
+        format: int32
+        minimum: 1
+        maximum: 2147483647
+      - type: 'null'
+    description: >-
+      Platform-level cap on the number of transactions each card may authorize
+      during one UTC calendar day, for every card whose authorization
+      decisions are made by Grid. Grid enforces the lower of this cap and the
+      card's configured `maxTransactionsPerDay`; null means no platform-level
+      daily transaction cap. The window resets at 00:00 UTC. Each approved
+      authorization counts once; refunds, reversals, and authorization
+      expiries do not restore capacity during the day. The cap applies to
+      existing cards and cards issued later. Provider-decided card programs
+      are unaffected.
+    example: 50

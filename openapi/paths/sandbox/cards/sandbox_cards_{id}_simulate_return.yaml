@@ -2,9 +2,10 @@ post:
   summary: Simulate a card return
   description: >
     Simulate a merchant-initiated `RETURN` against an existing settled
-    card transaction in the sandbox environment. Creates a `CardRefund` on
-    the parent and either flips the parent to `REFUNDED` (full refund) or
-    keeps it `SETTLED` with a non-zero `refundedAmount` (partial refund).
+    card transaction in the sandbox environment. Creates a `CardRefund` and
+    posts the return as its own dated `CREDIT` `CardTransaction` linked to
+    the purchase via `originalTransactionId`; the purchase keeps its
+    `SETTLED` status, whether the return is full or partial.
 
 
     Production returns `404` on this path.
@@ -31,7 +32,7 @@ post:
           fullRefund:
             summary: Full refund of a $15.00 settled transaction
             value:
-              cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+              cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
               amount: 1500
   responses:
     '202':
@@ -67,6 +68,16 @@ post:
         application/json:
           schema:
             $ref: ../../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. The simulation targets a card in a program where the card
+        issuer makes authorization decisions. These sandbox simulators support
+        only card programs where Grid makes authorization decisions. This is a
+        property of the card's program, so retrying will not help.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:

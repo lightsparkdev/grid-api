@@ -66,6 +66,21 @@ post:
                 accountInfo:
                   accountType: ETHEREUM_WALLET
                   address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+          arbitrumWalletActive:
+            summary: An Arbitrum wallet account became active
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000044
+              type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+              timestamp: '2025-08-15T14:32:00Z'
+              data:
+                id: ExternalAccount:f95dcbd6-dced-4ec4-b756-3c3a9ea3d966
+                customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                status: ACTIVE
+                currency: USDC
+                ownershipType: FIRST_PARTY
+                accountInfo:
+                  accountType: ARBITRUM_WALLET
+                  address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
           verificationFailed:
             summary: A liveness check failed; a new challenge is needed to retry
             value:

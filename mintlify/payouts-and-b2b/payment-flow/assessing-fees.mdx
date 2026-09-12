@@ -39,19 +39,21 @@ billed for it separately. Which side absorbs it depends on `lockedCurrencySide`:
 
 Fees are configured per **fee type**, which identifies the activity being charged:
 
-- `CROSS_CURRENCY_TRANSACTION` — a transfer where the sending currency differs from the
-  receiving currency.
+- `CROSS_CURRENCY_TRANSACTION` — a fee charged on transactions where the sending currency differs from the receiving currency
+- `RAIL` — a fee charged on any transaction that uses this payment rail
+
+Both fee types may apply to the same transaction, e.g. a cross-currency payment that goes out over ACH. Your platform will receive the sum of all applied fees.
 
 <Info>
-**Current limits.** Platform fees are supported for a **USD** sending currency only, and
-the fixed fee must be denominated in that same sending currency — other currencies return
-`NOT_IMPLEMENTED`. `CROSS_CURRENCY_TRANSACTION` is the only fee type you can configure
-today.
+**Current limits.** Cross-currency fees are supported for a **USD** sending currency
+only, and the fixed fee must be in that same currency — other currencies return
+`NOT_IMPLEMENTED`.
 
-Both are expanding: a `RAIL` fee type (charged for use of a payment rail) and support for
-stablecoin sending currencies such as USDC are planned. Watch the
-[changelog](/changelog) for when they land rather than assuming today's limits are
-permanent.
+Rail fees cover `ACH`, `RTP`, `FEDNOW` and `WIRE`, going `OUT`, with the fixed fee in USD.
+Anything else returns `NOT_IMPLEMENTED`.
+
+Both are expanding — support for stablecoin sending currencies such as USDC is planned.
+Watch the [changelog](/changelog) rather than assuming today's limits are permanent.
 </Info>
 
 <Note>
@@ -116,11 +118,35 @@ curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
   }'
 ```
 
-`feeConfigs` is a **merge-by-key upsert** keyed by `(feeType, sourceCurrency)`:
+`feeConfigs` is a **merge-by-key upsert**. Cross-currency fees are keyed by
+`(feeType, sourceCurrency)`, rail fees by `(feeType, rail, direction, originator)`:
 
 - Only the keys you send are touched. Configs you omit are left unchanged.
 - Omitting `feeConfigs` entirely leaves all your fee configuration unchanged.
 - There is at most one active config per key.
+
+A rail fee looks like this:
+
+```bash Set a standing rail fee
+curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
+  -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "feeConfigs": [
+      {
+        "feeType": "RAIL",
+        "rail": "ACH",
+        "direction": "OUT",
+        "originator": "GRID",
+        "variableFeeBps": 0,
+        "fixedFee": {
+          "amount": 25,
+          "currency": "USD"
+        }
+      }
+    ]
+  }'
+```
 
 To read your current fees back, call `GET /config` — the response includes a `feeConfigs`
 array with every currently-active config.

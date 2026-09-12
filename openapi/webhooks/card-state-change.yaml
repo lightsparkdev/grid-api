@@ -49,19 +49,18 @@ post:
               timestamp: '2026-05-08T14:11:00Z'
               data:
                 id: Card:019542f5-b3e7-1d02-0000-000000000010
-                cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                platformCardId: card-emp-aary-001
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCardId: card-emp-001
                 state: ACTIVE
-                stateReason: null
                 brand: VISA
                 form: VIRTUAL
                 last4: '4242'
                 expMonth: 12
                 expYear: 2029
-                fundingSources:
-                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 maxSpendPerTransaction: 5000
                 maxSpendPerDay: 25000
+                maxTransactionsPerDay: 20
                 currency: USD
                 processorRef: card_b81c2a4f
                 issuerRef: lead_card_7a1b9c3d
@@ -75,14 +74,14 @@ post:
               timestamp: '2026-05-08T14:12:00Z'
               data:
                 id: Card:019542f5-b3e7-1d02-0000-000000000011
-                cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 state: CLOSED
                 stateReason: ISSUER_REJECTED
                 form: VIRTUAL
-                fundingSources:
-                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 maxSpendPerTransaction: null
                 maxSpendPerDay: null
+                maxTransactionsPerDay: null
                 currency: USD
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-08T14:12:00Z'
@@ -94,18 +93,17 @@ post:
               timestamp: '2026-05-09T09:00:00Z'
               data:
                 id: Card:019542f5-b3e7-1d02-0000-000000000010
-                cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 state: FROZEN
-                stateReason: null
                 brand: VISA
                 form: VIRTUAL
                 last4: '4242'
                 expMonth: 12
                 expYear: 2029
-                fundingSources:
-                  - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 maxSpendPerTransaction: 5000
                 maxSpendPerDay: 25000
+                maxTransactionsPerDay: 20
                 currency: USD
                 createdAt: '2026-05-08T14:10:00Z'
                 updatedAt: '2026-05-09T09:00:00Z'

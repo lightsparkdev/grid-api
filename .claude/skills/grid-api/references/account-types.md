@@ -57,6 +57,7 @@ The **Available Rails** column lists the payment rails Grid may use for the crea
 | SOLANA_WALLET | USDC | Solana wallet address |
 | TRON_WALLET | USDT | TRON wallet address |
 | PLASMA_WALLET | USDT | Plasma wallet address (0x...) |
+| ARBITRUM_WALLET | USDC, USDT | Arbitrum wallet address (0x...) |
 | POLYGON_WALLET | USDC | Polygon wallet address (0x...) |
 | BASE_WALLET | USDC | Base wallet address (0x...) |
 
@@ -224,7 +225,6 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
     "accountInfo": {
       "accountType": "EUR_ACCOUNT",
       "iban": "DE89370400440532013000",
-      "swiftCode": "COBADEFFXXX",
       "beneficiary": {
         "beneficiaryType": "INDIVIDUAL",
         "fullName": "Full Name",
@@ -246,8 +246,14 @@ curl -s -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
 Required fields:
 
 - `iban`: International Bank Account Number (15-34 characters)
-- `swiftCode`: SWIFT/BIC code (8 or 11 characters, pattern: `^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`) — optional
 - Beneficiary: `countryOfResidence` is required (in addition to `fullName`)
+
+Optional field:
+
+- `swiftCode`: SWIFT/BIC code (8 or 11 characters, pattern:
+  `^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`). When omitted, Grid derives
+  it from `iban` when possible. Provide it when automatic derivation is
+  unavailable.
 
 ### Denmark (DKK_ACCOUNT)
 

@@ -1,0 +1,92 @@
+post:
+  summary: Simulate a card authorization expiry
+  description: >
+    Simulate an authorization the merchant never followed through on, so the
+    card network lets it lapse and releases the held funds. Use it to see how
+    your integration handles a hold that quietly goes away instead of
+    settling.
+
+    The transaction must still be fully open: once any part of it has
+    settled, it can no longer expire.
+
+    Grid processes the expiry in the background and sends a card transaction
+    webhook once it lands, the same as the other simulators.
+
+
+    Production returns `404` on this path.
+  operationId: sandboxSimulateCardAuthorizationExpiry
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The id of the card the expiry applies to.
+      schema:
+        type: string
+      example: Card:019542f5-b3e7-1d02-0000-000000000010
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../../components/schemas/cards/SandboxCardTransactionRefRequest.yaml
+        examples:
+          expiry:
+            summary: Expire an open authorization
+            value:
+              cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+  responses:
+    '202':
+      description: >-
+        Simulation accepted. The resulting card operation is delivered
+        asynchronously via the issuer's events webhook. Returns the issuer
+        transaction token that correlates the simulated event.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/cards/SandboxCardSimulationResponse.yaml
+    '400':
+      description: >-
+        Bad request - Invalid parameters, or the transaction is not an open
+        authorization
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or card transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. The simulation targets a card in a program where the card
+        issuer makes authorization decisions. These sandbox simulators support
+        only card programs where Grid makes authorization decisions. This is a
+        property of the card's program, so retrying will not help.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error500.yaml

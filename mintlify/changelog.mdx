@@ -9,6 +9,81 @@ Follow along with the latest additions and improvements to the Grid API. For upc
 changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 [contact support](mailto:support@lightspark.com).
 
+<Update label="September 2026">
+
+## Card refunds post as their own rows, declines report as `DECLINED`
+
+Two card-statement corrections to `CardTransaction`:
+
+- **Refunds are their own dated rows.** A merchant `RETURN` against a purchase now opens
+  its own `CardTransaction` (`direction: CREDIT`, credited value in `settledAmount`)
+  linked back to the purchase via the new `originalTransactionId` field, instead of
+  folding into the purchase's `refundedAmount`. The purchase stays `SETTLED`; the refund
+  fires its own `CARD_TRANSACTION.*` webhooks on the refund row. To reverse a sandbox
+  return, pass the refund row's id to `POST /sandbox/cards/{id}/simulate/return_reversal`.
+- **`DECLINED` status.** An authorization declined before any money moved now reports
+  `DECLINED` (and fires `CARD_TRANSACTION.DECLINED`) instead of `EXCEPTION`, which is
+  reserved for settlement anomalies. Declines must be excluded from cardholder
+  statements.
+- Card rows now carry the same full currency metadata (`decimals`, `name`, `symbol`) as
+  payment rows, and `merchant` gains `city` and `state` when the network reports them.
+- `GET /transactions` accepts a `cardId` filter (`Card:` LSID or UUID) for listing one
+  card of a multi-card cardholder, and rejects `status` combined with `type=CARD` with a
+  400—`status` applies to payment transactions only.
+
+## Card returns report as `SETTLED` with a `refundedAmount`
+
+`REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from
+the webhook types. A card transaction's status tracks settlement only—a return is
+reported through `direction` and `refundedAmount`, which together already carry it.
+
+- A settled purchase that the merchant later returns stays `SETTLED`, with the returned
+  value in `refundedAmount`. A standalone merchant refund arrives as `direction: CREDIT`
+  and `status: SETTLED`, with the credited value in `settledAmount`.
+- Returns no longer get a webhook type of their own—the transaction re-fires
+  `CARD_TRANSACTION.SETTLED` with the updated amounts.
+- The sandbox return reversal simulator requires a parent with a posted return (non-zero
+  `refundedAmount`) rather than a `REFUNDED` parent, which the previous docs described
+  and the server never produced.
+
+Nothing you have received changes: the status was always derived on read, so existing
+transactions already report `SETTLED`. `TransactionStatus.REFUNDED` on cross-border
+payments is a separate enum and is unaffected.
+
+See [Reconciliation](/cards/transactions/reconciliation).
+
+## Sandbox KYC and KYB follow the production flow
+
+Unregulated sandbox platforms now resolve a customer's verification from a submitted
+packet rather than at create, so your sandbox integration rehearses the same collect,
+submit, and resolve loop you run in production.
+
+<Warning>
+  Behavior change. On an unregulated sandbox, a name suffix alone no longer sets the
+  result at create. New customers stay `UNVERIFIED` until you call `POST /verifications`.
+  Customers created before this change keep their status, and regulated sandbox platforms
+  are unaffected.
+</Warning>
+
+- Upload documents with `POST /documents`, register beneficial owners for a business, then
+  submit with `POST /verifications`. The suffix on `fullName`, `registrationNumber`, or a
+  beneficial owner's `lastName` still decides the outcome—it applies once the submission
+  is in rather than at create.
+- An incomplete submission returns `verificationStatus: RESOLVE_ERRORS` naming every
+  missing field and document, so you can fix and resubmit. A business whose
+  `registrationNumber` ends in `002` now reports those errors first rather than rejecting
+  outright.
+- Renaming a customer no longer overwrites a settled result—`APPROVED` and `REJECTED` stay
+  put. Create a new customer when you want to exercise a different outcome.
+- To keep the previous fast path, open **Configuration** in your sandbox dashboard and turn
+  on **Skip verification paperwork**. A terminal suffix then resolves with no documents:
+  individuals at create, businesses at their first submission. `001` and `003` still require
+  a complete packet. Turn it off when you want to test the full flow again.
+
+Walk through the fix-and-resubmit loop in [sandbox testing](/api-reference/sandbox-testing).
+
+</Update>
+
 <Update label="August 2026">
 
 ## `/transfer-in` and `/transfer-out` are deprecated

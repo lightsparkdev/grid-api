@@ -58,7 +58,7 @@ tags:
   - name: Agent Operations
     description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
-    description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage card funding sources, and list card transactions.
+    description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
     description: Stablecoin issuance endpoints. Link provider accounts, register provider-created stablecoins, create direct mint/burn issuer operations, and track operation status.
 paths:
@@ -92,7 +92,7 @@ paths:
                 $ref: '#/components/schemas/Error500'
     patch:
       summary: Update platform configuration
-      description: Update platform configuration settings. `cardConfigs` can establish platform-level per-transaction and UTC-calendar-day card caps. Grid enforces the lower of each platform cap and its corresponding card-specific value without replacing the card-specific value. Daily limits reset at 00:00 UTC.
+      description: Update platform configuration settings. `cardConfigs` can establish platform-level caps on a single card transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Grid enforces the lower of each platform cap and its corresponding card-specific value without replacing the card-specific value. Daily limits reset at 00:00 UTC.
       operationId: updatePlatformConfig
       tags:
         - Platform Configuration
@@ -142,6 +142,7 @@ paths:
               cardConfigs:
                 maxSpendPerTransaction: 10000
                 maxSpendPerDay: 50000
+                maxTransactionsPerDay: 50
       responses:
         '200':
           description: Configuration updated successfully
@@ -331,12 +332,12 @@ paths:
                   summary: Payment rails for Philippines (PHP)
                   value:
                     data:
-                      - bankName: BDO Unibank
-                        displayName: BDO Unibank
+                      - bankName: Bank of the Philippine Islands (BPI)
+                        displayName: Bank of the Philippine Islands (BPI)
                         country: PH
                         currency: PHP
-                      - bankName: BPI
-                        displayName: Bank of the Philippine Islands
+                      - bankName: BDO Network Bank
+                        displayName: BDO Network Bank / One Network Bank
                         country: PH
                         currency: PHP
         '400':
@@ -1790,8 +1791,9 @@ paths:
         Complete a 2FA reset once liveness has passed, clearing the lost factor so
         the customer can re-enroll.
 
-        For an `SMS_OTP` reset, supply the new `mobile` number in the body — completing
-        the reset enrolls it as the customer's number. Other factors need no body.
+        The body is required and must carry the end user's `endUserIpAddress`. For an
+        `SMS_OTP` reset, also supply the new `mobile` number — completing the reset
+        enrolls it as the customer's number; other factors need no `mobile`.
 
         This endpoint is only meaningful for customers in a region where SCA is required (e.g. EU). For customers outside SCA-regulated regions, this returns `409`.
       operationId: completeTwoFactorReset
@@ -1800,7 +1802,7 @@ paths:
       security:
         - BasicAuth: []
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -2091,6 +2093,133 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /internal-accounts:
+    post:
+      summary: Create an internal account
+      description: |
+        Create a rule-based internal account.
+
+        A rule-based account is an additional account number for an account holder
+        that already holds an account in the same currency. It carries a routing
+        rule: every payment that settles into it is attributed to that account
+        number and then swept to the rule's destination, so you can issue one number
+        per payer and reconcile incoming payments without matching on remittance
+        text.
+
+        Only `RULE_BASED` accounts can be created here. `INTERNAL_FIAT`,
+        `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
+        automatically when an account holder is created or approved.
+
+        The response carries the account's own `fundingPaymentInstructions` — the
+        routable number payers send to. Rule-based accounts are currently available
+        in `USD`, for individual customers, and must be enabled for your platform
+        before this endpoint accepts requests.
+
+        Sandbox platforms can create rule-based accounts and exercise the whole
+        flow. The account number is generated locally rather than issued by a
+        partner bank, and `POST /sandbox/internal-accounts/{accountId}/fund` stands
+        in for a settled deposit — funding the account triggers its sweep just as a
+        real deposit would.
+
+        Creating an account mints a new account number that cannot be reversed, so
+        an `Idempotency-Key` header is required. A retry carrying the same key
+        returns the account created by the first request with a `200` instead of a
+        `201`; reusing a key for a materially different account is rejected with
+        `409`.
+      operationId: createInternalAccount
+      tags:
+        - Internal Accounts
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: |
+            A unique identifier for the request. Required, because creating the account mints an account number that cannot be reversed. Retries must carry the same key.
+          required: true
+          schema:
+            type: string
+            example: 550e8400-e29b-41d4-a716-446655440000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalAccountCreateRequest'
+            examples:
+              externalDestination:
+                summary: Forward every payment to an external account over ACH
+                value:
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  type: RULE_BASED
+                  currency: USD
+                  label: invoice-4417
+                  sweepRule:
+                    destination:
+                      accountId: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+                      paymentRail: ACH
+                    purposeOfPayment: SELF
+                    description: Rent sweep
+                    remittanceInformation: Unit 4B March
+              internalDestination:
+                summary: Forward every payment to another internal account
+                value:
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  type: RULE_BASED
+                  currency: USD
+                  label: payer-northwind
+                  sweepRule:
+                    destination:
+                      accountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+      responses:
+        '200':
+          description: The `Idempotency-Key` was already used to create this account. The account created by the first request is returned unchanged.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '201':
+          description: Internal account created. `fundingPaymentInstructions` carries the account's own number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalAccount'
+        '400':
+          description: Bad request. Returned when `type` is not `RULE_BASED`, when `sweepRule` is missing, when the currency is not supported for rule-based accounts, when the account holder has no account in that currency yet, when the destination cannot accept the requested payment rail, and for general invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - rule-based accounts are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Customer or destination account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict - the `Idempotency-Key` was already used to create a different account, or the account for this key is still being provisioned. Retry with the same key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /customers/internal-accounts:
     get:
       summary: List Customer internal accounts
@@ -2120,7 +2249,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued for a customer.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -2185,7 +2314,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for a customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for the platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued with a sweep rule.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -4540,7 +4669,7 @@ paths:
             type: string
         - name: status
           in: query
-          description: Filter by transaction status
+          description: 'Filter by transaction status. Applies to payment transactions only: card transactions carry a card lifecycle status (see `CardTransactionStatus`) and are excluded from status-filtered queries. Combining `status` with `type=CARD` is rejected with a 400.'
           required: false
           schema:
             $ref: '#/components/schemas/TransactionStatus'
@@ -4550,6 +4679,13 @@ paths:
           required: false
           schema:
             $ref: '#/components/schemas/TransactionType'
+        - name: cardId
+          in: query
+          description: Filter to card transactions made on a single card. Accepts a `Card:` LSID or a bare UUID. Only card transactions match, so this implies `type=CARD` and can be combined with `customerId` to list one card of a multi-card cardholder.
+          required: false
+          schema:
+            type: string
+            example: Card:019542f5-b3e7-1d02-0000-000000000010
         - name: reference
           in: query
           description: Filter by reference
@@ -4923,6 +5059,14 @@ paths:
                   cryptoNetwork: SOLANA
                   amount: 1000000
                   destinationAddress: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+              estimateArbitrumWithdrawal:
+                summary: Estimate fee for USDC withdrawal on Arbitrum
+                value:
+                  internalAccountId: InternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+                  currency: USDC
+                  cryptoNetwork: ARBITRUM
+                  amount: 1000000
+                  destinationAddress: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
       responses:
         '200':
           description: Fee estimation returned successfully
@@ -8177,7 +8321,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, or `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts.
+          description: Filter by internal account type. Use `EMBEDDED_WALLET` to find the self-custodial wallet provisioned for the customer, `INTERNAL_FIAT` / `INTERNAL_CRYPTO` for platform-managed holding accounts, or `RULE_BASED` for the additional account numbers issued with a sweep rule.
           required: false
           schema:
             $ref: '#/components/schemas/InternalAccountType'
@@ -8423,11 +8567,15 @@ paths:
     post:
       summary: Issue a card
       description: |
-        Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
+        Issue a new card for a cardholder. Every card is bound to one internal account, `fundingSource`, at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
-        Optional `maxSpendPerTransaction` and `maxSpendPerDay` values set the card-specific caps on one transaction and one UTC calendar day. The limits are enforced by Grid for card programs where Grid makes the authorization decision, whether the card is funded by an Embedded Wallet account or custodial fiat. If the platform config sets the corresponding `cardConfigs` value, Grid enforces the lower of the card and platform caps. All values use the smallest unit of the card's currency.
+        Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Retries must carry the same key.
 
-        If any funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
+        Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and `maxTransactionsPerDay` values set the card-specific caps on one transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Check the funding-source internal account's `cardCapabilities.supportsSpendLimits` before supplying either spend limit, and `cardCapabilities.supportsTransactionCountLimit` before supplying the transaction count limit. If the platform config sets the corresponding `cardConfigs` value, Grid enforces the lower of the card and platform caps. Amounts use the smallest unit of the card's currency.
+
+        If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
+
+        A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` state do not count toward the limit.
 
         New cards start in `state: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on each state transition, including the transition to `ACTIVE` (or to `CLOSED` with `stateReason: "ISSUER_REJECTED"` if provisioning fails).
       operationId: createCard
@@ -8435,6 +8583,16 @@ paths:
         - Cards
       security:
         - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: |
+            A unique identifier for the request, up to 255 characters. A retry carrying the same key returns the card created by the first request; reusing a key for a materially different card request is rejected with `409`.
+          required: true
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
         content:
@@ -8445,13 +8603,13 @@ paths:
               virtualCard:
                 summary: Issue a virtual card with one funding source
                 value:
-                  cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                  platformCardId: card-emp-aary-001
+                  customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                  platformCardId: card-emp-001
                   form: VIRTUAL
-                  fundingSources:
-                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                   maxSpendPerTransaction: 5000
                   maxSpendPerDay: 25000
+                  maxTransactionsPerDay: 20
       responses:
         '201':
           description: Card created successfully. Newly-created cards start in `PROCESSING` while the issuer provisions them. Cards funded by an Embedded Wallet internal account also require an active delegated key for that funding source before Authorization Decisioning can use it.
@@ -8460,7 +8618,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, with `INVALID_INPUT` when the `Idempotency-Key` header is missing or exceeds 255 characters or when a required `threeDSecurePassword` is missing, empty, or whitespace-only, with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -8471,6 +8629,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '409':
+          description: Conflict. Returned with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the `Idempotency-Key` was already used for a different card request. Closing a card frees its slot; contact Lightspark to raise the limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -8493,15 +8657,15 @@ paths:
       security:
         - BasicAuth: []
       parameters:
-        - name: cardholderId
+        - name: customerId
           in: query
-          description: Filter by cardholder (customer) id.
+          description: Filter by customer id.
           required: false
           schema:
             type: string
         - name: accountId
           in: query
-          description: Filter by internal account id. Returns cards whose `fundingSources` array contains the given internal account id.
+          description: Filter by internal account id. Returns cards whose `fundingSource` is the given internal account id.
           required: false
           schema:
             type: string
@@ -8623,22 +8787,23 @@ paths:
     patch:
       summary: Update a card
       description: |
-        Update a card's `state`, bound `fundingSources`, and / or `maxSpendPerTransaction`, or `maxSpendPerDay`. At least one field must be supplied.
+        Update a card's `state`, bound `fundingSource`, and / or `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`. At least one field must be supplied.
 
         - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
-        - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`.
-        - `maxSpendPerTransaction`, when supplied, replaces the card-specific per-transaction cap. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card and platform values. Limits are supported only for card programs where Grid makes the authorization decision. `maxSpendPerTransaction` cannot be supplied alongside `state: CLOSED`.
-        - `maxSpendPerDay`, when supplied, replaces the card-specific cap on cumulative new spend during one UTC calendar day. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. `maxSpendPerDay` cannot be supplied alongside `state: CLOSED`.
+        - `fundingSource`, when supplied, replaces the card's bound internal account. It must belong to the customer and be denominated in the card's currency. `fundingSource` cannot be supplied alongside `state: CLOSED`. On card programs where the card issuer makes authorization decisions, `fundingSource` cannot be combined with any `state` change, so send the changes as separate requests. On card programs where Grid makes the authorization decision, the combination remains valid for `state` changes other than `CLOSED`.
+        - `maxSpendPerTransaction`, when supplied, replaces the card-specific per-transaction cap. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card and platform values. The card's `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerTransaction` cannot be supplied alongside `state: CLOSED`.
+        - `maxSpendPerDay`, when supplied, replaces the card-specific cap on cumulative new spend during one UTC calendar day. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. The card's `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerDay` cannot be supplied alongside `state: CLOSED`.
+        - `maxTransactionsPerDay`, when supplied, replaces the card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Supply a positive integer to set it or null to clear it. If the platform config sets `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. `maxTransactionsPerDay` requires the card's `cardCapabilities.supportsTransactionCountLimit` to be true and cannot be supplied alongside `state: CLOSED`.
 
         This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
         Effects:
         - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
         - `state: ACTIVE`: normal authorization behavior resumes.
-        - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. Funding-source bindings are detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
-        - `fundingSources` change: emits `card.funding_source_change` reflecting the new ordered binding.
+        - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. The funding source is detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
+        - `fundingSource` change: returns the updated card with the new binding and fires no webhook.
 
-        The `card.state_change` webhook fires on every successful `state` transition; the `card.funding_source_change` webhook fires whenever `fundingSources` is updated.
+        The `card.state_change` webhook fires on every successful `state` transition.
       operationId: updateCardById
       tags:
         - Cards
@@ -8659,28 +8824,27 @@ paths:
                 summary: Unfreeze a frozen card
                 value:
                   state: ACTIVE
-              updateFundingSources:
-                summary: Replace the card's bound funding sources
+              updateFundingSource:
+                summary: Replace the card's bound funding source
                 value:
-                  fundingSources:
-                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
               setSpendingLimit:
-                summary: Set the card's per-transaction spending limit
+                summary: Set the card's spending and transaction limits
                 value:
                   maxSpendPerTransaction: 10000
                   maxSpendPerDay: 25000
+                  maxTransactionsPerDay: 20
               clearSpendingLimit:
                 summary: Remove the card's spending limits
                 value:
                   maxSpendPerTransaction: null
                   maxSpendPerDay: null
-              freezeAndUpdateSources:
-                summary: Freeze the card and replace its funding sources in one call
+                  maxTransactionsPerDay: null
+              freezeAndUpdateSource:
+                summary: Freeze the card and replace its funding source in one call
                 value:
                   state: FROZEN
-                  fundingSources:
-                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
               close:
                 summary: Permanently close the card
                 value:
@@ -8693,7 +8857,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, and for general invalid parameters.
+          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, with `INVALID_INPUT` when `fundingSource` is combined with any `state` change on a card program where the card issuer makes authorization decisions, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -8739,7 +8903,9 @@ paths:
     post:
       summary: Reveal card details
       description: |-
-        Mint a signed, short-lived URL for the card processor's iframe that displays the card's full PAN, CVV, and expiry to the cardholder. This is the only way to obtain a reveal URL — the `Card` resource never carries one.
+        When the card's `cardCapabilities.supportsPanReveal` is true, mint a signed, short-lived URL for the card processor's iframe that displays the card's full PAN, CVV, and expiry to the cardholder. The `Card` resource never carries a reveal URL.
+
+        When `cardCapabilities.supportsPanReveal` is false, this endpoint cannot reveal the card. Use the card issuer's challenge-based hosted reveal flow instead.
 
         Request the reveal right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
 
@@ -8774,6 +8940,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The card's `cardCapabilities.supportsPanReveal` is false, so Grid cannot mint a PAN reveal URL for it. Use the card issuer's challenge-based hosted reveal flow instead. This capability is fixed for the card, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -8868,6 +9040,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -8908,12 +9086,12 @@ paths:
               tipOnTopClearing:
                 summary: Clearing larger than auth — exercises post-hoc pull
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 1500
               authorizationExpiry:
                 summary: Clearing of 0 — exercises authorization expiry
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 0
       responses:
         '202':
@@ -8946,6 +9124,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -8956,7 +9140,7 @@ paths:
     post:
       summary: Simulate a card return
       description: |
-        Simulate a merchant-initiated `RETURN` against an existing settled card transaction in the sandbox environment. Creates a `CardRefund` on the parent and either flips the parent to `REFUNDED` (full refund) or keeps it `SETTLED` with a non-zero `refundedAmount` (partial refund).
+        Simulate a merchant-initiated `RETURN` against an existing settled card transaction in the sandbox environment. Creates a `CardRefund` and posts the return as its own dated `CREDIT` `CardTransaction` linked to the purchase via `originalTransactionId`; the purchase keeps its `SETTLED` status, whether the return is full or partial.
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardReturn
@@ -8982,7 +9166,7 @@ paths:
               fullRefund:
                 summary: Full refund of a $15.00 settled transaction
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 1500
       responses:
         '202':
@@ -9015,6 +9199,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9086,6 +9276,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9162,6 +9358,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9238,6 +9440,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9314,6 +9522,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9350,7 +9564,7 @@ paths:
               resizeUp:
                 summary: Re-size an open auth up to a new total of $20.00
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                   amount: 2000
       responses:
         '202':
@@ -9383,6 +9597,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9459,6 +9679,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -9469,9 +9695,7 @@ paths:
     post:
       summary: Simulate a card return reversal
       description: |
-        Simulate a `RETURN_REVERSAL` against an existing `REFUNDED` card transaction in the sandbox environment — reversing a previously settled return. The parent transaction must be in `REFUNDED` state. The resulting card operation is delivered asynchronously via the issuer's events webhook.
-
-        Note: authorization reversal / void has no dedicated card-issuer simulate path (the void simulator emits a distinct `VOID` event), so — like authorization expiry — it is not exposed here.
+        Simulate a `RETURN_REVERSAL` against an existing refund in the sandbox environment — reversing a previously posted return. Pass the refund row's own id (the `CREDIT` `CardTransaction` linked to the purchase via `originalTransactionId`) as `cardTransactionId`. The resulting card operation is delivered asynchronously via the issuer's events webhook.
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardReturnReversal
@@ -9495,9 +9719,9 @@ paths:
               $ref: '#/components/schemas/SandboxCardTransactionRefRequest'
             examples:
               returnReversal:
-                summary: Reverse a settled return on a refunded transaction
+                summary: Reverse a settled return on a transaction with a posted return
                 value:
-                  cardTransactionId: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
       responses:
         '202':
           description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
@@ -9529,6 +9753,169 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/authorization_reversal:
+    post:
+      summary: Simulate a card authorization reversal
+      description: |
+        Simulate a merchant cancelling a card authorization before it settles — a hotel releasing a hold, or a store voiding a purchase that never went through. Use it to see how your integration handles an authorization that disappears without ever clearing.
+        Send `amount` to reverse only part of the authorization, or leave it out to reverse all of it. The transaction must still be fully open: once any part of it has settled, it can no longer be reversed.
+        Grid processes the reversal in the background and sends a card transaction webhook once it lands, the same as the other simulators.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardAuthorizationReversal
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the reversal applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardReversalRequest'
+            examples:
+              fullReversal:
+                summary: Reverse the whole open authorization
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+              partialReversal:
+                summary: Reverse part of it and leave the rest authorized
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 500
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters, or the transaction is not an open authorization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/authorization_expiry:
+    post:
+      summary: Simulate a card authorization expiry
+      description: |
+        Simulate an authorization the merchant never followed through on, so the card network lets it lapse and releases the held funds. Use it to see how your integration handles a hold that quietly goes away instead of settling.
+        The transaction must still be fully open: once any part of it has settled, it can no longer expire.
+        Grid processes the expiry in the background and sends a card transaction webhook once it lands, the same as the other simulators.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardAuthorizationExpiry
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the expiry applies to.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardTransactionRefRequest'
+            examples:
+              expiry:
+                summary: Expire an open authorization
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+      responses:
+        '202':
+          description: Simulation accepted. The resulting card operation is delivered asynchronously via the issuer's events webhook. Returns the issuer transaction token that correlates the simulated event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardSimulationResponse'
+        '400':
+          description: Bad request - Invalid parameters, or the transaction is not an open authorization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -11238,6 +11625,21 @@ webhooks:
                     accountInfo:
                       accountType: ETHEREUM_WALLET
                       address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+              arbitrumWalletActive:
+                summary: An Arbitrum wallet account became active
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000044
+                  type: EXTERNAL_ACCOUNT.STATUS_UPDATED
+                  timestamp: '2025-08-15T14:32:00Z'
+                  data:
+                    id: ExternalAccount:f95dcbd6-dced-4ec4-b756-3c3a9ea3d966
+                    customerId: Customer:da459a29-1fb7-41ce-a4cb-eb3a3c9fd7a7
+                    status: ACTIVE
+                    currency: USDC
+                    ownershipType: FIRST_PARTY
+                    accountInfo:
+                      accountType: ARBITRUM_WALLET
+                      address: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
               verificationFailed:
                 summary: A liveness check failed; a new challenge is needed to retry
                 value:
@@ -11392,19 +11794,18 @@ webhooks:
                   timestamp: '2026-05-08T14:11:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000010
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    platformCardId: card-emp-aary-001
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCardId: card-emp-001
                     state: ACTIVE
-                    stateReason: null
                     brand: VISA
                     form: VIRTUAL
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     maxSpendPerTransaction: 5000
                     maxSpendPerDay: 25000
+                    maxTransactionsPerDay: 20
                     currency: USD
                     processorRef: card_b81c2a4f
                     issuerRef: lead_card_7a1b9c3d
@@ -11418,14 +11819,14 @@ webhooks:
                   timestamp: '2026-05-08T14:12:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000011
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     state: CLOSED
                     stateReason: ISSUER_REJECTED
                     form: VIRTUAL
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     maxSpendPerTransaction: null
                     maxSpendPerDay: null
+                    maxTransactionsPerDay: null
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-08T14:12:00Z'
@@ -11437,97 +11838,20 @@ webhooks:
                   timestamp: '2026-05-09T09:00:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000010
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     state: FROZEN
-                    stateReason: null
                     brand: VISA
                     form: VIRTUAL
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     maxSpendPerTransaction: 5000
                     maxSpendPerDay: 25000
+                    maxTransactionsPerDay: 20
                     currency: USD
                     createdAt: '2026-05-08T14:10:00Z'
                     updatedAt: '2026-05-09T09:00:00Z'
-      responses:
-        '200':
-          description: |
-            Webhook received successfully
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400'
-        '401':
-          description: Unauthorized - Signature validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '409':
-          description: Conflict - Webhook has already been processed (duplicate id)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error409'
-  card-funding-source-change:
-    post:
-      summary: Card funding source change
-      description: |
-        Webhook that is called when the funding sources bound to a card change. Fires whenever `PATCH /cards/{id}` updates the `fundingSources` array. The payload carries the full `Card` resource with the post-change `fundingSources` array.
-
-        This endpoint should be implemented by clients of the Grid API.
-
-        ### Authentication
-
-        The webhook includes a signature in the `X-Grid-Signature` header that allows you to verify that the webhook was sent by Grid.
-        To verify the signature:
-        1. Get the Grid public key provided to you during integration
-        2. Decode the base64 signature from the header
-        3. Create a SHA-256 hash of the request body
-        4. Verify the signature using the public key and the hash
-
-        If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
-      operationId: cardFundingSourceChangeWebhook
-      tags:
-        - Webhooks
-      security:
-        - WebhookSignature: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CardFundingSourceChangeWebhook'
-            examples:
-              fundingSourcesReplaced:
-                summary: Funding sources replaced via PATCH /cards/{id}
-                value:
-                  id: Webhook:019542f5-b3e7-1d02-0000-000000000030
-                  type: CARD.FUNDING_SOURCE_CHANGE
-                  timestamp: '2026-05-08T14:30:00Z'
-                  data:
-                    id: Card:019542f5-b3e7-1d02-0000-000000000010
-                    cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                    state: ACTIVE
-                    stateReason: null
-                    brand: VISA
-                    form: VIRTUAL
-                    last4: '4242'
-                    expMonth: 12
-                    expYear: 2029
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
-                    maxSpendPerTransaction: null
-                    maxSpendPerDay: null
-                    currency: USD
-                    createdAt: '2026-05-08T14:10:00Z'
-                    updatedAt: '2026-05-08T14:30:00Z'
       responses:
         '200':
           description: |
@@ -11554,7 +11878,9 @@ webhooks:
     post:
       summary: Card transaction
       description: |
-        Webhook that is called on every state transition of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
+        Webhook that is called on every lifecycle update of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when the authorization is declined (`CARD_TRANSACTION.DECLINED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
+
+        A merchant return is its own `CardTransaction` row (`direction: CREDIT`) linked to the purchase via `originalTransactionId`, and fires its own `CARD_TRANSACTION.*` deliveries on that row — the purchase row is not re-fired for the return.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -11588,7 +11914,7 @@ webhooks:
                   timestamp: '2026-05-09T10:00:00Z'
                   data:
                     type: CARD
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
@@ -11607,16 +11933,6 @@ webhooks:
                         symbol: $
                         decimals: 2
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 12550
-                      pendingCount: 1
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 0
-                      totalAmount: 0
                     authorizedAt: '2026-05-09T10:00:00Z'
                     createdAt: '2026-05-09T10:00:00Z'
                     updatedAt: '2026-05-09T10:00:00Z'
@@ -11628,7 +11944,7 @@ webhooks:
                   timestamp: '2026-05-09T15:42:11Z'
                   data:
                     type: CARD
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
@@ -11654,35 +11970,25 @@ webhooks:
                         symbol: $
                         decimals: 2
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 12550
-                      pendingCount: 0
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 1
-                      totalAmount: 12550
                     authorizedAt: '2026-05-09T10:00:00Z'
-                    lastEventAt: '2026-05-09T15:42:11Z'
                     createdAt: '2026-05-09T10:00:00Z'
                     updatedAt: '2026-05-09T15:42:11Z'
-              refunded:
-                summary: Settled funds returned by the merchant
+              returned:
+                summary: Merchant return posted as its own CREDIT row
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000042
-                  type: CARD_TRANSACTION.REFUNDED
+                  type: CARD_TRANSACTION.SETTLED
                   timestamp: '2026-05-10T09:15:00Z'
                   data:
                     type: CARD
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000105
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
-                    issuerTransactionToken: lithic_txn_b81c2a4f
-                    status: REFUNDED
-                    direction: DEBIT
+                    issuerTransactionToken: lithic_txn_r55e8c1d
+                    status: SETTLED
+                    direction: CREDIT
+                    originalTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                     merchant:
                       descriptor: BLUE BOTTLE COFFEE SF
                       mcc: '5814'
@@ -11701,28 +12007,40 @@ webhooks:
                         name: United States Dollar
                         symbol: $
                         decimals: 2
-                    refundedAmount:
-                      amount: 12550
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    authorizedAt: '2026-05-10T09:15:00Z'
+                    createdAt: '2026-05-10T09:15:00Z'
+                    updatedAt: '2026-05-10T09:15:00Z'
+              declined:
+                summary: Authorization declined
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000044
+                  type: CARD_TRANSACTION.DECLINED
+                  timestamp: '2026-05-09T16:10:00Z'
+                  data:
+                    type: CARD
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000102
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_d41a7f02
+                    status: DECLINED
+                    direction: DEBIT
+                    merchant:
+                      descriptor: UBER EATS
+                      mcc: '5812'
+                      country: US
+                    authorizedAmount:
+                      amount: 4200
                       currency:
                         code: USD
                         name: United States Dollar
                         symbol: $
                         decimals: 2
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 12550
-                      pendingCount: 0
-                    refundSummary:
-                      count: 1
-                      totalAmount: 12550
-                    settlementSummary:
-                      count: 1
-                      totalAmount: 12550
-                    authorizedAt: '2026-05-09T10:00:00Z'
-                    lastEventAt: '2026-05-10T09:15:00Z'
-                    createdAt: '2026-05-09T10:00:00Z'
-                    updatedAt: '2026-05-10T09:15:00Z'
+                    authorizedAt: '2026-05-09T16:10:00Z'
+                    createdAt: '2026-05-09T16:10:00Z'
+                    updatedAt: '2026-05-09T16:10:00Z'
               exception:
                 summary: Settled to the network but the funding-source pull failed
                 value:
@@ -11731,7 +12049,7 @@ webhooks:
                   timestamp: '2026-05-09T16:05:00Z'
                   data:
                     type: CARD
-                    id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000101
                     cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                     customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 18d3e5f7b4a9c2
@@ -11757,18 +12075,7 @@ webhooks:
                         symbol: $
                         decimals: 2
                     accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    pullSummary:
-                      count: 1
-                      totalAmount: 0
-                      pendingCount: 0
-                    refundSummary:
-                      count: 0
-                      totalAmount: 0
-                    settlementSummary:
-                      count: 1
-                      totalAmount: 4200
                     authorizedAt: '2026-05-09T15:30:00Z'
-                    lastEventAt: '2026-05-09T16:05:00Z'
                     createdAt: '2026-05-09T15:30:00Z'
                     updatedAt: '2026-05-09T16:05:00Z'
       responses:
@@ -11956,7 +12263,8 @@ components:
       enum:
         - INCOMING
         - OUTGOING
-      description: Type of transaction (incoming payment or outgoing payment)
+        - CARD
+      description: Type of transaction
     PlatformCurrencyConfig:
       type: object
       properties:
@@ -12090,7 +12398,7 @@ components:
         fromName:
           type: string
           maxLength: 255
-          description: Sender display name.
+          description: Sender display name. Defaults to `displayName`.
           example: Acme Cards
         replyToAddress:
           type: string
@@ -12101,7 +12409,9 @@ components:
         subject:
           type: string
           maxLength: 255
-          description: Subject for the authentication email.
+          description: |
+            Subject for the authentication email. Defaults to
+            "Your {displayName} verification code".
           example: Your Acme card verification code
         bodyText:
           type: string
@@ -12109,7 +12419,8 @@ components:
           description: |
             Plain-text message content. Lightspark inserts the authentication code into
             a controlled text and HTML template; arbitrary HTML and template variables
-            are not supported.
+            are not supported. Defaults to "Use this code to finish adding your
+            {displayName} card to your wallet."
           example: Use this code to finish adding your Acme card to your digital wallet.
     CardTokenization2FASmsConfig:
       type: object
@@ -12127,7 +12438,8 @@ components:
           maxLength: 480
           description: |
             Plain-text fallback message used when Twilio Verify is unavailable for the
-            authentication code. Lightspark appends the code to this text.
+            authentication code. Lightspark appends the code to this text. Defaults to
+            "Your {displayName} verification code is:".
           example: Use this code to finish adding your Acme card to your digital wallet.
     CardTokenization2FAConfig:
       type: object
@@ -12136,7 +12448,9 @@ components:
         displayName:
           type: string
           maxLength: 255
-          description: Platform name displayed in authentication messages.
+          description: |
+            Name shown in authentication messages and used to build the default
+            subject, body, and sender name. Defaults to the platform's name.
           example: Acme
         logoUrl:
           type: string
@@ -12171,15 +12485,26 @@ components:
             - type: 'null'
           description: Platform-level cap on cumulative new spend during one UTC calendar day for every card whose authorization decisions are made by Grid. The value is interpreted in the smallest unit of each card's currency. Grid enforces the lower of this cap and the card's configured `maxSpendPerDay`; null means no platform-level daily cap. The window resets at 00:00 UTC. Refunds, reversals, and authorization expiries do not restore capacity during the day. The cap applies to existing cards and cards issued later. Provider-decided card programs are unaffected.
           example: 50000
+        maxTransactionsPerDay:
+          anyOf:
+            - type: integer
+              format: int32
+              minimum: 1
+              maximum: 2147483647
+            - type: 'null'
+          description: Platform-level cap on the number of transactions each card may authorize during one UTC calendar day, for every card whose authorization decisions are made by Grid. Grid enforces the lower of this cap and the card's configured `maxTransactionsPerDay`; null means no platform-level daily transaction cap. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. The cap applies to existing cards and cards issued later. Provider-decided card programs are unaffected.
+          example: 50
     FeeType:
       type: string
       enum:
         - CROSS_CURRENCY_TRANSACTION
+        - RAIL
       description: |
         The kind of activity this fee applies to.
 
-        - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
-          (source currency differs from destination currency).
+        - `CROSS_CURRENCY_TRANSACTION` — a fee charged on transactions where the sending
+          currency differs from the receiving currency
+        - `RAIL` — a fee charged on any transaction that uses the specified payment rail
       example: CROSS_CURRENCY_TRANSACTION
     FixedFee:
       type: object
@@ -12200,14 +12525,10 @@ components:
           example: USD
     FeeConfig:
       type: object
-      description: A platform-configured fee collected by Grid and settled to the platform internal account. There can be at most one fee config for a given fee type and source currency pair. The fee will apply to all transactions of the fee type that originate in the source currency.
+      description: A platform-configured fee collected by Grid and settled to the platform internal account. These fields are shared by every platform fee config.
       properties:
         feeType:
           $ref: '#/components/schemas/FeeType'
-        sourceCurrency:
-          type: string
-          description: Currency code of the sending side this fee applies to. Only `USD` is accepted today; other currencies return a `NOT_IMPLEMENTED` error.
-          example: USD
         variableFeeBps:
           type: integer
           minimum: 0
@@ -12218,16 +12539,96 @@ components:
           $ref: '#/components/schemas/FixedFee'
       required:
         - feeType
-        - sourceCurrency
         - variableFeeBps
         - fixedFee
+    CrossCurrencyTransactionFeeConfig:
+      allOf:
+        - $ref: '#/components/schemas/FeeConfig'
+        - type: object
+          properties:
+            feeType:
+              enum:
+                - CROSS_CURRENCY_TRANSACTION
+            sourceCurrency:
+              type: string
+              description: Currency code of the sending side this fee applies to. Only `USD` is accepted today; other currencies return a `NOT_IMPLEMENTED` error.
+              example: USD
+          required:
+            - sourceCurrency
+      description: A fee charged for a cross-currency transaction. There can be at most one cross-currency transaction fee config for a given source currency. The fee will apply to all cross-currency transactions that originate in the source currency.
+    PaymentRail:
+      type: string
+      enum:
+        - ACH
+        - ACH_COLOMBIA
+        - BANK_TRANSFER
+        - BRE_B
+        - CIPS
+        - FAST
+        - FASTER_PAYMENTS
+        - FEDNOW
+        - INSTAPAY
+        - MOBILE_MONEY
+        - NEFT
+        - PAYNOW
+        - PESONET
+        - PIX
+        - RTGS
+        - RTP
+        - SEPA
+        - SEPA_INSTANT
+        - SPEI
+        - SWIFT
+        - UNIONPAY
+        - UPI
+        - WIRE
+      description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
+      example: ACH
+    RailFeeConfig:
+      allOf:
+        - $ref: '#/components/schemas/FeeConfig'
+        - type: object
+          properties:
+            feeType:
+              enum:
+                - RAIL
+            rail:
+              $ref: '#/components/schemas/PaymentRail'
+              description: The rail used in the transaction. `ACH`, `RTP`, `FEDNOW` and `WIRE` are accepted today; other rails return a `NOT_IMPLEMENTED` error.
+            direction:
+              type: string
+              enum:
+                - IN
+                - OUT
+              description: Whether the money is coming in or going out, relative to Grid. Only `OUT` is accepted today.
+              example: OUT
+            originator:
+              type: string
+              enum:
+                - GRID
+                - EXTERNAL
+              description: Who originated the movement over the rail. An ACH OUT where Grid is the originator means Grid is pushing out the funds, while an ACH OUT with an EXTERNAL originator indicates Grid received an ACH pull request from an external source.
+              example: GRID
+          required:
+            - rail
+            - direction
+            - originator
+      description: 'A fee charged when a transaction uses the specified rail. There can be at most one for a given rail, direction and originator. For example, a config with rail: ACH, direction: OUT, originator: GRID will charge a fee on all outgoing ACH transactions.'
+    FeeConfigOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/CrossCurrencyTransactionFeeConfig'
+        - $ref: '#/components/schemas/RailFeeConfig'
+      discriminator:
+        propertyName: feeType
+        mapping:
+          CROSS_CURRENCY_TRANSACTION: '#/components/schemas/CrossCurrencyTransactionFeeConfig'
+          RAIL: '#/components/schemas/RailFeeConfig'
     PlatformConfig:
       type: object
       properties:
         id:
           type: string
           description: System-generated unique identifier
-          readOnly: true
           example: PlatformConfig:019542f5-b3e7-1d02-0000-000000000003
         umaDomain:
           type: string
@@ -12273,7 +12674,7 @@ components:
         feeConfigs:
           type: array
           items:
-            $ref: '#/components/schemas/FeeConfig'
+            $ref: '#/components/schemas/FeeConfigOneOf'
           description: |
             Platform-collected fees that should be added on top of
             Grid-collected fees. Contains every currently-active fee config
@@ -12282,13 +12683,11 @@ components:
           type: string
           format: date-time
           description: Creation timestamp
-          readOnly: true
           example: '2025-06-15T12:30:45Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp
-          readOnly: true
           example: '2025-06-15T12:30:45Z'
     Error401:
       type: object
@@ -12386,16 +12785,17 @@ components:
             to subsequent delivery attempts.
         cardConfigs:
           $ref: '#/components/schemas/CardConfig'
-          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. For either spending limit, supply null to clear the platform cap or a positive integer to set it. Omit this field at the top level to leave all card settings unchanged.
+          description: Update platform-level card settings. Fields omitted from the nested object are left unchanged. For any card limit, supply null to clear the platform cap or a positive integer to set it. Omit this field at the top level to leave all card settings unchanged.
         feeConfigs:
           type: array
           items:
-            $ref: '#/components/schemas/FeeConfig'
+            $ref: '#/components/schemas/FeeConfigOneOf'
           description: |
-            Merge-by-key upsert of platform fee configs, keyed by
-            `(feeType, sourceCurrency)`. Setting variable and fixed fees to 0 for
-            an existing fee config deactivates it. Only `sourceCurrency: USD` is
-            accepted today. Omit this field to leave fee configs unchanged.
+            Merge-by-key upsert of platform fee configs. A cross-currency transaction
+            fee config is keyed by `(feeType, sourceCurrency)` and a rail fee config by
+            `(feeType, rail, direction, originator)`. Setting variable and fixed fees
+            to 0 for an existing config deactivates it. Omit this field to leave fee
+            configs unchanged.
     FieldConstraint:
       type: object
       description: Machine-readable validator hint accompanying a 400 `INVALID_INPUT` error. Consumers use it to drive form UI (input types, dropdowns, masking, length limits) and to pre-validate the field client-side before re-submitting. Fields are additive.
@@ -12607,34 +13007,6 @@ components:
           description: Number of decimal places for the currency
           minimum: 0
           example: 2
-    PaymentRail:
-      type: string
-      enum:
-        - ACH
-        - ACH_COLOMBIA
-        - BANK_TRANSFER
-        - BRE_B
-        - CIPS
-        - FAST
-        - FASTER_PAYMENTS
-        - FEDNOW
-        - INSTAPAY
-        - MOBILE_MONEY
-        - NEFT
-        - PAYNOW
-        - PESONET
-        - PIX
-        - RTGS
-        - RTP
-        - SEPA
-        - SEPA_INSTANT
-        - SPEI
-        - SWIFT
-        - UNIONPAY
-        - UPI
-        - WIRE
-      description: The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
-      example: ACH
     ExchangeRateFees:
       type: object
       description: Fees associated with an exchange rate
@@ -12701,7 +13073,7 @@ components:
           example: 1650000
         exchangeRate:
           type: number
-          description: Number of sending currency units per receiving currency unit.
+          description: 'Number of sending currency units per receiving currency unit. The rate is fee-exclusive: it covers the currency conversion only, and Grid charges `fees` separately rather than pricing them into the rate.'
           exclusiveMinimum: 0
           example: 0.012121
         fees:
@@ -12818,7 +13190,6 @@ components:
         id:
           type: string
           description: System-generated unique identifier
-          readOnly: true
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         platformCustomerId:
           type: string
@@ -12828,7 +13199,6 @@ components:
           $ref: '#/components/schemas/CustomerType'
         endUserTermsConsent:
           $ref: '#/components/schemas/EndUserTermsConsent'
-          readOnly: true
           description: The customer's recorded acceptance of the End User Terms. Omitted until acceptance has been recorded.
         region:
           type: string
@@ -12860,23 +13230,19 @@ components:
           type: string
           format: date-time
           description: Creation timestamp
-          readOnly: true
           example: '2025-07-21T17:32:28Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp
-          readOnly: true
           example: '2025-07-21T17:32:28Z'
         isDeleted:
           type: boolean
           description: Whether the customer is marked as deleted
           example: false
-          readOnly: true
         contactVerification:
           allOf:
             - $ref: '#/components/schemas/ContactVerification'
-          readOnly: true
           description: Email and phone verification state. **Only present when the customer's payment provider requires it** (e.g. EU customers); omitted otherwise.
     KycStatus:
       type: string
@@ -13817,6 +14183,7 @@ components:
             | INVALID_STATE_TRANSITION | The requested card `state` transition is not one of `ACTIVE ⇄ FROZEN` or `ACTIVE \| FROZEN → CLOSED` |
             | CARD_ALREADY_CLOSED | `state: CLOSED` was requested for a card that is already `CLOSED` |
             | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
+            | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
           enum:
@@ -13831,6 +14198,7 @@ components:
             - INVALID_STATE_TRANSITION
             - CARD_ALREADY_CLOSED
             - CARD_NOT_MUTABLE
+            - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - CONFLICT
         message:
@@ -14471,6 +14839,7 @@ components:
       description: Records a client-side security event for the customer so Grid can maintain the customer's login-security state (SCA session revocation and failed-login lockout).
       required:
         - eventType
+        - endUserIpAddress
       properties:
         eventType:
           type: string
@@ -14485,6 +14854,10 @@ components:
             | `RESET_PASSWORD_COMPLETED` | Revokes every active SCA session for the customer and clears the failed-login counter. |
             | `FAILED_LOGIN_ATTEMPT` | Increments the cumulative failed-login counter and escalates the lockout at each milestone: 5 attempts → 15 minutes, 6 → 30 minutes, 7 → 1 hour, 8 → 24 hours, 9 or more → suspension. |
           example: FAILED_LOGIN_ATTEMPT
+        endUserIpAddress:
+          type: string
+          description: The IP address of the end user's device the event was observed from, recorded against the event by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment and the adaptive-authentication signals derived from this event.
+          example: 203.0.113.42
     RecordSecurityEventResponse:
       type: object
       description: The customer's login-security state after recording the event, so the integrator can surface a lockout to the end user.
@@ -14516,13 +14889,18 @@ components:
           example: 5
     TwoFactorResetStartRequest:
       type: object
-      description: Selects which enrolled factor to reset via the liveness-gated recovery flow.
+      description: Selects which enrolled factor to reset via the liveness-gated recovery flow, and the IP address the end user is starting the reset from.
       required:
         - factor
+        - endUserIpAddress
       properties:
         factor:
           $ref: '#/components/schemas/ScaFactor'
           description: The enrolled factor to reset.
+        endUserIpAddress:
+          type: string
+          description: The IP address of the end user's device starting this reset, recorded against the reset by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment of the recovery.
+          example: 203.0.113.42
     TwoFactorResetStart:
       type: object
       description: The reset handle plus the opaque liveness handles a caller relays to the end-user device to complete the liveness check. `resetId` threads the ceremony together (status and complete reference it). `livenessAccessToken` and `verificationLink` are omitted when they are not returned.
@@ -14627,8 +15005,14 @@ components:
           example: null
     TwoFactorResetCompleteRequest:
       type: object
-      description: Optional body for completing a 2FA reset. Only needed when resetting the `SMS_OTP` factor to a new phone number; omit the body entirely otherwise.
+      description: Completes a 2FA reset. The body is required and carries the IP address the end user is completing the reset from; `mobile` is only needed when resetting the `SMS_OTP` factor to a new phone number.
+      required:
+        - endUserIpAddress
       properties:
+        endUserIpAddress:
+          type: string
+          description: The IP address of the end user's device completing this reset, recorded against the reset by the SCA provider. Supply the customer's address, not your server's — it feeds the provider's risk assessment of the recovery.
+          example: 203.0.113.42
         mobile:
           type: object
           description: For an `SMS_OTP` reset, the new mobile number to enroll as the customer completes the reset. Required for an `SMS_OTP` reset; ignored for `TOTP` / `PASSKEY` resets.
@@ -14754,12 +15138,106 @@ components:
         - INTERNAL_FIAT
         - INTERNAL_CRYPTO
         - EMBEDDED_WALLET
+        - RULE_BASED
       description: |-
         Classification of an internal account.
 
         - `INTERNAL_FIAT`: A Grid-managed fiat holding account (for example, the USD holding account used as the source for Payouts flows).
         - `INTERNAL_CRYPTO`: A Grid-managed crypto holding account denominated in a stablecoin such as USDC.
         - `EMBEDDED_WALLET`: A self-custodial Embedded Wallet provisioned for the customer. Outbound transfers require a session signature produced by the customer's device — see the Embedded Wallets guide.
+        - `RULE_BASED`: An additional account number for an existing account holder, with a routing rule attached, so incoming payments can be attributed to a specific payer and swept automatically. Created with `POST /internal-accounts`.
+    SweepRuleDestinationRequest:
+      title: Sweep Rule Destination Request
+      type: object
+      description: The account a rule-based account sweeps its incoming payments to.
+      additionalProperties: false
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: Reference to the account that receives the swept funds. May be an external account or another internal account, but never a `RULE_BASED` internal account — that account's own rule would sweep the funds on again. The destination may be denominated in a different currency, in which case the sweep is converted at the prevailing rate.
+          example: ExternalAccount:e85dcbd6-dced-4ec4-b756-3c3a9ea3d965
+        paymentRail:
+          description: The payment rail to use when sweeping to an external account. Must be one of the rails supported by the destination account. If omitted, a rail is selected automatically for each sweep. Not accepted when the destination is an internal account, which settles without a payment rail.
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+    PurposeOfPayment:
+      type: string
+      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
+      enum:
+        - GIFT
+        - SELF
+        - GOODS_OR_SERVICES
+        - EDUCATION
+        - HEALTH_OR_MEDICAL
+        - REAL_ESTATE_PURCHASE
+        - TAX_PAYMENT
+        - LOAN_PAYMENT
+        - UTILITY_BILL
+        - DONATION
+        - TRAVEL
+        - FAMILY_SUPPORT
+        - SALARY_PAYMENT
+        - OTHER
+    SweepRuleRequest:
+      title: Sweep Rule Request
+      type: object
+      description: The routing rule attached to a rule-based account. Every payment that settles into the account is swept to the rule's destination, carrying the payment metadata configured here.
+      additionalProperties: false
+      required:
+        - destination
+      properties:
+        destination:
+          allOf:
+            - $ref: '#/components/schemas/SweepRuleDestinationRequest'
+          description: Where funds that settle into this account are swept.
+        purposeOfPayment:
+          allOf:
+            - $ref: '#/components/schemas/PurposeOfPayment'
+          description: The purpose of payment applied to each sweep. Required by some destination geographies.
+          example: SELF
+        description:
+          type: string
+          maxLength: 255
+          description: Free-form description recorded on each sweep. Not delivered to the recipient; use `remittanceInformation` for that.
+          example: Rent sweep
+        remittanceInformation:
+          type: string
+          maxLength: 1024
+          description: 'Free-form information that travels with each sweep to the recipient. The field this populates depends on the payment rail: for ACH it populates the Addenda record, for FedNow and RTP it populates the remittanceInformation field, and for wires it populates the OBI (Originator to Beneficiary Information) / beneficiary information. Only printable ASCII characters are accepted, because the underlying rails carry nothing else.'
+          example: Unit 4B March
+    InternalAccountCreateRequest:
+      title: Internal Account Create Request
+      type: object
+      description: Request body for `POST /internal-accounts`. Only `RULE_BASED` accounts can be created today, and they are rejected without a `sweepRule` — the type and its rule are created together or not at all.
+      additionalProperties: false
+      required:
+        - type
+        - currency
+      properties:
+        customerId:
+          type: string
+          description: The customer the account is created for. Omit it to create a platform-owned account. The account holder must already have a verified account in the same currency, which is where funds land when a sweep cannot be completed. Platform-owned rule-based accounts are not available yet, so omitting this is currently rejected.
+          example: Customer:019542f5-b3e7-1d02-0000-000000000001
+        type:
+          allOf:
+            - $ref: '#/components/schemas/InternalAccountType'
+          description: Must be `RULE_BASED`. `INTERNAL_FIAT`, `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned automatically when a customer is created or approved, so they cannot be created through this endpoint.
+          example: RULE_BASED
+        currency:
+          type: string
+          description: Currency code the account is denominated in (ISO 4217). Rule-based accounts are currently available in `USD` only.
+          example: USD
+        label:
+          type: string
+          maxLength: 255
+          description: Your own name for the account, echoed back on reads. Useful for identifying which payer the account was issued for.
+          example: invoice-4417
+        sweepRule:
+          allOf:
+            - $ref: '#/components/schemas/SweepRuleRequest'
+          description: 'The routing rule for the account. Required when `type` is `RULE_BASED`, which is the only type this endpoint creates today: a rule-based account with no rule has no meaning, so the two are written together.'
     InternalAccountStatus:
       title: Internal Account Status
       type: string
@@ -14818,6 +15296,7 @@ components:
         - SOLANA_WALLET
         - TRON_WALLET
         - PLASMA_WALLET
+        - ARBITRUM_WALLET
         - POLYGON_WALLET
         - BASE_WALLET
         - ETHEREUM_WALLET
@@ -14857,7 +15336,7 @@ components:
           pattern: ^[0-9]{9}$
         bankName:
           type: string
-          description: The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message.
+          description: The name of the financial institution holding the account. Optional on every rail, and recommended for wires, where it identifies the beneficiary's institution on the payment message. Not checked against `GET /discoveries`.
           minLength: 1
           maxLength: 140
           example: Chase Bank
@@ -15066,7 +15545,7 @@ components:
           pattern: ^[A-Z]{2}[0-9]{2}[A-Za-z0-9]{11,30}$
         swiftCode:
           type: string
-          description: The SWIFT/BIC code of the bank
+          description: The SWIFT/BIC code of the bank. When omitted, Grid derives it from the IBAN when possible. Provide it when automatic derivation is unavailable.
           example: DEUTDEFF
           minLength: 8
           maxLength: 11
@@ -15143,18 +15622,12 @@ components:
           minLength: 1
           maxLength: 32
           example: NEFT
-        bankName:
-          type: string
-          description: The name of the bank
-          minLength: 1
-          maxLength: 255
       example:
         accountType: INR_ACCOUNT
         vpa: user@upi
         accountNumber: '000111222333'
         ifsc: HDFC0001234
         rail: NEFT
-        bankName: Example Bank
     InrAccountInfo:
       allOf:
         - $ref: '#/components/schemas/InrAccountInfoBase'
@@ -15195,13 +15668,14 @@ components:
           pattern: ^[0-9]{10}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Access Bank
       example:
         accountType: NGN_ACCOUNT
         accountNumber: '0123456789'
-        bankName: Example Bank
+        bankName: Access Bank
     NgnAccountInfo:
       allOf:
         - $ref: '#/components/schemas/NgnAccountInfoBase'
@@ -15346,7 +15820,6 @@ components:
       type: object
       required:
         - accountType
-        - bankName
         - accountNumber
         - swiftCode
       properties:
@@ -15356,9 +15829,10 @@ components:
             - HKD_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation. Not checked against `GET /discoveries`.
           minLength: 1
           maxLength: 255
+          example: HSBC Hong Kong
         accountNumber:
           type: string
           description: Hong Kong bank account number
@@ -15374,7 +15848,7 @@ components:
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: HKD_ACCOUNT
-        bankName: Example Bank
+        bankName: HSBC Hong Kong
         accountNumber: '123456789012'
         swiftCode: HSBCHKHHHKH
     HkdAccountInfo:
@@ -15418,10 +15892,10 @@ components:
             - IDR_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
-          example: Bank Central Asia
+          example: Bank Central Asia (BCA)
         accountNumber:
           type: string
           description: Indonesian bank account number
@@ -15444,7 +15918,7 @@ components:
           pattern: ^\+62[0-9]{9,12}$
       example:
         accountType: IDR_ACCOUNT
-        bankName: Bank Central Asia
+        bankName: Bank Central Asia (BCA)
         accountNumber: '1234567890'
         swiftCode: CENAIDJA
         phoneNumber: '+6281234567890'
@@ -15488,9 +15962,10 @@ components:
             - MYR_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Maybank
         accountNumber:
           type: string
           description: Malaysian bank account number
@@ -15506,7 +15981,7 @@ components:
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: MYR_ACCOUNT
-        bankName: Example Bank
+        bankName: Maybank
         accountNumber: '1234567890'
         swiftCode: MABORUMMYYY
     MyrAccountInfo:
@@ -15554,10 +16029,10 @@ components:
           example: INSTAPAY
         bankName:
           type: string
-          description: Name of the beneficiary's bank
+          description: Name of the beneficiary's bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
-          example: BDO Unibank
+          example: Bank of the Philippine Islands (BPI)
         accountNumber:
           type: string
           description: Bank account number
@@ -15568,7 +16043,7 @@ components:
       example:
         accountType: PHP_ACCOUNT
         rail: INSTAPAY
-        bankName: BDO Unibank
+        bankName: Bank of the Philippine Islands (BPI)
         accountNumber: '001234567890'
     PhpAccountInfo:
       allOf:
@@ -15609,7 +16084,7 @@ components:
             - SGD_ACCOUNT
         bankName:
           type: string
-          description: Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation.
+          description: Name of the beneficiary's bank. When omitted, resolved from swiftCode via the payout partner bank directory at account creation. Not checked against `GET /discoveries`.
           minLength: 1
           maxLength: 255
           example: DBS Bank Ltd
@@ -15673,9 +16148,10 @@ components:
             - THB_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Bangkok Bank Public Company Limited
         accountNumber:
           type: string
           description: Thai bank account number
@@ -15691,7 +16167,7 @@ components:
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: THB_ACCOUNT
-        bankName: Example Bank
+        bankName: Bangkok Bank Public Company Limited
         accountNumber: '1234567890'
         swiftCode: BKKBTHBK
     ThbAccountInfo:
@@ -15734,9 +16210,10 @@ components:
             - VND_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Vietcombank
         accountNumber:
           type: string
           description: Vietnamese bank account number
@@ -15752,7 +16229,7 @@ components:
           pattern: ^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$
       example:
         accountType: VND_ACCOUNT
-        bankName: Example Bank
+        bankName: Vietcombank
         accountNumber: '1234567890'
         swiftCode: BFTVVNVX
     VndAccountInfo:
@@ -15905,6 +16382,33 @@ components:
               type: string
               description: Type of asset
               enum:
+                - USDT
+    ArbitrumWalletInfo:
+      type: object
+      required:
+        - address
+        - accountType
+      properties:
+        accountType:
+          type: string
+          enum:
+            - ARBITRUM_WALLET
+        address:
+          type: string
+          description: Arbitrum wallet address
+          example: '0xAbCDEF1234567890aBCdEf1234567890ABcDef12'
+    PaymentArbitrumWalletInfo:
+      title: Arbitrum Wallet
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletInfo'
+        - type: object
+          properties:
+            assetType:
+              type: string
+              description: Type of asset
+              enum:
+                - USDC
                 - USDT
     PolygonWalletInfo:
       type: object
@@ -16412,13 +16916,14 @@ components:
           pattern: ^[0-9]{9,13}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Standard Bank (South Africa)
       example:
         accountType: ZAR_ACCOUNT
         accountNumber: '1234567890'
-        bankName: Example Bank
+        bankName: Standard Bank (South Africa)
     ZarAccountInfo:
       allOf:
         - $ref: '#/components/schemas/ZarAccountInfoBase'
@@ -16636,9 +17141,10 @@ components:
           maxLength: 34
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: BRAC Bank
         branchCode:
           type: string
           description: The branch code
@@ -16662,7 +17168,7 @@ components:
       example:
         accountType: BDT_ACCOUNT
         accountNumber: '1234567890'
-        bankName: Example Bank
+        bankName: BRAC Bank
         branchCode: '11111'
         swiftCode: DEUTDEFF
         phoneNumber: '+1234567890'
@@ -16752,9 +17258,10 @@ components:
           pattern: ^EG[0-9]{27}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: BANQUE MISR
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -16765,7 +17272,7 @@ components:
       example:
         accountType: EGP_ACCOUNT
         iban: EG380019000500000000263180002
-        bankName: Example Bank
+        bankName: BANQUE MISR
         phoneNumber: '+1234567890'
     EgpAccountInfo:
       allOf:
@@ -16815,9 +17322,10 @@ components:
           maxLength: 34
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Gcb Bank Ltd
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -16828,7 +17336,7 @@ components:
       example:
         accountType: GHS_ACCOUNT
         accountNumber: '1234567890'
-        bankName: Example Bank
+        bankName: Gcb Bank Ltd
         phoneNumber: '+1234567890'
     GhsAccountInfo:
       allOf:
@@ -16882,14 +17390,15 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the beneficiary's bank
+          description: The name of the beneficiary's bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Banco Industrial
       example:
         accountType: GTQ_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
-        bankName: Example Bank
+        bankName: Banco Industrial
     GtqAccountInfo:
       allOf:
         - $ref: '#/components/schemas/GtqAccountInfoBase'
@@ -16994,15 +17503,16 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: National Commercial Bank Ja Ltd
       example:
         accountType: JMD_ACCOUNT
         accountNumber: '1234567890'
         branchCode: '11111'
         bankAccountType: CHECKING
-        bankName: Example Bank
+        bankName: National Commercial Bank Ja Ltd
     JmdAccountInfo:
       allOf:
         - $ref: '#/components/schemas/JmdAccountInfoBase'
@@ -17045,9 +17555,10 @@ components:
             - PKR_ACCOUNT
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Habib Bank Limited
         accountNumber:
           type: string
           description: The account number of the bank
@@ -17069,7 +17580,7 @@ components:
           pattern: ^\+[0-9]{6,14}$
       example:
         accountType: PKR_ACCOUNT
-        bankName: Example Bank
+        bankName: Habib Bank Limited
         accountNumber: '1234567890'
         iban: PK36SCBL0000001123456702
         phoneNumber: '+1234567890'
@@ -17297,9 +17808,10 @@ components:
           maxLength: 34
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: China Construction Bank
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -17310,7 +17822,7 @@ components:
       example:
         accountType: CNY_ACCOUNT
         accountNumber: '1234567890'
-        bankName: Example Bank
+        bankName: China Construction Bank
         phoneNumber: '+1234567890'
     CnyAccountInfo:
       allOf:
@@ -17359,13 +17871,14 @@ components:
           pattern: ^IL[0-9]{21}$
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Bank Leumi Le-Israel B.M
       example:
         accountType: ILS_ACCOUNT
         iban: IL620108000000099999999
-        bankName: Example Bank
+        bankName: Bank Leumi Le-Israel B.M
     IlsAccountInfo:
       allOf:
         - $ref: '#/components/schemas/IlsAccountInfoBase'
@@ -17452,6 +17965,7 @@ components:
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
             - $ref: '#/components/schemas/PaymentTronWalletInfo'
             - $ref: '#/components/schemas/PaymentPlasmaWalletInfo'
+            - $ref: '#/components/schemas/PaymentArbitrumWalletInfo'
             - $ref: '#/components/schemas/PaymentPolygonWalletInfo'
             - $ref: '#/components/schemas/PaymentBaseWalletInfo'
             - $ref: '#/components/schemas/PaymentEthereumWalletInfo'
@@ -17481,6 +17995,7 @@ components:
               SOLANA_WALLET: '#/components/schemas/PaymentSolanaWalletInfo'
               TRON_WALLET: '#/components/schemas/PaymentTronWalletInfo'
               PLASMA_WALLET: '#/components/schemas/PaymentPlasmaWalletInfo'
+              ARBITRUM_WALLET: '#/components/schemas/PaymentArbitrumWalletInfo'
               POLYGON_WALLET: '#/components/schemas/PaymentPolygonWalletInfo'
               BASE_WALLET: '#/components/schemas/PaymentBaseWalletInfo'
               ETHEREUM_WALLET: '#/components/schemas/PaymentEthereumWalletInfo'
@@ -17510,6 +18025,104 @@ components:
               SWIFT_ACCOUNT: '#/components/schemas/PaymentSwiftAccountInfo'
               CNY_ACCOUNT: '#/components/schemas/PaymentCnyAccountInfo'
               ILS_ACCOUNT: '#/components/schemas/PaymentIlsAccountInfo'
+    SweepRuleDestination:
+      title: Sweep Rule Destination
+      type: object
+      description: Where a rule-based account's credits are swept.
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+          description: The account that receives the swept funds.
+          example: ExternalAccount:a12dcbd6-dced-4ec4-b756-3c3a9ea3d123
+        paymentRail:
+          allOf:
+            - $ref: '#/components/schemas/PaymentRail'
+          description: The rail each sweep is sent over. Null when a rail is selected automatically per sweep, in which case none is resolved ahead of time.
+          example: ACH
+    PlatformFeeOverride:
+      type: object
+      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
+      required:
+        - platformFixedFee
+        - platformVariableFeeBps
+      properties:
+        platformFixedFee:
+          $ref: '#/components/schemas/FixedFee'
+          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
+        platformVariableFeeBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
+          example: 30
+      example:
+        platformFixedFee:
+          amount: 50
+          currency: USD
+        platformVariableFeeBps: 30
+    SweepRule:
+      title: Sweep Rule
+      type: object
+      description: The routing rule attached to a rule-based account. Returned on the account rather than as a resource of its own, because the rule has no lifecycle apart from the account.
+      required:
+        - destination
+      properties:
+        destination:
+          allOf:
+            - $ref: '#/components/schemas/SweepRuleDestination'
+          description: Where funds that settle into this account are swept.
+        minimumAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: '**In this rule-based account''s currency, not the destination''s.** The smallest balance the corridor to the destination can carry; a settled balance below it is not swept. Zero means no floor, which is the case for a same-currency internal destination — a book transfer with no rail, fee or conversion to justify one. Configuration rather than a moving estimate, so there is nothing to re-poll.'
+        maximumAmount:
+          allOf:
+            - $ref: '#/components/schemas/CurrencyAmount'
+          description: '**In this rule-based account''s currency, not the destination''s.** The largest balance the corridor to the destination can carry; a settled balance above it is not swept. Null means no ceiling.'
+        purposeOfPayment:
+          allOf:
+            - $ref: '#/components/schemas/PurposeOfPayment'
+          description: The purpose of payment applied to each sweep.
+          example: SELF
+        description:
+          type: string
+          description: Free-form description recorded on each sweep. Not delivered to the recipient.
+          example: Rent sweep
+        remittanceInformation:
+          type: string
+          description: Free-form information that travels with each sweep to the recipient.
+          example: Unit 4B March
+        platformFeeOverride:
+          allOf:
+            - $ref: '#/components/schemas/PlatformFeeOverride'
+          description: Fee terms applied to every sweep this rule drives. Null when the platform's configured fees apply.
+    CardCapabilities:
+      type: object
+      description: Actions supported by the card program associated with this resource.
+      required:
+        - supportsSpendLimits
+        - supportsTransactionCountLimit
+        - supports3dSecurePassword
+        - supportsPanReveal
+      properties:
+        supportsSpendLimits:
+          type: boolean
+          description: Whether cards in this program accept `maxSpendPerTransaction` and `maxSpendPerDay`.
+          example: true
+        supportsTransactionCountLimit:
+          type: boolean
+          description: Whether cards in this program accept `maxTransactionsPerDay`.
+          example: true
+        supports3dSecurePassword:
+          type: boolean
+          description: Whether cards in this program accept a caller-supplied `threeDSecurePassword`.
+          example: false
+        supportsPanReveal:
+          type: boolean
+          description: Whether cards in this program can be revealed through `POST /cards/{id}/reveal`.
+          example: true
     InternalAccount:
       type: object
       required:
@@ -17545,10 +18158,22 @@ components:
           description: Payment instructions for funding the account
           items:
             $ref: '#/components/schemas/PaymentInstructions'
+        label:
+          type: string
+          maxLength: 255
+          description: The platform-supplied label recorded when the account was created. Null for accounts that carry none.
+          example: invoice-4417
+        sweepRule:
+          allOf:
+            - $ref: '#/components/schemas/SweepRule'
+          description: The routing rule attached to this account. Null for accounts that carry no rule, which is every account other than a `RULE_BASED` one.
         privateEnabled:
           type: boolean
           description: Whether wallet privacy is enabled for the Embedded Wallet. Only present for `EMBEDDED_WALLET` internal accounts.
           example: true
+        cardCapabilities:
+          $ref: '#/components/schemas/CardCapabilities'
+          description: Actions supported for a card issued now with this account as its funding source. They can change if the platform's card routing changes and do not describe cards already issued using the account. The funding source a create request supplies selects the issuer and therefore the resulting card's capabilities; read this field from that account. Absent when this account cannot fund a card.
         createdAt:
           type: string
           format: date-time
@@ -17559,6 +18184,41 @@ components:
           format: date-time
           description: Timestamp when the internal account was last updated
           example: '2025-10-03T12:30:00Z'
+    Error403:
+      type: object
+      required:
+        - message
+        - status
+        - code
+      properties:
+        status:
+          type: integer
+          enum:
+            - 403
+          description: HTTP status code
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+            - END_USER_TERMS_NOT_ACCEPTED
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     InternalAccountListResponse:
       type: object
       required:
@@ -17684,6 +18344,7 @@ components:
         - ETHEREUM_WALLET
         - LIGHTNING
         - PLASMA_WALLET
+        - ARBITRUM_WALLET
         - POLYGON_WALLET
         - SOLANA_WALLET
         - SPARK_WALLET
@@ -18162,9 +18823,10 @@ components:
             - SAVINGS
         bankName:
           type: string
-          description: The name of the bank
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
           minLength: 1
           maxLength: 255
+          example: Banco de Colombia (Bancolombia)
         phoneNumber:
           type: string
           description: The phone number in international format
@@ -18176,7 +18838,7 @@ components:
         accountType: COP_ACCOUNT
         accountNumber: '1234567890'
         bankAccountType: CHECKING
-        bankName: Example Bank
+        bankName: Banco de Colombia (Bancolombia)
         phoneNumber: '+1234567890'
     CopAccountInfo:
       allOf:
@@ -20680,6 +21342,13 @@ components:
         - $ref: '#/components/schemas/PlasmaWalletInfo'
         - $ref: '#/components/schemas/WalletBeneficiaryFields'
         - $ref: '#/components/schemas/WalletCustodyFields'
+    ArbitrumWalletExternalAccountInfo:
+      title: Arbitrum Wallet
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletInfo'
+        - $ref: '#/components/schemas/WalletBeneficiaryFields'
+        - $ref: '#/components/schemas/WalletCustodyFields'
     SolanaWalletExternalAccountInfo:
       title: Solana Wallet
       allOf:
@@ -20911,6 +21580,7 @@ components:
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -20962,6 +21632,7 @@ components:
           LIGHTNING_ACCOUNT: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+          ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -21855,6 +22526,7 @@ components:
         - $ref: '#/components/schemas/LightningExternalAccountInfo'
         - $ref: '#/components/schemas/PolygonWalletExternalAccountInfo'
         - $ref: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+        - $ref: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SolanaWalletExternalAccountInfo'
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -21905,6 +22577,7 @@ components:
           LIGHTNING: '#/components/schemas/LightningExternalAccountInfo'
           POLYGON_WALLET: '#/components/schemas/PolygonWalletExternalAccountInfo'
           PLASMA_WALLET: '#/components/schemas/PlasmaWalletExternalAccountInfo'
+          ARBITRUM_WALLET: '#/components/schemas/ArbitrumWalletExternalAccountInfo'
           SOLANA_WALLET: '#/components/schemas/SolanaWalletExternalAccountInfo'
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
@@ -22614,6 +23287,7 @@ components:
         - POLYGON
         - TRON
         - PLASMA
+        - ARBITRUM
         - SPARK
       description: The blockchain network an on-chain transaction settled on. Whether this is the mainnet or a test network (e.g. Solana devnet) is determined by your platform's environment — sandbox platforms operate on test networks, production platforms on mainnet — mirroring how `cryptoNetwork` is interpreted elsewhere in the API.
       example: SOLANA
@@ -22791,7 +23465,7 @@ components:
           description: Amount sent in the sender's currency
         exchangeRate:
           type: number
-          description: Number of sending currency units per receiving currency unit.
+          description: 'Number of sending currency units per receiving currency unit. The rate is fee-exclusive: Grid deducts fees from the sending amount before converting at this rate.'
           exclusiveMinimum: 0
           example: 1.08
         quoteId:
@@ -22961,7 +23635,11 @@ components:
         - QUOTE_EXECUTION_FAILED
         - COMPLIANCE_REJECTED
         - COLLECTION_FAILED
-      description: Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
+        - SWEEP_AMOUNT_OUT_OF_RANGE
+        - SWEEP_QUOTE_FAILED
+      description: |-
+        Reason for failure of an incoming transaction. This is used to provide more context on why a transaction failed. If the transaction is not in a failed state, this field is omitted. COMPLIANCE_REJECTED means compliance blocked the incoming funds. COLLECTION_FAILED means an inbound bank-rail collection deposit (e.g. a SWIFT wire) failed after arrival and did not credit — most commonly a compliance-screening rejection or an unresolved request for information, on either the collection provider's side or Grid's. Failed collections are returned to the sender per the collection provider's process.
+        A payment that settled into a rule-based account but could not be swept to the destination of the account's rule fails with one of the `SWEEP_*` reasons. A rule-based account never holds a balance, so the funds are moved to the account holder's own account in the same currency. SWEEP_AMOUNT_OUT_OF_RANGE means the amount was outside the band the corridor to the destination can carry — the rule's minimumAmount and maximumAmount give the current band — and SWEEP_QUOTE_FAILED that Grid could not price it. A sweep that was priced and then failed on the way to settlement reports QUOTE_EXECUTION_FAILED, the same as any other payment.
     IncomingTransaction:
       title: Incoming Transaction
       allOf:
@@ -22969,7 +23647,6 @@ components:
         - type: object
           required:
             - type
-            - receivedAmount
           properties:
             type:
               type: string
@@ -22979,7 +23656,7 @@ components:
               $ref: '#/components/schemas/TransactionSourceOneOf'
             receivedAmount:
               $ref: '#/components/schemas/CurrencyAmount'
-              description: Amount received in the recipient's currency
+              description: Amount received in the recipient's currency. This is only absent for rule-based account sweeps if the sweep couldn't be quoted. It's always present otherwise.
             fees:
               type: integer
               format: int64
@@ -23074,6 +23751,8 @@ components:
         - COMPLIANCE_REJECTED
         - LIGHTNING_PAYMENT_FAILED
         - COUNTERPARTY_POST_TX_FAILED
+        - SWEEP_AMOUNT_OUT_OF_RANGE
+        - SWEEP_QUOTE_FAILED
       description: |
         Reason for failure of an outgoing transaction. This is used to provide more
         context on why a transaction failed. If the transaction is not in a failed
@@ -23100,11 +23779,18 @@ components:
         | `SCA_NOT_COMPLETED` | The customer did not complete the Strong Customer Authentication challenge before it expired |
         | `PAYOUT_RETURNED` | The receiving bank accepted the payout and then returned or reversed it |
         | `LIMIT_EXCEEDED` | The payout exceeds a recipient-, account-, or corridor-level limit at the partner |
-        | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency isn't supported for that account |
+        | `ACCOUNT_CANNOT_RECEIVE` | The account exists but can't accept this payment — dormant, frozen, restricted, or the currency or payment rail isn't supported for that account. A sweep whose rule names a rail the destination cannot accept reports this |
         | `ACCOUNT_INVALID` | The recipient account couldn't be found or the details are wrong — bad IBAN/account number, beneficiary not found, or account closed |
         | `COMPLIANCE_REJECTED` | The payout partner rejected the recipient on compliance grounds — sanctions, watchlist, or KYC/AML screening |
         | `LIGHTNING_PAYMENT_FAILED` | Deprecated — superseded by `QUOTE_EXECUTION_FAILED`. The Lightning settlement leg failed |
         | `COUNTERPARTY_POST_TX_FAILED` | Deprecated — coarse fallback retained for historical transactions when no granular payout reason is available |
+        | `SWEEP_AMOUNT_OUT_OF_RANGE` | The amount was outside the range the corridor to the rule's destination can carry — below its minimum or above its maximum. The rule's `minimumAmount` and `maximumAmount` give the current band |
+        | `SWEEP_QUOTE_FAILED` | Grid could not price the sweep to the rule's destination. A sweep that was priced and then failed on the way to settlement reports `QUOTE_EXECUTION_FAILED`, the same as any other payout |
+
+        The `SWEEP_*` reasons apply to a payment that settled into a rule-based
+        account and could not be swept onward. A rule-based account never holds a
+        balance, so the funds are moved to the account holder's own account in the
+        same currency.
     RailSelectionMode:
       type: string
       enum:
@@ -23184,10 +23870,8 @@ components:
                 - type: 'null'
               description: The payment rail used to settle this transaction (e.g. ACH, WIRE, NEFT, FASTER_PAYMENTS). Uses the same values as the PaymentRail sent on quote requests. Null when no external rail is used (e.g. instant or intra-network transfers, or non-direct-destination transactions) or before a rail is resolved.
             railSelectionMode:
-              anyOf:
-                - $ref: '#/components/schemas/RailSelectionMode'
-                - type: 'null'
-              description: How the rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it. Null when no rail is resolved.
+              $ref: '#/components/schemas/RailSelectionMode'
+              description: How the rail was chosen — MANUAL when the platform specified a paymentRail on the destination, AUTO when Lightspark selects it.
             expectedSettlementAt:
               type:
                 - string
@@ -23205,17 +23889,19 @@ components:
         - AUTHORIZED
         - PARTIALLY_SETTLED
         - SETTLED
-        - REFUNDED
+        - DECLINED
         - EXCEPTION
       description: |
-        Lifecycle status of a card transaction.
+        Lifecycle status of a card transaction. The status tracks settlement only —
+        a return against a purchase is its own dated `CREDIT` row linked to the
+        purchase via `originalTransactionId`, not a status of its own.
 
         | Status | Description |
         |--------|-------------|
         | `AUTHORIZED` | The auth has been approved and a hold placed on the funding source; no clearing has arrived yet. |
         | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
-        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. |
-        | `REFUNDED` | A `RETURN` was received from the merchant; the net settled amount has been refunded in part or whole. |
+        | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. A `RETURN` received afterwards keeps the purchase `SETTLED`; the return appears as its own `CREDIT` transaction. |
+        | `DECLINED` | The authorization was declined before any money moved. Declines carry no settlement and must be excluded from cardholder statements. |
         | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
     CardMerchant:
       type: object
@@ -23230,59 +23916,18 @@ components:
           type: string
           description: Merchant Category Code (ISO 18245) — four-digit numeric string.
           example: '5814'
+        city:
+          type: string
+          description: Merchant city as reported by the card network, when present.
+          example: San Francisco
+        state:
+          type: string
+          description: Merchant state or region as reported by the card network, when present.
+          example: CA
         country:
           type: string
           description: Two-letter ISO 3166-1 alpha-2 country code of the merchant.
           example: US
-    CardPullSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Total number of pulls (debits) executed against the funding source for this transaction. `> 1` indicates one or more post-hoc pulls — e.g. restaurant tip / over-auth clearings.
-          example: 2
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all pull amounts in the smallest unit of the funding source's currency.
-          example: 1500
-        pendingCount:
-          type: integer
-          description: Number of pulls still in the `PENDING` state. Drops to zero when every pull has reached a terminal state. Non-zero values that persist beyond the expected settlement window are an early signal for the `EXCEPTION` path.
-          example: 0
-    CardRefundSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Number of refund (return) events received for this transaction.
-          example: 0
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all refund amounts in the smallest unit of the funding source's currency.
-          example: 0
-    CardSettlementSummary:
-      type: object
-      required:
-        - count
-        - totalAmount
-      properties:
-        count:
-          type: integer
-          description: Number of settlement (clearing) events received for this transaction.
-          example: 1
-        totalAmount:
-          type: integer
-          format: int64
-          description: Sum of all settled amounts in the smallest unit of the funding source's currency.
-          example: 1500
     CardTransaction:
       title: Card Transaction
       type: object
@@ -23299,7 +23944,7 @@ components:
         - authorizedAt
         - createdAt
         - updatedAt
-      description: Parent transaction row for a card authorization and all of the pulls / settlements / refunds that reconcile against it. Child events are rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary` aggregates. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
+      description: One row per cardholder-visible card transaction. A purchase row rolls its clearings up into `settledAmount`; a merchant return is its own dated `CREDIT` row linked back to the purchase via `originalTransactionId` rather than a rollup on the parent, so statements can list purchases and refunds as separate dated lines. Delivered whole as the `data` payload of every `CARD_TRANSACTION.*` webhook, and returned as the `CARD` variant of `Transaction` from `GET /transactions`.
       properties:
         type:
           type: string
@@ -23309,8 +23954,7 @@ components:
         id:
           type: string
           description: System-generated unique card transaction identifier
-          readOnly: true
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         cardId:
           type: string
           description: The id of the `Card` this transaction was made on.
@@ -23327,13 +23971,16 @@ components:
           type: string
           description: Opaque identifier for the transaction on the underlying issuer. Used to cross-reference Grid records against issuer dashboards and webhooks.
           example: lithic_txn_b81c2a4f
-          readOnly: true
         status:
           $ref: '#/components/schemas/CardTransactionStatus'
         direction:
           $ref: '#/components/schemas/TransactionDirection'
-          description: Card transactions debit the customer's account.
+          description: A purchase is a `DEBIT`. A merchant refund is a `CREDIT` with the credited value in `settledAmount`; when the refund returns against a known purchase, `originalTransactionId` identifies it.
           example: DEBIT
+        originalTransactionId:
+          type: string
+          description: 'On a refund row (`direction: CREDIT`), the id of the purchase this return credits back against. Absent on purchases and on standalone credits with no matching purchase.'
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000099
         merchant:
           $ref: '#/components/schemas/CardMerchant'
         authorizedAmount:
@@ -23346,33 +23993,20 @@ components:
           type: string
           description: Internal account id that funded this transaction (the funding source selected by Authorization Decisioning at auth time).
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-        pullSummary:
-          $ref: '#/components/schemas/CardPullSummary'
-        refundSummary:
-          $ref: '#/components/schemas/CardRefundSummary'
-        settlementSummary:
-          $ref: '#/components/schemas/CardSettlementSummary'
         authorizedAt:
           type: string
           format: date-time
           description: When the auth was approved.
           example: '2026-05-08T14:30:00Z'
-        lastEventAt:
-          type: string
-          format: date-time
-          description: Timestamp of the most recent reconcile event (pull / clearing / refund) against this transaction.
-          example: '2026-05-08T15:42:11Z'
         createdAt:
           type: string
           format: date-time
           description: Creation timestamp (same as `authorizedAt` for card transactions).
-          readOnly: true
           example: '2026-05-08T14:30:00Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp.
-          readOnly: true
           example: '2026-05-08T15:42:11Z'
     TransactionOneOf:
       oneOf:
@@ -23398,24 +24032,6 @@ components:
           description: The payment rail to use for the transfer. Must be one of the rails supported by the destination account. If not specified, the system will select a default rail.
           allOf:
             - $ref: '#/components/schemas/PaymentRail'
-    PurposeOfPayment:
-      type: string
-      description: The purpose of the payment. This may be required when sending to certain geographies (e.g. India).
-      enum:
-        - GIFT
-        - SELF
-        - GOODS_OR_SERVICES
-        - EDUCATION
-        - HEALTH_OR_MEDICAL
-        - REAL_ESTATE_PURCHASE
-        - TAX_PAYMENT
-        - LOAN_PAYMENT
-        - UTILITY_BILL
-        - DONATION
-        - TRAVEL
-        - FAMILY_SUPPORT
-        - SALARY_PAYMENT
-        - OTHER
     TransferOutRequest:
       type: object
       required:
@@ -23612,7 +24228,7 @@ components:
               example: USD
             cryptoNetwork:
               type: string
-              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
+              description: 'The crypto network to use for the funding source. Required when `currency` is a stablecoin (e.g. USDC, USDT). Specifies which network the customer will deposit on, so the correct deposit address can be generated. Example values: `SOLANA`, `ETHEREUM`, `BASE`, `POLYGON`, `TRON`, `PLASMA`, `ARBITRUM`, `SPARK`, `LIGHTNING`, `BITCOIN`.'
               example: SOLANA
           description: Fund the quote using a real-time funding source (RTP, SEPA Instant, Spark, Stables, etc.). This will require manual just-in-time funding using `paymentInstructions` in the response. Because quotes expire quickly, this option is only valid for instant payment methods. Do not try to fund a quote with a non-instant payment method (ACH, etc.).
     QuoteSourceOneOf:
@@ -23757,7 +24373,7 @@ components:
           example: 1000
         exchangeRate:
           type: number
-          description: Number of sending currency units per receiving currency unit.
+          description: 'Number of sending currency units per receiving currency unit. The rate is fee-exclusive: Grid deducts `feesIncluded` from `totalSendingAmount` first, then converts the remainder at this rate to reach `totalReceivingAmount`.'
           exclusiveMinimum: 0
         feesIncluded:
           type: integer
@@ -23804,7 +24420,6 @@ components:
           description: Details about the rate and fees for the transaction.
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
-          readOnly: true
           description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
     QuoteLockSide:
       type: string
@@ -23812,27 +24427,6 @@ components:
         - SENDING
         - RECEIVING
       description: The side of the quote which should be locked and specified in the `lockedCurrencyAmount`. For example, if I want to send exactly $5 MXN from my wallet, I would set this to "sending", and the `lockedCurrencyAmount` to 500 (in cents). If I want the receiver to receive exactly $10 USD, I would set this to "receiving" and the `lockedCurrencyAmount` to 10000 (in cents).
-    PlatformFeeOverride:
-      type: object
-      description: Overrides the platform-collected fee for this transaction. When present, it replaces any configured platform-collected fees that would otherwise apply to the transaction. Currently only supported when the quote's source currency is USD; the fixed fee must be denominated in the source currency.
-      required:
-        - platformFixedFee
-        - platformVariableFeeBps
-      properties:
-        platformFixedFee:
-          $ref: '#/components/schemas/FixedFee'
-          description: Fixed fee charged for this transaction. Must be denominated in the quote's source currency (USD today).
-        platformVariableFeeBps:
-          type: integer
-          minimum: 0
-          maximum: 10000
-          description: Variable fee in basis points (1 bps = 0.01%) to apply to the transaction's source-currency amount.
-          example: 30
-      example:
-        platformFixedFee:
-          amount: 50
-          currency: USD
-        platformVariableFeeBps: 30
     QuoteRequest:
       type: object
       required:
@@ -23892,41 +24486,6 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
-    Error403:
-      type: object
-      required:
-        - message
-        - status
-        - code
-      properties:
-        status:
-          type: integer
-          enum:
-            - 403
-          description: HTTP status code
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-            - END_USER_TERMS_NOT_ACCEPTED
-        message:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.
@@ -24030,7 +24589,7 @@ components:
           example: USDC
         cryptoNetwork:
           type: string
-          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, SPARK, LIGHTNING, BITCOIN.'
+          description: 'The blockchain network for the withdrawal. Example values: SOLANA, ETHEREUM, BASE, POLYGON, ARBITRUM, SPARK, LIGHTNING, BITCOIN.'
           example: SOLANA
         amount:
           type: integer
@@ -25643,35 +26202,33 @@ components:
       type: object
       required:
         - id
-        - cardholderId
+        - customerId
         - state
         - form
-        - fundingSources
+        - fundingSource
         - maxSpendPerTransaction
         - maxSpendPerDay
+        - maxTransactionsPerDay
         - createdAt
         - updatedAt
       properties:
         id:
           type: string
           description: System-generated unique card identifier
-          readOnly: true
           example: Card:019542f5-b3e7-1d02-0000-000000000010
-        cardholderId:
+        customerId:
           type: string
           description: The id of the `Customer` who holds this card.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         platformCardId:
           type: string
-          description: Platform-specific card identifier. Optional on create — system-generated if omitted, mirroring `platformCustomerId` semantics.
-          example: card-emp-aary-001
+          description: Platform-specific card identifier generated by the server.
+          example: card-emp-001
         state:
           $ref: '#/components/schemas/CardState'
         stateReason:
-          anyOf:
-            - $ref: '#/components/schemas/CardStateReason'
-            - type: 'null'
-          description: Reason associated with the current `state`. Populated when the card is `CLOSED` or when provisioning was rejected; otherwise null.
+          $ref: '#/components/schemas/CardStateReason'
+          description: Reason associated with the current `state`. Present when the card is `CLOSED` or when provisioning was rejected; absent otherwise.
         brand:
           $ref: '#/components/schemas/CardBrand'
         form:
@@ -25690,14 +26247,13 @@ components:
           type: integer
           description: Card expiration year (four digits).
           example: 2029
-        fundingSources:
-          type: array
-          description: Internal account ids bound to this card as funding sources, in priority order — the first entry is tried first by Authorization Decisioning. Every card has at least one funding source.
-          items:
-            type: string
-          example:
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        fundingSource:
+          type: string
+          description: Internal account id that funds this card.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        cardCapabilities:
+          $ref: '#/components/schemas/CardCapabilities'
+          description: Actions supported for this card by the issuer selected at issuance. Present for cards whose program has been resolved; absent otherwise. These capabilities are fixed at issuance for the card's lifetime.
         maxSpendPerTransaction:
           anyOf:
             - type: integer
@@ -25716,32 +26272,36 @@ components:
             - type: 'null'
           description: Card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's `currency`. The window resets at 00:00 UTC. Null means the card has no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values without replacing this configured value. Refunds, reversals, and authorization expiries do not restore capacity during the day. Spend exactly equal to the effective limit is allowed.
           example: 25000
+        maxTransactionsPerDay:
+          anyOf:
+            - type: integer
+              format: int32
+              minimum: 1
+              maximum: 2147483647
+            - type: 'null'
+          description: Card-specific cap on the number of transactions the card may authorize during one UTC calendar day. The window resets at 00:00 UTC. Null means the card has no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values without replacing this configured value. Each approved authorization counts once for the day it was authorized; refunds, reversals, and authorization expiries do not restore capacity during the day. A transaction that brings the day's count exactly to the effective limit is allowed.
+          example: 20
         currency:
           type: string
-          description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
+          description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding source at issue time.
           example: USD
-          readOnly: true
         processorRef:
           type: string
           description: Opaque processor-side reference for the card (e.g. the Lithic card token). Useful for cross-referencing in the processor's dashboards; not used for any Grid request routing.
           example: card_b81c2a4f
-          readOnly: true
         issuerRef:
           type: string
           description: Opaque identifier for the card on the issuer of record (e.g. the Lead Bank account/card identifier). Useful for cross-referencing in issuer dashboards; not used for any Grid request routing.
           example: lead_card_7a1b9c3d
-          readOnly: true
         createdAt:
           type: string
           format: date-time
           description: Creation timestamp
-          readOnly: true
           example: '2026-05-08T14:10:00Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp
-          readOnly: true
           example: '2026-05-08T14:11:00Z'
     CardListResponse:
       type: object
@@ -25766,49 +26326,52 @@ components:
     CardCreateRequest:
       type: object
       required:
-        - cardholderId
+        - customerId
         - form
-        - fundingSources
+        - fundingSource
       properties:
-        cardholderId:
+        customerId:
           type: string
           description: The id of the `Customer` to issue the card to. The customer must have KYC status `APPROVED`; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         platformCardId:
           type: string
-          description: Optional platform-specific card identifier. System-generated when omitted, mirroring `platformCustomerId` semantics.
-          example: card-emp-aary-001
+          description: Platform-specific card identifier. Always generated by the server; any value supplied in the request is ignored.
+          example: card-emp-001
         threeDSecurePassword:
           type: string
-          description: 'Optional static password used as the card''s 3-D Secure factor. Only accepted for card programs whose issuer supports a static-password factor (EU cards today); supplying it for a program that does not is rejected with `INVALID_INPUT`. When omitted, one is generated on the cardholder''s behalf. Grid does not retain the value: it is forwarded to the issuer and discarded, so it cannot be read back afterwards.'
+          description: 'Static password used as the card''s 3-D Secure factor. Required when the first funding-source internal account''s `cardCapabilities.supports3dSecurePassword` is true; omitting it or supplying an empty or whitespace-only string is rejected with `INVALID_INPUT`. When the capability is false, supplying this field is rejected with `INVALID_INPUT` because cards in that program have no static-password factor. Grid does not retain the value: it is forwarded to the issuer and discarded, so it cannot be read back afterwards; a cardholder who forgets it must set a new one through `PATCH /cards/{id}`.'
           example: AbCd1234EfGh5678
         form:
           $ref: '#/components/schemas/CardForm'
-        fundingSources:
-          type: array
-          description: Internal account ids to bind as funding sources, in priority order. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency; otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
-          minItems: 1
-          items:
-            type: string
-          example:
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        fundingSource:
+          type: string
+          description: Internal account id that funds this card. The account must belong to the customer and be denominated in a card-eligible currency; otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         maxSpendPerTransaction:
           type: integer
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on a single transaction, in the smallest unit of the card currency derived from its funding sources. Omit this field for no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Supported only for card programs whose authorization decisions are made by Grid. A transaction for exactly the effective limit is allowed.
+          description: Optional card-specific cap on a single transaction, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. A transaction for exactly the effective limit is allowed.
           example: 5000
         maxSpendPerDay:
           type: integer
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding sources. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Supported only for card programs whose authorization decisions are made by Grid. Spend exactly equal to the effective limit is allowed.
+          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. Spend exactly equal to the effective limit is allowed.
           example: 25000
+        maxTransactionsPerDay:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 2147483647
+          description: Optional card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field for no card-specific daily transaction cap. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsTransactionCountLimit` is true.
+          example: 20
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `state`, `fundingSources`, `maxSpendPerTransaction`, or `maxSpendPerDay` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSources`, `maxSpendPerTransaction`, or `maxSpendPerDay`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
+      description: Update request for `PATCH /cards/{id}`. At least one of `state`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         state:
           type: string
@@ -25818,15 +26381,10 @@ components:
             - CLOSED
           description: Target state for the card. Permitted transitions are `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
           example: FROZEN
-        fundingSources:
-          type: array
-          description: 'New ordered list of internal account ids to bind as funding sources. Fully replaces the previous binding. Each id must belong to the cardholder and be denominated in the card''s currency. The list must contain at least one source — to stop a card from spending without removing all sources, transition it to `FROZEN` instead. Cannot be supplied alongside `state: CLOSED`.'
-          minItems: 1
-          items:
-            type: string
-          example:
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        fundingSource:
+          type: string
+          description: 'Replaces the card''s funding source. Must belong to the customer and be denominated in the card''s currency. Cannot be supplied alongside `state: CLOSED`. To stop a card from spending, set `state: FROZEN` instead.'
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         maxSpendPerTransaction:
           anyOf:
             - type: integer
@@ -25834,7 +26392,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: 'Replacement card-specific per-transaction cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Supported only for card programs whose authorization decisions are made by Grid. Cannot be supplied alongside `state: CLOSED`.'
+          description: 'Replacement card-specific per-transaction cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Accepted only when the card''s `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied alongside `state: CLOSED`.'
           example: 10000
         maxSpendPerDay:
           anyOf:
@@ -25843,8 +26401,17 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: 'Replacement card-specific UTC-calendar-day cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. Refunds, reversals, and authorization expiries do not restore capacity during the day. Supported only for card programs whose authorization decisions are made by Grid. Cannot be supplied alongside `state: CLOSED`.'
+          description: 'Replacement card-specific UTC-calendar-day cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. Refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the card''s `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied alongside `state: CLOSED`.'
           example: 25000
+        maxTransactionsPerDay:
+          anyOf:
+            - type: integer
+              format: int32
+              minimum: 1
+              maximum: 2147483647
+            - type: 'null'
+          description: 'Replacement card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. Refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the card''s `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be supplied alongside `state: CLOSED`.'
+          example: 20
     CardRevealResponse:
       type: object
       required:
@@ -25899,7 +26466,7 @@ components:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` to clear against. Must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         amount:
           type: integer
           format: int64
@@ -25911,12 +26478,12 @@ components:
       required:
         - cardTransactionId
         - amount
-      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/return`. Drives a `RETURN` event against an existing settled `CardTransaction`, which creates a `CardRefund` and pushes the parent transaction towards `REFUNDED` (full) or keeps it `SETTLED` (partial).
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/return`. Drives a `RETURN` event against an existing settled `CardTransaction`, which creates a `CardRefund` and posts the return as its own dated `CREDIT` `CardTransaction` linked to the purchase via `originalTransactionId`.
       properties:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` to refund against. Must have at least one settled clearing.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         amount:
           type: integer
           format: int64
@@ -25941,7 +26508,7 @@ components:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` the advice re-sizes. Must be in `AUTHORIZED` or `PARTIALLY_SETTLED` state.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         amount:
           type: integer
           format: int64
@@ -25952,12 +26519,28 @@ components:
       type: object
       required:
         - cardTransactionId
-      description: Sandbox-only request body for simulate endpoints keyed only by an existing card transaction — currently `POST /sandbox/cards/{id}/simulate/return_reversal`.
+      description: 'Sandbox-only request body for simulate endpoints keyed only by an existing card transaction: `POST /sandbox/cards/{id}/simulate/return_reversal` and `POST /sandbox/cards/{id}/simulate/authorization_expiry`.'
       properties:
         cardTransactionId:
           type: string
           description: The id of the `CardTransaction` to act against.
-          example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+    SandboxCardReversalRequest:
+      type: object
+      required:
+        - cardTransactionId
+      description: 'Request body for `POST /sandbox/cards/{id}/simulate/authorization_reversal`: which authorization to reverse, and optionally how much of it.'
+      properties:
+        cardTransactionId:
+          type: string
+          description: The authorization to reverse. It must still be fully open, with nothing settled against it yet.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: How much to reverse, in the smallest unit of the transaction's currency (cents for USD). Leave it out to reverse the whole authorization. Send an amount to reverse only that much and leave the rest on hold.
+          exclusiveMinimum: 0
+          example: 1250
     StablecoinIssuanceStatus:
       type: string
       enum:
@@ -26755,11 +27338,10 @@ components:
         - BULK_UPLOAD.FAILED
         - AGENT_ACTION.PENDING_APPROVAL
         - CARD.STATE_CHANGE
-        - CARD.FUNDING_SOURCE_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
         - CARD_TRANSACTION.PARTIALLY_SETTLED
         - CARD_TRANSACTION.SETTLED
-        - CARD_TRANSACTION.REFUNDED
+        - CARD_TRANSACTION.DECLINED
         - CARD_TRANSACTION.EXCEPTION
         - WALLET_OPERATION.COMPLETED
         - WALLET_OPERATION.FAILED
@@ -26989,19 +27571,6 @@ components:
               type: string
               enum:
                 - CARD.STATE_CHANGE
-    CardFundingSourceChangeWebhook:
-      allOf:
-        - $ref: '#/components/schemas/BaseWebhook'
-        - type: object
-          required:
-            - data
-          properties:
-            data:
-              $ref: '#/components/schemas/Card'
-            type:
-              type: string
-              enum:
-                - CARD.FUNDING_SOURCE_CHANGE
     CardTransactionWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
@@ -27017,7 +27586,7 @@ components:
                 - CARD_TRANSACTION.AUTHORIZED
                 - CARD_TRANSACTION.PARTIALLY_SETTLED
                 - CARD_TRANSACTION.SETTLED
-                - CARD_TRANSACTION.REFUNDED
+                - CARD_TRANSACTION.DECLINED
                 - CARD_TRANSACTION.EXCEPTION
     WalletOperationCompletedData:
       title: Wallet Operation Completed Data

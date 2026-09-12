@@ -15,5 +15,6 @@ properties:
     maxLength: 480
     description: |
       Plain-text fallback message used when Twilio Verify is unavailable for the
-      authentication code. Lightspark appends the code to this text.
+      authentication code. Lightspark appends the code to this text. Defaults to
+      "Your {displayName} verification code is:".
     example: Use this code to finish adding your Acme card to your digital wallet.

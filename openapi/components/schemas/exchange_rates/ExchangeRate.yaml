@@ -47,7 +47,10 @@ properties:
     example: 1650000
   exchangeRate:
     type: number
-    description: Number of sending currency units per receiving currency unit.
+    description: >-
+      Number of sending currency units per receiving currency unit. The rate is
+      fee-exclusive: it covers the currency conversion only, and Grid charges
+      `fees` separately rather than pricing them into the rate.
     exclusiveMinimum: 0
     example: 0.012121
   fees:

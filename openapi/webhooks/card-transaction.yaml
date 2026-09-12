@@ -1,13 +1,19 @@
 post:
   summary: Card transaction
   description: >
-    Webhook that is called on every state transition of a card
+    Webhook that is called on every lifecycle update of a card
     `CardTransaction`. Fires when an authorization is approved
     (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it
-    (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`),
-    when settled funds are returned (`CARD_TRANSACTION.REFUNDED`), and
-    when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`).
+    (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when
+    the authorization is declined (`CARD_TRANSACTION.DECLINED`), and when a
+    pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`).
     The payload carries the full `CardTransaction` resource.
+
+
+    A merchant return is its own `CardTransaction` row (`direction: CREDIT`)
+    linked to the purchase via `originalTransactionId`, and fires its own
+    `CARD_TRANSACTION.*` deliveries on that row — the purchase row is not
+    re-fired for the return.
 
 
     This endpoint should be implemented by clients of the Grid API.
@@ -52,7 +58,7 @@ post:
               timestamp: '2026-05-09T10:00:00Z'
               data:
                 type: CARD
-                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
@@ -71,16 +77,6 @@ post:
                     symbol: $
                     decimals: 2
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                pullSummary:
-                  count: 1
-                  totalAmount: 12550
-                  pendingCount: 1
-                refundSummary:
-                  count: 0
-                  totalAmount: 0
-                settlementSummary:
-                  count: 0
-                  totalAmount: 0
                 authorizedAt: '2026-05-09T10:00:00Z'
                 createdAt: '2026-05-09T10:00:00Z'
                 updatedAt: '2026-05-09T10:00:00Z'
@@ -92,7 +88,7 @@ post:
               timestamp: '2026-05-09T15:42:11Z'
               data:
                 type: CARD
-                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000100
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
@@ -118,35 +114,25 @@ post:
                     symbol: $
                     decimals: 2
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                pullSummary:
-                  count: 1
-                  totalAmount: 12550
-                  pendingCount: 0
-                refundSummary:
-                  count: 0
-                  totalAmount: 0
-                settlementSummary:
-                  count: 1
-                  totalAmount: 12550
                 authorizedAt: '2026-05-09T10:00:00Z'
-                lastEventAt: '2026-05-09T15:42:11Z'
                 createdAt: '2026-05-09T10:00:00Z'
                 updatedAt: '2026-05-09T15:42:11Z'
-          refunded:
-            summary: Settled funds returned by the merchant
+          returned:
+            summary: Merchant return posted as its own CREDIT row
             value:
               id: Webhook:019542f5-b3e7-1d02-0000-000000000042
-              type: CARD_TRANSACTION.REFUNDED
+              type: CARD_TRANSACTION.SETTLED
               timestamp: '2026-05-10T09:15:00Z'
               data:
                 type: CARD
-                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000105
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
-                issuerTransactionToken: lithic_txn_b81c2a4f
-                status: REFUNDED
-                direction: DEBIT
+                issuerTransactionToken: lithic_txn_r55e8c1d
+                status: SETTLED
+                direction: CREDIT
+                originalTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
                 merchant:
                   descriptor: BLUE BOTTLE COFFEE SF
                   mcc: '5814'
@@ -165,28 +151,40 @@ post:
                     name: United States Dollar
                     symbol: $
                     decimals: 2
-                refundedAmount:
-                  amount: 12550
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                authorizedAt: '2026-05-10T09:15:00Z'
+                createdAt: '2026-05-10T09:15:00Z'
+                updatedAt: '2026-05-10T09:15:00Z'
+          declined:
+            summary: Authorization declined
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000044
+              type: CARD_TRANSACTION.DECLINED
+              timestamp: '2026-05-09T16:10:00Z'
+              data:
+                type: CARD
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000102
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_d41a7f02
+                status: DECLINED
+                direction: DEBIT
+                merchant:
+                  descriptor: UBER EATS
+                  mcc: '5812'
+                  country: US
+                authorizedAmount:
+                  amount: 4200
                   currency:
                     code: USD
                     name: United States Dollar
                     symbol: $
                     decimals: 2
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                pullSummary:
-                  count: 1
-                  totalAmount: 12550
-                  pendingCount: 0
-                refundSummary:
-                  count: 1
-                  totalAmount: 12550
-                settlementSummary:
-                  count: 1
-                  totalAmount: 12550
-                authorizedAt: '2026-05-09T10:00:00Z'
-                lastEventAt: '2026-05-10T09:15:00Z'
-                createdAt: '2026-05-09T10:00:00Z'
-                updatedAt: '2026-05-10T09:15:00Z'
+                authorizedAt: '2026-05-09T16:10:00Z'
+                createdAt: '2026-05-09T16:10:00Z'
+                updatedAt: '2026-05-09T16:10:00Z'
           exception:
             summary: Settled to the network but the funding-source pull failed
             value:
@@ -195,7 +193,7 @@ post:
               timestamp: '2026-05-09T16:05:00Z'
               data:
                 type: CARD
-                id: CardTransaction:019542f5-b3e7-1d02-0000-000000000101
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000101
                 cardId: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCustomerId: 18d3e5f7b4a9c2
@@ -221,18 +219,7 @@ post:
                     symbol: $
                     decimals: 2
                 accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                pullSummary:
-                  count: 1
-                  totalAmount: 0
-                  pendingCount: 0
-                refundSummary:
-                  count: 0
-                  totalAmount: 0
-                settlementSummary:
-                  count: 1
-                  totalAmount: 4200
                 authorizedAt: '2026-05-09T15:30:00Z'
-                lastEventAt: '2026-05-09T16:05:00Z'
                 createdAt: '2026-05-09T15:30:00Z'
                 updatedAt: '2026-05-09T16:05:00Z'
   responses:

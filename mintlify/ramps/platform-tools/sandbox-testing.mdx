@@ -63,6 +63,10 @@ curl -X PATCH 'https://api.lightspark.com/grid/2025-10-13/config' \
 
 Simulate the complete on-ramp flow in sandbox:
 
+<Note>
+  This walkthrough assumes a customer who is approved at creation — a regulated sandbox platform, or an unregulated one with **Skip verification paperwork** turned on in the dashboard's Configuration. On the default unregulated path a new customer stays `UNVERIFIED` until you submit a complete verification, so run through [KYC/KYB verification](/api-reference/sandbox-testing#kyckyb-verification) before Step 2.
+</Note>
+
 ### Step 1: Create a test customer
 
 ```bash
@@ -85,7 +89,7 @@ curl -X POST 'https://api.lightspark.com/grid/2025-10-13/customers' \
   }'
 ```
 
-<Check>In sandbox, customers are automatically approved for testing.</Check>
+<Check>A `fullName` not ending in `001`, `002`, or `003` yields an approved customer rather than a real review. Under the configuration above, `Alice Test` is `APPROVED` at creation and ready for Step 2.</Check>
 
 ### Step 2: Create an external account for the destination wallet
 

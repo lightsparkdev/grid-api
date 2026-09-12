@@ -1,0 +1,225 @@
+import { CardBlueprint } from '/snippets/cards/card-design/blueprints.mdx';
+import { CardSamples } from '/snippets/cards/card-design/samples.mdx';
+import { TemplateDownloads } from '/snippets/cards/card-design/downloads.mdx';
+
+Your physical card and its digital wallet art share one design: the front
+of the card. You design the front and choose a few options for the back. The
+chip, the magnetic stripe, the Visa marks, and the issuer statement are fixed.
+We prepare the production files and take the design through Visa's review.
+
+<Note>
+Physical cards are set up with your Lightspark contact as part of card
+program onboarding. The Cards API issues virtual cards; see
+[Issuing cards](/cards/card-management/issuing-cards).
+</Note>
+
+Start from the templates. Each is a 1536 × 969 SVG overlay with the guides
+on their own layers; it opens as editable vectors in Figma, Illustrator,
+Sketch, and Affinity. Keep it on a hidden or non-printing layer while you
+design.
+
+<TemplateDownloads id="templates" />
+
+## What you choose and what is fixed
+
+| Surface | You choose | Fixed |
+| --- | --- | --- |
+| Front | Background color or artwork, your logo and where it sits | Chip position |
+| Back | Background color (usually the front's), personalization ink color and typeface, your support phone number and URL | Magnetic stripe, account block layout, contactless indicator, Visa DEBIT lockup in silver foil, "Issued by Lead Bank" statement |
+| Digital wallet art (Apple Pay, Google Pay) | The card image, derived from your front by default or supplied by you; your app icon and logo; two colors | Visa DEBIT lockup placement; the image must be recognizably the same card as the physical one |
+
+## Card body
+
+Cards print on white card stock. Any color, gradient, or artwork prints edge
+to edge on both faces in CMYK, and the card edge is white. A black-core body
+is also available for black cards.
+
+<CardSamples />
+
+- **White stock**: the standard body. Any color or artwork on the front; the same color continues on the back. The stripe band runs to the top edge of the back. Best for brand colors, gradients, and photographic or illustrated artwork.
+- **Black core**: black plastic through the card, so the edge is black. Personalization prints in white, and the logo prints in white or in one spot color (give us the Pantone number). Finishes: matte, gloss, or satin. Best for a black or one-color brand.
+
+Both bodies carry the Visa DEBIT lockup as the Premium Visa Brand Mark: silver
+hot-stamped foil on the back. Because the card carries the premium mark, Visa
+does not require the dove hologram, and the card has none.
+
+## Canvas
+
+Work on a 1536 × 969 px artboard. It has the proportions of an ISO/IEC 7810
+ID-1 card, and it is also the size Visa requires for digital wallet art, so
+one file serves both.
+
+| | Physical | On the artboard |
+| --- | --- | --- |
+| Width | 85.6 mm | 1536 px |
+| Height | 53.98 mm | 969 px |
+| Corner radius | 3.18 mm | 57 px |
+| Scale | 1 mm | 17.94 px |
+
+Keep the artboard's corners square. The manufacturer cuts the corners;
+preview them at 57 px if you want to see the result. Run backgrounds past the
+card edge to give the cut bleed; the bleed amount depends on the
+manufacturer's press, and we confirm it with your proof. Anything that must
+stay legible (logos, text) stays inside a 54 px (3 mm) safe margin.
+
+<CardBlueprint face="front" />
+
+The [templates at the top of this page](#templates) carry every guide in
+this figure as a layer.
+
+## Front
+
+The front carries your brand and the chip. Nothing else.
+
+- **Chip**: the module sits at (152, 324) and measures 236 × 164 px. It is embedded after printing, so nothing prints over it. Keep the zone from x 107 to 415 and y 279 to 533 clear of logos and text; background color and artwork may run through it.
+- **Logo**: the samples put it right of the chip, centered on the chip's mid-line (y 406), with its right edge 152 px from the card edge, 90 px tall. A larger mark, a centered mark, or a bleeding watermark all work if they stay out of the chip zone and legible parts stay inside the safe margin.
+- **Artwork**: photographs, gradients, and patterns are fine on white stock. Supply vector artwork where you can. Raster artwork must be at least 1536 × 969 px at card size; larger is better.
+
+Do not put on the front:
+
+- Cardholder name, card number, expiry date, or security code. These print on the back.
+- A drawn chip, hologram, or any imitation of a security feature.
+- Visa marks. We place the Visa DEBIT lockup on the back from Visa's supplied artwork.
+- Taglines, unless they are part of your trademarked logo.
+- URLs or phone numbers. The back carries your support line.
+
+Visa's rules also exclude, on either face:
+
+- The name or mark of another card network, or of a company you do not own.
+- Advertising or promotional language.
+- Reproductions of banknotes, coins, or another payment card.
+- Artwork, characters, or likenesses you do not hold the rights to.
+
+## Back
+
+The back is a fixed layout. Your background color or artwork continues onto
+it, and you choose how the personalization prints. The blueprint carries the
+positions; the back template has them as guides.
+
+<CardBlueprint face="back" />
+
+| Element | What it is | Who sets it |
+| --- | --- | --- |
+| Magnetic stripe | Standard black band. The band runs to the top edge of the card. | Fixed |
+| Account block | Three lines in 9 pt type: cardholder name, card number, then expiry and security code. Printed at personalization. | Layout fixed; ink and typeface yours |
+| Contactless indicator | EMVCo artwork, 5 mm tall. | Fixed |
+| Visa DEBIT lockup | Premium Visa Brand Mark in silver foil, with 3 mm clear space on every side kept free of text and logos. | Fixed |
+| Support line | Your support phone number and URL, in fine print. | Yours |
+| Issuer statement | "Issued by Lead Bank". | Fixed |
+
+Your choices on the back:
+
+- **Background**: the front's color or artwork, or a solid color from your palette. Keep the area under the lockup calm enough for silver foil to read.
+- **Personalization ink**: white or dark, whichever contrasts with the background. The black-core body prints white only.
+- **Typeface**: a sans serif, which Visa requires for a printed cardholder name, at 9 to 12 pt. The default is Suisse Intl Regular at 9 pt (57 px on the artboard; 1 pt = 6.33 px). The card number, expiry, and security code have no mandated face, and use the same one as the name.
+- **Support line**: the phone number and URL your cardholders should use.
+
+Cardholder names print as they appear on the cardholder's customer record.
+We shorten names that do not fit the line and confirm the result with you
+at proof.
+
+## Color
+
+Cards are printed, so specify colors the way a printer uses them.
+
+- Give brand colors as Pantone numbers, or as CMYK values if your brand guide has them. Hex and RGB values are for the digital wallet art only.
+- CMYK reproduces a smaller range than a screen. Saturated screen colors, especially bright orange, lime green, cyan, magenta, and violet, print duller and darker. Look up your brand color's Pantone or CMYK equivalent before you commit to it; a color that looks right in Figma can disappoint on plastic.
+- On white stock, everything prints as a four-color CMYK process. For a saturated brand color that CMYK cannot reach, the black-core body prints your logo as a Pantone spot color instead, which reproduces the exact ink.
+- Metallic and fluorescent colors do not print in CMYK. A metallic look comes from foil (see [Beyond the standard card](#beyond-the-standard-card)).
+- Everything printed must contrast with what is behind it. This is a Visa requirement for the cardholder name and a legibility requirement for everything else.
+- The Visa DEBIT lockup is always silver foil. You do not choose its color.
+
+Print differs from screen in a few other ways that affect card artwork:
+
+- Set black as 100% K, not a CMYK build. Builds shift toward brown or blue on press.
+- Ink coverage under 10% in any channel can drop out. Avoid very light tints for anything that must be visible.
+- Avoid borders or frames that follow the card edge. The cut moves slightly from card to card, and a border makes that visible.
+- Dark solid colors with a matte finish show surface scratches sooner than lighter or glossier cards.
+- Keep type in your artwork at 6 pt or larger and lines at 0.08 mm (0.25 pt) or thicker.
+
+The digital proof and the printed samples are the color check. Screen previews,
+including the figures on this page, are not color-accurate.
+
+## Digital wallet art
+
+When a cardholder adds the card to Apple Pay or Google Pay, the wallet shows
+a flat image of the card. By default we produce it from your front design.
+You can supply your own version instead, within the rules below; Visa and the
+wallets require it to be recognizably the same card as the physical one.
+
+<CardBlueprint face="wallet" />
+
+The image Visa and the wallets accept is a 1536 × 969 px PNG at 72 dpi, RGB,
+under 4 MB, with square corners (the wallet rounds them). The rules for what
+may appear on it:
+
+- No cardholder name, card number, expiry date, chip, hologram, or embossing cues.
+- No 3D or skeuomorphic effects that imitate a physical card. The wallet renders the rounding, stacking, shadows, and on iOS the tilt itself; a baked-in shadow or highlight fights that rendering.
+- The lower-left quadrant stays empty. The wallet draws the last four digits there.
+- The Visa DEBIT lockup sits in the lower right. We add it.
+
+If your logo sits right of the chip on the physical card, it lands in the
+upper right of the wallet art, which is allowed. A logo that depends on the
+chip for balance, or one placed in the lower left, needs an alternate
+placement for the wallet; that is the usual reason to supply your own
+version.
+
+The wallets also show your brand outside the card image, in notifications,
+transaction lists, and the card details screen. Visa Token Service, which
+provisions the card to Apple Pay and Google Pay, takes these assets with the
+card image:
+
+- An app icon, 100 × 100 px PNG.
+- Your logo, 1372 × 283 px PNG, on a transparent background.
+- An overlay text color for the last four digits, white or black, whichever reads on your art.
+- A card background color as a hex value. The wallet shows it while the image loads.
+
+## Carrier and envelope
+
+Physical cards ship in a folded carrier letter with the card attached, inside
+an unbranded envelope. Card networks require that nothing on the envelope
+indicates a card is inside, so the envelope is not customized. The standard
+carrier is used for all programs; to discuss a custom carrier, contact your
+Lightspark contact.
+
+## What to send
+
+Send the following to your Lightspark contact:
+
+- Brand colors as Pantone numbers or CMYK values for print, and as hex values for the digital wallet art.
+- The front design on a 1536 × 969 artboard, as the layered source file (Figma, Illustrator, or Sketch) or a PDF with vectors preserved. Keep your logo as a vector on its own layer, and include the overlay template on a hidden layer.
+- Your choices for the back: background color, personalization ink, typeface, support phone number and URL.
+- The body: white stock or black core, and the finish for black core.
+- For the digital wallets: the app icon, the logo PNG, the overlay text color, and the card background color listed under digital wallet art.
+
+## Review and production
+
+<Steps>
+<Step title="Design review">
+  We check the design against the rules on this page and send back anything that needs to change.
+</Step>
+<Step title="Production files">
+  We prepare the print files for both faces and the digital wallet art PNG, and place the Visa marks from Visa's supplied artwork.
+</Step>
+<Step title="Visa design approval">
+  Visa reviews every card design before production. We submit and handle their feedback with you.
+</Step>
+<Step title="Proof and samples">
+  The manufacturer returns a digital proof, then printed samples for you to approve.
+</Step>
+<Step title="Production">
+  Approved designs go into production for your card program.
+</Step>
+</Steps>
+
+Plan for several weeks from submission to printed samples, and longer for
+production stock. We give you a schedule at design review.
+
+## Beyond the standard card
+
+The two bodies on this page are what most programs print. Metal, custom cores
+and edges, foil or spot-gloss logos, and other premium finishes are possible.
+Each raises the cost of every card, adds a minimum order, and adds months of
+lead time, and some change what the artwork can be. If you are considering
+one, talk to your Lightspark contact before you design. The same applies to a vertical orientation or a
+custom back layout.

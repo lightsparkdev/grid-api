@@ -1,5 +1,5 @@
 Before you can issue a card, the cardholder must be a Grid `Customer`
-in good standing with at least one funded internal account. This page
+in good standing with a funded internal account. This page
 covers the requirements and the order they must be satisfied in.
 
 ## KYC must be APPROVED
@@ -21,8 +21,8 @@ curl -X GET "$GRID_BASE_URL/customers/Customer:019542f5-b3e7-1d02-0000-000000000
 
 ## The cardholder needs a funding source
 
-Every card must be bound to at least one `InternalAccount` at issue
-time. The account must:
+Every card must be bound to one `InternalAccount` at issue time. The
+account must:
 
 - Belong to the cardholder (no cross-customer funding in v1).
 - Be denominated in a card-eligible currency. In v1 this is USDB; the

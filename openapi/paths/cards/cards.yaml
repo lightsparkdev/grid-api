@@ -1,27 +1,39 @@
 post:
   summary: Issue a card
   description: >
-    Issue a new card for a cardholder. Every card must be bound to at least
-    one funding source at create time. The cardholder must have KYC status
-    `APPROVED` before a card can be issued; otherwise the request is rejected
-    with `CARDHOLDER_KYC_NOT_APPROVED`.
+    Issue a new card for a cardholder. Every card is bound to one internal
+    account, `fundingSource`, at create time. The cardholder must
+    have KYC status `APPROVED` before a card can be issued; otherwise the
+    request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
 
-    Optional `maxSpendPerTransaction` and `maxSpendPerDay` values set the
-    card-specific caps on one transaction and one UTC calendar day. The limits
-    are enforced by Grid for card programs where Grid makes the authorization
-    decision, whether the card is funded by an Embedded Wallet account or
-    custodial fiat. If the platform config sets the corresponding
-    `cardConfigs` value, Grid enforces the lower of the card and platform caps.
-    All values use the smallest unit of the card's currency.
+    Card issuance is fee-bearing and cannot be reversed, so an
+    `Idempotency-Key` header is required. Retries must carry the same key.
 
 
-    If any funding source is an Embedded Wallet internal account, the
+    Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and
+    `maxTransactionsPerDay` values set the card-specific caps on one
+    transaction, on spend during one UTC calendar day, and on the number of
+    transactions during one UTC calendar day. Check the funding-source internal
+    account's `cardCapabilities.supportsSpendLimits` before supplying either
+    spend limit, and `cardCapabilities.supportsTransactionCountLimit` before
+    supplying the transaction count limit. If the platform config sets the
+    corresponding `cardConfigs` value, Grid enforces the lower of the card and
+    platform caps. Amounts use the smallest unit of the card's currency.
+
+
+    If the funding source is an Embedded Wallet internal account, the
     cardholder must authorize Grid to sign Spark token transactions for that
     card funding source by completing the delegated-key creation flow with
     `POST /auth/delegated-keys`. Until an active delegated key exists for that
     funding source, Authorization Decisioning cannot use it to fund card
     transactions.
+
+
+    A platform may be limited to a maximum number of live cards. Once that
+    limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED`
+    until a card is closed or Lightspark raises the limit. Cards in `CLOSED`
+    state do not count toward the limit.
 
 
     New cards start in `state: "PROCESSING"` while the card issuer
@@ -33,6 +45,19 @@ post:
     - Cards
   security:
     - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      description: >
+        A unique identifier for the request, up to 255 characters. A retry
+        carrying the same key returns the card created by the first request;
+        reusing a key for a materially different card request is rejected with
+        `409`.
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+        example: 550e8400-e29b-41d4-a716-446655440000
   requestBody:
     required: true
     content:
@@ -43,13 +68,13 @@ post:
           virtualCard:
             summary: Issue a virtual card with one funding source
             value:
-              cardholderId: Customer:019542f5-b3e7-1d02-0000-000000000001
-              platformCardId: card-emp-aary-001
+              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              platformCardId: card-emp-001
               form: VIRTUAL
-              fundingSources:
-                - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+              fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
               maxSpendPerTransaction: 5000
               maxSpendPerDay: 25000
+              maxTransactionsPerDay: 20
   responses:
     '201':
       description: >-
@@ -64,10 +89,12 @@ post:
     '400':
       description: >-
         Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
-        cardholder's KYC status is not `APPROVED`, with
-        `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does
-        not belong to the cardholder or is not denominated in a
-        card-eligible currency, and for general invalid parameters.
+        cardholder's KYC status is not `APPROVED`, with `INVALID_INPUT` when
+        the `Idempotency-Key` header is missing or exceeds 255 characters or
+        when a required `threeDSecurePassword` is missing, empty, or
+        whitespace-only, with `FUNDING_SOURCE_INELIGIBLE` when the supplied
+        funding source does not belong to the cardholder or is not denominated
+        in a card-eligible currency, and for general invalid parameters.
       content:
         application/json:
           schema:
@@ -78,6 +105,17 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `CARD_LIMIT_REACHED` when the platform has
+        reached the maximum number of live cards it may hold, and with
+        `CONFLICT` when the `Idempotency-Key` was already used for a
+        different card request. Closing a card frees its slot; contact
+        Lightspark to raise the limit.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '500':
       description: Internal service error
       content:
@@ -106,17 +144,17 @@ get:
   security:
     - BasicAuth: []
   parameters:
-    - name: cardholderId
+    - name: customerId
       in: query
-      description: Filter by cardholder (customer) id.
+      description: Filter by customer id.
       required: false
       schema:
         type: string
     - name: accountId
       in: query
       description: >-
-        Filter by internal account id. Returns cards whose `fundingSources`
-        array contains the given internal account id.
+        Filter by internal account id. Returns cards whose `fundingSource` is
+        the given internal account id.
       required: false
       schema:
         type: string

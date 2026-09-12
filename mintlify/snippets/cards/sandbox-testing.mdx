@@ -9,21 +9,9 @@ POST /sandbox/cards/{id}/simulate/clearing
 POST /sandbox/cards/{id}/simulate/return
 ```
 
-Outcomes are deterministic — driven by magic-value suffixes on the
-relevant id. The same approach is used by
-`/sandbox/internal-accounts/{id}/fund`.
-
-## Issuance suffixes (platformCardId)
-
-The last three characters of `platformCardId` (or `cardholderId` when
-`platformCardId` is omitted) control how `POST /cards` resolves:
-
-| Suffix | Behavior |
-|--------|----------|
-| `001` | Stays `PROCESSING` indefinitely (test the polling path) |
-| `002` | Issuer provisioning rejected → `state: CLOSED`, `stateReason: "ISSUER_REJECTED"` |
-| `005` | Delayed activation (~30s) before the `CARD.STATE_CHANGE` webhook fires |
-| any other | Instant activation → `state: ACTIVE`, `last4` deterministic from the suffix |
+Authorization outcomes are deterministic and driven by magic-value suffixes
+on `merchant.descriptor`. Other Sandbox helpers use the identifier suffixes
+described in their sections, including `/sandbox/internal-accounts/{id}/fund`.
 
 ## Funding-source suffixes (accountId)
 
@@ -73,7 +61,7 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "cardTransactionId": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100",
+    "cardTransactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000100",
     "amount": 1500
   }'
 ```
@@ -95,13 +83,14 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "cardTransactionId": "CardTransaction:019542f5-b3e7-1d02-0000-000000000100",
+    "cardTransactionId": "Transaction:019542f5-b3e7-1d02-0000-000000000100",
     "amount": 1500
   }'
 ```
 
-A full refund flips the parent to `REFUNDED`; a partial refund keeps
-it `SETTLED` with a non-zero `refundedAmount`.
+A refund posts as its own dated `CREDIT` `CardTransaction` linked to the
+purchase via `originalTransactionId`; the purchase keeps its `SETTLED`
+status, whether the refund is full or partial.
 
 ## End-to-end happy path
 
@@ -109,15 +98,14 @@ A simple Sandbox loop that exercises issue → activate → auth → clear
 → refund:
 
 ```bash
-# 1. Issue (suffix not in the magic set → instant activation)
+# 1. Issue a virtual card
 curl -X POST "$GRID_BASE_URL/cards" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
   -d '{
-    "cardholderId": "Customer:...",
-    "platformCardId": "card-test-happy",
+    "customerId": "Customer:...",
     "form": "VIRTUAL",
-    "fundingSources": ["InternalAccount:..."]
+    "fundingSource": "InternalAccount:..."
   }'
 
 # 2. Simulate auth — any non-magic descriptor approves
@@ -130,16 +118,15 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/authorization" \
 curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/clearing" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
-  -d '{ "cardTransactionId": "CardTransaction:...", "amount": 1500 }'
+  -d '{ "cardTransactionId": "Transaction:...", "amount": 1500 }'
 
 # 4. Refund the cleared transaction
 curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/return" \
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET" \
   -H "Content-Type: application/json" \
-  -d '{ "cardTransactionId": "CardTransaction:...", "amount": 1500 }'
+  -d '{ "cardTransactionId": "Transaction:...", "amount": 1500 }'
 ```
 
-At each step you'll see `CARD.STATE_CHANGE` or
-`CARD.FUNDING_SOURCE_CHANGE` webhooks plus transaction webhooks for
-the simulated authorization, clearing, and return — wire those into
+At each step you'll see `CARD.STATE_CHANGE` webhooks plus transaction
+webhooks for the simulated authorization, clearing, and return — wire those into
 your local webhook handler to validate end-to-end.

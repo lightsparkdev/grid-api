@@ -14,12 +14,13 @@ required:
   - createdAt
   - updatedAt
 description: >-
-  Parent transaction row for a card authorization and all of the
-  pulls / settlements / refunds that reconcile against it. Child events are
-  rolled up into the `pullSummary`, `refundSummary`, and `settlementSummary`
-  aggregates. Delivered as the payload of the generic transaction
-  webhook stream (extends the Transaction model with a card
-  destination type) on every transition.
+  One row per cardholder-visible card transaction. A purchase row rolls its
+  clearings up into `settledAmount`; a merchant return is its own dated
+  `CREDIT` row linked back to the purchase via `originalTransactionId` rather
+  than a rollup on the parent, so statements can list purchases and refunds
+  as separate dated lines. Delivered whole as the `data` payload of every
+  `CARD_TRANSACTION.*` webhook, and returned as the `CARD` variant of
+  `Transaction` from `GET /transactions`.
 properties:
   type:
     type: string
@@ -29,8 +30,7 @@ properties:
   id:
     type: string
     description: System-generated unique card transaction identifier
-    readOnly: true
-    example: CardTransaction:019542f5-b3e7-1d02-0000-000000000100
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
   cardId:
     type: string
     description: The id of the `Card` this transaction was made on.
@@ -49,13 +49,22 @@ properties:
       Opaque identifier for the transaction on the underlying issuer. Used to
       cross-reference Grid records against issuer dashboards and webhooks.
     example: lithic_txn_b81c2a4f
-    readOnly: true
   status:
     $ref: ./CardTransactionStatus.yaml
   direction:
     $ref: ../transactions/TransactionDirection.yaml
-    description: Card transactions debit the customer's account.
+    description: >-
+      A purchase is a `DEBIT`. A merchant refund is a `CREDIT` with the
+      credited value in `settledAmount`; when the refund returns against a
+      known purchase, `originalTransactionId` identifies it.
     example: DEBIT
+  originalTransactionId:
+    type: string
+    description: >-
+      On a refund row (`direction: CREDIT`), the id of the purchase this
+      return credits back against. Absent on purchases and on standalone
+      credits with no matching purchase.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000099
   merchant:
     $ref: ./CardMerchant.yaml
   authorizedAmount:
@@ -70,33 +79,18 @@ properties:
       Internal account id that funded this transaction (the funding source
       selected by Authorization Decisioning at auth time).
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-  pullSummary:
-    $ref: ./CardPullSummary.yaml
-  refundSummary:
-    $ref: ./CardRefundSummary.yaml
-  settlementSummary:
-    $ref: ./CardSettlementSummary.yaml
   authorizedAt:
     type: string
     format: date-time
     description: When the auth was approved.
     example: '2026-05-08T14:30:00Z'
-  lastEventAt:
-    type: string
-    format: date-time
-    description: >-
-      Timestamp of the most recent reconcile event (pull / clearing / refund)
-      against this transaction.
-    example: '2026-05-08T15:42:11Z'
   createdAt:
     type: string
     format: date-time
     description: Creation timestamp (same as `authorizedAt` for card transactions).
-    readOnly: true
     example: '2026-05-08T14:30:00Z'
   updatedAt:
     type: string
     format: date-time
     description: Last update timestamp.
-    readOnly: true
     example: '2026-05-08T15:42:11Z'

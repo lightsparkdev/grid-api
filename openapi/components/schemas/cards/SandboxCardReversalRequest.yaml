@@ -1,0 +1,23 @@
+type: object
+required:
+  - cardTransactionId
+description: >-
+  Request body for `POST /sandbox/cards/{id}/simulate/authorization_reversal`:
+  which authorization to reverse, and optionally how much of it.
+properties:
+  cardTransactionId:
+    type: string
+    description: >-
+      The authorization to reverse. It must still be fully open, with
+      nothing settled against it yet.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+  amount:
+    type: integer
+    format: int64
+    description: >-
+      How much to reverse, in the smallest unit of the transaction's
+      currency (cents for USD). Leave it out to reverse the whole
+      authorization. Send an amount to reverse only that much and leave the
+      rest on hold.
+    exclusiveMinimum: 0
+    example: 1250

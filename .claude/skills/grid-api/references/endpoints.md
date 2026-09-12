@@ -296,7 +296,7 @@ The `/agents/me/*` endpoints are called by an agent using its own credentials (A
 | POST | `/cards` | Issue a card |
 | GET | `/cards` | List cards |
 | GET | `/cards/{id}` | Get a card |
-| PATCH | `/cards/{id}` | Update a card (freeze/unfreeze, rebind funding sources, close) |
+| PATCH | `/cards/{id}` | Update a card (freeze/unfreeze, replace the funding source, close) |
 | POST | `/cards/{id}/reveal` | Reveal card details |
 
 ### Sandbox Card Simulation
@@ -332,7 +332,6 @@ Drive card lifecycle events in sandbox to test authorization, clearing, and retu
 - `verification-update`: Verification status change
 - `agent-action`: Agent action requires approval or changed status
 - `card-state-change`: Card state changed
-- `card-funding-source-change`: Card funding source changed
 - `card-transaction`: Card transaction event
 - `bulk-upload`: Bulk job completion
 - `invitation-claimed`: Invitation claimed

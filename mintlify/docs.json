@@ -58,6 +58,17 @@
               "platform-overview/core-concepts/currencies-and-rails",
               "platform-overview/configuration"
             ]
+          },
+          {
+            "group": "Strong Customer Authentication",
+            "pages": [
+              "platform-overview/sca/overview",
+              "platform-overview/sca/per-transaction-authorization",
+              "platform-overview/sca/factor-enrollment",
+              "platform-overview/sca/login-and-sessions",
+              "platform-overview/sca/trusted-beneficiaries",
+              "platform-overview/sca/two-factor-reset"
+            ]
           }
         ]
       },
@@ -354,7 +365,7 @@
             ]
           },
           {
-            "group": "Card Management",
+            "group": "Card management",
             "pages": [
               "cards/card-management/issuing-cards",
               "cards/card-management/funding-sources",
@@ -368,7 +379,13 @@
             ]
           },
           {
-            "group": "Platform Tools",
+            "group": "Card design",
+            "pages": [
+              "cards/card-design/guidelines"
+            ]
+          },
+          {
+            "group": "Platform tools",
             "pages": [
               "cards/platform-tools/webhooks",
               "cards/platform-tools/sandbox-testing"

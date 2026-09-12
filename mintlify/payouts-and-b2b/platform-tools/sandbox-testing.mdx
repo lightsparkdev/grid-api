@@ -251,7 +251,7 @@ While sandbox closely mimics production, there are some differences:
 
 - **Instant settlement**: All transfers complete immediately (success cases) or fail immediately (error cases), except timeout scenarios (005)
 - **No real bank validation**: Account numbers aren't validated against real banking networks
-- **Simplified KYC**: KYC processes are simulated and complete instantly. You must add customers via the `/customers` endpoint, rather than using the KYC link flow.
+- **Simplified KYC**: KYC processes are simulated rather than reviewed for real. On an unregulated platform the result resolves after a complete packet is submitted with `POST /verifications` — an incomplete one returns `RESOLVE_ERRORS` first. On a regulated platform, or with **Skip verification paperwork** on, an individual resolves at creation; a business never does — a terminal registration-number suffix resolves it on the first submission, while `001` and `003` still require a complete packet. Customers can be onboarded through `POST /customers` or the hosted link flow, as in production.
 - **Fixed exchange rates**: Currency conversion rates may not reflect real-time market rates.
 
 <Warning>

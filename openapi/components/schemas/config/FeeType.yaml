@@ -1,9 +1,11 @@
 type: string
 enum:
   - CROSS_CURRENCY_TRANSACTION
+  - RAIL
 description: |
   The kind of activity this fee applies to.
 
-  - `CROSS_CURRENCY_TRANSACTION` — fee charged on a cross-currency Grid transaction
-    (source currency differs from destination currency).
+  - `CROSS_CURRENCY_TRANSACTION` — a fee charged on transactions where the sending
+    currency differs from the receiving currency
+  - `RAIL` — a fee charged on any transaction that uses the specified payment rail
 example: CROSS_CURRENCY_TRANSACTION
