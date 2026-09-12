@@ -169,10 +169,27 @@ interface BrandDrag {
 
 /** Snap guides shown during a move, in spec px: the lines, and an × at each
  *  point being aligned (on the brand, and on what it snapped to). */
+/** An equal-gap snap: the box sits midway between two lines `a` and `b`
+ *  across one axis; the two gaps (a to the box, the box to b) are drawn as
+ *  matched spacing bars along `at` on the other axis. */
+interface Gap {
+  a: number;
+  b: number;
+  /** The box's near and far edges on the gap's axis, after the snap. */
+  lo: number;
+  hi: number;
+  /** Where along the other axis the bars are drawn (the box's center). */
+  at: number;
+}
+
 interface Guides {
   x?: number;
   y?: number;
   marks?: Pt[];
+  /** Equal gaps left and right of the box (bars run along x). */
+  gapX?: Gap;
+  /** Equal gaps above and below the box (bars run along y). */
+  gapY?: Gap;
 }
 
 interface CardStageProps {
@@ -343,7 +360,25 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   useEffect(() => {
     if (!selected) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelected(false);
+      if (e.key === 'Escape') {
+        setSelected(false);
+        return;
+      }
+      // Arrows nudge the brand a screen pixel, ten with Shift, as Figma does.
+      const dir: Record<string, Pt> = {
+        ArrowLeft: { x: -1, y: 0 },
+        ArrowRight: { x: 1, y: 0 },
+        ArrowUp: { x: 0, y: -1 },
+        ArrowDown: { x: 0, y: 1 },
+      };
+      const d = dir[e.key];
+      const pl = placement.current;
+      const hit = hitRef.current;
+      if (!d || !pl || !hit || (e.target as HTMLElement | null)?.tagName === 'INPUT') return;
+      e.preventDefault();
+      const perPx = face.w / hit.getBoundingClientRect().width;
+      const step = (e.shiftKey ? 10 : 1) * perPx;
+      setLayout({ ...pl.layout, x: pl.layout.x + d.x * step, y: pl.layout.y + d.y * step });
     };
     // A click on the stage off the card deselects; the panels beside it
     // don't, so a control can be used on the selection.
@@ -397,36 +432,57 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     const turned = Math.abs(rotation) > 0.5;
     const c = center(box);
     const { cardCenter, chipCenter, brandRow } = landmarks();
-    // [from, to, the feature's point to mark, if any]
-    type Pair = [number, number, Pt | null];
+    const chip = chipBox(design.orientation);
+    // [from, to, the feature's point to mark, if any, the gap it equalizes, if any]
+    type Pair = [number, number, Pt | null, [number, number] | null];
     const xs: Pair[] = [
-      [c.x, cardCenter.x, cardCenter],
-      [c.x, chipCenter.x, chipCenter],
+      [c.x, cardCenter.x, cardCenter, null],
+      [c.x, chipCenter.x, chipCenter, null],
     ];
     const ys: Pair[] = [
-      [c.y, cardCenter.y, cardCenter],
-      [c.y, chipCenter.y, chipCenter],
-      [c.y, brandRow, null],
+      [c.y, cardCenter.y, cardCenter, null],
+      [c.y, chipCenter.y, chipCenter, null],
+      [c.y, brandRow, null, null],
     ];
     if (!turned) {
-      xs.push([box.x, BRAND_MARGIN, null], [box.x + box.w, face.w - BRAND_MARGIN, null]);
-      ys.push([box.y, BRAND_MARGIN, null], [box.y + box.h, face.h - BRAND_MARGIN, null]);
+      xs.push([box.x, BRAND_MARGIN, null, null], [box.x + box.w, face.w - BRAND_MARGIN, null, null]);
+      ys.push([box.y, BRAND_MARGIN, null, null], [box.y + box.h, face.h - BRAND_MARGIN, null, null]);
+      // Equal gaps: the box midway between two of the card's edges and the
+      // chip's edges, on each axis, when it fits between them.
+      const linesX = [0, chip.x, chip.x + chip.w, face.w];
+      const linesY = [0, chip.y, chip.y + chip.h, face.h];
+      const between = (lines: number[], size: number, pairs: Pair[], from: number) => {
+        for (let i = 0; i < lines.length; i++) {
+          for (let j = i + 1; j < lines.length; j++) {
+            const a = lines[i];
+            const b = lines[j];
+            if (b - a <= size) continue;
+            pairs.push([from, (a + b) / 2, null, [a, b]]);
+          }
+        }
+      };
+      between(linesX, box.w, xs, c.x);
+      between(linesY, box.h, ys, c.y);
     }
     const best = (pairs: Pair[]) => {
       let d = 0;
       let at: number | undefined;
       let feature: Pt | null = null;
+      let gap: [number, number] | null = null;
       let min = tol;
-      for (const [from, to, pt] of pairs) {
+      for (const [from, to, pt, g] of pairs) {
         const dist = Math.abs(to - from);
-        if (dist <= min) {
+        // The plain alignments come first in the list; an equal-gap snap
+        // only wins when it is strictly nearer.
+        if (dist < min || (dist === min && at === undefined)) {
           min = dist;
           d = to - from;
           at = to;
           feature = pt;
+          gap = g;
         }
       }
-      return { d, at, feature };
+      return { d, at, feature, gap };
     };
     const sx = best(xs);
     const sy = best(ys);
@@ -436,15 +492,26 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     const mark = (p: Pt) => {
       if (!marks.some((m) => Math.hypot(m.x - p.x, m.y - p.y) < 3)) marks.push(p);
     };
+    const guides: Guides = { marks };
     if (sx.at !== undefined) {
-      mark({ x: sx.at, y: snapped.y });
-      if (sx.feature) mark(sx.feature);
+      if (sx.gap) {
+        guides.gapX = { a: sx.gap[0], b: sx.gap[1], lo: snapped.x - box.w / 2, hi: snapped.x + box.w / 2, at: snapped.y };
+      } else {
+        guides.x = sx.at;
+        mark({ x: sx.at, y: snapped.y });
+        if (sx.feature) mark(sx.feature);
+      }
     }
     if (sy.at !== undefined) {
-      mark({ x: snapped.x, y: sy.at });
-      if (sy.feature) mark(sy.feature);
+      if (sy.gap) {
+        guides.gapY = { a: sy.gap[0], b: sy.gap[1], lo: snapped.y - box.h / 2, hi: snapped.y + box.h / 2, at: snapped.x };
+      } else {
+        guides.y = sy.at;
+        mark({ x: snapped.x, y: sy.at });
+        if (sy.feature) mark(sy.feature);
+      }
     }
-    return { dx: sx.d, dy: sy.d, guides: { x: sx.at, y: sy.at, marks } };
+    return { dx: sx.d, dy: sy.d, guides };
   };
 
   /** Snap a gradient's end to the card's corners, edges and center, the
@@ -1011,6 +1078,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         {guides.y !== undefined && (
           <span className={styles.guideH} style={{ top: guides.y * CARD_PER_SPEC }} aria-hidden />
         )}
+        {guides.gapY && <GapBars gap={guides.gapY} axis="y" />}
+        {guides.gapX && <GapBars gap={guides.gapX} axis="x" />}
         {guides.marks?.map((m, i) => (
           <span
             key={i}
@@ -1048,6 +1117,39 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         </span>
       </div>
     </div>
+  );
+}
+
+/**
+ * Equal-spacing bars, as Figma draws them: one bar across each of the two
+ * matched gaps, with a tick at each end, along the box's center line.
+ */
+function GapBars({ gap, axis }: { gap: Gap; axis: 'x' | 'y' }) {
+  const k = CARD_PER_SPEC;
+  const spans: Array<[number, number]> = [
+    [gap.a, gap.lo],
+    [gap.hi, gap.b],
+  ];
+  return (
+    <>
+      {spans.map(([from, to], i) =>
+        axis === 'y' ? (
+          <span
+            key={i}
+            className={clsx(styles.gapBar, styles.gapBarV)}
+            style={{ left: gap.at * k, top: from * k, height: (to - from) * k }}
+            aria-hidden
+          />
+        ) : (
+          <span
+            key={i}
+            className={clsx(styles.gapBar, styles.gapBarH)}
+            style={{ top: gap.at * k, left: from * k, width: (to - from) * k }}
+            aria-hidden
+          />
+        ),
+      )}
+    </>
   );
 }
 

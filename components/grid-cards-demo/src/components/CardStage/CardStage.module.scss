@@ -264,6 +264,62 @@
   margin-top: calc(var(--guide-px) / -2);
 }
 
+/* Equal-spacing bars: a hairline across each matched gap with a tick at
+   both ends, in the guide red. */
+.gapBar {
+  position: absolute;
+  pointer-events: none;
+  background: var(--guide);
+  --tick: calc(6px / var(--card-scale));
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    background: var(--guide);
+  }
+}
+
+.gapBarV {
+  width: var(--guide-px);
+  margin-left: calc(var(--guide-px) / -2);
+
+  &::before,
+  &::after {
+    left: calc(var(--tick) / -2 + var(--guide-px) / 2);
+    width: var(--tick);
+    height: var(--guide-px);
+  }
+
+  &::before {
+    top: 0;
+  }
+
+  &::after {
+    bottom: 0;
+  }
+}
+
+.gapBarH {
+  height: var(--guide-px);
+  margin-top: calc(var(--guide-px) / -2);
+
+  &::before,
+  &::after {
+    top: calc(var(--tick) / -2 + var(--guide-px) / 2);
+    height: var(--tick);
+    width: var(--guide-px);
+  }
+
+  &::before {
+    left: 0;
+  }
+
+  &::after {
+    right: 0;
+  }
+}
+
 /* An × at each point a guide aligns: two hairlines through one point. */
 .guideMark {
   position: absolute;
