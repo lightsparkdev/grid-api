@@ -18,9 +18,10 @@ export interface SpendLimits {
   perDayCents: number | null;
 }
 
-/** Which of the card hub's bottom sheets is up. `walletAgain` says the card is
- *  already in Apple Wallet. */
-export type CardSheet = 'none' | 'transaction' | 'close' | 'walletAgain';
+/** Which of the card hub's bottom sheets is up. `freeze` confirms a freeze or
+ *  unfreeze from the lock; `walletAgain` says the card is already in Apple
+ *  Wallet. */
+export type CardSheet = 'none' | 'freeze' | 'transaction' | 'close' | 'walletAgain';
 
 /** The page pushed over the card home; the card stays in its slot above.
  *  `numbers` is Wallet's Card Numbers page (the reveal; the card turns to its

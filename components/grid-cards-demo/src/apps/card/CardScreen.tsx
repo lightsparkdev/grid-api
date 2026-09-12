@@ -1,7 +1,6 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
@@ -19,7 +18,7 @@ import type { CardScreenProps } from '@/apps/types';
 import { ApplePayAddCard, WalletAddedScreen } from './AddToWalletFlow';
 import { CardHomeContent } from './CardHomeContent';
 import { CardNumbersContent } from './CardNumbersContent';
-import { CloseCardSheet, TransactionSheet, WalletAgainSheet } from './CardSheets';
+import { CloseCardSheet, FreezeSheet, TransactionSheet, WalletAgainSheet } from './CardSheets';
 import { LimitsContent } from './LimitsContent';
 import styles from './CardScreen.module.scss';
 
@@ -32,11 +31,13 @@ const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.2 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
 const CONTENT_HIDDEN = { opacity: 0, filter: 'blur(8px)' };
 const CONTENT_VISIBLE = { opacity: 1, filter: 'blur(0px)' };
-/** iOS push: the new page slides in from the right; the one under it slides
- *  a third of the way out and dims. Pop runs it backwards. */
+/** Card numbers arrives with a short rise under the turning card. */
+const NUMBERS_HIDDEN = { opacity: 0, filter: 'blur(8px)', y: 16 };
+const NUMBERS_VISIBLE = { opacity: 1, filter: 'blur(0px)', y: 0 };
+/** iOS push (Spending limits): the new page slides in from the right; the
+ *  body under it slides a third of the way out. Pop runs it backwards. */
 const PUSH = motionTransition(easeOutSnappy, 0.45);
 const PAGE_RIGHT = { x: '100%', opacity: 1 };
-const PAGE_LEFT = { x: '-30%', opacity: 0.4 };
 const PAGE_REST = { x: 0, opacity: 1 };
 /** The pushed pages' header titles. */
 const PAGE_TITLE = { numbers: 'Card numbers', limits: 'Spending limits' } as const;
@@ -71,18 +72,12 @@ export function CardScreen({ home }: CardScreenProps) {
     startTapToPay,
   } = home;
   const onPage = card.page !== 'home';
-  // Card Numbers pushes over the content below the card (the card stays,
-  // turned over); Spending Limits pushes over the whole body, card included
-  // (the stage clips the card to its leading edge), and the home stays put
-  // underneath.
+  // Card numbers is not a push: the header swaps as it always does, the
+  // content under the card blur-fades out, and the numbers blur-fade in with
+  // a short rise, while the card stays and turns over. Spending limits is a
+  // push over the whole body, card included (the stage clips the card to its
+  // leading edge), with the home staying put underneath.
   const onNumbers = card.page === 'numbers';
-  // The home comes back from under the Card Numbers page (a pop, sliding in
-  // from the left) or after tap-to-pay (the blur-in), depending on where it was.
-  const prevPage = useRef(card.page);
-  const fromNumbers = prevPage.current === 'numbers' && !onNumbers;
-  useEffect(() => {
-    prevPage.current = card.page;
-  }, [card.page]);
 
   // App icon for push notifications — a brand-tinted rounded square.
   const brandColor = brandColorOf(design);
@@ -168,10 +163,11 @@ export function CardScreen({ home }: CardScreenProps) {
                         disabled: card.closed,
                       },
                       {
-                        name: card.frozen ? 'lock.fill' : 'lock.open.fill',
+                        // The lock shows what the tap does: lock a live card, unlock a frozen one.
+                        name: card.frozen ? 'lock.open.fill' : 'lock.fill',
                         size: 20,
                         label: card.frozen ? 'Unfreeze card' : 'Freeze card',
-                        onClick: toggleFreeze,
+                        onClick: () => card.setSheet('freeze'),
                         disabled: card.closed,
                       },
                     ]}
@@ -211,27 +207,18 @@ export function CardScreen({ home }: CardScreenProps) {
             />
           </div>
 
-          {/* Below the card: the home (actions, transactions), Card Numbers
-            pushed over it, or the tap-to-pay reader status. popLayout so an
-            exiting block leaves the flex flow immediately. */}
+          {/* Below the card: the home (actions, transactions), Card numbers in
+            its place, or the tap-to-pay reader status. Each blur-fades out
+            and the next blur-fades in. popLayout so an exiting block leaves
+            the flex flow immediately. */}
           <AnimatePresence mode="popLayout" initial={false}>
             {!isTap && !onNumbers && (
               <motion.div
                 key="home"
                 className={styles.homeContent}
-                initial={reduceMotion ? false : fromNumbers ? PAGE_LEFT : CONTENT_HIDDEN}
-                animate={
-                  reduceMotion
-                    ? PAGE_REST
-                    : { ...PAGE_REST, filter: 'blur(0px)', transition: fromNumbers ? PUSH : CONTENT_IN }
-                }
-                exit={
-                  reduceMotion
-                    ? { opacity: 0 }
-                    : onNumbers
-                      ? { ...PAGE_LEFT, transition: PUSH }
-                      : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }
-                }
+                initial={reduceMotion ? false : CONTENT_HIDDEN}
+                animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
+                exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
               >
                 <div className={styles.homeScroll}>
                   <CardHomeContent
@@ -247,9 +234,9 @@ export function CardScreen({ home }: CardScreenProps) {
               <motion.div
                 key="numbers"
                 className={styles.homeContent}
-                initial={reduceMotion ? false : PAGE_RIGHT}
-                animate={reduceMotion ? PAGE_REST : { ...PAGE_REST, transition: PUSH }}
-                exit={reduceMotion ? { opacity: 0 } : { ...PAGE_RIGHT, transition: PUSH }}
+                initial={reduceMotion ? false : NUMBERS_HIDDEN}
+                animate={reduceMotion ? CONTENT_VISIBLE : { ...NUMBERS_VISIBLE, transition: CONTENT_IN }}
+                exit={reduceMotion ? { opacity: 0 } : { ...NUMBERS_HIDDEN, transition: CONTENT_OUT }}
               >
                 <div className={styles.homeScroll}>
                   <CardNumbersContent card={card} />
@@ -291,7 +278,8 @@ export function CardScreen({ home }: CardScreenProps) {
         </AnimatePresence>
       </motion.div>
 
-      {/* Bottom sheets — transaction, close, already in Apple Wallet. */}
+      {/* Bottom sheets — freeze, transaction, close, already in Apple Wallet. */}
+      <FreezeSheet card={card} onConfirm={toggleFreeze} />
       <TransactionSheet card={card} />
       <CloseCardSheet card={card} />
       <WalletAgainSheet card={card} />

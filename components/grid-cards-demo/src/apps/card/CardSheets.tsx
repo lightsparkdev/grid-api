@@ -60,6 +60,44 @@ function SheetShell({ open, onDismiss, icon, title, sub, children, tone = 'defau
   );
 }
 
+/* ── Freeze / unfreeze ───────────────────────────────────────────────────── */
+
+/** The lock's confirmation: what freezing (or unfreezing) does, and the button
+ *  that does it. `onConfirm` runs the flow (PATCH, webhook, push). */
+export function FreezeSheet({ card, onConfirm }: { card: CardControls; onConfirm: () => void }) {
+  const open = card.sheet === 'freeze';
+  const { frozen } = card;
+  return (
+    <SheetShell
+      open={open}
+      onDismiss={card.closeSheet}
+      icon={<SfSymbol name={frozen ? 'lock.open.fill' : 'lock.fill'} size={28} />}
+      title={frozen ? 'Unfreeze card?' : 'Freeze card?'}
+      sub={
+        frozen
+          ? 'Purchases go through again right away.'
+          : 'New purchases are declined until you unfreeze it. Pending purchases still settle.'
+      }
+    >
+      <div className={styles.actions}>
+        <ContentAreaButton
+          type="button"
+          variant="filled"
+          onClick={() => {
+            card.closeSheet();
+            onConfirm();
+          }}
+        >
+          {frozen ? 'Unfreeze card' : 'Freeze card'}
+        </ContentAreaButton>
+        <ContentAreaButton type="button" variant="bordered" onClick={card.closeSheet}>
+          Cancel
+        </ContentAreaButton>
+      </div>
+    </SheetShell>
+  );
+}
+
 /* ── Already in Apple Wallet ─────────────────────────────────────────────── */
 
 /** A second Add to Wallet: the card is already on this iPhone. */

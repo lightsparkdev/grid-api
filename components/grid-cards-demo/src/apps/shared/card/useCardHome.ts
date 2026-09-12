@@ -58,6 +58,7 @@ export type CardPose =
   | 'numbers'
   | 'wallet'
   | 'walletAgain'
+  | 'freeze'
   | 'limits'
   | 'transaction'
   | 'close'
@@ -510,6 +511,9 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
         break;
       case 'walletAgain':
         c.setSheet('walletAgain');
+        break;
+      case 'freeze':
+        c.setSheet('freeze');
         break;
       case 'limits':
         c.openLimits();
