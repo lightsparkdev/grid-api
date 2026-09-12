@@ -11768,11 +11768,11 @@ webhooks:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
-  card-state-change:
+  card-status-change:
     post:
-      summary: Card state change
+      summary: Card status change
       description: |
-        Webhook that is called when a card's lifecycle state changes. Fires on `PROCESSING → ACTIVE`, on `PROCESSING → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
+        Webhook that is called when a card's lifecycle status changes. Fires on `PROCESSING → ACTIVE`, on `PROCESSING → CLOSED (ISSUER_REJECTED)` when issuer provisioning fails, and on every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition.
 
         This endpoint should be implemented by clients of the Grid API.
 
@@ -11786,7 +11786,7 @@ webhooks:
         4. Verify the signature using the public key and the hash
 
         If the signature verification succeeds, the webhook is authentic. If not, it should be rejected.
-      operationId: cardStateChangeWebhook
+      operationId: cardStatusChangeWebhook
       tags:
         - Webhooks
       security:
@@ -11796,13 +11796,13 @@ webhooks:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CardStateChangeWebhook'
+              $ref: '#/components/schemas/CardStatusChangeWebhook'
             examples:
               activated:
                 summary: Card transitioned from PROCESSING to ACTIVE
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000020
-                  type: CARD.STATE_CHANGE
+                  type: CARD.STATUS_CHANGE
                   timestamp: '2026-05-08T14:11:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000010
@@ -11827,7 +11827,7 @@ webhooks:
                 summary: Card rejected by issuer during provisioning
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000021
-                  type: CARD.STATE_CHANGE
+                  type: CARD.STATUS_CHANGE
                   timestamp: '2026-05-08T14:12:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000011
@@ -11846,7 +11846,7 @@ webhooks:
                 summary: Card frozen by the platform
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000022
-                  type: CARD.STATE_CHANGE
+                  type: CARD.STATUS_CHANGE
                   timestamp: '2026-05-09T09:00:00Z'
                   data:
                     id: Card:019542f5-b3e7-1d02-0000-000000000010
@@ -27351,7 +27351,7 @@ components:
         - BULK_UPLOAD.COMPLETED
         - BULK_UPLOAD.FAILED
         - AGENT_ACTION.PENDING_APPROVAL
-        - CARD.STATE_CHANGE
+        - CARD.STATUS_CHANGE
         - CARD_TRANSACTION.AUTHORIZED
         - CARD_TRANSACTION.PARTIALLY_SETTLED
         - CARD_TRANSACTION.SETTLED
@@ -27572,7 +27572,7 @@ components:
                 - VERIFICATION.RESOLVE_ERRORS
                 - VERIFICATION.IN_PROGRESS
                 - VERIFICATION.PENDING_MANUAL_REVIEW
-    CardStateChangeWebhook:
+    CardStatusChangeWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
         - type: object
@@ -27584,7 +27584,7 @@ components:
             type:
               type: string
               enum:
-                - CARD.STATE_CHANGE
+                - CARD.STATUS_CHANGE
     CardTransactionWebhook:
       allOf:
         - $ref: '#/components/schemas/BaseWebhook'
