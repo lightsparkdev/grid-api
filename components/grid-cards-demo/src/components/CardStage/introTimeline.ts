@@ -200,7 +200,7 @@ const TICK_OUT_DUR = 0.5;
 const REVEAL_HOLD = 0.25;
 /** The reveal: the blueprint blurs out while the card blurs in. */
 const REVEAL_AT = Math.max(...Object.values(CUES).map((c) => c.at + c.dur)) + REVEAL_HOLD;
-const BLUEPRINT_OUT = 0.8;
+const BLUEPRINT_OUT = 1.3;
 const CARD_IN = 2.25;
 /** The card starts coming in this much before the blueprint starts to go. */
 const CARD_LEAD = 1.25;
@@ -210,14 +210,21 @@ const CARD_SCALE = 1.06;
 /** Where the blueprint ends, card px of blur (it scales with the hit box, so
  *  this lands near the card's 16 stage px at the desktop scale). */
 const BLUEPRINT_BLUR = 12;
-export const INTRO_END = Math.max(REVEAL_AT + BLUEPRINT_OUT, REVEAL_AT - CARD_LEAD + CARD_IN);
+/** Where the score above ends, in its own seconds. */
+const SCORE_END = Math.max(REVEAL_AT + BLUEPRINT_OUT, REVEAL_AT - CARD_LEAD + CARD_IN);
+/** The whole score plays this much longer (s), spread evenly over all of it.
+ *  Every time above is authored in score seconds; `stepIntro` and `introCard`
+ *  take real seconds and divide by the resulting scale. */
+const INTRO_STRETCH = 1.0;
+const TIME_SCALE = (SCORE_END + INTRO_STRETCH) / SCORE_END;
+export const INTRO_END = SCORE_END * TIME_SCALE;
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 
-/** The card's look at `t`: hidden until the reveal, then fading in as the
- *  blur clears and it settles down to size. */
+/** The card's look at real time `t`: hidden until the reveal, then fading in
+ *  as the blur clears and it settles down to size. */
 export function introCard(t: number): { opacity: number; blur: number; scale: number } {
-  const u = ease(clamp01((t - (REVEAL_AT - CARD_LEAD)) / CARD_IN));
+  const u = ease(clamp01((t / TIME_SCALE - (REVEAL_AT - CARD_LEAD)) / CARD_IN));
   return { opacity: u, blur: CARD_BLUR * (1 - u), scale: 1 + (CARD_SCALE - 1) * (1 - u) };
 }
 
@@ -233,8 +240,9 @@ function elements(root: Element): Map<string, SVGElement> {
   return m;
 }
 
-/** Pose every blueprint element for time `t`. `root` is the overlay itself. */
-export function stepIntro(root: HTMLElement | SVGElement, t: number) {
+/** Pose every blueprint element for real time `t`. `root` is the overlay itself. */
+export function stepIntro(root: HTMLElement | SVGElement, realT: number) {
+  const t = realT / TIME_SCALE;
   const out = ease(clamp01((t - REVEAL_AT) / BLUEPRINT_OUT));
   root.style.opacity = String(1 - out);
   root.style.filter = out > 0 ? `blur(${(BLUEPRINT_BLUR * out).toFixed(2)}px)` : '';
