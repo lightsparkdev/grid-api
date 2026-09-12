@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'motion/react';
 import { FrostPanel, GlassOver, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { TEXT_GLASS } from '@/apps/shared/glass';
 import { useSquircleClip } from '@/apps/shared/useSquircleClip';
@@ -31,7 +31,11 @@ const ENTER_TRANSITION = {
   opacity: motionTransition(easeOutQuick, 0.2),
   filter: motionTransition(easeOutQuick, 0.3),
 };
-const EXIT_TUCK = motionTransition(easeOutQuick, 0.25);
+// The lift is a spring so a swipe's velocity carries straight into it (the
+// timer's dismiss starts from rest and reads the same as the ease did).
+const EXIT_TUCK = { ...motionTransition(easeOutQuick, 0.25), y: { type: 'spring' as const, visualDuration: 0.25, bounce: 0 } };
+/** A swipe let go short of dismissing: back into the slot on the swoop's own spring. */
+const SNAP_BACK = ENTER_TRANSITION.y;
 // Starts fully OFF-SCREEN above the phone (clears the 70px slot + capsule +
 // shadow), hard-squished on the horizontal axis.
 // Base swoop (no self-blur): any `filter` on the capsule makes it a backdrop
@@ -116,6 +120,9 @@ export function GlassNotification({
 }: GlassNotificationProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
+  // The capsule's lift, shared by the swoop, the drag, and the dismiss, so a
+  // swipe hands its position and speed straight to whichever comes next.
+  const y = useMotionValue(0);
   // The shadow underlay carries the glass's exact squircle (blur runs after
   // the clip), so its corners agree in every browser.
   const { ref: shadowRef, style: shadowClipStyle } = useSquircleClip<HTMLSpanElement>({
@@ -175,6 +182,7 @@ export function GlassNotification({
             key="notification"
             type="button"
             className={styles.capsule}
+            style={{ y }}
             initial={reduceMotion ? { opacity: 0 } : lensMode ? LENS_HIDDEN : HIDDEN}
             animate={reduceMotion ? { opacity: 1 } : lensMode ? LENS_SHOWN : SHOWN}
             exit={
@@ -184,15 +192,17 @@ export function GlassNotification({
             }
             transition={ENTER_TRANSITION}
             // iOS: the banner swipes up and away. Free upward, a stiff rubber
-            // band downward; a short release settles it back in its slot. A
-            // tap (not a drag) is the tap.
+            // band downward. Let go far or fast enough, the dismiss lifts it
+            // out from where it is, at the speed it was going; let go short,
+            // it springs back into its slot the way it arrived. A tap (not a
+            // drag) is the tap.
             drag={onDismiss ? 'y' : false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 1, bottom: 0.08 }}
             dragMomentum={false}
-            dragSnapToOrigin
             onDragEnd={(_, info) => {
               if (info.offset.y < -SWIPE_DISMISS_PX || info.velocity.y < -SWIPE_DISMISS_VELOCITY) onDismiss?.();
+              else animate(y, 0, SNAP_BACK);
             }}
             onTap={onTap}
           >
