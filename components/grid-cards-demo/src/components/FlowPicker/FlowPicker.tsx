@@ -1,9 +1,14 @@
 'use client';
 
 import clsx from 'clsx';
+import { TextMorph } from 'torph/react';
 import { ACTIONS, type ActionId, type WalletState } from '@/data/actions';
 import { FLOW_ICONS } from '@/data/flowIcons';
+import { cubicBezierCss, easeOutSwift } from '@/lib/easing';
 import styles from './FlowPicker.module.scss';
+
+/** Freeze ⇄ Unfreeze: the shared letters glide, the rest morph. */
+const LABEL_MORPH_MS = 280;
 
 // 2-col grid (matches the auth picker): four card-flow pairs. There's no Sign
 // in tile — every flow auto-runs sign-in, and the divider's Reset re-arms it.
@@ -55,7 +60,14 @@ export function FlowPicker({ wallet, running, onAction }: FlowPickerProps) {
             <span className={styles.optionIcon}>
               <Icon size={24} />
             </span>
-            <span className={styles.optionLabel}>{label}</span>
+            <TextMorph
+              as="span"
+              className={styles.optionLabel}
+              duration={LABEL_MORPH_MS}
+              ease={cubicBezierCss(easeOutSwift)}
+            >
+              {label}
+            </TextMorph>
           </button>
         );
       })}
