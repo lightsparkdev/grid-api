@@ -6,9 +6,12 @@
 .layer {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  /* One grid cell: every capsule (one arriving over one leaving) sits in the
+     same slot at full width. A flex row split the width between them, and a
+     run of quick notifications narrowed each one. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
   /* Equal rhythm: phone top → status bar contents (21px) = contents → capsule
      (21 + 22 + 21 = 64). 20px sides — 362px capsule on the 402px screen. */
   padding: 64px 20px 0;
@@ -21,6 +24,7 @@
    squircle, radius 24). The wrapper button carries the drop shadow OUTSIDE
    the glass clip (the square-halo rule) and the tap behavior. */
 .capsule {
+  grid-area: 1 / 1;
   width: 100%;
   margin: 0;
   padding: 0;
