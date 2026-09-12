@@ -57,6 +57,7 @@ The **Available Rails** column lists the payment rails Grid may use for the crea
 | SOLANA_WALLET | USDC | Solana wallet address |
 | TRON_WALLET | USDT | TRON wallet address |
 | PLASMA_WALLET | USDT | Plasma wallet address (0x...) |
+| ARBITRUM_WALLET | USDC, USDT | Arbitrum wallet address (0x...) |
 | POLYGON_WALLET | USDC | Polygon wallet address (0x...) |
 | BASE_WALLET | USDC | Base wallet address (0x...) |
 
