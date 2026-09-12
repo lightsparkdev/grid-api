@@ -11921,6 +11921,7 @@ webhooks:
                     issuerTransactionToken: lithic_txn_b81c2a4f
                     status: AUTHORIZED
                     direction: DEBIT
+                    description: BLUE BOTTLE COFFEE SF
                     merchant:
                       descriptor: BLUE BOTTLE COFFEE SF
                       mcc: '5814'
@@ -11951,6 +11952,7 @@ webhooks:
                     issuerTransactionToken: lithic_txn_b81c2a4f
                     status: SETTLED
                     direction: DEBIT
+                    description: BLUE BOTTLE COFFEE SF
                     merchant:
                       descriptor: BLUE BOTTLE COFFEE SF
                       mcc: '5814'
@@ -11989,6 +11991,7 @@ webhooks:
                     status: SETTLED
                     direction: CREDIT
                     originalTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                    description: BLUE BOTTLE COFFEE SF
                     merchant:
                       descriptor: BLUE BOTTLE COFFEE SF
                       mcc: '5814'
@@ -12026,6 +12029,7 @@ webhooks:
                     issuerTransactionToken: lithic_txn_d41a7f02
                     status: DECLINED
                     direction: DEBIT
+                    description: UBER EATS
                     merchant:
                       descriptor: UBER EATS
                       mcc: '5812'
@@ -12056,6 +12060,7 @@ webhooks:
                     issuerTransactionToken: lithic_txn_c92d3b5a
                     status: EXCEPTION
                     direction: DEBIT
+                    description: UBER EATS
                     merchant:
                       descriptor: UBER EATS
                       mcc: '5812'
@@ -23981,6 +23986,10 @@ components:
           type: string
           description: 'On a refund row (`direction: CREDIT`), the id of the purchase this return credits back against. Absent on purchases and on standalone credits with no matching purchase.'
           example: Transaction:019542f5-b3e7-1d02-0000-000000000099
+        description:
+          type: string
+          description: The merchant descriptor, repeated from `merchant.descriptor` so a transaction list reads without expanding each card row. Unlike `description` on other transaction types, this is set by Grid from the card network's descriptor, not supplied by the platform.
+          example: BLUE BOTTLE COFFEE SF
         merchant:
           $ref: '#/components/schemas/CardMerchant'
         authorizedAmount:
