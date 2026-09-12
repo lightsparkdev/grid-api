@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'motion/react';
 import { FrostPanel, GlassOver, PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { TEXT_GLASS } from '@/apps/shared/glass';
@@ -87,6 +87,10 @@ const REDUCED_VARIANTS = {
 /** A swipe up dismisses once it has come this far, or is this quick. */
 const SWIPE_DISMISS_PX = 40;
 const SWIPE_DISMISS_VELOCITY = 500;
+/** How far up a drag can carry the capsule (well past the dismissed point). */
+const DRAG_REACH = 400;
+/** No wheel event for this long: the two-finger swipe is over. */
+const WHEEL_IDLE_MS = 140;
 /** Where along the dismiss a lift of `y` puts the capsule: 0 in its slot, 1 at
  *  the dismissed point. The drag scrubs the dismiss's own squash. */
 const dismissProgress = (y: number) => Math.min(1, Math.max(0, y / DISMISSED.y));
@@ -317,6 +321,71 @@ function Capsule({ custom, reduceMotion, onTap, onDismiss, children }: CapsulePr
     scaleX.set(lerp(SHOWN.scaleX, DISMISSED.scaleX, t));
     scaleY.set(lerp(SHOWN.scaleY, DISMISSED.scaleY, t));
   };
+  // Dismissed once; a second release or a trailing wheel event is a no-op.
+  const gone = useRef(false);
+  const dismiss = () => {
+    if (gone.current) return;
+    gone.current = true;
+    onDismiss?.();
+  };
+  const settleBack = () => {
+    animate(y, 0, SNAP_BACK);
+    animate(scaleX, SHOWN.scaleX, ENTER_TRANSITION.scaleX);
+    animate(scaleY, SHOWN.scaleY, ENTER_TRANSITION.scaleY);
+  };
+  /** A new gesture takes over from a settle still in flight. */
+  const takeHold = () => {
+    y.stop();
+    scaleX.stop();
+    scaleY.stop();
+  };
+  // Two fingers up on a trackpad reads as the swipe: the wheel scrubs the
+  // capsule up the same path. The first wheel over the capsule starts the
+  // gesture; from there the window's wheel events feed it (the capsule
+  // scrubs out from under the pointer within a few px, so its own events
+  // stop) until a pause ends it (the wheel has no release), settling the
+  // capsule back if it hasn't gone.
+  const wheelIdle = useRef(0);
+  const wheelActive = useRef(false);
+  const endWheel = useRef<() => void>(() => {});
+  const onWheel = (e: React.WheelEvent) => {
+    if (!onDismiss || gone.current || wheelActive.current) return;
+    takeHold();
+    wheelActive.current = true;
+    // The starting event is fed by hand below, and then reaches the window
+    // listener too: once is enough.
+    const first = e.nativeEvent;
+    let firstSeen = false;
+    const feed = (ev: WheelEvent) => {
+      if (ev === first) {
+        if (firstSeen) return;
+        firstSeen = true;
+      }
+      // Fingers moving up scroll "down" (positive deltaY) with natural
+      // scrolling; a pull back down is let through a little, like the drag.
+      const next = y.get() - ev.deltaY;
+      y.set(next > 0 ? next * 0.08 : next);
+      scrubDismiss();
+      window.clearTimeout(wheelIdle.current);
+      if (y.get() < -SWIPE_DISMISS_PX) {
+        endWheel.current();
+        dismiss();
+        return;
+      }
+      wheelIdle.current = window.setTimeout(() => {
+        endWheel.current();
+        settleBack();
+      }, WHEEL_IDLE_MS);
+    };
+    endWheel.current = () => {
+      window.removeEventListener('wheel', feed);
+      window.clearTimeout(wheelIdle.current);
+      wheelActive.current = false;
+    };
+    window.addEventListener('wheel', feed, { passive: true });
+    feed(e.nativeEvent);
+  };
+  useEffect(() => () => endWheel.current(), []);
   // The shadow underlay carries the glass's exact squircle (blur runs after
   // the clip), so its corners agree in every browser.
   const { ref: shadowRef, style: shadowClipStyle } = useSquircleClip<HTMLSpanElement>({
@@ -340,20 +409,23 @@ function Capsule({ custom, reduceMotion, onTap, onDismiss, children }: CapsulePr
       // dismiss finishes from where it is, at the speed it was going; let go
       // short, it springs back into its slot the way it arrived. A tap (not
       // a drag) is the tap.
+      // Upward is INSIDE the constraints: a release up there must not start
+      // Motion's own snap back to the bounds, which fought the exit's lift
+      // and left the capsule squashed in its slot with the exit never done.
       drag={onDismiss ? 'y' : false}
-      dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={{ top: 1, bottom: 0.08 }}
+      dragConstraints={{ top: -DRAG_REACH, bottom: 0 }}
+      dragElastic={{ top: 0, bottom: 0.08 }}
       dragMomentum={false}
+      onDragStart={takeHold}
       onDrag={scrubDismiss}
       onDragEnd={(_, info) => {
         if (info.offset.y < -SWIPE_DISMISS_PX || info.velocity.y < -SWIPE_DISMISS_VELOCITY) {
-          onDismiss?.();
+          dismiss();
           return;
         }
-        animate(y, 0, SNAP_BACK);
-        animate(scaleX, SHOWN.scaleX, ENTER_TRANSITION.scaleX);
-        animate(scaleY, SHOWN.scaleY, ENTER_TRANSITION.scaleY);
+        settleBack();
       }}
+      onWheel={onWheel}
       onTap={onTap}
     >
       {/* Blur on the OUTER span, clip on the INNER: clip-path applies after
