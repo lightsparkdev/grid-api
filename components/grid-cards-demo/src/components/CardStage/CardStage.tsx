@@ -680,6 +680,15 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     hoverName(false);
     if (!drag.current) motion.clearTilt();
   };
+
+  /** Parked, the card rides in the phone's page scroll, but its hit box lives
+   *  in the stage's layer where no scroller is an ancestor: the wheel over the
+   *  card is handed to the scroller so the page moves as it does anywhere else. */
+  const onWheel = (e: React.WheelEvent) => {
+    if (!inPhone()) return;
+    const scroller = rootRef.current?.ownerDocument.querySelector<HTMLElement>('[data-card-scroller]');
+    scroller?.scrollBy({ top: e.deltaY, left: 0 });
+  };
   // ── Typing on the card ─────────────────────────────────────────────────────
   // Double-click the wordmark (front) or the cardholder's name (back) to type
   // it in place: a transparent input rides the hit box over the painted text,
@@ -857,6 +866,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         onPointerCancel={endDrag}
         onLostPointerCapture={() => releaseRef.current()}
         onPointerLeave={onPointerLeave}
+        onWheel={onWheel}
         onDoubleClick={onDoubleClick}
       >
         <span className={styles.srOnly} role="img" aria-label={`${programNameOf(design)} card`} />
@@ -1203,16 +1213,30 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     // over it (AppShell), and the card is clipped to the screen, so a push
     // that slides its slot past the bezel can't show it over the shell. (Not
     // during the flight in or out, when it crosses the bezel on purpose.)
+    // The screen's scroll edge ([data-card-fade], the strip under the status
+    // bar and header) blurs and tints the content scrolling under it; the card
+    // is in this layer, out of the blur's reach, so it fades out over the
+    // strip instead as the page scroll carries it up there.
     let clip = '';
+    let mask = '';
     if (t >= CARD_PARKED_T) {
-      const screen = root.ownerDocument.querySelector<HTMLElement>('[data-screen-body]');
+      const doc = root.ownerDocument;
+      const screen = doc.querySelector<HTMLElement>('[data-screen-body]');
       if (screen) {
         const b = screen.getBoundingClientRect();
         const ins = (v: number) => Math.max(0, v).toFixed(1);
         clip = `inset(${ins(b.top - r.top)}px ${ins(r.right - b.right)}px ${ins(r.bottom - b.bottom)}px ${ins(b.left - r.left)}px)`;
       }
+      const fade = doc.querySelector<HTMLElement>('[data-card-fade]');
+      if (fade) {
+        const f = fade.getBoundingClientRect();
+        const from = (f.top - r.top).toFixed(1);
+        const to = (f.top - r.top + f.height * 0.8).toFixed(1);
+        mask = `linear-gradient(to bottom, transparent ${from}px, #000 ${to}px)`;
+      }
     }
     if (root.style.clipPath !== clip) root.style.clipPath = clip;
+    if (root.style.maskImage !== mask) root.style.maskImage = mask;
   });
 
   // The blueprint starts drawing once the front has painted.

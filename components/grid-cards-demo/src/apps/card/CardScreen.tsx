@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
@@ -95,6 +96,18 @@ export function CardScreen({ home }: CardScreenProps) {
   // home comes in when the card goes ACTIVE.
   const creating = issuing;
 
+  // Aurora's home scroll: once the card is issued the stack (the card and the
+  // content under it) page-scrolls, the card pinned at the top edge while the
+  // content rides up over it. Tap-to-pay and the pages hold the scroll where
+  // it is; leaving the home for them (not the limits push, which keeps its
+  // place under the page) brings it back to the top first.
+  const stackRef = useRef<HTMLDivElement>(null);
+  const canScroll = !creating && !isTap && card.page === 'home';
+  useEffect(() => {
+    if (canScroll || card.page === 'limits') return;
+    stackRef.current?.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }, [canScroll, card.page, reduceMotion]);
+
   // App icon for push notifications — a brand-tinted rounded square.
   const brandColor = brandColorOf(design);
   const appIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -131,6 +144,20 @@ export function CardScreen({ home }: CardScreenProps) {
 
   return (
     <div className={styles.root}>
+      {/* Scroll edge: content riding up under the status bar and header is
+          progressively blurred and faded into the surface. Before the header
+          in the DOM so the header's buttons paint over it. The stage reads
+          this strip (data-card-fade) to fade the card, which is out of the
+          blur's reach in its own layer, over the same band. */}
+      {!creating && (
+        <div className={styles.topFade} data-card-fade aria-hidden>
+          <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
+          <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
+          <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />
+          <div className={styles.fadeTint} />
+        </div>
+      )}
+
       {/* Header. Home: back (the app's, a no-op here), card numbers, and the
           limits + lock pill. A pushed page: back, and its title. The page
           change is iOS's navigation bar push: the title slides in from the
@@ -223,17 +250,21 @@ export function CardScreen({ home }: CardScreenProps) {
       {/* The whole body lifts as one transform during tap-to-pay (card + content
           together) so nothing desyncs. */}
       <motion.div
-        className={clsx(styles.body, isTap && styles.bodyTap)}
+        className={clsx(styles.body, !creating && styles.bodyHome, isTap && styles.bodyTap)}
         initial={false}
         animate={{ y: isTap ? TAP_LIFT : 0 }}
         transition={BODY_TRANSITION}
       >
-        {/* The card and everything under it. Spending limits pushes it: it
-            slides a third of the way out to the left as the page comes in from
-            the right, iOS's push. The stage follows the slot's live rect, so
-            the card rides along; the page's leading edge then covers it. */}
+        {/* The card and everything under it: the page scroll once issued (the
+            stage forwards the wheel over the card to it, see data-card-scroller).
+            Spending limits pushes it: it slides a third of the way out to the
+            left as the page comes in from the right, iOS's push. The stage
+            follows the slot's live rect, so the card rides along; the page's
+            leading edge then covers it. */}
         <motion.div
-          className={styles.stack}
+          ref={stackRef}
+          data-card-scroller
+          className={clsx(styles.stack, !creating && styles.stackScroll, !canScroll && styles.stackLocked)}
           initial={false}
           animate={{ x: card.page === 'limits' ? '-30%' : '0%' }}
           transition={reduceMotion ? { duration: 0 } : PUSH}
@@ -282,19 +313,17 @@ export function CardScreen({ home }: CardScreenProps) {
             {!isTap && !onNumbers && !creating && (
               <motion.div
                 key="home"
-                className={styles.homeContent}
+                className={clsx(styles.homeContent, styles.homeSurface)}
                 initial={reduceMotion ? false : CONTENT_HIDDEN}
                 animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
                 exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
               >
-                <div className={styles.homeScroll}>
-                  <CardHomeContent
-                    activity={activity}
-                    card={card}
-                    onTapToPay={startTapToPay}
-                    onAddToWallet={startAddToWallet}
-                  />
-                </div>
+                <CardHomeContent
+                  activity={activity}
+                  card={card}
+                  onTapToPay={startTapToPay}
+                  onAddToWallet={startAddToWallet}
+                />
               </motion.div>
             )}
             {!isTap && onNumbers && (

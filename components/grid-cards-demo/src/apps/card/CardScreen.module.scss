@@ -76,10 +76,18 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Underlap the header strip so the card's top drop-shadow bleed paints
-     unclipped. */
+  /* Creating: underlap the header strip so the card's top drop-shadow bleed
+     paints unclipped, and center the card in what is left. */
   margin-top: calc(-1 * var(--wallet-header-height));
   padding-top: var(--wallet-header-height);
+}
+
+/* Issued: the body runs to the screen's top edge (under the status bar and
+   the header) so the stack inside can page-scroll the card up under them,
+   Aurora's home. The stack carries the offset as padding, so nothing moves. */
+.bodyHome {
+  margin-top: calc(-1 * (62px + var(--wallet-header-height)));
+  padding-top: 0;
 }
 
 /* Tap-to-pay lifts the body over the (still-present) header; raising it above the
@@ -88,13 +96,21 @@
   z-index: 3;
 }
 
-/* Card slot — pinned at the top; the hub scrolls beneath it. */
+/* Card slot. In the scrolling stack it is pinned: it rides up to the screen's
+   top edge and holds there while the content scrolls over it. */
 .cardArea {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px 16px 8px;
+}
+
+.stackScroll > .cardArea {
+  position: sticky;
+  /* Sticky offsets resolve from the scroller's content edge, inside its
+     padding: pull back by the padding so the slot pins at the screen's edge. */
+  top: calc(-1 * (62px + var(--wallet-header-height)));
 }
 
 /* Aurora's issuance slot (Figma 2219:48842): the card centered in the body,
@@ -172,7 +188,14 @@
   width: 100%;
 }
 
-/* The hub scrolls under the pinned card. */
+/* The home: a surface that grows with the Activity list (never shrinks below
+   it) so the stack page-scrolls it up over the pinned card, Aurora's sheet. */
+.homeSurface {
+  flex: 1 0 auto;
+  background: var(--wallet-bg);
+}
+
+/* A page's content scrolls in its own box (Card numbers, Spending limits). */
 .homeScroll {
   display: flex;
   flex: 1 1 0;
@@ -202,6 +225,24 @@
   min-height: 0;
 }
 
+/* Issued: the stack is the page scroll, the card riding in it. Its top
+   padding stands in for the status bar and header the body now underlaps. */
+.stackScroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-top: calc(62px + var(--wallet-header-height));
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Not the home (tap-to-pay, a page): the scroll holds where it is. */
+.stackLocked {
+  overflow-y: hidden;
+}
+
 /* A page over the whole body, the card's slot included (Spending limits).
    Under the header (the body is its own stacking context below it), so the
    back button and title stay on top. */
@@ -212,8 +253,70 @@
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  padding-top: var(--wallet-header-height);
+  padding-top: calc(62px + var(--wallet-header-height));
   background: var(--wallet-bg);
+}
+
+/* ── Scroll edge ──────────────────────────────────────────────────────────── */
+
+/* iOS's scroll edge: the strip under the status bar and header progressively
+   blurs and fades the scrolling content into the surface, so it never collides
+   with the status bar glyphs or the header's buttons. Above the body (z 1),
+   below the header (z 2, later in the DOM) and AppShell's status bar. */
+.topFade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 150px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Progressive blur (Aurora's three-layer stack): each layer ups the radius
+   and is masked to a band, so the blur ramps from 0 at the bottom to full at
+   the top with no hard edge where it stops. */
+.fadeBlur {
+  position: absolute;
+  inset: 0;
+  /* Hairline fill kicks backdrop-filter into compositing. */
+  background: rgba(255, 255, 255, 0.01);
+  -webkit-backdrop-filter: blur(var(--fade-blur));
+  backdrop-filter: blur(var(--fade-blur));
+  mask-image: var(--fade-mask);
+  -webkit-mask-image: var(--fade-mask);
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.01);
+  }
+}
+
+.fadeBlurStrong {
+  --fade-blur: 8px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 16%, transparent 46%);
+}
+
+.fadeBlurMid {
+  --fade-blur: 4px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 34%, transparent 68%);
+}
+
+.fadeBlurSoft {
+  --fade-blur: 2px;
+  --fade-mask: linear-gradient(to bottom, #000 0%, #000 56%, transparent 100%);
+}
+
+/* The surface's tint over the blur: solid at the very edge (under the status
+   bar), melting to clear so the blurred content shows through below. */
+.fadeTint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--wallet-bg) 0%,
+    color-mix(in srgb, var(--wallet-bg) 50%, transparent) 50%,
+    transparent 100%
+  );
 }
 
 /* Tap-to-pay reader status — fills below the raised card; glyph + label sit just
