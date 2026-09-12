@@ -27,6 +27,7 @@ properties:
       | CARD_NOT_MUTABLE | The card is `CLOSED`, so it can no longer be mutated |
       | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
       | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
+      | BANK_ACCOUNT_VALIDATION_PENDING | The US bank account on this request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected; retry once validation completes. A permanently failed account returns `400 INVALID_BANK_ACCOUNT` instead |
       | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
     enum:
       - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
@@ -37,6 +38,7 @@ properties:
       - PASSKEY_ALREADY_ENROLLED
       - SCA_SESSION_REQUIRED
       - BENEFICIARY_TRUSTED
+      - BANK_ACCOUNT_VALIDATION_PENDING
       - INVALID_STATE_TRANSITION
       - CARD_ALREADY_CLOSED
       - CARD_NOT_MUTABLE
