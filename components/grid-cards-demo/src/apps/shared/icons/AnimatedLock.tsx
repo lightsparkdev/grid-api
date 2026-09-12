@@ -37,6 +37,9 @@ const SWING = motionTransition(easeOutSnappy, 0.42, { delay: 0.22 });
 /** The drop gathers speed into the body: an ease-in. */
 const ENGAGE = motionTransition([0.4, 0, 1, 1], 0.12);
 const IMPACT = motionTransition(easeOutSnappy, 0.34);
+/** Unlocking, the same backwards: the shackle lifts out, then turns away. */
+const RELEASE = motionTransition(easeOutSnappy, 0.18);
+const SWING_OUT = motionTransition(easeOutSnappy, 0.42);
 
 interface AnimatedLockProps {
   size?: number;
@@ -44,6 +47,10 @@ interface AnimatedLockProps {
   /** Play the locking on mount: the shackle turns in from the right, drops
    *  to engage, and the lock dips on impact. Off, the lock is at rest. */
   locking?: boolean;
+  /** Locked (the default). Turned false, the shackle lifts out and turns
+   *  away, the locking backwards; `onUnlocked` fires when it has. */
+  locked?: boolean;
+  onUnlocked?: () => void;
 }
 
 /**
@@ -52,7 +59,7 @@ interface AnimatedLockProps {
  * off to the right; it turns back over the body, drops in, and the whole lock
  * gives a little under the hit.
  */
-export function AnimatedLock({ size = 24, className, locking = true }: AnimatedLockProps) {
+export function AnimatedLock({ size = 24, className, locking = true, locked = true, onUnlocked }: AnimatedLockProps) {
   const reduceMotion = useReducedMotion();
   const play = locking && !reduceMotion;
   const whole = useRef<SVGGElement>(null);
@@ -60,6 +67,8 @@ export function AnimatedLock({ size = 24, className, locking = true }: AnimatedL
   const turn = useMotionValue(play ? TURN_FROM : 0);
   const lift = useMotionValue(play ? -LIFT : 0);
   const dip = useMotionValue(0);
+  const onUnlockedRef = useRef(onUnlocked);
+  onUnlockedRef.current = onUnlocked;
 
   // The transforms are written by hand, in the symbol's own units, so the
   // axis is a line on the glyph rather than a box's edge.
@@ -78,14 +87,30 @@ export function AnimatedLock({ size = 24, className, locking = true }: AnimatedL
   }, [turn, lift, dip]);
 
   useEffect(() => {
-    if (!play) return;
     let cancelled = false;
     const run = async () => {
-      await animate(turn, 0, SWING);
+      if (locked) {
+        if (!play) {
+          turn.set(0);
+          lift.set(0);
+          return;
+        }
+        await animate(turn, 0, SWING);
+        if (cancelled) return;
+        await animate(lift, 0, ENGAGE);
+        if (cancelled) return;
+        animate(dip, [0, DIP, 0], IMPACT);
+        return;
+      }
+      if (reduceMotion) {
+        onUnlockedRef.current?.();
+        return;
+      }
+      await animate(lift, -LIFT, RELEASE);
       if (cancelled) return;
-      await animate(lift, 0, ENGAGE);
+      await animate(turn, TURN_FROM, SWING_OUT);
       if (cancelled) return;
-      animate(dip, [0, DIP, 0], IMPACT);
+      onUnlockedRef.current?.();
     };
     run();
     return () => {
@@ -94,7 +119,7 @@ export function AnimatedLock({ size = 24, className, locking = true }: AnimatedL
       lift.stop();
       dip.stop();
     };
-  }, [play, turn, lift, dip]);
+  }, [locked, play, reduceMotion, turn, lift, dip]);
 
   return (
     <svg

@@ -303,25 +303,25 @@
 }
 
 /* Locked: the lock in the middle of the dimmed card, in card px, so it
-   rides and scales with the card. A tap on it opens the card's status. */
+   rides and scales with the card. The whole card is the tap (the hit box). */
 .lockMark {
   position: absolute;
   top: 50%;
   left: 50%;
   display: flex;
   margin: -28px 0 0 -28px;
-  padding: 0;
-  border: 0;
-  background: none;
   /* The docs' text color: the phone's iOS tokens don't reach the stage. */
   color: var(--text-primary);
-  cursor: pointer;
-  pointer-events: auto;
-  -webkit-tap-highlight-color: transparent;
+  pointer-events: none;
 
   svg {
     display: block;
   }
+}
+
+/* Locked, in the phone: a tap anywhere on the card opens its status. */
+.hitLocked {
+  cursor: pointer;
 }
 
 .canvasDimmed {

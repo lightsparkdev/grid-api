@@ -270,6 +270,13 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   live.current.wantBack = revealed;
   live.current.tap = isTap;
   live.current.inert = card.frozen || card.closed;
+  // The lock on the card outlives the lock state by its unlocking (the
+  // shackle lifting out and turning away), then the mark leaves.
+  const [lockMark, setLockMark] = useState<'locked' | 'unlocking' | null>(card.frozen ? 'locked' : null);
+  useEffect(() => {
+    setLockMark((m) => (card.frozen ? 'locked' : m === 'locked' ? 'unlocking' : m));
+  }, [card.frozen]);
+  const dimmed = card.closed || lockMark !== null;
   live.current.reduceMotion = reduceMotion;
   live.current.orientation = design.orientation;
   // The composed face and the card's footprint on screen, for the card as held.
@@ -865,7 +872,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     <div ref={rootRef} className={styles.root}>
       <Canvas
         ref={canvasRef}
-        className={clsx(styles.canvas, (card.frozen || card.closed) && styles.canvasDimmed)}
+        className={clsx(styles.canvas, dimmed && styles.canvasDimmed)}
         dpr={[1, 2]}
         // Stepped by StageClock from Motion's frame loop, not R3F's own: the
         // rig reads the phone's DOM (the slot, the pages) every frame, and
@@ -904,6 +911,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           overBrand && styles.hitOverBrand,
           overName && styles.hitOverName,
           (card.frozen || card.closed) && styles.hitInert,
+          card.frozen && phoneUp && !inFlightNow && styles.hitLocked,
         )}
         data-card-hit
         style={{ width: foot.w, height: foot.h, pointerEvents: inFlightNow || !introDone ? 'none' : 'auto' }}
@@ -914,6 +922,10 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         onLostPointerCapture={() => releaseRef.current()}
         onPointerLeave={onPointerLeave}
         onDoubleClick={onDoubleClick}
+        // Locked, in the phone: the whole card is the tap for its status.
+        onClick={() => {
+          if (inPhone() && card.frozen) card.setSheet('freeze');
+        }}
       >
         <span className={styles.srOnly} role="img" aria-label={`${programNameOf(design)} card`} />
         {!introDone && <CardIntro ref={overlayRef} brand={programNameOf(design)} orientation={design.orientation} />}
@@ -933,21 +945,17 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
             >
               This card has been closed
             </m.span>
-          ) : card.frozen ? (
-            <m.button
+          ) : lockMark ? (
+            <m.span
               key="lock"
-              type="button"
               className={styles.lockMark}
-              aria-label="Card locked"
               initial={reduceMotion ? { opacity: 0 } : LOCK_MARK_HIDDEN}
               animate={reduceMotion ? { opacity: 1 } : { ...LOCK_MARK_SHOWN, transition: LOCK_MARK_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...LOCK_MARK_HIDDEN, transition: LOCK_MARK_OUT }}
-              // The card's status, with the way back. The hit box under it
-              // ignores the press (the card is inert while locked).
-              onClick={() => card.setSheet('freeze')}
+              aria-hidden
             >
-              <AnimatedLock size={56} />
-            </m.button>
+              <AnimatedLock size={56} locked={lockMark === 'locked'} onUnlocked={() => setLockMark(null)} />
+            </m.span>
           ) : null}
         </AnimatePresence>
 
