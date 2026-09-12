@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FUNDING_SOURCE_CENTS } from '@/data/actions';
 import type { ToastData } from '@/apps/shared/Toast';
 import {
+  LOCK_SEQUENCE_MS,
   useCardControls,
   type DeclineReason,
   type TransactionStatus,
@@ -349,10 +350,13 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     }
     const next = !card.frozen;
     card.setFrozen(next);
-    notify(
-      next ? 'Card locked' : 'Card unlocked',
-      next ? 'Purchases will be declined until you unlock it.' : 'Your card is active again.',
-    );
+    if (next) {
+      // The lock on the card locks first; the notification lands as it settles.
+      later(() => notify('Card locked', 'Purchases will be declined until you unlock it.'), LOCK_SEQUENCE_MS);
+      settle(LOCK_SEQUENCE_MS + NOTICE_SETTLE_MS);
+      return;
+    }
+    notify('Card unlocked', 'Your card is active again.');
     settle(NOTICE_SETTLE_MS);
   };
 

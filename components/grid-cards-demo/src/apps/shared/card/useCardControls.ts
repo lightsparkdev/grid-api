@@ -85,6 +85,10 @@ const REFUND_MS = 900;
 /** A sheet's dismiss, a page's pop, or Apple's cover sliding away, plus a
  *  beat: an event from behind one of them shows in Activity after this. */
 const EVENT_SETTLE_MS = 550;
+/** The lock on the card has come up, turned, dropped in, and settled (see
+ *  AnimatedLock, after the mark's own entrance): the locked event, and the
+ *  notification, wait for it. */
+export const LOCK_SEQUENCE_MS = 1250;
 
 function startOfUtcDay(t: number) {
   const d = new Date(t);
@@ -148,7 +152,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
    *  cover) lands in Activity once that surface has gone, so the row slides
    *  in on its own instead of already sitting there when the home reappears. */
   const recordEventSettled = useCallback(
-    (kind: ActivityKind, detail?: string) => later(() => recordEvent(kind, detail), EVENT_SETTLE_MS),
+    (kind: ActivityKind, detail?: string, afterMs = EVENT_SETTLE_MS) => later(() => recordEvent(kind, detail), afterMs),
     [later, recordEvent],
   );
 
@@ -184,7 +188,9 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
       if (closed) return;
       const state: CardLifecycle = next ? 'FROZEN' : 'ACTIVE';
       setLifecycle(state);
-      recordEventSettled(next ? 'frozen' : 'unfrozen');
+      // Locking: the row lands once the lock on the card has finished locking.
+      if (next) recordEventSettled('frozen', undefined, LOCK_SEQUENCE_MS);
+      else recordEventSettled('unfrozen');
       onStateChange?.(state);
     },
     [closed, onStateChange, recordEventSettled],
