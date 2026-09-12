@@ -65,6 +65,7 @@ post:
                 issuerTransactionToken: lithic_txn_b81c2a4f
                 status: AUTHORIZED
                 direction: DEBIT
+                description: BLUE BOTTLE COFFEE SF
                 merchant:
                   descriptor: BLUE BOTTLE COFFEE SF
                   mcc: '5814'
@@ -95,6 +96,7 @@ post:
                 issuerTransactionToken: lithic_txn_b81c2a4f
                 status: SETTLED
                 direction: DEBIT
+                description: BLUE BOTTLE COFFEE SF
                 merchant:
                   descriptor: BLUE BOTTLE COFFEE SF
                   mcc: '5814'
@@ -133,6 +135,7 @@ post:
                 status: SETTLED
                 direction: CREDIT
                 originalTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                description: BLUE BOTTLE COFFEE SF
                 merchant:
                   descriptor: BLUE BOTTLE COFFEE SF
                   mcc: '5814'
@@ -170,6 +173,7 @@ post:
                 issuerTransactionToken: lithic_txn_d41a7f02
                 status: DECLINED
                 direction: DEBIT
+                description: UBER EATS
                 merchant:
                   descriptor: UBER EATS
                   mcc: '5812'
@@ -200,6 +204,7 @@ post:
                 issuerTransactionToken: lithic_txn_c92d3b5a
                 status: EXCEPTION
                 direction: DEBIT
+                description: UBER EATS
                 merchant:
                   descriptor: UBER EATS
                   mcc: '5812'
