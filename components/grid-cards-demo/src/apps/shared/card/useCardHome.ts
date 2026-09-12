@@ -34,6 +34,8 @@ const REVEAL_SETTLE_MS = 1400;
 const WALLET_COVER_IN_MS = 600;
 /** A sheet has risen; the rest is the cardholder's. */
 const SHEET_UP_MS = 600;
+/** The phone sent away has left the stage. */
+const PHONE_GONE_MS = 900;
 /** The app's toast lands as Apple's flow finishes sliding away. */
 const WALLET_TOAST_MS = 350;
 /** Dwell on the transaction sheet before the refund runs. */
@@ -125,6 +127,9 @@ export interface UseCardHomeOptions {
   /** The playground's Reset: a new nonce resets the brain to a fresh, unissued
    *  card, after `afterMs` (the phone's flight out, when it was up). */
   reset?: { nonce: number; afterMs: number };
+  /** The phone is on stage. Sent away, it goes as it is; what was up on it
+   *  (a page, a sheet, Apple's cover) is cleared once it has gone. */
+  phoneUp?: boolean;
 }
 
 /**
@@ -134,7 +139,7 @@ export interface UseCardHomeOptions {
  * state + derived values + handlers; the face renders them.
  */
 export function useCardHome(options: UseCardHomeOptions = {}) {
-  const { entry, onCardIssued, onTapToPay, onTapDeclined, card: cardOptions, onSettled, reset } = options;
+  const { entry, onCardIssued, onTapToPay, onTapDeclined, card: cardOptions, onSettled, reset, phoneUp } = options;
 
   // Push notification on the phone (freeze, limits, close, refund).
   const [notice, setNotice] = useState<CardNotice | null>(null);
@@ -415,6 +420,21 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     pendingTapTx.current = merchant;
     setTapPhase('hold');
   };
+
+  // The phone sent away: once it has gone, whatever was up on its screen
+  // comes down unseen, so the next flow finds the home and nothing has to
+  // dismiss in view while the phone leaves or returns.
+  const wasUp = useRef(phoneUp);
+  useEffect(() => {
+    const leaving = wasUp.current && !phoneUp;
+    wasUp.current = phoneUp;
+    if (!leaving) return;
+    const t = window.setTimeout(() => {
+      cardRef.current.resetSurfaces();
+      setRevealPending(false);
+    }, PHONE_GONE_MS);
+    return () => window.clearTimeout(t);
+  }, [phoneUp]);
 
   // Reset: once the phone is away (or at once, if it wasn't up), the brain
   // goes back to a fresh, unissued card, in place. What the phone showed

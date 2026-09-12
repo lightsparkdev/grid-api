@@ -57,6 +57,7 @@ export function AppPanel({
     card: cardOptions,
     onSettled,
     reset: brainReset,
+    phoneUp,
   });
   const theme = useThemeMode();
   // Two states only: the card floats alone, or it is in the phone. The first
@@ -78,11 +79,10 @@ export function AppPanel({
         glass={{ brightness: headerGlassBrightness(theme) }}
         tabIndex={showBack ? 0 : -1}
         disabled={running}
-        onClick={() => {
-          // Whatever a flow left up (the Card Numbers page) goes with the phone.
-          home.card.resetSurfaces();
-          onDismissPhone?.();
-        }}
+        // The phone goes as it is, whatever is up on it (a page, a sheet,
+        // Apple's cover): one motion, not a dismiss and then a flight. The
+        // next flow clears the screen before it starts (useCardHome's entry).
+        onClick={onDismissPhone}
       >
         <SfSymbol name="xmark" size={16} />
       </GlassSymbolButton>
