@@ -31,12 +31,7 @@
     inset: 0;
     border-radius: 16px;
     corner-shape: var(--corner-shape);
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--app-tint, #0083c3) 55%, #ffffff) 0%,
-      var(--app-tint, #0083c3) 60%,
-      color-mix(in srgb, var(--app-tint, #0083c3) 75%, #000000) 100%
-    );
+    background: var(--app-tint, #0083c3);
     filter: blur(6px);
   }
 
