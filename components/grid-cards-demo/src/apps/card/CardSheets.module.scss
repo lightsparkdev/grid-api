@@ -23,9 +23,18 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  /* The glyph reads over the brand fill: white on a dark brand, black on a
-     light one (brandVars). */
-  color: var(--brand-ink, #ffffff);
+  /* The brand's color, held to a luminance that still reads as a shape on
+     the sheet (a white card's tile pulled down to grey on the light sheet, a
+     black card's up on the dark one), and the glyph ink that reads over the
+     result (brandVars). */
+  --tile-fill: var(--brand-fill-on-light, var(--app-tint, #0083c3));
+  --tile-ink: var(--brand-fill-on-light-ink, #ffffff);
+  color: var(--tile-ink);
+
+  :global([data-theme='dark']) & {
+    --tile-fill: var(--brand-fill-on-dark, var(--app-tint, #0083c3));
+    --tile-ink: var(--brand-fill-on-dark-ink, #ffffff);
+  }
 
   &::before {
     content: '';
@@ -33,7 +42,7 @@
     inset: 0;
     border-radius: 16px;
     corner-shape: var(--corner-shape);
-    background: var(--app-tint, #0083c3);
+    background: var(--tile-fill);
     filter: blur(6px);
   }
 
