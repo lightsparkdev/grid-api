@@ -143,6 +143,7 @@ export function CardScreen({ home }: CardScreenProps) {
             <motion.div
               key="header"
               className={styles.headerInner}
+              data-above-card="above"
               initial={reduceMotion ? false : CONTENT_HIDDEN}
               animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}

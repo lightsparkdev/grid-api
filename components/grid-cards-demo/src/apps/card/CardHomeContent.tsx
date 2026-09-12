@@ -30,7 +30,7 @@ export function CardHomeContent({ activity, card, onTapToPay, onAddToWallet }: C
       : { initial: BLOCK_HIDDEN, animate: { ...BLOCK_VISIBLE, transition: blockIn(i) } };
   return (
     <>
-      <motion.div {...block(0)}>
+      <motion.div {...block(0)} data-above-card="below">
         <CardHomeActions
           onTapToPay={onTapToPay}
           onAddToWallet={onAddToWallet}

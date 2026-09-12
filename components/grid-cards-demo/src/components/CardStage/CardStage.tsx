@@ -1233,6 +1233,14 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
           bottom = Math.max(bottom, r.bottom - b.bottom);
           left = Math.max(left, b.left - r.left);
         }
+        // The phone's chrome around the slot (the header above it, the actions
+        // row under it) sits over the card: a turning card's near edge
+        // overshoots its slot by a few px, and goes under them, not over.
+        root.ownerDocument.querySelectorAll<HTMLElement>('[data-above-card]').forEach((el) => {
+          const b = el.getBoundingClientRect();
+          if (el.dataset.aboveCard === 'below') bottom = Math.max(bottom, r.bottom - b.top);
+          else top = Math.max(top, b.bottom - r.top);
+        });
       }
     }
     const ins = (v: number) => Math.max(0, Math.min(v, Math.max(r.width, r.height))).toFixed(1);
