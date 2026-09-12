@@ -17,7 +17,8 @@ export interface AppPanelProps {
   /** The stage edits the design too: the brand is moved and resized on the card. */
   onDesignChange?: (patch: Partial<CardDesign>) => void;
   /** Bumped on reset; remounts the brain so everything starts clean. */
-  session: number;
+  /** The playground's Reset (see useCardHome). */
+  brainReset: { nonce: number; afterMs: number };
   /** The cardholder's phone is on stage with the card in it; false = the card floats alone. */
   phoneUp: boolean;
   /** A flow is playing out on the phone. */
@@ -34,12 +35,7 @@ export interface AppPanelProps {
 }
 
 /** The stage: the card, always; the cardholder's phone comes in with the first flow, the card goes into it, and it stays until sent away. */
-export function AppPanel({ session, ...props }: AppPanelProps) {
-  // Keyed on the session so Reset remounts the brain with fresh state.
-  return <StageHost key={session} {...props} />;
-}
-
-function StageHost({
+export function AppPanel({
   design,
   onDesignChange,
   phoneUp,
@@ -51,7 +47,8 @@ function StageHost({
   onTapDeclined,
   cardOptions,
   onSettled,
-}: Omit<AppPanelProps, 'session'>) {
+  brainReset,
+}: AppPanelProps) {
   const home = useCardHome({
     entry: walletEntry,
     onCardIssued,
@@ -59,6 +56,7 @@ function StageHost({
     onTapDeclined,
     card: cardOptions,
     onSettled,
+    reset: brainReset,
   });
   const theme = useThemeMode();
   // Two states only: the card floats alone, or it is in the phone. The first

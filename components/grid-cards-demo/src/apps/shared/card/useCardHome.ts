@@ -121,6 +121,9 @@ export interface UseCardHomeOptions {
   card?: UseCardControlsOptions;
   /** The current flow has played out on the phone; the next one can start. */
   onSettled?: () => void;
+  /** The playground's Reset: a new nonce resets the brain to a fresh, unissued
+   *  card, after `afterMs` (the phone's flight out, when it was up). */
+  reset?: { nonce: number; afterMs: number };
 }
 
 /**
@@ -130,7 +133,7 @@ export interface UseCardHomeOptions {
  * state + derived values + handlers; the face renders them.
  */
 export function useCardHome(options: UseCardHomeOptions = {}) {
-  const { entry, onCardIssued, onTapToPay, onTapDeclined, card: cardOptions, onSettled } = options;
+  const { entry, onCardIssued, onTapToPay, onTapDeclined, card: cardOptions, onSettled, reset } = options;
 
   // Push notification on the phone (freeze, limits, close, refund).
   const [notice, setNotice] = useState<CardNotice | null>(null);
@@ -409,6 +412,32 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     pendingTapTx.current = merchant;
     setTapPhase('hold');
   };
+
+  // Reset: once the phone is away (or at once, if it wasn't up), the brain
+  // goes back to a fresh, unissued card, in place. What the phone showed
+  // leaves with the phone; the card's dim, blur, and mark fade off it on
+  // the stage.
+  const lastResetNonce = useRef(0);
+  useEffect(() => {
+    if (!reset || reset.nonce === lastResetNonce.current) return;
+    lastResetNonce.current = reset.nonce;
+    clearFlowTimers();
+    window.clearTimeout(issueTimer.current);
+    window.clearTimeout(insertTimer.current);
+    posed.current = false;
+    const t = window.setTimeout(() => {
+      cardRef.current.resetAll();
+      setIssued(false);
+      setIssuing(false);
+      setTapPhase('idle');
+      setRevealPending(false);
+      setNotice(null);
+      setToast(null);
+      setDeltaCents(0);
+    }, reset.afterMs);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reset?.nonce]);
 
   // Apply a sidebar jump command exactly once (nonce-guarded so re-renders and
   // StrictMode's double-invoke don't replay it). The first flow brings the

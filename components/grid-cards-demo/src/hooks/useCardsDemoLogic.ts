@@ -36,6 +36,9 @@ import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
 const CARD_ACTIVE_DELAY_MS = 2700;
 // A state-change webhook lands a beat after its PATCH so the rows arrive 1-by-1.
 const WEBHOOK_DELAY_MS = 650;
+/** The phone's flight out, with the card coming back to the stage: the brain
+ *  resets once it has gone. */
+const PHONE_OUT_MS = 1000;
 const GROUP_LABEL: Record<ActionId, string> = {
   card: 'Issue a card',
   tap: 'Spend',
@@ -110,7 +113,8 @@ export function useCardsDemoLogic() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [walletEntry, setWalletEntry] = useState<WalletEntry | undefined>(undefined);
   // Remounts the phone app on reset so the wallet brain starts clean.
-  const [session, setSession] = useState(0);
+  /** The brain's reset command (see useCardHome). */
+  const [brainReset, setBrainReset] = useState({ nonce: 0, afterMs: 0 });
   // The card's current caps, mirrored so later PATCH responses show them.
   const limitsRef = useRef<CardSpendLimits>({});
   // Each purchase keeps one CardTransaction id across auth → clearing → return,
@@ -290,6 +294,10 @@ export function useCardsDemoLogic() {
     };
   }, []);
 
+  // Reset: the phone flies away with whatever it was showing (the card comes
+  // back to the stage), the API log clears, and once the phone has gone the
+  // brain resets in place to a fresh card (see useCardHome's `reset`). No
+  // remount: everything animates through it.
   const reset = useCallback(() => {
     pendingTimers.current.forEach((t) => clearTimeout(t));
     pendingTimers.current.clear();
@@ -297,12 +305,12 @@ export function useCardsDemoLogic() {
     limitsRef.current = {};
     setWallet(initialWallet);
     setActiveFlow(null);
-    setPhoneUp(false);
     setCompleted(initialCompleted);
     setEntries([]);
     setWalletEntry(undefined);
-    setSession((s) => s + 1);
-  }, []);
+    setBrainReset((r) => ({ nonce: r.nonce + 1, afterMs: phoneUp ? PHONE_OUT_MS : 0 }));
+    setPhoneUp(false);
+  }, [phoneUp]);
 
   return {
     activeFlow,
@@ -318,7 +326,7 @@ export function useCardsDemoLogic() {
     completed,
     entries,
     walletEntry,
-    session,
+    brainReset,
     handleAction,
     reset,
     onCardIssued,

@@ -134,7 +134,7 @@ export default function Page() {
             onDismissPhone={logic.dismissPhone}
             design={logic.design}
             onDesignChange={logic.updateDesign}
-            session={logic.session}
+            brainReset={logic.brainReset}
             walletEntry={logic.walletEntry}
             onCardIssued={logic.onCardIssued}
             onTapToPay={logic.onTapToPay}

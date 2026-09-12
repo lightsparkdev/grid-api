@@ -222,6 +222,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setPage('home');
   }, []);
 
+
   const saveLimits = useCallback(
     (next: SpendLimits) => {
       setLimitsState(next);
@@ -298,6 +299,22 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     clearWalletTimers();
     setWalletPhase('idle');
   }, [clearWalletTimers]);
+
+  /** Back to a fresh card, everything gone: the playground's Reset. In
+   *  place, so the phone and the card animate through it rather than
+   *  remounting. */
+  const resetAll = useCallback(() => {
+    timers.current.forEach((t) => window.clearTimeout(t));
+    timers.current.clear();
+    clearWalletTimers();
+    reissue();
+    setLimitsState({ perTransactionCents: null, perDayCents: null });
+    setLimitsDraft({ perTransactionCents: null, perDayCents: null });
+    setLimitsRow(null);
+    setRows([]);
+    setSelectedRowId(null);
+    setEvents([]);
+  }, [clearWalletTimers, reissue]);
 
   /** Record an approved authorization; it settles on its own a few seconds later. */
   const recordAuthorization = useCallback(
@@ -399,6 +416,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setFrozen,
     closeCard,
     reissue,
+    resetAll,
     saveLimits,
     reveal,
     startAddToWallet,
