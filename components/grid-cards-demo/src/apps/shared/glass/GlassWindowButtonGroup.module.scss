@@ -53,4 +53,14 @@ $group-hover-scale: ($group-height + shadow.$glass-button-hover-bloom * 2) / $gr
   -webkit-appearance: none;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
+
+  /* Pressed, the glyph dims to half (iOS's button highlight), and eases back. */
+  svg {
+    transition: opacity shadow.$glass-button-press-duration shadow.$glass-button-press-ease;
+  }
+
+  &:active:not(:disabled) svg {
+    opacity: 0.5;
+    transition-duration: 0.06s;
+  }
 }

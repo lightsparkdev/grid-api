@@ -41,6 +41,13 @@
      themed --glass-symbol-backdrop the button sits on). Override --glass-symbol-glyph
      when the button sits on a dark backdrop (e.g. the issuance aurora). */
   color: var(--glass-symbol-glyph, var(--ios-label-primary));
+  /* Pressed, the glyph dims to half (iOS's button highlight), and eases back. */
+  transition: opacity shadow.$glass-button-press-duration shadow.$glass-button-press-ease;
+}
+
+.root:active:not(:disabled) .glyph {
+  opacity: 0.5;
+  transition-duration: 0.06s;
 }
 
 .size40 {
