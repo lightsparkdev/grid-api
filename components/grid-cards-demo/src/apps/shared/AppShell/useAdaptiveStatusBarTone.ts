@@ -78,7 +78,11 @@ function sampleLuminanceAt(
     if (rgb) return relativeLuminance(rgb.r, rgb.g, rgb.b);
   }
 
-  return null;
+  // Nothing in the content paints behind the bar (the app's root is
+  // transparent; its surface is the screen under the stage, which hit
+  // testing skips): the screen's own surface is what shows there.
+  const surface = resolveBackgroundRgb(screenEl);
+  return surface ? relativeLuminance(surface.r, surface.g, surface.b) : null;
 }
 
 function measureTone(
