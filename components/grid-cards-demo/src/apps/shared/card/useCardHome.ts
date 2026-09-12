@@ -29,11 +29,12 @@ const PHONE_IN_MS = 750;
 /** The reveal has played (page pushed, digits rolled); the page stays. */
 const REVEAL_SETTLE_MS = 1400;
 /** The cardholder reads Apple's "Add Card to Apple Pay" this long, then taps
- *  Continue; and reads the app's "added" screen this long, then taps Done. */
+ *  Continue. */
 const WALLET_CONTINUE_MS = 1400;
-const WALLET_DONE_MS = 2200;
-/** Apple's waits, from Continue to the app's own screen (see useCardControls). */
+/** Apple's waits, from Continue to its flow going (see useCardControls). */
 const WALLET_ADDING_MS = 1500 + 1500 + 1100;
+/** The app's toast lands as Apple's flow finishes sliding away. */
+const WALLET_TOAST_MS = 350;
 /** Dwell on the transaction sheet before the refund runs. */
 const REFUND_START_MS = 1100;
 /** Dwell after a refund before the sheet closes. */
@@ -67,7 +68,7 @@ export type CardPose =
   | 'toast';
 
 export interface CardPoseOptions {
-  /** `wallet`: 'intro' | 'contacting' | 'setup' | 'added' | 'confirm';
+  /** `wallet`: 'intro' | 'contacting' | 'setup' | 'added';
    *  `tap`: 'hold' | 'auth' | 'done' | 'declined'. */
   phase?: WalletAddPhase | TapPhase;
   /** `tap` at 'declined': why. */
@@ -123,6 +124,10 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   };
   useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
 
+  // Glass toast (overlay layer): the tap-to-pay balance guard, the wallet add.
+  const [toast, setToast] = useState<ToastData | null>(null);
+  const showToast = (text: string) => setToast({ id: Date.now(), text });
+
   // Funding source balance: opening balance less card spend this session.
   const [deltaCents, setDeltaCents] = useState(0);
   const availableCents = FUNDING_SOURCE_CENTS + deltaCents;
@@ -135,6 +140,11 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
       setDeltaCents((c) => c + row.cents);
       notify(`Refund from ${row.title}`, `+${row.amount} back on your card`);
       cardOptions?.onRefund?.(row);
+    },
+    // Apple's flow is done and sliding away: the app's toast says so.
+    onAddToWallet: () => {
+      window.setTimeout(() => showToast('Added to Apple Wallet'), WALLET_TOAST_MS);
+      cardOptions?.onAddToWallet?.();
     },
   });
   // Delayed flow steps read the LATEST controls, not the render they were
@@ -159,10 +169,6 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
       })),
     [card.rows],
   );
-
-  // Glass toast (overlay layer): the tap-to-pay balance guard.
-  const [toast, setToast] = useState<ToastData | null>(null);
-  const showToast = (text: string) => setToast({ id: Date.now(), text });
 
   const isTap = tapPhase !== 'idle';
   const isDeclined = tapPhase === 'declined';
@@ -309,8 +315,9 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   };
 
   /** Add to Apple Wallet: Apple's add-card flow comes up; the cardholder's
-   *  Continue and Done are scripted (a real tap first wins, the script's is
-   *  then a no-op). Already added: a sheet says so. */
+   *  Continue is scripted (a real tap first wins, the script's is then a
+   *  no-op); when Apple's flow goes, a toast says the card was added.
+   *  Already added: a sheet says so. */
   const startAddToWallet = () => {
     arm();
     if (card.closed) {
@@ -325,11 +332,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     }
     card.startAddToWallet();
     later(() => cardRef.current.confirmAddToWallet(), WALLET_CONTINUE_MS);
-    later(() => {
-      const c = cardRef.current;
-      if (c.walletPhase === 'confirm') c.finishAddToWallet();
-      settle(400);
-    }, WALLET_CONTINUE_MS + WALLET_ADDING_MS + WALLET_DONE_MS);
+    settle(WALLET_CONTINUE_MS + WALLET_ADDING_MS + WALLET_TOAST_MS + 600);
   };
 
   // The merchant is picked when the tap STARTS — the balance guard, the charge,

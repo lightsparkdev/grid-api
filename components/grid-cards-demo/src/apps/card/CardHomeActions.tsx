@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from 'clsx';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { SfSymbol } from '@/apps/shared/icons';
 import styles from './CardHomeActions.module.scss';
@@ -25,7 +26,7 @@ export function CardHomeActions({ onTapToPay, onAddToWallet, inWallet, disabled 
         </span>
       </ContentAreaButton>
       <ContentAreaButton
-        className={styles.button}
+        className={clsx(styles.button, styles.walletButton)}
         type="button"
         variant="bordered"
         icon={<img className={styles.walletIcon} src="/assets/icon-apple-wallet.png" alt="" draggable={false} />}

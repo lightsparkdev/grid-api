@@ -25,6 +25,12 @@
   }
 }
 
+/* The icon carries more weight than the label's first letter; 4px less on
+   the left balances the pair. */
+.walletButton {
+  padding-left: 16px;
+}
+
 /* Apple's Wallet app icon (public/assets/icon-apple-wallet.png, 512 × 379),
    at the glyph's height. */
 .walletIcon {

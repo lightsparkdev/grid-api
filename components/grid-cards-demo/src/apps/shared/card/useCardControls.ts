@@ -33,9 +33,9 @@ export type LimitsRow = 'perTransaction' | 'perDay';
 
 /** Add to Apple Wallet, as Apple's full-screen add-card flow: `intro` is "Add
  *  Card to Apple Pay" waiting on Continue; `contacting` and `setup` are the
- *  two "Adding Card" waits; `added` shows the check; `confirm` is the app's
- *  own "added to Apple Pay" screen, until Done. */
-export type WalletAddPhase = 'idle' | 'intro' | 'contacting' | 'setup' | 'added' | 'confirm';
+ *  two "Adding Card" waits; `added` shows the check, then Apple's flow goes
+ *  and the app says so with a toast. */
+export type WalletAddPhase = 'idle' | 'intro' | 'contacting' | 'setup' | 'added';
 
 export type TransactionStatus = 'AUTHORIZED' | 'SETTLED' | 'REFUNDED';
 
@@ -250,12 +250,12 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     at(() => setWalletPhase('setup'), WALLET_CONTACTING_MS);
     at(() => setWalletPhase('added'), WALLET_CONTACTING_MS + WALLET_SETUP_MS);
     at(() => {
-      setWalletPhase('confirm');
+      setWalletPhase('idle');
       setInWallet(true);
       onAddToWallet?.();
     }, WALLET_CONTACTING_MS + WALLET_SETUP_MS + WALLET_ADDED_MS);
   }, [onAddToWallet]);
-  /** Done on the app's screen (or X on Apple's): back to the card home. */
+  /** X on Apple's flow: back to the card home, nothing added. */
   const finishAddToWallet = useCallback(() => {
     clearWalletTimers();
     setWalletPhase('idle');

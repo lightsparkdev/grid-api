@@ -15,7 +15,7 @@ import { brandColorOf } from '@/data/design';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import type { CardScreenProps } from '@/apps/types';
-import { ApplePayAddCard, WalletAddedScreen } from './AddToWalletFlow';
+import { ApplePayAddCard } from './AddToWalletFlow';
 import { CardHomeContent } from './CardHomeContent';
 import { CardNumbersContent } from './CardNumbersContent';
 import { CloseCardSheet, FreezeSheet, TransactionSheet, WalletAgainSheet } from './CardSheets';
@@ -284,8 +284,7 @@ export function CardScreen({ home }: CardScreenProps) {
       <CloseCardSheet card={card} />
       <WalletAgainSheet card={card} />
 
-      {/* Full-screen: the app's "added" screen under Apple's add-card flow. */}
-      <WalletAddedScreen card={card} />
+      {/* Full-screen: Apple's add-card flow. */}
       <ApplePayAddCard card={card} />
 
       {screenOverlay}

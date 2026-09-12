@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useBrand } from '@/apps/shared/brand/BrandContext';
 import { PAN_GROUPS, type CardControls } from '@/apps/shared/card';
-import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
 import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
@@ -154,45 +153,6 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
             >
               {waiting ? <span className={styles.spinner} aria-label="Adding card" /> : 'Continue'}
             </button>
-          </div>
-        </motion.section>
-      )}
-    </AnimatePresence>
-  );
-}
-
-/**
- * The app's own screen once Apple hands back: the card is in Apple Pay. It is
- * under Apple's flow as that leaves, so the slide-down reveals it; Done takes
- * it down the same way, back to the card home.
- */
-export function WalletAddedScreen({ card }: { card: CardControls }) {
-  const reduceMotion = useReducedMotion();
-  // "Your Acme card", or just "Your card" until the brand has a name.
-  const brand = useBrand().programName.trim();
-  const open = card.walletPhase === 'confirm';
-  return (
-    <AnimatePresence initial={false}>
-      {open && (
-        <motion.section
-          key="wallet-added"
-          className={styles.confirm}
-          data-covers-card
-          aria-label="Card added to Apple Pay"
-          initial={false}
-          animate={{ y: 0, opacity: 1 }}
-          exit={reduceMotion ? { opacity: 0, transition: SWAP } : { ...COVER_HIDDEN, transition: COVER_OUT }}
-        >
-          <div className={styles.confirmBody}>
-            <span className={styles.confirmCheck} aria-hidden>
-              <SfSymbol name="checkmark" size={30} />
-            </span>
-            <h1 className={styles.confirmTitle}>Your {brand ? `${brand} card` : 'card'} was added to Apple Pay.</h1>
-          </div>
-          <div className={styles.confirmActions}>
-            <ContentAreaButton type="button" variant="filled" onClick={card.finishAddToWallet}>
-              Done
-            </ContentAreaButton>
           </div>
         </motion.section>
       )}
