@@ -26,7 +26,7 @@ lint-openapi:
 	npm run lint:openapi
 
 lint-spectral:
-	npx spectral lint openapi.yaml --fail-severity=error
+	npm run lint:spectral
 
 lint-markdown:
 	npm run lint:markdown
