@@ -146,7 +146,7 @@ const CUES: Record<string, Cue> = {
   'cross-2': { kind: 'draw', at: 0.2, dur: 0.3 },
   'cross-3': { kind: 'draw', at: 0.2, dur: 0.3 },
   ring: { kind: 'draw', at: 0.2, dur: 0.3 },
-  outline: { kind: 'draw', at: 0.35, dur: 0.95 },
+  outline: { kind: 'draw', at: 0.35, dur: 1.95 },
   centerlines: { kind: 'fade', at: 0.75, dur: 0.4 },
   'dim-w': { kind: 'draw', at: 1.05, dur: 0.35 },
   'ext-w': { kind: 'fade', at: 1.05, dur: 0.3 },
