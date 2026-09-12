@@ -50,22 +50,18 @@
 }
 
 /* Off the phone's top-right corner, in the void its rounded corner leaves:
-   the button's center sits 8px out from the box's corner. The bezel grows 2px on hover
-   (--shell-grow, from AppShell); the button moves with it so it keeps its
-   place against the corner. In the phone's own box (AppShell's stage chrome
+   the button's center sits 8px out from the box's corner. It holds still when
+   the bezel blooms on hover. In the phone's own box (AppShell's stage chrome
    layer, which carries the fit transform). */
 .back {
   position: absolute;
-  top: calc(-30px - var(--shell-grow, 0px));
-  right: calc(-30px - var(--shell-grow, 0px));
+  top: -30px;
+  right: -30px;
   pointer-events: auto;
   /* The glyph takes the docs' text color: light in dark mode. The phone's
      iOS tokens don't reach this layer. */
   --glass-symbol-glyph: var(--text-primary);
-  transition:
-    opacity 400ms ease,
-    top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    right 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 400ms ease;
 }
 
 .backHidden {
