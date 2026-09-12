@@ -57,32 +57,58 @@ function base(y: number): [number, number, number] {
   return stops[stops.length - 1][1];
 }
 
+// The maps are painted in JavaScript, half a million texels each with a few
+// lights or panels apiece. The loops keep the trigonometry out of the texel:
+// what depends on the row or the column alone is taken once per row or
+// column, what depends on a light or a panel alone once per light or panel.
+// (Per texel, the same sums came to seconds in JavaScriptCore, whose Math
+// functions run far slower than V8's; the pictures are unchanged.)
 function studioTexture(): THREE.DataTexture {
   const data = new Float32Array(ENV_W * ENV_H * 4);
   const lights = STUDIO_LIGHTS.map((l) => {
     const n = Math.hypot(...l.dir);
-    return { ...l, dir: l.dir.map((c) => c / n) as [number, number, number] };
+    return {
+      dx: l.dir[0] / n,
+      dy: l.dir[1] / n,
+      dz: l.dir[2] / n,
+      radius: l.radius,
+      // Outside the disc (the angle past the radius) a light adds nothing:
+      // texels whose cosine is under the rim's are skipped before the acos.
+      cosRim: Math.cos(l.radius),
+      inner: l.radius * 0.45,
+      band: l.radius * 0.55,
+      intensity: l.intensity,
+      color: l.color,
+    };
   });
+  // three's equirect: u = atan2(z, x) / 2π + 0.5.
+  const cosLon = new Float64Array(ENV_W);
+  const sinLon = new Float64Array(ENV_W);
+  for (let i = 0; i < ENV_W; i++) {
+    const lon = ((i + 0.5) / ENV_W - 0.5) * Math.PI * 2;
+    cosLon[i] = Math.cos(lon);
+    sinLon[i] = Math.sin(lon);
+  }
   for (let j = 0; j < ENV_H; j++) {
     // v runs bottom (-π/2) to top (+π/2); a DataTexture's row 0 is v = 0.
     const v = (j + 0.5) / ENV_H;
     const lat = (v - 0.5) * Math.PI;
+    const cosLat = Math.cos(lat);
+    const y = Math.sin(lat);
+    const [r, g, b] = base(y);
     for (let i = 0; i < ENV_W; i++) {
-      // three's equirect: u = atan2(z, x) / 2π + 0.5.
-      const u = (i + 0.5) / ENV_W;
-      const lon = (u - 0.5) * Math.PI * 2;
-      const x = Math.cos(lat) * Math.cos(lon);
-      const z = Math.cos(lat) * Math.sin(lon);
-      const y = Math.sin(lat);
-      const [r, g, b] = base(y);
+      const x = cosLat * cosLon[i];
+      const z = cosLat * sinLon[i];
       let R = r;
       let G = g;
       let B = b;
-      for (const l of lights) {
-        const cos = x * l.dir[0] + y * l.dir[1] + z * l.dir[2];
-        const ang = Math.acos(Math.max(-1, Math.min(1, cos)));
+      for (let li = 0; li < lights.length; li++) {
+        const l = lights[li];
+        const cos = x * l.dx + y * l.dy + z * l.dz;
+        if (cos <= l.cosRim) continue;
+        const ang = Math.acos(Math.min(1, cos));
         // Soft disc: full inside half the radius, smooth falloff to the rim.
-        const k = 1 - Math.min(1, Math.max(0, (ang - l.radius * 0.45) / (l.radius * 0.55)));
+        const k = 1 - Math.min(1, Math.max(0, (ang - l.inner) / l.band));
         const w = k * k * (3 - 2 * k) * l.intensity;
         R += w * l.color[0];
         G += w * l.color[1];
@@ -161,33 +187,49 @@ function foilBase(y: number): number {
  *  a sheet that mirrors the room as soft shapes). */
 function panelStudio(panels: Panel[], base: (y: number) => number, w: number, h: number, soft = 0.02): THREE.DataTexture {
   const data = new Float32Array(w * h * 4);
+  const TWO_PI = Math.PI * 2;
+  const flat = panels.map((p) => ({
+    lon: p.lon,
+    lat: p.lat,
+    w: p.w,
+    h: p.h,
+    intensity: p.intensity,
+    r: p.color[0],
+    g: p.color[1],
+    b: p.color[2],
+    tilted: !!p.tilt,
+    c: p.tilt ? Math.cos(p.tilt) : 1,
+    s: p.tilt ? Math.sin(p.tilt) : 0,
+  }));
   for (let j = 0; j < h; j++) {
     const lat = ((j + 0.5) / h - 0.5) * Math.PI;
+    const cosLat = Math.cos(lat);
+    const b = base(Math.sin(lat));
     for (let i = 0; i < w; i++) {
-      const lon = ((i + 0.5) / w - 0.5) * Math.PI * 2;
-      const b = base(Math.sin(lat));
+      const lon = ((i + 0.5) / w - 0.5) * TWO_PI;
       let R = b;
       let G = b;
       let B = b;
-      for (const p of panels) {
-        // Wrap the longitude difference.
+      for (let pi = 0; pi < flat.length; pi++) {
+        const p = flat[pi];
+        // Wrap the longitude difference to (-π, π].
         let dl = lon - p.lon;
-        dl = Math.atan2(Math.sin(dl), Math.cos(dl));
-        let dx = dl * Math.cos(lat);
+        dl -= TWO_PI * Math.floor((dl + Math.PI) / TWO_PI);
+        let dx = dl * cosLat;
         let dy = lat - p.lat;
-        if (p.tilt) {
-          const c = Math.cos(p.tilt);
-          const s = Math.sin(p.tilt);
-          const rx = dx * c + dy * s;
-          dy = -dx * s + dy * c;
+        if (p.tilted) {
+          const rx = dx * p.c + dy * p.s;
+          dy = -dx * p.s + dy * p.c;
           dx = rx;
         }
         const ex = 1 - Math.min(1, Math.max(0, (Math.abs(dx) - p.w) / soft));
+        if (ex <= 0) continue;
         const ey = 1 - Math.min(1, Math.max(0, (Math.abs(dy) - p.h) / soft));
+        if (ey <= 0) continue;
         const k = ex * ey * p.intensity;
-        R += k * p.color[0];
-        G += k * p.color[1];
-        B += k * p.color[2];
+        R += k * p.r;
+        G += k * p.g;
+        B += k * p.b;
       }
       const o = (j * w + i) * 4;
       // A panel with a negative intensity is a dark patch; the room stays

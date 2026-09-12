@@ -93,21 +93,35 @@ export function paintDoveMaps(assets: FaceAssets): DoveMaps {
   const linePitch = 0.16 * PX_PER_MM;
   const grating = new ImageData(w, h);
   const lines = new Float32Array(n);
+  const gd = grating.data;
+  const HALF_PI = Math.PI / 2;
   for (let y = 0; y < h; y++) {
+    const dy = y - cy;
     for (let x = 0; x < w; x++) {
       const i = y * w + x;
-      let ang = Math.atan2(y - cy, x - cx);
-      // Fold to [-π/2, π/2): a grating has no sign.
-      if (ang < -Math.PI / 2) ang += Math.PI;
-      if (ang >= Math.PI / 2) ang -= Math.PI;
+      const dx = x - cx;
+      let ang = Math.atan2(dy, dx);
+      // Fold to [-π/2, π/2): a grating has no sign. The fold turns the
+      // direction by π, which is a change of sign on both of its parts.
+      let sign = 1;
+      if (ang < -HALF_PI) {
+        ang += Math.PI;
+        sign = -1;
+      } else if (ang >= HALF_PI) {
+        ang -= Math.PI;
+        sign = -1;
+      }
       const f = foil[i];
       const pitch = PITCH_BODY + (PITCH_FOIL - PITCH_BODY) * f;
-      grating.data[i * 4] = Math.round(((ang + Math.PI / 2) / Math.PI) * 255);
-      grating.data[i * 4 + 1] = Math.round(((pitch - PITCH_MIN) / PITCH_RANGE) * 255);
-      grating.data[i * 4 + 2] = Math.round((BODY_FOIL + (1 - BODY_FOIL) * f) * 255);
-      grating.data[i * 4 + 3] = 255;
-      const s = x * Math.cos(ang) + y * Math.sin(ang);
-      lines[i] = Math.sin((s / linePitch) * Math.PI * 2) * f;
+      gd[i * 4] = Math.round(((ang + HALF_PI) / Math.PI) * 255);
+      gd[i * 4 + 1] = Math.round(((pitch - PITCH_MIN) / PITCH_RANGE) * 255);
+      gd[i * 4 + 2] = Math.round((BODY_FOIL + (1 - BODY_FOIL) * f) * 255);
+      gd[i * 4 + 3] = 255;
+      // (cos, sin) of the direction, from its parts: no second and third trig.
+      const r = Math.sqrt(dx * dx + dy * dy);
+      // At the center the direction is 0 (atan2's), whose cos is 1.
+      const s = r === 0 ? x : (x * dx + y * dy) * (sign / r);
+      lines[i] = f === 0 ? 0 : Math.sin((s / linePitch) * Math.PI * 2) * f;
     }
   }
   const gratingC = makeCanvas(w, h);
