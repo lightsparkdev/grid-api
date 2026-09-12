@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
+import { isCardParked, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useAdaptiveStatusBarTone } from './useAdaptiveStatusBarTone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
@@ -62,7 +62,7 @@ export function AppShell({
   screenStyle,
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
-  const { ready: stageBootReady, bootOpacity, realignLens } = usePhoneBoot();
+  const { ready: stageBootReady, bootOpacity, bootProgress, realignLens } = usePhoneBoot();
   const showPhone = stageBootReady && size.w > 0 && size.h > 0;
   const phoneVisible = showPhone && bootOpacity > 0;
   const bootY = (1 - bootOpacity) * 128;
@@ -240,6 +240,25 @@ export function AppShell({
     opacity: showPhone ? bootOpacity : 0,
     filter: showPhone && bootOpacity < 1 ? `blur(${(1 - bootOpacity) * 48}px)` : undefined,
   };
+  // The card is parked in the slot (not in flight): the content layer sits
+  // above the stage's canvas. Same landing test as the stage's.
+  const cardParked = isCardParked(bootProgress);
+  // The screen's shape, on the surface below the stage and on the content
+  // layer above it alike, so the two trace one squircle.
+  // border-radius MUST be 0: clipPath is the sole corner shaper. A non-zero
+  // radius clips to a *circle* on Safari/Firefox (no corner-shape), tighter
+  // than the squircle, knocking the screen out of concentricity with the
+  // lens. clip-path path() is a squircle on every browser.
+  const screenShape: CSSProperties = externalGlass
+    ? {
+        borderRadius: 0,
+        clipPath: screenClip,
+        WebkitClipPath: screenClip,
+        // Concentric corner radius for descendants (e.g. a bottom sheet
+        // hugging the screen edge). Inherits via the cascade.
+        ['--screen-corner-radius' as string]: `${glassConfig.radius - SCREEN_INSET}px`,
+      }
+    : {};
 
   return (
     <div className={styles.stage} ref={wrapRef}>
@@ -324,38 +343,14 @@ export function AppShell({
               />
             </Glass>
           )}
+          {/* The screen's surface only. Its content lives in the layer above
+              the stage (below), so the card parked in the slot is under the
+              app's chrome, sheets, and covers, and shows through the slot. */}
           <div
             ref={screenRef}
             className={`${styles.screen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
-            style={{
-              ...screenStyle,
-              ...(externalGlass
-                ? {
-                    // border-radius MUST be 0: clipPath below is the sole corner
-                    // shaper. A non-zero radius clips the screen to a *circle* on
-                    // Safari/Firefox (no corner-shape) — tighter than the squircle
-                    // clip-path — knocking the screen out of concentricity with the
-                    // lens. clip-path path() is a squircle on every browser.
-                    borderRadius: 0,
-                    clipPath: screenClip,
-                    WebkitClipPath: screenClip,
-                    // Concentric corner radius for descendants (e.g. a bottom sheet
-                    // hugging the screen edge). Inherits via the cascade.
-                    ['--screen-corner-radius' as string]: `${glassConfig.radius - SCREEN_INSET}px`,
-                  }
-                : undefined),
-            }}
-          >
-            <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
-            <div className={styles.screenOverlay}>{screenOverlay}</div>
-            {children ? (
-              <ScreenOverlayContext.Provider value={overlayEl}>
-                <div ref={screenBodyRef} className={styles.screenBody} data-screen-body>
-                  {children}
-                </div>
-              </ScreenOverlayContext.Provider>
-            ) : null}
-          </div>
+            style={{ ...screenStyle, ...screenShape }}
+          />
         </div>
         {bezelOverlay && (
           <img
@@ -384,19 +379,37 @@ export function AppShell({
           />
         )}
       </div>
-      {/* The screen's overlay layer, above the stage: rides the same boot
-          transform as the phone, clipped to the screen, and holds what must
-          paint over the card in the slot (Face ID, notifications, the toast). */}
+      {/* The screen's content, in a layer above the stage: it rides the same
+          boot transform as the shell, is clipped to the screen, and holds the
+          status bar, the app, and the overlays (Face ID, notifications, the
+          toast). The card's canvas covers the whole stage above the phone's
+          shell, so this is what puts the app over the card parked in the slot:
+          the slot is a hole in the content the card shows through. While the
+          card flies in or out the layer drops under the canvas, so the card
+          crosses the phone on top; the swap lands while the card is in the
+          slot, where nothing overlaps it. */}
       <div
-        className={styles.overStage}
+        className={`${styles.overStage} ${cardParked ? '' : styles.overStageUnder}`}
         style={{ ...bootStyle, ['--shell-grow' as string]: `${growOut}px` }}
         aria-hidden={!phoneVisible}
       >
         <div
-          ref={setOverlayEl}
           className={`${styles.overStageScreen} ${screenTone === 'light' ? styles.screenToneLight : ''}`}
-          style={screenStyle}
-        />
+          style={{ ...screenStyle, ...screenShape }}
+        >
+          <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
+          {children ? (
+            <ScreenOverlayContext.Provider value={overlayEl}>
+              <div ref={screenBodyRef} className={styles.screenBody} data-screen-body>
+                {children}
+              </div>
+            </ScreenOverlayContext.Provider>
+          ) : null}
+          {/* Above the status bar and the app: the portal target for overlays. */}
+          <div ref={setOverlayEl} className={styles.screenOverlay}>
+            {screenOverlay}
+          </div>
+        </div>
         {stageChrome ? <div className={styles.overStageChrome}>{stageChrome}</div> : null}
       </div>
     </div>

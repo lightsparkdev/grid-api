@@ -99,7 +99,8 @@
   height: var(--app-screen-height);
   border-radius: var(--corner-radius-phone-screen);
   corner-shape: var(--corner-shape);
-  background: var(--app-bg);
+  /* The surface under the content layer (the app sets --screen-surface). */
+  background: var(--screen-surface, var(--app-bg));
   overflow: hidden;
   pointer-events: none;
   /* Isolate swag phone UI from demo chrome (Origin salt/tracking on :root). */
@@ -160,10 +161,20 @@
   pointer-events: none;
 }
 
+/* The card in flight crosses the phone on top: the content goes under the
+   stage's canvas (z-index 3) until the card is parked. */
+.overStageUnder {
+  z-index: 2;
+}
+
+/* The screen's content: the status bar, the app, and the overlays, in the
+   screen's shape (the same clip-path as the surface below; see AppShell). */
 .overStageScreen {
   position: absolute;
   top: var(--app-shell-padding);
   left: var(--app-shell-padding);
+  display: flex;
+  flex-direction: column;
   width: var(--app-screen-width);
   height: var(--app-screen-height);
   border-radius: var(--corner-radius-phone-screen);
@@ -171,10 +182,14 @@
   overflow: hidden;
   pointer-events: none;
   font-family: var(--ios-font-family);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--app-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   font-feature-settings: normal;
   --ios-font-family: var(--font-family-sf-pro);
 
-  /* The screen's tokens, for what is portaled here from the screen. */
   @include ios-colors.tokens;
   @include app-colors.tokens;
   --app-tint: var(--brand-color, #0083c3);
@@ -189,13 +204,17 @@
   pointer-events: none;
 }
 
+/* The app's content. Pointer events are off here and opted back in by what
+   is interactive (the app's header, its content blocks, sheets, covers), so
+   the empty card slot passes the pointer through to the card's hit box in
+   the stage's canvas below. */
 .screenBody {
   position: absolute;
   inset: 0;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 /* Hairline edge contrast just OUTSIDE the screen's superellipse (see AppShell).

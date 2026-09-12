@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import type { CardHome } from '@/apps/shared/card';
-import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
+import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useGradientEditing } from '@/components/DesignPicker/gradientEditing';
 import {
@@ -41,8 +41,6 @@ const GUTTER_X = 28;
 const GUTTER_Y = 120;
 /** Glide time constant toward the rest position (seconds). */
 const GLIDE_TAU = 0.14;
-/** The phone's boot curve past this counts as landed: the card is parked. */
-const PARKED_T = 0.999;
 /** Camera distance, stage px. Scene units are stage px at z = 0. */
 const CAMERA_Z = 2000;
 /** How far outside the brand's box (spec px) still grabs it. */
@@ -65,10 +63,6 @@ const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 }
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
 const EXPOSURE_LIGHT = 1.25;
 const EXPOSURE_DARK = 1.0;
-
-function easeInOutCubic(p: number) {
-  return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-}
 
 /** Inputs the frame loop reads without re-subscribing. */
 interface Live {
@@ -204,7 +198,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const { issued, issuing, card, isDeclined } = home;
   const revealed = card.page === 'numbers';
   const phoneUp = bootProgress > 0;
-  const inFlightNow = phoneUp && easeInOutCubic(bootProgress) < PARKED_T;
+  const inFlightNow = phoneUp && easeInOutCubic(bootProgress) < CARD_PARKED_T;
 
   // The intro plays once, when the card first appears: the blueprint draws,
   // then dissolves as the card comes into focus. Until it's done the card is
@@ -452,8 +446,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
   // Parked in the phone the card still tilts and turns; only the flight in
   // and out is off limits, and the brand is only placed on the stage.
-  const inFlight = () => live.current.t > 0 && live.current.t < PARKED_T;
-  const inPhone = () => live.current.t >= PARKED_T;
+  const inFlight = () => live.current.t > 0 && live.current.t < CARD_PARKED_T;
+  const inPhone = () => live.current.t >= CARD_PARKED_T;
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   /** A press on the unselected brand: a click if it ends within CLICK_SLOP. */
   const pendingSelect = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -1151,7 +1145,7 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       // the brand's selection box (which is DOM, and must sit on the face).
       // Parked, the card is free again: it tilts under the pointer and can be
       // turned over in the slot.
-      hold: (t > 0 && t < PARKED_T) || !intro.done || live.current.editing,
+      hold: (t > 0 && t < CARD_PARKED_T) || !intro.done || live.current.editing,
       freeze: live.current.freeze,
       reduceMotion: live.current.reduceMotion,
     });
@@ -1205,46 +1199,19 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       hit.style.setProperty('--card-scale', s.toFixed(4));
     }
 
-    // A presentation on the phone slides over the parked card: Apple's
-    // add-card flow up from the bottom, a pushed page in from the right
-    // (`data-covers-card="left"`). The stage paints above the phone, so the
-    // card is clipped to the cover's leading edge as it moves: it goes under,
-    // the way it would on the phone, and is never unmounted.
-    // Parked, the card is screen content: it is also clipped to the phone's
-    // screen, so a push that slides its slot past the bezel takes it out of
-    // sight the way the screen's edge would. (Not during the flight in or out,
-    // when it crosses the bezel on purpose.)
-    let top = 0;
-    let right = 0;
-    let bottom = 0;
-    let left = 0;
-    if (t > 0) {
-      root.ownerDocument.querySelectorAll<HTMLElement>('[data-covers-card]').forEach((el) => {
-        const b = el.getBoundingClientRect();
-        if (el.dataset.coversCard === 'left') right = Math.max(right, r.right - b.left);
-        else bottom = Math.max(bottom, r.bottom - b.top);
-      });
-      if (t >= 0.999) {
-        const screen = root.ownerDocument.querySelector<HTMLElement>('[data-screen-body]');
-        if (screen) {
-          const b = screen.getBoundingClientRect();
-          top = Math.max(top, b.top - r.top);
-          right = Math.max(right, r.right - b.right);
-          bottom = Math.max(bottom, r.bottom - b.bottom);
-          left = Math.max(left, b.left - r.left);
-        }
-        // The phone's chrome around the slot (the header above it, the actions
-        // row under it) sits over the card: a turning card's near edge
-        // overshoots its slot by a few px, and goes under them, not over.
-        root.ownerDocument.querySelectorAll<HTMLElement>('[data-above-card]').forEach((el) => {
-          const b = el.getBoundingClientRect();
-          if (el.dataset.aboveCard === 'below') bottom = Math.max(bottom, r.bottom - b.top);
-          else top = Math.max(top, b.bottom - r.top);
-        });
+    // Parked, the card is screen content: the phone's content layer paints
+    // over it (AppShell), and the card is clipped to the screen, so a push
+    // that slides its slot past the bezel can't show it over the shell. (Not
+    // during the flight in or out, when it crosses the bezel on purpose.)
+    let clip = '';
+    if (t >= CARD_PARKED_T) {
+      const screen = root.ownerDocument.querySelector<HTMLElement>('[data-screen-body]');
+      if (screen) {
+        const b = screen.getBoundingClientRect();
+        const ins = (v: number) => Math.max(0, v).toFixed(1);
+        clip = `inset(${ins(b.top - r.top)}px ${ins(r.right - b.right)}px ${ins(r.bottom - b.bottom)}px ${ins(b.left - r.left)}px)`;
       }
     }
-    const ins = (v: number) => Math.max(0, Math.min(v, Math.max(r.width, r.height))).toFixed(1);
-    const clip = top || right || bottom || left ? `inset(${ins(top)}px ${ins(right)}px ${ins(bottom)}px ${ins(left)}px)` : '';
     if (root.style.clipPath !== clip) root.style.clipPath = clip;
   });
 

@@ -25,8 +25,8 @@ const LEGAL =
  * Apple's add-card flow (PKAddPaymentPassViewController), 1:1 with iOS: "Add
  * Card to Apple Pay" with the name and number, Continue, then "Adding Card"
  * through "Contacting the Card Issuer…" and "Setting up Card for Apple Pay…"
- * to the check. System chrome, so its colors are iOS's, not the app's. The
- * card in the slot is under it (the stage clips the card to its top edge).
+ * to the check. System chrome, so its colors are iOS's, not the app's. It
+ * covers the card in the slot as it rises.
  */
 export function ApplePayAddCard({ card }: { card: CardControls }) {
   const reduceMotion = useReducedMotion();
@@ -53,7 +53,6 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
         <motion.section
           key="apple-pay"
           className={styles.cover}
-          data-covers-card
           aria-label="Add Card to Apple Pay"
           initial={reduceMotion ? { opacity: 0 } : COVER_HIDDEN}
           animate={reduceMotion ? { opacity: 1 } : COVER_SHOWN}

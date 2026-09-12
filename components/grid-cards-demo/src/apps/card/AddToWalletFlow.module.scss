@@ -12,6 +12,7 @@ $apple-blue: #007aff;
   position: absolute;
   inset: 0;
   z-index: 30;
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

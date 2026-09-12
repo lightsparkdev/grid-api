@@ -85,8 +85,8 @@ export function CardScreen({ home }: CardScreenProps) {
   // Card numbers is not a push: the header swaps as it always does, the
   // content under the card blur-fades out, and the numbers blur-fade in with
   // a short rise, while the card stays and turns over. Spending limits is a
-  // push over the whole body, card included (the stage clips the card to its
-  // leading edge), with the home staying put underneath.
+  // push over the whole body, card included (the page paints over the card,
+  // as all the screen's content does), with the home staying put underneath.
   const onNumbers = card.page === 'numbers';
   // The navigation bar's direction: a page coming in is a push, home is a pop.
   const pushDir = onPage ? 1 : -1;
@@ -143,7 +143,6 @@ export function CardScreen({ home }: CardScreenProps) {
             <motion.div
               key="header"
               className={styles.headerInner}
-              data-above-card="above"
               initial={reduceMotion ? false : CONTENT_HIDDEN}
               animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
@@ -325,15 +324,13 @@ export function CardScreen({ home }: CardScreenProps) {
           </AnimatePresence>
         </motion.div>
 
-        {/* Spending limits: a page over the whole body, the card included. It
-            carries data-covers-card="left" so the stage clips the card to its
-            leading edge as it slides. */}
+        {/* Spending limits: a page over the whole body, the card included; it
+            covers the card as it slides in. */}
         <AnimatePresence initial={false}>
           {!isTap && card.page === 'limits' && (
             <motion.div
               key="limits"
               className={styles.pageCover}
-              data-covers-card="left"
               initial={reduceMotion ? { opacity: 0 } : PAGE_RIGHT}
               animate={reduceMotion ? { opacity: 1 } : { ...PAGE_REST, transition: PUSH }}
               exit={reduceMotion ? { opacity: 0 } : { ...PAGE_RIGHT, transition: PUSH }}

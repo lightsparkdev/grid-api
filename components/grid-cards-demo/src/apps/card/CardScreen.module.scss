@@ -8,17 +8,13 @@
   flex-direction: column;
   /* Clear the iOS status bar — screenBody underlaps it (see AppShell). */
   padding-top: 62px;
-  background: var(--wallet-bg);
+  /* No surface of its own: the screen under the stage paints --wallet-bg
+     (DemoPhone sets it as the screen's surface), and the card in the stage's
+     canvas shows through the empty slot. */
+  background: transparent;
 
-  /* Figma DS.screenBackground — off-white, a hair below the #fff cards. */
-  --wallet-bg: #f9f9f9;
   /* Header strip height — the body underlaps it by this much. */
   --wallet-header-height: 56px;
-
-  :global([data-theme='dark']) & {
-    /* Off-black mirror of #f9f9f9 — soft dark base a step below the cards. */
-    --wallet-bg: #111111;
-  }
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
@@ -32,6 +28,8 @@
   box-sizing: border-box;
 }
 
+/* Interactive: takes the pointer back (the content layer passes it through by
+   default, for the card under the slot). */
 .headerInner {
   position: absolute;
   inset: 8px 24px;
@@ -40,6 +38,7 @@
   justify-content: space-between;
   gap: 8px;
   width: auto;
+  pointer-events: auto;
 }
 
 /* The pushed page's title, centered in the header the way Wallet's is; the
@@ -165,6 +164,7 @@
 .homeContent {
   position: relative;
   z-index: 2;
+  pointer-events: auto;
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
@@ -209,6 +209,7 @@
   position: absolute;
   inset: 0;
   z-index: 3;
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   padding-top: var(--wallet-header-height);
