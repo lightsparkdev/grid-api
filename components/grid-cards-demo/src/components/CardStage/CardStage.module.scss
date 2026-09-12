@@ -79,6 +79,11 @@
   cursor: grabbing;
 }
 
+/* Locked or closed: nothing to grab. */
+.hitInert {
+  cursor: default;
+}
+
 /* Over the brand, or moving it: the arrow, as a design tool has it. */
 .hitOverBrand,
 .hitMoving {

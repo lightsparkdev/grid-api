@@ -94,6 +94,9 @@ interface Live {
   freeze: boolean;
   /** Tap-to-pay is running: the card is held to the reader, front up. */
   tap: boolean;
+  /** Locked or closed: the card can't be used, and doesn't answer the pointer
+   *  (no tilt, no turning it over). */
+  inert: boolean;
   /** Which face is toward the camera, from the last frame (+ front, - back). */
   facing: number;
   /** How the card is held: the footprint, the roll, and the pick's frame. */
@@ -234,6 +237,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     editing: false,
     freeze: false,
     tap: false,
+    inert: false,
     facing: 1,
     orientation: design.orientation,
     intro: {
@@ -254,6 +258,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   live.current.t = easeInOutCubic(bootProgress);
   live.current.wantBack = revealed;
   live.current.tap = isTap;
+  live.current.inert = card.frozen || card.closed;
   live.current.reduceMotion = reduceMotion;
   live.current.orientation = design.orientation;
   // The composed face and the card's footprint on screen, for the card as held.
@@ -575,7 +580,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     const canEdit = brandEditable && !inPhone();
     hover(canEdit && e.pointerType === 'mouse' && motion.atRest && hitBrand(e.clientX, e.clientY) !== null);
     hoverName(canEdit && e.pointerType === 'mouse' && !textEdit && motion.atRest && hitName(e.clientX, e.clientY));
-    if (reduceMotion || selected) return;
+    if (reduceMotion || selected || live.current.inert) return;
     const b = e.currentTarget.getBoundingClientRect();
     motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
   };
@@ -619,8 +624,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       setSelected(false);
     }
     // On Card numbers the card is turned over for the reveal and stays so:
-    // no spinning it (it still tilts). At the reader it is held.
-    if (live.current.wantBack || live.current.tap) return;
+    // no spinning it (it still tilts). At the reader it is held; locked or
+    // closed it is inert.
+    if (live.current.wantBack || live.current.tap || live.current.inert) return;
     // The card: spin. The brand's and the name's outlines come off for the turn.
     hover(false);
     hoverName(false);
@@ -874,7 +880,12 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           it is the composed face in card px. */}
       <div
         ref={hitRef}
-        className={clsx(styles.hit, overBrand && styles.hitOverBrand, overName && styles.hitOverName)}
+        className={clsx(
+          styles.hit,
+          overBrand && styles.hitOverBrand,
+          overName && styles.hitOverName,
+          (card.frozen || card.closed) && styles.hitInert,
+        )}
         data-card-hit
         style={{ width: foot.w, height: foot.h, pointerEvents: inFlightNow || !introDone ? 'none' : 'auto' }}
         onPointerMove={onPointerMove}
@@ -1177,7 +1188,8 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       // or at the reader for tap-to-pay (front up, whichever face it was
       // showing). Parked otherwise, the card is free again: it tilts under
       // the pointer and can be turned over in the slot.
-      hold: (t > 0 && t < CARD_PARKED_T) || !intro.done || live.current.editing || live.current.tap,
+      hold:
+        (t > 0 && t < CARD_PARKED_T) || !intro.done || live.current.editing || live.current.tap || live.current.inert,
       freeze: live.current.freeze,
       reduceMotion: live.current.reduceMotion,
     });
