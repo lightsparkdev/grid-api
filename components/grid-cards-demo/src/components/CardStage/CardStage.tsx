@@ -41,6 +41,8 @@ const GUTTER_X = 28;
 const GUTTER_Y = 120;
 /** Glide time constant toward the rest position (seconds). */
 const GLIDE_TAU = 0.14;
+/** The phone's boot curve past this counts as landed: the card is parked. */
+const PARKED_T = 0.999;
 /** Camera distance, stage px. Scene units are stage px at z = 0. */
 const CAMERA_Z = 2000;
 /** How far outside the brand's box (spec px) still grabs it. */
@@ -191,6 +193,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const { issued, issuing, card, isDeclined } = home;
   const revealed = card.page === 'numbers';
   const phoneUp = bootProgress > 0;
+  const inFlightNow = phoneUp && easeInOutCubic(bootProgress) < PARKED_T;
 
   // The intro plays once, when the card first appears: the blueprint draws,
   // then dissolves as the card comes into focus. Until it's done the card is
@@ -436,6 +439,10 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   };
 
   // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
+  // Parked in the phone the card still tilts and turns; only the flight in
+  // and out is off limits, and the brand is only placed on the stage.
+  const inFlight = () => live.current.t > 0 && live.current.t < PARKED_T;
+  const inPhone = () => live.current.t >= PARKED_T;
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   /** A press on the unselected brand: a click if it ends within CLICK_SLOP. */
   const pendingSelect = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -535,10 +542,12 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       if (ps && Math.hypot(e.clientX - ps.x, e.clientY - ps.y) > CLICK_SLOP) pendingSelect.current = null;
       return;
     }
-    if (live.current.t > 0) return;
-    // The outline is for a card at rest: not while it turns or settles.
-    hover(brandEditable && e.pointerType === 'mouse' && motion.atRest && hitBrand(e.clientX, e.clientY) !== null);
-    hoverName(brandEditable && e.pointerType === 'mouse' && !textEdit && motion.atRest && hitName(e.clientX, e.clientY));
+    if (inFlight()) return;
+    // The outline is for a card at rest, on the stage (the brand is not
+    // placed on the card in the phone): not while it turns or settles.
+    const canEdit = brandEditable && !inPhone();
+    hover(canEdit && e.pointerType === 'mouse' && motion.atRest && hitBrand(e.clientX, e.clientY) !== null);
+    hoverName(canEdit && e.pointerType === 'mouse' && !textEdit && motion.atRest && hitName(e.clientX, e.clientY));
     if (reduceMotion || selected) return;
     const b = e.currentTarget.getBoundingClientRect();
     motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
@@ -546,8 +555,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // Nothing says the card can be turned; say it once, until the first drag.
   const [dragged, setDragged] = useState(false);
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (live.current.t > 0 || e.button !== 0 || brandDrag.current || gradDrag.current) return;
-    if (gradEditing) {
+    if (inFlight() || e.button !== 0 || brandDrag.current || gradDrag.current) return;
+    if (gradEditing && !inPhone()) {
       const gradEl = (e.target as HTMLElement).closest<HTMLElement>('[data-grad]');
       if (gradEl) {
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -557,7 +566,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         return;
       }
     }
-    if (brandEditable) {
+    if (brandEditable && !inPhone()) {
       // A handle of the selection box: scale, or rotate from just outside a corner.
       const handleEl = (e.target as HTMLElement).closest<HTMLElement>('[data-handle]');
       const p = pick.current?.(e.clientX, e.clientY);
@@ -795,7 +804,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         ref={hitRef}
         className={clsx(styles.hit, overBrand && styles.hitOverBrand, overName && styles.hitOverName)}
         data-card-hit
-        style={{ width: foot.w, height: foot.h, pointerEvents: phoneUp || !introDone ? 'none' : 'auto' }}
+        style={{ width: foot.w, height: foot.h, pointerEvents: inFlightNow || !introDone ? 'none' : 'auto' }}
         onPointerMove={onPointerMove}
         onPointerDown={onPointerDown}
         onPointerUp={endDrag}
@@ -1085,9 +1094,11 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     const { intro } = live.current;
     const pose = motion.step(dt, {
       wantBack: live.current.wantBack,
-      // Held flat: parked in the phone, during the intro, or under the
-      // brand's selection box (which is DOM, and must sit on the face).
-      hold: t > 0 || !intro.done || live.current.editing,
+      // Held flat: in flight to or from the phone, during the intro, or under
+      // the brand's selection box (which is DOM, and must sit on the face).
+      // Parked, the card is free again: it tilts under the pointer and can be
+      // turned over in the slot.
+      hold: (t > 0 && t < PARKED_T) || !intro.done || live.current.editing,
       freeze: live.current.freeze,
       reduceMotion: live.current.reduceMotion,
     });
