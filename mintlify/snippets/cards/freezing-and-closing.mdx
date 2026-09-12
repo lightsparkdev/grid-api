@@ -33,7 +33,7 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
 ```
 
 The response is `200 OK` with the updated `Card` and a
-`CARD.STATE_CHANGE` webhook.
+`CARD.STATUS_CHANGE` webhook.
 
 ## What freeze does
 
@@ -44,7 +44,7 @@ Setting a card to `FROZEN`:
 - Does **not** pause the lifecycle of authorizations that already
   passed. Pulls, clearings, and refunds against existing transactions
   continue to reconcile normally.
-- Emits `CARD.STATE_CHANGE` with `status: "FROZEN"`.
+- Emits `CARD.STATUS_CHANGE` with `status: "FROZEN"`.
 
 Unfreeze (`status: "ACTIVE"`) reverses this — new auths flow normally
 again.
@@ -62,7 +62,7 @@ setting `status: "CLOSED"`. The operation is permanent:
 - Inbound clearings received after close follow the standard
   force-post / late-presentment path — Lightspark absorbs the loss if
   a post-hoc pull on the now-unbound source fails.
-- `CARD.STATE_CHANGE` fires with `status: "CLOSED"`.
+- `CARD.STATUS_CHANGE` fires with `status: "CLOSED"`.
 
 ```bash
 curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
