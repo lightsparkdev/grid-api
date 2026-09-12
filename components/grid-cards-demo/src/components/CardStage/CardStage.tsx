@@ -819,9 +819,10 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     };
   }
 
-  // The card's state, on the card. Not while it is being issued: the creating
-  // screen says so, and the card itself stays clean for the reveal.
-  const pill = card.closed ? 'Closed' : card.frozen ? 'Frozen' : card.inWallet ? 'In Apple Wallet' : null;
+  // The card's state, on the card, when it can't be used: closed or frozen.
+  // Nothing while it is being issued (the creating screen says so) and
+  // nothing for Apple Wallet (Activity has it).
+  const pill = card.closed ? 'Closed' : card.frozen ? 'Frozen' : null;
 
   // The selection box, in card px on the hit box.
   const box = placed && (selected || overBrand) && !textEdit ? placed.box : null;

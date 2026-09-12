@@ -17,6 +17,8 @@ const COVER_IN = motionTransition(easeOutSnappy, 0.5);
 const COVER_OUT = motionTransition(easeOutSnappy, 0.42);
 /** Apple's copy swaps between steps: a quick crossfade. */
 const SWAP = motionTransition(easeOutQuick, 0.22);
+/** The form follows the titles up as they shorten. */
+const GROUP_MOVE = motionTransition(easeOutSnappy, 0.4);
 
 const LEGAL =
   'Card-related information, location, and information about device settings and use patterns may be sent to Apple and may be used together with account information to provide assessments to your card issuer or payment network to set up Apple Pay and prevent transaction fraud.';
@@ -87,8 +89,11 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
                 moment it starts fading, so the layout change lands in the
                 same render as the phase change and the group below animates
                 up to meet it (with mode="wait" it left later, in a render
-                the group didn't take part in, and the group jumped). */}
-            <motion.div className={styles.titles} layout transition={SWAP}>
+                the group didn't take part in, and the group jumped). The
+                titles box itself takes its new height at once: its text
+                crossfades, and animating its size (a scale) threw the popped
+                text off before the group settled. */}
+            <div className={styles.titles}>
               <h1 className={styles.title}>
                 <AnimatePresence mode="popLayout" initial={false}>
                   <motion.span
@@ -128,9 +133,11 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
                   </motion.p>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
 
-            <motion.div className={styles.group} layout transition={SWAP}>
+            {/* Position only: the group's size never changes, and a size
+                animation would scale the rows' text on the way. */}
+            <motion.div className={styles.group} layout="position" transition={GROUP_MOVE}>
               <div className={styles.row}>
                 <span className={styles.rowLabel}>Name</span>
                 <span className={styles.rowValue}>{name}</span>
