@@ -11,7 +11,7 @@ import {
   type WalletAddPhase,
 } from './useCardControls';
 import type { SpendLimits } from './useCardControls';
-import type { TapPhase, WalletEntry, WalletListItemData } from './types';
+import type { ActivityKind, TapPhase, WalletEntry, WalletListItemData } from './types';
 import { TAP_MERCHANTS, parseCents } from './merchants';
 
 /** POST /cards → PROCESSING; the ACTIVE webhook lands after this. */
@@ -51,6 +51,24 @@ const LIMITS_SAVE_MS = 1100;
 const NOTICE_MS = 3600;
 /** The Limits flow applies these caps (platform-side PATCH). */
 export const PRESET_LIMITS: SpendLimits = { perTransactionCents: 7_500, perDayCents: 25_000 };
+
+/** How a card event reads in Activity. */
+const EVENT_TITLE: Record<ActivityKind, string> = {
+  issued: 'Card issued',
+  frozen: 'Card frozen',
+  unfrozen: 'Card unfrozen',
+  wallet: 'Added to Apple Wallet',
+  limits: 'Spending limits set',
+  closed: 'Card closed',
+};
+const EVENT_DETAIL: Record<ActivityKind, string> = {
+  issued: 'Virtual Visa debit',
+  frozen: 'Purchases are declined',
+  unfrozen: 'Purchases go through again',
+  wallet: 'Ready for Apple Pay',
+  limits: '',
+  closed: 'No longer usable',
+};
 
 /** A phone moment the dev hook can pose and hold (see `pose` below). */
 export type CardPose =
@@ -160,15 +178,23 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   // Reveal needs Face ID first; the view shows the overlay while this is set.
   const [revealPending, setRevealPending] = useState(false);
 
-  // Card transactions are the control brain's rows, labelled by lifecycle.
-  const transactions: WalletListItemData[] = useMemo(
-    () =>
-      card.rows.map((r) => ({
-        ...r,
-        detail: r.status === 'AUTHORIZED' ? 'Pending' : r.status === 'REFUNDED' ? 'Refunded' : r.detail,
-      })),
-    [card.rows],
-  );
+  // Activity: the purchases (the controls' rows, labelled by lifecycle) and
+  // the card's events, newest first.
+  const activity: WalletListItemData[] = useMemo(() => {
+    const purchases: WalletListItemData[] = card.rows.map((r) => ({
+      ...r,
+      detail: r.status === 'AUTHORIZED' ? 'Pending' : r.status === 'REFUNDED' ? 'Refunded' : r.detail,
+    }));
+    const events: WalletListItemData[] = card.events.map((e) => ({
+      id: e.id,
+      category: e.kind,
+      title: EVENT_TITLE[e.kind],
+      detail: e.detail ?? EVENT_DETAIL[e.kind],
+      timestamp: e.timestamp,
+      amount: '',
+    }));
+    return [...purchases, ...events].sort((a, b) => b.timestamp - a.timestamp);
+  }, [card.rows, card.events]);
 
   const isTap = tapPhase !== 'idle';
   const isDeclined = tapPhase === 'declined';
@@ -203,6 +229,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     issueTimer.current = window.setTimeout(() => {
       setIssued(true);
       setIssuing(false);
+      cardRef.current.recordEvent('issued');
       settle(1100);
     }, ISSUE_MS);
   };
@@ -580,7 +607,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     issueCard,
     tapPhase,
     setTapPhase,
-    transactions,
+    activity,
     availableCents,
     // Toast + push notification
     toast,

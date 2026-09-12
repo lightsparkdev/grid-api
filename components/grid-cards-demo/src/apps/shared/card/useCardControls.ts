@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { WalletListItemData } from './types';
+import type { ActivityKind, MerchantCategory, WalletListItemData } from './types';
 
 /** Mirrors the API's `CardState` for an issued card (PENDING_KYC / PROCESSING
  *  are the issuance animation's job). */
@@ -39,9 +39,20 @@ export type WalletAddPhase = 'idle' | 'intro' | 'contacting' | 'setup' | 'added'
 
 export type TransactionStatus = 'AUTHORIZED' | 'SETTLED' | 'REFUNDED';
 
+/** A card event for the Activity list (issued, frozen, closed…). */
+export interface ActivityEvent {
+  id: string;
+  kind: ActivityKind;
+  timestamp: number;
+  /** A second line, e.g. the caps a limits change set. */
+  detail?: string;
+}
+
 /** A card transaction row plus its lifecycle. The skin renders `status`
- *  however it likes (Pending / Settled / Refunded chips). */
-export interface CardTransactionRow extends WalletListItemData {
+ *  however it likes (Pending / Settled / Refunded chips). A purchase's
+ *  category is a merchant's; the card's events have their own rows. */
+export interface CardTransactionRow extends Omit<WalletListItemData, 'category'> {
+  category?: MerchantCategory;
   status: TransactionStatus;
   cents: number;
 }
@@ -110,6 +121,11 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   const [inWallet, setInWallet] = useState(false);
   const [rows, setRows] = useState<CardTransactionRow[]>([]);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  // Card events, shown in Activity with the purchases.
+  const [events, setEvents] = useState<ActivityEvent[]>([]);
+  const recordEvent = useCallback((kind: ActivityKind, detail?: string) => {
+    setEvents((prev) => [{ id: `ev-${kind}-${Date.now()}`, kind, timestamp: Date.now(), detail }, ...prev]);
+  }, []);
   /** Last decline, for the card's bounce + the status label. Cleared on idle. */
   const [lastDecline, setLastDecline] = useState<DeclineReason | null>(null);
 
@@ -158,9 +174,10 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
       if (closed) return;
       const state: CardLifecycle = next ? 'FROZEN' : 'ACTIVE';
       setLifecycle(state);
+      recordEvent(next ? 'frozen' : 'unfrozen');
       onStateChange?.(state);
     },
-    [closed, onStateChange],
+    [closed, onStateChange, recordEvent],
   );
 
   const closeCard = useCallback(() => {
@@ -172,8 +189,9 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setSheet('none');
     setPage('home');
     setRevealedAt(null);
+    recordEvent('closed');
     onStateChange?.('CLOSED');
-  }, [closed, onStateChange, onCloseRejected]);
+  }, [closed, onStateChange, onCloseRejected, recordEvent]);
 
   /** A new card is being issued (flows are replayable): it starts ACTIVE, out
    *  of the wallet, unrevealed. State only; POST /cards is the caller's log.
@@ -191,9 +209,12 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   const saveLimits = useCallback(
     (next: SpendLimits) => {
       setLimitsState(next);
+      const cap = (c: number | null, per: string) => (c === null ? null : `$${c / 100} ${per}`);
+      const parts = [cap(next.perTransactionCents, 'per purchase'), cap(next.perDayCents, 'per day')].filter(Boolean);
+      recordEvent('limits', parts.length ? parts.join(' · ') : 'No caps');
       onLimitsChange?.(next);
     },
-    [onLimitsChange],
+    [onLimitsChange, recordEvent],
   );
 
   /** The Spending Limits page, its draft seeded from the card's caps. */
@@ -252,9 +273,10 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     at(() => {
       setWalletPhase('idle');
       setInWallet(true);
+      recordEvent('wallet');
       onAddToWallet?.();
     }, WALLET_CONTACTING_MS + WALLET_SETUP_MS + WALLET_ADDED_MS);
-  }, [onAddToWallet]);
+  }, [onAddToWallet, recordEvent]);
   /** X on Apple's flow: back to the card home, nothing added. */
   const finishAddToWallet = useCallback(() => {
     clearWalletTimers();
@@ -282,7 +304,13 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setRows((prev) => [{ ...row, status }, ...prev]);
   }, []);
 
+  // The rows at call time, for delayed callers and for the id checks below.
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+
+  /** A purchase row opens its sheet; a card event row has nothing to open. */
   const openTransaction = useCallback((id: string) => {
+    if (!rowsRef.current.some((r) => r.id === id)) return;
     setSelectedRowId(id);
     setSheet('transaction');
   }, []);
@@ -291,8 +319,6 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
    *  Only a settled purchase can be returned (a pending one has nothing to
    *  return against). Reads the row at fire time (functional update) so
    *  delayed callers can't act on a stale list. */
-  const rowsRef = useRef(rows);
-  rowsRef.current = rows;
   const refundRow = useCallback(
     (id: string) => {
       later(() => {
@@ -348,6 +374,8 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setWalletPhase,
     inWallet,
     rows,
+    events,
+    recordEvent,
     selectedRow: rows.find((r) => r.id === selectedRowId) ?? null,
     lastDecline,
     setLastDecline,

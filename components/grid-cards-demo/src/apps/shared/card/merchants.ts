@@ -17,7 +17,7 @@ export const CATEGORY_LABEL: Record<MerchantCategory, string> = {
 
 // Globally recognizable chains with FIXED, plausible charges (deterministic per
 // merchant) so repeat taps read as real purchases around town.
-export const TAP_MERCHANTS: Array<Omit<WalletListItemData, 'id' | 'timestamp'>> = [
+export const TAP_MERCHANTS: Array<Omit<WalletListItemData, 'id' | 'timestamp' | 'category'> & { category: MerchantCategory }> = [
   { category: 'coffee', title: 'Starbucks', detail: 'Tap to Pay', amount: '$7.45' },
   { category: 'fast-food', title: 'McDonald’s', detail: 'Tap to Pay', amount: '$11.84' },
   { category: 'convenience', title: '7-Eleven', detail: 'Tap to Pay', amount: '$6.27' },

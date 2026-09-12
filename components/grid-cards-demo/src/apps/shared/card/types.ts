@@ -40,11 +40,14 @@ export type MerchantCategory =
   | 'homeware'
   | 'grocery';
 
-/** One transaction row's data. */
+/** A card event in the Activity list, beside the purchases. */
+export type ActivityKind = 'issued' | 'frozen' | 'unfrozen' | 'wallet' | 'limits' | 'closed';
+
+/** One Activity row's data: a purchase, or a card event. */
 export interface WalletListItemData {
   id: string;
-  /** Merchant category — WalletListItem maps it to an icon. */
-  category?: MerchantCategory;
+  /** Merchant category, or the card event — WalletListItem maps it to an icon. */
+  category?: MerchantCategory | ActivityKind;
   title: string;
   /** Merchant detail line, e.g. "Tap to Pay". */
   detail: string;

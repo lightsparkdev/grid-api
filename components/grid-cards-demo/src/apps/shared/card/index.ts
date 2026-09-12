@@ -1,5 +1,6 @@
 /** Headless card logic — shared by the phone faces. No JSX. */
 export type {
+  ActivityKind,
   TapPhase,
   WalletEntry,
   WalletEntryTarget,
@@ -12,6 +13,7 @@ export { CATEGORY_LABEL, TAP_MERCHANTS, parseCents } from './merchants';
 export { useCardHome, type UseCardHomeOptions, type CardHome } from './useCardHome';
 export {
   useCardControls,
+  type ActivityEvent,
   type CardControls,
   type CardLifecycle,
   type CardPage,
