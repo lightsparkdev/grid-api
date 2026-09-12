@@ -78,7 +78,7 @@ function inkFor(luminance: number): string {
 /** Where a brand fill's luminance is held to so it still reads as a shape on
  *  the sheet's surface: no lighter than this on the light surface (a white
  *  card's tile went white on white), no darker than this on the dark one. */
-const FILL_MAX_L_ON_LIGHT = 0.5;
+const FILL_MAX_L_ON_LIGHT = 0.62;
 const FILL_MIN_L_ON_DARK = 0.07;
 
 function toHex([r, g, b]: [number, number, number]): string {
