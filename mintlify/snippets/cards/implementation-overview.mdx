@@ -55,7 +55,7 @@ Issuance is a single `POST /cards` call. New cards start in
 `CARD.STATE_CHANGE` webhook. Day-to-day operational changes are:
 
 - `PATCH /cards/{id}` to freeze, unfreeze, or close permanently
-  (`state: "CLOSED"`).
+  (`status: "CLOSED"`).
 
 Both freeze and close use Grid's `202 → signed-retry` pattern (the same
 pattern as Embedded Wallet credential revocation). See

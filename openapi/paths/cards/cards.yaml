@@ -33,13 +33,13 @@ post:
     A platform may be limited to a maximum number of live cards. Once that
     limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED`
     until a card is closed or Lightspark raises the limit. Cards in `CLOSED`
-    state do not count toward the limit.
+    status do not count toward the limit.
 
 
-    New cards start in `state: "PROCESSING"` while the card issuer
-    provisions the card. The `card.state_change` webhook fires on each state
+    New cards start in `status: "PROCESSING"` while the card issuer
+    provisions the card. The `card.state_change` webhook fires on each status
     transition, including the transition to `ACTIVE` (or to `CLOSED` with
-    `stateReason: "ISSUER_REJECTED"` if provisioning fails).
+    `statusReason: "ISSUER_REJECTED"` if provisioning fails).
   operationId: createCard
   tags:
     - Cards
@@ -135,7 +135,7 @@ get:
   summary: List cards
   description: >
     Retrieve a paginated list of cards. Cards can be filtered by cardholder,
-    bound funding-source internal account, state, and platform-specific
+    bound funding-source internal account, status, and platform-specific
     card identifier. If no filters are provided, returns all cards visible
     to the caller.
   operationId: listCards
@@ -164,12 +164,12 @@ get:
       required: false
       schema:
         type: string
-    - name: state
+    - name: status
       in: query
-      description: Filter by card state.
+      description: Filter by card status.
       required: false
       schema:
-        $ref: ../../components/schemas/cards/CardState.yaml
+        $ref: ../../components/schemas/cards/CardStatus.yaml
     - name: limit
       in: query
       description: Maximum number of results to return (default 20, max 100)

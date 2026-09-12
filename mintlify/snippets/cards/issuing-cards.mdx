@@ -43,15 +43,15 @@ PROCESSING ──► ACTIVE ◄──► FROZEN
 |-------|-----------------|
 | `PROCESSING` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
 | `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATE_CHANGE` webhook. |
-| `FROZEN` | You called `PATCH /cards/{id}` with `state: "FROZEN"`. |
-| `CLOSED` | You called `PATCH /cards/{id}` with `state: "CLOSED"`. Terminal. |
+| `FROZEN` | You called `PATCH /cards/{id}` with `status: "FROZEN"`. |
+| `CLOSED` | You called `PATCH /cards/{id}` with `status: "CLOSED"`. Terminal. |
 
-`PENDING_KYC` is also a valid state but you should not see it in v1 —
+`PENDING_KYC` is also a valid status but you should not see it in v1 —
 issuance is gated on KYC up front.
 
 ## After issuance
 
-`POST /cards` returns immediately with `state: "PROCESSING"`. The
+`POST /cards` returns immediately with `status: "PROCESSING"`. The
 issuer provisions the card asynchronously; on success a
 `CARD.STATE_CHANGE` webhook fires with the activated `Card` resource
 including the populated `last4`, `expMonth`, and `expYear`.
@@ -112,6 +112,6 @@ curl -X GET "$GRID_BASE_URL/cards?customerId=Customer:019542f5-b3e7-1d02-0000-00
   -u "$GRID_CLIENT_ID:$GRID_CLIENT_SECRET"
 ```
 
-Filter by `customerId`, `platformCardId`, or `state`. The response is
+Filter by `customerId`, `platformCardId`, or `status`. The response is
 paginated using the standard cursor shape used by other Grid list
 endpoints.
