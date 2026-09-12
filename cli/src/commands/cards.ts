@@ -6,7 +6,7 @@ import { addSignedOptions, signedHeaders, validateSignedOptions } from "../signe
 
 interface Card {
   id: string;
-  cardholderId: string;
+  customerId: string;
   platformCardId?: string;
   status: "PENDING_KYC" | "PROCESSING" | "ACTIVE" | "FROZEN" | "CLOSED";
   form: "VIRTUAL";
@@ -57,7 +57,7 @@ export function registerCardsCommand(
   cardsCmd
     .command("list")
     .description("List cards")
-    .option("--cardholder-id <id>", "Filter by cardholder (customer) ID")
+    .option("--customer-id <id>", "Filter by customer ID")
     .option("--account-id <id>", "Filter by a bound funding-source account ID")
     .option("--platform-card-id <id>", "Filter by platform card ID")
     .option("--status <status>", "Filter by status (PENDING_KYC, PROCESSING, ACTIVE, FROZEN, CLOSED)")
@@ -77,7 +77,7 @@ export function registerCardsCommand(
       }
 
       const params: Record<string, string | number | undefined> = {
-        cardholderId: options.cardholderId,
+        customerId: options.customerId,
         accountId: options.accountId,
         platformCardId: options.platformCardId,
         status: options.status,
@@ -105,7 +105,7 @@ export function registerCardsCommand(
   cardsCmd
     .command("create")
     .description("Issue a card")
-    .requiredOption("--cardholder-id <id>", "Cardholder (customer) ID")
+    .requiredOption("--customer-id <id>", "Customer ID")
     .requiredOption(
       "--funding-source <id>",
       "Internal account ID that funds the card",
@@ -124,7 +124,7 @@ export function registerCardsCommand(
       if (!client) return;
 
       const body: Record<string, unknown> = {
-        cardholderId: options.cardholderId,
+        customerId: options.customerId,
         form: options.form,
         fundingSource: options.fundingSource,
       };
