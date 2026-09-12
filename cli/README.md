@@ -310,14 +310,14 @@ grid receiver lookup-account <accountId>
 
 ```bash
 # List cards
-grid cards list [--cardholder-id <id>] [--status ACTIVE]
+grid cards list [--customer-id <id>] [--status ACTIVE]
 
 # Get a card
 grid cards get <cardId>
 
 # Issue a virtual card
 grid cards create \
-  --cardholder-id <customerId> \
+  --customer-id <customerId> \
   --funding-source "InternalAccount:1" \
   --max-spend-per-transaction 5000
 
