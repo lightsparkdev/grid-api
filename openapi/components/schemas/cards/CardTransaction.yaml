@@ -51,6 +51,10 @@ properties:
     example: lithic_txn_b81c2a4f
   status:
     $ref: ./CardTransactionStatus.yaml
+  cardDeclinedReason:
+    $ref: ./CardDeclinedReason.yaml
+    description: Present only when `status` is `DECLINED`.
+    example: INSUFFICIENT_FUNDS
   direction:
     $ref: ../transactions/TransactionDirection.yaml
     description: >-
@@ -82,7 +86,7 @@ properties:
   authorizedAt:
     type: string
     format: date-time
-    description: When the auth was approved.
+    description: When the authorization was approved or declined.
     example: '2026-05-08T14:30:00Z'
   createdAt:
     type: string

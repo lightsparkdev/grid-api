@@ -1,0 +1,21 @@
+type: string
+enum:
+  - CARD_NOT_ACTIVE
+  - SPEND_LIMIT_EXCEEDED
+  - INSUFFICIENT_FUNDS
+  - NO_ELIGIBLE_FUNDING_SOURCE
+  - BLOCKED
+  - UNSUPPORTED_NETWORK
+  - OTHER
+description: |
+  Reason a card authorization was declined.
+
+  | Reason | Description |
+  |--------|-------------|
+  | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. |
+  | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or the matching platform cap. |
+  | `INSUFFICIENT_FUNDS` | The funding source balance does not cover the authorization. |
+  | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
+  | `BLOCKED` | The merchant category or the transaction is blocked by program rules. |
+  | `UNSUPPORTED_NETWORK` | The network or transaction type is not supported. |
+  | `OTHER` | Any other reason. |

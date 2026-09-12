@@ -39,9 +39,11 @@ curl -X GET "$GRID_BASE_URL/customers/internal-accounts?customerId=Customer:0195
 
 ## Pre-fund before authorizations arrive
 
-Cards decline at auth time if the bound funding source can't cover the
-transaction. The decline code surfaces as `INSUFFICIENT_FUNDS` and is
-visible on the resulting `CardTransaction`. Fund the source the same
+Grid does not check the funding source balance when it decides an
+authorization. An authorization against an underfunded source is approved to
+the card network, and the pull against the funding source fails afterwards. The
+transaction resolves as `EXCEPTION` for you to reconcile, and it carries no
+`cardDeclinedReason`, because nothing was declined. Fund the source the same
 way you would for any other internal account — via the funding
 payment instructions or, in Sandbox, with
 `/sandbox/internal-accounts/{id}/fund`.
