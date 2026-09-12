@@ -96,21 +96,15 @@
   z-index: 3;
 }
 
-/* Card slot. In the scrolling stack it is pinned: it rides up to the screen's
-   top edge and holds there while the content scrolls over it. */
+/* Card slot. It scrolls with the content (not Aurora's pinned card: the
+   home's surface is the screen's, so a surface sliding over the card read as
+   the card being cut off), fading out under the header as it goes. */
 .cardArea {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px 16px 8px;
-}
-
-.stackScroll > .cardArea {
-  position: sticky;
-  /* Sticky offsets resolve from the scroller's content edge, inside its
-     padding: pull back by the padding so the slot pins at the screen's edge. */
-  top: calc(-1 * (62px + var(--wallet-header-height)));
 }
 
 /* Aurora's issuance slot (Figma 2219:48842): the card centered in the body,
@@ -188,11 +182,10 @@
   width: 100%;
 }
 
-/* The home: a surface that grows with the Activity list (never shrinks below
-   it) so the stack page-scrolls it up over the pinned card, Aurora's sheet. */
-.homeSurface {
+/* The home grows with the Activity list (never shrinks below it) so the
+   stack page-scrolls it. */
+.homeFlow {
   flex: 1 0 auto;
-  background: var(--wallet-bg);
 }
 
 /* A page's content scrolls in its own box (Card numbers, Spending limits). */

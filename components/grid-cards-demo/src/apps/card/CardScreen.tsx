@@ -98,8 +98,8 @@ export function CardScreen({ home }: CardScreenProps) {
   const creating = issuing;
 
   // Aurora's home scroll: once the card is issued the stack (the card and the
-  // content under it) page-scrolls, the card pinned at the top edge while the
-  // content rides up over it. Tap-to-pay and the pages hold the scroll where
+  // content under it) page-scrolls, the card riding up under the header with
+  // the rest. Tap-to-pay and the pages hold the scroll where
   // it is; leaving the home for them (not the limits push, which keeps its
   // place under the page) brings it back to the top first.
   const stackRef = useRef<HTMLDivElement>(null);
@@ -315,7 +315,7 @@ export function CardScreen({ home }: CardScreenProps) {
             {!isTap && !onNumbers && !creating && (
               <motion.div
                 key="home"
-                className={clsx(styles.homeContent, styles.homeSurface)}
+                className={clsx(styles.homeContent, styles.homeFlow)}
                 initial={reduceMotion ? false : CONTENT_HIDDEN}
                 animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
                 exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
