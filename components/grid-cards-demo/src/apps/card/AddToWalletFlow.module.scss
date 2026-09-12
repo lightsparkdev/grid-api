@@ -202,11 +202,13 @@ $apple-blue: #007aff;
   overflow: hidden;
 }
 
+/* The glass lens wraps its content at the content's height: the label sets
+   the pill's height itself (as GlassTextButton's does) so it centers. */
 .continueLabel {
   display: flex;
-  flex: 1;
   align-items: center;
   justify-content: center;
+  height: 52px;
   padding: 0 20px;
 }
 
