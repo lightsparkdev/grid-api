@@ -15,10 +15,23 @@ properties:
   customerType:
     $ref: ./CustomerType.yaml
   endUserTermsConsent:
-    $ref: ./EndUserTermsConsent.yaml
+    deprecated: true
+    readOnly: true
+    allOf:
+      - $ref: ./EndUserTermsConsent.yaml
     description: >-
-      The customer's recorded acceptance of the End User Terms. Omitted until
+      Deprecated; read `agreementConsents` instead. Mirrors the customer's
+      `LIGHTSPARK_END_USER_TERMS` acceptance when one is on file, and is
+      omitted otherwise.
+  agreementConsents:
+    type: array
+    readOnly: true
+    description: >-
+      The customer's recorded agreement acceptances, one entry per accepted
+      type holding that type's most recent acceptance. Empty until an
       acceptance has been recorded.
+    items:
+      $ref: ./AgreementConsent.yaml
   region:
     type: string
     description: >-

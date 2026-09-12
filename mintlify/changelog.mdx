@@ -30,6 +30,30 @@ Two card-statement corrections to `CardTransaction`:
 - `GET /transactions` accepts a `cardId` filter (`Card:` LSID or UUID) for listing one
   card of a multi-card cardholder, and rejects `status` combined with `type=CARD` with a
   400—`status` applies to payment transactions only.
+## Record consent for each agreement by type
+
+`agreementConsents` supersedes `endUserTermsConsent`: a list with one entry per agreement,
+so a customer's acceptance of each document is recorded and auditable separately.
+
+- Each entry carries a `type` alongside the existing `acceptedAt`, `ipAddress`,
+  `termsVersion`, and `acceptanceMethod` fields. Send at most one entry per type.
+- `GET /customers/end-user-terms` now returns `{ data: [...] }` listing every supported
+  agreement with its `type`, current `version`, and hosted `url`. Send an entry's
+  `version` as `termsVersion` when recording that agreement's acceptance.
+- Customer responses return `agreementConsents`, holding the most recent acceptance per
+  accepted type, and an empty list until the first acceptance.
+- On update, supplying consents records additional acceptances; acceptances already on
+  file for other types are left untouched.
+
+`endUserTermsConsent` is **deprecated, not removed** — it still works on both the request
+and response, and is equivalent to a single `LIGHTSPARK_END_USER_TERMS` entry. Acceptance
+you have already recorded is migrated for you and reported under that type; you don't need
+to re-collect it. Sending both fields in one request is rejected.
+
+Accepting one agreement never implies acceptance of another, so the remaining six types
+must be collected from each customer.
+
+See [Disclosures](/payouts-and-b2b/onboarding/disclosures).
 
 ## Card returns report as `SETTLED` with a `refundedAmount`
 
