@@ -23,7 +23,9 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  color: #ffffff;
+  /* The glyph reads over the brand fill: white on a dark brand, black on a
+     light one (brandVars). */
+  color: var(--brand-ink, #ffffff);
 
   &::before {
     content: '';
@@ -38,6 +40,10 @@
   svg {
     position: relative;
   }
+}
+
+.tileDanger {
+  color: #ffffff;
 }
 
 .tileDanger::before {
