@@ -3,10 +3,12 @@
 import clsx from 'clsx';
 import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { cancelFrame, frame, useReducedMotion } from 'motion/react';
+import { AnimatePresence, cancelFrame, frame, motion as m, useReducedMotion } from 'motion/react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
+import { SfSymbol } from '@/apps/shared/icons';
+import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { canScrollBy } from '@/lib/scroll';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import type { CardHome } from '@/apps/shared/card';
@@ -82,6 +84,13 @@ function edgeMask(top: number, run: number, strength: number): string {
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
 const EXPOSURE_LIGHT = 1.25;
 const EXPOSURE_DARK = 1.0;
+
+/** Locked: the card dims and a lock comes up out of its middle (blur, scale,
+ *  a short rise); unlocking runs it back. */
+const LOCK_MARK_HIDDEN = { opacity: 0, filter: 'blur(10px)', scale: 0.6, y: 16 };
+const LOCK_MARK_SHOWN = { opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 };
+const LOCK_MARK_IN = motionTransition(easeOutSnappy, 0.5, { delay: 0.1 });
+const LOCK_MARK_OUT = motionTransition(easeOutQuick, 0.25);
 
 /** Inputs the frame loop reads without re-subscribing. */
 interface Live {
@@ -838,10 +847,11 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     };
   }
 
-  // The card's state, on the card, when it can't be used: closed or locked.
-  // Nothing while it is being issued (the creating screen says so) and
-  // nothing for Apple Wallet (Activity has it).
-  const pill = card.closed ? 'Closed' : card.frozen ? 'Locked' : null;
+  // The card's state, on the card: a pill for closed. Locked dims the card
+  // and puts a lock on it instead (below). Nothing while it is being issued
+  // (the creating screen says so) and nothing for Apple Wallet (Activity
+  // has it).
+  const pill = card.closed ? 'Closed' : null;
 
   // The selection box, in card px on the hit box.
   const box = placed && (selected || overBrand) && !textEdit ? placed.box : null;
@@ -859,7 +869,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     <div ref={rootRef} className={styles.root}>
       <Canvas
         ref={canvasRef}
-        className={styles.canvas}
+        className={clsx(styles.canvas, card.frozen && styles.canvasLocked)}
         dpr={[1, 2]}
         // Stepped by StageClock from Motion's frame loop, not R3F's own: the
         // rig reads the phone's DOM (the slot, the pages) every frame, and
@@ -916,6 +926,20 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
             {pill}
           </span>
         )}
+        <AnimatePresence initial={false}>
+          {card.frozen && (
+            <m.span
+              key="lock"
+              className={styles.lockMark}
+              initial={reduceMotion ? { opacity: 0 } : LOCK_MARK_HIDDEN}
+              animate={reduceMotion ? { opacity: 1 } : { ...LOCK_MARK_SHOWN, transition: LOCK_MARK_IN }}
+              exit={reduceMotion ? { opacity: 0 } : { ...LOCK_MARK_HIDDEN, transition: LOCK_MARK_OUT }}
+              aria-hidden
+            >
+              <SfSymbol name="lock.fill" size={56} />
+            </m.span>
+          )}
+        </AnimatePresence>
 
         {/* The brand's box: an outline on hover; selected, the handles too. */}
         {overName && !textEdit && (

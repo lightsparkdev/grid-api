@@ -19,6 +19,9 @@
   width: 100% !important;
   height: 100% !important;
   pointer-events: none !important;
+  /* Locked, the card dims (the intro's own fade is inline on the <canvas>
+     inside, not here). */
+  transition: opacity 0.45s ease;
 
   canvas {
     pointer-events: none !important;
@@ -296,6 +299,26 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Locked: the lock in the middle of the dimmed card, in card px like the
+   pill, so it rides and scales with the card. */
+.lockMark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  margin: -28px 0 0 -28px;
+  color: var(--ios-label-primary);
+  pointer-events: none;
+
+  svg {
+    display: block;
+  }
+}
+
+.canvasLocked {
+  opacity: 0.3;
 }
 
 /* Small status pill, top-center of the front. */

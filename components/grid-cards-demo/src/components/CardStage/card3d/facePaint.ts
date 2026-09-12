@@ -426,8 +426,9 @@ export function inkFor(design: CardDesign, art: HTMLImageElement | null): string
   return luminance(design.color!) > 0.6 ? '#26262b' : '#ffffff';
 }
 
-/** Whole-face washes, in texels. */
-function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: boolean) {
+/** Whole-face washes, in texels. Closed greys the face out; locked (frozen)
+ *  leaves it alone, the stage dims the whole card and puts a lock on it. */
+function paintState(ctx: CanvasRenderingContext2D, closed: boolean) {
   texelSpace(ctx);
   if (closed) {
     ctx.globalCompositeOperation = 'saturation';
@@ -437,13 +438,6 @@ function paintState(ctx: CanvasRenderingContext2D, frozen: boolean, closed: bool
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(0, 0, TEX_W, TEX_H);
     ctx.globalCompositeOperation = 'source-over';
-  } else if (frozen) {
-    ctx.globalCompositeOperation = 'saturation';
-    ctx.fillStyle = 'rgba(128,128,128,0.7)';
-    ctx.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(235,245,255,0.42)';
-    ctx.fillRect(0, 0, TEX_W, TEX_H);
   }
 }
 
@@ -863,7 +857,7 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets:
   // on the back, as the Figma physical front spec ("chip only") has it.
   if (s.design.visaMark === 'front') paintFrontLockup(ctx, assets, ink, s.design.orientation);
 
-  paintState(ctx, s.frozen, s.closed);
+  paintState(ctx, s.closed);
 }
 
 /** The account block's leading, as shares of its em (41 px lines 32 apart at
@@ -967,5 +961,5 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   // window the standards require in its place.
   if (s.design.visaMark === 'back') paintLockup(ctx, assets, foilIsBlack(s.design), o);
   else paintDoveGround(ctx, assets, o);
-  paintState(ctx, s.frozen, s.closed);
+  paintState(ctx, s.closed);
 }
