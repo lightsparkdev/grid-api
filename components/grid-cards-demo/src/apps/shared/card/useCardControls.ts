@@ -89,6 +89,9 @@ const EVENT_SETTLE_MS = 550;
  *  AnimatedLock, after the mark's own entrance): the locked event, and the
  *  notification, wait for it. */
 export const LOCK_SEQUENCE_MS = 1250;
+/** The lock has lifted out, turned away, and the mark has left the card:
+ *  the unlocked event, and the notification, wait for it. */
+export const UNLOCK_SEQUENCE_MS = 900;
 
 function startOfUtcDay(t: number) {
   const d = new Date(t);
@@ -190,7 +193,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
       setLifecycle(state);
       // Locking: the row lands once the lock on the card has finished locking.
       if (next) recordEventSettled('frozen', undefined, LOCK_SEQUENCE_MS);
-      else recordEventSettled('unfrozen');
+      else recordEventSettled('unfrozen', undefined, UNLOCK_SEQUENCE_MS);
       onStateChange?.(state);
     },
     [closed, onStateChange, recordEventSettled],

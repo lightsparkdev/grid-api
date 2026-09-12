@@ -5,6 +5,7 @@ import { FUNDING_SOURCE_CENTS } from '@/data/actions';
 import type { ToastData } from '@/apps/shared/Toast';
 import {
   LOCK_SEQUENCE_MS,
+  UNLOCK_SEQUENCE_MS,
   useCardControls,
   type DeclineReason,
   type TransactionStatus,
@@ -359,8 +360,9 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
       settle(LOCK_SEQUENCE_MS + NOTICE_SETTLE_MS);
       return;
     }
-    notify('Card unlocked', 'Your card is active again.');
-    settle(NOTICE_SETTLE_MS);
+    // The lock on the card opens and leaves first; the notification follows.
+    later(() => notify('Card unlocked', 'Your card is active again.'), UNLOCK_SEQUENCE_MS);
+    settle(UNLOCK_SEQUENCE_MS + NOTICE_SETTLE_MS);
   };
 
   /** Add to Apple Wallet: Apple's add-card flow comes up and waits for the
