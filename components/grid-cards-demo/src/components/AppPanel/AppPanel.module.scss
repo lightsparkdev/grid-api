@@ -49,17 +49,19 @@
   overflow: hidden;
 }
 
-/* Tucked into the phone's top-right corner, in the void its rounded corner
-   leaves: the button's center sits 4px in from the box's corner, so a 44
-   circle just meets the bezel's curve. The bezel grows 2px on hover
+/* Off the phone's top-right corner, in the void its rounded corner leaves:
+   the button's center sits 8px out from the box's corner. The bezel grows 2px on hover
    (--shell-grow, from AppShell); the button moves with it so it keeps its
    place against the corner. In the phone's own box (AppShell's stage chrome
    layer, which carries the fit transform). */
 .back {
   position: absolute;
-  top: calc(-18px - var(--shell-grow, 0px));
-  right: calc(-18px - var(--shell-grow, 0px));
+  top: calc(-30px - var(--shell-grow, 0px));
+  right: calc(-30px - var(--shell-grow, 0px));
   pointer-events: auto;
+  /* The glyph takes the docs' text color: light in dark mode. The phone's
+     iOS tokens don't reach this layer. */
+  --glass-symbol-glyph: var(--text-primary);
   transition:
     opacity 400ms ease,
     top 0.28s cubic-bezier(0.22, 1, 0.36, 1),
