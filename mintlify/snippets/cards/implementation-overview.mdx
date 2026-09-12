@@ -15,7 +15,7 @@ cards. Cards do not require new webhook endpoints or new API
 credentials — they reuse what's already configured for the rest of
 Grid. You'll only need to:
 
-- Subscribe to the card webhook types: `CARD.STATE_CHANGE` for card
+- Subscribe to the card webhook types: `CARD.STATUS_CHANGE` for card
   state, and `CARD_TRANSACTION.AUTHORIZED`,
   `CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`,
   `CARD_TRANSACTION.DECLINED`, and
@@ -52,7 +52,7 @@ balance before approving each auth, so:
 Issuance is a single `POST /cards` call. New cards start in
 `PROCESSING` while the issuer provisions them and transition to
 `ACTIVE` automatically — you observe both transitions via the
-`CARD.STATE_CHANGE` webhook. Day-to-day operational changes are:
+`CARD.STATUS_CHANGE` webhook. Day-to-day operational changes are:
 
 - `PATCH /cards/{id}` to freeze, unfreeze, or close permanently
   (`status: "CLOSED"`).

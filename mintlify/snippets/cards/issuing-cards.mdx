@@ -42,7 +42,7 @@ PROCESSING ──► ACTIVE ◄──► FROZEN
 | State | When you see it |
 |-------|-----------------|
 | `PROCESSING` | Returned synchronously from `POST /cards`. The card cannot transact yet. |
-| `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATE_CHANGE` webhook. |
+| `ACTIVE` | Issuer provisioned the card. Reached via `CARD.STATUS_CHANGE` webhook. |
 | `FROZEN` | You called `PATCH /cards/{id}` with `status: "FROZEN"`. |
 | `CLOSED` | You called `PATCH /cards/{id}` with `status: "CLOSED"`. Terminal. |
 
@@ -53,7 +53,7 @@ issuance is gated on KYC up front.
 
 `POST /cards` returns immediately with `status: "PROCESSING"`. The
 issuer provisions the card asynchronously; on success a
-`CARD.STATE_CHANGE` webhook fires with the activated `Card` resource
+`CARD.STATUS_CHANGE` webhook fires with the activated `Card` resource
 including the populated `last4`, `expMonth`, and `expYear`.
 
 ## Revealing the PAN

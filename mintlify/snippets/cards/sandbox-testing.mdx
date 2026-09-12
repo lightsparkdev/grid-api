@@ -127,6 +127,6 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:.../simulate/return" \
   -d '{ "cardTransactionId": "Transaction:...", "amount": 1500 }'
 ```
 
-At each step you'll see `CARD.STATE_CHANGE` webhooks plus transaction
+At each step you'll see `CARD.STATUS_CHANGE` webhooks plus transaction
 webhooks for the simulated authorization, clearing, and return — wire those into
 your local webhook handler to validate end-to-end.
