@@ -143,7 +143,6 @@ properties:
     description: Details about the rate and fees for the transaction.
   scaChallenge:
     $ref: ../sca/ScaChallenge.yaml
-    readOnly: true
     description: >-
       Present only while `status` is `PENDING_AUTHORIZATION`: the Strong
       Customer Authentication challenge to satisfy before this quote can be

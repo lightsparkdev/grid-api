@@ -7,7 +7,6 @@ properties:
   id:
     type: string
     description: System-generated unique identifier
-    readOnly: true
     example: Customer:019542f5-b3e7-1d02-0000-000000000001
   platformCustomerId:
     type: string
@@ -17,7 +16,6 @@ properties:
     $ref: ./CustomerType.yaml
   endUserTermsConsent:
     $ref: ./EndUserTermsConsent.yaml
-    readOnly: true
     description: >-
       The customer's recorded acceptance of the End User Terms. Omitted until
       acceptance has been recorded.
@@ -58,23 +56,19 @@ properties:
     type: string
     format: date-time
     description: Creation timestamp
-    readOnly: true
     example: '2025-07-21T17:32:28Z'
   updatedAt:
     type: string
     format: date-time
     description: Last update timestamp
-    readOnly: true
     example: '2025-07-21T17:32:28Z'
   isDeleted:
     type: boolean
     description: Whether the customer is marked as deleted
     example: false
-    readOnly: true
   contactVerification:
     allOf:
       - $ref: ./ContactVerification.yaml
-    readOnly: true
     description: >-
       Email and phone verification state. **Only present when the customer's
       payment provider requires it** (e.g. EU customers); omitted otherwise.

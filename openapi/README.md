@@ -466,6 +466,24 @@ post:
 
 This applies to all request bodies, response bodies, and nested objects within them. If a schema is used only once, it still belongs in `components/schemas/` with a descriptive name.
 
+### Don't Mark Resource Fields `readOnly`
+
+Only use `readOnly: true` on a schema that is shared between a request body and a response, where it hides a server-computed field from the request. `PlatformCurrencyConfig` is the one such case: it sits inside both `PlatformConfig` and `PlatformConfigUpdateRequest`.
+
+Never put it on a resource schema (`Card`, `Customer`, `CardTransaction`, and so on). Resources use separate `*CreateRequest` and `*UpdateRequest` schemas for input, so the flag adds nothing there, and it breaks the webhook pages: OpenAPI models a webhook as a request Grid sends, and renderers hide `readOnly` properties from request bodies, so `id`, `createdAt`, and any other flagged field vanish from the payload documentation.
+
+```yaml
+# ❌ Wrong — id disappears from every webhook that delivers this resource
+id:
+  type: string
+  readOnly: true
+
+# ✅ Correct — say it in the description if it matters
+id:
+  type: string
+  description: System-generated unique card identifier
+```
+
 ### Documentation in OpenAPI
 
 - Add `description` to every endpoint, parameter, and schema field

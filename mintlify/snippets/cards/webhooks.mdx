@@ -78,12 +78,55 @@ Common branches to handle in your consumer:
 
 ## Card-transaction lifecycle
 
-Each `CARD_TRANSACTION.*` event carries the full `CardTransaction`
-resource. Not every delivery changes `status`: a merchant return has no
-event type of its own and re-fires `CARD_TRANSACTION.SETTLED` with the
-same status, so treat a repeated `SETTLED` as a new update and read
-`refundedAmount` to tell it apart from the original settlement. See
-[Reconciliation](/cards/transactions/reconciliation) for the
+The `data` payload is the whole post-change `CardTransaction` resource,
+the same shape `GET /transactions` returns for a `CARD` row, so you can
+upsert it by `data.id` without a follow-up read. Example — authorization
+approved:
+
+```json
+{
+  "id": "Webhook:019542f5-b3e7-1d02-0000-000000000040",
+  "type": "CARD_TRANSACTION.AUTHORIZED",
+  "timestamp": "2026-05-09T10:00:00Z",
+  "data": {
+    "type": "CARD",
+    "id": "Transaction:019542f5-b3e7-1d02-0000-000000000100",
+    "cardId": "Card:019542f5-b3e7-1d02-0000-000000000010",
+    "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
+    "platformCustomerId": "18d3e5f7b4a9c2",
+    "issuerTransactionToken": "lithic_txn_b81c2a4f",
+    "status": "AUTHORIZED",
+    "direction": "DEBIT",
+    "merchant": {
+      "descriptor": "BLUE BOTTLE COFFEE SF",
+      "mcc": "5814",
+      "country": "US"
+    },
+    "authorizedAmount": {
+      "amount": 12550,
+      "currency": {
+        "code": "USD",
+        "name": "United States Dollar",
+        "symbol": "$",
+        "decimals": 2
+      }
+    },
+    "accountId": "InternalAccount:019542f5-b3e7-1d02-0000-000000000002",
+    "authorizedAt": "2026-05-09T10:00:00Z",
+    "createdAt": "2026-05-09T10:00:00Z",
+    "updatedAt": "2026-05-09T10:00:00Z"
+  }
+}
+```
+
+Later deliveries for the same `data.id` carry the updated resource:
+`settledAmount` appears once a clearing posts, and `status` moves to
+`PARTIALLY_SETTLED`, `SETTLED`, `DECLINED`, or `EXCEPTION`. A merchant
+return has no event type of its own — it arrives as a
+`CARD_TRANSACTION.SETTLED` delivery for a new `data.id` with
+`direction: "CREDIT"` and `originalTransactionId` pointing at the
+purchase, so key your handling on `data.id` rather than on the event
+type. See [Reconciliation](/cards/transactions/reconciliation) for the
 underlying event model.
 
 ## Idempotency & retries

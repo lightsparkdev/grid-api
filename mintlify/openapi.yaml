@@ -12635,7 +12635,6 @@ components:
         id:
           type: string
           description: System-generated unique identifier
-          readOnly: true
           example: PlatformConfig:019542f5-b3e7-1d02-0000-000000000003
         umaDomain:
           type: string
@@ -12690,13 +12689,11 @@ components:
           type: string
           format: date-time
           description: Creation timestamp
-          readOnly: true
           example: '2025-06-15T12:30:45Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp
-          readOnly: true
           example: '2025-06-15T12:30:45Z'
     Error401:
       type: object
@@ -13199,7 +13196,6 @@ components:
         id:
           type: string
           description: System-generated unique identifier
-          readOnly: true
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         platformCustomerId:
           type: string
@@ -13209,7 +13205,6 @@ components:
           $ref: '#/components/schemas/CustomerType'
         endUserTermsConsent:
           $ref: '#/components/schemas/EndUserTermsConsent'
-          readOnly: true
           description: The customer's recorded acceptance of the End User Terms. Omitted until acceptance has been recorded.
         region:
           type: string
@@ -13241,23 +13236,19 @@ components:
           type: string
           format: date-time
           description: Creation timestamp
-          readOnly: true
           example: '2025-07-21T17:32:28Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp
-          readOnly: true
           example: '2025-07-21T17:32:28Z'
         isDeleted:
           type: boolean
           description: Whether the customer is marked as deleted
           example: false
-          readOnly: true
         contactVerification:
           allOf:
             - $ref: '#/components/schemas/ContactVerification'
-          readOnly: true
           description: Email and phone verification state. **Only present when the customer's payment provider requires it** (e.g. EU customers); omitted otherwise.
     KycStatus:
       type: string
@@ -18125,22 +18116,18 @@ components:
         supportsSpendLimits:
           type: boolean
           description: Whether cards in this program accept `maxSpendPerTransaction` and `maxSpendPerDay`.
-          readOnly: true
           example: true
         supportsTransactionCountLimit:
           type: boolean
           description: Whether cards in this program accept `maxTransactionsPerDay`.
-          readOnly: true
           example: true
         supports3dSecurePassword:
           type: boolean
           description: Whether cards in this program accept a caller-supplied `threeDSecurePassword`.
-          readOnly: true
           example: false
         supportsPanReveal:
           type: boolean
           description: Whether cards in this program can be revealed through `POST /cards/{id}/reveal`.
-          readOnly: true
           example: true
     InternalAccount:
       type: object
@@ -23963,7 +23950,7 @@ components:
         - authorizedAt
         - createdAt
         - updatedAt
-      description: One row per cardholder-visible card transaction. A purchase row rolls its clearings up into `settledAmount`; a merchant return is its own dated `CREDIT` row linked back to the purchase via `originalTransactionId` rather than a rollup on the parent, so statements can list purchases and refunds as separate dated lines. Delivered as the payload of the generic transaction webhook stream (extends the Transaction model with a card destination type) on every transition.
+      description: One row per cardholder-visible card transaction. A purchase row rolls its clearings up into `settledAmount`; a merchant return is its own dated `CREDIT` row linked back to the purchase via `originalTransactionId` rather than a rollup on the parent, so statements can list purchases and refunds as separate dated lines. Delivered whole as the `data` payload of every `CARD_TRANSACTION.*` webhook, and returned as the `CARD` variant of `Transaction` from `GET /transactions`.
       properties:
         type:
           type: string
@@ -23973,7 +23960,6 @@ components:
         id:
           type: string
           description: System-generated unique card transaction identifier
-          readOnly: true
           example: Transaction:019542f5-b3e7-1d02-0000-000000000100
         cardId:
           type: string
@@ -23991,7 +23977,6 @@ components:
           type: string
           description: Opaque identifier for the transaction on the underlying issuer. Used to cross-reference Grid records against issuer dashboards and webhooks.
           example: lithic_txn_b81c2a4f
-          readOnly: true
         status:
           $ref: '#/components/schemas/CardTransactionStatus'
         direction:
@@ -24001,7 +23986,6 @@ components:
         originalTransactionId:
           type: string
           description: 'On a refund row (`direction: CREDIT`), the id of the purchase this return credits back against. Absent on purchases and on standalone credits with no matching purchase.'
-          readOnly: true
           example: Transaction:019542f5-b3e7-1d02-0000-000000000099
         merchant:
           $ref: '#/components/schemas/CardMerchant'
@@ -24024,13 +24008,11 @@ components:
           type: string
           format: date-time
           description: Creation timestamp (same as `authorizedAt` for card transactions).
-          readOnly: true
           example: '2026-05-08T14:30:00Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp.
-          readOnly: true
           example: '2026-05-08T15:42:11Z'
     TransactionOneOf:
       oneOf:
@@ -24444,7 +24426,6 @@ components:
           description: Details about the rate and fees for the transaction.
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
-          readOnly: true
           description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
     QuoteLockSide:
       type: string
@@ -26240,7 +26221,6 @@ components:
         id:
           type: string
           description: System-generated unique card identifier
-          readOnly: true
           example: Card:019542f5-b3e7-1d02-0000-000000000010
         customerId:
           type: string
@@ -26315,28 +26295,23 @@ components:
           type: string
           description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
           example: USD
-          readOnly: true
         processorRef:
           type: string
           description: Opaque processor-side reference for the card (e.g. the Lithic card token). Useful for cross-referencing in the processor's dashboards; not used for any Grid request routing.
           example: card_b81c2a4f
-          readOnly: true
         issuerRef:
           type: string
           description: Opaque identifier for the card on the issuer of record (e.g. the Lead Bank account/card identifier). Useful for cross-referencing in issuer dashboards; not used for any Grid request routing.
           example: lead_card_7a1b9c3d
-          readOnly: true
         createdAt:
           type: string
           format: date-time
           description: Creation timestamp
-          readOnly: true
           example: '2026-05-08T14:10:00Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp
-          readOnly: true
           example: '2026-05-08T14:11:00Z'
     CardListResponse:
       type: object
