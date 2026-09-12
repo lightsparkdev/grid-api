@@ -16,6 +16,7 @@ import { useBrand } from '@/apps/shared/brand/BrandContext';
 import { brandColorOf } from '@/data/design';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import { canScrollBy } from '@/lib/scroll';
 import type { CardScreenProps } from '@/apps/types';
 import { ApplePayAddCard } from './AddToWalletFlow';
 import { CardHomeContent } from './CardHomeContent';
@@ -126,10 +127,15 @@ export function CardScreen({ home }: CardScreenProps) {
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       if (!canScrollRef.current || e.ctrlKey) return;
-      e.preventDefault();
       const unit =
         e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? el.clientHeight : 1;
-      el.scrollTop += e.deltaY * unit;
+      const dy = e.deltaY * unit;
+      // At the end of the home in the wheel's direction, the wheel is not
+      // ours: it goes on to scroll the page around the phone, as it would
+      // over anything else on it.
+      if (!canScrollBy(el, dy)) return;
+      e.preventDefault();
+      el.scrollTop += dy;
     };
     const onScroll = () => {
       fadeRef.current?.style.setProperty('--edge-fade', Math.min(1, el.scrollTop / EDGE_FADE_IN_PX).toFixed(3));

@@ -7,6 +7,7 @@ import { cancelFrame, frame, useReducedMotion } from 'motion/react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
+import { canScrollBy } from '@/lib/scroll';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import type { CardHome } from '@/apps/shared/card';
 import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
@@ -709,14 +710,26 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (!drag.current) motion.clearTilt();
   };
 
-  /** Parked, the card rides in the phone's page scroll, but its hit box lives
-   *  in the stage's layer where no scroller is an ancestor: the wheel over the
-   *  card is handed to the scroller so the page moves as it does anywhere else. */
-  const onWheel = (e: React.WheelEvent) => {
-    if (!inPhone()) return;
-    const scroller = rootRef.current?.ownerDocument.querySelector<HTMLElement>('[data-card-scroller]');
-    scroller?.scrollBy({ top: e.deltaY, left: 0 });
-  };
+  // Parked, the card rides in the phone's page scroll, but its hit box lives
+  // in the stage's layer where no scroller is an ancestor: the wheel over the
+  // card is handed to the scroller so the home moves as it does anywhere
+  // else on it, and the page around the phone doesn't (a native listener:
+  // React's wheel is passive and can't hold the default). At the home's end
+  // the wheel is left alone and goes on to the page, as over the home itself.
+  useEffect(() => {
+    const hit = hitRef.current;
+    if (!hit) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!inPhone() || e.ctrlKey) return;
+      const scroller = hit.ownerDocument.querySelector<HTMLElement>('[data-card-scroller]');
+      if (!scroller || getComputedStyle(scroller).overflowY !== 'auto' || !canScrollBy(scroller, e.deltaY)) return;
+      e.preventDefault();
+      scroller.scrollTop += e.deltaY;
+    };
+    hit.addEventListener('wheel', onWheel, { passive: false });
+    return () => hit.removeEventListener('wheel', onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // ── Typing on the card ─────────────────────────────────────────────────────
   // Double-click the wordmark (front) or the cardholder's name (back) to type
   // it in place: a transparent input rides the hit box over the painted text,
@@ -894,7 +907,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         onPointerCancel={endDrag}
         onLostPointerCapture={() => releaseRef.current()}
         onPointerLeave={onPointerLeave}
-        onWheel={onWheel}
         onDoubleClick={onDoubleClick}
       >
         <span className={styles.srOnly} role="img" aria-label={`${programNameOf(design)} card`} />
