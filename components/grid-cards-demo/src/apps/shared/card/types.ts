@@ -55,4 +55,6 @@ export interface WalletListItemData {
   timestamp: number;
   /** Formatted amount, e.g. "$7.32". */
   amount: string;
+  /** Money coming back (a refund): the amount reads "+$7.32", in green. */
+  credit?: boolean;
 }

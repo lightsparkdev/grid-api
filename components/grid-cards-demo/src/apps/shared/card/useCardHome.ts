@@ -186,6 +186,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     const purchases: WalletListItemData[] = card.rows.map((r) => ({
       ...r,
       detail: r.status === 'AUTHORIZED' ? 'Pending' : r.status === 'REFUNDED' ? 'Refunded' : r.detail,
+      credit: r.status === 'REFUNDED',
     }));
     const events: WalletListItemData[] = card.events.map((e) => ({
       id: e.id,
