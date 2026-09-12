@@ -264,6 +264,9 @@
   height: 150px;
   z-index: 2;
   pointer-events: none;
+  /* Nothing is under the header at rest: the strip comes in with the first
+     px of scroll (CardScreen sets --edge-fade from the scroll position). */
+  opacity: var(--edge-fade, 0);
 }
 
 /* Progressive blur (Aurora's three-layer stack): each layer ups the radius
@@ -300,14 +303,22 @@
 }
 
 /* The surface's tint over the blur: solid at the very edge (under the status
-   bar), melting to clear so the blurred content shows through below. */
+   bar), melting to clear so the blurred content shows through below. The
+   stops follow a smoothstep (1 − 3t² + 2t³): a straight ramp shows its two
+   ends as lines (Mach bands), an eased one has no edge to see. */
 .fadeTint {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     to bottom,
     var(--wallet-bg) 0%,
+    color-mix(in srgb, var(--wallet-bg) 95.6%, transparent) 12.5%,
+    color-mix(in srgb, var(--wallet-bg) 84.4%, transparent) 25%,
+    color-mix(in srgb, var(--wallet-bg) 68.4%, transparent) 37.5%,
     color-mix(in srgb, var(--wallet-bg) 50%, transparent) 50%,
+    color-mix(in srgb, var(--wallet-bg) 31.6%, transparent) 62.5%,
+    color-mix(in srgb, var(--wallet-bg) 15.6%, transparent) 75%,
+    color-mix(in srgb, var(--wallet-bg) 4.4%, transparent) 87.5%,
     transparent 100%
   );
 }

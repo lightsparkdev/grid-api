@@ -31,6 +31,8 @@ const CARD_ISSUANCE_SCALE = 338 / 370;
 const BODY_TRANSITION = motionTransition(easeOutSnappy, 0.5);
 /** The page scroll's return to the top ahead of tap-to-pay or a page. */
 const SCROLL_HOME = motionTransition(easeOutSnappy, 0.4);
+/** The scroll edge strip is fully in after this much scroll. */
+const EDGE_FADE_IN_PX = 40;
 const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.2 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
 const CONTENT_HIDDEN = { opacity: 0, filter: 'blur(8px)' };
@@ -115,6 +117,10 @@ export function CardScreen({ home }: CardScreenProps) {
   // the card would trail it. The wheel is taken here instead and the scroll
   // applied synchronously: the content and the card then move in the same
   // frame. (The stage forwards the wheel over the card the same way.)
+  // The scroll edge strip comes in with the first few px of scroll (nothing
+  // is under the header until then) and holds; the stage reads the same
+  // factor off the strip for the card.
+  const fadeRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = stackRef.current;
     if (!el) return;
@@ -125,8 +131,15 @@ export function CardScreen({ home }: CardScreenProps) {
         e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? el.clientHeight : 1;
       el.scrollTop += e.deltaY * unit;
     };
+    const onScroll = () => {
+      fadeRef.current?.style.setProperty('--edge-fade', Math.min(1, el.scrollTop / EDGE_FADE_IN_PX).toFixed(3));
+    };
     el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   // Back to the top before tap-to-pay or a page: driven from here, frame by
@@ -187,7 +200,7 @@ export function CardScreen({ home }: CardScreenProps) {
           this strip (data-card-fade) to fade the card, which is out of the
           blur's reach in its own layer, over the same band. */}
       {!creating && (
-        <div className={styles.topFade} data-card-fade aria-hidden>
+        <div ref={fadeRef} className={styles.topFade} data-card-fade aria-hidden>
           <div className={clsx(styles.fadeBlur, styles.fadeBlurStrong)} />
           <div className={clsx(styles.fadeBlur, styles.fadeBlurMid)} />
           <div className={clsx(styles.fadeBlur, styles.fadeBlurSoft)} />

@@ -58,6 +58,24 @@ const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
  *  mesh carries about its own normal, degrees (three's positive z is
  *  counterclockwise seen from the front). */
 const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 };
+/** The card's fade under the screen's scroll edge has run out this far down
+ *  the strip (the header's bottom edge). */
+const EDGE_FADE_RAMP_END = 0.8;
+const EDGE_FADE_STOPS = 8;
+
+/** The parked card's mask under the scroll edge: from `top` (stage px) it
+ *  fades in over `run` px, the alpha easing on a smoothstep so neither end of
+ *  the ramp shows as a line, and reaching only as deep as `strength` (0..1). */
+function edgeMask(top: number, run: number, strength: number): string {
+  const stops: string[] = [];
+  for (let i = 0; i <= EDGE_FADE_STOPS; i++) {
+    const t = i / EDGE_FADE_STOPS;
+    const ease = t * t * (3 - 2 * t);
+    const alpha = 1 - strength * (1 - ease);
+    stops.push(`rgba(0,0,0,${alpha.toFixed(3)}) ${(top + run * t).toFixed(1)}px`);
+  }
+  return `linear-gradient(to bottom, ${stops.join(', ')})`;
+}
 
 // Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
@@ -74,6 +92,8 @@ interface Live {
   editing: boolean;
   /** Text is being typed on a face: the card holds still on that face. */
   freeze: boolean;
+  /** Tap-to-pay is running: the card is held to the reader, front up. */
+  tap: boolean;
   /** Which face is toward the camera, from the last frame (+ front, - back). */
   facing: number;
   /** How the card is held: the footprint, the roll, and the pick's frame. */
@@ -195,7 +215,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const hitRef = useRef<HTMLDivElement>(null);
   const motion = useMemo(() => new CardMotion(), []);
 
-  const { issued, issuing, card, isDeclined } = home;
+  const { issued, issuing, card, isDeclined, isTap } = home;
   const revealed = card.page === 'numbers';
   const phoneUp = bootProgress > 0;
   const inFlightNow = phoneUp && easeInOutCubic(bootProgress) < CARD_PARKED_T;
@@ -213,6 +233,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     reduceMotion,
     editing: false,
     freeze: false,
+    tap: false,
     facing: 1,
     orientation: design.orientation,
     intro: {
@@ -232,6 +253,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   });
   live.current.t = easeInOutCubic(bootProgress);
   live.current.wantBack = revealed;
+  live.current.tap = isTap;
   live.current.reduceMotion = reduceMotion;
   live.current.orientation = design.orientation;
   // The composed face and the card's footprint on screen, for the card as held.
@@ -597,8 +619,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       setSelected(false);
     }
     // On Card numbers the card is turned over for the reveal and stays so:
-    // no spinning it (it still tilts).
-    if (live.current.wantBack) return;
+    // no spinning it (it still tilts). At the reader it is held.
+    if (live.current.wantBack || live.current.tap) return;
     // The card: spin. The brand's and the name's outlines come off for the turn.
     hover(false);
     hoverName(false);
@@ -1155,11 +1177,12 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     const { intro } = live.current;
     const pose = motion.step(dt, {
       wantBack: live.current.wantBack,
-      // Held flat: in flight to or from the phone, during the intro, or under
-      // the brand's selection box (which is DOM, and must sit on the face).
-      // Parked, the card is free again: it tilts under the pointer and can be
-      // turned over in the slot.
-      hold: (t > 0 && t < CARD_PARKED_T) || !intro.done || live.current.editing,
+      // Held flat: in flight to or from the phone, during the intro, under
+      // the brand's selection box (which is DOM, and must sit on the face),
+      // or at the reader for tap-to-pay (front up, whichever face it was
+      // showing). Parked otherwise, the card is free again: it tilts under
+      // the pointer and can be turned over in the slot.
+      hold: (t > 0 && t < CARD_PARKED_T) || !intro.done || live.current.editing || live.current.tap,
       freeze: live.current.freeze,
       reduceMotion: live.current.reduceMotion,
     });
@@ -1233,10 +1256,13 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
       }
       const fade = doc.querySelector<HTMLElement>('[data-card-fade]');
       if (fade) {
-        const f = fade.getBoundingClientRect();
-        const from = (f.top - r.top).toFixed(1);
-        const to = (f.top - r.top + f.height * 0.8).toFixed(1);
-        mask = `linear-gradient(to bottom, transparent ${from}px, #000 ${to}px)`;
+        // The strip's own strength (it comes in with the scroll) scales the
+        // card's fade; the stops ease like the strip's tint.
+        const strength = Number(fade.style.getPropertyValue('--edge-fade')) || 0;
+        if (strength > 0.005) {
+          const f = fade.getBoundingClientRect();
+          mask = edgeMask(f.top - r.top, f.height * EDGE_FADE_RAMP_END, strength);
+        }
       }
     }
     if (root.style.clipPath !== clip) root.style.clipPath = clip;
