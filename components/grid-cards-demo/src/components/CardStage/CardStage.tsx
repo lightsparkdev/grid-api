@@ -819,15 +819,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     };
   }
 
-  const pill = card.closed
-    ? 'Closed'
-    : card.frozen
-      ? 'Frozen'
-      : issuing
-        ? 'Processing'
-        : card.inWallet
-          ? 'In Apple Wallet'
-          : null;
+  // The card's state, on the card. Not while it is being issued: the creating
+  // screen says so, and the card itself stays clean for the reveal.
+  const pill = card.closed ? 'Closed' : card.frozen ? 'Frozen' : card.inWallet ? 'In Apple Wallet' : null;
 
   // The selection box, in card px on the hit box.
   const box = placed && (selected || overBrand) && !textEdit ? placed.box : null;
@@ -894,7 +888,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         <span className={styles.srOnly} role="img" aria-label={`${programNameOf(design)} card`} />
         {!introDone && <CardIntro ref={overlayRef} brand={programNameOf(design)} orientation={design.orientation} />}
         {pill && (
-          <span className={clsx(styles.pill, card.closed && styles.pillClosed, issuing && styles.pillProcessing)}>
+          <span className={clsx(styles.pill, card.closed && styles.pillClosed)}>
             {pill}
           </span>
         )}
