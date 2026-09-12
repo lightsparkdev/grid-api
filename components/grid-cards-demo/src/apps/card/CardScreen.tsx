@@ -164,6 +164,7 @@ export function CardScreen({ home }: CardScreenProps) {
       <Toast toast={toast} onDismiss={() => setToast(null)} />
       <GlassNotification
         show={notice !== null}
+        id={notice?.id}
         icon={appIcon}
         title={notice?.title ?? ''}
         body={notice?.body ?? ''}
