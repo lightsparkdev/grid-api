@@ -1,7 +1,7 @@
 A card transaction is not a single event — it's a parent row plus a
 stream of child events from the card network. This page covers the
 event model, the status transitions, and how to handle the
-`EXCEPTION` path.
+`EXCEPTION` path, including what a reversal and an expiry do to the status.
 
 ## The event model
 
@@ -22,15 +22,31 @@ Clearings are reconciled against the purchase and rolled up into its
 
 ## Status transitions
 
-```text
-AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED
-    │
-    ├──► DECLINED   (auth declined, no money moved)
-    └──► EXCEPTION  (pull failed after settlement)
+```mermaid
+stateDiagram-v2
+    [*] --> AUTHORIZED : Authorization approved
+    [*] --> DECLINED : Authorization declined
+    AUTHORIZED --> PARTIALLY_SETTLED : A clearing posts, more expected
+    PARTIALLY_SETTLED --> SETTLED : Final clearing posts
+    AUTHORIZED --> SETTLED : Resolved, nothing left outstanding
+    AUTHORIZED --> EXCEPTION : Funding-source pull failed
+    PARTIALLY_SETTLED --> EXCEPTION : Funding-source pull failed
+    SETTLED --> EXCEPTION : Funding-source pull failed
+    EXCEPTION --> SETTLED : The outstanding amount posts
 ```
+
+The status is not stored. Grid re-derives it from the events recorded so far
+every time you read the transaction, so a status can change in either
+direction as later events arrive. `DECLINED` is the one exception: nothing was
+pulled, and no further event follows.
 
 A merchant `RETURN` does not move the purchase's status. The purchase stays
 `SETTLED`; the return posts as its own `CREDIT` transaction.
+
+A partial authorization reversal releases part of the hold and lowers
+`authorizedAmount`. The transaction stays `AUTHORIZED`. A full reversal or an
+expiry releases the whole hold, which leaves nothing outstanding, so the
+transaction resolves as `SETTLED` with a `settledAmount` of zero.
 
 | Status | Meaning |
 |--------|---------|
