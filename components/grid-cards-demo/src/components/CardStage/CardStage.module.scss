@@ -19,9 +19,11 @@
   width: 100% !important;
   height: 100% !important;
   pointer-events: none !important;
-  /* Locked, the card dims (the intro's own fade is inline on the <canvas>
-     inside, not here). */
-  transition: opacity 0.45s ease;
+  /* Locked or closed, the card dims and blurs (the intro's own fade is
+     inline on the <canvas> inside, not here). */
+  transition:
+    opacity 0.45s ease,
+    filter 0.45s ease;
 
   canvas {
     pointer-events: none !important;
@@ -40,7 +42,6 @@
   cursor: grab;
   touch-action: none;
   user-select: none;
-  --pill-opacity: 1;
   --card-scale: 1;
   /* Blueprint ink: the tertiary text grey (gray-400 light, gray-600 dark), a
      step above the dot grid in either theme. */
@@ -301,8 +302,8 @@
   white-space: nowrap;
 }
 
-/* Locked: the lock in the middle of the dimmed card, in card px like the
-   pill, so it rides and scales with the card. */
+/* Locked: the lock in the middle of the dimmed card, in card px, so it
+   rides and scales with the card. */
 .lockMark {
   position: absolute;
   top: 50%;
@@ -317,28 +318,23 @@
   }
 }
 
-.canvasLocked {
+.canvasDimmed {
   opacity: 0.3;
+  filter: blur(6px);
 }
 
-/* Small status pill, top-center of the front. */
-.pill {
+/* Closed: the line in the middle of the dimmed card. */
+.closedMark {
   position: absolute;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  color: #ffffff;
-  @include ios.ios-text-caption-2;
+  top: 50%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  transform: translateY(-50%);
+  @include ios.ios-text-headline;
   font-weight: 590;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  opacity: var(--pill-opacity);
-  transition: opacity 160ms linear;
+  text-align: center;
+  color: var(--ios-label-primary);
   pointer-events: none;
 }
 
@@ -376,6 +372,3 @@
   opacity: 0;
 }
 
-.pillClosed {
-  background: rgba(255, 69, 58, 0.85);
-}

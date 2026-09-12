@@ -426,21 +426,6 @@ export function inkFor(design: CardDesign, art: HTMLImageElement | null): string
   return luminance(design.color!) > 0.6 ? '#26262b' : '#ffffff';
 }
 
-/** Whole-face washes, in texels. Closed greys the face out; locked (frozen)
- *  leaves it alone, the stage dims the whole card and puts a lock on it. */
-function paintState(ctx: CanvasRenderingContext2D, closed: boolean) {
-  texelSpace(ctx);
-  if (closed) {
-    ctx.globalCompositeOperation = 'saturation';
-    ctx.fillStyle = '#808080';
-    ctx.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.globalCompositeOperation = 'source-over';
-  }
-}
-
 /* ── Foil + chip albedo ───────────────────────────────────────────────────── */
 
 /** The Premium Visa Brand Mark in silver foil, with the DEBIT product
@@ -857,7 +842,6 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets:
   // on the back, as the Figma physical front spec ("chip only") has it.
   if (s.design.visaMark === 'front') paintFrontLockup(ctx, assets, ink, s.design.orientation);
 
-  paintState(ctx, s.closed);
 }
 
 /** The account block's leading, as shares of its em (41 px lines 32 apart at
@@ -961,5 +945,4 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
   // window the standards require in its place.
   if (s.design.visaMark === 'back') paintLockup(ctx, assets, foilIsBlack(s.design), o);
   else paintDoveGround(ctx, assets, o);
-  paintState(ctx, s.closed);
 }

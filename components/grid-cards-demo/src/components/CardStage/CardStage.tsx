@@ -85,8 +85,9 @@ const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMap
 const EXPOSURE_LIGHT = 1.25;
 const EXPOSURE_DARK = 1.0;
 
-/** Locked: the card dims and a lock comes up out of its middle (blur, scale,
- *  a short rise); unlocking runs it back. */
+/** Locked or closed: the card dims and blurs, and its mark (a lock that
+ *  locks; the closed line) comes up out of its middle (blur, scale, a short
+ *  rise). Unlocking runs it back. */
 const LOCK_MARK_HIDDEN = { opacity: 0, filter: 'blur(10px)', scale: 0.6, y: 16 };
 const LOCK_MARK_SHOWN = { opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 };
 const LOCK_MARK_IN = motionTransition(easeOutSnappy, 0.5, { delay: 0.1 });
@@ -847,11 +848,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     };
   }
 
-  // The card's state, on the card: a pill for closed. Locked dims the card
-  // and puts a lock on it instead (below). Nothing while it is being issued
-  // (the creating screen says so) and nothing for Apple Wallet (Activity
-  // has it).
-  const pill = card.closed ? 'Closed' : null;
 
   // The selection box, in card px on the hit box.
   const box = placed && (selected || overBrand) && !textEdit ? placed.box : null;
@@ -869,7 +865,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     <div ref={rootRef} className={styles.root}>
       <Canvas
         ref={canvasRef}
-        className={clsx(styles.canvas, card.frozen && styles.canvasLocked)}
+        className={clsx(styles.canvas, (card.frozen || card.closed) && styles.canvasDimmed)}
         dpr={[1, 2]}
         // Stepped by StageClock from Motion's frame loop, not R3F's own: the
         // rig reads the phone's DOM (the slot, the pages) every frame, and
@@ -921,13 +917,23 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       >
         <span className={styles.srOnly} role="img" aria-label={`${programNameOf(design)} card`} />
         {!introDone && <CardIntro ref={overlayRef} brand={programNameOf(design)} orientation={design.orientation} />}
-        {pill && (
-          <span className={clsx(styles.pill, card.closed && styles.pillClosed)}>
-            {pill}
-          </span>
-        )}
+        {/* The card's state, on the card: locked, it dims and blurs under a lock
+            that locks; closed, the same under a line that says so. Nothing
+            while it is being issued (the creating screen says so) and nothing
+            for Apple Wallet (Activity has it). */}
         <AnimatePresence initial={false}>
-          {card.frozen && (
+          {card.closed ? (
+            <m.span
+              key="closed"
+              className={styles.closedMark}
+              initial={reduceMotion ? { opacity: 0 } : LOCK_MARK_HIDDEN}
+              animate={reduceMotion ? { opacity: 1 } : { ...LOCK_MARK_SHOWN, transition: LOCK_MARK_IN }}
+              exit={reduceMotion ? { opacity: 0 } : { ...LOCK_MARK_HIDDEN, transition: LOCK_MARK_OUT }}
+              aria-hidden
+            >
+              This card has been closed
+            </m.span>
+          ) : card.frozen ? (
             <m.span
               key="lock"
               className={styles.lockMark}
@@ -938,7 +944,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
             >
               <AnimatedLock size={56} />
             </m.span>
-          )}
+          ) : null}
         </AnimatePresence>
 
         {/* The brand's box: an outline on hover; selected, the handles too. */}
@@ -1273,8 +1279,6 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     const hit = hitRef.current;
     if (hit) {
       hit.style.transform = `translate(${x + pose.dx * s - foot.w / 2}px, ${y + bob - foot.h / 2}px) scale(${s})`;
-      // The pill belongs to the front; hide it while the back is showing.
-      hit.style.setProperty('--pill-opacity', pose.facing > 0.3 ? '1' : '0');
       // The hit box scales with the card; text riding on it undoes that.
       hit.style.setProperty('--card-scale', s.toFixed(4));
     }

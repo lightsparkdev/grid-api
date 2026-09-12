@@ -30,6 +30,8 @@ const PHONE_IN_MS = 750;
 const REVEAL_SETTLE_MS = 1400;
 /** Apple's add-card flow has risen; the rest is the cardholder's. */
 const WALLET_COVER_IN_MS = 600;
+/** A sheet has risen; the rest is the cardholder's. */
+const SHEET_UP_MS = 600;
 /** The app's toast lands as Apple's flow finishes sliding away. */
 const WALLET_TOAST_MS = 350;
 /** Dwell on the transaction sheet before the refund runs. */
@@ -165,6 +167,16 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     onAddToWallet: () => {
       window.setTimeout(() => showToast('Added to Apple Wallet'), WALLET_TOAST_MS);
       cardOptions?.onAddToWallet?.();
+    },
+    // Closed from its sheet: the phone says so.
+    onStateChange: (state) => {
+      if (state === 'CLOSED') notify('Card closed', 'This card can no longer be used. You can issue a new one.');
+      cardOptions?.onStateChange?.(state);
+    },
+    // The API answers 409 CARD_ALREADY_CLOSED; the phone just says so.
+    onCloseRejected: () => {
+      notify('Card already closed', 'This card was closed earlier.');
+      cardOptions?.onCloseRejected?.();
     },
   });
   // Delayed flow steps read the LATEST controls, not the render they were
@@ -483,15 +495,11 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           break;
         }
         case 'close':
-          if (card.closed) {
-            // The API answers 409 CARD_ALREADY_CLOSED; the phone just says so.
-            card.closeCard();
-            notify('Card already closed', 'This card was closed earlier.');
-          } else {
-            card.closeCard();
-            notify('Card closed', 'This card can no longer be used. You can issue a new one.');
-          }
-          settle(NOTICE_SETTLE_MS);
+          // The sheet asks; the cardholder's confirm closes the card (the
+          // notification follows, from the controls' callbacks below). On a
+          // card already closed the sheet says so and the API answers 409.
+          card.setSheet('close');
+          settle(SHEET_UP_MS);
           break;
         case undefined:
           settle(0);
