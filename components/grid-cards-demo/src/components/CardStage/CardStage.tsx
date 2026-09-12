@@ -154,6 +154,17 @@ interface CardStageProps {
   onDesignChange?: (patch: Partial<CardDesign>) => void;
 }
 
+/** Capture the pointer for a drag. A pointer that is already gone (a touch
+ *  lifted, a synthetic event) makes this throw; the drag then goes on
+ *  uncaptured and the window-level release still ends it. */
+function capture(e: ReactPointerEvent<HTMLDivElement>) {
+  try {
+    e.currentTarget.setPointerCapture(e.pointerId);
+  } catch {
+    // Not capturable; see above.
+  }
+}
+
 const rad = (deg: number) => (deg * Math.PI) / 180;
 function rotate(p: Pt, deg: number): Pt {
   const c = Math.cos(rad(deg));
@@ -468,7 +479,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const beginBrandDrag = (e: ReactPointerEvent<HTMLDivElement>, start: Pt, mode: BrandDrag['mode'], handle?: Handle) => {
     const pl = placement.current;
     if (!pl) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capture(e);
     const bd: BrandDrag = { id: e.pointerId, mode, handle, start, layout0: pl.layout, box0: pl.box };
     brandDrag.current = bd;
     motion.clearTilt();
@@ -559,7 +570,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (gradEditing && !inPhone()) {
       const gradEl = (e.target as HTMLElement).closest<HTMLElement>('[data-grad]');
       if (gradEl) {
-        e.currentTarget.setPointerCapture(e.pointerId);
+        capture(e);
         gradDrag.current = { id: e.pointerId, end: gradEl.dataset.grad as 'from' | 'to' };
         motion.clearTilt();
         e.currentTarget.classList.add(styles.hitMoving);
@@ -594,7 +605,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     // The card: spin. The brand's and the name's outlines come off for the turn.
     hover(false);
     hoverName(false);
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capture(e);
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     setDragged(true);
     motion.beginDrag(e.timeStamp);
@@ -629,6 +640,44 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       setSelected(true);
     }
   };
+  /** Let go of whatever is in flight, whichever pointer had it. The capture
+   *  can end without a pointerup reaching the hit box (the button released
+   *  outside the window or the embed's iframe, the hit box losing its pointer
+   *  events mid-drag), and a drag left set would hold the card in mid-turn
+   *  until the next click. */
+  const releaseAll = () => {
+    const hit = hitRef.current;
+    if (gradDrag.current || brandDrag.current) {
+      gradDrag.current = null;
+      brandDrag.current = null;
+      setGuides({});
+      hit?.classList.remove(styles.hitMoving);
+      if (hit) hit.style.cursor = '';
+    }
+    if (drag.current) {
+      drag.current = null;
+      pendingSelect.current = null;
+      motion.endDrag(performance.now());
+      hit?.classList.remove(styles.hitDragging);
+    }
+  };
+  // Through a ref, so the listeners always call this render's release (with
+  // this render's motion), not the one from the mount.
+  const releaseRef = useRef(releaseAll);
+  releaseRef.current = releaseAll;
+  useEffect(() => {
+    const onUp = () => {
+      if (drag.current || brandDrag.current || gradDrag.current) releaseRef.current();
+    };
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    window.addEventListener('blur', onUp);
+    return () => {
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener('blur', onUp);
+    };
+  }, []);
   const onPointerLeave = () => {
     hover(false);
     hoverName(false);
@@ -809,6 +858,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         onPointerDown={onPointerDown}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
+        onLostPointerCapture={() => releaseRef.current()}
         onPointerLeave={onPointerLeave}
         onDoubleClick={onDoubleClick}
       >
