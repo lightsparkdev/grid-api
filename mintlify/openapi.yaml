@@ -27146,30 +27146,75 @@ components:
           EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnSource'
           GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnSource'
           PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceBurnSource'
-    StablecoinBurnDestination:
+    StablecoinBurnDestinationRail:
+      type: string
+      enum:
+        - WIRE
+        - ACH_CREDIT
+        - SAME_DAY_ACH_CREDIT
+        - RTP_CREDIT
+      description: Fiat payout rail for the burn destination.
+    StablecoinBurnDestinationBase:
       type: object
       required:
         - type
-        - externalAccountId
         - rail
       properties:
         type:
           type: string
           enum:
             - EXTERNAL_ACCOUNT
-          description: Burn destination variant. V1 supports fiat Grid `ExternalAccount` destinations.
-        externalAccountId:
-          type: string
-          description: Grid bank `ExternalAccount` receiving fiat redemption proceeds.
-          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
+            - GRID_INTERNAL_ACCOUNT
+          description: Burn destination variant.
         rail:
-          type: string
-          enum:
-            - WIRE
-            - ACH_CREDIT
-            - SAME_DAY_ACH_CREDIT
-            - RTP_CREDIT
-          description: Fiat payout rail for the burn destination.
+          $ref: '#/components/schemas/StablecoinBurnDestinationRail'
+    StablecoinExternalAccountBurnDestination:
+      title: External Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnDestinationBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT
+              description: External account burn destination.
+              example: EXTERNAL_ACCOUNT
+            externalAccountId:
+              type: string
+              description: Grid bank `ExternalAccount` receiving fiat redemption proceeds.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
+    StablecoinGridInternalBurnDestination:
+      title: Grid Internal Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnDestinationBase'
+        - type: object
+          required:
+            - type
+            - accountId
+          properties:
+            type:
+              type: string
+              enum:
+                - GRID_INTERNAL_ACCOUNT
+              description: Grid internal account burn destination.
+              example: GRID_INTERNAL_ACCOUNT
+            accountId:
+              type: string
+              description: Grid `InternalAccount` receiving fiat redemption proceeds through its bank funding instructions.
+              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000206
+    StablecoinBurnDestination:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinExternalAccountBurnDestination'
+        - $ref: '#/components/schemas/StablecoinGridInternalBurnDestination'
+      discriminator:
+        propertyName: type
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnDestination'
+          GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnDestination'
     StablecoinBurnRequest:
       type: object
       required:
