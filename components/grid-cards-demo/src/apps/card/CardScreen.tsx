@@ -43,13 +43,23 @@ const PAGE_REST = { x: 0, opacity: 1 };
 /** The pushed pages' header titles. */
 const PAGE_TITLE = { numbers: 'Card numbers', limits: 'Spending limits' } as const;
 /** The navigation bar's title on a push (+1) or a pop (−1): in from the
- *  side the page comes from, out toward the side it goes. */
+ *  side the page comes from, out toward the side it goes (Spending limits,
+ *  whose page pushes). */
 const TITLE_TRAVEL = 64;
-const TITLE_VARIANTS = {
-  enter: (dir: number) => ({ x: dir * TITLE_TRAVEL, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: -dir * TITLE_TRAVEL, opacity: 0 }),
+const TITLE_PUSH_VARIANTS = {
+  enter: (dir: number) => ({ x: dir * TITLE_TRAVEL, opacity: 0, transition: PUSH }),
+  center: { x: 0, opacity: 1, transition: PUSH },
+  exit: (dir: number) => ({ x: -dir * TITLE_TRAVEL, opacity: 0, transition: PUSH }),
 };
+/** Card numbers doesn't push: its title blur-fades in with a short rise,
+ *  first, and its list follows a beat later. */
+const NUMBERS_STAGGER_S = 0.1;
+const TITLE_FADE_VARIANTS = {
+  enter: { ...NUMBERS_HIDDEN, transition: CONTENT_IN },
+  center: { ...NUMBERS_VISIBLE, transition: CONTENT_IN },
+  exit: { ...NUMBERS_HIDDEN, transition: CONTENT_OUT },
+};
+const NUMBERS_LIST_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.2 + NUMBERS_STAGGER_S });
 
 /**
  * The card hub — the whole app. Header (back, card numbers, limits and lock),
@@ -163,11 +173,10 @@ export function CardScreen({ home }: CardScreenProps) {
                     key={card.page}
                     className={styles.title}
                     custom={pushDir}
-                    variants={reduceMotion ? undefined : TITLE_VARIANTS}
+                    variants={reduceMotion ? undefined : card.page === 'numbers' ? TITLE_FADE_VARIANTS : TITLE_PUSH_VARIANTS}
                     initial="enter"
                     animate="center"
                     exit="exit"
-                    transition={PUSH}
                   >
                     {PAGE_TITLE[card.page]}
                   </motion.h1>
@@ -303,7 +312,7 @@ export function CardScreen({ home }: CardScreenProps) {
                 key="numbers"
                 className={styles.homeContent}
                 initial={reduceMotion ? false : NUMBERS_HIDDEN}
-                animate={reduceMotion ? CONTENT_VISIBLE : { ...NUMBERS_VISIBLE, transition: CONTENT_IN }}
+                animate={reduceMotion ? CONTENT_VISIBLE : { ...NUMBERS_VISIBLE, transition: NUMBERS_LIST_IN }}
                 exit={reduceMotion ? { opacity: 0 } : { ...NUMBERS_HIDDEN, transition: CONTENT_OUT }}
               >
                 <div className={styles.homeScroll}>
