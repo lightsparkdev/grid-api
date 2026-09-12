@@ -212,12 +212,12 @@ const CARD_SCALE = 1.06;
 const BLUEPRINT_BLUR = 12;
 /** Where the score above ends, in its own seconds. */
 const SCORE_END = Math.max(REVEAL_AT + BLUEPRINT_OUT, REVEAL_AT - CARD_LEAD + CARD_IN);
-/** The whole score plays this much longer (s), spread evenly over all of it.
- *  Every time above is authored in score seconds; `stepIntro` and `introCard`
- *  take real seconds and divide by the resulting scale. */
-const INTRO_STRETCH = 1.0;
-const TIME_SCALE = (SCORE_END + INTRO_STRETCH) / SCORE_END;
-export const INTRO_END = SCORE_END * TIME_SCALE;
+/** How long the whole intro runs on screen (s). The score above is scaled
+ *  evenly to fit: every time above is authored in score seconds, and
+ *  `stepIntro` and `introCard` take real seconds and divide by the scale. */
+const INTRO_DURATION = 2.8;
+const TIME_SCALE = INTRO_DURATION / SCORE_END;
+export const INTRO_END = INTRO_DURATION;
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 
