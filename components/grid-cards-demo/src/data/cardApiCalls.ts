@@ -501,10 +501,10 @@ export function walletBrandingCalls(programName: string, logoUrl: string | null)
     {
       method: 'PATCH',
       path: '/platform/config',
-      title: 'Brand the wallet verification',
+      title: 'Set up wallet branding',
       reqBody: body,
       status: '200 OK',
-      note: 'When a cardholder adds the card to Apple Pay or Google Pay, the wallet asks for a one-time code. Grid sends it with your name, logo, and copy. Provisioning itself is handled by the wallet and the issuer — there is no Grid call for it.',
+      note: 'One-time platform setup, not a per-card call. When a cardholder adds a card to Apple Pay or Google Pay, the wallet asks for a one-time code; Grid sends it with your name, logo, and copy. Adding the card itself is handled by the wallet and the issuer — there is no Grid call for it, so this only appears again if your branding changes.',
       resBody: {
         id: PLATFORM_CONFIG_ID,
         webhookEndpoint: WEBHOOK_ENDPOINT,

@@ -8,3 +8,7 @@ next-env.d.ts
 .DS_Store
 certs/
 .vercel
+# scripts/export-sf-symbols.mjs byproducts: the app reads the inlined paths
+# in src/apps/shared/icons/sfSymbolPaths.ts, not these SVGs.
+public/assets/symbols/
+.tmp-sf-symbols-*/

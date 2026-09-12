@@ -117,6 +117,10 @@ export function useCardsDemoLogic() {
   const [brainReset, setBrainReset] = useState({ nonce: 0, afterMs: 0 });
   // The card's current caps, mirrored so later PATCH responses show them.
   const limitsRef = useRef<CardSpendLimits>({});
+  // The wallet-verification branding is platform config: set once, then only
+  // when the brand changes. Adding the card itself makes no Grid call, so
+  // repeat adds log nothing. Holds the brand the last PATCH sent.
+  const walletBrandingRef = useRef<string | null>(null);
   // Each purchase keeps one CardTransaction id across auth → clearing → return,
   // and the group it logged under so the clearing lands in the same group.
   const spendRefs = useRef(new Map<string, { ref: SpendRef; gid: string }>());
@@ -226,7 +230,11 @@ export function useCardsDemoLogic() {
       },
       onAddToWallet: () => {
         const d = designRef.current;
-        pushCalls(walletBrandingCalls(d.programName, d.logoUrl), GROUP_LABEL.wallet);
+        const brand = `${d.programName.trim()}|${d.logoUrl ?? ''}`;
+        if (walletBrandingRef.current !== brand) {
+          walletBrandingRef.current = brand;
+          pushCalls(walletBrandingCalls(d.programName, d.logoUrl), GROUP_LABEL.wallet);
+        }
         markDone('wallet');
       },
       onSettle: (row) => {
@@ -304,6 +312,7 @@ export function useCardsDemoLogic() {
     pendingTimers.current.clear();
     spendRefs.current.clear();
     limitsRef.current = {};
+    walletBrandingRef.current = null;
     setWallet(initialWallet);
     setActiveFlow(null);
     setCompleted(initialCompleted);
