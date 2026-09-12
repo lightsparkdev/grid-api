@@ -7,7 +7,7 @@ import { AnimatePresence, cancelFrame, frame, motion as m, useReducedMotion } fr
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
-import { SfSymbol } from '@/apps/shared/icons';
+import { AnimatedLock } from '@/apps/shared/icons';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { canScrollBy } from '@/lib/scroll';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
@@ -936,7 +936,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
               exit={reduceMotion ? { opacity: 0 } : { ...LOCK_MARK_HIDDEN, transition: LOCK_MARK_OUT }}
               aria-hidden
             >
-              <SfSymbol name="lock.fill" size={56} />
+              <AnimatedLock size={56} />
             </m.span>
           )}
         </AnimatePresence>
