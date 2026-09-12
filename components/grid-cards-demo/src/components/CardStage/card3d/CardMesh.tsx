@@ -140,6 +140,14 @@ function useLoadedImage(url: string | null): { img: HTMLImageElement | null; pen
  * face the foil is black lacquer rather than silver: the same film, read by
  * its gloss and bevel.
  */
+/** The background surface bakes start this long after the face assets land:
+ *  past the intro (the blueprint draws and the card comes into focus). */
+const BAKE_START_DELAY_MS = 4500;
+/** No pointer input for this long counts as a quiet moment for a bake. */
+const BAKE_QUIET_MS = 700;
+/** How long an idle request may wait before it runs regardless. */
+const BAKE_IDLE_TIMEOUT_MS = 8000;
+
 const FOIL = { roughness: 0.04, envMapIntensity: 1.1, normalScale: 1 };
 /** The mark's plane on the mesh (center in card px, size, roll) for the card
  *  as held: the back's texture is mirrored in u and the composed back turns
@@ -252,6 +260,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   ref,
 ) {
   const invalidate = useThree((s) => s.invalidate);
+  const three = useThree((s) => s.get);
   // The body's material lags the design's through a change: the wipe shows
   // the new stock, and the slab is rebuilt as it finishes.
   const [bodyMaterial, setBodyMaterial] = useState<CardMaterial>(state.design.material);
@@ -338,11 +347,13 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const baseSurface = surfaceOf(state.design);
   // Bake the other surfaces while the page is idle, one per slice, so the
   // first switch to metal or gloss does not pay for its maps on the click.
+  // Each bake is a frame or two of work (more in WebKit), so none runs while
+  // the intro plays or while the pointer is moving: the queue waits out the
+  // intro, then asks for idle time (a long timeout, so a busy page is left
+  // alone rather than interrupted), and where idle callbacks don't exist
+  // (WebKit) it waits for a quiet moment instead.
   useEffect(() => {
     if (!assets) return;
-    const ric: (cb: () => void) => number =
-      typeof requestIdleCallback === 'function' ? (cb) => requestIdleCallback(cb, { timeout: 2000 }) : (cb) => window.setTimeout(cb, 250);
-    const cancel: (id: number) => void = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
     const jobs: Array<[Surface, 'front' | 'back', boolean, Orientation]> = [];
     for (const s of ['print-matte', 'print-gloss', 'bare-matte', 'bare-gloss'] as Surface[]) {
       for (const side of ['front', 'back'] as const) jobs.push([s, side, true, 'landscape']);
@@ -351,15 +362,38 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       jobs.push([s, 'back', true, 'portrait']);
       jobs.push([s, 'back', false, 'landscape']);
     }
-    let id = 0;
-    const next = () => {
+    let lastInput = performance.now();
+    const onInput = () => {
+      lastInput = performance.now();
+    };
+    window.addEventListener('pointermove', onInput, { passive: true });
+    window.addEventListener('pointerdown', onInput, { passive: true });
+    window.addEventListener('wheel', onInput, { passive: true });
+    let timer = 0;
+    let idle = 0;
+    const hasIdle = typeof requestIdleCallback === 'function';
+    const quiet = () => performance.now() - lastInput > BAKE_QUIET_MS;
+    const runOne = () => {
       const job = jobs.shift();
       if (!job) return;
       getSurfaceMaps(job[0], job[1], assets, false, job[2], job[3]);
-      id = ric(next);
+      schedule();
     };
-    id = ric(next);
-    return () => cancel(id);
+    const schedule = () => {
+      if (hasIdle) {
+        idle = requestIdleCallback(() => (quiet() ? runOne() : schedule()), { timeout: BAKE_IDLE_TIMEOUT_MS });
+      } else {
+        timer = window.setTimeout(() => (quiet() ? runOne() : schedule()), BAKE_QUIET_MS);
+      }
+    };
+    timer = window.setTimeout(schedule, BAKE_START_DELAY_MS);
+    return () => {
+      window.clearTimeout(timer);
+      if (hasIdle && idle) cancelIdleCallback(idle);
+      window.removeEventListener('pointermove', onInput);
+      window.removeEventListener('pointerdown', onInput);
+      window.removeEventListener('wheel', onInput);
+    };
   }, [assets]);
   // The back carries the foil mark's carrier and metal only while the mark
   // is there; with the mark on the front, the hologram layer has its own.
@@ -576,7 +610,33 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     onBrandPlacement?.({ box: brandBox(bodyDesign, logo), layout: resolveBrandLayout(bodyDesign, logo) });
     if (!ready.current) {
       ready.current = true;
-      onReady?.();
+      // Before the card is shown, its textures go up to the GPU one frame at
+      // a time and its programs compile off the main thread (where the
+      // browser allows), so the intro's first frame is not the frame that
+      // uploads a dozen 2048px maps and links the shaders: that was a
+      // quarter-second hitch as the blueprint began.
+      const { gl, scene, camera } = three();
+      const textures = new Set<THREE.Texture>();
+      for (const m of materials) {
+        for (const v of Object.values(m)) if (v instanceof THREE.Texture) textures.add(v);
+      }
+      for (const u of [swapU.front, swapU.back]) {
+        for (const x of Object.values(u)) if (x?.value instanceof THREE.Texture) textures.add(x.value);
+      }
+      const queue = Array.from(textures);
+      let raf = 0;
+      const uploadNext = () => {
+        const t = queue.shift();
+        if (t) {
+          gl.initTexture(t);
+          raf = requestAnimationFrame(uploadNext);
+          return;
+        }
+        const compiled = typeof gl.compileAsync === 'function' ? gl.compileAsync(scene, camera) : Promise.resolve();
+        compiled.catch(() => undefined).then(() => onReady?.());
+      };
+      raf = requestAnimationFrame(uploadNext);
+      return () => cancelAnimationFrame(raf);
     }
   }, [
     assets,
@@ -591,6 +651,9 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     invalidate,
     onReady,
     onBrandPlacement,
+    three,
+    materials,
+    swapU,
   ]);
 
   // Back print.
