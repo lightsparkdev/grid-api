@@ -12,6 +12,11 @@
   -webkit-tap-highlight-color: transparent;
   @include shadow.glass-button-shadow;
   @include shadow.glass-button-press-scale(1.04);
+  opacity: 1;
+  transition:
+    transform shadow.$glass-button-press-duration shadow.$glass-button-press-ease,
+    filter shadow.$glass-button-press-duration shadow.$glass-button-press-ease,
+    opacity shadow.$glass-button-press-duration shadow.$glass-button-press-ease;
 
   &:disabled {
     opacity: 0.45;
