@@ -660,7 +660,7 @@ export function paintBaseBack(ctx: CanvasRenderingContext2D, design: CardDesign)
  *  beside it on the bottom row. */
 const BRAND_DEFAULT_MAX_W: Record<Orientation, number> = { landscape: 410, portrait: 370 };
 /** A wordmark is set at this share of its box, so its caps sit inside it. */
-const BRAND_TEXT_EM = 0.8;
+export const BRAND_TEXT_EM = 0.8;
 /** Suisse's cap height, as a share of the em. */
 export const BRAND_CAP = 0.72;
 export const BRAND_TEXT_WEIGHT = 430;

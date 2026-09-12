@@ -4,6 +4,7 @@ import { forwardRef } from 'react';
 import { CARD_H, CARD_W } from '@/apps/card/cardMetrics';
 import type { Orientation } from '@/data/design';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
+import { BRAND_TEXT_WEIGHT } from './card3d/facePaint';
 import { INTRO_GEOMETRY as G, INTRO_PAD } from './introTimeline';
 import styles from './CardStage.module.scss';
 
@@ -113,8 +114,9 @@ export const CardIntro = forwardRef<SVGSVGElement, { brand: string; orientation:
           x={G.brandText.x}
           y={G.brandText.y}
           fontSize={G.brandText.size}
+          letterSpacing={G.brandText.letterSpacing}
           fontFamily={`'${CARD_FONT_FAMILY}', 'Suisse Intl', sans-serif`}
-          fontWeight={430}
+          fontWeight={BRAND_TEXT_WEIGHT}
           textAnchor="end"
           fill="var(--card-blueprint)"
           stroke="none"

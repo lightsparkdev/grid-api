@@ -13,7 +13,9 @@
 import { cubicBezier } from 'motion';
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
 import { squirclePath } from '@/components/liquid-glass';
+import { brandDefaultLayout } from '@/data/design';
 import { CARD_R } from './card3d/cardGeometry';
+import { BRAND_CAP, BRAND_TEXT_EM, BRAND_TRACKING } from './card3d/facePaint';
 
 /** Fades and the reveal: Out Quart, cubic-bezier(0.165, 0.84, 0.44, 1). */
 const ease = cubicBezier(0.165, 0.84, 0.44, 1);
@@ -53,7 +55,12 @@ const DIM_TICK = fig(24);
 const CHIP_W = fig(197);
 const CHIP_H = fig(149);
 const CHIP = { x: fig(172), y: fig(334), w: CHIP_W, h: CHIP_H, r: (CHIP_W * 19.5) / 151 };
-const BRAND = { right: fig(1384), cy: CHIP.y + CHIP.h / 2, w: fig(410), h: fig(90) };
+/** The brand's default landscape layout, as the face painter places it:
+ *  right-anchored, centered on the chip row, 90 tall; a wordmark is set at
+ *  0.8 of that with its caps centered, tracked -4%. Card px. */
+const brandLayout = brandDefaultLayout('landscape');
+const BRAND = { right: fig(brandLayout.x), cy: fig(brandLayout.y), w: fig(410), h: fig(brandLayout.h) };
+const BRAND_EM = BRAND.h * BRAND_TEXT_EM;
 /** Where the corner arc's midpoint sits in from the corner. */
 const ARC_IN = CARD_R * (1 - Math.SQRT1_2);
 const LEADER_DIAG = fig(100);
@@ -124,7 +131,15 @@ export const INTRO_GEOMETRY = {
   labelCY: { x: CHIP.x + CHIP.w / 2 + fig(16), y: CHIP.y / 2 },
   labelChip: { x: CHIP.x, y: CHIP.y + CHIP.h + fig(38) },
   brandBox: { x: BRAND.right - BRAND.w, y: BRAND.cy - BRAND.h / 2, w: BRAND.w, h: BRAND.h },
-  brandText: { x: BRAND.right, y: BRAND.cy + fig(72) * 0.35, size: fig(72) },
+  /** The wordmark as painted: baseline half a cap below the row's middle,
+   *  right edge on the anchor (the trailing tracking is pulled back so the
+   *  last glyph, not its spacing, lands there). */
+  brandText: {
+    x: BRAND.right + BRAND_EM * BRAND_TRACKING,
+    y: BRAND.cy + (BRAND_EM * BRAND_CAP) / 2,
+    size: BRAND_EM,
+    letterSpacing: BRAND_EM * BRAND_TRACKING,
+  },
   /** Label sizes, card px. */
   fontDim: fig(28),
   fontSmall: fig(24),
@@ -186,9 +201,9 @@ const REVEAL_HOLD = 0.25;
 /** The reveal: the blueprint blurs out while the card blurs in. */
 const REVEAL_AT = Math.max(...Object.values(CUES).map((c) => c.at + c.dur)) + REVEAL_HOLD;
 const BLUEPRINT_OUT = 0.8;
-const CARD_IN = 2.0;
+const CARD_IN = 2.25;
 /** The card starts coming in this much before the blueprint starts to go. */
-const CARD_LEAD = 1.0;
+const CARD_LEAD = 1.25;
 /** Where the card starts: stage px of blur, and a little large. */
 const CARD_BLUR = 16;
 const CARD_SCALE = 1.06;
