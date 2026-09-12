@@ -14,7 +14,6 @@ properties:
   id:
     type: string
     description: System-generated unique card identifier
-    readOnly: true
     example: Card:019542f5-b3e7-1d02-0000-000000000010
   customerId:
     type: string
@@ -122,7 +121,6 @@ properties:
       Derived from the funding sources at issue time — all funding sources
       bound to a card must be denominated in the same card-eligible currency.
     example: USD
-    readOnly: true
   processorRef:
     type: string
     description: >-
@@ -130,7 +128,6 @@ properties:
       Useful for cross-referencing in the processor's dashboards; not used for
       any Grid request routing.
     example: card_b81c2a4f
-    readOnly: true
   issuerRef:
     type: string
     description: >-
@@ -138,16 +135,13 @@ properties:
       account/card identifier). Useful for cross-referencing in issuer
       dashboards; not used for any Grid request routing.
     example: lead_card_7a1b9c3d
-    readOnly: true
   createdAt:
     type: string
     format: date-time
     description: Creation timestamp
-    readOnly: true
     example: '2026-05-08T14:10:00Z'
   updatedAt:
     type: string
     format: date-time
     description: Last update timestamp
-    readOnly: true
     example: '2026-05-08T14:11:00Z'

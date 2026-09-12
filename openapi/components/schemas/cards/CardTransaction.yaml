@@ -18,9 +18,9 @@ description: >-
   clearings up into `settledAmount`; a merchant return is its own dated
   `CREDIT` row linked back to the purchase via `originalTransactionId` rather
   than a rollup on the parent, so statements can list purchases and refunds
-  as separate dated lines. Delivered as the payload of the generic transaction
-  webhook stream (extends the Transaction model with a card
-  destination type) on every transition.
+  as separate dated lines. Delivered whole as the `data` payload of every
+  `CARD_TRANSACTION.*` webhook, and returned as the `CARD` variant of
+  `Transaction` from `GET /transactions`.
 properties:
   type:
     type: string
@@ -30,7 +30,6 @@ properties:
   id:
     type: string
     description: System-generated unique card transaction identifier
-    readOnly: true
     example: Transaction:019542f5-b3e7-1d02-0000-000000000100
   cardId:
     type: string
@@ -50,7 +49,6 @@ properties:
       Opaque identifier for the transaction on the underlying issuer. Used to
       cross-reference Grid records against issuer dashboards and webhooks.
     example: lithic_txn_b81c2a4f
-    readOnly: true
   status:
     $ref: ./CardTransactionStatus.yaml
   direction:
@@ -66,7 +64,6 @@ properties:
       On a refund row (`direction: CREDIT`), the id of the purchase this
       return credits back against. Absent on purchases and on standalone
       credits with no matching purchase.
-    readOnly: true
     example: Transaction:019542f5-b3e7-1d02-0000-000000000099
   merchant:
     $ref: ./CardMerchant.yaml
@@ -91,11 +88,9 @@ properties:
     type: string
     format: date-time
     description: Creation timestamp (same as `authorizedAt` for card transactions).
-    readOnly: true
     example: '2026-05-08T14:30:00Z'
   updatedAt:
     type: string
     format: date-time
     description: Last update timestamp.
-    readOnly: true
     example: '2026-05-08T15:42:11Z'

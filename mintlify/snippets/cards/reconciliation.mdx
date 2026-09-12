@@ -40,8 +40,9 @@ A merchant `RETURN` does not move the purchase's status. The purchase stays
 | `DECLINED` | The authorization was declined before any money moved. Declines must be excluded from cardholder statements. |
 | `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
-Every transition is delivered as a `CARD_TRANSACTION.*` webhook carrying
-the post-change parent — see [Webhooks](/cards/platform-tools/webhooks).
+Every transition is delivered as a `CARD_TRANSACTION.*` webhook whose
+`data` is the whole post-change `CardTransaction` — see
+[Webhooks](/cards/platform-tools/webhooks).
 
 ## The over-auth path
 
