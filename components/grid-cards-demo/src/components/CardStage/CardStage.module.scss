@@ -303,16 +303,21 @@
 }
 
 /* Locked: the lock in the middle of the dimmed card, in card px, so it
-   rides and scales with the card. */
+   rides and scales with the card. A tap on it opens the card's status. */
 .lockMark {
   position: absolute;
   top: 50%;
   left: 50%;
   display: flex;
   margin: -28px 0 0 -28px;
+  padding: 0;
+  border: 0;
+  background: none;
   /* The docs' text color: the phone's iOS tokens don't reach the stage. */
   color: var(--text-primary);
-  pointer-events: none;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
 
   svg {
     display: block;
@@ -321,7 +326,7 @@
 
 .canvasDimmed {
   opacity: 0.3;
-  filter: blur(6px);
+  filter: blur(3px);
 }
 
 /* Closed: the line in the middle of the dimmed card, quiet: the Activity

@@ -934,16 +934,20 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
               This card has been closed
             </m.span>
           ) : card.frozen ? (
-            <m.span
+            <m.button
               key="lock"
+              type="button"
               className={styles.lockMark}
+              aria-label="Card locked"
               initial={reduceMotion ? { opacity: 0 } : LOCK_MARK_HIDDEN}
               animate={reduceMotion ? { opacity: 1 } : { ...LOCK_MARK_SHOWN, transition: LOCK_MARK_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...LOCK_MARK_HIDDEN, transition: LOCK_MARK_OUT }}
-              aria-hidden
+              // The card's status, with the way back. The hit box under it
+              // ignores the press (the card is inert while locked).
+              onClick={() => card.setSheet('freeze')}
             >
               <AnimatedLock size={56} />
-            </m.span>
+            </m.button>
           ) : null}
         </AnimatePresence>
 
