@@ -42,6 +42,14 @@ const PAGE_RIGHT = { x: '100%', opacity: 1 };
 const PAGE_REST = { x: 0, opacity: 1 };
 /** The pushed pages' header titles. */
 const PAGE_TITLE = { numbers: 'Card numbers', limits: 'Spending limits' } as const;
+/** The navigation bar's title on a push (+1) or a pop (−1): in from the
+ *  side the page comes from, out toward the side it goes. */
+const TITLE_TRAVEL = 64;
+const TITLE_VARIANTS = {
+  enter: (dir: number) => ({ x: dir * TITLE_TRAVEL, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: -dir * TITLE_TRAVEL, opacity: 0 }),
+};
 
 /**
  * The card hub — the whole app. Header (back, card numbers, limits and lock),
@@ -59,7 +67,7 @@ export function CardScreen({ home }: CardScreenProps) {
   const {
     issuing,
     tapPhase,
-    transactions,
+    activity,
     toast,
     setToast,
     isTap,
@@ -80,6 +88,8 @@ export function CardScreen({ home }: CardScreenProps) {
   // push over the whole body, card included (the stage clips the card to its
   // leading edge), with the home staying put underneath.
   const onNumbers = card.page === 'numbers';
+  // The navigation bar's direction: a page coming in is a push, home is a pop.
+  const pushDir = onPage ? 1 : -1;
   // POST /cards is PROCESSING: Aurora's creating screen. No header, the card
   // alone near the center of the screen, "Creating your card…" under it; the
   // home comes in when the card goes ACTIVE.
@@ -122,18 +132,18 @@ export function CardScreen({ home }: CardScreenProps) {
   return (
     <div className={styles.root}>
       {/* Header. Home: back (the app's, a no-op here), card numbers, and the
-          limits + lock pill. A pushed page: back, and its title. Hidden
-          during tap-to-pay. */}
+          limits + lock pill. A pushed page: back, and its title. The page
+          change is iOS's navigation bar push: the title slides in from the
+          right (out to the left; the reverse on pop) while the right-side
+          items crossfade; the back button stays. The whole bar blur-fades
+          away for tap-to-pay and the creating screen. */}
       <header className={styles.header}>
         <AnimatePresence initial={false} mode="popLayout">
           {!isTap && !creating && (
             <motion.div
-              key={card.page}
+              key="header"
               className={styles.headerInner}
               initial={reduceMotion ? false : CONTENT_HIDDEN}
-              // Staged like the content under the card: out in 0.2s, then the
-              // next one in over 0.4s, so a page change reads as a blur-fade
-              // rather than a swap.
               animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
               exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
             >
@@ -146,42 +156,65 @@ export function CardScreen({ home }: CardScreenProps) {
               >
                 <SfSymbol name="chevron.left" size={17} />
               </GlassSymbolButton>
-              {card.page !== 'home' ? (
-                <h1 className={styles.title}>{PAGE_TITLE[card.page]}</h1>
-              ) : (
-                <div className={styles.headerActions}>
-                  <GlassSymbolButton
-                    aria-label="Card numbers"
-                    size={40}
-                    type="button"
-                    glass={{ brightness }}
-                    onClick={startReveal}
-                    disabled={card.closed}
+              <AnimatePresence initial={false} custom={pushDir}>
+                {card.page !== 'home' && (
+                  <motion.h1
+                    key={card.page}
+                    className={styles.title}
+                    custom={pushDir}
+                    variants={reduceMotion ? undefined : TITLE_VARIANTS}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={PUSH}
                   >
-                    <SfSymbol name="creditcard.and.numbers" size={24} />
-                  </GlassSymbolButton>
-                  <GlassWindowButtonGroup
-                    glass={{ brightness }}
-                    symbols={[
-                      {
-                        name: 'gauge.with.dots.needle.bottom.50percent',
-                        size: 22,
-                        label: 'Spending limits',
-                        onClick: card.openLimits,
-                        disabled: card.closed,
-                      },
-                      {
-                        // The lock shows what the tap does: lock a live card, unlock a frozen one.
-                        name: card.frozen ? 'lock.open.fill' : 'lock.fill',
-                        size: 20,
-                        label: card.frozen ? 'Unfreeze card' : 'Freeze card',
-                        onClick: () => card.setSheet('freeze'),
-                        disabled: card.closed,
-                      },
-                    ]}
-                  />
-                </div>
-              )}
+                    {PAGE_TITLE[card.page]}
+                  </motion.h1>
+                )}
+              </AnimatePresence>
+              <AnimatePresence initial={false}>
+                {!onPage && (
+                  <motion.div
+                    key="actions"
+                    className={styles.headerActions}
+                    initial={reduceMotion ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={PUSH}
+                  >
+                    <GlassSymbolButton
+                      aria-label="Card numbers"
+                      size={40}
+                      type="button"
+                      glass={{ brightness }}
+                      onClick={startReveal}
+                      disabled={card.closed}
+                    >
+                      <SfSymbol name="creditcard.and.numbers" size={24} />
+                    </GlassSymbolButton>
+                    <GlassWindowButtonGroup
+                      glass={{ brightness }}
+                      symbols={[
+                        {
+                          name: 'gauge.with.dots.needle.bottom.50percent',
+                          size: 22,
+                          label: 'Spending limits',
+                          onClick: card.openLimits,
+                          disabled: card.closed,
+                        },
+                        {
+                          // The lock shows what the tap does: lock a live card, unlock a frozen one.
+                          name: card.frozen ? 'lock.open.fill' : 'lock.fill',
+                          size: 20,
+                          label: card.frozen ? 'Unfreeze card' : 'Freeze card',
+                          onClick: () => card.setSheet('freeze'),
+                          disabled: card.closed,
+                        },
+                      ]}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
@@ -256,7 +289,7 @@ export function CardScreen({ home }: CardScreenProps) {
               >
                 <div className={styles.homeScroll}>
                   <CardHomeContent
-                    transactions={transactions}
+                    activity={activity}
                     card={card}
                     onTapToPay={startTapToPay}
                     onAddToWallet={startAddToWallet}
