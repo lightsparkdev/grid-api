@@ -27146,30 +27146,65 @@ components:
           EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnSource'
           GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnSource'
           PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceBurnSource'
+    StablecoinBurnDestinationRail:
+      type: string
+      enum:
+        - WIRE
+        - ACH_CREDIT
+        - SAME_DAY_ACH_CREDIT
+        - RTP_CREDIT
+      description: Fiat payout rail for the burn destination.
     StablecoinBurnDestination:
       type: object
       required:
         - type
-        - externalAccountId
         - rail
       properties:
         type:
           type: string
           enum:
             - EXTERNAL_ACCOUNT
-          description: Burn destination variant. V1 supports fiat Grid `ExternalAccount` destinations.
+            - GRID_INTERNAL_ACCOUNT
+          description: Burn destination variant.
         externalAccountId:
           type: string
-          description: Grid bank `ExternalAccount` receiving fiat redemption proceeds.
+          description: Grid bank `ExternalAccount` receiving fiat redemption proceeds. Required when `type` is `EXTERNAL_ACCOUNT`.
           example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
-        rail:
+        accountId:
           type: string
-          enum:
-            - WIRE
-            - ACH_CREDIT
-            - SAME_DAY_ACH_CREDIT
-            - RTP_CREDIT
-          description: Fiat payout rail for the burn destination.
+          description: Grid `InternalAccount` receiving fiat redemption proceeds through its bank funding instructions. Required when `type` is `GRID_INTERNAL_ACCOUNT`.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000206
+        rail:
+          $ref: '#/components/schemas/StablecoinBurnDestinationRail'
+      allOf:
+        - if:
+            properties:
+              type:
+                const: EXTERNAL_ACCOUNT
+          then:
+            properties:
+              externalAccountId: {}
+            required:
+              - externalAccountId
+            not:
+              properties:
+                accountId: {}
+              required:
+                - accountId
+        - if:
+            properties:
+              type:
+                const: GRID_INTERNAL_ACCOUNT
+          then:
+            properties:
+              accountId: {}
+            required:
+              - accountId
+            not:
+              properties:
+                externalAccountId: {}
+              required:
+                - externalAccountId
     StablecoinBurnRequest:
       type: object
       required:
