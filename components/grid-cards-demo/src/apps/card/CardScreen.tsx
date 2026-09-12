@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { useScreenOverlay } from '@/apps/shared/AppShell/ScreenOverlayContext';
 import { FaceIdAuth } from '@/apps/shared/FaceIdAuth';
 import { GlassNotification } from '@/apps/shared/GlassNotification';
@@ -24,6 +25,8 @@ import styles from './CardScreen.module.scss';
 
 const HEADER_DURATION = 0.2;
 const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
+/** Aurora's issuance slot shows the card a touch smaller than the home's. */
+const CARD_ISSUANCE_SCALE = 338 / 370;
 
 const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
 const BODY_TRANSITION = motionTransition(easeOutSnappy, 0.5);
@@ -56,6 +59,7 @@ export function CardScreen({ home }: CardScreenProps) {
   const brightness = headerGlassBrightness(theme);
 
   const {
+    issuing,
     tapPhase,
     transactions,
     toast,
@@ -78,6 +82,10 @@ export function CardScreen({ home }: CardScreenProps) {
   // push over the whole body, card included (the stage clips the card to its
   // leading edge), with the home staying put underneath.
   const onNumbers = card.page === 'numbers';
+  // POST /cards is PROCESSING: Aurora's creating screen. No header, the card
+  // alone near the center of the screen, "Creating your card…" under it; the
+  // home comes in when the card goes ACTIVE.
+  const creating = issuing;
 
   // App icon for push notifications — a brand-tinted rounded square.
   const brandColor = brandColorOf(design);
@@ -120,7 +128,7 @@ export function CardScreen({ home }: CardScreenProps) {
           during tap-to-pay. */}
       <header className={styles.header}>
         <AnimatePresence initial={false} mode="popLayout">
-          {!isTap && (
+          {!isTap && !creating && (
             <motion.div
               key={card.page}
               className={styles.headerInner}
@@ -197,14 +205,40 @@ export function CardScreen({ home }: CardScreenProps) {
           animate={{ x: card.page === 'limits' ? '-30%' : '0%' }}
           transition={reduceMotion ? { duration: 0 } : PUSH}
         >
-          <div className={styles.cardArea}>
+          <div className={clsx(styles.cardArea, creating && styles.cardAreaCreating)}>
             {/* An empty slot: THE card (the one on the stage, never a copy) flies
-              in and parks exactly here. CardStage measures this box and fits
-              the card to it, so an upright card gets a tall slot. */}
-            <div
-              data-card-slot
-              className={clsx(styles.cardSlot, design.orientation === 'portrait' && styles.cardSlotPortrait)}
-            />
+                in and parks exactly here. CardStage measures this box and fits
+                the card to it, so an upright card gets a tall slot. While the
+                card is being created the slot carries to the center (Aurora's
+                issuance slot, a touch smaller) and back; the stage follows. */}
+            <motion.div
+              layout={!reduceMotion && !isTap}
+              className={styles.cardCarry}
+              initial={false}
+              animate={{ scale: creating ? CARD_ISSUANCE_SCALE : 1 }}
+              transition={BODY_TRANSITION}
+            >
+              <div
+                data-card-slot
+                className={clsx(styles.cardSlot, design.orientation === 'portrait' && styles.cardSlotPortrait)}
+              />
+            </motion.div>
+            <AnimatePresence>
+              {creating && (
+                <motion.div
+                  key="creating"
+                  className={styles.creating}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: motionTransition(easeOutQuick, 0.3, { delay: 0.2 }) }}
+                  exit={{ opacity: 0, transition: CONTENT_OUT }}
+                >
+                  <span className={styles.spinner} aria-hidden>
+                    <IconLoadingCircle size={16} />
+                  </span>
+                  <span className={styles.creatingText}>Creating your card…</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Below the card: the home (actions, transactions), Card numbers in
@@ -212,7 +246,7 @@ export function CardScreen({ home }: CardScreenProps) {
             and the next blur-fades in. popLayout so an exiting block leaves
             the flex flow immediately. */}
           <AnimatePresence mode="popLayout" initial={false}>
-            {!isTap && !onNumbers && (
+            {!isTap && !onNumbers && !creating && (
               <motion.div
                 key="home"
                 className={styles.homeContent}

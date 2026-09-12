@@ -92,7 +92,61 @@
 /* Card slot — pinned at the top; the hub scrolls beneath it. */
 .cardArea {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 10px 16px 8px;
+}
+
+/* Aurora's issuance slot (Figma 2219:48842): the card centered in the body,
+   the "Creating…" caption 12 below it; the 96 bottom padding sits the pair 48
+   above true center. */
+.cardAreaCreating {
+  flex: 1 1 0;
+  min-height: 0;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px 96px;
+}
+
+/* Carries the slot between the top and the centered slot (layout-animated),
+   and scales it for issuance. */
+.cardCarry {
+  width: 100%;
+  transform-origin: center center;
+}
+
+/* Figma 2219:48913 — "Creating your card…" with a leading spinner. */
+.creating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  color: var(--ios-label-secondary);
+}
+
+.creatingText {
+  @include ios.ios-text-subheadline;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'opsz' var(--ios-type-subheadline-opsz);
+}
+
+.spinner {
+  display: inline-flex;
+  flex-shrink: 0;
+  animation: card-creating-spin 0.9s linear infinite;
+}
+
+@keyframes card-creating-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
 }
 
 /* The card's footprint (DebitCard is 232 tall at the screen width minus gutters). */

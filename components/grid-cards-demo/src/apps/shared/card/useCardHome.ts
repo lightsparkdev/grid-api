@@ -471,13 +471,16 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     };
 
     // Clear whatever the previous flow left up, then run: once the phone lands,
-    // or at once when it is already up from an earlier flow.
+    // or at once when it is already up from an earlier flow. Issue starts at
+    // once either way, so the phone arrives already on the creating screen
+    // and the card dives into its centered slot.
     const busy = card.surfaceUp || revealPending || tapPhase !== 'idle';
     setTapPhase('idle');
     card.resetSurfaces();
     setRevealPending(false);
     setNotice(null);
-    later(run, (entry.phoneUp ? 0 : PHONE_IN_MS) + (busy ? ENTRY_HOME_SETTLE_MS : 0));
+    const waitForPhone = entry.phoneUp || entry.open === 'card' ? 0 : PHONE_IN_MS;
+    later(run, waitForPhone + (busy ? ENTRY_HOME_SETTLE_MS : 0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry]);
 
