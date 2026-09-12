@@ -37,7 +37,9 @@ export type LimitsRow = 'perTransaction' | 'perDay';
  *  and the app says so with a toast. */
 export type WalletAddPhase = 'idle' | 'intro' | 'contacting' | 'setup' | 'added';
 
-export type TransactionStatus = 'AUTHORIZED' | 'SETTLED' | 'REFUNDED';
+/** Mirrors the API's `CardTransactionStatus` for the rows the demo shows.
+ *  A refund is not a status: it is its own CREDIT row (see `refundRow`). */
+export type TransactionStatus = 'AUTHORIZED' | 'SETTLED';
 
 /** A card event for the Activity list (issued, frozen, closed…). */
 export interface ActivityEvent {
@@ -48,13 +50,19 @@ export interface ActivityEvent {
   detail?: string;
 }
 
-/** A card transaction row plus its lifecycle. The skin renders `status`
- *  however it likes (Pending / Settled / Refunded chips). A purchase's
- *  category is a merchant's; the card's events have their own rows. */
-export interface CardTransactionRow extends Omit<WalletListItemData, 'category'> {
+/** A card transaction row plus its lifecycle, one per line on the
+ *  cardholder's statement, as the API models it: a purchase is a DEBIT; a
+ *  merchant's return is its own dated CREDIT row that points back at the
+ *  purchase, which keeps its own status. A purchase's category is a
+ *  merchant's; the card's events have their own rows. */
+export interface CardTransactionRow extends Omit<WalletListItemData, 'category' | 'credit'> {
   category?: MerchantCategory;
   status: TransactionStatus;
   cents: number;
+  /** Absent means DEBIT (a purchase). */
+  direction?: 'DEBIT' | 'CREDIT';
+  /** On a CREDIT row: the purchase this return credits back against. */
+  originalTransactionId?: string;
 }
 
 export interface UseCardControlsOptions {
@@ -70,8 +78,9 @@ export interface UseCardControlsOptions {
   onAddToWallet?: () => void;
   /** A transaction settled (clearing) — log simulate/clearing + webhook. */
   onSettle?: (row: CardTransactionRow) => void;
-  /** A merchant refund landed — log simulate/return + webhook. */
-  onRefund?: (row: CardTransactionRow) => void;
+  /** A merchant refund landed — log simulate/return + webhook. `purchase` is
+   *  the row being returned against; `refund` is the new CREDIT row. */
+  onRefund?: (purchase: CardTransactionRow, refund: CardTransactionRow) => void;
 }
 
 /** Apple's add-card waits: "Contacting the Card Issuer…", then "Setting up
@@ -162,13 +171,20 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   const frozen = lifecycle === 'FROZEN';
   const closed = lifecycle === 'CLOSED';
 
-  const spentTodayCents = rows
-    .filter((r) => r.status !== 'REFUNDED' && startOfUtcDay(r.timestamp) === startOfUtcDay(Date.now()))
-    .reduce((sum, r) => sum + r.cents, 0);
-  // Refunds don't restore daily capacity (the API's rule), so count them too.
+  const today = (r: CardTransactionRow) => startOfUtcDay(r.timestamp) === startOfUtcDay(Date.now());
+  const isCredit = (r: CardTransactionRow) => r.direction === 'CREDIT';
+  /** Net spend today: purchases less the refunds that came back. */
+  const spentTodayCents = rows.filter(today).reduce((sum, r) => sum + (isCredit(r) ? -r.cents : r.cents), 0);
+  /** Spend counted against maxSpendPerDay. Refunds don't restore daily
+   *  capacity (the API's rule), so only the purchases count. */
   const dailyUsedCents = rows
-    .filter((r) => startOfUtcDay(r.timestamp) === startOfUtcDay(Date.now()))
+    .filter((r) => today(r) && !isCredit(r))
     .reduce((sum, r) => sum + r.cents, 0);
+  /** The CREDIT row that returned a purchase, if the merchant has. */
+  const refundOf = useCallback(
+    (purchaseId: string) => rows.find((r) => r.originalTransactionId === purchaseId) ?? null,
+    [rows],
+  );
 
   /** Would an authorization for `cents` go through? */
   const declineReasonFor = useCallback(
@@ -351,17 +367,29 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setSheet('transaction');
   }, []);
 
-  /** Merchant returns the purchase `id`; the row flips to REFUNDED after a beat.
-   *  Only a settled purchase can be returned (a pending one has nothing to
-   *  return against). Reads the row at fire time (functional update) so
-   *  delayed callers can't act on a stale list. */
+  /** Merchant returns the purchase `id`. After a beat a CREDIT row for the
+   *  same amount lands above it, pointing back at the purchase, which stays
+   *  SETTLED — the way the API records a return. Only a settled purchase can
+   *  be returned, once (a pending one has nothing to return against). Reads
+   *  the rows at fire time so delayed callers can't act on a stale list. */
   const refundRow = useCallback(
     (id: string) => {
       later(() => {
-        const row = rowsRef.current.find((r) => r.id === id);
-        if (!row || row.status !== 'SETTLED') return;
-        setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'REFUNDED' } : r)));
-        onRefund?.({ ...row, status: 'REFUNDED' });
+        const rows = rowsRef.current;
+        const purchase = rows.find((r) => r.id === id);
+        if (!purchase || purchase.status !== 'SETTLED' || purchase.direction === 'CREDIT') return;
+        if (rows.some((r) => r.originalTransactionId === id)) return;
+        const refund: CardTransactionRow = {
+          ...purchase,
+          id: `refund-${id}`,
+          detail: 'Refund',
+          timestamp: Date.now(),
+          status: 'SETTLED',
+          direction: 'CREDIT',
+          originalTransactionId: id,
+        };
+        setRows((prev) => [refund, ...prev]);
+        onRefund?.(purchase, refund);
       }, REFUND_MS);
     },
     [later, onRefund],
@@ -393,6 +421,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     openLimits,
     spentTodayCents,
     dailyUsedCents,
+    refundOf,
     sheet,
     setSheet,
     closeSheet,

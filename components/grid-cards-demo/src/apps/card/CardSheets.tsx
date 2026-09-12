@@ -125,29 +125,35 @@ export function WalletAgainSheet({ card }: { card: CardControls }) {
 
 /* ── Transaction detail + refund ──────────────────────────────────────────── */
 
-const STATUS_LABEL = { AUTHORIZED: 'Pending', SETTLED: 'Settled', REFUNDED: 'Refunded' } as const;
+const STATUS_LABEL = { AUTHORIZED: 'Pending', SETTLED: 'Settled' } as const;
 
+/** A purchase, or the refund that came back for one. A refund is its own
+ *  line (a CREDIT the API links to the purchase), so the purchase keeps its
+ *  Settled status and shows the refund beside it. */
 export function TransactionSheet({ card }: { card: CardControls }) {
   const open = card.sheet === 'transaction';
   const row = card.selectedRow;
+  const isRefund = row?.direction === 'CREDIT';
+  const refund = row && !isRefund ? card.refundOf(row.id) : null;
   const [refunding, setRefunding] = useState(false);
   useEffect(() => {
     if (!open) setRefunding(false);
   }, [open]);
   useEffect(() => {
-    if (row?.status === 'REFUNDED') setRefunding(false);
-  }, [row?.status]);
+    if (refund) setRefunding(false);
+  }, [refund]);
   return (
     <SheetShell
       open={open}
       onDismiss={card.closeSheet}
       icon={<IconArrowUndoUp size={28} />}
-      title={row?.title ?? 'Transaction'}
-      sub={row ? `${row.detail === 'Pending' || row.detail === 'Refunded' ? 'Tap to Pay' : row.detail} · Card ending 8972` : undefined}
+      title={row ? (isRefund ? `Refund from ${row.title}` : row.title) : 'Transaction'}
+      sub={row ? `${isRefund ? 'Merchant return' : 'Tap to Pay'} · Card ending 8972` : undefined}
     >
       {row ? (
         <div className={styles.txnBody}>
-          <div className={styles.txnAmount}>
+          <div className={clsx(styles.txnAmount, isRefund && styles.txnAmountCredit)}>
+            {isRefund ? '+' : ''}
             <NumericText value={row.cents / 100} format={{ style: 'currency', currency: 'USD' }} />
           </div>
           <dl className={styles.kv}>
@@ -159,26 +165,34 @@ export function TransactionSheet({ card }: { card: CardControls }) {
             <dd>{row.title.toUpperCase()}</dd>
             <dt>Category</dt>
             <dd>{row.category ? CATEGORY_LABEL[row.category] : 'Retail'}</dd>
+            {refund ? (
+              <>
+                <dt>Refunded</dt>
+                <dd>+{refund.amount}</dd>
+              </>
+            ) : null}
           </dl>
-          <div className={styles.actions}>
-            <ContentAreaButton
-              type="button"
-              variant="bordered"
-              disabled={row.status !== 'SETTLED' || refunding}
-              onClick={() => {
-                setRefunding(true);
-                card.refundSelected();
-              }}
-            >
-              {row.status === 'REFUNDED'
-                ? 'Refunded'
-                : row.status === 'AUTHORIZED'
-                  ? 'Waiting to settle…'
-                  : refunding
-                    ? 'Refunding…'
-                    : 'Simulate merchant refund'}
-            </ContentAreaButton>
-          </div>
+          {isRefund ? null : (
+            <div className={styles.actions}>
+              <ContentAreaButton
+                type="button"
+                variant="bordered"
+                disabled={row.status !== 'SETTLED' || refunding || Boolean(refund)}
+                onClick={() => {
+                  setRefunding(true);
+                  card.refundSelected();
+                }}
+              >
+                {refund
+                  ? 'Refunded'
+                  : row.status === 'AUTHORIZED'
+                    ? 'Waiting to settle…'
+                    : refunding
+                      ? 'Refunding…'
+                      : 'Simulate merchant refund'}
+              </ContentAreaButton>
+            </div>
+          )}
         </div>
       ) : null}
     </SheetShell>

@@ -163,10 +163,10 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     ...cardOptions,
     // The refund lands: the money is back on the funding source, the phone
     // says so, and the playground logs it, all on the same beat.
-    onRefund: (row) => {
-      setDeltaCents((c) => c + row.cents);
-      notify(`Refund from ${row.title}`, `+${row.amount} back on your card`);
-      cardOptions?.onRefund?.(row);
+    onRefund: (purchase, refund) => {
+      setDeltaCents((c) => c + refund.cents);
+      notify(`Refund from ${purchase.title}`, `+${refund.amount} back on your card`);
+      cardOptions?.onRefund?.(purchase, refund);
     },
     // Apple's flow is done and sliding away: the app's toast says so.
     onAddToWallet: () => {
@@ -197,13 +197,14 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   // Reveal needs Face ID first; the view shows the overlay while this is set.
   const [revealPending, setRevealPending] = useState(false);
 
-  // Activity: the purchases (the controls' rows, labelled by lifecycle) and
-  // the card's events, newest first.
+  // Activity: the transactions (the controls' rows, labelled by lifecycle —
+  // a refund is its own credit line under the merchant) and the card's
+  // events, newest first.
   const activity: WalletListItemData[] = useMemo(() => {
     const purchases: WalletListItemData[] = card.rows.map((r) => ({
       ...r,
-      detail: r.status === 'AUTHORIZED' ? 'Pending' : r.status === 'REFUNDED' ? 'Refunded' : r.detail,
-      credit: r.status === 'REFUNDED',
+      detail: r.status === 'AUTHORIZED' ? 'Pending' : r.detail,
+      credit: r.direction === 'CREDIT',
     }));
     const events: WalletListItemData[] = card.events.map((e) => ({
       id: e.id,
@@ -503,10 +504,13 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           break;
         }
         case 'refund': {
-          // Only a settled purchase can be returned. None yet: provision one
-          // (state only, like the other fast-forwards; it was spent from the
-          // funding source) so the flow has something to act on.
-          let target = card.rows.find((r) => r.status === 'SETTLED');
+          // Only a settled purchase can be returned, and only once. None
+          // left: provision one (state only, like the other fast-forwards; it
+          // was spent from the funding source) so the flow has something to
+          // act on.
+          let target = card.rows.find(
+            (r) => r.status === 'SETTLED' && r.direction !== 'CREDIT' && !card.refundOf(r.id),
+          );
           if (!target) {
             const seed = TAP_MERCHANTS[0];
             target = {
