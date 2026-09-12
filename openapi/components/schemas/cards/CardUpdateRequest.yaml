@@ -41,9 +41,8 @@ properties:
       smallest unit of its currency (cents for USD). Send a positive integer
       to set the limit, `null` to remove it, or omit the field to leave it
       unchanged. If your platform config also sets
-      `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. A
-      transaction for exactly whichever limit applies is allowed. You can only
-      send this when the card's
+      `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You
+      can only send this when the card's
       `cardCapabilities.supportsSpendLimits` is true, and not together with
       `status: CLOSED`.
     example: 10000

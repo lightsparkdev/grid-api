@@ -70,9 +70,9 @@ properties:
       The most this card can spend on a single transaction, in the smallest
       unit of its `currency` (cents for USD). `null` means the card sets no
       limit of its own. If your platform config also sets
-      `cardConfigs.maxSpendPerTransaction`, the lower of the two applies and
-      this value stays as you set it. A transaction for exactly whichever
-      limit applies is allowed.
+      `cardConfigs.maxSpendPerTransaction` (the platform level
+      maxSpendPerTransaction), the lower of the two applies and this value
+      stays as you set it.
     example: 5000
   maxSpendPerDay:
     anyOf:
