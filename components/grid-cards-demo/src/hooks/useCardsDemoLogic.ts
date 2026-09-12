@@ -194,12 +194,13 @@ export function useCardsDemoLogic() {
 
   const onTapDeclined = useCallback<NonNullable<UseCardHomeOptions['onTapDeclined']>>(
     (reason, cents, merchant) => {
-      pushCalls(declineCalls(reason, merchant, cents), GROUP_LABEL.tap);
+      // The simulate now; CARD_TRANSACTION.DECLINED a beat later.
+      pushWithWebhook(declineCalls(reason, merchant, cents), GROUP_LABEL.tap);
       // A decline proves the control that caused it.
       if (reason === 'CARD_PAUSED') markDone('freeze');
       if (reason === 'OVER_PER_TXN_LIMIT' || reason === 'OVER_DAILY_LIMIT') markDone('limits');
     },
-    [pushCalls, markDone],
+    [pushWithWebhook, markDone],
   );
 
   const cardOptions = useMemo<NonNullable<UseCardHomeOptions['card']>>(

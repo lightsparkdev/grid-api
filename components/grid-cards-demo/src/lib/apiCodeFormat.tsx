@@ -26,6 +26,10 @@ export function formatCurlString(entry: ApiCall): string {
   const headerEntries = Object.entries(entry.headers ?? {});
   if (!entry.inbound) headerEntries.unshift(['Authorization', 'Basic $GRID_KEY']);
   const hasBody = !!entry.reqBody;
+  // curl defaults `-d` to application/x-www-form-urlencoded; the API wants JSON.
+  if (hasBody && !headerEntries.some(([name]) => name.toLowerCase() === 'content-type')) {
+    headerEntries.push(['Content-Type', 'application/json']);
+  }
 
   lines.push(`curl -X ${entry.method} "${url}"${headerEntries.length || hasBody ? ' \\' : ''}`);
 
@@ -427,7 +431,7 @@ export function highlightCurl(code: string, s: SyntaxClass): ReactNode[] {
         continue;
       }
 
-      const methodMatch = remaining.match(/^(GET|POST)\b/);
+      const methodMatch = remaining.match(/^(GET|POST|PATCH|PUT|DELETE)\b/);
       if (methodMatch) {
         parts.push(<span key={partKey++} className={s.flag}>{methodMatch[1]}</span>);
         remaining = remaining.slice(methodMatch[1].length);
