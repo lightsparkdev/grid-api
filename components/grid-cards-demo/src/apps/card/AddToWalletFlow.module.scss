@@ -168,24 +168,25 @@ $apple-blue: #007aff;
   color: var(--ios-label-tertiary);
 }
 
-/* Apple's Continue: a full-width blue pill; gray with a spinner while adding. */
+/* Apple's Continue: a full-width blue glass pill (the glass is the child;
+   the button is its shape and shadow); gray with a spinner while adding. */
 .continue {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
   height: 52px;
   margin: 0;
-  padding: 0 20px;
+  padding: 0;
   border: 0;
   border-radius: 1000px;
   corner-shape: round;
-  background: $apple-blue;
+  background: none;
   color: #ffffff;
   @include ios.ios-text-headline;
   font-weight: 590;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background-color 220ms ease, color 220ms ease;
+  @include shadow.glass-button-shadow;
   @include shadow.glass-button-press-scale(1.02);
 
   &:disabled {
@@ -193,9 +194,27 @@ $apple-blue: #007aff;
   }
 }
 
+.continueGlass {
+  width: 100%;
+  height: 100%;
+  border-radius: 1000px;
+  corner-shape: round;
+  overflow: hidden;
+}
+
+.continueLabel {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+}
+
 .continueDim {
   background: var(--ios-fill-secondary);
   color: var(--ios-label-tertiary);
+
+  box-shadow: none;
 
   &:active:not(:disabled) {
     filter: none;

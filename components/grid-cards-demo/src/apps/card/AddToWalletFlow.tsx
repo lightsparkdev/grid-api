@@ -4,7 +4,8 @@ import clsx from 'clsx';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useBrand } from '@/apps/shared/brand/BrandContext';
 import { PAN_GROUPS, type CardControls } from '@/apps/shared/card';
-import { GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
+import { GlassOver } from '@/components/liquid-glass';
+import { GlassSymbolButton, headerGlassBrightness, TEXT_GLASS, TEXT_GLASS_PRIMARY_BACKDROP, useOverlayGlass } from '@/apps/shared/glass';
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
@@ -34,6 +35,7 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
   const design = useBrand();
+  const overlayGlass = useOverlayGlass();
   const phase = card.walletPhase;
   const open = phase === 'intro' || phase === 'contacting' || phase === 'setup' || phase === 'added';
   const intro = phase === 'intro';
@@ -162,7 +164,16 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
               onClick={card.confirmAddToWallet}
               disabled={!intro}
             >
-              {waiting ? <span className={styles.spinner} aria-label="Adding card" /> : 'Continue'}
+              {intro ? (
+                // Apple's prominent button, as iOS draws it now: blue glass.
+                <GlassOver className={styles.continueGlass} backdrop={TEXT_GLASS_PRIMARY_BACKDROP} {...overlayGlass.text}>
+                  <span className={styles.continueLabel}>Continue</span>
+                </GlassOver>
+              ) : (
+                <span className={styles.continueLabel}>
+                  {waiting ? <span className={styles.spinner} aria-label="Adding card" /> : 'Continue'}
+                </span>
+              )}
             </button>
           </div>
         </motion.section>
