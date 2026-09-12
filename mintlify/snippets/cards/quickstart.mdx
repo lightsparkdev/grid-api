@@ -91,7 +91,7 @@ before rendering. The full card credentials never cross your servers.
 Sandbox exposes simulate endpoints that drive the same internal paths
 the card issuer would call in production. The decisioning outcome is
 controlled by the last three characters of `merchant.descriptor` — any
-non-magic suffix is approved.
+non-magic suffix is approved. The descriptor must be 1–25 characters.
 
 ```bash
 curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-000000000010/simulate/authorization" \
