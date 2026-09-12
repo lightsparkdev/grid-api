@@ -3,7 +3,6 @@ properties:
   id:
     type: string
     description: System-generated unique identifier
-    readOnly: true
     example: PlatformConfig:019542f5-b3e7-1d02-0000-000000000003
   umaDomain:
     type: string
@@ -58,11 +57,9 @@ properties:
     type: string
     format: date-time
     description: Creation timestamp
-    readOnly: true
     example: '2025-06-15T12:30:45Z'
   updatedAt:
     type: string
     format: date-time
     description: Last update timestamp
-    readOnly: true
     example: '2025-06-15T12:30:45Z'

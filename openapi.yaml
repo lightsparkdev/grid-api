@@ -12635,7 +12635,6 @@ components:
         id:
           type: string
           description: System-generated unique identifier
-          readOnly: true
           example: PlatformConfig:019542f5-b3e7-1d02-0000-000000000003
         umaDomain:
           type: string
@@ -12690,13 +12689,11 @@ components:
           type: string
           format: date-time
           description: Creation timestamp
-          readOnly: true
           example: '2025-06-15T12:30:45Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp
-          readOnly: true
           example: '2025-06-15T12:30:45Z'
     Error401:
       type: object
@@ -13199,7 +13196,6 @@ components:
         id:
           type: string
           description: System-generated unique identifier
-          readOnly: true
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         platformCustomerId:
           type: string
@@ -13209,7 +13205,6 @@ components:
           $ref: '#/components/schemas/CustomerType'
         endUserTermsConsent:
           $ref: '#/components/schemas/EndUserTermsConsent'
-          readOnly: true
           description: The customer's recorded acceptance of the End User Terms. Omitted until acceptance has been recorded.
         region:
           type: string
@@ -13241,23 +13236,19 @@ components:
           type: string
           format: date-time
           description: Creation timestamp
-          readOnly: true
           example: '2025-07-21T17:32:28Z'
         updatedAt:
           type: string
           format: date-time
           description: Last update timestamp
-          readOnly: true
           example: '2025-07-21T17:32:28Z'
         isDeleted:
           type: boolean
           description: Whether the customer is marked as deleted
           example: false
-          readOnly: true
         contactVerification:
           allOf:
             - $ref: '#/components/schemas/ContactVerification'
-          readOnly: true
           description: Email and phone verification state. **Only present when the customer's payment provider requires it** (e.g. EU customers); omitted otherwise.
     KycStatus:
       type: string
@@ -24435,7 +24426,6 @@ components:
           description: Details about the rate and fees for the transaction.
         scaChallenge:
           $ref: '#/components/schemas/ScaChallenge'
-          readOnly: true
           description: 'Present only while `status` is `PENDING_AUTHORIZATION`: the Strong Customer Authentication challenge to satisfy before this quote can be executed (or, for realtime-funding sources, before `paymentInstructions` are issued). Omitted for customers outside SCA-regulated regions (non-EU).'
     QuoteLockSide:
       type: string
