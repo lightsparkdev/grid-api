@@ -1025,7 +1025,11 @@ function GradientHandles({ gradient: g }: { gradient: CardGradient }) {
 function StageClock() {
   const advance = useThree((s) => s.advance);
   useEffect(() => {
-    const step = ({ timestamp }: { timestamp: number }) => advance(timestamp);
+    // With frameloop="never" R3F takes each frame's delta from this timestamp,
+    // in SECONDS (it becomes the clock's elapsed time); Motion's is in ms. In
+    // ms every delta read as seconds and hit the rig's 0.05s clamp, and all
+    // the card's time-based motion ran 3× at 60Hz, 6× at 120Hz.
+    const step = ({ timestamp }: { timestamp: number }) => advance(timestamp / 1000);
     frame.postRender(step, true);
     return () => cancelFrame(step);
   }, [advance]);
