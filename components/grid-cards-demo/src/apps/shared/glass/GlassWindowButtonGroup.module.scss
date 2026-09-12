@@ -63,4 +63,13 @@ $group-hover-scale: ($group-height + shadow.$glass-button-hover-bloom * 2) / $gr
     opacity: 0.5;
     transition-duration: 0.06s;
   }
+
+  /* Disabled (a closed card): the glyph fades, as the round glass buttons do. */
+  &:disabled {
+    cursor: not-allowed;
+
+    svg {
+      opacity: 0.45;
+    }
+  }
 }
