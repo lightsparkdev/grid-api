@@ -223,7 +223,12 @@ export function loadFaceAssets(): Promise<FaceAssets> {
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
+/** A scratch canvas. In a worker (the surface bakes run in one, see
+ *  surfaceBake.worker) there is no document: an OffscreenCanvas stands in.
+ *  It answers everything the bakes ask of a canvas (its 2D context, width and
+ *  height, drawing it into another), so it goes by the same type here. */
 export function makeCanvas(w: number, h: number): HTMLCanvasElement {
+  if (typeof document === 'undefined') return new OffscreenCanvas(w, h) as unknown as HTMLCanvasElement;
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;

@@ -55,15 +55,8 @@ import {
   type FaceAssets,
   type SpecRect,
 } from './facePaint';
-import {
-  bakeEdge,
-  decorateNormal,
-  decorateOrm,
-  getSurfaceMaps,
-  surfaceKey,
-  surfaceOf,
-  type Surface,
-} from './surfaceMaps';
+import { bakeEdge, decorateNormal, decorateOrm, surfaceKey, surfaceOf, type Surface } from './surfaceMaps';
+import { loadSurfaceMaps, surfaceMapsReady, type BakeJob } from './surfaceBakeClient';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -376,8 +369,11 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const runOne = () => {
       const job = jobs.shift();
       if (!job) return;
-      getSurfaceMaps(job[0], job[1], assets, false, job[2], job[3]);
-      schedule();
+      // Off the main thread (the bake worker); the next when this one lands.
+      loadSurfaceMaps({ surface: job[0], side: job[1], plain: false, mark: job[2], orientation: job[3] }, assets).then(
+        schedule,
+        schedule,
+      );
     };
     const schedule = () => {
       if (hasIdle) {
@@ -399,51 +395,125 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // is there; with the mark on the front, the hologram layer has its own.
   const backMark = bodyDesign.visaMark === 'back';
   const orientation = bodyDesign.orientation;
+  // The maps for the surface land asynchronously (the bake worker); this
+  // counts the times they have, for the decoration effect below to lay its
+  // treatment over the maps that are actually on the material.
+  const [mapsVersion, setMapsVersion] = useState(0);
+  // The front has painted and the card wants to report ready, but its
+  // surface maps hadn't landed yet: the maps effect reports for it.
+  const readyWanted = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (!assets) return;
     const c = SURFACE[surface];
-    const maps = (s: Surface, side: 'front' | 'back', plain = false, mark = true) => {
-      const key = surfaceKey(s, side, plain, mark, orientation);
+    // Every map this surface needs, for either face: the surface's own, and
+    // the blank's and the base's for the material change.
+    const jobs: Array<[BakeJob, 'orm' | 'normal' | 'both']> = [];
+    const job = (s: Surface, side: 'front' | 'back', plain: boolean, mark: boolean): BakeJob => ({
+      surface: s,
+      side,
+      plain,
+      mark,
+      orientation,
+    });
+    for (const side of ['front', 'back'] as const) {
+      jobs.push([job(surface, side, false, side === 'front' || backMark), 'both']);
+      jobs.push([job(bareSurface, side, true, true), 'both']);
+      jobs.push([job(baseSurface, side, true, true), 'both']);
+    }
+    let cancelled = false;
+    let raf = 0;
+    // Textures made here and not yet on the GPU: they go up one per frame
+    // before the material takes them, so the frame that switches surfaces
+    // isn't also the frame that uploads six 2048px maps.
+    const fresh: THREE.Texture[] = [];
+    const texturesFor = (j: BakeJob) => {
+      const key = surfaceKey(j.surface, j.side, j.plain, j.mark, orientation);
       let t = surfaceTex.current.get(key);
       if (!t) {
-        const m = getSurfaceMaps(s, side, assets, plain, mark, orientation);
+        const m = surfaceMapsReady(j);
+        if (!m) return null;
         t = { orm: canvasTexture(m.orm), normal: canvasTexture(m.normal) };
         surfaceTex.current.set(key, t);
+        fresh.push(t.orm, t.normal);
       }
       return t;
     };
-    for (const [side, idx, u] of [
-      ['front', MAT_FRONT, swapU.front],
-      ['back', MAT_BACK, swapU.back],
-    ] as const) {
-      const t = maps(surface, side, false, side === 'front' || backMark);
-      const mat = materials[idx];
-      mat.roughnessMap = t.orm;
-      mat.metalnessMap = t.orm;
-      mat.normalMap = t.normal;
-      mat.normalScale.set(c.normalScale, c.normalScale);
-      // Never exactly zero: three compiles a different program when a coat
-      // or a sheen is present at all, and a recompile stalls the frame at a
-      // finish change. A trace of each keeps one program for every surface.
-      mat.clearcoat = Math.max(SHADER_KEEP, c.clearcoat);
-      mat.clearcoatRoughness = c.clearcoatRoughness;
-      mat.specularIntensity = c.specular;
-      mat.sheen = Math.max(SHADER_KEEP, c.sheen);
-      mat.sheenRoughness = 0.9;
-      mat.sheenColor.set('#ffffff');
-      mat.needsUpdate = true;
-      // The blank and the base are the body before anything is laid on or
-      // set into it: no stripe, no mark, no chip pocket. The chip arrives
-      // with the graphics.
-      const bare = maps(bareSurface, side, true);
-      u.uBareOrm.value = bare.orm;
-      u.uBareNormal.value = bare.normal;
-      const base = maps(baseSurface, side, true);
-      u.uBaseOrm.value = base.orm;
-      u.uBaseNormal.value = base.normal;
+    const apply = () => {
+      for (const [side, idx, u] of [
+        ['front', MAT_FRONT, swapU.front],
+        ['back', MAT_BACK, swapU.back],
+      ] as const) {
+        const t = texturesFor(job(surface, side, false, side === 'front' || backMark))!;
+        const mat = materials[idx];
+        mat.roughnessMap = t.orm;
+        mat.metalnessMap = t.orm;
+        mat.normalMap = t.normal;
+        mat.normalScale.set(c.normalScale, c.normalScale);
+        // Never exactly zero: three compiles a different program when a coat
+        // or a sheen is present at all, and a recompile stalls the frame at a
+        // finish change. A trace of each keeps one program for every surface.
+        mat.clearcoat = Math.max(SHADER_KEEP, c.clearcoat);
+        mat.clearcoatRoughness = c.clearcoatRoughness;
+        mat.specularIntensity = c.specular;
+        mat.sheen = Math.max(SHADER_KEEP, c.sheen);
+        mat.sheenRoughness = 0.9;
+        mat.sheenColor.set('#ffffff');
+        mat.needsUpdate = true;
+        // The blank and the base are the body before anything is laid on or
+        // set into it: no stripe, no mark, no chip pocket. The chip arrives
+        // with the graphics.
+        const bare = texturesFor(job(bareSurface, side, true, true))!;
+        u.uBareOrm.value = bare.orm;
+        u.uBareNormal.value = bare.normal;
+        const base = texturesFor(job(baseSurface, side, true, true))!;
+        u.uBaseOrm.value = base.orm;
+        u.uBaseNormal.value = base.normal;
+      }
+      invalidate();
+      setMapsVersion((v) => v + 1);
+      const announce = readyWanted.current;
+      readyWanted.current = null;
+      announce?.();
+    };
+    // Wrap every map in a texture (fresh ones are queued for upload), send
+    // the fresh ones up a frame apiece, then switch the material over.
+    const stage = () => {
+      for (const [j] of jobs) texturesFor(j);
+      const { gl } = three();
+      const uploadNext = () => {
+        if (cancelled) return;
+        const t = fresh.shift();
+        if (t) {
+          gl.initTexture(t);
+          raf = requestAnimationFrame(uploadNext);
+          return;
+        }
+        apply();
+      };
+      // The first paint (nothing on the material yet) can't wait a frame per
+      // map: the ready path uploads for it. Later switches stage.
+      if (materials[MAT_FRONT].roughnessMap === null) {
+        fresh.length = 0;
+        apply();
+      } else {
+        uploadNext();
+      }
+    };
+    // All baked already (a second visit, or the background got there first):
+    // straight on. Otherwise the worker bakes what is missing and the
+    // material keeps its last maps until the new ones land together.
+    if (jobs.every(([j]) => surfaceMapsReady(j))) {
+      stage();
+    } else {
+      Promise.all(jobs.map(([j]) => loadSurfaceMaps(j, assets))).then(() => {
+        if (!cancelled) stage();
+      });
     }
-    invalidate();
-  }, [assets, surface, bareSurface, baseSurface, backMark, orientation, materials, swapU, invalidate]);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [assets, surface, bareSurface, baseSurface, backMark, orientation, materials, swapU, invalidate, three]);
 
   // The blank's room, as a PMREM in the scene environment's layout, so
   // polished steel has something to reflect.
@@ -485,6 +555,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     if (!assets || frontPending) return;
     const front = materials[MAT_FRONT];
     const base = surfaceTex.current.get(surfaceKey(surface, 'front', false, true, orientation));
+    // Not yet baked: this runs again when the maps land (mapsVersion).
     if (!base) return;
     decoTex.current.orm?.dispose();
     decoTex.current.normal?.dispose();
@@ -498,7 +569,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     } else {
       const decorated = canvasTexture(
         decorateOrm(
-          base.orm.image as HTMLCanvasElement,
+          base.orm.image as HTMLCanvasElement, // a canvas, or the worker's bitmap: both draw
           brandMask,
           brandT,
           artT && art ? paintArtMask(art, orientation) : null,
@@ -537,6 +608,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     frontPending,
     materials,
     invalidate,
+    mapsVersion,
   ]);
 
   // Edge: the construction's layers, the printed skins in the print color (or
@@ -614,7 +686,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       // a time and its programs compile off the main thread (where the
       // browser allows), so the intro's first frame is not the frame that
       // uploads a dozen 2048px maps and links the shaders: that was a
-      // quarter-second hitch as the blueprint began.
+      // quarter-second hitch as the blueprint began. If the surface maps
+      // haven't landed yet (they bake in a worker), this waits for them.
       const { gl, scene, camera } = three();
       const textures = new Set<THREE.Texture>();
       for (const m of materials) {
@@ -635,7 +708,9 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
         const compiled = typeof gl.compileAsync === 'function' ? gl.compileAsync(scene, camera) : Promise.resolve();
         compiled.catch(() => undefined).then(() => onReady?.());
       };
-      raf = requestAnimationFrame(uploadNext);
+      const surfaceMapsOn = materials[MAT_FRONT].roughnessMap !== null;
+      if (surfaceMapsOn) raf = requestAnimationFrame(uploadNext);
+      else readyWanted.current = () => requestAnimationFrame(uploadNext);
       return () => cancelAnimationFrame(raf);
     }
   }, [
