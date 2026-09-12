@@ -58,6 +58,10 @@ const LENS_DISMISSED = { ...DISMISSED, filter: 'blur(8px)' };
 /** A swipe up dismisses once it has come this far, or is this quick. */
 const SWIPE_DISMISS_PX = 40;
 const SWIPE_DISMISS_VELOCITY = 500;
+/** Where along the dismiss a lift of `y` puts the capsule: 0 in its slot, 1 at
+ *  the dismissed point. The drag scrubs the dismiss's own squash and fade. */
+const dismissProgress = (y: number) => Math.min(1, Math.max(0, y / DISMISSED.y));
+const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
 
 interface GlassNotificationProps {
   show: boolean;
@@ -120,9 +124,19 @@ export function GlassNotification({
 }: GlassNotificationProps) {
   const reduceMotion = useReducedMotion();
   const theme = useThemeMode();
-  // The capsule's lift, shared by the swoop, the drag, and the dismiss, so a
-  // swipe hands its position and speed straight to whichever comes next.
+  // The capsule's lift, squash, and fade, shared by the swoop, the drag, and
+  // the dismiss: the drag sets them along the dismiss's path, and a release
+  // hands them, position and speed, straight to whichever comes next.
   const y = useMotionValue(0);
+  const scaleX = useMotionValue(1);
+  const scaleY = useMotionValue(1);
+  const opacity = useMotionValue(1);
+  const scrubDismiss = () => {
+    const t = dismissProgress(y.get());
+    scaleX.set(lerp(SHOWN.scaleX, DISMISSED.scaleX, t));
+    scaleY.set(lerp(SHOWN.scaleY, DISMISSED.scaleY, t));
+    opacity.set(lerp(SHOWN.opacity, DISMISSED.opacity, t));
+  };
   // The shadow underlay carries the glass's exact squircle (blur runs after
   // the clip), so its corners agree in every browser.
   const { ref: shadowRef, style: shadowClipStyle } = useSquircleClip<HTMLSpanElement>({
@@ -182,7 +196,7 @@ export function GlassNotification({
             key="notification"
             type="button"
             className={styles.capsule}
-            style={{ y }}
+            style={{ y, scaleX, scaleY, opacity }}
             initial={reduceMotion ? { opacity: 0 } : lensMode ? LENS_HIDDEN : HIDDEN}
             animate={reduceMotion ? { opacity: 1 } : lensMode ? LENS_SHOWN : SHOWN}
             exit={
@@ -192,17 +206,25 @@ export function GlassNotification({
             }
             transition={ENTER_TRANSITION}
             // iOS: the banner swipes up and away. Free upward, a stiff rubber
-            // band downward. Let go far or fast enough, the dismiss lifts it
-            // out from where it is, at the speed it was going; let go short,
-            // it springs back into its slot the way it arrived. A tap (not a
-            // drag) is the tap.
+            // band downward; the pull scrubs along the dismiss's own path
+            // (it squashes and fades as it goes, not a bare slide). Let go
+            // far or fast enough, the dismiss finishes from where it is, at
+            // the speed it was going; let go short, it springs back into its
+            // slot the way it arrived. A tap (not a drag) is the tap.
             drag={onDismiss ? 'y' : false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 1, bottom: 0.08 }}
             dragMomentum={false}
+            onDrag={scrubDismiss}
             onDragEnd={(_, info) => {
-              if (info.offset.y < -SWIPE_DISMISS_PX || info.velocity.y < -SWIPE_DISMISS_VELOCITY) onDismiss?.();
-              else animate(y, 0, SNAP_BACK);
+              if (info.offset.y < -SWIPE_DISMISS_PX || info.velocity.y < -SWIPE_DISMISS_VELOCITY) {
+                onDismiss?.();
+                return;
+              }
+              animate(y, 0, SNAP_BACK);
+              animate(scaleX, SHOWN.scaleX, ENTER_TRANSITION.scaleX);
+              animate(scaleY, SHOWN.scaleY, ENTER_TRANSITION.scaleY);
+              animate(opacity, SHOWN.opacity, ENTER_TRANSITION.opacity);
             }}
             onTap={onTap}
           >
