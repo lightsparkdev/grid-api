@@ -201,7 +201,7 @@ const REVEAL_HOLD = 0.25;
 /** The reveal: the blueprint blurs out while the card blurs in. */
 const REVEAL_AT = Math.max(...Object.values(CUES).map((c) => c.at + c.dur)) + REVEAL_HOLD;
 const BLUEPRINT_OUT = 1.8;
-const CARD_IN = 2.75;
+const CARD_IN = 3.25;
 /** The card starts coming in this much before the blueprint starts to go. */
 const CARD_LEAD = 1.25;
 /** Where the card starts: stage px of blur, and a little large. */
