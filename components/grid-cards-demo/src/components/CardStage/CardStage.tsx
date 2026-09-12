@@ -602,6 +602,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     } else {
       setSelected(false);
     }
+    // On Card numbers the card is turned over for the reveal and stays so:
+    // no spinning it (it still tilts).
+    if (live.current.wantBack) return;
     // The card: spin. The brand's and the name's outlines come off for the turn.
     hover(false);
     hoverName(false);

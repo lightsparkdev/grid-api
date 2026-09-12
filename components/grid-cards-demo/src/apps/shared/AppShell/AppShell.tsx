@@ -85,6 +85,47 @@ export function AppShell({
   const [hovered, setHovered] = useState(false);
   const REST_INSET = 2; // inset at rest
   const HOVER_GROW = 2; // lift back out on hover
+  const frameRef = useRef<HTMLDivElement>(null);
+  // Hovered is geometric (the pointer inside the frame's box), not an enter
+  // on the frame: the card parked in the slot takes the pointer above the
+  // phone, and the bezel should stay bloomed while the pointer is over it.
+  useEffect(() => {
+    if (!externalGlass) return;
+    let over = false;
+    let raf = 0;
+    let last: { x: number; y: number } | null = null;
+    const check = () => {
+      raf = 0;
+      const el = frameRef.current;
+      if (!el || !last) return;
+      const r = el.getBoundingClientRect();
+      const inside = last.x >= r.left && last.x <= r.right && last.y >= r.top && last.y <= r.bottom;
+      if (inside !== over) {
+        over = inside;
+        setHovered(inside);
+      }
+    };
+    const onMove = (e: PointerEvent) => {
+      last = { x: e.clientX, y: e.clientY };
+      if (!raf) raf = requestAnimationFrame(check);
+    };
+    const onLeave = () => {
+      last = null;
+      if (over) {
+        over = false;
+        setHovered(false);
+      }
+    };
+    document.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerleave', onLeave);
+    window.addEventListener('blur', onLeave);
+    return () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerleave', onLeave);
+      window.removeEventListener('blur', onLeave);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [externalGlass]);
   const growOut = externalGlass ? (hovered ? HOVER_GROW : 0) - REST_INSET : 0;
   const shellInset = -growOut;
   // Each outer corner grows with the bloom; the lens reads them back off the DOM.
@@ -207,11 +248,7 @@ export function AppShell({
         style={{ ...bootStyle, pointerEvents: bootOpacity >= 1 ? 'auto' : 'none' }}
         aria-hidden={!phoneVisible}
       >
-        <div
-          className={styles.frame}
-          onPointerEnter={externalGlass ? () => setHovered(true) : undefined}
-          onPointerLeave={externalGlass ? () => setHovered(false) : undefined}
-        >
+        <div ref={frameRef} className={styles.frame}>
           {externalGlass ? (
             <>
               {/* Squircle drop shadow (cross-browser) — see shellPath/shadowId above. */}
