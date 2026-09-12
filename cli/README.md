@@ -310,7 +310,7 @@ grid receiver lookup-account <accountId>
 
 ```bash
 # List cards
-grid cards list [--cardholder-id <id>] [--state ACTIVE]
+grid cards list [--cardholder-id <id>] [--status ACTIVE]
 
 # Get a card
 grid cards get <cardId>
@@ -322,9 +322,9 @@ grid cards create \
   --max-spend-per-transaction 5000
 
 # Freeze / unfreeze / close, replace the funding source, or change the spending limit
-grid cards update <cardId> --state FROZEN
-grid cards update <cardId> --state ACTIVE
-grid cards update <cardId> --state CLOSED
+grid cards update <cardId> --status FROZEN
+grid cards update <cardId> --status ACTIVE
+grid cards update <cardId> --status CLOSED
 grid cards update <cardId> --funding-source "InternalAccount:3"
 grid cards update <cardId> --max-spend-per-transaction 10000
 grid cards update <cardId> --clear-max-spend-per-transaction

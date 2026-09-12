@@ -51,7 +51,7 @@ post:
                 id: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                 platformCardId: card-emp-001
-                state: ACTIVE
+                status: ACTIVE
                 brand: VISA
                 form: VIRTUAL
                 last4: '4242'
@@ -75,8 +75,8 @@ post:
               data:
                 id: Card:019542f5-b3e7-1d02-0000-000000000011
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                state: CLOSED
-                stateReason: ISSUER_REJECTED
+                status: CLOSED
+                statusReason: ISSUER_REJECTED
                 form: VIRTUAL
                 fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                 maxSpendPerTransaction: null
@@ -94,7 +94,7 @@ post:
               data:
                 id: Card:019542f5-b3e7-1d02-0000-000000000010
                 customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
-                state: FROZEN
+                status: FROZEN
                 brand: VISA
                 form: VIRTUAL
                 last4: '4242'

@@ -54,23 +54,23 @@ get:
 patch:
   summary: Update a card
   description: >
-    Update a card's `state`, bound `fundingSource`, and / or
+    Update a card's `status`, bound `fundingSource`, and / or
     `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
     At least one field must be supplied.
 
 
-    - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and
+    - `status` transitions are limited to `ACTIVE ⇄ FROZEN` and
     `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible.
     Any other transition returns `409 INVALID_STATE_TRANSITION`.
 
     - `fundingSource`, when supplied, replaces the card's bound internal
     account. It must belong to the customer and be denominated in the card's
-    currency. `fundingSource` cannot be supplied alongside `state: CLOSED`.
+    currency. `fundingSource` cannot be supplied alongside `status: CLOSED`.
     On card programs
     where the card issuer makes authorization decisions, `fundingSource` cannot
-    be combined with any `state` change, so send the changes as separate
+    be combined with any `status` change, so send the changes as separate
     requests. On card programs where Grid makes the authorization decision, the
-    combination remains valid for `state` changes other than `CLOSED`.
+    combination remains valid for `status` changes other than `CLOSED`.
 
     - `maxSpendPerTransaction`, when supplied, replaces the card-specific
     per-transaction cap. Supply a positive integer in the smallest unit of the
@@ -78,7 +78,7 @@ patch:
     `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card
     and platform values. The card's `cardCapabilities.supportsSpendLimits`
     must be true. `maxSpendPerTransaction` cannot be supplied alongside
-    `state: CLOSED`.
+    `status: CLOSED`.
 
     - `maxSpendPerDay`, when supplied, replaces the card-specific cap on
     cumulative new spend during one UTC calendar day. Supply a positive integer
@@ -87,7 +87,7 @@ patch:
     lower of the card and platform values. Refunds, reversals, and authorization
     expiries do not restore capacity during the day. The card's
     `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerDay`
-    cannot be supplied alongside `state: CLOSED`.
+    cannot be supplied alongside `status: CLOSED`.
 
     - `maxTransactionsPerDay`, when supplied, replaces the card-specific cap on
     the number of transactions the card may authorize during one UTC calendar
@@ -96,7 +96,7 @@ patch:
     lower of the card and platform values. Refunds, reversals, and authorization
     expiries do not restore capacity during the day. `maxTransactionsPerDay`
     requires the card's `cardCapabilities.supportsTransactionCountLimit` to be
-    true and cannot be supplied alongside `state: CLOSED`.
+    true and cannot be supplied alongside `status: CLOSED`.
 
 
     This endpoint is authenticated by the platform credential alone and
@@ -114,15 +114,15 @@ patch:
 
     Effects:
 
-    - `state: FROZEN`: Authorization Decisioning declines new auths with
+    - `status: FROZEN`: Authorization Decisioning declines new auths with
     `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue —
     freezing does not pause the lifecycle of authorizations that already
     passed.
 
-    - `state: ACTIVE`: normal authorization behavior resumes.
+    - `status: ACTIVE`: normal authorization behavior resumes.
 
-    - `state: CLOSED`: terminal close. The card transitions to
-    `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays
+    - `status: CLOSED`: terminal close. The card transitions to
+    `status: "CLOSED"` with `statusReason: "CLOSED_BY_PLATFORM"` and stays
     in the system for audit and reconciliation. All pending auths
     reconcile to a terminal state via the existing reconcile primitive.
     Inbound clearings received after close follow the standard
@@ -135,7 +135,7 @@ patch:
     and fires no webhook.
 
 
-    The `card.state_change` webhook fires on every successful `state`
+    The `card.state_change` webhook fires on every successful `status`
     transition.
   operationId: updateCardById
   tags:
@@ -152,11 +152,11 @@ patch:
           freeze:
             summary: Freeze an active card
             value:
-              state: FROZEN
+              status: FROZEN
           unfreeze:
             summary: Unfreeze a frozen card
             value:
-              state: ACTIVE
+              status: ACTIVE
           updateFundingSource:
             summary: Replace the card's bound funding source
             value:
@@ -176,12 +176,12 @@ patch:
           freezeAndUpdateSource:
             summary: Freeze the card and replace its funding source in one call
             value:
-              state: FROZEN
+              status: FROZEN
               fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
           close:
             summary: Permanently close the card
             value:
-              state: CLOSED
+              status: CLOSED
   responses:
     '200':
       description: Card updated. Returns the updated card.
@@ -194,7 +194,7 @@ patch:
         Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a
         supplied funding source does not belong to the cardholder or is
         not denominated in the card's currency, with `INVALID_INPUT` when
-        `fundingSource` is combined with any `state` change on a card program
+        `fundingSource` is combined with any `status` change on a card program
         where the card issuer makes authorization decisions, and for general
         invalid parameters.
       content:
@@ -218,10 +218,10 @@ patch:
     '409':
       description: >-
         Conflict. Returned with `INVALID_STATE_TRANSITION` when the
-        requested `state` transition is not one of
+        requested `status` transition is not one of
         `ACTIVE ⇄ FROZEN` or `ACTIVE | FROZEN → CLOSED` (e.g. trying
         to un-freeze a `CLOSED` card); with `CARD_ALREADY_CLOSED` when
-        `state: CLOSED` is requested for a card that is already
+        `status: CLOSED` is requested for a card that is already
         `CLOSED`; and with `CARD_NOT_MUTABLE` when the card is
         `CLOSED`.
       content:

@@ -1,22 +1,22 @@
 type: object
 description: >-
-  Update request for `PATCH /cards/{id}`. At least one of `state`,
+  Update request for `PATCH /cards/{id}`. At least one of `status`,
   `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or
-  `maxTransactionsPerDay` must be supplied. `state`
+  `maxTransactionsPerDay` must be supplied. `status`
   transitions are limited to `ACTIVE ⇄ FROZEN` and
   `ACTIVE | FROZEN → CLOSED`; any other transition returns
   `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and
   cannot be combined with `fundingSource`, `maxSpendPerTransaction`,
   `maxSpendPerDay`, or `maxTransactionsPerDay`.
 properties:
-  state:
+  status:
     type: string
     enum:
       - ACTIVE
       - FROZEN
       - CLOSED
     description: >-
-      Target state for the card. Permitted transitions are
+      Target status for the card. Permitted transitions are
       `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is
       terminal and irreversible; once closed, the card stays in the
       system for audit and reconciliation but cannot transact again.
@@ -26,7 +26,7 @@ properties:
     description: >-
       Replaces the card's funding source. Must belong to the customer and be
       denominated in the card's currency. Cannot be supplied alongside
-      `state: CLOSED`. To stop a card from spending, set `state: FROZEN`
+      `status: CLOSED`. To stop a card from spending, set `status: FROZEN`
       instead.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   maxSpendPerTransaction:
@@ -43,7 +43,7 @@ properties:
       platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid
       enforces the lower of the two values. Accepted only when the card's
       `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied
-      alongside `state: CLOSED`.
+      alongside `status: CLOSED`.
     example: 10000
   maxSpendPerDay:
     anyOf:
@@ -60,7 +60,7 @@ properties:
       the lower of the two values. Refunds, reversals, and authorization
       expiries do not restore capacity during the day. Accepted only when the
       card's `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied
-      alongside `state: CLOSED`.
+      alongside `status: CLOSED`.
     example: 25000
   maxTransactionsPerDay:
     anyOf:
@@ -78,5 +78,5 @@ properties:
       values. Refunds, reversals, and authorization expiries do not restore
       capacity during the day. Accepted only when the card's
       `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be
-      supplied alongside `state: CLOSED`.
+      supplied alongside `status: CLOSED`.
     example: 20

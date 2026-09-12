@@ -8,14 +8,14 @@ describe("cards list", () => {
       "list",
       "--cardholder-id",
       "Customer:abc",
-      "--state",
+      "--status",
       "ACTIVE",
     ]);
 
     expect(request?.path).toBe("/grid/v1/cards");
     expect(request?.query).toMatchObject({
       cardholderId: "Customer:abc",
-      state: "ACTIVE",
+      status: "ACTIVE",
     });
   });
 });
@@ -100,18 +100,18 @@ describe("cards create", () => {
 });
 
 describe("cards update", () => {
-  it("freezes a card via state", async () => {
+  it("freezes a card via status", async () => {
     const { request } = await runCli([
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "FROZEN",
     ]);
 
     expect(request?.method).toBe("PATCH");
     expect(request?.path).toBe("/grid/v1/cards/Card:1");
-    expect(request?.body).toMatchObject({ state: "FROZEN" });
+    expect(request?.body).toMatchObject({ status: "FROZEN" });
   });
 
   it("forwards a supplied wallet signature and request id as headers", async () => {
@@ -119,7 +119,7 @@ describe("cards update", () => {
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "CLOSED",
       "--wallet-signature",
       "stamp123",
@@ -154,17 +154,17 @@ describe("cards update", () => {
     expect(request?.body).toEqual({ maxSpendPerTransaction: null });
   });
 
-  it("rejects an update with no state or funding source", async () => {
+  it("rejects an update with no status or funding source", async () => {
     const { calls } = await runCli(["cards", "update", "Card:1"]);
     expect(calls).toBe(0);
   });
 
-  it("rejects an invalid --state value", async () => {
+  it("rejects an invalid --status value", async () => {
     const { calls } = await runCli([
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "PENDING_KYC",
     ]);
     expect(calls).toBe(0);
@@ -181,7 +181,7 @@ describe("cards update", () => {
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "FROZEN",
       "--wallet-signature",
       "stamp",
@@ -194,7 +194,7 @@ describe("cards update", () => {
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "CLOSED",
       "--funding-source",
       "InternalAccount:1",
@@ -219,7 +219,7 @@ describe("cards update", () => {
       "cards",
       "update",
       "Card:1",
-      "--state",
+      "--status",
       "CLOSED",
       "--max-spend-per-transaction",
       "5000",
