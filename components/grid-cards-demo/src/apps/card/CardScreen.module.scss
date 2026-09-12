@@ -265,8 +265,10 @@
   z-index: 2;
   pointer-events: none;
   /* Nothing is under the header at rest: the strip comes in with the first
-     px of scroll (CardScreen sets --edge-fade from the scroll position). */
-  opacity: var(--edge-fade, 0);
+     px of scroll (CardScreen sets --edge-fade, 0..1, from the scroll
+     position). NOT as opacity on this box: an opacity below 1 makes it a
+     backdrop root, and the blur layers inside then see only this empty box
+     and blur nothing. The blur radius and the tint's opacity carry it. */
 }
 
 /* Progressive blur (Aurora's three-layer stack): each layer ups the radius
@@ -277,8 +279,8 @@
   inset: 0;
   /* Hairline fill kicks backdrop-filter into compositing. */
   background: rgba(255, 255, 255, 0.01);
-  -webkit-backdrop-filter: blur(var(--fade-blur));
-  backdrop-filter: blur(var(--fade-blur));
+  -webkit-backdrop-filter: blur(calc(var(--fade-blur) * var(--edge-fade, 0)));
+  backdrop-filter: blur(calc(var(--fade-blur) * var(--edge-fade, 0)));
   mask-image: var(--fade-mask);
   -webkit-mask-image: var(--fade-mask);
 
@@ -309,6 +311,8 @@
 .fadeTint {
   position: absolute;
   inset: 0;
+  /* A plain gradient, no filter inside: its own opacity is safe. */
+  opacity: var(--edge-fade, 0);
   background: linear-gradient(
     to bottom,
     var(--wallet-bg) 0%,
