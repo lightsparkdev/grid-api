@@ -23,12 +23,10 @@ import { CloseCardSheet, FreezeSheet, TransactionSheet, WalletAgainSheet } from 
 import { LimitsContent } from './LimitsContent';
 import styles from './CardScreen.module.scss';
 
-const HEADER_DURATION = 0.2;
 const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
 /** Aurora's issuance slot shows the card a touch smaller than the home's. */
 const CARD_ISSUANCE_SCALE = 338 / 370;
 
-const HEADER_TRANSITION = motionTransition(easeOutQuick, HEADER_DURATION);
 const BODY_TRANSITION = motionTransition(easeOutSnappy, 0.5);
 const CONTENT_IN = motionTransition(easeOutQuick, 0.4, { delay: 0.2 });
 const CONTENT_OUT = motionTransition(easeOutQuick, 0.2);
@@ -133,9 +131,11 @@ export function CardScreen({ home }: CardScreenProps) {
               key={card.page}
               className={styles.headerInner}
               initial={reduceMotion ? false : CONTENT_HIDDEN}
-              animate={CONTENT_VISIBLE}
-              exit={CONTENT_HIDDEN}
-              transition={HEADER_TRANSITION}
+              // Staged like the content under the card: out in 0.2s, then the
+              // next one in over 0.4s, so a page change reads as a blur-fade
+              // rather than a swap.
+              animate={reduceMotion ? CONTENT_VISIBLE : { ...CONTENT_VISIBLE, transition: CONTENT_IN }}
+              exit={reduceMotion ? { opacity: 0 } : { ...CONTENT_HIDDEN, transition: CONTENT_OUT }}
             >
               <GlassSymbolButton
                 aria-label="Back"
