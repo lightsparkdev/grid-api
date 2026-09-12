@@ -129,8 +129,15 @@ export function useAdaptiveStatusBarTone(
 
     let frame = 0;
 
+    // Read the refs each time: the elements can be replaced under a stable
+    // AppShell (the body remounts with its children; fast refresh), and a
+    // measurement against a detached element would hold the tone forever.
     const update = () => {
-      const measured = measureTone(contentRoot, statusBarEl, screenEl, toneRef.current);
+      const screen = screenRef.current;
+      const content = screenBodyRef.current;
+      const bar = statusBarRef.current;
+      if (!screen?.isConnected || !content?.isConnected || !bar?.isConnected) return;
+      const measured = measureTone(content, bar, screen, toneRef.current);
       if (measured !== toneRef.current) {
         toneRef.current = measured;
         setTone(measured);
@@ -151,11 +158,16 @@ export function useAdaptiveStatusBarTone(
       attributes: true,
       attributeFilter: ['class', 'style', 'data-theme'],
     });
+    // The theme lands on <html>; the surface's color follows, and the bar with it.
+    mutationObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+    // The half-second tick is the safety net for anything the observers miss
+    // (a repaint with no DOM change). Always re-arm it: a measurement that
+    // throws must not stop the loop.
     const tick = () => {
       frame += 1;
-      if (frame % 30 === 0) update();
       rafId = requestAnimationFrame(tick);
+      if (frame % 30 === 0) update();
     };
     let rafId = requestAnimationFrame(tick);
 
