@@ -2,7 +2,8 @@ import { IconCreditCardAdd } from '@central-icons-react/round-outlined-radius-3-
 import { IconNfc1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconNfc1';
 import { IconEyeOpen } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyeOpen';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
-import { IconSnowFlakes } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconSnowFlakes';
+import { IconLock } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLock';
+import { IconUnlocked } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconUnlocked';
 import { IconLimit } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLimit';
 import { IconArrowUndoUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUndoUp';
 import { IconCircleX } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCircleX';
@@ -17,11 +18,14 @@ export const FLOW_ICONS: Record<ActionId, FlowIconCmp> = {
   tap: IconNfc1,
   reveal: IconEyeOpen,
   wallet: IconWallet1,
-  freeze: IconSnowFlakes,
+  freeze: IconLock,
   limits: IconLimit,
   refund: IconArrowUndoUp,
   close: IconCircleX,
 };
+
+/** The Lock tile on a locked card: the way back. */
+export const UNLOCK_ICON: FlowIconCmp = IconUnlocked;
 
 export function actionIdForLabel(label: string): ActionId | undefined {
   return ACTIONS.find((action) => action.label === label)?.id;

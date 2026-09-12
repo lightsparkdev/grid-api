@@ -70,7 +70,7 @@ function DoneCheckGlyph({ animate }: { animate: boolean }) {
  * 2143:41197. (Each skin positions it in its own card-detail layout.)
  */
 const DECLINE_LABEL: Record<DeclineReason, string> = {
-  CARD_PAUSED: 'Card frozen',
+  CARD_PAUSED: 'Card locked',
   CARD_CLOSED: 'Card closed',
   OVER_PER_TXN_LIMIT: 'Over purchase limit',
   OVER_DAILY_LIMIT: 'Over daily limit',

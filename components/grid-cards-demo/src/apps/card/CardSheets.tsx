@@ -60,9 +60,9 @@ function SheetShell({ open, onDismiss, icon, title, sub, children, tone = 'defau
   );
 }
 
-/* ── Freeze / unfreeze ───────────────────────────────────────────────────── */
+/* ── Lock / unlock ───────────────────────────────────────────────────── */
 
-/** The lock's confirmation: what freezing (or unfreezing) does, and the button
+/** The lock's confirmation: what locking (or unlocking) does, and the button
  *  that does it. `onConfirm` runs the flow (PATCH, webhook, push). */
 export function FreezeSheet({ card, onConfirm }: { card: CardControls; onConfirm: () => void }) {
   const open = card.sheet === 'freeze';
@@ -72,11 +72,11 @@ export function FreezeSheet({ card, onConfirm }: { card: CardControls; onConfirm
       open={open}
       onDismiss={card.closeSheet}
       icon={<SfSymbol name={frozen ? 'lock.open.fill' : 'lock.fill'} size={28} />}
-      title={frozen ? 'Unfreeze card?' : 'Freeze card?'}
+      title={frozen ? 'Unlock card?' : 'Lock card?'}
       sub={
         frozen
           ? 'Purchases go through again right away.'
-          : 'New purchases are declined until you unfreeze it. Pending purchases still settle.'
+          : 'New purchases are declined until you unlock it. Pending purchases still settle.'
       }
     >
       <div className={styles.actions}>
@@ -88,7 +88,7 @@ export function FreezeSheet({ card, onConfirm }: { card: CardControls; onConfirm
             onConfirm();
           }}
         >
-          {frozen ? 'Unfreeze card' : 'Freeze card'}
+          {frozen ? 'Unlock card' : 'Lock card'}
         </ContentAreaButton>
         <ContentAreaButton type="button" variant="bordered" onClick={card.closeSheet}>
           Cancel

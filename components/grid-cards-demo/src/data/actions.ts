@@ -6,7 +6,7 @@
 export interface WalletState {
   hasCard: boolean;
   balanceCents: number;
-  /** The card is FROZEN; the Freeze tile reads Unfreeze. */
+  /** The card is FROZEN (locked, to the cardholder); the Lock tile reads Unlock. */
   frozen: boolean;
 }
 
@@ -99,7 +99,7 @@ export const ACTIONS: ActionDef[] = [
   },
   {
     id: 'freeze',
-    label: 'Freeze',
+    label: 'Lock',
     desc: 'Pause the card, or resume it',
     icon: 'freeze',
     available: () => true,

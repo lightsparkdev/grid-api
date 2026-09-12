@@ -52,8 +52,8 @@ export const PRESET_LIMITS: SpendLimits = { perTransactionCents: 7_500, perDayCe
 /** How a card event reads in Activity. */
 const EVENT_TITLE: Record<ActivityKind, string> = {
   issued: 'Card issued',
-  frozen: 'Card frozen',
-  unfrozen: 'Card unfrozen',
+  frozen: 'Card locked',
+  unfrozen: 'Card unlocked',
   wallet: 'Added to Apple Wallet',
   limits: 'Spending limits set',
   closed: 'Card closed',
@@ -326,19 +326,19 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
     settle(REVEAL_SETTLE_MS);
   };
 
-  /** Freeze, or unfreeze: the PATCH and its webhook, and a push on the phone. */
+  /** Lock, or unlock (FROZEN ⇄ ACTIVE): the PATCH and its webhook, and a push on the phone. */
   const toggleFreeze = () => {
     arm();
     if (card.closed) {
-      notify('Card closed', 'A closed card can’t be frozen or unfrozen.');
+      notify('Card closed', 'A closed card can’t be locked or unlocked.');
       settle(NOTICE_SETTLE_MS);
       return;
     }
     const next = !card.frozen;
     card.setFrozen(next);
     notify(
-      next ? 'Card frozen' : 'Card unfrozen',
-      next ? 'Purchases will be declined until you unfreeze it.' : 'Your card is active again.',
+      next ? 'Card locked' : 'Card unlocked',
+      next ? 'Purchases will be declined until you unlock it.' : 'Your card is active again.',
     );
     settle(NOTICE_SETTLE_MS);
   };
@@ -518,7 +518,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
   //   __cardHome.pose('wallet', { phase: 'contacting' })
   //   __cardHome.pose('tap', { phase: 'declined', reason: 'OVER_PER_TXN_LIMIT' })
   //   __cardHome.pose('transaction', { status: 'AUTHORIZED' })
-  //   __cardHome.pose('notice', { title: 'Card frozen', body: '…' })
+  //   __cardHome.pose('notice', { title: 'Card locked', body: '…' })
   // The next flow from a tile takes over as usual.
   const pose = (target: CardPose, opts: CardPoseOptions = {}) => {
     clearFlowTimers();
@@ -574,7 +574,7 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
       }
       case 'notice':
         window.clearTimeout(noticeTimer.current);
-        setNotice({ id: Date.now(), title: opts.title ?? 'Card frozen', body: opts.body ?? 'Purchases will be declined until you unfreeze it.' });
+        setNotice({ id: Date.now(), title: opts.title ?? 'Card locked', body: opts.body ?? 'Purchases will be declined until you unlock it.' });
         break;
       case 'toast':
         setToast({ id: Date.now(), text: opts.title ?? 'Not enough balance' });

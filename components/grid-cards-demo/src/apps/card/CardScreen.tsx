@@ -280,10 +280,10 @@ export function CardScreen({ home }: CardScreenProps) {
                           disabled: card.closed,
                         },
                         {
-                          // The lock shows what the tap does: lock a live card, unlock a frozen one.
+                          // The lock shows what the tap does: lock a live card, unlock a locked one.
                           name: card.frozen ? 'lock.open.fill' : 'lock.fill',
                           size: 20,
-                          label: card.frozen ? 'Unfreeze card' : 'Freeze card',
+                          label: card.frozen ? 'Unlock card' : 'Lock card',
                           onClick: () => card.setSheet('freeze'),
                           disabled: card.closed,
                         },

@@ -143,7 +143,7 @@ export function revealCalls(): ApiCall[] {
   ];
 }
 
-/* ── Freeze / unfreeze / close ─────────────────────────────────────────── */
+/* ── Lock (FROZEN) / unlock / close ─────────────────────────────────────────── */
 
 export function stateChangeCalls(state: CardLifecycleState, limits: CardSpendLimits = {}): ApiCall[] {
   const at = nowIso();
@@ -155,13 +155,13 @@ export function stateChangeCalls(state: CardLifecycleState, limits: CardSpendLim
   });
   const copy = {
     FROZEN: {
-      title: 'Freeze card',
+      title: 'Lock card',
       note: 'ACTIVE → FROZEN. New authorizations decline with CARD_PAUSED; in-flight clearings still post.',
-      hookTitle: 'Card frozen',
+      hookTitle: 'Card locked',
       hookNote: 'CARD.STATE_CHANGE — state is FROZEN. Reversible with state: ACTIVE.',
     },
     ACTIVE: {
-      title: 'Unfreeze card',
+      title: 'Unlock card',
       note: 'FROZEN → ACTIVE. Authorizations resume immediately.',
       hookTitle: 'Card active',
       hookNote: 'CARD.STATE_CHANGE — state is back to ACTIVE.',
