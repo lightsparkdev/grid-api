@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useImperativeHandle, useLayoutEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import { computeDomeConstants } from '@/components/liquid-glass/displacement';
 import { observeTheme, readDotGridPalette, type DotGridPalette } from '@/lib/dotGridColors';
 import {
@@ -409,6 +409,16 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
   useImperativeHandle(ref, () => ({
     bootRepaint: () => bootRepaintRef.current?.(),
   }));
+
+  // The parent repaints the lens as its boot value animates, but it does so
+  // in the same tick that sets the value, so each paint sees the value from
+  // the render before; the last paint of a phone dismissal was a hair above
+  // zero and a faint outline of the phone stayed on the backdrop. One more
+  // paint on the frame after each change lands the value that was set.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => bootRepaintRef.current?.());
+    return () => cancelAnimationFrame(id);
+  }, [bootMix]);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
