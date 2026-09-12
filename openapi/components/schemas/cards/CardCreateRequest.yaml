@@ -2,7 +2,7 @@ type: object
 required:
   - customerId
   - form
-  - fundingSources
+  - fundingSource
 properties:
   customerId:
     type: string
@@ -32,22 +32,13 @@ properties:
     example: AbCd1234EfGh5678
   form:
     $ref: ./CardForm.yaml
-  fundingSources:
-    type: array
+  fundingSource:
+    type: string
     description: >-
-      Internal account ids to bind as funding sources, in priority order.
-      The first entry selects the card issuer and therefore the card's
-      capabilities.
-      The first entry is tried first by Authorization Decisioning. Every
-      card must be bound to at least one source, and every source must
-      belong to the cardholder and be denominated in a card-eligible
-      currency; otherwise the request is rejected with
-      `FUNDING_SOURCE_INELIGIBLE`.
-    minItems: 1
-    items:
-      type: string
-    example:
-      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+      Internal account id that funds this card. The account must belong to the
+      customer and be denominated in a card-eligible currency; otherwise the
+      request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+    example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   maxSpendPerTransaction:
     type: integer
     format: int64
@@ -55,7 +46,7 @@ properties:
     maximum: 9007199254740991
     description: >-
       Optional card-specific cap on a single transaction, in the smallest unit
-      of the card currency derived from its funding sources. Omit this field
+      of the card currency derived from its funding source. Omit this field
       for no card-specific cap. When the platform config also supplies
       `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two
       values. Accepted only when the funding-source internal account's
@@ -70,7 +61,7 @@ properties:
     description: >-
       Optional card-specific cap on cumulative new spend during one UTC
       calendar day, in the smallest unit of the card currency derived from its
-      funding sources. Omit this field for no card-specific daily cap. When the
+      funding source. Omit this field for no card-specific daily cap. When the
       platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces
       the lower of the two values. The window resets at 00:00 UTC, and refunds,
       reversals, and authorization expiries do not restore capacity during the

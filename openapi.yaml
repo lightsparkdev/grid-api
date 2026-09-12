@@ -58,7 +58,7 @@ tags:
   - name: Agent Operations
     description: Endpoints called by the agent itself using its own credentials (obtained via device code redemption). Scoped to the agent's associated customer — all requests automatically operate on behalf of that customer and are subject to the agent's policy. When an action requires approval, the resulting transaction enters a pending state and must be approved by the platform via `POST /transactions/{transactionId}/approve`.
   - name: Cards
-    description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage card funding sources, and list card transactions.
+    description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
     description: Stablecoin issuance endpoints. Link provider accounts, register provider-created stablecoins, create direct mint/burn issuer operations, and track operation status.
 paths:
@@ -8567,13 +8567,13 @@ paths:
     post:
       summary: Issue a card
       description: |
-        Issue a new card for a cardholder. Every card must be bound to at least one funding source at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
+        Issue a new card for a cardholder. Every card is bound to one internal account, `fundingSource`, at create time. The cardholder must have KYC status `APPROVED` before a card can be issued; otherwise the request is rejected with `CARDHOLDER_KYC_NOT_APPROVED`.
 
         Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Retries must carry the same key.
 
         Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and `maxTransactionsPerDay` values set the card-specific caps on one transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Check the funding-source internal account's `cardCapabilities.supportsSpendLimits` before supplying either spend limit, and `cardCapabilities.supportsTransactionCountLimit` before supplying the transaction count limit. If the platform config sets the corresponding `cardConfigs` value, Grid enforces the lower of the card and platform caps. Amounts use the smallest unit of the card's currency.
 
-        If any funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
+        If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` state do not count toward the limit.
 
@@ -8606,8 +8606,7 @@ paths:
                   customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
                   platformCardId: card-emp-001
                   form: VIRTUAL
-                  fundingSources:
-                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                   maxSpendPerTransaction: 5000
                   maxSpendPerDay: 25000
                   maxTransactionsPerDay: 20
@@ -8666,7 +8665,7 @@ paths:
             type: string
         - name: accountId
           in: query
-          description: Filter by internal account id. Returns cards whose `fundingSources` array contains the given internal account id.
+          description: Filter by internal account id. Returns cards whose `fundingSource` is the given internal account id.
           required: false
           schema:
             type: string
@@ -8788,10 +8787,10 @@ paths:
     patch:
       summary: Update a card
       description: |
-        Update a card's `state`, bound `fundingSources`, and / or `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`. At least one field must be supplied.
+        Update a card's `state`, bound `fundingSource`, and / or `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`. At least one field must be supplied.
 
         - `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
-        - `fundingSources`, when supplied, fully replaces the card's bound funding sources. Array order determines the priority Authorization Decisioning tries them in. Each id must belong to the cardholder and be denominated in the card's currency; the list must contain at least one source. `fundingSources` cannot be supplied alongside `state: CLOSED`. On card programs where the card issuer makes authorization decisions, `fundingSources` cannot be combined with any `state` change, so send the changes as separate requests. On card programs where Grid makes the authorization decision, the combination remains valid for `state` changes other than `CLOSED`.
+        - `fundingSource`, when supplied, replaces the card's bound internal account. It must belong to the customer and be denominated in the card's currency. `fundingSource` cannot be supplied alongside `state: CLOSED`. On card programs where the card issuer makes authorization decisions, `fundingSource` cannot be combined with any `state` change, so send the changes as separate requests. On card programs where Grid makes the authorization decision, the combination remains valid for `state` changes other than `CLOSED`.
         - `maxSpendPerTransaction`, when supplied, replaces the card-specific per-transaction cap. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card and platform values. The card's `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerTransaction` cannot be supplied alongside `state: CLOSED`.
         - `maxSpendPerDay`, when supplied, replaces the card-specific cap on cumulative new spend during one UTC calendar day. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. The card's `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerDay` cannot be supplied alongside `state: CLOSED`.
         - `maxTransactionsPerDay`, when supplied, replaces the card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Supply a positive integer to set it or null to clear it. If the platform config sets `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. `maxTransactionsPerDay` requires the card's `cardCapabilities.supportsTransactionCountLimit` to be true and cannot be supplied alongside `state: CLOSED`.
@@ -8801,7 +8800,8 @@ paths:
         Effects:
         - `state: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
         - `state: ACTIVE`: normal authorization behavior resumes.
-        - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. Funding-source bindings are detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
+        - `state: CLOSED`: terminal close. The card transitions to `state: "CLOSED"` with `stateReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. The funding source is detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
+        - `fundingSource` change: returns the updated card with the new binding and fires no webhook.
 
         The `card.state_change` webhook fires on every successful `state` transition.
       operationId: updateCardById
@@ -8824,12 +8824,10 @@ paths:
                 summary: Unfreeze a frozen card
                 value:
                   state: ACTIVE
-              updateFundingSources:
-                summary: Replace the card's bound funding sources
+              updateFundingSource:
+                summary: Replace the card's bound funding source
                 value:
-                  fundingSources:
-                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
               setSpendingLimit:
                 summary: Set the card's spending and transaction limits
                 value:
@@ -8842,12 +8840,11 @@ paths:
                   maxSpendPerTransaction: null
                   maxSpendPerDay: null
                   maxTransactionsPerDay: null
-              freezeAndUpdateSources:
-                summary: Freeze the card and replace its funding sources in one call
+              freezeAndUpdateSource:
+                summary: Freeze the card and replace its funding source in one call
                 value:
                   state: FROZEN
-                  fundingSources:
-                    - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                  fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
               close:
                 summary: Permanently close the card
                 value:
@@ -8860,7 +8857,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, with `INVALID_INPUT` when `fundingSources` is combined with any `state` change on a card program where the card issuer makes authorization decisions, and for general invalid parameters.
+          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, with `INVALID_INPUT` when `fundingSource` is combined with any `state` change on a card program where the card issuer makes authorization decisions, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -11805,8 +11802,7 @@ webhooks:
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     maxSpendPerTransaction: 5000
                     maxSpendPerDay: 25000
                     maxTransactionsPerDay: 20
@@ -11827,8 +11823,7 @@ webhooks:
                     state: CLOSED
                     stateReason: ISSUER_REJECTED
                     form: VIRTUAL
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     maxSpendPerTransaction: null
                     maxSpendPerDay: null
                     maxTransactionsPerDay: null
@@ -11850,8 +11845,7 @@ webhooks:
                     last4: '4242'
                     expMonth: 12
                     expYear: 2029
-                    fundingSources:
-                      - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
                     maxSpendPerTransaction: 5000
                     maxSpendPerDay: 25000
                     maxTransactionsPerDay: 20
@@ -18179,7 +18173,7 @@ components:
           example: true
         cardCapabilities:
           $ref: '#/components/schemas/CardCapabilities'
-          description: Actions supported for a card issued now with this account as the first funding source. They can change if the platform's card routing changes and do not describe cards already issued using the account. When a create request supplies several funding sources, the first entry selects the issuer and therefore the resulting card's capabilities; read this field from that account. Absent when this account cannot fund a card.
+          description: Actions supported for a card issued now with this account as its funding source. They can change if the platform's card routing changes and do not describe cards already issued using the account. The funding source a create request supplies selects the issuer and therefore the resulting card's capabilities; read this field from that account. Absent when this account cannot fund a card.
         createdAt:
           type: string
           format: date-time
@@ -26211,7 +26205,7 @@ components:
         - customerId
         - state
         - form
-        - fundingSources
+        - fundingSource
         - maxSpendPerTransaction
         - maxSpendPerDay
         - maxTransactionsPerDay
@@ -26253,14 +26247,10 @@ components:
           type: integer
           description: Card expiration year (four digits).
           example: 2029
-        fundingSources:
-          type: array
-          description: Internal account ids bound to this card as funding sources, in priority order — the first entry is tried first by Authorization Decisioning. Every card has at least one funding source.
-          items:
-            type: string
-          example:
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        fundingSource:
+          type: string
+          description: Internal account id that funds this card.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         cardCapabilities:
           $ref: '#/components/schemas/CardCapabilities'
           description: Actions supported for this card by the issuer selected at issuance. Present for cards whose program has been resolved; absent otherwise. These capabilities are fixed at issuance for the card's lifetime.
@@ -26293,7 +26283,7 @@ components:
           example: 20
         currency:
           type: string
-          description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding sources at issue time — all funding sources bound to a card must be denominated in the same card-eligible currency.
+          description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding source at issue time.
           example: USD
         processorRef:
           type: string
@@ -26338,7 +26328,7 @@ components:
       required:
         - customerId
         - form
-        - fundingSources
+        - fundingSource
       properties:
         customerId:
           type: string
@@ -26354,27 +26344,23 @@ components:
           example: AbCd1234EfGh5678
         form:
           $ref: '#/components/schemas/CardForm'
-        fundingSources:
-          type: array
-          description: Internal account ids to bind as funding sources, in priority order. The first entry selects the card issuer and therefore the card's capabilities. The first entry is tried first by Authorization Decisioning. Every card must be bound to at least one source, and every source must belong to the cardholder and be denominated in a card-eligible currency; otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
-          minItems: 1
-          items:
-            type: string
-          example:
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+        fundingSource:
+          type: string
+          description: Internal account id that funds this card. The account must belong to the customer and be denominated in a card-eligible currency; otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         maxSpendPerTransaction:
           type: integer
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on a single transaction, in the smallest unit of the card currency derived from its funding sources. Omit this field for no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. A transaction for exactly the effective limit is allowed.
+          description: Optional card-specific cap on a single transaction, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. A transaction for exactly the effective limit is allowed.
           example: 5000
         maxSpendPerDay:
           type: integer
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding sources. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. Spend exactly equal to the effective limit is allowed.
+          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. Spend exactly equal to the effective limit is allowed.
           example: 25000
         maxTransactionsPerDay:
           type: integer
@@ -26385,7 +26371,7 @@ components:
           example: 20
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `state`, `fundingSources`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSources`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`. `fundingSources`, when supplied, fully replaces the card's bound funding sources — the array order determines the priority Authorization Decisioning tries them in.
+      description: Update request for `PATCH /cards/{id}`. At least one of `state`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay` must be supplied. `state` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         state:
           type: string
@@ -26395,15 +26381,10 @@ components:
             - CLOSED
           description: Target state for the card. Permitted transitions are `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
           example: FROZEN
-        fundingSources:
-          type: array
-          description: 'New ordered list of internal account ids to bind as funding sources. Fully replaces the previous binding. Each id must belong to the cardholder and be denominated in the card''s currency. The list must contain at least one source — to stop a card from spending without removing all sources, transition it to `FROZEN` instead. Cannot be supplied alongside `state: CLOSED`.'
-          minItems: 1
-          items:
-            type: string
-          example:
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000002
-            - InternalAccount:019542f5-b3e7-1d02-0000-000000000003
+        fundingSource:
+          type: string
+          description: 'Replaces the card''s funding source. Must belong to the customer and be denominated in the card''s currency. Cannot be supplied alongside `state: CLOSED`. To stop a card from spending, set `state: FROZEN` instead.'
+          example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         maxSpendPerTransaction:
           anyOf:
             - type: integer
