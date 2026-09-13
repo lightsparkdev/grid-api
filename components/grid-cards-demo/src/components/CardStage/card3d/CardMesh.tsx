@@ -948,7 +948,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     swarm.begin(targetMaterial, newStock.face, dir, state.design.orientation, [frontCanvas, backCanvas]);
     shared.uBareSteel.value = targetMaterial === 'metal' ? 1 : 0;
     swap.current = { t, to: targetMaterial, dir, committed: false };
-    // Redirected mid-wipe, the voice carries on; otherwise it opens here.
+    // The new card is put down on the table as the change starts (the tile
+    // was just pressed); the grain follows as it is laid. Redirected
+    // mid-wipe, the voice carries on.
+    play(targetMaterial === 'metal' ? 'metalDown' : 'plasticDown');
     voice.current ??= grainVoice(targetMaterial === 'metal' ? 1 : 0.25);
   }, [
     targetMaterial,
@@ -1013,8 +1016,6 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       swarm.end();
       voice.current?.stop();
       voice.current = null;
-      // The last pass done, the new card is set down on the table.
-      play(sw.to === 'metal' ? 'metalDown' : 'plasticDown');
       shared.uFront.value = FRONT_REST;
       shared.uBase.value = FRONT_REST;
       shared.uPrint.value = FRONT_REST;

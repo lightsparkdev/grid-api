@@ -90,14 +90,18 @@ export type SoundName =
 /** Where `scripts/build-sounds.sh` writes the samples, relative to the app origin. */
 const ASSET_BASE = '/assets/sounds/';
 
+/** Everything, before the limiter. The cues are balanced against each other
+ *  below; this sets how loud the whole set is in a quiet room. */
+const MASTER_GAIN = 0.6;
+
 /** Sampled cues: the file (without extension; `.m4a` first, `.mp3` fallback)
  *  and the gain applied to it. Files peak at -3 dBFS. */
 const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
-  lock: { file: 'lock', gain: 0.3 },
-  unlock: { file: 'lock', gain: 0.2 },
-  notify: { file: 'notify', gain: 0.22 },
-  success: { file: 'approval', gain: 0.42 },
-  approved: { file: 'applepay', gain: 0.36 },
+  lock: { file: 'lock', gain: 0.24 },
+  unlock: { file: 'lock', gain: 0.16 },
+  notify: { file: 'notify', gain: 0.18 },
+  success: { file: 'approval', gain: 0.32 },
+  approved: { file: 'applepay', gain: 0.28 },
 };
 
 /** The least time between two plays of the same cue, ms. */
@@ -204,7 +208,7 @@ const SYNTH: Record<SoundName, Recipe> = {
     ],
   },
   decline: {
-    masterGain: 0.5,
+    masterGain: 0.38,
     layers: [
       { kind: 'tone', waveform: 'triangle', frequency: 196, attack: 0.004, decay: 0.05, peak: 0.25 },
       { kind: 'tone', waveform: 'triangle', frequency: 165, attack: 0.004, decay: 0.06, peak: 0.25, offset: 0.095 },
@@ -258,14 +262,13 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'noise', filterType: 'bandpass', filterFrequency: 2400, filterQ: 2, attack: 0.001, decay: 0.008, peak: 0.06 },
     ],
   },
-  /** PVC on wood: a low, damped thump, a little slap from the face, and the
-   *  edge's tick. Nothing rings. */
+  /** PVC on wood: a low, damped thump and a muffled slap from the face.
+   *  Nothing rings, nothing above the midrange. */
   plasticDown: {
     masterGain: 0.5,
     layers: [
-      { kind: 'tone', waveform: 'sine', frequency: 150, attack: 0.002, decay: 0.07, peak: 0.28 },
-      { kind: 'noise', filterType: 'lowpass', filterFrequency: 700, filterQ: 0.7, attack: 0.001, decay: 0.03, peak: 0.16 },
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 2600, filterQ: 3, attack: 0.001, decay: 0.006, peak: 0.05 },
+      { kind: 'tone', waveform: 'sine', frequency: 105, frequencySweepTo: 80, attack: 0.003, decay: 0.09, peak: 0.3 },
+      { kind: 'noise', filterType: 'lowpass', filterFrequency: 320, filterQ: 0.6, attack: 0.002, decay: 0.04, peak: 0.18 },
     ],
   },
   /** Steel on wood: a hard, bright clack, then the plate rings briefly on
@@ -412,16 +415,19 @@ function getAudioContext(): AudioContext | null {
   } catch {
     return null;
   }
-  // The master bus: a compressor as a limiter, so a press under a chime
-  // cannot clip.
+  // The master bus: the set's level, then a compressor as a limiter, so a
+  // press under a chime cannot clip.
   const limiter = sharedContext.createDynamicsCompressor();
-  limiter.threshold.value = -10;
+  limiter.threshold.value = -12;
   limiter.knee.value = 6;
   limiter.ratio.value = 12;
   limiter.attack.value = 0.002;
   limiter.release.value = 0.1;
   limiter.connect(sharedContext.destination);
-  bus = limiter;
+  const master = sharedContext.createGain();
+  master.gain.value = MASTER_GAIN;
+  master.connect(limiter);
+  bus = master;
   return sharedContext;
 }
 
@@ -752,7 +758,7 @@ export interface Grain {
   stop(): void;
 }
 
-const GRAIN_GAIN = 0.08;
+const GRAIN_GAIN = 0.04;
 /** Crackle: sparse impulses, this many per second at full level. */
 const GRAIN_CRACKLE_PER_S = 900;
 /** The hiss under the crackle: a bandpass, its center by `bright` (0 dull
