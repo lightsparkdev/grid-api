@@ -74,12 +74,14 @@ export type SoundName =
   | 'unlock'
   /** A push notification landing (iOS "Rebound"). */
   | 'notify'
-  /** Card issued, added to wallet. */
+  /** Added to wallet (Epidemic's approval). */
   | 'success'
+  /** The card issued: access granted, muted. */
+  | 'issued'
   /** A tap-to-pay approved (the Apple Pay chime). */
   | 'approved'
-  /** A soft plop (the intro's card landing). */
-  | 'pop'
+  /** The intro's card landing: a deep, heavy tick. */
+  | 'land'
   /** A plastic card set down on a table: a dull, short thud. */
   | 'plasticDown'
   /** A metal card set down on a table: a clack with a short ring. */
@@ -101,6 +103,7 @@ const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
   unlock: { file: 'lock', gain: 0.16 },
   notify: { file: 'notify', gain: 0.18 },
   success: { file: 'approval', gain: 0.32 },
+  issued: { file: 'issued', gain: 0.34 },
   approved: { file: 'applepay', gain: 0.28 },
 };
 
@@ -112,6 +115,7 @@ const MIN_GAP_MS: Partial<Record<SoundName, number>> = {
   type: 25,
   notify: 400,
   success: 400,
+  issued: 400,
   approved: 400,
 };
 const DEFAULT_GAP_MS = 30;
@@ -252,14 +256,21 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 2349, attack: 0.005, decay: 0.2, peak: 0.05, offset: 0.1 },
     ],
   },
-  /** A bubble pop: a sine dropping an octave and a half in 60 ms, with the
-   *  skin's tick on top. */
-  pop: {
-    masterGain: 0.45,
-    jitter: 0.04,
+  /** Stand-in: a muted two-note rise, low. */
+  issued: {
+    masterGain: 0.3,
     layers: [
-      { kind: 'tone', waveform: 'sine', frequency: 640, frequencySweepTo: 190, attack: 0.002, decay: 0.06, peak: 0.28 },
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 2400, filterQ: 2, attack: 0.001, decay: 0.008, peak: 0.06 },
+      { kind: 'tone', waveform: 'sine', frequency: 392, attack: 0.005, decay: 0.25, peak: 0.2 },
+      { kind: 'tone', waveform: 'sine', frequency: 523, attack: 0.005, decay: 0.35, peak: 0.2, offset: 0.14 },
+    ],
+  },
+  /** A deep, heavy tick: the press's knock an octave and a half down, with
+   *  a short low body under it. */
+  land: {
+    masterGain: 0.55,
+    layers: [
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 420, filterQ: 1.6, attack: 0.001, decay: 0.035, peak: 0.22 },
+      { kind: 'tone', waveform: 'sine', frequency: 95, attack: 0.002, decay: 0.07, peak: 0.2 },
     ],
   },
   /** PVC on wood: a low, damped thump and a muffled slap from the face.

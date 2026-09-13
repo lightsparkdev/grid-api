@@ -23,6 +23,7 @@ mkdir -p "$out"
 # name | source | start (s) | end (s) | fade-out (s, optional; 0.02 default)
 clips=(
   "approval|$refs/epidemic/approval_success.caf|0|1.09"
+  "issued|$refs/studies/payment-panel/03_access-granted-muted.wav|0|0.62|0.08"
   "applepay|$refs/processed/applepay-success.caf|0.05|1.0"
   "lock|$refs/apple/lock.wav|0|0.35"
   "notify|$refs/apple/notification-rebound.wav|0|1.45"

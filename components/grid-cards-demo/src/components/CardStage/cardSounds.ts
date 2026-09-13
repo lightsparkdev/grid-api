@@ -15,7 +15,7 @@ export function useCardMomentSounds(state: { issued: boolean; issuing: boolean; 
   // Issued: only at the end of an issuance, not a provisioned card.
   const wasIssuing = useRef(issuing);
   useEffect(() => {
-    if (wasIssuing.current && issued && !issuing) play('success');
+    if (wasIssuing.current && issued && !issuing) play('issued');
     wasIssuing.current = issuing;
   }, [issued, issuing]);
 
