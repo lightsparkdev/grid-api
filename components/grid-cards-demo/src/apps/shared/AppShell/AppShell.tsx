@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { isCardParked, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
+import {
+  isCardParked,
+  PHONE_FADE_IN_TRANSITION,
+  PHONE_FADE_OUT_TRANSITION,
+  usePhoneBoot,
+} from '@/components/DotGridCanvas/PhoneBootContext';
 import { useAdaptiveStatusBarTone } from './useAdaptiveStatusBarTone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
@@ -62,11 +67,12 @@ export function AppShell({
   screenStyle,
 }: AppShellProps) {
   const { wrapRef, scale, size } = usePhoneFitScale();
-  const { ready: stageBootReady, bootOpacity, bootProgress, realignLens } = usePhoneBoot();
+  const { ready: stageBootReady, bootOpacity, bootProgress, phoneWanted, fade, realignLens } = usePhoneBoot();
   const showPhone = stageBootReady && size.w > 0 && size.h > 0;
   const phoneVisible = showPhone && bootOpacity > 0;
-  const bootY = (1 - bootOpacity) * 128;
-  const bootScale = 0.9 + bootOpacity * 0.1;
+  // Fading in place (WebKit), the phone neither rises nor scales.
+  const bootY = fade ? 0 : (1 - bootOpacity) * 128;
+  const bootScale = fade ? 1 : 0.9 + bootOpacity * 0.1;
   const screenRef = useRef<HTMLDivElement>(null);
   const screenBodyRef = useRef<HTMLDivElement>(null);
   const statusBarRef = useRef<HTMLElement>(null);
@@ -233,13 +239,27 @@ export function AppShell({
     return () => cancelAnimationFrame(raf);
   }, [phoneVisible, bootOpacity, realignLens]);
 
-  const bootStyle: CSSProperties = {
-    ['--fit-scale' as string]: scale,
-    ['--boot-scale' as string]: bootScale,
-    ['--boot-y' as string]: `${bootY}px`,
-    opacity: showPhone ? bootOpacity : 0,
-    filter: showPhone && bootOpacity < 1 ? `blur(${(1 - bootOpacity) * 48}px)` : undefined,
-  };
+  // Fading in place, the opacity and the blur go straight to where the
+  // curve is headed and CSS transitions carry them there on the compositor,
+  // on the curve's clock (see PhoneBootContext); the frame-by-frame values
+  // would have WebKit paint the phone every frame. The blur comes off once
+  // the curve has landed, as it does on the curve.
+  const bootStyle: CSSProperties = fade
+    ? {
+        ['--fit-scale' as string]: scale,
+        ['--boot-scale' as string]: 1,
+        ['--boot-y' as string]: '0px',
+        opacity: showPhone && phoneWanted ? 1 : 0,
+        filter: showPhone && !(phoneWanted && bootOpacity >= 1) ? (phoneWanted ? 'blur(0px)' : 'blur(48px)') : undefined,
+        transition: phoneWanted ? PHONE_FADE_IN_TRANSITION : PHONE_FADE_OUT_TRANSITION,
+      }
+    : {
+        ['--fit-scale' as string]: scale,
+        ['--boot-scale' as string]: bootScale,
+        ['--boot-y' as string]: `${bootY}px`,
+        opacity: showPhone ? bootOpacity : 0,
+        filter: showPhone && bootOpacity < 1 ? `blur(${(1 - bootOpacity) * 48}px)` : undefined,
+      };
   // The card is parked in the slot (not in flight): the content layer sits
   // above the stage's canvas. Same landing test as the stage's.
   const cardParked = isCardParked(bootProgress);

@@ -6,15 +6,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import type { GlassConfig } from '@/components/liquid-glass';
 import { useGlassEngine } from '@/components/liquid-glass/useGlassEngine';
 import { StageGL, type StageGLHandle } from '@/components/glass-gl/StageGL';
-import { PhoneBootProvider } from './PhoneBootContext';
+import { PHONE_IN_DURATION_S, PHONE_OUT_DURATION_S, PhoneBootProvider } from './PhoneBootContext';
 import styles from './DotGridCanvas.module.scss';
 
 /** ms after dots begin fading before the phone + glass bezel can fade in. */
 const PHONE_BOOT_DELAY_MS = 120;
-/** Phone (and glass bezel) materializing — the card flies into it on this curve. */
-export const PHONE_IN_DURATION_S = 0.7;
-/** Phone dissolving back to the bare card (Reset). */
-export const PHONE_OUT_DURATION_S = 0.45;
 
 interface DotGridCanvasProps {
   children?: ReactNode;
@@ -32,9 +28,11 @@ function easeOutQuart(p: number) {
 
 export function DotGridCanvas({ children, glassConfig, phoneVisible = true }: DotGridCanvasProps) {
   const stageRef = useRef<StageGLHandle>(null);
-  // WebKit runs the glass shader on a slow path, so animating the entrance (the
-  // lens recomputes every frame) stutters. On Safari we skip the animation and
-  // let the phone + glass appear at full strength instead.
+  // In WebKit the phone fades in place instead of rising in: a transform
+  // driven from script has WebKit paint the whole phone every frame. The
+  // curve below still runs there, for the card's flight and the lens; the
+  // shell reads `fade` and hands its own opacity and focus to CSS
+  // transitions on the same clock (see PhoneBootContext).
   const { isSafari } = useGlassEngine();
   const [dotsReady, setDotsReady] = useState(false);
   const [bootReady, setBootReady] = useState(false);
@@ -62,19 +60,10 @@ export function DotGridCanvas({ children, glassConfig, phoneVisible = true }: Do
   }, [realignLens]);
 
   // One shared 0→1 curve drives screen content, the WebGL glass lens, AND the
-  // card's flight from the stage into its slot. Safari skips the animation —
-  // the phone + glass snap (no per-frame shader).
+  // card's flight from the stage into its slot.
   useEffect(() => {
     if (!bootReady) return;
     const target = phoneVisible ? 1 : 0;
-    if (isSafari) {
-      bootProgressRef.current = target;
-      setBootProgress(target);
-      realignLens();
-      // One more realign next frame in case the fit-scale is still settling.
-      const raf = requestAnimationFrame(() => realignLens());
-      return () => cancelAnimationFrame(raf);
-    }
     const anim = animate(bootProgressRef.current, target, {
       duration: target ? PHONE_IN_DURATION_S : PHONE_OUT_DURATION_S,
       ease: 'linear',
@@ -85,10 +74,12 @@ export function DotGridCanvas({ children, glassConfig, phoneVisible = true }: Do
       },
     });
     return () => anim.stop();
-  }, [bootReady, phoneVisible, isSafari, realignLens]);
+  }, [bootReady, phoneVisible, realignLens]);
 
   return (
-    <PhoneBootProvider value={{ ready: bootReady, bootOpacity, bootProgress, realignLens }}>
+    <PhoneBootProvider
+      value={{ ready: bootReady, bootOpacity, bootProgress, phoneWanted: phoneVisible, fade: isSafari, realignLens }}
+    >
       <div className={styles.canvasGlassDemo}>
         <StageGL
           ref={stageRef}
