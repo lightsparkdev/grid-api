@@ -66,7 +66,7 @@ export type SoundName =
   | 'confirm'
   /** Keyboard-driven text and nudges. Sampled iOS key click. */
   | 'keyClick'
-  /** A short thin swish (a sheet turning). The card uses `airflow()` instead. */
+  /** A short thin swish (a sheet turning), synthesized. The card uses `airflow()` instead. */
   | 'swish'
   /** A declined purchase: a short low double. */
   | 'decline'
@@ -80,9 +80,7 @@ export type SoundName =
   | 'success'
   /** A tap-to-pay approved (the Apple Pay chime). */
   | 'approved'
-  /** A pen drawing (the intro's blueprint). */
-  | 'scribble'
-  /** A rising whoosh (the intro's card arriving). */
+  /** A light rising whoosh (the intro's card arriving). */
   | 'whoosh';
 
 // ── Levels and sources ────────────────────────────────────────────────────────
@@ -95,13 +93,11 @@ const ASSET_BASE = '/assets/sounds/';
 const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
   confirm: { file: 'confirm', gain: 0.3 },
   keyClick: { file: 'keyclick', gain: 0.14 },
-  swish: { file: 'swish', gain: 0.22 },
   lock: { file: 'lock', gain: 0.3 },
   unlock: { file: 'lock', gain: 0.2 },
   notify: { file: 'notify', gain: 0.22 },
   success: { file: 'approval', gain: 0.42 },
   approved: { file: 'applepay', gain: 0.36 },
-  scribble: { file: 'scribble', gain: 0.28 },
   whoosh: { file: 'whoosh', gain: 0.32 },
 };
 
@@ -253,20 +249,6 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 1175, attack: 0.005, decay: 0.4, peak: 0.2, offset: 0.1 },
       { kind: 'tone', waveform: 'sine', frequency: 2349, attack: 0.005, decay: 0.2, peak: 0.05, offset: 0.1 },
     ],
-  },
-  /** Stand-in: a run of short filtered scratches. */
-  scribble: {
-    masterGain: 0.3,
-    layers: [0, 0.09, 0.2, 0.34, 0.41, 0.55, 0.7, 0.78, 0.92, 1.05].map((offset, i) => ({
-      kind: 'noise' as const,
-      filterType: 'bandpass' as const,
-      filterFrequency: 2600 + (i % 3) * 500,
-      filterQ: 1.2,
-      attack: 0.01,
-      decay: 0.05 + (i % 2) * 0.04,
-      peak: 0.08,
-      offset,
-    })),
   },
   /** Stand-in: a swell of noise rising through a lowpass. */
   whoosh: {
@@ -465,9 +447,9 @@ function realPointer(pointerType?: string): boolean {
 
 const lastPlayed: Partial<Record<SoundName, number>> = {};
 
-function throttled(name: SoundName, now: number): boolean {
+function throttled(name: SoundName, now: number, gap = MIN_GAP_MS[name] ?? DEFAULT_GAP_MS): boolean {
   const last = lastPlayed[name];
-  if (last !== undefined && now - last < (MIN_GAP_MS[name] ?? DEFAULT_GAP_MS)) return true;
+  if (last !== undefined && now - last < gap) return true;
   lastPlayed[name] = now;
   return false;
 }
@@ -573,15 +555,16 @@ function whenRunning(context: AudioContext, go: () => void, blocked: () => void)
  * first gesture here, or an activation the parent page delegated to this
  * frame through `allow="autoplay"`), when the same cue played within its
  * minimum gap, or when Web Audio is missing. `gain` scales the cue's level
- * (1 = as tuned).
+ * (1 = as tuned); `gap` overrides the cue's minimum gap in ms for this call
+ * (a scored run of ticks closer than the hover throttle allows).
  */
-export function play(name: SoundName, opts: { gain?: number } = {}) {
+export function play(name: SoundName, opts: { gain?: number; gap?: number } = {}) {
   if (typeof window === 'undefined') return;
   const at = performance.now();
   const suppress = (reason: Suppressed) => record({ name, at, played: false, reason });
   if (isMuted()) return suppress('muted');
   if (document.visibilityState !== 'visible') return suppress('hidden');
-  if (throttled(name, at)) return suppress('throttled');
+  if (throttled(name, at, opts.gap)) return suppress('throttled');
   const context = getAudioContext();
   if (!context) return suppress('no-audio');
   const gain = opts.gain ?? 1;
@@ -620,15 +603,17 @@ const AIR_NOISE_S = 2;
  *  a small wobble is near silent, shallower than drag's square, so a lazy
  *  turn is still heard. Kept well under the presses: the air is felt more
  *  than heard. */
-const AIR_GAIN = 0.16;
+const AIR_GAIN = 0.09;
 const AIR_CURVE = 1.8;
+/** Nothing under this: the air is a whisper, not a rumble. */
+const AIR_FLOOR = 250;
 /** The lowpass opens with speed: a breath at a lazy turn, a rush at a fling. */
-const AIR_LOW_MIN = 180;
-const AIR_LOW_MAX = 1000;
-/** A resonant body under it, for depth. */
-const AIR_BODY_MIN = 220;
-const AIR_BODY_MAX = 520;
-const AIR_BODY_MIX = 0.35;
+const AIR_LOW_MIN = 500;
+const AIR_LOW_MAX = 2200;
+/** A resonant body under it, for a little shape. */
+const AIR_BODY_MIN = 600;
+const AIR_BODY_MAX = 1100;
+const AIR_BODY_MIX = 0.25;
 /** How fast the voice follows the speed (s). */
 const AIR_LAG = 0.035;
 const AIR_FADE_S = 0.12;
@@ -668,7 +653,7 @@ export function airflow(): Airflow {
 
   const rumble = context.createBiquadFilter();
   rumble.type = 'highpass';
-  rumble.frequency.value = 70;
+  rumble.frequency.value = AIR_FLOOR;
 
   const low = context.createBiquadFilter();
   low.type = 'lowpass';

@@ -220,13 +220,39 @@ const INTRO_DURATION = 2.8;
 const TIME_SCALE = INTRO_DURATION / SCORE_END;
 export const INTRO_END = INTRO_DURATION;
 
-/** Sounds on the intro's clock, real seconds: the pen as the first line
- *  draws; the whoosh starting as the card begins to come through, so its
- *  crest (0.4 s in) lands as it takes shape behind the blueprint. */
-export const INTRO_SOUNDS: ReadonlyArray<{ at: number; name: SoundName }> = [
-  { at: 0.2 * TIME_SCALE, name: 'scribble' },
-  { at: (REVEAL_AT - CARD_LEAD + 0.1) * TIME_SCALE, name: 'whoosh' },
+export interface IntroSound {
+  /** Real seconds on the intro clock. */
+  at: number;
+  name: SoundName;
+  gain?: number;
+  /** Ticks closer together than the cue's own throttle allows. */
+  gap?: number;
+}
+
+/** Sounds on the intro's clock: a tick as each line of the blueprint starts
+ *  to draw (the crosses, the outline, the dimensions, the leader, the chip
+ *  plate, then the six pads in a quick run), resolving into the whoosh as
+ *  the card comes through behind it. The whoosh starts as the pads finish,
+ *  so its crest (0.45 s in) lands as the blueprint begins to go. */
+const TICKS: ReadonlyArray<[key: string, name: SoundName, gain: number]> = [
+  ['cross-0', 'tickBright', 0.5],
+  ['outline', 'tick', 0.6],
+  ['dim-w', 'tick', 0.6],
+  ['dim-h', 'tick', 0.6],
+  ['leader-r', 'tick', 0.6],
+  ['chip-plate', 'tick', 0.7],
+  ['pad-0', 'snap', 0.9],
+  ['pad-1', 'snap', 0.9],
+  ['pad-2', 'snap', 0.9],
+  ['pad-3', 'snap', 0.9],
+  ['pad-4', 'snap', 0.9],
+  ['pad-5', 'snap', 0.9],
 ];
+const lastPad = CUES['pad-5'].at;
+export const INTRO_SOUNDS: ReadonlyArray<IntroSound> = [
+  ...TICKS.map(([key, name, gain]) => ({ at: CUES[key].at * TIME_SCALE, name, gain, gap: 0 })),
+  { at: (lastPad + 0.05) * TIME_SCALE, name: 'whoosh' as const },
+].sort((a, b) => a.at - b.at);
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 

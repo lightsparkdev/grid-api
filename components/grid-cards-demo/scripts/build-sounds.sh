@@ -22,13 +22,11 @@ mkdir -p "$out"
 
 # name | source | start (s) | end (s) | fade-out (s, optional; 0.02 default)
 clips=(
-  "scribble|$refs/epidemic/pen_writing_02.wav|0.15|1.65|0.25"
-  "whoosh|$refs/epidemic/swoosh_fire_reversed.wav|0.10|1.60|0.30"
+  "whoosh|$refs/epidemic/swoosh_light.wav|0.25|1.45|0.10"
   "confirm|$refs/epidemic/confirm_tap.caf|0|0.245"
   "approval|$refs/epidemic/approval_success.caf|0|1.09"
   "applepay|$refs/processed/applepay-success.caf|0.05|1.0"
   "keyclick|$refs/sampled/ios-keyboard-click-tight.caf|0.028|0.105"
-  "swish|$refs/studies/payment-panel/11_thin-metal-swish-muted.wav|0.045|0.32"
   "lock|$refs/apple/lock.wav|0|0.35"
   "notify|$refs/apple/notification-rebound.wav|0|1.45"
 )

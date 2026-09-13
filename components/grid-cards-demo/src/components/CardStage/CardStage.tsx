@@ -1517,10 +1517,11 @@ const CardRig = memo(function CardRig({
         intro.t = INTRO_END;
         intro.cued = INTRO_SOUNDS.length;
       }
-      // The pen and the whoosh, on the same clock (silent when the browser
+      // The ticks and the whoosh, on the same clock (silent when the browser
       // has not yet allowed sound; the module drops them, nothing fires late).
       while (intro.cued < INTRO_SOUNDS.length && intro.t >= INTRO_SOUNDS[intro.cued].at) {
-        play(INTRO_SOUNDS[intro.cued].name);
+        const cue = INTRO_SOUNDS[intro.cued];
+        play(cue.name, { gain: cue.gain, gap: cue.gap });
         intro.cued += 1;
       }
       if (intro.overlay.current) stepIntro(intro.overlay.current, intro.t);
