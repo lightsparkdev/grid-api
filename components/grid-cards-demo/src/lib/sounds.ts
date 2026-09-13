@@ -260,14 +260,16 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 1568, attack: 0.005, decay: 0.13, peak: 0.04, offset: 0.09 },
     ],
   },
-  /** A slip of paper set down: the press's knock, softer and a little
-   *  lower, with a breath of paper on top. No tone, nothing electronic. */
+  /** A small wooden note: the press's knock for the strike, a short sine
+   *  for the bar and its fourth partial dying fast (a marimba's ratio), so
+   *  it has a pitch without sounding electronic. */
   blip: {
-    masterGain: 0.34,
-    jitter: 0.05,
+    masterGain: 0.32,
+    jitter: 0.03,
     layers: [
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1100, filterQ: 1.1, attack: 0.002, decay: 0.03, peak: 0.13 },
-      { kind: 'noise', filterType: 'highpass', filterFrequency: 3200, filterQ: 0.7, attack: 0.004, decay: 0.05, peak: 0.035 },
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1100, filterQ: 1.1, attack: 0.002, decay: 0.025, peak: 0.1 },
+      { kind: 'tone', waveform: 'sine', frequency: 740, attack: 0.003, decay: 0.11, peak: 0.15 },
+      { kind: 'tone', waveform: 'sine', frequency: 2960, attack: 0.002, decay: 0.035, peak: 0.035 },
     ],
   },
 };
