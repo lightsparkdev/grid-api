@@ -70,9 +70,15 @@ export function brandInk(color: string): string {
   return inkFor(relativeLuminance(rgb));
 }
 
+/** White ink on fills darker than this (CIE L*), black above. The WCAG
+ *  contrast crossover (L* 50, a luminance of 0.18) puts black on saturated
+ *  mid-tones (iOS system blue, Grid's blue) that read as dark and carry
+ *  white everywhere else; the flip sits higher, as the eye has it. */
+const INK_FLIP_LSTAR = 65;
+
 function inkFor(luminance: number): string {
-  // Contrast against white is (1.05 / (l + 0.05)); against black, (l + 0.05) / 0.05.
-  return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.05 ? '#ffffff' : '#000000';
+  const lstar = luminance > 0.008856 ? 116 * Math.cbrt(luminance) - 16 : 903.3 * luminance;
+  return lstar < INK_FLIP_LSTAR ? '#ffffff' : '#000000';
 }
 
 /** Where a brand fill's luminance is held to so it still reads as a shape on
