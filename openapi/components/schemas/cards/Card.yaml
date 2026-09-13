@@ -67,11 +67,14 @@ properties:
         maximum: 9007199254740991
       - type: 'null'
     description: >-
-      Card-specific cap on a single transaction, in the smallest unit of the
-      card's `currency`. Null means the card has no card-specific cap. When the
-      platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid
-      enforces the lower of the two values without replacing this configured
-      value. A transaction for exactly the effective limit is allowed.
+      The largest amount this card can authorize on a single transaction, in
+      the smallest unit of its `currency` (cents for USD). An authorization for
+      exactly the limit is allowed. A later clearing can still settle above it
+      — a restaurant tip, for example — so this caps the authorization, not the
+      final settled amount. `null` means the card sets no limit of its own. If
+      your platform config also sets `cardConfigs.maxSpendPerTransaction` (the
+      platform-level limit), the lower of the two applies and this value stays
+      as you set it.
     example: 5000
   maxSpendPerDay:
     anyOf:

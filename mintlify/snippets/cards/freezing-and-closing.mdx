@@ -86,10 +86,12 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   -d '{ "maxSpendPerTransaction": 10000 }'
 ```
 
-Supply a positive integer to set the limit (in the smallest unit of the
-card's currency) or `null` to clear it. Omitting the field leaves the
-current limit unchanged. `maxSpendPerTransaction` cannot be supplied
-alongside `status: CLOSED`.
+Send a positive integer to set the limit (in the smallest unit of the
+card's currency, so cents for USD) or `null` to remove it. Omit the field
+to leave the current limit unchanged. An authorization for exactly the limit
+is allowed, and a later clearing can still settle above it (e.g. a restaurant
+tip) — the limit caps the authorization, not the final settled amount. You
+cannot send `maxSpendPerTransaction` together with `status: CLOSED`.
 
 ## Updating the daily limit
 
