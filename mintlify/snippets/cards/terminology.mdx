@@ -21,7 +21,8 @@ identifies this account.
 The real-time request from the card network ("can this card spend
 $12.50 at Blue Bottle Coffee?"). {` `}Grid runs Authorization Decisioning
 against the funding source and either approves the auth (placing a hold)
-or declines it (`INSUFFICIENT_FUNDS`, `CARD_PAUSED`, etc.).
+or declines it, creating a terminal card transaction with
+`status: "DECLINED"` and a `cardDeclinedReason`.
 
 ## Pull
 

@@ -8810,7 +8810,7 @@ paths:
         This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
         Effects:
-        - `status: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
+        - `status: FROZEN`: Authorization Decisioning declines new auths with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
         - `status: ACTIVE`: normal authorization behavior resumes.
         - `status: CLOSED`: terminal close. The card transitions to `status: "CLOSED"` with `statusReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. The funding source is detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
         - `fundingSource` change: returns the updated card with the new binding and fires no webhook.
@@ -8978,7 +8978,7 @@ paths:
 
         The decisioning outcome is controlled by the last three characters of `merchant.descriptor`:
 
-        | Suffix | Outcome | | ------ | ------- | | `002`  | Decline — `INSUFFICIENT_FUNDS` (the pull on the funding source fails) | | `003`  | Decline — `CARD_PAUSED` (intended to verify a frozen card refuses auths) | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
+        | Suffix | Outcome | | ------ | ------- | | `002`  | Declined, `cardDeclinedReason: INSUFFICIENT_FUNDS`. Sandbox only: production approves an underfunded authorization and resolves it as `EXCEPTION` when the pull fails | | `003`  | Declined, `cardDeclinedReason: CARD_NOT_ACTIVE`. Use against a `FROZEN` card to verify it refuses authorizations | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardAuthorization
@@ -12027,7 +12027,7 @@ webhooks:
                     createdAt: '2026-05-10T09:15:00Z'
                     updatedAt: '2026-05-10T09:15:00Z'
               declined:
-                summary: Authorization declined
+                summary: Authorization declined for insufficient funds
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000044
                   type: CARD_TRANSACTION.DECLINED
@@ -12040,6 +12040,7 @@ webhooks:
                     platformCustomerId: 18d3e5f7b4a9c2
                     issuerTransactionToken: lithic_txn_d41a7f02
                     status: DECLINED
+                    cardDeclinedReason: INSUFFICIENT_FUNDS
                     direction: DEBIT
                     description: UBER EATS
                     merchant:
@@ -23922,6 +23923,29 @@ components:
         | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. A `RETURN` received afterwards keeps the purchase `SETTLED`; the return appears as its own `CREDIT` transaction. |
         | `DECLINED` | The authorization was declined before any money moved. Declines carry no settlement and must be excluded from cardholder statements. |
         | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
+    CardDeclinedReason:
+      type: string
+      enum:
+        - CARD_NOT_ACTIVE
+        - SPEND_LIMIT_EXCEEDED
+        - INSUFFICIENT_FUNDS
+        - NO_ELIGIBLE_FUNDING_SOURCE
+        - BLOCKED
+        - UNSUPPORTED_NETWORK
+        - OTHER
+      description: |
+        Why Grid declined a card authorization. Present only when a card
+        transaction's `status` is `DECLINED`.
+
+        | Reason | Returned when |
+        |--------|---------------|
+        | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. A `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED` card declines every authorization. |
+        | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or the matching platform cap. |
+        | `INSUFFICIENT_FUNDS` | Sandbox only. Production does not check the funding source balance when it decides an authorization, so an underfunded card approves and then resolves as `EXCEPTION` when the pull fails. |
+        | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
+        | `BLOCKED` | Program rules block the merchant category or the transaction. |
+        | `UNSUPPORTED_NETWORK` | Grid does not support the network or the transaction type. |
+        | `OTHER` | Any other reason, including a decline the card processor made on its own. |
     CardMerchant:
       type: object
       required:
@@ -23992,6 +24016,10 @@ components:
           example: lithic_txn_b81c2a4f
         status:
           $ref: '#/components/schemas/CardTransactionStatus'
+        cardDeclinedReason:
+          $ref: '#/components/schemas/CardDeclinedReason'
+          description: Present only when `status` is `DECLINED`.
+          example: INSUFFICIENT_FUNDS
         direction:
           $ref: '#/components/schemas/TransactionDirection'
           description: A purchase is a `DEBIT`. A merchant refund is a `CREDIT` with the credited value in `settledAmount`; when the refund returns against a known purchase, `originalTransactionId` identifies it.
@@ -24019,7 +24047,7 @@ components:
         authorizedAt:
           type: string
           format: date-time
-          description: When the auth was approved.
+          description: When the authorization was approved or declined.
           example: '2026-05-08T14:30:00Z'
         createdAt:
           type: string
@@ -26188,7 +26216,7 @@ components:
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
         | `ACTIVE` | The card is live and can authorize transactions. |
-        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `CARD_PAUSED`. Existing settlements and refunds continue to reconcile. |
+        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |
     CardStatusReason:
       type: string
