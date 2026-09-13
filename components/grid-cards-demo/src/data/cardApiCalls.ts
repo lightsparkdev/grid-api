@@ -84,15 +84,15 @@ const CARD_CAPABILITIES = {
   supportsPanReveal: true,
 };
 
-/** The Card resource. `stateReason` is present only once the card is
+/** The Card resource. `statusReason` is present only once the card is
  *  CLOSED (or provisioning was rejected); the demo only ever closes it. */
 function cardResource({ state = 'ACTIVE', limits = {}, updatedAt }: CardResourceOptions = {}) {
   return {
     id: card.id,
     customerId: CARDHOLDER,
     platformCardId: card.platformCardId,
-    state,
-    ...(state === 'CLOSED' ? { stateReason: 'CLOSED_BY_PLATFORM' } : {}),
+    status: state,
+    ...(state === 'CLOSED' ? { statusReason: 'CLOSED_BY_PLATFORM' } : {}),
     brand: 'VISA',
     form: 'VIRTUAL',
     last4: '8972',
@@ -121,7 +121,7 @@ function stateWebhook(card: ReturnType<typeof cardResource>, title: string, note
     headers: { 'X-Grid-Signature': '<signature>' },
     reqBody: {
       id: nextId('Webhook'),
-      type: 'CARD.STATE_CHANGE',
+      type: 'CARD.STATUS_CHANGE',
       timestamp: card.updatedAt,
       data: card,
     },
@@ -133,7 +133,7 @@ function stateWebhook(card: ReturnType<typeof cardResource>, title: string, note
 /* ── Issue ─────────────────────────────────────────────────────────────── */
 
 /** Issue a virtual card — POST /cards, then the issuer activates it and Grid
- *  delivers CARD.STATE_CHANGE to your webhook endpoint. */
+ *  delivers CARD.STATUS_CHANGE to your webhook endpoint. */
 export function cardCalls(limits: CardSpendLimits = {}): ApiCall[] {
   mintCard();
   const reqLimits: Record<string, number> = {};
@@ -158,7 +158,7 @@ export function cardCalls(limits: CardSpendLimits = {}): ApiCall[] {
     stateWebhook(
       cardResource({ state: 'ACTIVE', limits }),
       'Card active',
-      'CARD.STATE_CHANGE — the issuer activated the card. It can be revealed, added to a wallet, and used.',
+      'CARD.STATUS_CHANGE — the issuer activated the card. It can be revealed, added to a wallet, and used.',
     ),
   ];
 }
@@ -189,21 +189,21 @@ export function stateChangeCalls(state: CardLifecycleState, limits: CardSpendLim
   const copy = {
     FROZEN: {
       title: 'Lock card',
-      note: 'ACTIVE → FROZEN. New authorizations decline with CARD_PAUSED; in-flight clearings still post.',
+      note: 'ACTIVE → FROZEN. New authorizations decline with cardDeclinedReason CARD_NOT_ACTIVE; in-flight clearings still post.',
       hookTitle: 'Card locked',
-      hookNote: 'CARD.STATE_CHANGE — state is FROZEN. Reversible with state: ACTIVE.',
+      hookNote: 'CARD.STATUS_CHANGE — status is FROZEN. Reversible with status: ACTIVE.',
     },
     ACTIVE: {
       title: 'Unlock card',
       note: 'FROZEN → ACTIVE. Authorizations resume immediately.',
       hookTitle: 'Card active',
-      hookNote: 'CARD.STATE_CHANGE — state is back to ACTIVE.',
+      hookNote: 'CARD.STATUS_CHANGE — status is back to ACTIVE.',
     },
     CLOSED: {
       title: 'Close card',
       note: 'ACTIVE | FROZEN → CLOSED. Terminal: the funding source detaches, the card can no longer be mutated, and its slot against the platform\u2019s live-card limit frees up.',
       hookTitle: 'Card closed',
-      hookNote: 'CARD.STATE_CHANGE — state is CLOSED with stateReason CLOSED_BY_PLATFORM.',
+      hookNote: 'CARD.STATUS_CHANGE — status is CLOSED with statusReason CLOSED_BY_PLATFORM.',
     },
   }[state];
   return [
@@ -211,7 +211,7 @@ export function stateChangeCalls(state: CardLifecycleState, limits: CardSpendLim
       method: 'PATCH',
       path: `/cards/${card.id}`,
       title: copy.title,
-      reqBody: { state },
+      reqBody: { status: state },
       status: '200 OK',
       note: copy.note,
       resBody: card,
@@ -225,7 +225,7 @@ export function closeRejectedCall(): ApiCall {
     method: 'PATCH',
     path: `/cards/${card.id}`,
     title: 'Close card (again)',
-    reqBody: { state: 'CLOSED' },
+    reqBody: { status: 'CLOSED' },
     status: '409 Conflict',
     note: 'CLOSED is terminal. A second close returns CARD_ALREADY_CLOSED; any other mutation returns CARD_NOT_MUTABLE.',
     resBody: {
@@ -319,6 +319,8 @@ function merchantBody(merchant: string) {
 
 interface CardTransactionOptions {
   status: 'AUTHORIZED' | 'SETTLED' | 'DECLINED';
+  /** Why Grid declined; present only with status DECLINED. */
+  cardDeclinedReason?: CardDeclinedReason;
   /** A merchant return is its own CREDIT row pointing back at the purchase. */
   direction?: 'DEBIT' | 'CREDIT';
   originalTransactionId?: string;
@@ -330,7 +332,7 @@ interface CardTransactionOptions {
  *  a DECLINED row carries only the attempted authorizedAmount. */
 function cardTransaction(
   ref: SpendRef,
-  { status, direction = 'DEBIT', originalTransactionId, at }: CardTransactionOptions,
+  { status, cardDeclinedReason, direction = 'DEBIT', originalTransactionId, at }: CardTransactionOptions,
 ) {
   const amount = { amount: ref.cents, currency: USD };
   return {
@@ -341,6 +343,7 @@ function cardTransaction(
     platformCustomerId: 'customer_demo_001',
     issuerTransactionToken: ref.issuerTransactionToken,
     status,
+    ...(cardDeclinedReason ? { cardDeclinedReason } : {}),
     direction,
     ...(originalTransactionId ? { originalTransactionId } : {}),
     merchant: merchantBody(ref.merchant),
@@ -392,20 +395,33 @@ export function tapCalls(ref: SpendRef): ApiCall[] {
 
 export type DeclineCode = 'CARD_PAUSED' | 'CARD_CLOSED' | 'OVER_PER_TXN_LIMIT' | 'OVER_DAILY_LIMIT';
 
+/** The API's `cardDeclinedReason` (CardDeclinedReason in the spec). */
+type CardDeclinedReason = 'CARD_NOT_ACTIVE' | 'SPEND_LIMIT_EXCEEDED';
+
+const DECLINE_REASON: Record<DeclineCode, CardDeclinedReason> = {
+  CARD_PAUSED: 'CARD_NOT_ACTIVE',
+  CARD_CLOSED: 'CARD_NOT_ACTIVE',
+  OVER_PER_TXN_LIMIT: 'SPEND_LIMIT_EXCEEDED',
+  OVER_DAILY_LIMIT: 'SPEND_LIMIT_EXCEEDED',
+};
+
 const DECLINE_WHY: Record<DeclineCode, string> = {
-  CARD_PAUSED: 'the card is FROZEN, so Authorization Decisioning refuses new authorizations (CARD_PAUSED)',
-  CARD_CLOSED: 'the card is CLOSED',
-  OVER_PER_TXN_LIMIT: 'the amount exceeds the effective maxSpendPerTransaction (the lower of the card cap and the platform cap)',
-  OVER_DAILY_LIMIT: 'this purchase would push cumulative spend past the effective maxSpendPerDay for the current UTC day',
+  CARD_PAUSED: 'the card is FROZEN, so it is not ACTIVE (cardDeclinedReason CARD_NOT_ACTIVE)',
+  CARD_CLOSED: 'the card is CLOSED (cardDeclinedReason CARD_NOT_ACTIVE)',
+  OVER_PER_TXN_LIMIT:
+    'the amount exceeds the effective maxSpendPerTransaction, the lower of the card cap and the platform cap (cardDeclinedReason SPEND_LIMIT_EXCEEDED)',
+  OVER_DAILY_LIMIT:
+    'this purchase would push cumulative spend past the effective maxSpendPerDay for the current UTC day (cardDeclinedReason SPEND_LIMIT_EXCEEDED)',
 };
 
 /** A declined tap. The request is an ordinary authorization — Grid declines
- *  it from the card's own state (FROZEN / CLOSED) or its spend caps, the same
- *  way it would in production. The decline is recorded as a DECLINED
- *  CardTransaction and delivered as CARD_TRANSACTION.DECLINED. */
+ *  it from the card's own status (FROZEN / CLOSED) or its spend caps, the
+ *  same way it would in production. The decline is recorded as a DECLINED
+ *  CardTransaction carrying a cardDeclinedReason and delivered as
+ *  CARD_TRANSACTION.DECLINED. */
 export function declineCalls(reason: DeclineCode, merchant: string, cents: number): ApiCall[] {
   const ref = newSpendRef(merchant, cents);
-  const txn = cardTransaction(ref, { status: 'DECLINED', at: ref.authorizedAt });
+  const txn = cardTransaction(ref, { status: 'DECLINED', cardDeclinedReason: DECLINE_REASON[reason], at: ref.authorizedAt });
   return [
     {
       method: 'POST',
