@@ -3,8 +3,8 @@
 All tests use these target variables (set per-target in SKILL.md Step 4). A target is a chain paired with a stablecoin, e.g. `ethereum-usdc` or `ethereum-usdt`.
 
 - `chain_helper` — shell function wrapping the target's helper script (defined in SKILL.md Step 4)
-- `$CRYPTO_NETWORK` — e.g., `SOLANA_DEVNET`, `BASE_TESTNET`, `POLYGON_TESTNET`, `ETHEREUM_TESTNET`, `PLASMA`, `TRON_TESTNET`
-- `$WALLET_TYPE` — e.g., `SOLANA_WALLET`, `BASE_WALLET`, `POLYGON_WALLET`, `ETHEREUM_WALLET`, `PLASMA_WALLET`, `TRON_WALLET`
+- `$CRYPTO_NETWORK` — e.g., `SOLANA_DEVNET`, `BASE_TESTNET`, `POLYGON_TESTNET`, `ETHEREUM_TESTNET`, `ARBITRUM_TESTNET`, `PLASMA`, `TRON_TESTNET`
+- `$WALLET_TYPE` — e.g., `SOLANA_WALLET`, `BASE_WALLET`, `POLYGON_WALLET`, `ETHEREUM_WALLET`, `ARBITRUM_WALLET`, `PLASMA_WALLET`, `TRON_WALLET`
 - `$WALLET_ADDRESS` — the test wallet's on-chain address
 - `$STABLE_ASSET` — lowercase stablecoin name for helper subcommands (`usdc` or `usdt`)
 - `$STABLE_CURRENCY` — uppercase Grid currency code for API bodies (`USDC` or `USDT`)
@@ -14,7 +14,7 @@ All tests use these target variables (set per-target in SKILL.md Step 4). A targ
 
 Shell variables referenced below (`STABLE_INTERNAL_ID`, `STABLE_EXTERNAL_ID`, etc.) hold the IDs of internal/external accounts denominated in `$STABLE_CURRENCY`.
 
-On a chain that supports two stablecoins, `$WALLET_TYPE` is identical across both targets — the account's asset is carried by `$STABLE_CURRENCY` in the request body, and by `assetType` on the wallet info Grid returns. When extracting a deposit or payment address from `fundingPaymentInstructions` / `paymentInstructions`, match on **both** `accountOrWalletInfo.accountType == $WALLET_TYPE` **and** `accountOrWalletInfo.assetType == $STABLE_CURRENCY`, or you may pick up the sibling asset's address on Ethereum.
+On a chain that supports two stablecoins, `$WALLET_TYPE` is identical across both targets — the account's asset is carried by `$STABLE_CURRENCY` in the request body, and by `assetType` on the wallet info Grid returns. When extracting a deposit or payment address from `fundingPaymentInstructions` / `paymentInstructions`, match on **both** `accountOrWalletInfo.accountType == $WALLET_TYPE` **and** `accountOrWalletInfo.assetType == $STABLE_CURRENCY`, or you may pick up the sibling asset's address on Ethereum or Arbitrum.
 
 API credentials are in environment variables: `$GRID_API_TOKEN_ID`, `$GRID_API_CLIENT_SECRET`, `$GRID_BASE_URL`.
 

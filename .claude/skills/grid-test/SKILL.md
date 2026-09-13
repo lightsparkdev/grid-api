@@ -5,13 +5,14 @@ description: >
   "test deposits", "test withdrawals", "test Solana flows", "test Base flows", "test Polygon flows",
   "test Ethereum flows", "test ETH L1", "test Tron flows", "test USDT on Tron", "test USDT on Ethereum",
   "test USDT on eth", "test USDT on eth L1", "test USDC on Ethereum", "test Plasma flows",
-  "test USDT on Plasma", "test plasma", "run e2e tests",
+  "test USDT on Plasma", "test plasma", "test Arbitrum flows", "test arbitrum", "test USDC on Arbitrum",
+  "test USDT on Arbitrum", "test arb", "run e2e tests",
   "test sandbox", "test USDC to USD", "test USDT to USD", "test USDC to MXN", "test USDT to MXN",
   "run all Grid tests", "test transfer out", "test realtime funding", "test quote flows",
   "test deposits and withdrawals", "run sandbox tests", "test USDC sandbox", "test USDT sandbox",
   "test Grid API", "run e2e USDC test", "run e2e USDT test", "test USDC on [chain]",
   "test USDT on [chain]", or wants to verify Grid's stablecoin deposit/withdrawal/quote pipeline
-  (USDC on Solana/Base/Polygon/Ethereum, USDT on Ethereum/Plasma/Tron).
+  (USDC on Solana/Base/Polygon/Ethereum/Arbitrum, USDT on Ethereum/Arbitrum/Plasma/Tron).
   Even if the user mentions just one chain, one asset, one test, or one corridor, this skill applies.
   This replaces both grid-solana-usdc-sandbox and grid-base-usdc-test.
 allowed-tools:
@@ -24,7 +25,7 @@ allowed-tools:
 
 # Grid API Test Suite
 
-End-to-end tests for stablecoin flows: USDC on Solana, Base, Polygon, and Ethereum L1, and USDT on Ethereum L1, Plasma, and Tron. Covers deposits, withdrawals, and cross-currency quotes using real testnet (or mainnet) funds.
+End-to-end tests for stablecoin flows: USDC on Solana, Base, Polygon, Ethereum L1, and Arbitrum, and USDT on Ethereum L1, Arbitrum, Plasma, and Tron. Covers deposits, withdrawals, and cross-currency quotes using real testnet (or mainnet) funds.
 
 A **target** is a chain paired with a stablecoin — `ethereum-usdc` and `ethereum-usdt` are separate targets that share a chain, helper script, private key, and wallet address. The tests themselves are asset-agnostic, parameterized over the target's `STABLE_ASSET` / `STABLE_CURRENCY`.
 
@@ -33,9 +34,9 @@ A **target** is a chain paired with a stablecoin — `ethereum-usdc` and `ethere
 Determine what to run from the user's request:
 
 **Targets** (default: all available — see step 4 for which have keys):
-- `solana-usdc`, `base-usdc`, `polygon-usdc`, `ethereum-usdc`, `ethereum-usdt`, `plasma-usdt`, `tron-usdt`, or `all`
-- A bare chain name selects every target on that chain: "test ethereum" → `ethereum-usdc` + `ethereum-usdt`; "test plasma" → `plasma-usdt`
-- A bare asset name selects every target for that asset: "run USDT tests" → `ethereum-usdt` + `plasma-usdt` + `tron-usdt`
+- `solana-usdc`, `base-usdc`, `polygon-usdc`, `ethereum-usdc`, `ethereum-usdt`, `arbitrum-usdc`, `arbitrum-usdt`, `plasma-usdt`, `tron-usdt`, or `all`
+- A bare chain name selects every target on that chain: "test ethereum" → `ethereum-usdc` + `ethereum-usdt`; "test arbitrum" / "test arb" → `arbitrum-usdc` + `arbitrum-usdt`; "test plasma" → `plasma-usdt`
+- A bare asset name selects every target for that asset: "run USDT tests" → `ethereum-usdt` + `arbitrum-usdt` + `plasma-usdt` + `tron-usdt`
 - Chain + asset selects one: "test USDT on eth" → `ethereum-usdt`
 - Multiple targets: "test solana and base", "test USDT on plasma and tron"
 
@@ -114,6 +115,8 @@ For each target the user wants to test, set the target-specific variables and ve
 | `polygon-usdc` | `POLYGON_WALLET` | `usdc` | `USDC` | `scripts/polygon_helper.py` | `pol-balance` | POL | 0.1 | 200000 | `web3` |
 | `ethereum-usdc` | `ETHEREUM_WALLET` | `usdc` | `USDC` | `scripts/ethereum_helper.py` | `eth-balance` | ETH | 0.01 | 200000 | `web3` |
 | `ethereum-usdt` | `ETHEREUM_WALLET` | `usdt` | `USDT` | `scripts/ethereum_helper.py` | `eth-balance` | ETH | 0.01 | 200000 | `web3` |
+| `arbitrum-usdc` | `ARBITRUM_WALLET` | `usdc` | `USDC` | `scripts/arbitrum_helper.py` | `eth-balance` | ETH | 0.001 | 200000 | `web3` |
+| `arbitrum-usdt` | `ARBITRUM_WALLET` | `usdt` | `USDT` | `scripts/arbitrum_helper.py` | `eth-balance` | ETH | 0.001 | 200000 | `web3` |
 | `plasma-usdt` | `PLASMA_WALLET` | `usdt` | `USDT` | `scripts/plasma_helper.py` | `xpl-balance` | XPL | 0.01 | 200000 | `web3` |
 | `tron-usdt` | `TRON_WALLET` | `usdt` | `USDT` | `scripts/tron_helper.py` | `trx-balance` | TRX | 50 | 200000 | `tronpy` |
 
@@ -126,6 +129,8 @@ For each target the user wants to test, set the target-specific variables and ve
 | `polygon-usdc` | `POLYGON_TESTNET` | `POLYGON_MAINNET` | `polygonTestnetPrivateKey` | `polygonMainnetPrivateKey` |
 | `ethereum-usdc` | `ETHEREUM_TESTNET` | `ETHEREUM_MAINNET` | `ethereumTestnetPrivateKey` | `ethereumMainnetPrivateKey` |
 | `ethereum-usdt` | `ETHEREUM_TESTNET` | `ETHEREUM_MAINNET` | `ethereumTestnetPrivateKey` | `ethereumMainnetPrivateKey` |
+| `arbitrum-usdc` | `ARBITRUM_TESTNET` | `ARBITRUM_MAINNET` | `arbitrumTestnetPrivateKey` | `arbitrumMainnetPrivateKey` |
+| `arbitrum-usdt` | `ARBITRUM_TESTNET` | `ARBITRUM_MAINNET` | `arbitrumTestnetPrivateKey` | `arbitrumMainnetPrivateKey` |
 | `plasma-usdt` | `PLASMA` | `PLASMA` | `plasmaTestnetPrivateKey` | `plasmaMainnetPrivateKey` |
 | `tron-usdt` | `TRON_TESTNET` | `TRON_MAINNET` | `tronTestnetPrivateKey` | `tronMainnetPrivateKey` |
 
@@ -154,6 +159,23 @@ curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
 
 Skip the target on either error, reporting which of the two states above it matched. Everything else about the target is wired and runs unchanged once the deploy lands and the gatekeeper is on.
 
+**`arbitrum-usdc` / `arbitrum-usdt` readiness (as of 2026-09-12):** backend support merged to `webdev` `main` on 2026-09-12 (commit `064092bb54`, #34525, "Add Arbitrum (USDC + USDT) as a Fireblocks settlement network"). Every customer-facing path is gated per platform by `GK.USDC_USDT_ARBITRUM_ENABLED`. Probe the same way as Plasma, once per asset:
+
+| Response | Meaning |
+|---|---|
+| `MISSING_MANDATORY_USER_INFO: Beneficiary information is required for fiat accounts` | Deployed build predates Arbitrum support |
+| `INVALID_INPUT: USDC/USDT on Arbitrum is not enabled for this platform.` (external-account create) or `INVALID_INPUT: USDC/USDT on Arbitrum is not enabled.` (quotes) | Build is current; gatekeeper is off for this platform |
+| `201` with an account id | Ready — run the target |
+
+```bash
+curl -s -u "$GRID_API_TOKEN_ID:$GRID_API_CLIENT_SECRET" \
+  -X POST -H "Content-Type: application/json" \
+  -d "{\"customerId\":\"$CUSTOMER_ID\",\"currency\":\"$STABLE_CURRENCY\",\"cryptoNetwork\":\"$CRYPTO_NETWORK\",\"accountInfo\":{\"accountType\":\"ARBITRUM_WALLET\",\"address\":\"$WALLET_ADDRESS\"}}" \
+  "$GRID_BASE_URL/customers/external-accounts"
+```
+
+The gatekeeper covers both assets, so one failed probe skips both Arbitrum targets.
+
 ### Per-target prerequisites
 
 For each selected target, run these checks. Skip a target (with a warning) if its private key is missing.
@@ -162,7 +184,7 @@ For each selected target, run these checks. Skip a target (with a warning) if it
    ```bash
    jq -r ".$CRED_KEY // empty" ~/.grid-credentials
    ```
-   If empty, warn the user and skip this target. Targets sharing a chain share a key — a missing `ethereumTestnetPrivateKey` skips both `ethereum-usdc` and `ethereum-usdt`.
+   If empty, warn the user and skip this target. Targets sharing a chain share a key — a missing `ethereumTestnetPrivateKey` skips both `ethereum-usdc` and `ethereum-usdt`, and a missing `arbitrumTestnetPrivateKey` skips both Arbitrum targets.
 
 2. **Install dependencies:**
    ```bash
@@ -188,6 +210,7 @@ For each selected target, run these checks. Skip a target (with a warning) if it
    - Base: https://www.alchemy.com/faucets/base-sepolia
    - Polygon: https://faucet.polygon.technology/
    - Ethereum: https://www.alchemy.com/faucets/ethereum-sepolia
+   - Arbitrum: https://www.alchemy.com/faucets/arbitrum-sepolia (Arbitrum Sepolia ETH)
    - Plasma: https://faucet.plasma.to/ (Plasma testnet XPL faucet)
    - Tron: https://shasta.tronex.io/ (Shasta testnet TRX faucet)
 
@@ -201,6 +224,8 @@ For each selected target, run these checks. Skip a target (with a warning) if it
    - `polygon-usdc`: https://faucet.circle.com/ (select Polygon Amoy)
    - `ethereum-usdc`: https://faucet.circle.com/ (select Ethereum Sepolia)
    - `ethereum-usdt`: no public faucet. Acquire Sepolia USDT (ERC-20 contract `0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0`, 6 decimals) by transferring from an existing test wallet or swapping on a Sepolia DEX.
+   - `arbitrum-usdc`: https://faucet.circle.com/ (select Arbitrum Sepolia)
+   - `arbitrum-usdt`: no public faucet. Acquire Arbitrum Sepolia USDT (ERC-20 contract `0xc6d73dc581a37fece4fa24f6e0dfb2fea406d534`, 6 decimals) by transferring from an existing test wallet.
    - `plasma-usdt`: https://faucet.plasma.to/ (Plasma testnet faucet — dispenses XPL; for testnet USDT0, contract `0x502012b361AebCE43b26Ec812B74D9a51dB4D412`, transfer from an existing test wallet if the faucet does not dispense it)
    - `tron-usdt`: https://shasta.tronex.io/ (Shasta testnet faucet — request TRX, then swap or fund via the TRC-20 USDT contract `TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs`)
 
@@ -228,10 +253,12 @@ If running a subset, create the customer (Test 1) silently as setup, then run on
 - `polygon-usdc`: `CHAIN_PREFIX="polygon-usdc-test"`
 - `ethereum-usdc`: `CHAIN_PREFIX="ethereum-usdc-test"`
 - `ethereum-usdt`: `CHAIN_PREFIX="ethereum-usdt-test"`
+- `arbitrum-usdc`: `CHAIN_PREFIX="arbitrum-usdc-test"`
+- `arbitrum-usdt`: `CHAIN_PREFIX="arbitrum-usdt-test"`
 - `plasma-usdt`: `CHAIN_PREFIX="plasma-usdt-test"`
 - `tron-usdt`: `CHAIN_PREFIX="tron-usdt-test"`
 
-Each target gets its own customer, so `ethereum-usdc` and `ethereum-usdt` never share internal-account state. They do share one on-chain wallet, so run them sequentially — concurrent sends from the same address collide on the nonce.
+Each target gets its own customer, so `ethereum-usdc` and `ethereum-usdt` (likewise the two Arbitrum targets) never share internal-account state. They do share one on-chain wallet, so run them sequentially — concurrent sends from the same address collide on the nonce.
 
 ## Step 6: Results Summary
 
@@ -275,6 +302,8 @@ If multiple targets were tested, add an aggregate summary:
 | polygon-usdc  | 0/11   | 0      | 11      |
 | ethereum-usdc | 11/11  | 0      | 0       |
 | ethereum-usdt | 11/11  | 0      | 0       |
+| arbitrum-usdc | 11/11  | 0      | 0       |
+| arbitrum-usdt | 11/11  | 0      | 0       |
 | plasma-usdt   | 11/11  | 0      | 0       |
 | tron-usdt     | 11/11  | 0      | 0       |
 ```
@@ -325,6 +354,8 @@ All tests use small amounts to conserve testnet funds. Amounts are denominated i
   "polygonMainnetPrivateKey": "hex-private-key-with-or-without-0x",
   "ethereumTestnetPrivateKey": "hex-private-key-with-or-without-0x",
   "ethereumMainnetPrivateKey": "hex-private-key-with-or-without-0x",
+  "arbitrumTestnetPrivateKey": "hex-private-key-with-or-without-0x",
+  "arbitrumMainnetPrivateKey": "hex-private-key-with-or-without-0x",
   "plasmaTestnetPrivateKey": "hex-private-key-with-or-without-0x",
   "plasmaMainnetPrivateKey": "hex-private-key-with-or-without-0x",
   "tronTestnetPrivateKey": "hex-private-key-with-or-without-0x",
@@ -342,9 +373,11 @@ Each helper hardcodes the token contracts it sends and reads. For reference:
 |---|---|---|
 | `ethereum-usdc` | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` (Sepolia) | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
 | `ethereum-usdt` | `0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0` (Sepolia) | `0xdAC17F958D2ee523a2206206994597C13D831ec7` |
+| `arbitrum-usdc` | `0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d` (Arbitrum Sepolia) | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
+| `arbitrum-usdt` | `0xc6d73dc581a37fece4fa24f6e0dfb2fea406d534` (Arbitrum Sepolia) | `0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9` |
 | `plasma-usdt` | `0x502012b361AebCE43b26Ec812B74D9a51dB4D412` | `0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb` |
 | `tron-usdt` | `TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs` (Shasta) | `TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t` |
 
-Both Plasma contracts report `symbol()` as `USDT0` (Plasma's USD₮0 branding) with 6 decimals. Grid treats them as `USDT` — `STABLE_CURRENCY` stays `USDT` in all API bodies.
+Both Plasma contracts report `symbol()` as `USDT0` (Plasma's USD₮0 branding) with 6 decimals. Grid treats them as `USDT` — `STABLE_CURRENCY` stays `USDT` in all API bodies. The same applies to Arbitrum One's mainnet USDT contract, which reports `symbol()` as `USD₮0`; the Arbitrum Sepolia contract reports plain `USDT`.
 
 If a deposit never lands despite a confirmed on-chain send, the most likely cause is a contract mismatch — Grid indexes a different token contract than the helper sent to. Verify against Grid's configured contract for that network before debugging further.
