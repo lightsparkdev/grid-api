@@ -4,6 +4,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import clsx from 'clsx';
 import { GlassOver } from '@/components/liquid-glass';
 import type { GlassConfig } from '@/components/liquid-glass';
+import { pressable } from '@/lib/sounds';
 import { useOverlayGlass } from './OverlayGlassContext';
 import styles from './GlassSymbolButton.module.scss';
 
@@ -49,6 +50,7 @@ export function GlassSymbolButton({
       type={type}
       className={clsx(styles.root, size === 40 && styles.size40, className)}
       {...rest}
+      {...pressable(rest)}
     >
       <GlassOver
         className={styles.glass}

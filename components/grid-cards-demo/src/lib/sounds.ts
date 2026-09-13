@@ -538,6 +538,33 @@ export function hoverSound(name: SoundName = 'tick') {
   return (e: { pointerType?: string }) => playHover(name, e.pointerType);
 }
 
+type Handler<E> = (e: E) => void;
+
+/**
+ * A pressable's handlers with its sounds in front: the hover tick on
+ * `pointerenter` (real pointers only) and `press` on click, then the
+ * element's own handlers. Spread the result after the element's props:
+ * `<button {...rest} {...pressable(rest)}>`. A disabled control is silent.
+ * `null` for a cue turns that one off.
+ */
+export function pressable<E extends { pointerType?: string }, C>(
+  own: { onPointerEnter?: Handler<E>; onClick?: Handler<C>; disabled?: boolean },
+  cues: { hover?: SoundName | null; press?: SoundName | null } = {},
+): { onPointerEnter: Handler<E>; onClick: Handler<C> } {
+  const hover = cues.hover === undefined ? 'tick' : cues.hover;
+  const press = cues.press === undefined ? 'press' : cues.press;
+  return {
+    onPointerEnter: (e) => {
+      if (!own.disabled && hover) playHover(hover, e.pointerType);
+      own.onPointerEnter?.(e);
+    },
+    onClick: (e) => {
+      if (!own.disabled && press) play(press);
+      own.onClick?.(e);
+    },
+  };
+}
+
 /** Hover states, accordion toggles, carousel snaps. */
 export const playTick = () => playHover('tick');
 /** The brighter cut: toggles, tabs, swatches. */

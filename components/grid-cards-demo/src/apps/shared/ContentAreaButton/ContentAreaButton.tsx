@@ -1,5 +1,6 @@
 import type { ReactNode, ButtonHTMLAttributes } from 'react';
 import clsx from 'clsx';
+import { pressable } from '@/lib/sounds';
 import styles from './ContentAreaButton.module.scss';
 
 interface ContentAreaButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -43,6 +44,7 @@ export function ContentAreaButton({
         className,
       )}
       {...rest}
+      {...pressable(rest, { press: variant === 'destructive' ? 'pressLow' : 'press' })}
     >
       {icon ? <span className={styles.icon}>{icon}</span> : null}
       {children != null ? <span className={styles.label}>{children}</span> : null}

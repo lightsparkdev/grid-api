@@ -23,6 +23,7 @@ import { CardHomeContent } from './CardHomeContent';
 import { CardNumbersContent } from './CardNumbersContent';
 import { CloseCardSheet, FreezeSheet, TransactionSheet, WalletAgainSheet } from './CardSheets';
 import { LimitsContent } from './LimitsContent';
+import { useFlowSounds } from './useFlowSounds';
 import styles from './CardScreen.module.scss';
 
 const TAP_LIFT = -56; // Lift the body by the header height so the card sits under the status bar.
@@ -88,6 +89,7 @@ export function CardScreen({ home }: CardScreenProps) {
     startAddToWallet,
     startTapToPay,
   } = home;
+  useFlowSounds(home);
   const onPage = card.page !== 'home';
   // Card numbers is not a push: the header swaps as it always does, the
   // content under the card blur-fades out, and the numbers blur-fade in with

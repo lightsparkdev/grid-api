@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { GlassTextButton } from '@/apps/shared/glass';
 import { InlineWheelPicker, type WheelOption } from '@/apps/shared/InlineWheelPicker';
 import type { CardControls, LimitsRow, SpendLimits } from '@/apps/shared/card';
+import { pressable } from '@/lib/sounds';
 import styles from './LimitsContent.module.scss';
 
 /** A cap in cents, or null for none. */
@@ -33,7 +34,7 @@ function LimitRow({
 }) {
   return (
     <div className={styles.setting}>
-      <button type="button" className={styles.row} onClick={onToggle} aria-expanded={open}>
+      <button type="button" className={styles.row} aria-expanded={open} {...pressable({ onClick: onToggle })}>
         <span className={styles.label}>{label}</span>
         <span className={clsx(styles.pill, open && styles.pillOpen)}>{capLabel(value)}</span>
       </button>

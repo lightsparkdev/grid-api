@@ -9,6 +9,7 @@ import { GlassSymbolButton, headerGlassBrightness, TEXT_GLASS, TEXT_GLASS_PRIMAR
 import { SfSymbol } from '@/apps/shared/icons';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import { pressable } from '@/lib/sounds';
 import styles from './AddToWalletFlow.module.scss';
 
 /** A full-screen presentation: up from the bottom, back down to leave. */
@@ -161,8 +162,8 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
             <button
               type="button"
               className={clsx(styles.continue, !intro && styles.continueDim)}
-              onClick={card.confirmAddToWallet}
               disabled={!intro}
+              {...pressable({ onClick: card.confirmAddToWallet, disabled: !intro })}
             >
               {intro ? (
                 // Apple's prominent button, as iOS draws it now: blue glass.

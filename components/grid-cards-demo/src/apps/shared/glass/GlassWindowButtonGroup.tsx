@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { GlassOver } from '@/components/liquid-glass';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { SfSymbol, type SfSymbolName } from '@/apps/shared/icons';
+import { pressable } from '@/lib/sounds';
 import { useOverlayGlass } from './OverlayGlassContext';
 import styles from './GlassWindowButtonGroup.module.scss';
 
@@ -75,8 +76,8 @@ export function GlassWindowButtonGroup({
                 type="button"
                 className={styles.iconButton}
                 aria-label={label}
-                onClick={onClick}
                 disabled={disabled}
+                {...pressable({ onClick, disabled })}
               >
                 <SfSymbol name={name} size={size} />
               </button>

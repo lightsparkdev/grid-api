@@ -3,6 +3,7 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react';
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type MotionValue } from 'motion/react';
 import { easeOutSnappy, motionTransition } from '@/lib/easing';
+import { play } from '@/lib/sounds';
 import styles from './InlineWheelPicker.module.scss';
 
 /** Row pitch and the window's height (Apple Cash's Auto Reload picker: five
@@ -66,6 +67,20 @@ export function InlineWheelPicker<T>({ options, value, onChange, open, 'aria-lab
     const next = optionsRef.current[to];
     if (next && next.value !== value) onChangeRef.current(next.value);
   };
+
+  // The drum ticks over each row it crosses, turning or settling, as
+  // UIPickerView does. Only while open: a closed drum turning to an outside
+  // value is unseen.
+  useEffect(() => {
+    if (!open) return;
+    let row = Math.round(pos.get());
+    return pos.on('change', (v) => {
+      const next = Math.round(v);
+      if (next === row) return;
+      row = next;
+      play('tick');
+    });
+  }, [open, pos]);
 
   // The value changed from outside (a scripted pick, a reset): turn to it.
   useEffect(() => {
