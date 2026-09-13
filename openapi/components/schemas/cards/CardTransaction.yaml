@@ -65,6 +65,14 @@ properties:
       return credits back against. Absent on purchases and on standalone
       credits with no matching purchase.
     example: Transaction:019542f5-b3e7-1d02-0000-000000000099
+  description:
+    type: string
+    description: >-
+      The merchant descriptor, repeated from `merchant.descriptor` so a
+      transaction list reads without expanding each card row. Unlike
+      `description` on other transaction types, this is set by Grid from the
+      card network's descriptor, not supplied by the platform.
+    example: BLUE BOTTLE COFFEE SF
   merchant:
     $ref: ./CardMerchant.yaml
   authorizedAmount:
