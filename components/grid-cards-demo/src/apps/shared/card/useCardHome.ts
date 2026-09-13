@@ -12,7 +12,6 @@ import {
   type UseCardControlsOptions,
   type WalletAddPhase,
 } from './useCardControls';
-import type { SpendLimits } from './useCardControls';
 import type { ActivityKind, TapPhase, WalletEntry, WalletListItemData } from './types';
 import { TAP_MERCHANTS, parseCents } from './merchants';
 
@@ -44,16 +43,10 @@ const REFUND_START_MS = 1100;
 const REFUND_HOLD_MS = 2200;
 /** Simple state changes (freeze, close) settle after the notification. */
 const NOTICE_SETTLE_MS = 1400;
-/** Limits: the page opens; the cardholder opens Per purchase, turns its wheel,
- *  opens Per day (the first closes), turns that one, and saves. */
-const LIMITS_OPEN_ROW_MS = 800;
-const LIMITS_TURN_MS = 900;
-const LIMITS_NEXT_ROW_MS = 1000;
-const LIMITS_SAVE_MS = 1100;
+/** A page push (the Spending limits page). */
+const PAGE_PUSH_MS = 500;
 /** Push notification hold. */
 const NOTICE_MS = 3600;
-/** The Limits flow applies these caps (platform-side PATCH). */
-export const PRESET_LIMITS: SpendLimits = { perTransactionCents: 7_500, perDayCents: 25_000 };
 
 /** How a card event reads in Activity. */
 const EVENT_TITLE: Record<ActivityKind, string> = {
@@ -492,37 +485,27 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           startAddToWallet();
           break;
         case 'freeze':
-          toggleFreeze();
+          // The sheet asks; the cardholder's confirm locks or unlocks (the
+          // sheet's confirm is `toggleFreeze`, which notifies and settles).
+          if (card.closed) {
+            notify('Card closed', 'A closed card can’t be locked or unlocked.');
+            settle(NOTICE_SETTLE_MS);
+            break;
+          }
+          card.setSheet('freeze');
+          settle(SHEET_UP_MS);
           break;
-        case 'limits': {
+        case 'limits':
+          // The Spending limits page opens; the caps and the save are the
+          // cardholder's (the activity row and the PATCH follow the save).
           if (card.closed) {
             notify('Card closed', 'Limits can’t be changed on a closed card.');
             settle(NOTICE_SETTLE_MS);
             break;
           }
-          // The cardholder opens Spending limits, opens Per purchase and turns
-          // its wheel to the cap, then Per day, then saves; the page pops.
           card.openLimits();
-          let at = LIMITS_OPEN_ROW_MS;
-          later(() => cardRef.current.setLimitsRow('perTransaction'), at);
-          at += LIMITS_TURN_MS;
-          later(
-            () => cardRef.current.setLimitsDraft((d) => ({ ...d, perTransactionCents: PRESET_LIMITS.perTransactionCents })),
-            at,
-          );
-          at += LIMITS_NEXT_ROW_MS;
-          later(() => cardRef.current.setLimitsRow('perDay'), at);
-          at += LIMITS_TURN_MS;
-          later(() => cardRef.current.setLimitsDraft((d) => ({ ...d, perDayCents: PRESET_LIMITS.perDayCents })), at);
-          at += LIMITS_SAVE_MS;
-          later(() => {
-            const c = cardRef.current;
-            c.saveLimits(c.limitsDraft);
-            c.popPage();
-            settle(500);
-          }, at);
+          settle(PAGE_PUSH_MS);
           break;
-        }
         case 'refund': {
           // Only a settled purchase can be returned, and only once. None
           // left: provision one (state only, like the other fast-forwards; it
