@@ -25,7 +25,6 @@ clips=(
   "approval|$refs/epidemic/approval_success.caf|0|1.09"
   "applepay|$refs/processed/applepay-success.caf|0.05|1.0"
   "lock|$refs/apple/lock.wav|0|0.35"
-  "unlock|$refs/apple/unlock.wav|0|0.55"
   "notify|$refs/apple/notification-rebound.wav|0|1.45"
 )
 

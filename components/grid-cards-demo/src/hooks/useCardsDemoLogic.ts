@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiCall } from '@/data/flow';
-import { play } from '@/lib/sounds';
 import {
   ACTIONS,
   initialCompleted,
@@ -138,8 +137,6 @@ export function useCardsDemoLogic() {
     if (!calls?.length) return;
     const gid = groupId ?? newGroupId();
     const baseTime = Date.now();
-    // One blip per landing, however many calls land together.
-    play('blip');
     setEntries((prev) => [
       ...prev,
       ...calls.map((c, i) => ({

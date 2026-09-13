@@ -70,7 +70,7 @@ export type SoundName =
   | 'decline'
   /** The lock seating on the card (Apple's lock click). */
   | 'lock'
-  /** The lock leaving (iOS 6's unlock, the swipe-to-unlock latch). */
+  /** The lock leaving: the same click, a little quieter. */
   | 'unlock'
   /** A push notification landing (iOS "Rebound"). */
   | 'notify'
@@ -79,9 +79,7 @@ export type SoundName =
   /** The card issued: a small two-note rise, rounded, like a muted kalimba. */
   | 'issued'
   /** A tap-to-pay approved (the Apple Pay chime). */
-  | 'approved'
-  /** An API call landing in the panel: a small, quiet blip. */
-  | 'blip';
+  | 'approved';
 
 // ── Levels and sources ────────────────────────────────────────────────────────
 
@@ -96,7 +94,7 @@ const MASTER_GAIN = 0.6;
  *  and the gain applied to it. Files peak at -3 dBFS. */
 const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
   lock: { file: 'lock', gain: 0.24 },
-  unlock: { file: 'unlock', gain: 0.24 },
+  unlock: { file: 'lock', gain: 0.2 },
   notify: { file: 'notify', gain: 0.18 },
   success: { file: 'approval', gain: 0.32 },
   approved: { file: 'applepay', gain: 0.28 },
@@ -108,7 +106,6 @@ const MIN_GAP_MS: Partial<Record<SoundName, number>> = {
   tickBright: 60,
   snap: 80,
   type: 25,
-  blip: 150,
   notify: 400,
   success: 400,
   issued: 400,
@@ -258,18 +255,6 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 1046, attack: 0.005, decay: 0.11, peak: 0.04 },
       { kind: 'tone', waveform: 'sine', frequency: 784, attack: 0.005, decay: 0.36, peak: 0.2, offset: 0.09 },
       { kind: 'tone', waveform: 'sine', frequency: 1568, attack: 0.005, decay: 0.13, peak: 0.04, offset: 0.09 },
-    ],
-  },
-  /** A small wooden note: the press's knock for the strike, a short sine
-   *  for the bar and its fourth partial dying fast (a marimba's ratio), so
-   *  it has a pitch without sounding electronic. */
-  blip: {
-    masterGain: 0.32,
-    jitter: 0.03,
-    layers: [
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1100, filterQ: 1.1, attack: 0.002, decay: 0.025, peak: 0.1 },
-      { kind: 'tone', waveform: 'sine', frequency: 740, attack: 0.003, decay: 0.11, peak: 0.15 },
-      { kind: 'tone', waveform: 'sine', frequency: 2960, attack: 0.002, decay: 0.035, peak: 0.035 },
     ],
   },
 };
