@@ -10,9 +10,10 @@
  * built by `scripts/build-sounds.sh`. Every sampled cue has a synthesized
  * stand-in that plays until its sample has decoded, or when the asset is
  * missing, so nothing depends on the files being there. Besides the cues
- * there is `airflow()`: a continuous voice for something turning through
- * the air, which the caller writes a speed into every frame (the card's
- * turn-over).
+ * there are two continuous voices the caller writes into every frame:
+ * `airflow()` for something turning through the air (the card's turn-over)
+ * and `grain()` for a surface laid down as a dither behind a moving front
+ * (the card's material change).
  *
  * Rules, in the order `play` applies them: nothing during SSR; nothing
  * while muted (`localStorage['ls-demo-sounds-muted']`, shared across the
@@ -503,7 +504,7 @@ export function subscribeMuted(cb: (muted: boolean) => void): () => void {
 type Suppressed = 'muted' | 'hidden' | 'no-gesture' | 'throttled' | 'no-audio';
 
 interface LogEntry {
-  name: SoundName | 'airflow';
+  name: SoundName | 'airflow' | 'grain';
   at: number;
   played: boolean;
   reason?: Suppressed;
@@ -617,16 +618,17 @@ export interface Airflow {
 const AIR_NOISE_S = 2;
 /** Loudness at full speed, and the curve under it: steeper than linear, so
  *  a small wobble is near silent, shallower than drag's square, so a lazy
- *  turn is still heard. */
-const AIR_GAIN = 0.55;
-const AIR_CURVE = 1.6;
+ *  turn is still heard. Kept well under the presses: the air is felt more
+ *  than heard. */
+const AIR_GAIN = 0.16;
+const AIR_CURVE = 1.8;
 /** The lowpass opens with speed: a breath at a lazy turn, a rush at a fling. */
 const AIR_LOW_MIN = 180;
-const AIR_LOW_MAX = 1400;
+const AIR_LOW_MAX = 1000;
 /** A resonant body under it, for depth. */
 const AIR_BODY_MIN = 220;
-const AIR_BODY_MAX = 600;
-const AIR_BODY_MIX = 0.6;
+const AIR_BODY_MAX = 520;
+const AIR_BODY_MIX = 0.35;
 /** How fast the voice follows the speed (s). */
 const AIR_LAG = 0.035;
 const AIR_FADE_S = 0.12;
@@ -717,6 +719,120 @@ export function airflow(): Airflow {
   };
   watchdog = window.setTimeout(stop, AIR_WATCHDOG_MS);
   record({ name: 'airflow', at: performance.now(), played: true, via: 'synth' });
+  return { set, stop };
+}
+
+// ── Grain: a texture laid down grain by grain, driven by a sweep ─────────────
+
+/** A voice for a surface being laid down as a fine dither behind a moving
+ *  front. `set(level, pan)`: `level` 0..1 is how fast the front is moving
+ *  (the grain's density and loudness follow it), `pan` -1..1 is where the
+ *  front is across the screen. `stop()` fades it out. */
+export interface Grain {
+  set(level: number, pan: number): void;
+  stop(): void;
+}
+
+const GRAIN_GAIN = 0.2;
+/** Crackle: sparse impulses, this many per second at full level. */
+const GRAIN_CRACKLE_PER_S = 900;
+/** The hiss under the crackle: a bandpass, its center by `bright` (0 dull
+ *  plastic, 1 polished steel). */
+const GRAIN_HISS_MIN = 2400;
+const GRAIN_HISS_MAX = 5200;
+const GRAIN_HISS_MIX = 0.5;
+const GRAIN_LAG = 0.02;
+const GRAIN_FADE_S = 0.08;
+
+let crackleBuffer: AudioBuffer | null = null;
+/** Two seconds of sparse, random, one-sample impulses with random sign and
+ *  size: the dither's individual grains. */
+function crackle(context: AudioContext): AudioBuffer {
+  if (crackleBuffer && crackleBuffer.sampleRate === context.sampleRate) return crackleBuffer;
+  const length = Math.floor(AIR_NOISE_S * context.sampleRate);
+  const buffer = context.createBuffer(1, length, context.sampleRate);
+  const data = buffer.getChannelData(0);
+  const p = GRAIN_CRACKLE_PER_S / context.sampleRate;
+  for (let i = 0; i < length; i++) {
+    if (Math.random() < p) data[i] = (Math.random() < 0.5 ? -1 : 1) * (0.4 + Math.random() * 0.6);
+  }
+  crackleBuffer = buffer;
+  return buffer;
+}
+
+const NO_GRAIN: Grain = { set: () => {}, stop: () => {} };
+
+/**
+ * Starts a grain voice, silent until `set` is written. `bright` (0..1) sets
+ * the hiss's color. Subject to the same gates as `play`, in which case the
+ * voice is a no-op and safe to write to.
+ */
+export function grain(bright = 0.5): Grain {
+  if (typeof window === 'undefined') return NO_GRAIN;
+  if (isMuted() || document.visibilityState !== 'visible') return NO_GRAIN;
+  const context = getAudioContext();
+  if (!context || context.state !== 'running') return NO_GRAIN;
+  const destination = bus ?? context.destination;
+  const now = context.currentTime;
+  const b = Math.max(0, Math.min(1, bright));
+
+  const crackles = context.createBufferSource();
+  crackles.buffer = crackle(context);
+  crackles.loop = true;
+  crackles.loopStart = Math.random() * (AIR_NOISE_S / 2);
+  const crackleTone = context.createBiquadFilter();
+  crackleTone.type = 'highpass';
+  crackleTone.frequency.value = 1200 + 2400 * b;
+
+  const hiss = context.createBufferSource();
+  hiss.buffer = noiseBuffer(context);
+  hiss.loop = true;
+  const hissBand = context.createBiquadFilter();
+  hissBand.type = 'bandpass';
+  hissBand.frequency.value = GRAIN_HISS_MIN + (GRAIN_HISS_MAX - GRAIN_HISS_MIN) * b;
+  hissBand.Q.value = 1.2 + b;
+  const hissGain = context.createGain();
+  hissGain.gain.value = GRAIN_HISS_MIX;
+
+  const gain = context.createGain();
+  gain.gain.setValueAtTime(0, now);
+  const panner = typeof context.createStereoPanner === 'function' ? context.createStereoPanner() : null;
+
+  crackles.connect(crackleTone).connect(gain);
+  hiss.connect(hissBand).connect(hissGain).connect(gain);
+  if (panner) gain.connect(panner).connect(destination);
+  else gain.connect(destination);
+  crackles.start(now);
+  hiss.start(now);
+
+  let stopped = false;
+  let watchdog = 0;
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    window.clearTimeout(watchdog);
+    const t = context.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setTargetAtTime(0, t, GRAIN_FADE_S / 4);
+    crackles.stop(t + GRAIN_FADE_S);
+    hiss.stop(t + GRAIN_FADE_S);
+    hiss.onended = () => (panner ?? gain).disconnect();
+  };
+  const set = (level: number, pan: number) => {
+    if (stopped) return;
+    if (isMuted()) {
+      stop();
+      return;
+    }
+    window.clearTimeout(watchdog);
+    watchdog = window.setTimeout(stop, AIR_WATCHDOG_MS);
+    const l = Math.max(0, Math.min(1, level));
+    const t = context.currentTime;
+    gain.gain.setTargetAtTime(GRAIN_GAIN * l * l, t, GRAIN_LAG);
+    panner?.pan.setTargetAtTime(Math.max(-1, Math.min(1, pan)), t, GRAIN_LAG);
+  };
+  watchdog = window.setTimeout(stop, AIR_WATCHDOG_MS);
+  record({ name: 'grain', at: performance.now(), played: true, via: 'synth' });
   return { set, stop };
 }
 

@@ -13,6 +13,7 @@ import {
   type CardStock,
   type Orientation,
 } from '@/data/design';
+import { grain as grainVoice, type Grain } from '@/lib/sounds';
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
@@ -876,6 +877,16 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const swarm = useMemo(() => new MaterialSwarm(), []);
   useEffect(() => () => swarm.dispose(), [swarm]);
   const swap = useRef<Swap | null>(null);
+  // The change's sound: a grain voice that follows the moving front (see
+  // the frame loop), brighter for steel.
+  const voice = useRef<Grain | null>(null);
+  useEffect(
+    () => () => {
+      voice.current?.stop();
+      voice.current = null;
+    },
+    [],
+  );
   // The back's layers (the foil mark, the hologram): each prints with the
   // graphics at its own cell's moment.
   const foilMaterial = useRef<THREE.MeshPhysicalMaterial | null>(null);
@@ -895,6 +906,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const rest = () => {
       swap.current = null;
       swarm.end();
+      voice.current?.stop();
+      voice.current = null;
       shared.uFront.value = FRONT_REST;
       shared.uBase.value = FRONT_REST;
       shared.uPrint.value = FRONT_REST;
@@ -928,6 +941,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     swarm.begin(targetMaterial, newStock.face, dir, state.design.orientation, [frontCanvas, backCanvas]);
     shared.uBareSteel.value = targetMaterial === 'metal' ? 1 : 0;
     swap.current = { t, to: targetMaterial, dir, committed: false };
+    // Redirected mid-wipe, the voice carries on; otherwise it opens here.
+    voice.current ??= grainVoice(targetMaterial === 'metal' ? 1 : 0.25);
   }, [
     targetMaterial,
     bodyMaterial,
@@ -964,6 +979,22 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const particleFront = sw.t <= WIPE_MS ? front : FRONT_REST + ((sw.t - WIPE_MS) / WIPE_MS) * (FRONT_REST - FRONT_START);
     if (swarm.finished(particleFront)) swarm.end();
     else swarm.update(particleFront, frame.gl.domElement.height);
+    // The grain follows whichever front is moving: as loud as the front is
+    // fast (the ease's slope, so each pass swells and settles), from the
+    // left of the screen to the right with it. The blank's pass, with its
+    // dust, is the fullest; the base and the print lay down lighter.
+    const g = voice.current;
+    if (g) {
+      let level = 0;
+      let pan = 0;
+      for (let n = 0; n < 3; n++) {
+        const p = pass(n);
+        if (p <= 0 || p >= 1) continue;
+        level = Math.max(level, Math.sin(Math.PI * p) * [1, 0.7, 0.55][n]);
+        pan = (easeInOutSine(p) * 2 - 1) * 0.7;
+      }
+      g.set(level, pan);
+    }
     // The blank covers the face: rebuild the body as the new material.
     if (p1 >= 1 && !sw.committed) {
       sw.committed = true;
@@ -979,6 +1010,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     if (pass(2) >= 1) {
       swap.current = null;
       swarm.end();
+      voice.current?.stop();
+      voice.current = null;
       shared.uFront.value = FRONT_REST;
       shared.uBase.value = FRONT_REST;
       shared.uPrint.value = FRONT_REST;
