@@ -11,6 +11,7 @@ allOf:
         $ref: ./KycStatus.yaml
       fullName:
         type: string
+        maxLength: 250
         description: Individual's full name
         example: John Michael Doe
       birthDate:
@@ -28,6 +29,7 @@ allOf:
         $ref: ./IdentificationType.yaml
       identifier:
         type: string
+        maxLength: 100
         writeOnly: true
         description: >-
           The individual's identification number, required to onboard them as

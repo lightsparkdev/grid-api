@@ -12,6 +12,7 @@ allOf:
           - UMA_ADDRESS
       umaAddress:
         type: string
+        maxLength: 200
         description: UMA address of the recipient
         example: $receiver@uma.domain.com
       currency:
