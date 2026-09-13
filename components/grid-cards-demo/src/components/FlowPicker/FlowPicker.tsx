@@ -5,6 +5,7 @@ import { TextMorph } from 'torph/react';
 import { ACTIONS, type ActionId, type WalletState } from '@/data/actions';
 import { FLOW_ICONS, UNLOCK_ICON } from '@/data/flowIcons';
 import { cubicBezierCss, easeOutSwift } from '@/lib/easing';
+import { pressable } from '@/lib/sounds';
 import styles from './FlowPicker.module.scss';
 
 /** Lock ⇄ Unlock: the shared letters glide, the rest morph. */
@@ -55,8 +56,8 @@ export function FlowPicker({ wallet, running, onAction }: FlowPickerProps) {
             key={action.id}
             type="button"
             className={clsx(styles.option, enabled && styles.optionEnabled)}
-            onClick={() => enabled && onAction(action.id)}
             disabled={!enabled}
+            {...pressable({ onClick: () => enabled && onAction(action.id), disabled: !enabled })}
           >
             <span className={styles.optionIcon}>
               <Icon size={24} />

@@ -13,6 +13,7 @@ import {
 import clsx from 'clsx';
 import { AnimatePresence, animate, motion, useMotionValue } from 'motion/react';
 import { motionTransition } from '@/lib/easing';
+import { play, pressable } from '@/lib/sounds';
 import { IconEyedropper } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyedropper';
 import { IconArrowLeftRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeftRight';
 import { IconArrowRotateClockwise } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateClockwise';
@@ -178,7 +179,7 @@ function ModeTabs({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void 
           role="tab"
           aria-selected={mode === m.id}
           className={clsx(styles.mode, mode === m.id && styles.modeOn)}
-          onClick={() => onChange(m.id)}
+          {...pressable({ onClick: () => onChange(m.id) }, { press: 'tickBright' })}
         >
           {m.label}
         </button>
@@ -378,6 +379,7 @@ export function ColorPicker({
     };
     if (!d[e.key]) return;
     e.preventDefault();
+    play('keyClick');
     commit({ ...hsv, ...d[e.key] });
   };
   const onHueKey = (e: KeyboardEvent) => {
@@ -390,6 +392,7 @@ export function ColorPicker({
     };
     if (!d[e.key]) return;
     e.preventDefault();
+    play('keyClick');
     commit({ ...hsv, h: (hsv.h + d[e.key] + 360) % 360 });
   };
 
@@ -412,7 +415,9 @@ export function ColorPicker({
     let index: number;
     if (handle) {
       index = Number(handle.dataset.stop);
+      play('tickBright');
     } else {
+      play('press');
       // Add a stop where the bar was pressed, in the gradient's own color there.
       const at = atFrom(e.currentTarget, e.clientX);
       index = gradient.stops.length;
@@ -456,6 +461,7 @@ export function ColorPicker({
     const d = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
     if (!d) return;
     e.preventDefault();
+    play('keyClick');
     setGradient({
       ...gradient,
       stops: gradient.stops.map((s, i) => (i === sel ? { ...s, at: clamp01(s.at + d) } : s)),
@@ -567,7 +573,7 @@ export function ColorPicker({
             aria-label={triggerLabel}
             style={triggerStyle}
             {...(open ? {} : tip)}
-            onClick={tip.onMouseLeave}
+            {...pressable({ onClick: tip.onMouseLeave })}
           >
             {children}
           </PopoverTrigger>
@@ -631,9 +637,9 @@ export function ColorPicker({
                             <button
                               type="button"
                               className={styles.tool}
-                              onClick={flip}
                               aria-label="Flip gradient"
                               {...tip}
+                              {...pressable({ onClick: flip }, { press: 'tickBright' })}
                             >
                               <IconArrowLeftRight size={16} aria-hidden />
                             </button>
@@ -644,9 +650,9 @@ export function ColorPicker({
                             <button
                               type="button"
                               className={styles.tool}
-                              onClick={turn}
                               aria-label="Turn gradient 90 degrees"
                               {...tip}
+                              {...pressable({ onClick: turn }, { press: 'tickBright' })}
                             >
                               <IconArrowRotateClockwise size={16} aria-hidden />
                             </button>
@@ -657,9 +663,9 @@ export function ColorPicker({
                             <button
                               type="button"
                               className={styles.tool}
-                              onClick={addStop}
                               aria-label="Add stop"
                               {...tip}
+                              {...pressable({ onClick: addStop })}
                             >
                               <IconPlusSmall size={16} aria-hidden />
                             </button>
@@ -674,7 +680,10 @@ export function ColorPicker({
                             key={s.i}
                             layout
                             className={clsx(styles.stopRow, s.i === sel && styles.stopRowOn)}
-                            onPointerDown={() => setStop(s.i)}
+                            onPointerDown={() => {
+                              if (s.i !== sel) play('tickBright');
+                              setStop(s.i);
+                            }}
                             initial={{ opacity: 0, y: rise * 0.75 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: rise * 0.75 }}
@@ -699,7 +708,10 @@ export function ColorPicker({
                               className={styles.stopRemove}
                               disabled={gradient.stops.length <= 2}
                               aria-label={`Remove stop ${s.i + 1}`}
-                              onClick={() => removeStop(s.i)}
+                              {...pressable(
+                                { onClick: () => removeStop(s.i), disabled: gradient.stops.length <= 2 },
+                                { press: 'pressLow' },
+                              )}
                             >
                               <IconMinusSmall size={16} aria-hidden />
                             </button>
@@ -780,7 +792,12 @@ export function ColorPicker({
                   }}
                 />
                 {canDrop && (
-                  <button type="button" className={styles.tool} onClick={pickFromScreen} aria-label="Pick from screen">
+                  <button
+                    type="button"
+                    className={styles.tool}
+                    aria-label="Pick from screen"
+                    {...pressable({ onClick: pickFromScreen })}
+                  >
                     <IconEyedropper size={16} aria-hidden />
                   </button>
                 )}

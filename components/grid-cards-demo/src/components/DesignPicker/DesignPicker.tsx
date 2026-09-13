@@ -31,6 +31,7 @@ import { PRESETS, type PresetId } from '@/data/presets';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { TEX_H, TEX_W } from '@/components/CardStage/card3d/facePaint';
 import { surfaceJobs, warmSurfaceMaps } from '@/components/CardStage/card3d/surfaceBakeClient';
+import { play, pressable } from '@/lib/sounds';
 import { ColorPicker } from './ColorPicker';
 import styles from './DesignPicker.module.scss';
 
@@ -238,9 +239,11 @@ function SampleSwatches<T extends string>({
                 aria-label={o.label}
                 disabled={!!why}
                 className={clsx(styles.swatch, SAMPLE[o.id])}
-                onClick={() => onChange(o.id)}
-                onPointerEnter={onHover && (() => onHover(o.id))}
                 {...tip}
+                {...pressable(
+                  { onClick: () => onChange(o.id), onPointerEnter: onHover && (() => onHover(o.id)), disabled: !!why },
+                  { press: 'tickBright' },
+                )}
               />
             )}
           </Tooltip>
@@ -340,6 +343,7 @@ function UploadRow({
     if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
     const next = URL.createObjectURL(file);
     objectUrl.current = next;
+    play('tickBright');
     onPick(next);
     e.target.value = '';
   };
@@ -355,7 +359,7 @@ function UploadRow({
       {(tip) => (
         <div
           className={clsx(styles.row, !url && styles.rowPick)}
-          onClick={url ? undefined : () => fileRef.current?.click()}
+          {...pressable({ onClick: url ? undefined : () => fileRef.current?.click(), disabled: !!url })}
           // The hint anchors to the button, whichever part of the row is hovered.
           onMouseEnter={
             url ? undefined : (e) => tip.onMouseEnter({ ...e, currentTarget: uploadBtn.current ?? e.currentTarget })
@@ -383,7 +387,13 @@ function UploadRow({
                   </span>
                   <Tooltip text="Remove">
                     {(t) => (
-                      <button type="button" className={styles.logoClear} onClick={clear} aria-label="Remove" {...t}>
+                      <button
+                        type="button"
+                        className={styles.logoClear}
+                        aria-label="Remove"
+                        {...t}
+                        {...pressable({ onClick: clear }, { press: 'pressLow' })}
+                      >
                         <IconCrossMedium size={16} aria-hidden />
                       </button>
                     )}
@@ -455,9 +465,11 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                     aria-checked={preset === p.id}
                     aria-label={`${p.description} (${p.design.programName})`}
                     className={clsx(styles.swatch, styles.swatchIcon)}
-                    onClick={() => onPresetSelect(p.id)}
-                    onPointerEnter={() => warm({ ...design, ...p.design })}
                     {...tip}
+                    {...pressable(
+                      { onClick: () => onPresetSelect(p.id), onPointerEnter: () => warm({ ...design, ...p.design }) },
+                      { press: 'tickBright' },
+                    )}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={p.iconSrc} alt="" draggable={false} />
@@ -515,8 +527,8 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                   aria-checked={design.color === null}
                   aria-label="None"
                   className={clsx(styles.swatch, styles.swatchNone)}
-                  onClick={() => onChange({ color: null, gradient: null })}
                   {...tip}
+                  {...pressable({ onClick: () => onChange({ color: null, gradient: null }) }, { press: 'tickBright' })}
                 />
               )}
             </Tooltip>
@@ -530,8 +542,8 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                     aria-label={s.label}
                     className={styles.swatch}
                     style={swatchStyle(s.color)}
-                    onClick={() => onChange({ color: s.color, gradient: null })}
                     {...tip}
+                    {...pressable({ onClick: () => onChange({ color: s.color, gradient: null }) }, { press: 'tickBright' })}
                   />
                 )}
               </Tooltip>

@@ -9,6 +9,7 @@ import { initialDesignFor, sameDesign, type CardDesign } from '@/data/design';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import type { PresetId } from '@/data/presets';
 import type { ActionId, WalletState } from '@/data/actions';
+import { pressable } from '@/lib/sounds';
 import styles from './ConfigurePanel.module.scss';
 
 interface ConfigurePanelProps {
@@ -45,7 +46,11 @@ export function ConfigurePanel({
               label="Design your card"
               action={
                 !sameDesign(design, initialDesignFor(theme)) ? (
-                  <button type="button" className={styles.resetBtn} onClick={() => onDesignChange(initialDesignFor(theme))}>
+                  <button
+                    type="button"
+                    className={styles.resetBtn}
+                    {...pressable({ onClick: () => onDesignChange(initialDesignFor(theme)) })}
+                  >
                     <IconArrowRotateCounterClockwise size={12} aria-hidden />
                     Reset
                   </button>
@@ -63,8 +68,8 @@ export function ConfigurePanel({
                   <button
                     type="button"
                     className={styles.resetBtn}
-                    onClick={onReset}
                     disabled={running}
+                    {...pressable({ onClick: onReset, disabled: running })}
                   >
                     <IconArrowRotateCounterClockwise size={12} aria-hidden />
                     Reset
