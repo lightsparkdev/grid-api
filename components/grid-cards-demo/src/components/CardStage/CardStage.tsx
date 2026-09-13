@@ -35,7 +35,7 @@ import { CardMotion } from './cardMotion';
 import { useCardMomentSounds } from './cardSounds';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
-import { INTRO_END, introCard, stepIntro } from './introTimeline';
+import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from './introTimeline';
 import styles from './CardStage.module.scss';
 
 /** Largest the card gets on stage, relative to its size in the phone. */
@@ -140,6 +140,8 @@ interface Intro {
   /** Seconds since the blueprint started drawing; -1 until the card is ready. */
   t: number;
   done: boolean;
+  /** How many of `INTRO_SOUNDS` have played. */
+  cued: number;
   overlay: React.RefObject<SVGSVGElement>;
   /** The stage canvas, blurred and faded in behind the dissolving blueprint. */
   canvas: React.RefObject<HTMLCanvasElement>;
@@ -292,6 +294,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     intro: {
       t: -1,
       done: false,
+      cued: 0,
       overlay: overlayRef,
       canvas: canvasRef,
       onDone: () => setIntroDone(true),
@@ -300,6 +303,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         const { intro } = live.current;
         intro.t = 0;
         intro.done = false;
+        intro.cued = 0;
         setIntroDone(false);
       },
     },
@@ -307,14 +311,33 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   live.current.t = easeInOutCubic(bootProgress);
   live.current.wantBack = revealed;
   live.current.tap = isTap;
-  live.current.inert = card.frozen || card.closed;
+  // The card's state shows on the card only in the phone: parked, a locked
+  // or closed card dims under its mark and holds still. Out on the stage it
+  // is the card as an object, to be turned over and looked at, whatever the
+  // account says.
+  const stateShown = phoneUp && !inFlightNow;
+  live.current.inert = stateShown && (card.frozen || card.closed);
   // The lock on the card outlives the lock state by its unlocking (the
-  // shackle lifting out and turning away), then the mark leaves.
-  const [lockMark, setLockMark] = useState<'locked' | 'unlocking' | null>(card.frozen ? 'locked' : null);
+  // shackle lifting out and turning away), then the mark leaves. It locks
+  // (and sounds) only for a lock that happens in the phone; a card that
+  // comes back into the phone already locked shows the lock as it is.
+  const [lockMark, setLockMark] = useState<{ kind: 'locked' | 'unlocking'; locking: boolean } | null>(
+    card.frozen && stateShown ? { kind: 'locked', locking: false } : null,
+  );
+  const stateWasShown = useRef(stateShown);
   useEffect(() => {
-    setLockMark((m) => (card.frozen ? 'locked' : m === 'locked' ? 'unlocking' : m));
-  }, [card.frozen]);
-  const dimmed = card.closed || lockMark !== null;
+    const reshown = stateShown && !stateWasShown.current;
+    stateWasShown.current = stateShown;
+    if (!stateShown) {
+      setLockMark(null);
+      return;
+    }
+    setLockMark((m) => {
+      if (card.frozen) return m?.kind === 'locked' ? m : { kind: 'locked', locking: !reshown };
+      return m?.kind === 'locked' ? { kind: 'unlocking', locking: true } : m;
+    });
+  }, [card.frozen, stateShown]);
+  const dimmed = stateShown && (card.closed || lockMark !== null);
   useCardMomentSounds({ issued, issuing, frozen: card.frozen, closed: card.closed });
   live.current.reduceMotion = reduceMotion;
   live.current.orientation = design.orientation;
@@ -1039,8 +1062,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           styles.hit,
           overBrand && styles.hitOverBrand,
           overName && styles.hitOverName,
-          (card.frozen || card.closed) && styles.hitInert,
-          card.frozen && phoneUp && !inFlightNow && styles.hitLocked,
+          stateShown && (card.frozen || card.closed) && styles.hitInert,
+          stateShown && card.frozen && styles.hitLocked,
         )}
         data-card-hit
         style={{ width: foot.w, height: foot.h, pointerEvents: inFlightNow || !introDone ? 'none' : 'auto' }}
@@ -1063,7 +1086,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
             while it is being issued (the creating screen says so) and nothing
             for Apple Wallet (Activity has it). */}
         <AnimatePresence initial={false}>
-          {card.closed ? (
+          {stateShown && card.closed ? (
             <m.span
               key="closed"
               className={styles.closedMark}
@@ -1085,8 +1108,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
             >
               <AnimatedLock
                 size={56}
-                locked={lockMark === 'locked'}
-                onLocked={() => play('lock')}
+                locking={lockMark.locking}
+                locked={lockMark.kind === 'locked'}
+                onLocked={lockMark.locking ? () => play('lock') : undefined}
                 onUnlocked={() => setLockMark(null)}
               />
             </m.span>
@@ -1489,7 +1513,16 @@ const CardRig = memo(function CardRig({
     // ready, t is -1). A flow starting mid-intro (or reduced motion) ends it now.
     if (!intro.done) {
       if (intro.t >= 0 && !intro.paused) intro.t += dt;
-      if (t > 0 || live.current.reduceMotion) intro.t = INTRO_END;
+      if (t > 0 || live.current.reduceMotion) {
+        intro.t = INTRO_END;
+        intro.cued = INTRO_SOUNDS.length;
+      }
+      // The pen and the whoosh, on the same clock (silent when the browser
+      // has not yet allowed sound; the module drops them, nothing fires late).
+      while (intro.cued < INTRO_SOUNDS.length && intro.t >= INTRO_SOUNDS[intro.cued].at) {
+        play(INTRO_SOUNDS[intro.cued].name);
+        intro.cued += 1;
+      }
       if (intro.overlay.current) stepIntro(intro.overlay.current, intro.t);
       const canvas = intro.canvas.current;
       const look = introCard(intro.t);

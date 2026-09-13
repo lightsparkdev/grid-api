@@ -14,6 +14,7 @@ import { cubicBezier } from 'motion';
 import { CARD_H, CARD_W, fig } from '@/apps/card/cardMetrics';
 import { squirclePath } from '@/components/liquid-glass';
 import { brandDefaultLayout } from '@/data/design';
+import type { SoundName } from '@/lib/sounds';
 import { CARD_R } from './card3d/cardGeometry';
 import { BRAND_CAP, BRAND_TEXT_EM, BRAND_TRACKING } from './card3d/facePaint';
 
@@ -218,6 +219,14 @@ const SCORE_END = Math.max(REVEAL_AT + BLUEPRINT_OUT, REVEAL_AT - CARD_LEAD + CA
 const INTRO_DURATION = 2.8;
 const TIME_SCALE = INTRO_DURATION / SCORE_END;
 export const INTRO_END = INTRO_DURATION;
+
+/** Sounds on the intro's clock, real seconds: the pen as the first line
+ *  draws; the whoosh starting as the card begins to come through, so its
+ *  crest (0.4 s in) lands as it takes shape behind the blueprint. */
+export const INTRO_SOUNDS: ReadonlyArray<{ at: number; name: SoundName }> = [
+  { at: 0.2 * TIME_SCALE, name: 'scribble' },
+  { at: (REVEAL_AT - CARD_LEAD + 0.1) * TIME_SCALE, name: 'whoosh' },
+];
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 

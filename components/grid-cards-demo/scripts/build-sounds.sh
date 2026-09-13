@@ -20,8 +20,10 @@ refs="$here/../../grid-wallet-demo/refs/sounds"
 out="$here/../public/assets/sounds"
 mkdir -p "$out"
 
-# name | source | start (s) | end (s)
+# name | source | start (s) | end (s) | fade-out (s, optional; 0.02 default)
 clips=(
+  "scribble|$refs/epidemic/pen_writing_02.wav|0.15|1.65|0.25"
+  "whoosh|$refs/epidemic/swoosh_fire_reversed.wav|0.10|1.60|0.30"
   "confirm|$refs/epidemic/confirm_tap.caf|0|0.245"
   "approval|$refs/epidemic/approval_success.caf|0|1.09"
   "applepay|$refs/processed/applepay-success.caf|0.05|1.0"
@@ -32,16 +34,17 @@ clips=(
 )
 
 for clip in "${clips[@]}"; do
-  IFS='|' read -r name src start end <<<"$clip"
+  IFS='|' read -r name src start end fade <<<"$clip"
+  fade=${fade:-0.02}
   len=$(python3 -c "print(round($end - $start, 4))")
-  fade_at=$(python3 -c "print(max(0, round($len - 0.02, 4)))")
+  fade_at=$(python3 -c "print(max(0, round($len - $fade, 4)))")
   # Input-side seeking (-ss before -i) restarts timestamps at 0, so the fade's
   # start is measured from the clip, not from the source file.
   # Pass 1: measure the peak of the trimmed, mono clip.
   peak=$(ffmpeg -hide_banner -nostats -ss "$start" -t "$len" -i "$src" -ac 1 -af volumedetect -f null - 2>&1 |
     sed -n 's/.*max_volume: \(-\{0,1\}[0-9.]*\) dB.*/\1/p')
   gain=$(python3 -c "print(round(-3 - ($peak), 2))")
-  filters="volume=${gain}dB,afade=t=out:st=${fade_at}:d=0.02"
+  filters="volume=${gain}dB,afade=t=out:st=${fade_at}:d=${fade}"
   ffmpeg -hide_banner -loglevel error -y -ss "$start" -t "$len" -i "$src" -ac 1 -ar 48000 -af "$filters" \
     -c:a aac_at -b:a 64k -movflags +faststart "$out/$name.m4a"
   ffmpeg -hide_banner -loglevel error -y -ss "$start" -t "$len" -i "$src" -ac 1 -ar 48000 -af "$filters" \

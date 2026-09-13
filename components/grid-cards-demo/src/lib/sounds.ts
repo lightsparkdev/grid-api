@@ -16,11 +16,15 @@
  *
  * Rules, in the order `play` applies them: nothing during SSR; nothing
  * while muted (`localStorage['ls-demo-sounds-muted']`, shared across the
- * playgrounds); nothing while the tab is hidden; nothing before the first
- * user gesture inside this window (an iframe gets its own activation on
- * its first pointerdown); one cue per name per minimum gap, so a sweep
- * across a row of tiles cannot machine-gun. Hover cues also require a real
- * pointer: `(hover: hover) and (pointer: fine)` and `pointerType === 'mouse'`.
+ * playgrounds); nothing while the tab is hidden; one cue per name per
+ * minimum gap, so a sweep across a row of tiles cannot machine-gun; and
+ * nothing before the browser allows sound in this window, which is the
+ * first gesture here, or an activation the parent page delegated to the
+ * iframe through `allow="autoplay"` (so the intro can sound when the
+ * visitor clicked their way to the docs page, and stays silent on a cold
+ * load). A play blocked that way is dropped, never fired late on the first
+ * click. Hover cues also require a real pointer: `(hover: hover) and
+ * (pointer: fine)` and `pointerType === 'mouse'`.
  *
  * The AudioContext is built during idle time and resumed on the first
  * gesture, so the first press only pays a cheap `resume()`: building the
@@ -74,7 +78,11 @@ export type SoundName =
   /** Card issued, added to wallet. */
   | 'success'
   /** A tap-to-pay approved (the Apple Pay chime). */
-  | 'approved';
+  | 'approved'
+  /** A pen drawing (the intro's blueprint). */
+  | 'scribble'
+  /** A rising whoosh (the intro's card arriving). */
+  | 'whoosh';
 
 // ── Levels and sources ────────────────────────────────────────────────────────
 
@@ -92,6 +100,8 @@ const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
   notify: { file: 'notify', gain: 0.22 },
   success: { file: 'approval', gain: 0.42 },
   approved: { file: 'applepay', gain: 0.36 },
+  scribble: { file: 'scribble', gain: 0.28 },
+  whoosh: { file: 'whoosh', gain: 0.32 },
 };
 
 /** The least time between two plays of the same cue, ms. */
@@ -241,6 +251,36 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 784, attack: 0.005, decay: 0.3, peak: 0.2 },
       { kind: 'tone', waveform: 'sine', frequency: 1175, attack: 0.005, decay: 0.4, peak: 0.2, offset: 0.1 },
       { kind: 'tone', waveform: 'sine', frequency: 2349, attack: 0.005, decay: 0.2, peak: 0.05, offset: 0.1 },
+    ],
+  },
+  /** Stand-in: a run of short filtered scratches. */
+  scribble: {
+    masterGain: 0.3,
+    layers: [0, 0.09, 0.2, 0.34, 0.41, 0.55, 0.7, 0.78, 0.92, 1.05].map((offset, i) => ({
+      kind: 'noise' as const,
+      filterType: 'bandpass' as const,
+      filterFrequency: 2600 + (i % 3) * 500,
+      filterQ: 1.2,
+      attack: 0.01,
+      decay: 0.05 + (i % 2) * 0.04,
+      peak: 0.08,
+      offset,
+    })),
+  },
+  /** Stand-in: a swell of noise rising through a lowpass. */
+  whoosh: {
+    masterGain: 0.35,
+    layers: [
+      {
+        kind: 'noise',
+        filterType: 'lowpass',
+        filterFrequency: 300,
+        filterSweepTo: 2200,
+        filterQ: 1,
+        attack: 0.35,
+        decay: 0.45,
+        peak: 0.2,
+      },
     ],
   },
 };
@@ -412,16 +452,6 @@ function loadAllSamples(context: AudioContext) {
 
 // ── Gates ─────────────────────────────────────────────────────────────────────
 
-/** Set by the first gesture in this window, for browsers without
- *  `navigator.userActivation`. */
-let gestureSeen = false;
-
-function hasGesture(): boolean {
-  if (gestureSeen) return true;
-  const activation = (navigator as unknown as { userActivation?: { hasBeenActive: boolean } }).userActivation;
-  return activation?.hasBeenActive === true;
-}
-
 let hoverQuery: MediaQueryList | null = null;
 
 /** A pointer that hovers: a mouse or trackpad, not a touch screen. */
@@ -506,11 +536,43 @@ function render(context: AudioContext, name: SoundName, gainScale: number) {
   return 'synth' as const;
 }
 
+/** A `resume()` that takes longer than this was waiting on a gesture: the
+ *  cue it was for has passed, and must not fire late on the first click. */
+const RESUME_STALE_MS = 250;
+
+/**
+ * Runs `go` against a running context: at once when it is running, or
+ * after a prompt `resume()`. Before the browser allows sound (no gesture in
+ * this window yet, and no activation delegated to it), `resume()` waits for
+ * the gesture; a resume that takes that long is dropped, so nothing plays
+ * late. Calls `blocked` when nothing will play.
+ */
+function whenRunning(context: AudioContext, go: () => void, blocked: () => void) {
+  if (context.state === 'running') {
+    go();
+    return;
+  }
+  const asked = performance.now();
+  try {
+    void context.resume().then(
+      () => {
+        if (context.state === 'running' && performance.now() - asked < RESUME_STALE_MS) go();
+        else blocked();
+      },
+      () => blocked(),
+    );
+  } catch {
+    blocked();
+  }
+}
+
 /**
  * Plays a cue now. Safe anywhere: a no-op during SSR, while muted, while
- * the tab is hidden, before the first gesture in this window, when the
- * same cue played within its minimum gap, or when Web Audio is missing.
- * `gain` scales the cue's level (1 = as tuned).
+ * the tab is hidden, before the browser allows sound in this window (the
+ * first gesture here, or an activation the parent page delegated to this
+ * frame through `allow="autoplay"`), when the same cue played within its
+ * minimum gap, or when Web Audio is missing. `gain` scales the cue's level
+ * (1 = as tuned).
  */
 export function play(name: SoundName, opts: { gain?: number } = {}) {
   if (typeof window === 'undefined') return;
@@ -518,26 +580,15 @@ export function play(name: SoundName, opts: { gain?: number } = {}) {
   const suppress = (reason: Suppressed) => record({ name, at, played: false, reason });
   if (isMuted()) return suppress('muted');
   if (document.visibilityState !== 'visible') return suppress('hidden');
-  if (!hasGesture()) return suppress('no-gesture');
   if (throttled(name, at)) return suppress('throttled');
   const context = getAudioContext();
   if (!context) return suppress('no-audio');
   const gain = opts.gain ?? 1;
-  const go = () => record({ name, at, played: true, via: render(context, name, gain) });
-  if (context.state === 'running') {
-    go();
-    return;
-  }
-  try {
-    void context.resume().then(
-      () => {
-        if (context.state === 'running') go();
-      },
-      () => {},
-    );
-  } catch {
-    // Resume refused: the next gesture tries again.
-  }
+  whenRunning(
+    context,
+    () => record({ name, at, played: true, via: render(context, name, gain) }),
+    () => suppress('no-gesture'),
+  );
 }
 
 /** A hover cue, only for a real pointer (never touch), throttled. Pass the
@@ -597,21 +648,15 @@ const NO_AIR: Airflow = { set: () => {}, stop: () => {} };
 
 /**
  * Starts an airflow voice, silent until `set` is written. Subject to the
- * same gates as `play` (muted, hidden, no gesture yet, no Web Audio), in
- * which case the voice is a no-op and safe to write to.
+ * same gates as `play` (muted, hidden, sound not yet allowed, no Web
+ * Audio), in which case the voice is a no-op and safe to write to.
  */
 export function airflow(): Airflow {
   if (typeof window === 'undefined') return NO_AIR;
-  if (isMuted() || document.visibilityState !== 'visible' || !hasGesture()) return NO_AIR;
+  if (isMuted() || document.visibilityState !== 'visible') return NO_AIR;
   const context = getAudioContext();
-  if (!context) return NO_AIR;
-  if (context.state !== 'running') {
-    try {
-      void context.resume();
-    } catch {
-      return NO_AIR;
-    }
-  }
+  // A voice needs the context now: it is written to from this frame on.
+  if (!context || context.state !== 'running') return NO_AIR;
   const destination = bus ?? context.destination;
   const now = context.currentTime;
 
@@ -726,9 +771,10 @@ if (typeof window !== 'undefined') {
     setTimeout(preheat, 1500);
   }
 
+  // The first gesture resumes the context, so the cue it carries (and every
+  // one after) plays without waiting on `resume()`.
   const events = ['pointerdown', 'touchstart', 'keydown'] as const;
   const onGesture = () => {
-    gestureSeen = true;
     const context = getAudioContext();
     if (context?.state === 'suspended') void context.resume();
     events.forEach((e) => window.removeEventListener(e, onGesture, true));
