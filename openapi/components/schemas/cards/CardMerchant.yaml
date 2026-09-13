@@ -6,7 +6,9 @@ properties:
     type: string
     description: >-
       Merchant descriptor string captured from the card network at
-      authorization time.
+      authorization time. On the sandbox simulate endpoints, where this is
+      supplied rather than reported, it must be 1–25 characters — the width
+      of the card network's acceptor-name field.
     example: BLUE BOTTLE COFFEE SF
   mcc:
     type: string
