@@ -10872,7 +10872,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CareChatVerificationResponse'
         '400':
-          description: '`INVALID_INPUT` when the chat is already verified, when the body carries an unknown field, or when verification is not available for this chat at all — for example a cardholder with no phone number on file.'
+          description: '`INVALID_INPUT` when the chat is already verified, when the body carries an unknown field, or when verification is not available for this chat at all — the platform''s care programme does not offer SMS verification, or the cardholder record behind the chat could not be read.'
           content:
             application/json:
               schema:
