@@ -70,7 +70,7 @@ export type SoundName =
   | 'decline'
   /** The lock seating on the card (Apple's lock click). */
   | 'lock'
-  /** The lock leaving (iOS 7's unlock click). */
+  /** The lock leaving (iOS 6's unlock, the swipe-to-unlock latch). */
   | 'unlock'
   /** A push notification landing (iOS "Rebound"). */
   | 'notify'

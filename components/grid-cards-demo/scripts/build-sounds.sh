@@ -26,7 +26,7 @@ clips=(
   "issued|$refs/studies/payment-panel/03_access-granted-muted.wav|0|0.62|0.08"
   "applepay|$refs/processed/applepay-success.caf|0.05|1.0"
   "lock|$refs/apple/lock.wav|0|0.35"
-  "unlock|$refs/apple/unlock.wav|0|0.35"
+  "unlock|$refs/apple/unlock.wav|0|0.55"
   "notify|$refs/apple/notification-rebound.wav|0|1.45"
 )
 

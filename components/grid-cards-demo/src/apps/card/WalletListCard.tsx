@@ -9,7 +9,6 @@ import { useSquircleClip } from '@/apps/shared/useSquircleClip';
 import { useNow } from '@/hooks/useNow';
 import { motionTransition } from '@/lib/easing';
 import { relativeTime } from '@/lib/relativeTime';
-import { pressable } from '@/lib/sounds';
 import { WalletListItem, type WalletListItemData } from './WalletListItem';
 import styles from './WalletListCard.module.scss';
 
@@ -72,7 +71,7 @@ export function WalletListCard({
         type="button"
         className={styles.rowButton}
         aria-label={`${item.title}, ${item.amount}`}
-        {...pressable({ onClick: () => onItemClick(item.id) })}
+        onClick={() => onItemClick(item.id)}
       >
         <WalletListItem {...item} time={time} />
       </button>
