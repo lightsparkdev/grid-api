@@ -1,0 +1,31 @@
+type: object
+description: >-
+  Acknowledgement that a verification code is on its way to the cardholder.
+  `202`, not `200`: the SMS is in flight, not delivered.
+required:
+  - status
+  - destinationMasked
+  - alreadySent
+properties:
+  status:
+    type: string
+    enum:
+      - SENT
+    description: >-
+      Always `SENT`. The chat's own state is reported as
+      `verificationStatus` on the message route.
+    example: SENT
+  destinationMasked:
+    type: string
+    description: >-
+      The masked phone number the code is going to, for a UI to show as "we
+      texted ...". Always the number already on file for the cardholder; the
+      caller cannot nominate a destination.
+    example: '***0001'
+  alreadySent:
+    type: boolean
+    description: >-
+      True when a code was already outstanding and this call sent no new SMS.
+      Show "we already texted you" rather than implying a fresh send. A
+      request with `resend: true` sends a new code and returns false.
+    example: true

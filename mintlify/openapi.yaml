@@ -61,6 +61,73 @@ tags:
     description: Card management endpoints. Issue debit cards against an internal account, freeze / unfreeze, close, manage a card's funding source, and list card transactions.
   - name: Stablecoins
     description: Stablecoin issuance endpoints. Link provider accounts, register provider-created stablecoins, create direct mint/burn issuer operations, and track operation status.
+  - name: Embedded Care
+    description: |
+      A support chat between the cardholder and Lightspark's care agent, driven
+      from the partner's own app. The platform calls with its ordinary Grid
+      credential, but the person typing is the cardholder rather than the
+      caller, so reaching that cardholder's account takes a second proof: an
+      SMS code they answer, which the partner afterwards carries in the
+      `X-Ls-Care-Session` header.
+
+      **The surface is four routes, and the happy path is two calls.**
+
+      1. **Open the chat.** `POST /care/chats/{chatId}/messages` with an empty
+         `message`, addressed to the cardholder as `Customer:<uuid>`. Returns
+         the chat's id and the agent's `greeting`, which is what a chat window
+         renders before anybody has typed. Sends no SMS, runs no turn, bills
+         nothing, and is safe to call again — a widget that reloaded gets the
+         same chat back, this time without a greeting.
+      2. **Send the cardholder's first message.** The same route with their
+         text and an `Idempotency-Key` header. One turn runs synchronously and
+         the agent's answer comes back in `reply`. On a chat that cannot yet
+         reach the account this call also texts the verification code and says
+         so in the same body: `verificationRequired: true`, with
+         `destinationMasked`, `alreadySent` and `codeLength` for the input you
+         put on screen.
+      3. **Confirm the code.**
+         `POST /care/chats/{chatId}/verifications/confirm` returns a
+         `sessionToken` and its `expiresAt`. Send that token as the
+         `X-Ls-Care-Session` header on every message from then on.
+      4. **Close the chat** with `DELETE /care/chats/{chatId}` when the
+         cardholder is done.
+
+      `POST /care/chats/{chatId}/verifications` is the *Send another code*
+      button rather than a step in the flow: step 2 already sent the first
+      code.
+
+      Step 1 is optional. A message addressed to a `Customer:` id opens that
+      cardholder's chat if they have none, so a partner whose cardholder has
+      just typed something spends one call rather than two.
+
+      A cardholder who has not verified yet is never a `401`. That state is
+      reported inside a `200`, because the first message from every new
+      cardholder is unverified and a `401` there would be indistinguishable
+      from a bad credential. On these endpoints a `401` means the platform's
+      Grid credential is wrong, or a verified chat was driven without its
+      session token.
+
+      Two things an integration has to get right:
+
+      - **Render `displayMessage`, never your own copy of what was typed.**
+        Grid redacts the cardholder's text on the way in, and `displayMessage`
+        is that redacted echo. A UI that renders its own input box instead has
+        put a card number the cardholder pasted back on their screen unmasked,
+        and into every log the transcript reaches.
+      - **The session token is returned once and is never re-readable.** No
+        endpoint hands it back, there is no revocation, and it is short-lived
+        by design. Hold it for the life of the cardholder's session; a partner
+        that drops it has to send a new code and confirm it again.
+
+      Some things are absent by construction, so no integration can come to
+      depend on them: nothing returns a transcript or an earlier turn's reply
+      (retrying under the original `Idempotency-Key` is how an answer that was
+      produced but not delivered is recovered), nothing sets a verification
+      state, and nothing changes the number a code is sent to.
+
+      Errors from these endpoints carry `code` and `reason` only — see the
+      `CareError` schema, which differs from the `Error4xx` schemas used
+      elsewhere in this specification.
 paths:
   /config:
     get:
@@ -10563,6 +10630,483 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /care/chats/{chatId}/messages:
+    parameters:
+      - name: chatId
+        in: path
+        description: 'Who this message is for. Two forms are accepted, and the id''s own prefix decides which: a `Customer:<uuid>` addresses the cardholder and lands on their open chat, opening one if they have none; a `CareChat:<uuid>` addresses that chat and no other. A bare uuid is read as a chat id. Addressing the cardholder is what lets a partner send their first message in one call instead of two.'
+        required: true
+        schema:
+          type: string
+        example: Customer:019542f5-b3e7-1d02-0000-000000000001
+    post:
+      summary: Send a care chat message
+      description: |
+        Run one turn of the cardholder's conversation with the support agent, or —
+        with an empty `message` — open the chat without saying anything. This is
+        the entry point to the whole surface: a partner who has never called any
+        other care endpoint starts here.
+
+        **One turn, synchronously.** With a non-empty `message` the call holds the
+        connection until the agent has answered, and returns the answer in
+        `reply`. An `Idempotency-Key` header is required, and it is the only way
+        to recover an answer: nothing on this surface reads a transcript, so a
+        reply that was produced but not delivered is reachable only by retrying
+        under the same key, which returns the recorded answer with
+        `replayed: true`. A turn that failed does not pin its key — the same key
+        may be sent again and will run a fresh turn.
+
+        **An empty or absent `message` opens the chat and runs nothing.** On a
+        cardholder with no open chat it opens one and answers with `greeting`, the
+        agent's opening line, which is what a chat window renders before anybody
+        has typed. On a cardholder who already has one it resumes: the chat's id
+        and where verification stands come back, and `greeting` does not, because
+        a greeting arriving mid-conversation reads as the agent introducing itself
+        a second time. Either way no code is sent, no `Idempotency-Key` is needed
+        or consumed, and nothing is billed — a widget in a reconnect loop may call
+        it as often as it likes.
+
+        **Verification is signalled in this `200` body, never as a `401`.** Every
+        new cardholder's first message is unverified, so a `401` there would make
+        the normal case indistinguishable from a bad credential. A chat that
+        cannot yet reach the account answers `200` with
+        `verificationRequired: true`, and the first message with text is what
+        sends the code — `destinationMasked`, `alreadySent` and, where readable,
+        `codeLength` come back with it, and the agent's own sentence in `reply`
+        asks the cardholder for the code. Later messages on the same chat find the
+        code already outstanding and send nothing, reporting `alreadySent: true`.
+        Collect the code and post it to
+        `POST /care/chats/{chatId}/verifications/confirm`.
+
+        **Render `displayMessage`, not your own copy of the input.** Grid redacts
+        the cardholder's text on the way in — a card number they pasted comes back
+        masked — and `displayMessage` is that redacted echo. A UI that echoes its
+        own input box instead has put an unmasked PAN in the transcript, on the
+        screen and in whatever logs the transcript reaches.
+
+        Once the chat is verified every message must carry the session token from
+        `POST /care/chats/{chatId}/verifications/confirm` in the
+        `X-Ls-Care-Session` header. Without it the call is refused with
+        `CARE_SESSION_EXPIRED`: the chat's verified state never expires on its
+        own, so the session is what proves the cardholder is still at the keyboard.
+
+        Everything in the response describes the chat as of the moment the turn
+        started, `verificationStatus` included. The agent can verify a cardholder
+        during a turn, so a chat that this very call verified still reads
+        unverified here and verified on the next call.
+      operationId: sendCareChatMessage
+      tags:
+        - Embedded Care
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: 'A unique identifier for this turn, up to 255 characters. **Required whenever `message` is non-empty**; omitting it there is rejected with `INVALID_INPUT`. A retry carrying the same key returns the first call''s answer with `replayed: true`; aiming the same key at a different message, a different chat or a different cardholder is rejected with `409 CONFLICT`. An opening (empty `message`) neither needs nor consumes a key — one sent anyway is ignored, so that the partner''s first real message can still use it.'
+          schema:
+            type: string
+            maxLength: 255
+            example: 550e8400-e29b-41d4-a716-446655440000
+        - name: X-Ls-Care-Session
+          in: header
+          required: false
+          description: The `sessionToken` from `POST /care/chats/{chatId}/verifications/confirm`. Required on every message once the chat is verified, and refused with `CARE_SESSION_EXPIRED` when it is missing, malformed or past its expiry. Not read before verification, and not read on an opening — a widget that reloaded has lost its token, which is the case the opening exists for.
+          schema:
+            type: string
+          example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareChatMessageRequest'
+            examples:
+              openTheChat:
+                summary: Open or resume the cardholder's chat, saying nothing
+                value:
+                  message: ''
+              firstMessage:
+                summary: The cardholder's first message, which also sends the code
+                value:
+                  message: My card was declined at the grocery store
+              afterVerification:
+                summary: A later message, sent with the X-Ls-Care-Session header
+                value:
+                  message: Can you tell me the last four digits on file?
+      responses:
+        '200':
+          description: The turn ran, or the chat was opened or resumed. Which fields are present depends on which of those happened.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareChatMessageResponse'
+        '400':
+          description: Bad request. `INVALID_INPUT` when the `Idempotency-Key` header is missing on a message that carries text or exceeds 255 characters, when the body is not a JSON object or carries an unknown field, or when the path id is a `Customer:` id that is not well formed. `CARE_MESSAGE_REJECTED` when the cardholder's message was refused at the content boundary — no turn ran, and `reason` is written to be shown to them.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '401':
+          description: '`UNAUTHORIZED` when the platform''s Grid credential is missing or wrong. `CARE_SESSION_EXPIRED` when the chat is verified and the `X-Ls-Care-Session` header is missing, malformed or expired. An unverified cardholder is never a `401` — that is a `200` carrying `verificationRequired`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '403':
+          description: '`FORBIDDEN` when embedded care is not enabled for this platform, or `CARE_SESSION_PLATFORM_MISMATCH` when the session token was minted for another platform.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '404':
+          description: '`NOT_FOUND` when the path names a chat this platform does not own, and `CUSTOMER_NOT_FOUND` when it names a cardholder this platform does not own. A resource that belongs to somebody else and one that never existed are the same answer.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '409':
+          description: '`CONFLICT` when the `Idempotency-Key` was already used for a different message or a different chat — use a new key — or when the chat has no cardholder bound to it. `CARE_CHAT_ENDED` when the chat has been closed; open a new one by sending an empty message to the cardholder.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '422':
+          description: '`CARE_NOT_CONFIGURED_FOR_PLATFORM` when a message addressed to a cardholder has to find or open their chat and the platform, though entitled to embedded care, has no care programme configured.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '429':
+          description: '`CARE_BUDGET_EXCEEDED` when this chat has reached its limit. The chat is refused rather than replaced: opening a fresh one would be the limit cleared by asking again. `RATE_LIMITED` when the platform is calling this endpoint too often; back off for the interval in the `Retry-After` header.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '500':
+          description: Internal service error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '502':
+          description: '`CARE_TURN_FAILED` when the agent could not answer, and `CARE_VERIFICATION_UNAVAILABLE` when the code could not be sent. Both are transient and neither pins the key: retry with the same `Idempotency-Key`.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '503':
+          description: '`SERVICE_UNAVAILABLE` when embedded care is not available in this deployment, or the support agent is temporarily turned off.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '504':
+          description: '`CARE_TURN_TIMEOUT` when the turn is still running. The answer is not lost — retry with the same `Idempotency-Key` to collect it.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+  /care/chats/{chatId}/verifications:
+    parameters:
+      - name: chatId
+        in: path
+        description: The chat to send another code on, as returned in `chatId` by `POST /care/chats/{chatId}/messages`.
+        required: true
+        schema:
+          type: string
+        example: CareChat:019542f5-b3e7-1d02-0000-000000000030
+    post:
+      summary: Resend a care chat verification code
+      description: |
+        Send the cardholder another verification code.
+
+        **This is the resend, not the first send.** The cardholder's first message
+        already sent a code and said so in its own body; this is what the *Send
+        another code* button calls when they say it never arrived. A partner never
+        has to call it to start verification.
+
+        With `resend` false — the default, and the same as sending no body — the
+        call asks for a code and is content to be told one is already outstanding:
+        the answer carries `alreadySent: true` and no new SMS goes out. That is a
+        success. With `resend` true a second code is sent. Ask the cardholder
+        before doing that: codes are sent from a pool of numbers, so the second
+        arrives from a different sender than the first, leaving them holding two
+        codes from two strangers and deciding which to read back.
+
+        The destination is always the number already on file for the cardholder.
+        There is no way to nominate one, because a code sent to a number the
+        caller chose would prove nothing about the person holding the card.
+
+        `202`, not `200`: the SMS is in flight, not delivered.
+
+        A chat that is already verified is refused with `INVALID_INPUT` while its
+        verification is recent — there is nothing left to prove. Once that
+        verification has aged past the session lifetime the refusal lifts and a
+        fresh code can be sent.
+      operationId: resendCareChatVerification
+      tags:
+        - Embedded Care
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareChatVerificationRequest'
+            examples:
+              askForACode:
+                summary: Ask for a code, accepting the one already outstanding
+                value:
+                  resend: false
+              deliberateResend:
+                summary: The cardholder says the first code never arrived
+                value:
+                  resend: true
+      responses:
+        '202':
+          description: The code is on its way, or one was already outstanding and none was sent — `alreadySent` says which.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareChatVerificationResponse'
+        '400':
+          description: '`INVALID_INPUT` when the chat is already verified, when the body carries an unknown field, or when verification is not available for this chat at all — the platform''s care programme does not offer SMS verification, or the cardholder record behind the chat could not be read.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '401':
+          description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '403':
+          description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '404':
+          description: '`NOT_FOUND` — no such chat for this platform. A chat that belongs to another platform, one that never existed, and a malformed chat id are one answer.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '409':
+          description: '`CARE_CHAT_ENDED` when the chat has been closed, or `CONFLICT` when it has no cardholder bound to it.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '429':
+          description: '`CARE_BUDGET_EXCEEDED` when this chat has reached its limit, or `RATE_LIMITED` when the platform is calling this endpoint too often; back off for the interval in the `Retry-After` header.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '500':
+          description: Internal service error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '502':
+          description: '`CARE_VERIFICATION_UNAVAILABLE` — the SMS provider could not be reached. The factor is down, so retry rather than asking the cardholder for anything.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '503':
+          description: '`SERVICE_UNAVAILABLE` when embedded care is not available in this deployment, or the support agent is temporarily turned off.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+  /care/chats/{chatId}/verifications/confirm:
+    parameters:
+      - name: chatId
+        in: path
+        description: The chat the code was sent on, as returned in `chatId` by `POST /care/chats/{chatId}/messages`.
+        required: true
+        schema:
+          type: string
+        example: CareChat:019542f5-b3e7-1d02-0000-000000000030
+    post:
+      summary: Confirm a care chat verification code
+      description: |
+        Check the code the cardholder read back, and hand over the session that
+        every later message on this chat rides on.
+
+        **The session token is returned here and never again.** No endpoint reads
+        it back, and there is no revocation — the short expiry is what makes that
+        acceptable. Keep it in the cardholder's own session on your side, send it
+        as the `X-Ls-Care-Session` header on every later message, and treat losing
+        it as re-verification: send a new code with
+        `POST /care/chats/{chatId}/verifications` and confirm it again. Read
+        `expiresAt` rather than assuming a lifetime.
+
+        The token is bound to this platform, this chat and this cardholder. It
+        cannot drive another chat, and presenting it to another platform's chat is
+        refused with `CARE_SESSION_PLATFORM_MISMATCH`.
+
+        A code that does not match is `CARE_VERIFICATION_FAILED` — ask the
+        cardholder again. A provider that could not be reached is
+        `CARE_VERIFICATION_UNAVAILABLE` — retry; nothing the cardholder does will
+        help. The two are kept apart deliberately, because they call for opposite
+        reactions.
+
+        A chat whose verification is older than the session lifetime will not mint
+        a fresh session off it: that would be the platform issuing itself a
+        session for a cardholder who has not shown themselves in longer than a
+        session lasts. It is refused with `CARE_VERIFICATION_FAILED`, and the way
+        forward is a new code.
+      operationId: confirmCareChatVerification
+      tags:
+        - Embedded Care
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareChatVerificationConfirmRequest'
+            example:
+              code: '482913'
+      responses:
+        '200':
+          description: The cardholder is verified on this chat, and the session token is in this body — it is not retrievable afterwards.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareChatSession'
+        '400':
+          description: '`CARE_VERIFICATION_FAILED` when the code did not match, or when the chat''s existing verification is too old to mint another session. `INVALID_INPUT` when the code is not of the shape the SMS carries, when the body is missing or carries an unknown field, or when verification is not available for this chat.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '401':
+          description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '403':
+          description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '404':
+          description: '`NOT_FOUND` — no such chat for this platform. A chat that belongs to another platform, one that never existed, and a malformed chat id are one answer.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '409':
+          description: '`CARE_CHAT_ENDED` when the chat has been closed, or `CONFLICT` when it has no cardholder bound to it.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '429':
+          description: '`CARE_BUDGET_EXCEEDED` when this chat has reached its limit, or `RATE_LIMITED` when the platform is calling this endpoint too often; back off for the interval in the `Retry-After` header.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '500':
+          description: Internal service error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '502':
+          description: '`CARE_VERIFICATION_UNAVAILABLE` — the SMS provider could not be reached, so the code could not be checked. Retry; the cardholder has done nothing wrong.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '503':
+          description: '`SERVICE_UNAVAILABLE` when embedded care is not available in this deployment, or the support agent is temporarily turned off.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+  /care/chats/{chatId}:
+    parameters:
+      - name: chatId
+        in: path
+        description: The chat to close, as returned in `chatId` by `POST /care/chats/{chatId}/messages`.
+        required: true
+        schema:
+          type: string
+        example: CareChat:019542f5-b3e7-1d02-0000-000000000030
+    delete:
+      summary: End a care chat
+      description: |
+        Close a chat the cardholder has finished with or navigated away from. The
+        conversation stops accepting messages; sending one afterwards is refused
+        with `CARE_CHAT_ENDED`, and the cardholder starts a new chat by sending
+        another message.
+
+        No session token is required, even on a verified chat. Ending a chat is
+        the one thing the second factor is exempt from: it reaches nothing but the
+        chat's own closing timestamp, and requiring a live session would mean a
+        partner whose cardholder walked away could not close the chat without
+        texting them another code first. Ownership of the chat by the calling
+        platform is the whole bound.
+
+        Closing a chat that is already closed is not an error — that is the state
+        the caller asked for.
+      operationId: endCareChat
+      tags:
+        - Embedded Care
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: The chat is closed. No content.
+        '401':
+          description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '403':
+          description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '404':
+          description: '`NOT_FOUND` — no such chat for this platform. A chat that belongs to another platform, one that never existed, and a malformed chat id are one answer.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '429':
+          description: '`RATE_LIMITED` — the platform is calling this endpoint too often. Back off for the interval in the `Retry-After` header.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '500':
+          description: Internal service error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
+        '503':
+          description: '`SERVICE_UNAVAILABLE` when embedded care is not available in this deployment, or the support agent is temporarily turned off.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareError'
 webhooks:
   agent-action:
     post:
@@ -27312,6 +27856,262 @@ components:
           type: string
           description: Provider account id. Optional when the submitted credentials expose exactly one provider account.
           example: 2VcUIonJeVQzFoBuC7LdFT0dRe4
+    CareChatMessageRequest:
+      type: object
+      description: One turn of the cardholder's conversation, or — with `message` empty or absent — the call that opens or resumes the chat without saying anything. Unknown fields are rejected with `INVALID_INPUT`.
+      properties:
+        message:
+          type: string
+          description: |-
+            What the cardholder typed, verbatim and unredacted. Send it exactly as they entered it: Grid redacts it on the way in and returns the redacted form as `displayMessage`, which is what your UI must render.
+
+            Empty, absent, or whitespace-only opens the chat (or resumes an open one) and runs no turn: no model call, no SMS, no `Idempotency-Key` consumed, nothing billed. A non-empty value runs exactly one turn synchronously and requires an `Idempotency-Key` header.
+          example: My card was declined at the grocery store
+        locale:
+          type: string
+          minLength: 2
+          maxLength: 32
+          description: BCP 47 locale the agent should answer in. Read only by the call that opens the chat and ignored afterwards, because changing it later would rewrite the language earlier turns were answered in. Defaults to `en-US`.
+          example: en-US
+    CareChatVerificationStatus:
+      type: string
+      enum:
+        - PENDING
+        - SENT
+        - VERIFIED
+        - TRUSTED
+        - FAILED
+      description: |
+        Where the cardholder's proof of presence stands on this chat, as of the
+        moment the call was received. A chat in `VERIFIED` or `TRUSTED` can reach
+        the cardholder's account, and every message on it must carry the
+        `X-Ls-Care-Session` header; a chat in any other status cannot, and the
+        agent answers general questions only.
+
+        This field reports the chat as it was when the turn started. The agent can
+        verify a cardholder during a turn, so a chat that was verified by the turn
+        you just made still reads `SENT` in that response and `VERIFIED` on the next
+        call.
+
+        | Status | Description |
+        |--------|-------------|
+        | `PENDING` | No code has been sent on this chat yet. This is where every new chat starts. |
+        | `SENT` | A code has been sent to the cardholder and is outstanding. |
+        | `VERIFIED` | The cardholder answered the code. Account-reaching tools are available and `POST /care/chats/{chatId}/verifications/confirm` has issued a session token. |
+        | `TRUSTED` | The cardholder is treated as present without an SMS code on this chat. Reserved for channels Grid can already attribute; a partner chat does not start here. |
+        | `FAILED` | The last code was answered incorrectly or expired. Send another code with `POST /care/chats/{chatId}/verifications`. |
+    CareChatGreeting:
+      type: object
+      description: 'The agent''s opening line, recorded as the chat''s first message. Returned only by the call that opened the chat, never on a resume: a greeting arriving mid-conversation reads as the agent introducing itself a second time. Absent when the agent produced no opening line.'
+      required:
+        - id
+        - content
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Id of the recorded greeting message.
+          example: CareMessage:019542f5-b3e7-1d02-0000-000000000031
+        content:
+          type: string
+          description: The greeting text to render in the transcript, in the chat's locale.
+          example: Hi, I'm the support assistant. What can I help you with today?
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp, in UTC, of when the greeting was recorded.
+          example: '2026-09-12T14:10:00.123456Z'
+    CareChatMessageResponse:
+      type: object
+      description: 'The result of one call to the message route. Which fields are present depends on what the call did: a turn adds `id`, `displayMessage`, `reply` and `replayed`; the call that opened the chat adds `greeting`; an outstanding verification adds `destinationMasked`, `alreadySent` and, where the service could be read, `codeLength`.'
+      required:
+        - chatId
+        - verificationStatus
+        - verificationRequired
+      properties:
+        chatId:
+          type: string
+          description: 'The chat this call ran on. When the request addressed a cardholder (`Customer:<uuid>` in the path) this is the chat that was found or opened for them. Use it for every later call on this conversation: confirming the code, resending it, and closing the chat.'
+          example: CareChat:019542f5-b3e7-1d02-0000-000000000030
+        verificationStatus:
+          $ref: '#/components/schemas/CareChatVerificationStatus'
+        verificationRequired:
+          type: boolean
+          description: 'Whether the cardholder still has to prove they are present before the agent can reach their account. Present on every response, true or false, so a client reads a field rather than an absence. When true, `destinationMasked` and `alreadySent` are present and your UI should collect the code and post it to `POST /care/chats/{chatId}/verifications/confirm`. A verification that is outstanding is never reported as a `401`: on this surface a `401` means the platform credential is wrong, or a verified chat was driven without its session token.'
+          example: true
+        id:
+          type: string
+          description: Id of the cardholder's recorded message. Present only when a turn ran, so absent on an opening or a resume.
+          example: CareMessage:019542f5-b3e7-1d02-0000-000000000032
+        displayMessage:
+          type: string
+          description: The redacted echo of what the cardholder typed, and **the string your app must render in the transcript**. Grid masks card numbers and other sensitive digit strings here, so rendering your own copy of the input instead puts a PAN the cardholder pasted back on their screen and into your logs. Present only when a turn ran.
+          example: My card [redacted card number ending 1111] was declined
+        reply:
+          type: string
+          description: The agent's answer to this message, to render as the assistant's turn. Present only when a turn ran. When verification is outstanding the agent's own sentence asks for the code, so render it beside your code input rather than instead of it.
+          example: I can help with that. To look at your account I've texted you a code — what does it say?
+        replayed:
+          type: boolean
+          description: Whether this answer came from the record of an earlier call under the same `Idempotency-Key` rather than from a turn run now. Present only when a turn ran. There is no route that reads a transcript, so a retry under the original key is the only way to recover a reply that was produced but never delivered.
+          example: false
+        greeting:
+          $ref: '#/components/schemas/CareChatGreeting'
+        destinationMasked:
+          type: string
+          description: The masked phone number the code was sent to, for a UI to show as "we texted ...". Present whenever `verificationRequired` is true. The destination is the number already on file for the cardholder and cannot be nominated by the caller.
+          example: '***0001'
+        alreadySent:
+          type: boolean
+          description: 'Whether a code was already outstanding, so this call sent no new SMS. Present whenever `verificationRequired` is true. It reads against the call you made: on an opening, true means some earlier call left a code outstanding; on a message, true means an earlier message already sent one. Say "we already texted you" rather than implying a fresh send.'
+          example: false
+        codeLength:
+          type: integer
+          description: Number of digits in the code, read from the verification service's own configuration. Absent when it could not be read — leave the input unbounded in that case rather than guessing, since a guess that disagrees with the service makes every correct code look like a typo.
+          example: 6
+    CareError:
+      type: object
+      description: |
+        The error body returned by every endpoint under **Embedded Care**.
+
+        It carries `code` and `reason`, and nothing else. This differs from the
+        `Error4xx` / `Error5xx` schemas the rest of this specification uses, which
+        declare `status` and `message`: the care endpoints do not send those two
+        fields. Read the HTTP status from the response line and the human-readable
+        text from `reason`.
+
+        Branch on `code`, never on `reason` — the text is written for a human
+        reading a log and may be reworded at any time.
+      required:
+        - code
+        - reason
+      properties:
+        code:
+          type: string
+          description: |
+            Machine-readable error code. Each endpoint's response descriptions say
+            which of these it can send at which status.
+
+            | Error Code | HTTP | Description |
+            |------------|------|-------------|
+            | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `customerId` that is not a `Customer` id, a code of the wrong shape, or a chat that cannot be verified at all. |
+            | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused at the content boundary and no turn ran. `reason` carries the sentence to show them. |
+            | `CARE_VERIFICATION_FAILED` | 400 | The code did not match, or the chat's existing verification is too old to mint another session. Send a new code and confirm it. |
+            | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified — that is signalled in a `200` body. |
+            | `CARE_SESSION_EXPIRED` | 401 | The chat is verified, so it requires `X-Ls-Care-Session`, and the header was missing, malformed, or past its expiry. Send the cardholder a new code and confirm it. |
+            | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
+            | `CARE_SESSION_PLATFORM_MISMATCH` | 403 | The session token was minted for a different platform. Stop; retrying will not help. |
+            | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, and a malformed chat id are one answer. |
+            | `CUSTOMER_NOT_FOUND` | 404 | No such cardholder for this platform. |
+            | `CONFLICT` | 409 | The `Idempotency-Key` was already used for a different message or a different chat — use a new key — or the chat has no cardholder bound to it. |
+            | `CARE_CHAT_ENDED` | 409 | The chat has been closed. Open a new one by sending an empty message to the cardholder. |
+            | `CARE_NOT_CONFIGURED_FOR_PLATFORM` | 422 | The platform is entitled to embedded care but has no care programme configured. |
+            | `CARE_BUDGET_EXCEEDED` | 429 | This chat has reached its limit. It is not replaced by a new one: a replacement would be the limit cleared by asking again. |
+            | `RATE_LIMITED` | 429 | The platform is calling this endpoint too often. Back off for the interval in the `Retry-After` response header. |
+            | `INTERNAL_ERROR` | 500 | Unexpected server error. |
+            | `CARE_TURN_FAILED` | 502 | The agent could not answer. Transient; the same `Idempotency-Key` may be sent again. |
+            | `CARE_VERIFICATION_UNAVAILABLE` | 502 | The SMS provider could not be reached. Distinct from a wrong code: the factor is down, so retry rather than asking the cardholder again. |
+            | `SERVICE_UNAVAILABLE` | 503 | Embedded care is not available in this deployment, or the support agent is temporarily turned off. |
+            | `CARE_TURN_TIMEOUT` | 504 | The turn is still running. Retry with the same `Idempotency-Key` to collect the answer. |
+          enum:
+            - INVALID_INPUT
+            - CARE_MESSAGE_REJECTED
+            - CARE_VERIFICATION_FAILED
+            - UNAUTHORIZED
+            - CARE_SESSION_EXPIRED
+            - FORBIDDEN
+            - CARE_SESSION_PLATFORM_MISMATCH
+            - NOT_FOUND
+            - CUSTOMER_NOT_FOUND
+            - CONFLICT
+            - CARE_CHAT_ENDED
+            - CARE_NOT_CONFIGURED_FOR_PLATFORM
+            - CARE_BUDGET_EXCEEDED
+            - RATE_LIMITED
+            - INTERNAL_ERROR
+            - CARE_TURN_FAILED
+            - CARE_VERIFICATION_UNAVAILABLE
+            - SERVICE_UNAVAILABLE
+            - CARE_TURN_TIMEOUT
+          example: CARE_SESSION_EXPIRED
+        reason:
+          type: string
+          description: Human-readable explanation, for a log or a support ticket. Not for branching, and not always safe to show a cardholder verbatim — the exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be shown.
+          example: The care session has expired. Verify the cardholder again.
+    CareChatVerificationRequest:
+      type: object
+      description: 'Options for re-sending the cardholder''s verification code. The body may be omitted entirely, which is the same as `{"resend": false}`.'
+      properties:
+        resend:
+          type: boolean
+          default: false
+          description: |-
+            `false` asks for a code and is content to be told one is already outstanding: the response then carries `alreadySent: true` and no new SMS is sent. That is a success, not an error — the cardholder should read back the code they already have.
+
+            `true` is the deliberate second code, for a cardholder who says the first never arrived. Ask before you send one: codes are sent from a pool of numbers, so a second code arrives from a different sender than the first and leaves the cardholder holding two codes from two strangers, deciding which to read back.
+          example: false
+    CareChatVerificationResponse:
+      type: object
+      description: 'Acknowledgement that a verification code is on its way to the cardholder. `202`, not `200`: the SMS is in flight, not delivered.'
+      required:
+        - status
+        - destinationMasked
+        - alreadySent
+      properties:
+        status:
+          type: string
+          enum:
+            - SENT
+          description: Always `SENT`. The chat's own state is reported as `verificationStatus` on the message route.
+          example: SENT
+        destinationMasked:
+          type: string
+          description: The masked phone number the code is going to, for a UI to show as "we texted ...". Always the number already on file for the cardholder; the caller cannot nominate a destination.
+          example: '***0001'
+        alreadySent:
+          type: boolean
+          description: 'True when a code was already outstanding and this call sent no new SMS. Show "we already texted you" rather than implying a fresh send. A request with `resend: true` sends a new code and returns false.'
+          example: true
+    CareChatVerificationConfirmRequest:
+      type: object
+      description: The code the cardholder read back from their SMS.
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 32
+          description: The numeric code from the SMS, exactly as the cardholder entered it. A code of the wrong shape is rejected with `INVALID_INPUT`; a well-formed code that the provider says is not the one it sent is rejected with `CARE_VERIFICATION_FAILED`, which is the error to retry by asking the cardholder again.
+          example: '482913'
+    CareChatSession:
+      type: object
+      description: Proof that the cardholder answered their code, as a signed token the partner sends back on every later message.
+      required:
+        - status
+        - sessionToken
+        - expiresAt
+      properties:
+        status:
+          type: string
+          enum:
+            - VERIFIED
+          description: Always `VERIFIED`; a code that did not match is an error, not a status.
+          example: VERIFIED
+        sessionToken:
+          type: string
+          description: |-
+            The value to send as the `X-Ls-Care-Session` header on every later message on this chat.
+
+            **It is returned here and never again.** There is no route that reads it back, and there is no revocation: the short expiry is what makes that acceptable. Hold it in the cardholder's session on your side for as long as they are chatting, and treat losing it as re-verification — send a new code with `POST /care/chats/{chatId}/verifications` and confirm it again. Never log it, never put it in a URL, and never store it past `expiresAt`.
+
+            The token is bound to this platform, this chat and this cardholder, so it cannot drive another chat and does not survive being handed to another platform.
+          example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
+        expiresAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp, in UTC, after which the token is refused with `CARE_SESSION_EXPIRED`. Sessions are short-lived by design — fifteen minutes in the default deployment. Read this field rather than assuming a duration.
+          example: '2026-09-12T14:25:00Z'
     WebhookType:
       type: string
       enum:

@@ -1,0 +1,16 @@
+type: object
+description: The code the cardholder read back from their SMS.
+required:
+  - code
+properties:
+  code:
+    type: string
+    minLength: 1
+    maxLength: 32
+    description: >-
+      The numeric code from the SMS, exactly as the cardholder entered it.
+      A code of the wrong shape is rejected with `INVALID_INPUT`; a
+      well-formed code that the provider says is not the one it sent is
+      rejected with `CARE_VERIFICATION_FAILED`, which is the error to retry
+      by asking the cardholder again.
+    example: '482913'

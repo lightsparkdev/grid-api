@@ -1,0 +1,238 @@
+parameters:
+  - name: chatId
+    in: path
+    description: >-
+      Who this message is for. Two forms are accepted, and the id's own prefix
+      decides which: a `Customer:<uuid>` addresses the cardholder and lands on
+      their open chat, opening one if they have none; a `CareChat:<uuid>`
+      addresses that chat and no other. A bare uuid is read as a chat id.
+      Addressing the cardholder is what lets a partner send their first
+      message in one call instead of two.
+    required: true
+    schema:
+      type: string
+    example: Customer:019542f5-b3e7-1d02-0000-000000000001
+post:
+  summary: Send a care chat message
+  description: |
+    Run one turn of the cardholder's conversation with the support agent, or —
+    with an empty `message` — open the chat without saying anything. This is
+    the entry point to the whole surface: a partner who has never called any
+    other care endpoint starts here.
+
+    **One turn, synchronously.** With a non-empty `message` the call holds the
+    connection until the agent has answered, and returns the answer in
+    `reply`. An `Idempotency-Key` header is required, and it is the only way
+    to recover an answer: nothing on this surface reads a transcript, so a
+    reply that was produced but not delivered is reachable only by retrying
+    under the same key, which returns the recorded answer with
+    `replayed: true`. A turn that failed does not pin its key — the same key
+    may be sent again and will run a fresh turn.
+
+    **An empty or absent `message` opens the chat and runs nothing.** On a
+    cardholder with no open chat it opens one and answers with `greeting`, the
+    agent's opening line, which is what a chat window renders before anybody
+    has typed. On a cardholder who already has one it resumes: the chat's id
+    and where verification stands come back, and `greeting` does not, because
+    a greeting arriving mid-conversation reads as the agent introducing itself
+    a second time. Either way no code is sent, no `Idempotency-Key` is needed
+    or consumed, and nothing is billed — a widget in a reconnect loop may call
+    it as often as it likes.
+
+    **Verification is signalled in this `200` body, never as a `401`.** Every
+    new cardholder's first message is unverified, so a `401` there would make
+    the normal case indistinguishable from a bad credential. A chat that
+    cannot yet reach the account answers `200` with
+    `verificationRequired: true`, and the first message with text is what
+    sends the code — `destinationMasked`, `alreadySent` and, where readable,
+    `codeLength` come back with it, and the agent's own sentence in `reply`
+    asks the cardholder for the code. Later messages on the same chat find the
+    code already outstanding and send nothing, reporting `alreadySent: true`.
+    Collect the code and post it to
+    `POST /care/chats/{chatId}/verifications/confirm`.
+
+    **Render `displayMessage`, not your own copy of the input.** Grid redacts
+    the cardholder's text on the way in — a card number they pasted comes back
+    masked — and `displayMessage` is that redacted echo. A UI that echoes its
+    own input box instead has put an unmasked PAN in the transcript, on the
+    screen and in whatever logs the transcript reaches.
+
+    Once the chat is verified every message must carry the session token from
+    `POST /care/chats/{chatId}/verifications/confirm` in the
+    `X-Ls-Care-Session` header. Without it the call is refused with
+    `CARE_SESSION_EXPIRED`: the chat's verified state never expires on its
+    own, so the session is what proves the cardholder is still at the keyboard.
+
+    Everything in the response describes the chat as of the moment the turn
+    started, `verificationStatus` included. The agent can verify a cardholder
+    during a turn, so a chat that this very call verified still reads
+    unverified here and verified on the next call.
+  operationId: sendCareChatMessage
+  tags:
+    - Embedded Care
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: Idempotency-Key
+      in: header
+      required: false
+      description: >-
+        A unique identifier for this turn, up to 255 characters. **Required
+        whenever `message` is non-empty**; omitting it there is rejected with
+        `INVALID_INPUT`. A retry carrying the same key returns the first
+        call's answer with `replayed: true`; aiming the same key at a
+        different message, a different chat or a different cardholder is
+        rejected with `409 CONFLICT`. An opening (empty `message`) neither
+        needs nor consumes a key — one sent anyway is ignored, so that the
+        partner's first real message can still use it.
+      schema:
+        type: string
+        maxLength: 255
+        example: 550e8400-e29b-41d4-a716-446655440000
+    - name: X-Ls-Care-Session
+      in: header
+      required: false
+      description: >-
+        The `sessionToken` from
+        `POST /care/chats/{chatId}/verifications/confirm`. Required on every
+        message once the chat is verified, and refused with
+        `CARE_SESSION_EXPIRED` when it is missing, malformed or past its
+        expiry. Not read before verification, and not read on an opening — a
+        widget that reloaded has lost its token, which is the case the opening
+        exists for.
+      schema:
+        type: string
+      example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/care/CareChatMessageRequest.yaml
+        examples:
+          openTheChat:
+            summary: Open or resume the cardholder's chat, saying nothing
+            value:
+              message: ''
+          firstMessage:
+            summary: The cardholder's first message, which also sends the code
+            value:
+              message: My card was declined at the grocery store
+          afterVerification:
+            summary: A later message, sent with the X-Ls-Care-Session header
+            value:
+              message: Can you tell me the last four digits on file?
+  responses:
+    '200':
+      description: >-
+        The turn ran, or the chat was opened or resumed. Which fields are
+        present depends on which of those happened.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareChatMessageResponse.yaml
+    '400':
+      description: >-
+        Bad request. `INVALID_INPUT` when the `Idempotency-Key` header is
+        missing on a message that carries text or exceeds 255 characters, when
+        the body is not a JSON object or carries an unknown field, or when the
+        path id is a `Customer:` id that is not well formed.
+        `CARE_MESSAGE_REJECTED` when the cardholder's message was refused at
+        the content boundary — no turn ran, and `reason` is written to be
+        shown to them.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '401':
+      description: >-
+        `UNAUTHORIZED` when the platform's Grid credential is missing or
+        wrong. `CARE_SESSION_EXPIRED` when the chat is verified and the
+        `X-Ls-Care-Session` header is missing, malformed or expired. An
+        unverified cardholder is never a `401` — that is a `200` carrying
+        `verificationRequired`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '403':
+      description: >-
+        `FORBIDDEN` when embedded care is not enabled for this platform, or
+        `CARE_SESSION_PLATFORM_MISMATCH` when the session token was minted for
+        another platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '404':
+      description: >-
+        `NOT_FOUND` when the path names a chat this platform does not own, and
+        `CUSTOMER_NOT_FOUND` when it names a cardholder this platform does not
+        own. A resource that belongs to somebody else and one that never
+        existed are the same answer.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '409':
+      description: >-
+        `CONFLICT` when the `Idempotency-Key` was already used for a different
+        message or a different chat — use a new key — or when the chat has no
+        cardholder bound to it. `CARE_CHAT_ENDED` when the chat has been
+        closed; open a new one by sending an empty message to the cardholder.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '422':
+      description: >-
+        `CARE_NOT_CONFIGURED_FOR_PLATFORM` when a message addressed to a
+        cardholder has to find or open their chat and the platform, though
+        entitled to embedded care, has no care programme configured.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '429':
+      description: >-
+        `CARE_BUDGET_EXCEEDED` when this chat has reached its limit. The chat
+        is refused rather than replaced: opening a fresh one would be the
+        limit cleared by asking again. `RATE_LIMITED` when the platform is
+        calling this endpoint too often; back off for the interval in the
+        `Retry-After` header.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '502':
+      description: >-
+        `CARE_TURN_FAILED` when the agent could not answer, and
+        `CARE_VERIFICATION_UNAVAILABLE` when the code could not be sent. Both
+        are transient and neither pins the key: retry with the same
+        `Idempotency-Key`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '503':
+      description: >-
+        `SERVICE_UNAVAILABLE` when embedded care is not available in this
+        deployment, or the support agent is temporarily turned off.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '504':
+      description: >-
+        `CARE_TURN_TIMEOUT` when the turn is still running. The answer is not
+        lost — retry with the same `Idempotency-Key` to collect it.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
