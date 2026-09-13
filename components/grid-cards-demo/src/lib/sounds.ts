@@ -260,13 +260,15 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 1568, attack: 0.005, decay: 0.13, peak: 0.04, offset: 0.09 },
     ],
   },
-  /** A data blip: a short high sine with a faint octave, quick and dry. */
+  /** A receipt landing: a rounded mid tone with a low thock under it and a
+   *  dry tick on top. Lower and fuller than a blip. */
   blip: {
-    masterGain: 0.22,
+    masterGain: 0.3,
     jitter: 0.03,
     layers: [
-      { kind: 'tone', waveform: 'sine', frequency: 1320, attack: 0.003, decay: 0.07, peak: 0.16 },
-      { kind: 'tone', waveform: 'sine', frequency: 2640, attack: 0.003, decay: 0.035, peak: 0.04 },
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1900, filterQ: 1.2, attack: 0.001, decay: 0.012, peak: 0.1 },
+      { kind: 'tone', waveform: 'triangle', frequency: 660, attack: 0.003, decay: 0.09, peak: 0.14 },
+      { kind: 'tone', waveform: 'sine', frequency: 220, attack: 0.003, decay: 0.05, peak: 0.12 },
     ],
   },
 };
