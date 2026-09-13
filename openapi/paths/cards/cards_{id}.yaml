@@ -72,11 +72,14 @@ patch:
     requests. On card programs where Grid makes the authorization decision, the
     combination remains valid for `status` changes other than `CLOSED`.
 
-    - `maxSpendPerTransaction` sets the most the card can spend on a single
-    transaction. Send a positive integer in the smallest unit of the card's
-    currency (cents for USD) to set the limit, or null to remove it. If your
-    platform config sets `cardConfigs.maxSpendPerTransaction`, the lower of the
-    two applies. You can only send this when the card's
+    - `maxSpendPerTransaction` sets the largest amount the card can authorize
+    on a single transaction. An authorization for exactly the limit is allowed,
+    and a later clearing can still settle above it — a restaurant tip, for
+    example — so this caps the authorization, not the final settled amount.
+    Send a positive integer in the smallest unit of the card's currency (cents
+    for USD) to set the limit, or null to remove it. If your platform config
+    sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies.
+    You can only send this when the card's
     `cardCapabilities.supportsSpendLimits` is true, and not together with
     `status: CLOSED`.
 
