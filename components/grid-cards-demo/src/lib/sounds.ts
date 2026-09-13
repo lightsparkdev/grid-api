@@ -78,7 +78,11 @@ export type SoundName =
   /** A tap-to-pay approved (the Apple Pay chime). */
   | 'approved'
   /** A soft plop (the intro's card landing). */
-  | 'pop';
+  | 'pop'
+  /** A plastic card set down on a table: a dull, short thud. */
+  | 'plasticDown'
+  /** A metal card set down on a table: a clack with a short ring. */
+  | 'metalDown';
 
 // ── Levels and sources ────────────────────────────────────────────────────────
 
@@ -244,6 +248,28 @@ const SYNTH: Record<SoundName, Recipe> = {
     layers: [
       { kind: 'tone', waveform: 'sine', frequency: 240, attack: 0.003, decay: 0.09, peak: 0.25 },
       { kind: 'noise', filterType: 'bandpass', filterFrequency: 1400, filterQ: 1, attack: 0.001, decay: 0.02, peak: 0.08 },
+    ],
+  },
+  /** PVC on wood: a low, damped thump, a little slap from the face, and the
+   *  edge's tick. Nothing rings. */
+  plasticDown: {
+    masterGain: 0.5,
+    layers: [
+      { kind: 'tone', waveform: 'sine', frequency: 150, attack: 0.002, decay: 0.07, peak: 0.28 },
+      { kind: 'noise', filterType: 'lowpass', filterFrequency: 700, filterQ: 0.7, attack: 0.001, decay: 0.03, peak: 0.16 },
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 2600, filterQ: 3, attack: 0.001, decay: 0.006, peak: 0.05 },
+    ],
+  },
+  /** Steel on wood: a hard, bright clack, then the plate rings briefly on
+   *  three inharmonic partials and a low body. */
+  metalDown: {
+    masterGain: 0.42,
+    layers: [
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 2200, filterQ: 0.9, attack: 0.001, decay: 0.018, peak: 0.2 },
+      { kind: 'tone', waveform: 'sine', frequency: 380, attack: 0.002, decay: 0.07, peak: 0.16 },
+      { kind: 'tone', waveform: 'sine', frequency: 2140, attack: 0.001, decay: 0.16, peak: 0.07 },
+      { kind: 'tone', waveform: 'sine', frequency: 3470, attack: 0.001, decay: 0.22, peak: 0.05 },
+      { kind: 'tone', waveform: 'sine', frequency: 5390, attack: 0.001, decay: 0.12, peak: 0.03 },
     ],
   },
 };

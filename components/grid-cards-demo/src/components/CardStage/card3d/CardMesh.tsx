@@ -13,7 +13,7 @@ import {
   type CardStock,
   type Orientation,
 } from '@/data/design';
-import { grain as grainVoice, type Grain } from '@/lib/sounds';
+import { grain as grainVoice, play, type Grain } from '@/lib/sounds';
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
@@ -929,6 +929,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     if (!ready.current || frontPending || !ctx?.animate) {
       rest();
       setBodyMaterial(targetMaterial);
+      play(targetMaterial === 'metal' ? 'metalDown' : 'plasticDown');
       return;
     }
     // The sweep runs along local +x. Flat, that is screen-right on the front
@@ -1012,6 +1013,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       swarm.end();
       voice.current?.stop();
       voice.current = null;
+      // The last pass done, the new card is set down on the table.
+      play(sw.to === 'metal' ? 'metalDown' : 'plasticDown');
       shared.uFront.value = FRONT_REST;
       shared.uBase.value = FRONT_REST;
       shared.uPrint.value = FRONT_REST;
