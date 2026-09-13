@@ -187,15 +187,9 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'noise', filterType: 'bandpass', filterFrequency: 750, filterQ: 1.2, attack: 0.001, decay: 0.035, peak: 0.16 },
     ],
   },
-  /** lightspark-project-tracker's `playKeystroke`, as a recipe. */
-  type: {
-    masterGain: 1,
-    jitter: 0.12,
-    layers: [
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1680, filterQ: 0.9, attack: 0.003, decay: 0.025, peak: 0.055 },
-      { kind: 'tone', waveform: 'sine', frequency: 214, attack: 0.003, decay: 0.023, peak: 0.034 },
-    ],
-  },
+  /** Not used: `type` renders through `renderKeystroke` below. Kept so the
+   *  table is total. */
+  type: { masterGain: 0, layers: [] },
   swish: {
     masterGain: 0.3,
     layers: [
@@ -372,6 +366,59 @@ function renderTick(context: AudioContext, destination: AudioNode, layer: TickLa
   source.connect(filter).connect(gain).connect(destination);
   source.start(startTime);
   source.stop(startTime + 0.06);
+}
+
+/**
+ * lightspark-project-tracker's `playKeystroke`, verbatim (the noise is
+ * shaped inside its buffer by a decay² curve, which is what makes it a tick
+ * and not a puff): a filtered-noise click for the attack plus a tiny low
+ * sine "thock" for body, each call jittered a touch in pitch so a run of
+ * keys reads organic instead of a machine-gun of one sample.
+ */
+function renderKeystroke(context: AudioContext, destination: AudioNode, gain: number) {
+  const now = context.currentTime;
+  const clickDur = 0.028;
+  const variance = 0.88 + Math.random() * 0.24;
+
+  const frameCount = Math.max(1, Math.floor(context.sampleRate * clickDur));
+  const buffer = context.createBuffer(1, frameCount, context.sampleRate);
+  const channel = buffer.getChannelData(0);
+  for (let index = 0; index < frameCount; index += 1) {
+    const decay = 1 - index / frameCount;
+    channel[index] = (Math.random() * 2 - 1) * decay * decay;
+  }
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+
+  const filter = context.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(1680 * variance, now);
+  filter.Q.setValueAtTime(0.9, now);
+
+  const clickGain = context.createGain();
+  clickGain.gain.setValueAtTime(0.00001, now);
+  clickGain.gain.exponentialRampToValueAtTime(0.055 * gain, now + 0.003);
+  clickGain.gain.exponentialRampToValueAtTime(0.00001, now + clickDur);
+
+  source.connect(filter).connect(clickGain).connect(destination);
+  source.start();
+  source.stop(now + clickDur + 0.01);
+
+  const body = context.createOscillator();
+  body.type = 'sine';
+  body.frequency.setValueAtTime(214 * variance, now);
+  const bodyGain = context.createGain();
+  bodyGain.gain.setValueAtTime(0.00001, now);
+  bodyGain.gain.exponentialRampToValueAtTime(0.034 * gain, now + 0.003);
+  bodyGain.gain.exponentialRampToValueAtTime(0.00001, now + 0.026);
+  body.connect(bodyGain).connect(destination);
+  body.start();
+  body.stop(now + 0.05);
+
+  setTimeout(() => {
+    clickGain.disconnect();
+    bodyGain.disconnect();
+  }, (clickDur + CLEANUP_MARGIN + 0.05) * 1000);
 }
 
 /** How long a layer sounds, from the recipe's start. */
@@ -566,7 +613,8 @@ function render(context: AudioContext, name: SoundName, gainScale: number) {
     return 'sample' as const;
   }
   if (sample) void loadSample(context, sample.file);
-  renderRecipe(context, destination, SYNTH[name], gainScale);
+  if (name === 'type') renderKeystroke(context, destination, gainScale);
+  else renderRecipe(context, destination, SYNTH[name], gainScale);
   return 'synth' as const;
 }
 
