@@ -14,6 +14,7 @@ import { SfSymbol } from '@/apps/shared/icons';
 import { TapToPayStatus } from '@/apps/shared/TapToPayStatus';
 import { useBrand } from '@/apps/shared/brand/BrandContext';
 import { brandColorOf } from '@/data/design';
+import { brandFill } from '@/apps/shared/brand/brandPalette';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { canScrollBy } from '@/lib/scroll';
@@ -164,10 +165,12 @@ export function CardScreen({ home }: CardScreenProps) {
     return () => controls.stop();
   }, [canScroll, card.page, reduceMotion]);
 
-  // App icon for push notifications — a brand-tinted rounded square.
-  const brandColor = brandColorOf(design);
+  // App icon for push notifications: a card on a brand-colored rounded
+  // square. The fill and its ink are the sheet tile's (a light brand is held
+  // down so the tile reads on the surface; the card is drawn in the ink).
+  const icon = brandFill(brandColorOf(design), theme);
   const appIcon = `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 76"><rect width="76" height="76" rx="17" fill="${brandColor}"/><rect x="18" y="26" width="40" height="26" rx="5" fill="rgba(255,255,255,0.92)"/><rect x="18" y="33" width="40" height="5" fill="${brandColor}" opacity="0.55"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 76"><rect width="76" height="76" rx="17" fill="${icon.fill}"/><rect x="18" y="26" width="40" height="26" rx="5" fill="${icon.ink}" opacity="0.92"/><rect x="18" y="33" width="40" height="5" fill="${icon.fill}" opacity="0.55"/></svg>`,
   )}`;
 
   // Face ID, the toast, and the notification render in AppShell's overlay
