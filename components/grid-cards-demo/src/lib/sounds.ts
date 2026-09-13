@@ -61,8 +61,9 @@ export type SoundName =
   | 'press'
   /** A lower press: Remove, Close card. */
   | 'pressLow'
-  /** Keyboard-driven text and nudges. Sampled iOS key click. */
-  | 'keyClick'
+  /** A keystroke in a text field, and the arrow nudges: the project tracker's
+   *  soft key, a bandpassed tick over a low thock, jittered per key. */
+  | 'type'
   /** A short thin swish (a sheet turning), synthesized. The card uses `airflow()` instead. */
   | 'swish'
   /** A declined purchase: a short low double. */
@@ -92,13 +93,11 @@ const ASSET_BASE = '/assets/sounds/';
 /** Sampled cues: the file (without extension; `.m4a` first, `.mp3` fallback)
  *  and the gain applied to it. Files peak at -3 dBFS. */
 const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
-  keyClick: { file: 'keyclick', gain: 0.14 },
   lock: { file: 'lock', gain: 0.3 },
   unlock: { file: 'lock', gain: 0.2 },
   notify: { file: 'notify', gain: 0.22 },
   success: { file: 'approval', gain: 0.42 },
   approved: { file: 'applepay', gain: 0.36 },
-  pop: { file: 'pop', gain: 0.3 },
 };
 
 /** The least time between two plays of the same cue, ms. */
@@ -106,7 +105,7 @@ const MIN_GAP_MS: Partial<Record<SoundName, number>> = {
   tick: 60,
   tickBright: 60,
   snap: 80,
-  keyClick: 25,
+  type: 25,
   notify: 400,
   success: 400,
   approved: 400,
@@ -122,6 +121,8 @@ type ToneLayer = {
   kind: 'tone';
   waveform: OscillatorType;
   frequency: number;
+  /** The pitch glides to this over the layer (a pop, a drop). */
+  frequencySweepTo?: number;
   attack: number;
   decay: number;
   peak: number;
@@ -156,6 +157,9 @@ type Layer = ToneLayer | NoiseLayer | TickLayer;
 type Recipe = {
   masterGain: number;
   layers: Layer[];
+  /** Every frequency in the recipe is scaled by a random factor within
+   *  ±this per play, so a run of the same cue reads played, not sequenced. */
+  jitter?: number;
 };
 
 const SYNTH: Record<SoundName, Recipe> = {
@@ -175,11 +179,13 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'noise', filterType: 'bandpass', filterFrequency: 750, filterQ: 1.2, attack: 0.001, decay: 0.035, peak: 0.16 },
     ],
   },
-  keyClick: {
-    masterGain: 0.35,
+  /** lightspark-project-tracker's `playKeystroke`, as a recipe. */
+  type: {
+    masterGain: 1,
+    jitter: 0.12,
     layers: [
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 3200, filterQ: 3, attack: 0.001, decay: 0.008, peak: 0.12 },
-      { kind: 'tone', waveform: 'sine', frequency: 1900, attack: 0.001, decay: 0.012, peak: 0.06 },
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1680, filterQ: 0.9, attack: 0.003, decay: 0.025, peak: 0.055 },
+      { kind: 'tone', waveform: 'sine', frequency: 214, attack: 0.003, decay: 0.023, peak: 0.034 },
     ],
   },
   swish: {
@@ -242,12 +248,14 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 2349, attack: 0.005, decay: 0.2, peak: 0.05, offset: 0.1 },
     ],
   },
-  /** Stand-in: a round low knock with a little air on top. */
+  /** A bubble pop: a sine dropping an octave and a half in 60 ms, with the
+   *  skin's tick on top. */
   pop: {
     masterGain: 0.45,
+    jitter: 0.04,
     layers: [
-      { kind: 'tone', waveform: 'sine', frequency: 240, attack: 0.003, decay: 0.09, peak: 0.25 },
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1400, filterQ: 1, attack: 0.001, decay: 0.02, peak: 0.08 },
+      { kind: 'tone', waveform: 'sine', frequency: 640, frequencySweepTo: 190, attack: 0.002, decay: 0.06, peak: 0.28 },
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 2400, filterQ: 2, attack: 0.001, decay: 0.008, peak: 0.06 },
     ],
   },
   /** PVC on wood: a low, damped thump, a little slap from the face, and the
@@ -277,10 +285,16 @@ const SYNTH: Record<SoundName, Recipe> = {
 const SOURCE_STOP_PADDING = 0.05;
 const CLEANUP_MARGIN = 0.05;
 
-function renderTone(context: AudioContext, destination: AudioNode, layer: ToneLayer, startTime: number) {
+function renderTone(context: AudioContext, destination: AudioNode, layer: ToneLayer, startTime: number, pitch = 1) {
   const oscillator = context.createOscillator();
   oscillator.type = layer.waveform;
-  oscillator.frequency.setValueAtTime(layer.frequency, startTime);
+  oscillator.frequency.setValueAtTime(layer.frequency * pitch, startTime);
+  if (layer.frequencySweepTo !== undefined) {
+    oscillator.frequency.exponentialRampToValueAtTime(
+      layer.frequencySweepTo * pitch,
+      startTime + layer.attack + layer.decay,
+    );
+  }
 
   const gain = context.createGain();
   gain.gain.setValueAtTime(0.0001, startTime);
@@ -292,7 +306,7 @@ function renderTone(context: AudioContext, destination: AudioNode, layer: ToneLa
   oscillator.stop(startTime + layer.attack + layer.decay + SOURCE_STOP_PADDING);
 }
 
-function renderNoise(context: AudioContext, destination: AudioNode, layer: NoiseLayer, startTime: number) {
+function renderNoise(context: AudioContext, destination: AudioNode, layer: NoiseLayer, startTime: number, pitch = 1) {
   const duration = layer.attack + layer.decay + SOURCE_STOP_PADDING;
   const length = Math.max(1, Math.floor(duration * context.sampleRate));
   const buffer = context.createBuffer(1, length, context.sampleRate);
@@ -304,9 +318,9 @@ function renderNoise(context: AudioContext, destination: AudioNode, layer: Noise
 
   const filter = context.createBiquadFilter();
   filter.type = layer.filterType;
-  filter.frequency.setValueAtTime(layer.filterFrequency, startTime);
+  filter.frequency.setValueAtTime(layer.filterFrequency * pitch, startTime);
   if (layer.filterSweepTo !== undefined) {
-    filter.frequency.exponentialRampToValueAtTime(layer.filterSweepTo, startTime + layer.attack + layer.decay);
+    filter.frequency.exponentialRampToValueAtTime(layer.filterSweepTo * pitch, startTime + layer.attack + layer.decay);
   }
   if (layer.filterQ !== undefined) filter.Q.value = layer.filterQ;
 
@@ -359,11 +373,12 @@ function renderRecipe(context: AudioContext, destination: AudioNode, recipe: Rec
   master.gain.value = recipe.masterGain * gain;
   master.connect(destination);
 
+  const pitch = recipe.jitter ? 1 - recipe.jitter + Math.random() * 2 * recipe.jitter : 1;
   let end = 0;
   for (const layer of recipe.layers) {
     const startTime = now + (layer.offset ?? 0);
-    if (layer.kind === 'tone') renderTone(context, master, layer, startTime);
-    else if (layer.kind === 'noise') renderNoise(context, master, layer, startTime);
+    if (layer.kind === 'tone') renderTone(context, master, layer, startTime, pitch);
+    else if (layer.kind === 'noise') renderNoise(context, master, layer, startTime, pitch);
     else renderTick(context, master, layer, startTime);
     end = Math.max(end, layerEnd(layer));
   }
@@ -440,6 +455,19 @@ function loadAllSamples(context: AudioContext) {
 }
 
 // ── Gates ─────────────────────────────────────────────────────────────────────
+
+const NON_TEXT_INPUTS = new Set(['button', 'checkbox', 'radio', 'range', 'color', 'file', 'submit', 'reset', 'image']);
+
+/** Somewhere a keystroke puts a character: a text input, a textarea, or
+ *  anything contenteditable. */
+function isTextEntry(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  if (el.isContentEditable) return true;
+  if (el.tagName === 'TEXTAREA') return true;
+  if (el.tagName === 'INPUT') return !NON_TEXT_INPUTS.has((el as HTMLInputElement).type);
+  return false;
+}
 
 let hoverQuery: MediaQueryList | null = null;
 
@@ -890,6 +918,17 @@ if (typeof window !== 'undefined') {
 
   window.addEventListener('storage', (e) => {
     if (e.key === MUTE_KEY) muteListeners.forEach((cb) => cb(e.newValue === '1'));
+  });
+
+  // Typing: a key for every printable key, Backspace, and Delete while the
+  // focus is in a text field (the project tracker's rule). Not for shortcuts
+  // (a modifier held) and not for key repeat, so a held key cannot
+  // machine-gun.
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+    if (e.key.length !== 1 && e.key !== 'Backspace' && e.key !== 'Delete') return;
+    if (!isTextEntry(e.target)) return;
+    play('type');
   });
 
   if (DEV) {

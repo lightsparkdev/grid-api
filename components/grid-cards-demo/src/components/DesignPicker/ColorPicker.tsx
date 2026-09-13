@@ -379,7 +379,7 @@ export function ColorPicker({
     };
     if (!d[e.key]) return;
     e.preventDefault();
-    play('keyClick');
+    play('type');
     commit({ ...hsv, ...d[e.key] });
   };
   const onHueKey = (e: KeyboardEvent) => {
@@ -392,7 +392,7 @@ export function ColorPicker({
     };
     if (!d[e.key]) return;
     e.preventDefault();
-    play('keyClick');
+    play('type');
     commit({ ...hsv, h: (hsv.h + d[e.key] + 360) % 360 });
   };
 
@@ -461,7 +461,7 @@ export function ColorPicker({
     const d = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
     if (!d) return;
     e.preventDefault();
-    play('keyClick');
+    play('type');
     setGradient({
       ...gradient,
       stops: gradient.stops.map((s, i) => (i === sel ? { ...s, at: clamp01(s.at + d) } : s)),

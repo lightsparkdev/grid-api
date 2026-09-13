@@ -423,7 +423,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       const hit = hitRef.current;
       if (!d || !pl || !hit || (e.target as HTMLElement | null)?.tagName === 'INPUT') return;
       e.preventDefault();
-      play('keyClick');
+      play('type');
       const perPx = face.w / hit.getBoundingClientRect().width;
       const step = (e.shiftKey ? 10 : 1) * perPx;
       setLayout({ ...pl.layout, x: pl.layout.x + d.x * step, y: pl.layout.y + d.y * step });
@@ -909,9 +909,10 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     // As a double-click on text does: everything selected, ready to replace.
     el.select();
   }, [textEdit]);
+  // (The keystrokes sound from the module's global typing rule: the editor
+  // is a text input.)
   const onTextChange = (v: string) => {
     setDraft(v);
-    play('keyClick');
     onDesignChange?.(textEdit === 'brand' ? { programName: v } : { cardholderName: v });
   };
   useEffect(() => {
@@ -952,7 +953,6 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const onTextKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === 'Escape') {
       e.preventDefault();
-      play('keyClick');
       setTextEdit(null);
     }
   };
