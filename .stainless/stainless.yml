@@ -682,6 +682,29 @@ resources:
       retrieve: get /cards/{id}
       update: patch /cards/{id}
 
+  care:
+    subresources:
+      chats:
+        methods:
+          send_message: post /care/chats/{chatId}/messages
+          delete: delete /care/chats/{chatId}
+        models:
+          care_chat_message_request: "#/components/schemas/CareChatMessageRequest"
+          care_chat_message_response: "#/components/schemas/CareChatMessageResponse"
+          care_chat_greeting: "#/components/schemas/CareChatGreeting"
+          care_chat_verification_status: "#/components/schemas/CareChatVerificationStatus"
+          care_error: "#/components/schemas/CareError"
+        subresources:
+          verifications:
+            methods:
+              send: post /care/chats/{chatId}/verifications
+              confirm: post /care/chats/{chatId}/verifications/confirm
+            models:
+              care_chat_verification_request: "#/components/schemas/CareChatVerificationRequest"
+              care_chat_verification_response: "#/components/schemas/CareChatVerificationResponse"
+              care_chat_verification_confirm_request: "#/components/schemas/CareChatVerificationConfirmRequest"
+              care_chat_session: "#/components/schemas/CareChatSession"
+
 settings:
   # All generated integration tests that hit the prism mock http server are marked
   # as skipped. Removing this setting or setting it to false enables tests, but

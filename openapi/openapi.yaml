@@ -97,6 +97,73 @@ tags:
       Stablecoin issuance endpoints. Link provider accounts, register
       provider-created stablecoins, create direct mint/burn issuer operations,
       and track operation status.
+  - name: Embedded Care
+    description: |
+      A support chat between the cardholder and Lightspark's care agent, driven
+      from the partner's own app. The platform calls with its ordinary Grid
+      credential, but the person typing is the cardholder rather than the
+      caller, so reaching that cardholder's account takes a second proof: an
+      SMS code they answer, which the partner afterwards carries in the
+      `X-Ls-Care-Session` header.
+
+      **The surface is four routes, and the happy path is two calls.**
+
+      1. **Open the chat.** `POST /care/chats/{chatId}/messages` with an empty
+         `message`, addressed to the cardholder as `Customer:<uuid>`. Returns
+         the chat's id and the agent's `greeting`, which is what a chat window
+         renders before anybody has typed. Sends no SMS, runs no turn, bills
+         nothing, and is safe to call again — a widget that reloaded gets the
+         same chat back, this time without a greeting.
+      2. **Send the cardholder's first message.** The same route with their
+         text and an `Idempotency-Key` header. One turn runs synchronously and
+         the agent's answer comes back in `reply`. On a chat that cannot yet
+         reach the account this call also texts the verification code and says
+         so in the same body: `verificationRequired: true`, with
+         `destinationMasked`, `alreadySent` and `codeLength` for the input you
+         put on screen.
+      3. **Confirm the code.**
+         `POST /care/chats/{chatId}/verifications/confirm` returns a
+         `sessionToken` and its `expiresAt`. Send that token as the
+         `X-Ls-Care-Session` header on every message from then on.
+      4. **Close the chat** with `DELETE /care/chats/{chatId}` when the
+         cardholder is done.
+
+      `POST /care/chats/{chatId}/verifications` is the *Send another code*
+      button rather than a step in the flow: step 2 already sent the first
+      code.
+
+      Step 1 is optional. A message addressed to a `Customer:` id opens that
+      cardholder's chat if they have none, so a partner whose cardholder has
+      just typed something spends one call rather than two.
+
+      A cardholder who has not verified yet is never a `401`. That state is
+      reported inside a `200`, because the first message from every new
+      cardholder is unverified and a `401` there would be indistinguishable
+      from a bad credential. On these endpoints a `401` means the platform's
+      Grid credential is wrong, or a verified chat was driven without its
+      session token.
+
+      Two things an integration has to get right:
+
+      - **Render `displayMessage`, never your own copy of what was typed.**
+        Grid redacts the cardholder's text on the way in, and `displayMessage`
+        is that redacted echo. A UI that renders its own input box instead has
+        put a card number the cardholder pasted back on their screen unmasked,
+        and into every log the transcript reaches.
+      - **The session token is returned once and is never re-readable.** No
+        endpoint hands it back, there is no revocation, and it is short-lived
+        by design. Hold it for the life of the cardholder's session; a partner
+        that drops it has to send a new code and confirm it again.
+
+      Some things are absent by construction, so no integration can come to
+      depend on them: nothing returns a transcript or an earlier turn's reply
+      (retrying under the original `Idempotency-Key` is how an answer that was
+      produced but not delivered is recovered), nothing sets a verification
+      state, and nothing changes the number a code is sent to.
+
+      Errors from these endpoints carry `code` and `reason` only — see the
+      `CareError` schema, which differs from the `Error4xx` schemas used
+      elsewhere in this specification.
 servers:
   - url: https://api.lightspark.com/grid/2025-10-13
     description: Production server
@@ -390,6 +457,14 @@ paths:
     $ref: paths/stablecoins/stablecoin-provider-accounts.yaml
   /stablecoin-provider-accounts/{stablecoinProviderAccountId}:
     $ref: paths/stablecoins/stablecoin-provider-accounts_{stablecoinProviderAccountId}.yaml
+  /care/chats/{chatId}/messages:
+    $ref: paths/care/care_chats_{chatId}_messages.yaml
+  /care/chats/{chatId}/verifications:
+    $ref: paths/care/care_chats_{chatId}_verifications.yaml
+  /care/chats/{chatId}/verifications/confirm:
+    $ref: paths/care/care_chats_{chatId}_verifications_confirm.yaml
+  /care/chats/{chatId}:
+    $ref: paths/care/care_chats_{chatId}.yaml
 webhooks:
   agent-action:
     $ref: webhooks/agent-action.yaml
