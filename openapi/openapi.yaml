@@ -411,8 +411,8 @@ webhooks:
     $ref: webhooks/external-account-status.yaml
   verification-update:
     $ref: webhooks/verification-update.yaml
-  card-state-change:
-    $ref: webhooks/card-state-change.yaml
+  card-status-change:
+    $ref: webhooks/card-status-change.yaml
   card-transaction:
     $ref: webhooks/card-transaction.yaml
   wallet-operation:

@@ -80,6 +80,18 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US
+        bank account on the request is still being validated. Grid verifies a
+        newly added ACH account by sending a micro-entry and waiting out the
+        return window, which takes a few banking days. The account is not
+        rejected, so retry once validation completes. An account that failed
+        validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '429':
       description: >-
         Too many requests. Returned with `DAILY_VOLUME_LIMIT_EXCEEDED` when

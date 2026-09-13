@@ -51,6 +51,10 @@ properties:
     example: lithic_txn_b81c2a4f
   status:
     $ref: ./CardTransactionStatus.yaml
+  cardDeclinedReason:
+    $ref: ./CardDeclinedReason.yaml
+    description: Present only when `status` is `DECLINED`.
+    example: INSUFFICIENT_FUNDS
   direction:
     $ref: ../transactions/TransactionDirection.yaml
     description: >-
@@ -65,6 +69,14 @@ properties:
       return credits back against. Absent on purchases and on standalone
       credits with no matching purchase.
     example: Transaction:019542f5-b3e7-1d02-0000-000000000099
+  description:
+    type: string
+    description: >-
+      The merchant descriptor, repeated from `merchant.descriptor` so a
+      transaction list reads without expanding each card row. Unlike
+      `description` on other transaction types, this is set by Grid from the
+      card network's descriptor, not supplied by the platform.
+    example: BLUE BOTTLE COFFEE SF
   merchant:
     $ref: ./CardMerchant.yaml
   authorizedAmount:
@@ -82,7 +94,7 @@ properties:
   authorizedAt:
     type: string
     format: date-time
-    description: When the auth was approved.
+    description: When the authorization was approved or declined.
     example: '2026-05-08T14:30:00Z'
   createdAt:
     type: string

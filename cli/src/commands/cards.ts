@@ -6,9 +6,9 @@ import { addSignedOptions, signedHeaders, validateSignedOptions } from "../signe
 
 interface Card {
   id: string;
-  cardholderId: string;
+  customerId: string;
   platformCardId?: string;
-  state: "PENDING_KYC" | "PROCESSING" | "ACTIVE" | "FROZEN" | "CLOSED";
+  status: "PENDING_KYC" | "PROCESSING" | "ACTIVE" | "FROZEN" | "CLOSED";
   form: "VIRTUAL";
   last4?: string;
   fundingSource: string;
@@ -57,10 +57,10 @@ export function registerCardsCommand(
   cardsCmd
     .command("list")
     .description("List cards")
-    .option("--cardholder-id <id>", "Filter by cardholder (customer) ID")
+    .option("--customer-id <id>", "Filter by customer ID")
     .option("--account-id <id>", "Filter by a bound funding-source account ID")
     .option("--platform-card-id <id>", "Filter by platform card ID")
-    .option("--state <state>", "Filter by state (PENDING_KYC, PROCESSING, ACTIVE, FROZEN, CLOSED)")
+    .option("--status <status>", "Filter by status (PENDING_KYC, PROCESSING, ACTIVE, FROZEN, CLOSED)")
     .option("-l, --limit <number>", "Maximum results (default 20, max 100)", "20")
     .option("--cursor <cursor>", "Pagination cursor")
     .option("--sort <order>", "Sort order: asc or desc")
@@ -77,10 +77,10 @@ export function registerCardsCommand(
       }
 
       const params: Record<string, string | number | undefined> = {
-        cardholderId: options.cardholderId,
+        customerId: options.customerId,
         accountId: options.accountId,
         platformCardId: options.platformCardId,
-        state: options.state,
+        status: options.status,
         limit,
         cursor: options.cursor,
         sortOrder: options.sort,
@@ -105,7 +105,7 @@ export function registerCardsCommand(
   cardsCmd
     .command("create")
     .description("Issue a card")
-    .requiredOption("--cardholder-id <id>", "Cardholder (customer) ID")
+    .requiredOption("--customer-id <id>", "Customer ID")
     .requiredOption(
       "--funding-source <id>",
       "Internal account ID that funds the card",
@@ -124,7 +124,7 @@ export function registerCardsCommand(
       if (!client) return;
 
       const body: Record<string, unknown> = {
-        cardholderId: options.cardholderId,
+        customerId: options.customerId,
         form: options.form,
         fundingSource: options.fundingSource,
       };
@@ -143,7 +143,7 @@ export function registerCardsCommand(
       .description(
         "Update a card (freeze/unfreeze, replace the funding source, set a spending limit, or close)"
       )
-      .option("--state <state>", "Target state: ACTIVE, FROZEN, or CLOSED")
+      .option("--status <status>", "Target status: ACTIVE, FROZEN, or CLOSED")
       .option(
         "--funding-source <id>",
         "Replace the card's funding source",
@@ -164,21 +164,21 @@ export function registerCardsCommand(
     if (!client) return;
     if (!validateSignedOptions(options)) return;
 
-    if (options.state && !["ACTIVE", "FROZEN", "CLOSED"].includes(options.state)) {
-      output(formatError("--state must be ACTIVE, FROZEN, or CLOSED"));
+    if (options.status && !["ACTIVE", "FROZEN", "CLOSED"].includes(options.status)) {
+      output(formatError("--status must be ACTIVE, FROZEN, or CLOSED"));
       process.exitCode = 1;
       return;
     }
 
     if (
-      !options.state &&
+      !options.status &&
       options.fundingSource === undefined &&
       options.maxSpendPerTransaction === undefined &&
       !options.clearMaxSpendPerTransaction
     ) {
       output(
         formatError(
-          "Provide --state, --funding-source, --max-spend-per-transaction, and/or --clear-max-spend-per-transaction"
+          "Provide --status, --funding-source, --max-spend-per-transaction, and/or --clear-max-spend-per-transaction"
         )
       );
       process.exitCode = 1;
@@ -197,14 +197,14 @@ export function registerCardsCommand(
       return;
     }
     if (
-      options.state === "CLOSED" &&
+      options.status === "CLOSED" &&
       (options.fundingSource !== undefined ||
         options.maxSpendPerTransaction !== undefined ||
         options.clearMaxSpendPerTransaction)
     ) {
       output(
         formatError(
-          "--state CLOSED cannot be combined with funding-source or spending-limit changes"
+          "--status CLOSED cannot be combined with funding-source or spending-limit changes"
         )
       );
       process.exitCode = 1;
@@ -212,7 +212,7 @@ export function registerCardsCommand(
     }
 
     const body: Record<string, unknown> = {};
-    if (options.state) body.state = options.state;
+    if (options.status) body.status = options.status;
     if (options.fundingSource !== undefined) {
       body.fundingSource = options.fundingSource;
     }

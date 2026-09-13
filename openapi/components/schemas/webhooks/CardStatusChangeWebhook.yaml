@@ -9,4 +9,4 @@ allOf:
       type:
         type: string
         enum:
-          - CARD.STATE_CHANGE
+          - CARD.STATUS_CHANGE

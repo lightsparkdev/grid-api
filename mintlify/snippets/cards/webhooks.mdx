@@ -1,4 +1,4 @@
-Cards add five webhook event types on top of Grid's existing webhook
+Cards add six webhook event types on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
@@ -11,11 +11,11 @@ lifecycle.
 
 | Type | Fires on |
 |------|----------|
-| `CARD.STATE_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
+| `CARD.STATUS_CHANGE` | `PROCESSING → ACTIVE`, `→ CLOSED (ISSUER_REJECTED)`, and every subsequent `ACTIVE ⇄ FROZEN` and `→ CLOSED` transition. |
 | `CARD_TRANSACTION.AUTHORIZED` | An authorization is approved and a hold is placed on the funding source. |
 | `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted, but more are still expected. |
 | `CARD_TRANSACTION.SETTLED` | All clearings have posted. Also fires for a merchant return, which posts as its own `CREDIT` row linked via `originalTransactionId`. |
-| `CARD_TRANSACTION.DECLINED` | The authorization was declined before any money moved. |
+| `CARD_TRANSACTION.DECLINED` | The authorization was declined before any money moved. The payload carries `cardDeclinedReason`. |
 | `CARD_TRANSACTION.EXCEPTION` | The transaction settled to the network but the pull from the funding source failed. |
 
 All of them carry the standard envelope:
@@ -23,7 +23,7 @@ All of them carry the standard envelope:
 ```json
 {
   "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
-  "type": "CARD.STATE_CHANGE",
+  "type": "CARD.STATUS_CHANGE",
   "timestamp": "2026-05-08T14:11:00Z",
   "data": { /* the affected Card or CardTransaction resource */ }
 }
@@ -31,7 +31,7 @@ All of them carry the standard envelope:
 
 The `id` is unique per delivery and safe to use for idempotency.
 
-## CARD.STATE_CHANGE
+## CARD.STATUS_CHANGE
 
 The `data` payload is the post-change `Card` resource. Example —
 activation after issuance:
@@ -39,12 +39,12 @@ activation after issuance:
 ```json
 {
   "id": "Webhook:019542f5-b3e7-1d02-0000-000000000020",
-  "type": "CARD.STATE_CHANGE",
+  "type": "CARD.STATUS_CHANGE",
   "timestamp": "2026-05-08T14:11:00Z",
   "data": {
     "id": "Card:019542f5-b3e7-1d02-0000-000000000010",
     "customerId": "Customer:019542f5-b3e7-1d02-0000-000000000001",
-    "state": "ACTIVE",
+    "status": "ACTIVE",
     "brand": "VISA",
     "form": "VIRTUAL",
     "last4": "4242",
@@ -62,16 +62,16 @@ activation after issuance:
 
 Common branches to handle in your consumer:
 
-- `state: "ACTIVE"` after `PROCESSING` — the card is live. To reveal
+- `status: "ACTIVE"` after `PROCESSING` — the card is live. To reveal
   the full card details, request a reveal with
   `POST /cards/{id}/reveal` right before rendering its short-lived
   `panEmbedUrl` in an iframe — webhook payloads never carry a reveal
   URL.
-- `state: "CLOSED"`, `stateReason: "ISSUER_REJECTED"` — the issuer
+- `status: "CLOSED"`, `statusReason: "ISSUER_REJECTED"` — the issuer
   rejected provisioning; offer to issue a new card.
-- `state: "FROZEN"` / `state: "ACTIVE"` — reflect the freeze toggle in
+- `status: "FROZEN"` / `status: "ACTIVE"` — reflect the freeze toggle in
   your UI.
-- `state: "CLOSED"`, `stateReason: "CLOSED_BY_PLATFORM"` — close
+- `status: "CLOSED"`, `statusReason: "CLOSED_BY_PLATFORM"` — close
   confirmed; stop showing the card.
 
 ## Card-transaction lifecycle
@@ -95,6 +95,7 @@ approved:
     "issuerTransactionToken": "lithic_txn_b81c2a4f",
     "status": "AUTHORIZED",
     "direction": "DEBIT",
+    "description": "BLUE BOTTLE COFFEE SF",
     "merchant": {
       "descriptor": "BLUE BOTTLE COFFEE SF",
       "mcc": "5814",

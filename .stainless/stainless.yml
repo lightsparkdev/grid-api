@@ -1030,7 +1030,7 @@ openapi:
     - command: remove
       reason: >-
         Remove the wide WebhookType $ref from BaseWebhook so the inline
-        single-value enums on each child webhook (e.g. CardStateChangeWebhook,
+        single-value enums on each child webhook (e.g. CardStatusChangeWebhook,
         CardTransactionWebhook) become the sole definition. Without
         this, every generated *WebhookEvent has the full WebhookType enum on
         its `type` field, so the UnwrapWebhookEvent deserializer can't

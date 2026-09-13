@@ -30,7 +30,7 @@ A card moves through five states:
 | `FROZEN` | Card is temporarily disabled. New authorizations are declined; in-flight settlements continue. |
 | `CLOSED` | Card is permanently closed. Terminal, irreversible. |
 
-Every transition emits a `CARD.STATE_CHANGE` webhook so you can mirror
+Every transition emits a `CARD.STATUS_CHANGE` webhook so you can mirror
 state changes into your application.
 
 ## What's covered in this tab
