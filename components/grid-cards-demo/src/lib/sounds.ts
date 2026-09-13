@@ -80,8 +80,8 @@ export type SoundName =
   | 'issued'
   /** A tap-to-pay approved (the Apple Pay chime). */
   | 'approved'
-  /** The intro's card landing: a deep, heavy tick. */
-  | 'land'
+  /** An API call landing in the panel: a small, quiet blip. */
+  | 'blip'
   /** A plastic card set down on a table: a dull, short thud. */
   | 'plasticDown'
   /** A metal card set down on a table: a clack with a short ring. */
@@ -113,6 +113,7 @@ const MIN_GAP_MS: Partial<Record<SoundName, number>> = {
   tickBright: 60,
   snap: 80,
   type: 25,
+  blip: 150,
   notify: 400,
   success: 400,
   issued: 400,
@@ -258,13 +259,13 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 523, attack: 0.005, decay: 0.35, peak: 0.2, offset: 0.14 },
     ],
   },
-  /** A deep, heavy tick: the press's knock an octave and a half down, with
-   *  a short low body under it. */
-  land: {
-    masterGain: 0.55,
+  /** A data blip: a short high sine with a faint octave, quick and dry. */
+  blip: {
+    masterGain: 0.22,
+    jitter: 0.03,
     layers: [
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 420, filterQ: 1.6, attack: 0.001, decay: 0.035, peak: 0.22 },
-      { kind: 'tone', waveform: 'sine', frequency: 95, attack: 0.002, decay: 0.07, peak: 0.2 },
+      { kind: 'tone', waveform: 'sine', frequency: 1320, attack: 0.003, decay: 0.07, peak: 0.16 },
+      { kind: 'tone', waveform: 'sine', frequency: 2640, attack: 0.003, decay: 0.035, peak: 0.04 },
     ],
   },
   /** PVC on wood: a low, damped thump and a muffled slap from the face.

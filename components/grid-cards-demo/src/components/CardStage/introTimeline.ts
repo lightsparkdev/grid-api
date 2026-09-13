@@ -229,28 +229,33 @@ export interface IntroSound {
   gap?: number;
 }
 
-/** Sounds on the intro's clock: a tick as each line of the blueprint starts
- *  to draw (the crosses, the outline, the dimensions, the leader, the chip
- *  plate, then the six pads in a quick run), and a deep, heavy tick as the
- *  card lands: the moment the blueprint starts to go and the card is there. */
-const TICKS: ReadonlyArray<[key: string, name: SoundName, gain: number]> = [
-  ['cross-0', 'tickBright', 0.5],
-  ['outline', 'tick', 0.6],
-  ['dim-w', 'tick', 0.6],
-  ['dim-h', 'tick', 0.6],
-  ['leader-r', 'tick', 0.6],
-  ['chip-plate', 'tick', 0.7],
-  ['pad-0', 'snap', 0.9],
-  ['pad-1', 'snap', 0.9],
-  ['pad-2', 'snap', 0.9],
-  ['pad-3', 'snap', 0.9],
-  ['pad-4', 'snap', 0.9],
-  ['pad-5', 'snap', 0.9],
-];
-export const INTRO_SOUNDS: ReadonlyArray<IntroSound> = [
-  ...TICKS.map(([key, name, gain]) => ({ at: CUES[key].at * TIME_SCALE, name, gain, gap: 0 })),
-  { at: REVEAL_AT * TIME_SCALE, name: 'land' as const },
-].sort((a, b) => a.at - b.at);
+/** Cue starts closer than this (score s) share one tick. */
+const TICK_MERGE = 0.02;
+/** The outline is long: a plotter tick this often (score s) while it draws. */
+const PLOT_EVERY = 0.13;
+
+/** Sounds on the intro's clock: a tick as each element of the blueprint
+ *  starts (a line a tick, a label a brighter and quieter one, a chip pad a
+ *  snap), plotter ticks along the outline as it draws, and nothing at the
+ *  end: the card comes through in silence. */
+function introSounds(): IntroSound[] {
+  const moments: Array<{ at: number; name: SoundName; gain: number }> = [];
+  const add = (at: number, name: SoundName, gain: number) => {
+    if (moments.some((m) => Math.abs(m.at - at) < TICK_MERGE)) return;
+    moments.push({ at, name, gain });
+  };
+  for (const [key, cue] of Object.entries(CUES)) {
+    if (key.startsWith('pad-')) add(cue.at, 'snap', 0.9);
+    else if (cue.kind === 'draw') add(cue.at, 'tick', 0.6);
+    else add(cue.at, 'tickBright', 0.35);
+  }
+  const outline = CUES.outline;
+  for (let t = outline.at + PLOT_EVERY; t < outline.at + outline.dur; t += PLOT_EVERY) add(t, 'snap', 0.45);
+  return moments
+    .sort((a, b) => a.at - b.at)
+    .map((m) => ({ at: m.at * TIME_SCALE, name: m.name, gain: m.gain, gap: 0 }));
+}
+export const INTRO_SOUNDS: ReadonlyArray<IntroSound> = introSounds();
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
 
