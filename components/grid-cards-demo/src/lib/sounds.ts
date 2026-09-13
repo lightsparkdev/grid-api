@@ -81,11 +81,7 @@ export type SoundName =
   /** A tap-to-pay approved (the Apple Pay chime). */
   | 'approved'
   /** An API call landing in the panel: a small, quiet blip. */
-  | 'blip'
-  /** A plastic card set down on a table: a dull, short thud. */
-  | 'plasticDown'
-  /** A metal card set down on a table: a clack with a short ring. */
-  | 'metalDown';
+  | 'blip';
 
 // ── Levels and sources ────────────────────────────────────────────────────────
 
@@ -266,27 +262,6 @@ const SYNTH: Record<SoundName, Recipe> = {
     layers: [
       { kind: 'tone', waveform: 'sine', frequency: 1320, attack: 0.003, decay: 0.07, peak: 0.16 },
       { kind: 'tone', waveform: 'sine', frequency: 2640, attack: 0.003, decay: 0.035, peak: 0.04 },
-    ],
-  },
-  /** PVC on wood: a low, damped thump and a muffled slap from the face.
-   *  Nothing rings, nothing above the midrange. */
-  plasticDown: {
-    masterGain: 0.5,
-    layers: [
-      { kind: 'tone', waveform: 'sine', frequency: 105, frequencySweepTo: 80, attack: 0.003, decay: 0.09, peak: 0.3 },
-      { kind: 'noise', filterType: 'lowpass', filterFrequency: 320, filterQ: 0.6, attack: 0.002, decay: 0.04, peak: 0.18 },
-    ],
-  },
-  /** Steel on wood: a hard, bright clack, then the plate rings briefly on
-   *  three inharmonic partials and a low body. */
-  metalDown: {
-    masterGain: 0.42,
-    layers: [
-      { kind: 'noise', filterType: 'bandpass', filterFrequency: 2200, filterQ: 0.9, attack: 0.001, decay: 0.018, peak: 0.2 },
-      { kind: 'tone', waveform: 'sine', frequency: 380, attack: 0.002, decay: 0.07, peak: 0.16 },
-      { kind: 'tone', waveform: 'sine', frequency: 2140, attack: 0.001, decay: 0.16, peak: 0.07 },
-      { kind: 'tone', waveform: 'sine', frequency: 3470, attack: 0.001, decay: 0.22, peak: 0.05 },
-      { kind: 'tone', waveform: 'sine', frequency: 5390, attack: 0.001, decay: 0.12, peak: 0.03 },
     ],
   },
 };
@@ -703,17 +678,17 @@ const AIR_NOISE_S = 2;
  *  a small wobble is near silent, shallower than drag's square, so a lazy
  *  turn is still heard. Kept well under the presses: the air is felt more
  *  than heard. */
-const AIR_GAIN = 0.045;
+const AIR_GAIN = 0.032;
 const AIR_CURVE = 2;
 /** Nothing under this: the air is a whisper, not a rumble. */
-const AIR_FLOOR = 250;
+const AIR_FLOOR = 400;
 /** The lowpass opens with speed: a breath at a lazy turn, a rush at a fling. */
-const AIR_LOW_MIN = 500;
-const AIR_LOW_MAX = 2200;
+const AIR_LOW_MIN = 800;
+const AIR_LOW_MAX = 3200;
 /** A resonant body under it, for a little shape. */
-const AIR_BODY_MIN = 600;
-const AIR_BODY_MAX = 1100;
-const AIR_BODY_MIX = 0.25;
+const AIR_BODY_MIN = 900;
+const AIR_BODY_MAX = 1600;
+const AIR_BODY_MIX = 0.2;
 /** How fast the voice follows the speed (s). */
 const AIR_LAG = 0.035;
 const AIR_FADE_S = 0.12;

@@ -13,7 +13,7 @@ import {
   type CardStock,
   type Orientation,
 } from '@/data/design';
-import { grain as grainVoice, play, type Grain } from '@/lib/sounds';
+import { grain as grainVoice, type Grain } from '@/lib/sounds';
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
@@ -929,7 +929,6 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     if (!ready.current || frontPending || !ctx?.animate) {
       rest();
       setBodyMaterial(targetMaterial);
-      play(targetMaterial === 'metal' ? 'metalDown' : 'plasticDown');
       return;
     }
     // The sweep runs along local +x. Flat, that is screen-right on the front
@@ -948,10 +947,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     swarm.begin(targetMaterial, newStock.face, dir, state.design.orientation, [frontCanvas, backCanvas]);
     shared.uBareSteel.value = targetMaterial === 'metal' ? 1 : 0;
     swap.current = { t, to: targetMaterial, dir, committed: false };
-    // The new card is put down on the table as the change starts (the tile
-    // was just pressed); the grain follows as it is laid. Redirected
-    // mid-wipe, the voice carries on.
-    play(targetMaterial === 'metal' ? 'metalDown' : 'plasticDown');
+    // The grain follows the card being laid. Redirected mid-wipe, the voice
+    // carries on.
     voice.current ??= grainVoice(targetMaterial === 'metal' ? 1 : 0.25);
   }, [
     targetMaterial,
