@@ -26,6 +26,11 @@ The card's `currency` is derived from the funding source at issue time. If the
 account does not qualify, Grid rejects the request with
 `400 FUNDING_SOURCE_INELIGIBLE`.
 
+If the funding source is an `EMBEDDED_WALLET` account, the cardholder must
+also authorize a delegated signing key before the card can fund a
+transaction. See
+[Embedded Wallet funding](/cards/card-management/embedded-wallet-funding).
+
 ## Replace the funding source
 
 Supply a different `fundingSource` with `PATCH /cards/{id}` to replace the

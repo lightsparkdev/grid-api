@@ -368,6 +368,7 @@
             "pages": [
               "cards/card-management/issuing-cards",
               "cards/card-management/funding-sources",
+              "cards/card-management/embedded-wallet-funding",
               "cards/card-management/freezing-and-closing"
             ]
           },
