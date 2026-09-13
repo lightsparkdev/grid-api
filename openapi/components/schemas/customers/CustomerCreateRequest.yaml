@@ -30,6 +30,7 @@ properties:
   email:
     type: string
     format: email
+    maxLength: 255
     description: >-
       Email address for the customer. **Required in regions that verify the
       email address before identity verification** (e.g. the EU); optional
