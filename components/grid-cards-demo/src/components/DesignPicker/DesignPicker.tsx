@@ -30,8 +30,14 @@ import {
 import { PRESETS, type PresetId } from '@/data/presets';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { TEX_H, TEX_W } from '@/components/CardStage/card3d/facePaint';
+import { surfaceJobs, warmSurfaceMaps } from '@/components/CardStage/card3d/surfaceBakeClient';
 import { ColorPicker } from './ColorPicker';
 import styles from './DesignPicker.module.scss';
+
+/** The pointer is over a tile that would change the card's surface: decode
+ *  that surface's maps now (they bake ahead, compressed), so the click finds
+ *  them ready. Hover-to-click is longer than the decode. */
+const warm = (next: CardDesign) => warmSurfaceMaps(surfaceJobs(next));
 
 interface DesignPickerProps {
   design: CardDesign;
@@ -207,12 +213,15 @@ function SampleSwatches<T extends string>({
   value,
   options,
   onChange,
+  onHover,
   disabled,
 }: {
   label: string;
   value: T;
   options: ReadonlyArray<{ id: T; label: string }>;
   onChange: (id: T) => void;
+  /** The pointer is over an option: a chance to get ahead of the click. */
+  onHover?: (id: T) => void;
   disabled?: Partial<Record<T, string>>;
 }) {
   return (
@@ -230,6 +239,7 @@ function SampleSwatches<T extends string>({
                 disabled={!!why}
                 className={clsx(styles.swatch, SAMPLE[o.id])}
                 onClick={() => onChange(o.id)}
+                onPointerEnter={onHover && (() => onHover(o.id))}
                 {...tip}
               />
             )}
@@ -446,6 +456,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
                     aria-label={`${p.description} (${p.design.programName})`}
                     className={clsx(styles.swatch, styles.swatchIcon)}
                     onClick={() => onPresetSelect(p.id)}
+                    onPointerEnter={() => warm({ ...design, ...p.design })}
                     {...tip}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -463,6 +474,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             value={design.material}
             options={MATERIALS}
             onChange={(material) => onChange({ material })}
+            onHover={(material) => warm({ ...design, material })}
           />
         </div>
         {/* The same blank held flat or upright. The brand's placement and the
@@ -489,6 +501,7 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             value={design.finish}
             options={FINISHES}
             onChange={(finish) => onChange({ finish })}
+            onHover={(finish) => warm({ ...design, finish })}
           />
         </div>
         <div className={styles.row}>

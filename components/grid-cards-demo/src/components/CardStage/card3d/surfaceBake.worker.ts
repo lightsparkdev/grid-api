@@ -20,10 +20,14 @@ export interface BakeJob {
 
 export type BakeRequest =
   | { type: 'init'; assets: Record<keyof FaceAssets, ImageBitmap> }
-  | { type: 'bake'; id: number; job: BakeJob };
+  /** `encode`: a bake ahead of any need for it, sent back as PNG (a
+   *  twentieth of the pixels' size) for the page to keep until a design
+   *  asks; without it the maps come back as bitmaps, ready to upload. */
+  | { type: 'bake'; id: number; job: BakeJob; encode?: boolean };
 
 export type BakeResponse =
   | { type: 'baked'; id: number; orm: ImageBitmap; normal: ImageBitmap }
+  | { type: 'encoded'; id: number; orm: Blob; normal: Blob }
   | { type: 'failed'; id: number; error: string };
 
 let assets: FaceAssets | null = null;
@@ -55,17 +59,31 @@ self.onmessage = async (e: MessageEvent<BakeRequest>) => {
   try {
     const { surface, side, plain, mark, orientation } = msg.job;
     const maps = getSurfaceMaps(surface, side, assets, plain, mark, orientation);
-    // Copies, so the bake stays cached here for a repeat request. Flipped:
-    // a canvas texture is flipped as it uploads (canvas rows run down, a
-    // texture's up), and a bitmap isn't, so the flip is baked into the
-    // bitmap and its texture uploads as is (see canvasTexture, and the
-    // decorate passes, which flip it back to draw on it).
-    const [orm, normal] = await Promise.all([
-      createImageBitmap(maps.orm as unknown as OffscreenCanvas, { imageOrientation: 'flipY' }),
-      createImageBitmap(maps.normal as unknown as OffscreenCanvas, { imageOrientation: 'flipY' }),
-    ]);
-    (self as unknown as Worker).postMessage({ type: 'baked', id: msg.id, orm, normal } satisfies BakeResponse, [orm, normal]);
+    if (msg.encode) {
+      // Ahead of need: lossless PNG, decoded (and flipped, see below) by the
+      // page when a design asks for it.
+      const png = (c: HTMLCanvasElement) => (c as unknown as OffscreenCanvas).convertToBlob({ type: 'image/png' });
+      const [orm, normal] = await Promise.all([png(maps.orm), png(maps.normal)]);
+      (self as unknown as Worker).postMessage({ type: 'encoded', id: msg.id, orm, normal } satisfies BakeResponse);
+    } else {
+      // Copies, flipped: a canvas texture is flipped as it uploads (canvas
+      // rows run down, a texture's up), and a bitmap isn't, so the flip is
+      // baked into the bitmap and its texture uploads as is (see
+      // canvasTexture, and the decorate passes, which flip it back to draw
+      // on it).
+      const [orm, normal] = await Promise.all([
+        createImageBitmap(maps.orm as unknown as OffscreenCanvas, { imageOrientation: 'flipY' }),
+        createImageBitmap(maps.normal as unknown as OffscreenCanvas, { imageOrientation: 'flipY' }),
+      ]);
+      (self as unknown as Worker).postMessage({ type: 'baked', id: msg.id, orm, normal } satisfies BakeResponse, [orm, normal]);
+    }
     forgetSurfaceMaps(surface, side, plain, mark, orientation);
+    // And give the canvases' pixels back now rather than at the next
+    // collection: two 2048-wide maps a bake, and the bakes run back to back.
+    for (const c of [maps.orm, maps.normal]) {
+      c.width = 0;
+      c.height = 0;
+    }
   } catch (err) {
     (self as unknown as Worker).postMessage({
       type: 'failed',

@@ -57,7 +57,14 @@ import {
   type SpecRect,
 } from './facePaint';
 import { bakeEdge, decorateNormal, decorateOrm, surfaceKey, surfaceOf, type Surface } from './surfaceMaps';
-import { canBakeOffThread, loadSurfaceMaps, surfaceMapsReady, type BakeJob } from './surfaceBakeClient';
+import {
+  canBakeOffThread,
+  loadSurfaceMaps,
+  prebakeSurfaceMaps,
+  surfaceJobs,
+  surfaceMapsReady,
+  type BakeJob,
+} from './surfaceBakeClient';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -409,11 +416,14 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // does not pay for its maps on the click. In the worker the bakes cost
   // the page nothing, so they run back to back from the moment the artwork
   // is in, the bead-blast steel (the Z card, the heaviest and the one whose
-  // etched mark would otherwise show up a beat late) first. Where the page
-  // must bake them itself, each is a frame or two of work (more in WebKit),
-  // so the queue waits out the intro and runs only in quiet moments: idle
-  // time with a long timeout, or, without idle callbacks (WebKit), a pause
-  // in the pointer.
+  // etched mark would otherwise show up a beat late) first; they come back
+  // compressed and are decoded when a design asks (or when the pointer is
+  // over the tile that would: see warmSurfaceMaps). Where the page must
+  // bake them itself, each is a frame or two of work (more in WebKit), so
+  // the queue waits out the intro and runs only in quiet moments: idle time
+  // with a long timeout, or, without idle callbacks (WebKit), a pause in
+  // the pointer. The upright back bakes ahead only for an upright card
+  // (the orientation is behind a flag); otherwise it bakes when asked.
   // The maps for the surface land asynchronously (the bake worker); this
   // counts the times they have, for the decoration effect below to lay its
   // treatment over the maps that are actually on the material, and for the
@@ -432,7 +442,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       }
       // The back with the mark on an upright card, and without the foil mark
       // (for a front-marked card; the same either way up).
-      jobs.push([s, 'back', false, true, 'portrait']);
+      if (orientation === 'portrait') jobs.push([s, 'back', false, true, 'portrait']);
       jobs.push([s, 'back', false, false, 'landscape']);
     }
     const asJob = (job: (typeof jobs)[number]): BakeJob => ({
@@ -447,7 +457,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       const next = () => {
         const job = jobs.shift();
         if (!job || cancelled) return;
-        loadSurfaceMaps(asJob(job), assets).then(next, next);
+        prebakeSurfaceMaps(asJob(job), assets).then(next, next);
       };
       next();
       return () => {
@@ -499,7 +509,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const c = SURFACE[surface];
     // Every map this surface needs, for either face: the surface's own, and
     // the blank's and the base's for the material change.
-    const jobs: Array<[BakeJob, 'orm' | 'normal' | 'both']> = [];
+    const jobs = surfaceJobs(state.design, bodyDesign);
     const job = (s: Surface, side: 'front' | 'back', plain: boolean, mark: boolean): BakeJob => ({
       surface: s,
       side,
@@ -507,11 +517,6 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       mark,
       orientation,
     });
-    for (const side of ['front', 'back'] as const) {
-      jobs.push([job(surface, side, false, side === 'front' || backMark), 'both']);
-      jobs.push([job(bareSurface, side, true, true), 'both']);
-      jobs.push([job(baseSurface, side, true, true), 'both']);
-    }
     let cancelled = false;
     let raf = 0;
     // Textures made here and not yet on the GPU: they go up one per frame
@@ -570,7 +575,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     // Wrap every map in a texture (fresh ones are queued for upload), send
     // the fresh ones up a frame apiece, then switch the material over.
     const stage = () => {
-      for (const [j] of jobs) texturesFor(j);
+      for (const j of jobs) texturesFor(j);
       const { gl } = three();
       const uploadNext = () => {
         if (cancelled) return;
@@ -595,10 +600,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     // All baked already (a second visit, or the background got there first):
     // straight on. Otherwise the worker bakes what is missing and the
     // material keeps its last maps until the new ones land together.
-    if (jobs.every(([j]) => surfaceMapsReady(j))) {
+    if (jobs.every((j) => surfaceMapsReady(j))) {
       stage();
     } else {
-      Promise.all(jobs.map(([j]) => loadSurfaceMaps(j, assets))).then(() => {
+      Promise.all(jobs.map((j) => loadSurfaceMaps(j, assets))).then(() => {
         if (!cancelled) stage();
       });
     }
