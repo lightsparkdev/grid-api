@@ -231,13 +231,17 @@ export interface IntroSound {
 
 /** Cue starts closer than this (score s) share one tick. */
 const TICK_MERGE = 0.02;
-/** The outline is long: a plotter tick this often (score s) while it draws. */
-const PLOT_EVERY = 0.13;
+/** The plotter's ticks along the outline start this far apart (score s) and
+ *  close up to this by the outline's end, so the run gathers pace. */
+const PLOT_GAP_START = 0.34;
+const PLOT_GAP_END = 0.045;
+/** Labels only tick from here on (score s): the opening stays sparse. */
+const LABEL_TICKS_FROM = 1.4;
 
-/** Sounds on the intro's clock: a tick as each element of the blueprint
- *  starts (a line a tick, a label a brighter and quieter one, a chip pad a
- *  snap), plotter ticks along the outline as it draws, and nothing at the
- *  end: the card comes through in silence. */
+/** Sounds on the intro's clock, ramping: sparse at the start (a tick as
+ *  each line begins), then plotter ticks along the outline that close up as
+ *  it draws, the labels joining in the second half, and the chip pads' run
+ *  at the end. Nothing after: the card comes through in silence. */
 function introSounds(): IntroSound[] {
   const moments: Array<{ at: number; name: SoundName; gain: number }> = [];
   const add = (at: number, name: SoundName, gain: number) => {
@@ -247,10 +251,15 @@ function introSounds(): IntroSound[] {
   for (const [key, cue] of Object.entries(CUES)) {
     if (key.startsWith('pad-')) add(cue.at, 'snap', 0.9);
     else if (cue.kind === 'draw') add(cue.at, 'tick', 0.6);
-    else add(cue.at, 'tickBright', 0.35);
+    else if (cue.at >= LABEL_TICKS_FROM) add(cue.at, 'tickBright', 0.35);
   }
   const outline = CUES.outline;
-  for (let t = outline.at + PLOT_EVERY; t < outline.at + outline.dur; t += PLOT_EVERY) add(t, 'snap', 0.45);
+  const end = outline.at + outline.dur;
+  for (let t = outline.at + PLOT_GAP_START; t < end; ) {
+    add(t, 'snap', 0.45);
+    const u = (t - outline.at) / outline.dur;
+    t += PLOT_GAP_START + (PLOT_GAP_END - PLOT_GAP_START) * u * u;
+  }
   return moments
     .sort((a, b) => a.at - b.at)
     .map((m) => ({ at: m.at * TIME_SCALE, name: m.name, gain: m.gain, gap: 0 }));
