@@ -76,7 +76,7 @@ export type SoundName =
   | 'notify'
   /** Added to wallet (Epidemic's approval). */
   | 'success'
-  /** The card issued: access granted, muted. */
+  /** The card issued: a small two-note rise, rounded, like a muted kalimba. */
   | 'issued'
   /** A tap-to-pay approved (the Apple Pay chime). */
   | 'approved'
@@ -99,7 +99,6 @@ const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
   unlock: { file: 'unlock', gain: 0.24 },
   notify: { file: 'notify', gain: 0.18 },
   success: { file: 'approval', gain: 0.32 },
-  issued: { file: 'issued', gain: 0.34 },
   approved: { file: 'applepay', gain: 0.28 },
 };
 
@@ -247,12 +246,18 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 2349, attack: 0.005, decay: 0.2, peak: 0.05, offset: 0.1 },
     ],
   },
-  /** Stand-in: a muted two-note rise, low. */
+  /** C5 then G5, 90 ms apart, each a sine with a whisper of octave that
+   *  decays faster than the body (the tracker's pluck, twice), and the
+   *  faintest tick at the start so it has a touch. */
   issued: {
-    masterGain: 0.3,
+    masterGain: 0.32,
+    jitter: 0.01,
     layers: [
-      { kind: 'tone', waveform: 'sine', frequency: 392, attack: 0.005, decay: 0.25, peak: 0.2 },
-      { kind: 'tone', waveform: 'sine', frequency: 523, attack: 0.005, decay: 0.35, peak: 0.2, offset: 0.14 },
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 3000, filterQ: 2, attack: 0.001, decay: 0.008, peak: 0.03 },
+      { kind: 'tone', waveform: 'sine', frequency: 523, attack: 0.005, decay: 0.28, peak: 0.2 },
+      { kind: 'tone', waveform: 'sine', frequency: 1046, attack: 0.005, decay: 0.11, peak: 0.04 },
+      { kind: 'tone', waveform: 'sine', frequency: 784, attack: 0.005, decay: 0.36, peak: 0.2, offset: 0.09 },
+      { kind: 'tone', waveform: 'sine', frequency: 1568, attack: 0.005, decay: 0.13, peak: 0.04, offset: 0.09 },
     ],
   },
   /** A data blip: a short high sine with a faint octave, quick and dry. */
