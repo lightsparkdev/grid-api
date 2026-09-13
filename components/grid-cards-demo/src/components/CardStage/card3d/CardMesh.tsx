@@ -56,7 +56,7 @@ import {
   type SpecRect,
 } from './facePaint';
 import { bakeEdge, decorateNormal, decorateOrm, surfaceKey, surfaceOf, type Surface } from './surfaceMaps';
-import { loadSurfaceMaps, surfaceMapsReady, type BakeJob } from './surfaceBakeClient';
+import { canBakeOffThread, loadSurfaceMaps, surfaceMapsReady, type BakeJob } from './surfaceBakeClient';
 
 export interface CardMeshState {
   design: CardDesign;
@@ -167,6 +167,11 @@ function FoilMark({
   /** A material change prints the foil with the graphics. */
   materialRef: React.MutableRefObject<THREE.MeshPhysicalMaterial | null>;
 }) {
+  // One material for the life of the mark. Its albedo alone follows `black`
+  // (silver foil or black lacquer) and is swapped in place below: a new
+  // material per change threw away the only user of its shader program, and
+  // the next preset compiled the same program again, a quarter-second stall
+  // on every switch between a print card and a bare one.
   const material = useMemo(() => {
     const m = new THREE.MeshPhysicalMaterial({
       metalness: 1,
@@ -181,7 +186,17 @@ function FoilMark({
     m.envMapIntensity = FOIL.envMapIntensity;
     m.depthWrite = false;
     return m;
-  }, [assets, black]);
+    // `black` is read once here; the effect below keeps the albedo current.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assets]);
+  const paintedBlack = useRef(black);
+  useEffect(() => {
+    if (paintedBlack.current === black) return;
+    paintedBlack.current = black;
+    const old = material.map;
+    material.map = canvasTexture(paintFoilAlbedo(black), true);
+    old?.dispose();
+  }, [black, material]);
   useEffect(() => {
     materialRef.current = material;
     return () => {
@@ -338,22 +353,54 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const surface = surfaceOf(bodyDesign);
   const bareSurface: Surface = state.design.material === 'metal' ? 'bare-gloss' : `print-${state.design.finish}`;
   const baseSurface = surfaceOf(state.design);
-  // Bake the other surfaces while the page is idle, one per slice, so the
-  // first switch to metal or gloss does not pay for its maps on the click.
-  // Each bake is a frame or two of work (more in WebKit), so none runs while
-  // the intro plays or while the pointer is moving: the queue waits out the
-  // intro, then asks for idle time (a long timeout, so a busy page is left
-  // alone rather than interrupted), and where idle callbacks don't exist
-  // (WebKit) it waits for a quiet moment instead.
+  // Bake the other surfaces ahead, so the first switch to metal or gloss
+  // does not pay for its maps on the click. In the worker the bakes cost
+  // the page nothing, so they run back to back from the moment the artwork
+  // is in, the bead-blast steel (the Z card, the heaviest and the one whose
+  // etched mark would otherwise show up a beat late) first. Where the page
+  // must bake them itself, each is a frame or two of work (more in WebKit),
+  // so the queue waits out the intro and runs only in quiet moments: idle
+  // time with a long timeout, or, without idle callbacks (WebKit), a pause
+  // in the pointer.
+  // The maps for the surface land asynchronously (the bake worker); this
+  // counts the times they have, for the decoration effect below to lay its
+  // treatment over the maps that are actually on the material, and for the
+  // queue here to start once the card's own maps are in (the worker takes
+  // one bake at a time; the card's come first).
+  const [mapsVersion, setMapsVersion] = useState(0);
   useEffect(() => {
-    if (!assets) return;
-    const jobs: Array<[Surface, 'front' | 'back', boolean, Orientation]> = [];
-    for (const s of ['print-matte', 'print-gloss', 'bare-matte', 'bare-gloss'] as Surface[]) {
-      for (const side of ['front', 'back'] as const) jobs.push([s, side, true, 'landscape']);
+    if (!assets || mapsVersion === 0) return;
+    // [surface, side, plain, mark, orientation]. The plain bakes (the body
+    // alone) are the blank and the base a material change wipes through.
+    const jobs: Array<[Surface, 'front' | 'back', boolean, boolean, Orientation]> = [];
+    for (const s of ['bare-matte', 'print-gloss', 'bare-gloss', 'print-matte'] as Surface[]) {
+      for (const side of ['front', 'back'] as const) {
+        jobs.push([s, side, false, true, 'landscape']);
+        jobs.push([s, side, true, true, 'landscape']);
+      }
       // The back with the mark on an upright card, and without the foil mark
       // (for a front-marked card; the same either way up).
-      jobs.push([s, 'back', true, 'portrait']);
-      jobs.push([s, 'back', false, 'landscape']);
+      jobs.push([s, 'back', false, true, 'portrait']);
+      jobs.push([s, 'back', false, false, 'landscape']);
+    }
+    const asJob = (job: (typeof jobs)[number]): BakeJob => ({
+      surface: job[0],
+      side: job[1],
+      plain: job[2],
+      mark: job[3],
+      orientation: job[4],
+    });
+    if (canBakeOffThread()) {
+      let cancelled = false;
+      const next = () => {
+        const job = jobs.shift();
+        if (!job || cancelled) return;
+        loadSurfaceMaps(asJob(job), assets).then(next, next);
+      };
+      next();
+      return () => {
+        cancelled = true;
+      };
     }
     let lastInput = performance.now();
     const onInput = () => {
@@ -369,11 +416,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const runOne = () => {
       const job = jobs.shift();
       if (!job) return;
-      // Off the main thread (the bake worker); the next when this one lands.
-      loadSurfaceMaps({ surface: job[0], side: job[1], plain: false, mark: job[2], orientation: job[3] }, assets).then(
-        schedule,
-        schedule,
-      );
+      loadSurfaceMaps(asJob(job), assets).then(schedule, schedule);
     };
     const schedule = () => {
       if (hasIdle) {
@@ -390,15 +433,12 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       window.removeEventListener('pointerdown', onInput);
       window.removeEventListener('wheel', onInput);
     };
-  }, [assets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assets, mapsVersion > 0]);
   // The back carries the foil mark's carrier and metal only while the mark
   // is there; with the mark on the front, the hologram layer has its own.
   const backMark = bodyDesign.visaMark === 'back';
   const orientation = bodyDesign.orientation;
-  // The maps for the surface land asynchronously (the bake worker); this
-  // counts the times they have, for the decoration effect below to lay its
-  // treatment over the maps that are actually on the material.
-  const [mapsVersion, setMapsVersion] = useState(0);
   // The front has painted and the card wants to report ready, but its
   // surface maps hadn't landed yet: the maps effect reports for it.
   const readyWanted = useRef<(() => void) | null>(null);
@@ -482,9 +522,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       const { gl } = three();
       const uploadNext = () => {
         if (cancelled) return;
-        const t = fresh.shift();
-        if (t) {
-          gl.initTexture(t);
+        // Two a frame: a map's upload is well inside a frame's budget.
+        const pair = fresh.splice(0, 2);
+        if (pair.length) {
+          for (const t of pair) gl.initTexture(t);
           raf = requestAnimationFrame(uploadNext);
           return;
         }

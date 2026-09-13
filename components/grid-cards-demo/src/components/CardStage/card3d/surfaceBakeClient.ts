@@ -29,6 +29,11 @@ export function canBakeOffThread(): boolean {
 const ready = new Map<string, SurfaceMapImages>();
 const inflight = new Map<string, Promise<SurfaceMapImages>>();
 
+// Dev: which bakes are in (`__surfaceBakes.ready()`), for tracing the queue.
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__surfaceBakes = { ready: () => Array.from(ready.keys()) };
+}
+
 let worker: Worker | null = null;
 /** Resolves once the worker has the artwork; null until first asked for. */
 let workerReady: Promise<Worker | null> | null = null;
