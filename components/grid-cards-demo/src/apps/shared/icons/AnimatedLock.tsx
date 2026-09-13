@@ -51,6 +51,9 @@ interface AnimatedLockProps {
    *  away, the locking backwards; `onUnlocked` fires when it has. */
   locked?: boolean;
   onUnlocked?: () => void;
+  /** The shackle has dropped into the body (the impact), or, without the
+   *  locking animation, the lock is shown locked. */
+  onLocked?: () => void;
 }
 
 /**
@@ -59,7 +62,14 @@ interface AnimatedLockProps {
  * off to the right; it turns back over the body, drops in, and the whole lock
  * gives a little under the hit.
  */
-export function AnimatedLock({ size = 24, className, locking = true, locked = true, onUnlocked }: AnimatedLockProps) {
+export function AnimatedLock({
+  size = 24,
+  className,
+  locking = true,
+  locked = true,
+  onUnlocked,
+  onLocked,
+}: AnimatedLockProps) {
   const reduceMotion = useReducedMotion();
   const play = locking && !reduceMotion;
   const whole = useRef<SVGGElement>(null);
@@ -69,6 +79,8 @@ export function AnimatedLock({ size = 24, className, locking = true, locked = tr
   const dip = useMotionValue(0);
   const onUnlockedRef = useRef(onUnlocked);
   onUnlockedRef.current = onUnlocked;
+  const onLockedRef = useRef(onLocked);
+  onLockedRef.current = onLocked;
 
   // The transforms are written by hand, in the symbol's own units, so the
   // axis is a line on the glyph rather than a box's edge.
@@ -93,6 +105,7 @@ export function AnimatedLock({ size = 24, className, locking = true, locked = tr
         if (!play) {
           turn.set(0);
           lift.set(0);
+          onLockedRef.current?.();
           return;
         }
         await animate(turn, 0, SWING);
@@ -100,6 +113,7 @@ export function AnimatedLock({ size = 24, className, locking = true, locked = tr
         await animate(lift, 0, ENGAGE);
         if (cancelled) return;
         animate(dip, [0, DIP, 0], IMPACT);
+        onLockedRef.current?.();
         return;
       }
       if (reduceMotion) {

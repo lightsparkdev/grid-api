@@ -10,6 +10,7 @@ import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetri
 import { AnimatedLock } from '@/apps/shared/icons';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { canScrollBy } from '@/lib/scroll';
+import { play, playHover } from '@/lib/sounds';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import type { CardHome } from '@/apps/shared/card';
 import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
@@ -31,6 +32,7 @@ import { localToSpec } from './card3d/faceFrame';
 import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { CardMotion } from './cardMotion';
+import { useCardMomentSounds } from './cardSounds';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
 import { INTRO_END, introCard, stepIntro } from './introTimeline';
@@ -309,15 +311,18 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     setLockMark((m) => (card.frozen ? 'locked' : m === 'locked' ? 'unlocking' : m));
   }, [card.frozen]);
   const dimmed = card.closed || lockMark !== null;
+  useCardMomentSounds({ issued, issuing, revealed, frozen: card.frozen, closed: card.closed });
   live.current.reduceMotion = reduceMotion;
   live.current.orientation = design.orientation;
   // The composed face and the card's footprint on screen, for the card as held.
   const face = faceSize(design.orientation);
   const foot = footprint(design.orientation);
 
-  // Decline: shake once per bounce.
+  // Decline: shake once per bounce, with the low double.
   useEffect(() => {
-    if (isDeclined) motion.shake();
+    if (!isDeclined) return;
+    motion.shake();
+    play('decline');
   }, [isDeclined, motion]);
 
   // ── The brand on the card ──────────────────────────────────────────────────
@@ -391,6 +396,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       const hit = hitRef.current;
       if (!d || !pl || !hit || (e.target as HTMLElement | null)?.tagName === 'INPUT') return;
       e.preventDefault();
+      play('keyClick');
       const perPx = face.w / hit.getBoundingClientRect().width;
       const step = (e.shiftKey ? 10 : 1) * perPx;
       setLayout({ ...pl.layout, x: pl.layout.x + d.x * step, y: pl.layout.y + d.y * step });
@@ -418,7 +424,22 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (over === overBrandRef.current) return;
     overBrandRef.current = over;
     setOverBrand(over);
+    // The outline coming up is the hover; the callers only pass a mouse.
+    if (over) playHover('tick');
   };
+  // A guide caught during a drag ticks once, as the snapped target changes;
+  // a drag that stays on the same guide is silent.
+  const lastSnap = useRef('');
+  const snapTick = (key: string) => {
+    if (key === lastSnap.current) return;
+    lastSnap.current = key;
+    if (key) play('snap');
+  };
+  const snapKeyOf = (g: Guides) =>
+    [g.x, g.y, g.gapX && `gx${g.gapX.a},${g.gapX.b}`, g.gapY && `gy${g.gapY.a},${g.gapY.b}`]
+      .map((v) => v ?? '')
+      .join('|')
+      .replace(/^\|+$/, '');
 
   /** The composed face's landmarks, in its spec px: its center, the chip's
    *  center (its row and its column), and the row the brand sits on by
@@ -586,6 +607,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (!g) return;
     const snap = snapPoint(p, end === 'from' ? g.to : g.from);
     setGuides(snap.guides);
+    snapTick(snapKeyOf(snap.guides));
     const next: CardGradient = { ...g, [end]: { x: Math.round(snap.p.x), y: Math.round(snap.p.y) } };
     onDesignChange?.({ gradient: next });
   };
@@ -619,6 +641,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       dx += snap.dx;
       dy += snap.dy;
       setGuides(snap.guides);
+      snapTick(snapKeyOf(snap.guides));
       setLayout({ ...l0, x: l0.x + dx, y: l0.y + dy });
       return;
     }
@@ -629,7 +652,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       let rotation = l0.rotation + ((a - a0) * 180) / Math.PI;
       rotation = ((((rotation + 180) % 360) + 360) % 360) - 180;
       const step = Math.round(rotation / ROTATE_STEP) * ROTATE_STEP;
-      if (Math.abs(step - rotation) <= SNAP_DEG) rotation = ((((step + 180) % 360) + 360) % 360) - 180;
+      const caught = Math.abs(step - rotation) <= SNAP_DEG;
+      if (caught) rotation = ((((step + 180) % 360) + 360) % 360) - 180;
+      snapTick(caught ? `r${rotation}` : '');
       setLayout({ ...l0, rotation });
       if (hitRef.current) hitRef.current.style.cursor = dragCursor(bd, rotation);
       return;
@@ -742,6 +767,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       if (e.pointerId !== gd.id) return;
       gradDrag.current = null;
       setGuides({});
+      lastSnap.current = '';
       e.currentTarget.classList.remove(styles.hitMoving);
       return;
     }
@@ -750,19 +776,22 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       if (e.pointerId !== bd.id) return;
       brandDrag.current = null;
       setGuides({});
+      lastSnap.current = '';
       e.currentTarget.classList.remove(styles.hitMoving);
       e.currentTarget.style.cursor = '';
       return;
     }
     if (!drag.current || e.pointerId !== drag.current.id) return;
     drag.current = null;
-    motion.endDrag(e.timeStamp);
+    // The turn-over swishes as it is let go; a spin that comes back is silent.
+    if (motion.endDrag(e.timeStamp).turned) play('swish');
     e.currentTarget.classList.remove(styles.hitDragging);
     // A press on the brand that did not become a drag: select it.
     if (pendingSelect.current?.id === e.pointerId) {
       pendingSelect.current = null;
       motion.clearTilt();
       setSelected(true);
+      play('press');
     }
   };
   /** Let go of whatever is in flight, whichever pointer had it. The capture
@@ -776,13 +805,14 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       gradDrag.current = null;
       brandDrag.current = null;
       setGuides({});
+      lastSnap.current = '';
       hit?.classList.remove(styles.hitMoving);
       if (hit) hit.style.cursor = '';
     }
     if (drag.current) {
       drag.current = null;
       pendingSelect.current = null;
-      motion.endDrag(performance.now());
+      if (motion.endDrag(performance.now()).turned) play('swish');
       hit?.classList.remove(styles.hitDragging);
     }
   };
@@ -855,6 +885,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   }, [textEdit]);
   const onTextChange = (v: string) => {
     setDraft(v);
+    play('keyClick');
     onDesignChange?.(textEdit === 'brand' ? { programName: v } : { cardholderName: v });
   };
   useEffect(() => {
@@ -867,6 +898,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (over === overNameRef.current) return;
     overNameRef.current = over;
     setOverName(over);
+    if (over) playHover('tick');
   };
   const hitName = (clientX: number, clientY: number) => {
     const p = pickBack.current?.(clientX, clientY);
@@ -878,6 +910,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!brandEditable || live.current.t > 0) return;
     if (hitBrand(e.clientX, e.clientY)) {
+      play('press');
       if (design.logoUrl) setLayout(null);
       else {
         setSelected(false);
@@ -885,11 +918,15 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       }
       return;
     }
-    if (hitName(e.clientX, e.clientY)) setTextEdit('name');
+    if (hitName(e.clientX, e.clientY)) {
+      play('press');
+      setTextEdit('name');
+    }
   };
   const onTextKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === 'Escape') {
       e.preventDefault();
+      play('keyClick');
       setTextEdit(null);
     }
   };
@@ -1043,7 +1080,12 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
               exit={reduceMotion ? { opacity: 0 } : { ...LOCK_MARK_HIDDEN, transition: LOCK_MARK_OUT }}
               aria-hidden
             >
-              <AnimatedLock size={56} locked={lockMark === 'locked'} onUnlocked={() => setLockMark(null)} />
+              <AnimatedLock
+                size={56}
+                locked={lockMark === 'locked'}
+                onLocked={() => play('lock')}
+                onUnlocked={() => setLockMark(null)}
+              />
             </m.span>
           ) : null}
         </AnimatePresence>
