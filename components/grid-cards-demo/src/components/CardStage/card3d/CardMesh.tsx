@@ -272,6 +272,12 @@ interface Swap {
 }
 
 const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
+const smoothstep = (a: number, b: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+/** The whole change, first front to last: three passes and the holds between. */
+const SWAP_TOTAL_MS = 3 * WIPE_MS + 2 * WIPE_HOLD;
 
 /**
  * Upload the account block of the freshly painted back over the texture on
@@ -979,21 +985,15 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     const particleFront = sw.t <= WIPE_MS ? front : FRONT_REST + ((sw.t - WIPE_MS) / WIPE_MS) * (FRONT_REST - FRONT_START);
     if (swarm.finished(particleFront)) swarm.end();
     else swarm.update(particleFront, frame.gl.domElement.height);
-    // The grain follows whichever front is moving: as loud as the front is
-    // fast (the ease's slope, so each pass swells and settles), from the
-    // left of the screen to the right with it. The blank's pass, with its
-    // dust, is the fullest; the base and the print lay down lighter.
+    // The grain runs as one texture across the whole change, not three
+    // swells: up over the first tenth, held while the passes lay down, down
+    // over the last quarter, drifting once from left of the screen to right.
     const g = voice.current;
     if (g) {
-      let level = 0;
-      let pan = 0;
-      for (let n = 0; n < 3; n++) {
-        const p = pass(n);
-        if (p <= 0 || p >= 1) continue;
-        level = Math.max(level, Math.sin(Math.PI * p) * [1, 0.7, 0.55][n]);
-        pan = (easeInOutSine(p) * 2 - 1) * 0.7;
-      }
-      g.set(level, pan);
+      const u = Math.min(1, sw.t / SWAP_TOTAL_MS);
+      const rise = smoothstep(0, 0.12, u);
+      const fall = 1 - smoothstep(0.72, 1, u);
+      g.set(rise * fall, (u * 2 - 1) * 0.4);
     }
     // The blank covers the face: rebuild the body as the new material.
     if (p1 >= 1 && !sw.committed) {
