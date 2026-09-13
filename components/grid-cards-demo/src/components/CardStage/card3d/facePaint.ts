@@ -228,7 +228,18 @@ export function loadFaceAssets(): Promise<FaceAssets> {
  *  It answers everything the bakes ask of a canvas (its 2D context, width and
  *  height, drawing it into another), so it goes by the same type here. */
 export function makeCanvas(w: number, h: number): HTMLCanvasElement {
-  if (typeof document === 'undefined') return new OffscreenCanvas(w, h) as unknown as HTMLCanvasElement;
+  if (typeof document === 'undefined') {
+    const c = new OffscreenCanvas(w, h);
+    // The bakes read every map back (getImageData) and write it texel by
+    // texel (putImageData): on a software canvas those are plain memory
+    // copies. It also keeps the bakes off the GPU process, which the page's
+    // compositor shares: an accelerated bake running in the background
+    // stalled the phone's entrance for a quarter second while it ran. The
+    // first getContext fixes a canvas's context settings; later calls get
+    // this same context.
+    c.getContext('2d', { willReadFrequently: true });
+    return c as unknown as HTMLCanvasElement;
+  }
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -866,6 +877,23 @@ export function backNameBox(design: CardDesign): SpecRect {
   const w = Math.max(measureCtx.measureText(text).width, measureCtx.measureText('Cardholder name').width);
   // Baseline at the block's top + the line; the face's ascent is 85% of the em.
   return { x: L.x, y: L.y + L.em * BACK_LINE - L.em * 0.85, w, h: L.em };
+}
+
+/** The lines the personalization prints (the PAN, then the expiry and the
+ *  code), in the composed face's spec px, with air for the type's ascent and
+ *  descent. The print's steps repaint the whole back but upload only this
+ *  much of it (see CardMesh): the rest of the face hasn't changed. */
+export function backAccountBox(o: Orientation): SpecRect {
+  const L = backLayout(o);
+  const face = faceSize(o);
+  const line = L.em * BACK_LINE;
+  const gap = L.em * BACK_GAP;
+  const panBaseline = L.y + 2 * line + gap;
+  const expBaseline = L.y + 3 * line + 2 * gap;
+  const top = panBaseline - L.em;
+  const bottom = expBaseline + L.em * 0.4;
+  const x = L.x - L.em * 0.25;
+  return { x, y: top, w: face.w - x, h: bottom - top };
 }
 
 export interface BackState {

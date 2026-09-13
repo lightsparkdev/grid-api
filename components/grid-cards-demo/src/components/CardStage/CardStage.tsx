@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { AnimatePresence, cancelFrame, frame, motion as m, useReducedMotion } from 'motion/react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -113,7 +113,21 @@ interface Live {
   /** How the card is held: the footprint, the roll, and the pick's frame. */
   orientation: Orientation;
   intro: Intro;
+  /** Something the camera sees changed off the frame loop (a material, a
+   *  map, the exposure): the next frame paints. See CardRig's render gate. */
+  dirty: boolean;
 }
+
+/** A frame paints when the card has moved more than this since the last
+ *  one painted: degrees of rotation, stage px of position, and scale.
+ *  Well under a device pixel and a color step at any stage size, so a
+ *  settling spring stops painting once it has visibly stopped. */
+const RENDER_EPS_DEG = 1e-3;
+const RENDER_EPS_PX = 1e-3;
+const RENDER_EPS_SCALE = 1e-5;
+/** And at least this often regardless (frames), a safety net for a change
+ *  the gate didn't see. */
+const RENDER_EVERY = 30;
 
 /** The intro's clock, stepped by the frame loop once the front has painted. */
 interface Intro {
@@ -268,6 +282,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     inert: false,
     facing: 1,
     orientation: design.orientation,
+    dirty: true,
     intro: {
       t: -1,
       done: false,
@@ -923,6 +938,13 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   }
 
 
+  // What the mesh paints from. One object per change, so the rig (memoized)
+  // sits out the renders the phone's boot curve drives every frame.
+  const meshState = useMemo<CardMeshState>(
+    () => ({ design, issued, frozen: card.frozen, closed: card.closed }),
+    [design, issued, card.frozen, card.closed],
+  );
+
   // The selection box, in card px on the hit box.
   const box = placed && (selected || overBrand) && !textEdit ? placed.box : null;
   const boxStyle = box
@@ -952,7 +974,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         }}
       >
         <StageClock />
-        <StageCamera dark={dark} />
+        <StageCamera dark={dark} live={live} />
         <CardEnv />
         <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
         <CardRig
@@ -964,7 +986,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           pickBack={pickBack}
           placement={placement}
           onBrandPlacement={onBrandPlacement}
-          state={{ design, issued, frozen: card.frozen, closed: card.closed }}
+          state={meshState}
         />
       </Canvas>
 
@@ -1211,17 +1233,19 @@ function StageClock() {
 }
 
 /** Perspective camera whose view at z = 0 is exactly the stage in px. */
-function StageCamera({ dark }: { dark: boolean }) {
+function StageCamera({ dark, live }: { dark: boolean; live: React.MutableRefObject<Live> }) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
   const gl = useThree((s) => s.gl);
   useEffect(() => {
     camera.fov = (2 * Math.atan(size.height / 2 / CAMERA_Z) * 180) / Math.PI;
     camera.updateProjectionMatrix();
-  }, [camera, size.height]);
+    live.current.dirty = true;
+  }, [camera, size.height, live]);
   useEffect(() => {
     gl.toneMappingExposure = dark ? EXPOSURE_DARK : EXPOSURE_LIGHT;
-  }, [gl, dark]);
+    live.current.dirty = true;
+  }, [gl, dark, live]);
   return null;
 }
 
@@ -1239,14 +1263,40 @@ interface CardRigProps {
   state: CardMeshState;
 }
 
-/** Drives the mesh and the DOM hit box every frame. */
-function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onBrandPlacement, state }: CardRigProps) {
+/** Drives the mesh and the DOM hit box every frame. Memoized: every prop
+ *  but `state` is a ref or a stable callback, and the stage renders every
+ *  frame of the phone's boot for values the rig reads through `live`. */
+const CardRig = memo(function CardRig({
+  rootRef,
+  hitRef,
+  live,
+  motion,
+  pick,
+  pickBack,
+  placement,
+  onBrandPlacement,
+  state,
+}: CardRigProps) {
   // Carrier takes position and scale; the card inside it takes the spin.
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
   const size = useThree((s) => s.size);
+  const dpr = useThree((s) => s.viewport.dpr);
   const get = useThree((s) => s.get);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
+  // The last frame painted: the carrier's place, the card's turn, and the
+  // canvas's size. A frame that lands within the epsilons of it, with
+  // nothing marked dirty, isn't painted again (see the gate below).
+  const painted = useRef({ x: NaN, y: NaN, s: NaN, rx: NaN, ry: NaN, rz: NaN, w: 0, h: 0, dpr: 0, age: 0 });
+  const markDirty = useCallback(() => {
+    live.current.dirty = true;
+  }, [live]);
+  // The canvas coming back from a lost context is blank until painted.
+  useEffect(() => {
+    const el = get().gl.domElement;
+    el.addEventListener('webglcontextrestored', markDirty);
+    return () => el.removeEventListener('webglcontextrestored', markDirty);
+  }, [get, markDirty]);
 
   // Pointer → the card's plane → the composed face's spec px. The plane, not
   // the mesh, so a drag can carry the brand past the card's edge; null when
@@ -1298,7 +1348,13 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     };
   }, [get, motion, live, placement]);
 
-  useFrame((_, delta) => {
+  // Priority 1: R3F leaves the paint to this callback (the mesh's and the
+  // hologram's frame callbacks, at 0, have run by then), which paints only
+  // when the frame would look different from the last one painted. Parked
+  // in the phone, held still, the card is the same picture for whole flows
+  // while the screen animates around it, and a paint of the stage-sized
+  // canvas each frame was the largest fixed cost in WebKit.
+  useFrame(({ gl, scene, camera }, delta) => {
     const g = group.current;
     const c = carrier.current;
     const root = rootRef.current;
@@ -1428,7 +1484,37 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
     }
     if (root.style.clipPath !== clip) root.style.clipPath = clip;
     if (root.style.maskImage !== mask) root.style.maskImage = mask;
-  });
+
+    // ── The render gate ──────────────────────────────────────────────────
+    const last = painted.current;
+    const at = c.position;
+    const moved =
+      Math.abs(at.x - last.x) > RENDER_EPS_PX ||
+      Math.abs(at.y - last.y) > RENDER_EPS_PX ||
+      Math.abs(c.scale.x - last.s) > RENDER_EPS_SCALE ||
+      Math.abs(pose.rotX - last.rx) > RENDER_EPS_DEG ||
+      Math.abs(pose.rotY - last.ry) > RENDER_EPS_DEG ||
+      Math.abs(pose.rotZ - last.rz) > RENDER_EPS_DEG ||
+      size.width !== last.w ||
+      size.height !== last.h ||
+      dpr !== last.dpr;
+    last.age += 1;
+    if (!moved && !live.current.dirty && intro.done && last.age < RENDER_EVERY) return;
+    live.current.dirty = false;
+    painted.current = {
+      x: at.x,
+      y: at.y,
+      s: c.scale.x,
+      rx: pose.rotX,
+      ry: pose.rotY,
+      rz: pose.rotZ,
+      w: size.width,
+      h: size.height,
+      dpr,
+      age: 0,
+    };
+    gl.render(scene, camera);
+  }, 1);
 
   // The blueprint starts drawing once the front has painted.
   const onReady = useCallback(() => {
@@ -1444,7 +1530,14 @@ function CardRig({ rootRef, hitRef, live, motion, pick, pickBack, placement, onB
 
   return (
     <group ref={carrier}>
-      <CardMesh ref={group} state={state} onReady={onReady} onBrandPlacement={onBrandPlacement} swapContext={swapContext} />
+      <CardMesh
+        ref={group}
+        state={state}
+        onReady={onReady}
+        onBrandPlacement={onBrandPlacement}
+        swapContext={swapContext}
+        onChange={markDirty}
+      />
     </group>
   );
-}
+});

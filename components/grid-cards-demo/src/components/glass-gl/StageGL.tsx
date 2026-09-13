@@ -560,6 +560,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     let lastLw = NaN;
     let lastLh = NaN;
     let lastRadii: number[] | null = null;
+    let lastBootMix = NaN;
     let targetEl: Element | null = null;
     let shellBound: Element | null = null;
     const SETTLE_FRAMES = 3;
@@ -570,17 +571,13 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       return targetEl;
     };
 
-    const paintFrame = (s: SurfaceSample): boolean => {
+    /** Draw one frame. `onlyIfMoved` (the boot repaint) skips the draw when
+     *  the lens hasn't moved and nothing else changed since the last one:
+     *  the phone's boot asks for a repaint from three places a frame (the
+     *  boot curve's update, the shell's own loop, and the effect after the
+     *  commit), and only the first with a new rect has anything to paint. */
+    const paintFrame = (s: SurfaceSample, onlyIfMoved = false): boolean => {
       if (!gl || gl.isContextLost()) return false;
-
-      // Expensive path — only when the STATIC dot field changed (resize/theme). The
-      // click ripple is no longer baked here; it's a shader displacement (below), so
-      // it costs nothing on this 2D-redraw + upload path.
-      if (textureDirty) {
-        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg);
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
-      }
 
       // lens rect from the target element, in this canvas's device px (top-down)
       const c = cfgRef.current;
@@ -620,6 +617,18 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
           corner(cs.borderBottomLeftRadius),
         ];
       }
+      const moved = rectChanged || !lastRadii || radiiDevicePx.some((v, i) => v !== lastRadii![i]);
+      if (onlyIfMoved && !moved && !textureDirty && bootMixRef.current === lastBootMix) return false;
+
+      // Expensive path — only when the STATIC dot field changed (resize/theme). The
+      // click ripple is no longer baked here; it's a shader displacement (below), so
+      // it costs nothing on this 2D-redraw + upload path.
+      if (textureDirty) {
+        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg);
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
+      }
+
       const exp = 2 + Math.max(0, Math.min(1, c.cornerSmoothing)) * 4;
       const dome = c.domeDepth > 0 ? computeDomeConstants(c.domeDepth, c.designWidth / 2, (c.designWidth / 2) * (lh / lw)) : null;
       const ang = (c.specularRotation * Math.PI) / 180;
@@ -661,12 +670,12 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-      const moved = rectChanged || !lastRadii || radiiDevicePx.some((v, i) => v !== lastRadii![i]);
       lastLx = lx;
       lastLy = ly;
       lastLw = lw;
       lastLh = lh;
       lastRadii = radiiDevicePx;
+      lastBootMix = bootMixRef.current;
       return moved;
     };
 
@@ -779,11 +788,20 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       bindShell();
       const paintBootFrame = () => {
         if (!gl || gl.isContextLost()) return;
-        applyResizeBuffers();
+        // The buffers are rebuilt, and the dot field redrawn and re-uploaded,
+        // only when the stage's size changed under us. Setting a canvas's
+        // size clears it even to the same value, and this runs up to three
+        // times a frame through the phone's boot: rebuilding both canvases
+        // and re-uploading the stage-sized texture each time was most of the
+        // boot's cost on the main thread.
+        const nextDpr = Math.min(window.devicePixelRatio || 1, 2);
+        if (canvas.clientWidth !== cssW || canvas.clientHeight !== cssH || nextDpr !== dpr) {
+          applyResizeBuffers();
+          textureDirty = true;
+        }
         bindShell();
         if (cssW <= 0 || cssH <= 0) return;
-        textureDirty = true;
-        paintFrame(IDLE_SURFACE);
+        paintFrame(IDLE_SURFACE, true);
         textureDirty = false;
       };
       bootRepaintRef.current = paintBootFrame;

@@ -151,7 +151,38 @@ export function useAdaptiveStatusBarTone(
     resizeObserver.observe(contentRoot);
     resizeObserver.observe(statusBarEl);
 
-    const mutationObserver = new MutationObserver(update);
+    // A style or class change somewhere on the screen can only change what
+    // is under the bar if the element is under the bar, or was the last time
+    // it changed (it may have just left). Motion writes a style per frame on
+    // whatever it animates (a sheet sliding up, a page pushing in), and the
+    // measurement is five hit tests against the whole screen: not worth
+    // running for a sheet that is still well below the bar. Elements added
+    // or removed, and the theme, always measure.
+    const nearBar = new WeakSet<Element>();
+    const mayChangeBar = (rec: MutationRecord): boolean => {
+      if (rec.type !== 'attributes' || !(rec.target instanceof Element)) return true;
+      const el = rec.target;
+      const bar = statusBarRef.current;
+      if (el === document.documentElement || !bar) return true;
+      const r = el.getBoundingClientRect();
+      const was = nearBar.has(el);
+      if (r.width === 0 || r.height === 0) {
+        nearBar.delete(el);
+        return true;
+      }
+      const b = bar.getBoundingClientRect();
+      const near = r.bottom >= b.top && r.top <= b.bottom && r.right >= b.left && r.left <= b.right;
+      if (near) nearBar.add(el);
+      else nearBar.delete(el);
+      return near || was;
+    };
+    const mutationObserver = new MutationObserver((records) => {
+      // Every record is looked at (not short-circuited) so each element's
+      // "near the bar" memory stays current.
+      let changed = false;
+      for (const rec of records) if (mayChangeBar(rec)) changed = true;
+      if (changed) update();
+    });
     mutationObserver.observe(contentRoot, {
       subtree: true,
       childList: true,

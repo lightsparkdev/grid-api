@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
@@ -16,7 +16,7 @@ import {
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
-import { layerFrame } from './faceFrame';
+import { layerFrame, texelBounds } from './faceFrame';
 import { doveFrame, HoloDove } from './HoloDove';
 import {
   cellAt,
@@ -31,6 +31,7 @@ import {
 } from './materialSwap';
 import { MaterialSwarm } from './MaterialSwarm';
 import {
+  backAccountBox,
   brandBox,
   brandRegion,
   loadFaceAssets,
@@ -243,6 +244,11 @@ interface CardMeshProps {
    *  runs along the card's long axis, left to right on screen for a flat card
    *  whichever face shows). Absent, the body swaps at once. */
   swapContext?: () => { animate: boolean; backShowing: boolean };
+  /** Something the camera sees changed (a map, a material, a layer): the
+   *  stage paints the next frame. Called after every commit of the mesh and
+   *  on every frame of a material change; the stage otherwise paints only
+   *  when the card moves. */
+  onChange?: () => void;
 }
 
 /** A material change in flight. */
@@ -259,15 +265,61 @@ interface Swap {
 
 const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
 
+/**
+ * Upload the account block of the freshly painted back over the texture on
+ * the GPU, in place, and rebuild its mipmaps: the same texels the full
+ * upload would land there, without the rest of the face. `patch` is a
+ * scratch canvas the region is drawn into and a texture wrapping it for
+ * three's copy. Needs WebGL2 (the sub-rect upload of a canvas); false when
+ * it can't be done, and the caller uploads the whole face instead.
+ */
+function uploadBackRegion(
+  gl: THREE.WebGLRenderer,
+  backCanvas: HTMLCanvasElement,
+  backMap: THREE.CanvasTexture,
+  patch: { canvas: HTMLCanvasElement; texture: THREE.CanvasTexture },
+  orientation: Orientation,
+): boolean {
+  if (!gl.capabilities.isWebGL2) return false;
+  const r = texelBounds(orientation, 'back', backAccountBox(orientation));
+  if (r.w <= 0 || r.h <= 0) return false;
+  try {
+    if (patch.canvas.width !== r.w || patch.canvas.height !== r.h) {
+      patch.canvas.width = r.w;
+      patch.canvas.height = r.h;
+    }
+    patch.canvas.getContext('2d')!.drawImage(backCanvas, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+    // The face uploads flipped (canvas rows run down, a texture's up), so
+    // the region's row is counted from the bottom.
+    gl.copyTextureToTexture(patch.texture, backMap, null, new THREE.Vector2(r.x, TEX_H - (r.y + r.h)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** The steel blank's stock, for the change only: the finished card's steel
  *  (`STOCKS[2]`), a shade cooler and brighter, as mill stainless is. */
 const BLANK_STEEL: CardStock = { ...STOCKS[2], face: '#d3d5da' };
 
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
-  { state, onReady, onBrandPlacement, swapContext },
+  { state, onReady, onBrandPlacement, swapContext, onChange },
   ref,
 ) {
-  const invalidate = useThree((s) => s.invalidate);
+  const r3fInvalidate = useThree((s) => s.invalidate);
+  // Every place the mesh changes what it shows asks for a frame here. R3F's
+  // own invalidate is a no-op on a "never" frameloop (the stage steps it);
+  // the stage's render gate is what listens.
+  const invalidate = useCallback(() => {
+    onChange?.();
+    r3fInvalidate();
+  }, [onChange, r3fInvalidate]);
+  // And after every commit regardless: the layers (the foil mark, the
+  // hologram) swap maps and visibility in their own effects, and a re-render
+  // of the mesh is what got them there.
+  useEffect(() => {
+    onChange?.();
+  });
   const three = useThree((s) => s.get);
   // The body's material lags the design's through a change: the wipe shows
   // the new stock, and the slab is rebuilt as it finishes.
@@ -772,7 +824,17 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     swapU,
   ]);
 
-  // Back print.
+  // Back print. The personalization prints in a few repaints as the card
+  // goes ACTIVE; each of those changes the account block alone, so only
+  // that region goes up to the GPU (a whole 2048-wide face is a 20 ms
+  // upload in WebKit, and six of them in half a second dropped frames on
+  // the print). Anything else changing on the back re-uploads it whole.
+  const backPrinted = useRef<{ design: CardDesign; frozen: boolean; closed: boolean; assets: FaceAssets } | null>(null);
+  const backPatch = useMemo(() => {
+    const canvas = makeCanvas(1, 1);
+    return { canvas, texture: new THREE.CanvasTexture(canvas) };
+  }, []);
+  useEffect(() => () => backPatch.texture.dispose(), [backPatch]);
   useEffect(() => {
     if (!assets) return;
     paintBack(
@@ -785,9 +847,21 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       },
       assets,
     );
+    const prev = backPrinted.current;
+    backPrinted.current = { design: bodyDesign, frozen: state.frozen, closed: state.closed, assets };
+    const onlyPersonalization =
+      prev !== null &&
+      prev.design === bodyDesign &&
+      prev.frozen === state.frozen &&
+      prev.closed === state.closed &&
+      prev.assets === assets;
+    if (onlyPersonalization && uploadBackRegion(three().gl, backCanvas, backMap, backPatch, bodyDesign.orientation)) {
+      invalidate();
+      return;
+    }
     backMap.needsUpdate = true;
     invalidate();
-  }, [assets, bodyDesign, personalized, state.frozen, state.closed, backCanvas, backMap, invalidate]);
+  }, [assets, bodyDesign, personalized, state.frozen, state.closed, backCanvas, backMap, backPatch, three, invalidate]);
 
   // ── Material change ────────────────────────────────────────────────────────
   // Three fronts wipe the face left to right, the way a card is made: the
