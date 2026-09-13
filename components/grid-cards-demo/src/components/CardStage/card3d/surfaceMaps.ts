@@ -124,6 +124,21 @@ function bakeOrm(
   return c;
 }
 
+/** A cached base map onto a canvas to decorate. From the bake worker it is
+ *  a bitmap flipped for the GPU (see surfaceBake.worker): drawn flipped
+ *  back, so the decoration lands in canvas rows like everything else. */
+function drawBase(ctx: CanvasRenderingContext2D, base: HTMLCanvasElement, w: number, h: number) {
+  if (typeof ImageBitmap !== 'undefined' && (base as unknown) instanceof ImageBitmap) {
+    ctx.save();
+    ctx.translate(0, h);
+    ctx.scale(1, -1);
+    ctx.drawImage(base, 0, 0, w, h);
+    ctx.restore();
+    return;
+  }
+  ctx.drawImage(base, 0, 0, w, h);
+}
+
 /* ── Relief ───────────────────────────────────────────────────────────────── */
 
 function bakeHeight(
@@ -342,7 +357,7 @@ export function decorateOrm(
 ): HTMLCanvasElement {
   const c = makeCanvas(base.width, base.height);
   const ctx = c.getContext('2d')!;
-  ctx.drawImage(base, 0, 0);
+  drawBase(ctx, base, base.width, base.height);
   const stamp = (mask: HTMLCanvasElement, fill: string) => {
     const m = makeCanvas(mask.width, mask.height);
     const mc = m.getContext('2d')!;
@@ -389,7 +404,7 @@ export function decorateNormal(
 ): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
-  ctx.drawImage(base, 0, 0, TEX_W, TEX_H);
+  drawBase(ctx, base, TEX_W, TEX_H);
   const { x: rx, y: ry, w: rw, h: rh } = region;
   if (rw <= 0 || rh <= 0) return c;
   // Height in texels: flat mid-gray, the mark's floor a step down, the edge

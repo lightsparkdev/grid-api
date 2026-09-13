@@ -43,10 +43,14 @@ self.onmessage = async (e: MessageEvent<BakeRequest>) => {
   try {
     const { surface, side, plain, mark, orientation } = msg.job;
     const maps = getSurfaceMaps(surface, side, assets, plain, mark, orientation);
-    // Copies, so the bake stays cached here for a repeat request.
+    // Copies, so the bake stays cached here for a repeat request. Flipped:
+    // a canvas texture is flipped as it uploads (canvas rows run down, a
+    // texture's up), and a bitmap isn't, so the flip is baked into the
+    // bitmap and its texture uploads as is (see canvasTexture, and the
+    // decorate passes, which flip it back to draw on it).
     const [orm, normal] = await Promise.all([
-      createImageBitmap(maps.orm as unknown as OffscreenCanvas),
-      createImageBitmap(maps.normal as unknown as OffscreenCanvas),
+      createImageBitmap(maps.orm as unknown as OffscreenCanvas, { imageOrientation: 'flipY' }),
+      createImageBitmap(maps.normal as unknown as OffscreenCanvas, { imageOrientation: 'flipY' }),
     ]);
     (self as unknown as Worker).postMessage({ type: 'baked', id: msg.id, orm, normal } satisfies BakeResponse, [orm, normal]);
   } catch (err) {
