@@ -37,6 +37,8 @@ const SHEET_UP_MS = 600;
 const PHONE_GONE_MS = 900;
 /** The app's toast lands as Apple's flow finishes sliding away. */
 const WALLET_TOAST_MS = 350;
+/** The app's toast lands as the Spending limits page finishes popping. */
+const LIMITS_TOAST_MS = 350;
 /** Dwell on the transaction sheet before the refund runs. */
 const REFUND_START_MS = 1100;
 /** Dwell after a refund before the sheet closes. */
@@ -165,6 +167,12 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
       setDeltaCents((c) => c + refund.cents);
       notify(`Refund from ${purchase.title}`, `+${refund.amount} back on your card`);
       cardOptions?.onRefund?.(purchase, refund);
+    },
+    // Saved from the page, which pops: the app's toast says so as the home
+    // screen is back.
+    onLimitsChange: (limits) => {
+      window.setTimeout(() => showToast('Limits updated'), LIMITS_TOAST_MS);
+      cardOptions?.onLimitsChange?.(limits);
     },
     // Apple's flow is done and sliding away: the app's toast says so.
     onAddToWallet: () => {
