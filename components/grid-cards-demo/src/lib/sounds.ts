@@ -77,8 +77,8 @@ export type SoundName =
   | 'success'
   /** A tap-to-pay approved (the Apple Pay chime). */
   | 'approved'
-  /** A light rising whoosh (the intro's card arriving). */
-  | 'whoosh';
+  /** A soft plop (the intro's card landing). */
+  | 'pop';
 
 // ── Levels and sources ────────────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
   notify: { file: 'notify', gain: 0.22 },
   success: { file: 'approval', gain: 0.42 },
   approved: { file: 'applepay', gain: 0.36 },
-  whoosh: { file: 'whoosh', gain: 0.32 },
+  pop: { file: 'pop', gain: 0.3 },
 };
 
 /** The least time between two plays of the same cue, ms. */
@@ -238,20 +238,12 @@ const SYNTH: Record<SoundName, Recipe> = {
       { kind: 'tone', waveform: 'sine', frequency: 2349, attack: 0.005, decay: 0.2, peak: 0.05, offset: 0.1 },
     ],
   },
-  /** Stand-in: a swell of noise rising through a lowpass. */
-  whoosh: {
-    masterGain: 0.35,
+  /** Stand-in: a round low knock with a little air on top. */
+  pop: {
+    masterGain: 0.45,
     layers: [
-      {
-        kind: 'noise',
-        filterType: 'lowpass',
-        filterFrequency: 300,
-        filterSweepTo: 2200,
-        filterQ: 1,
-        attack: 0.35,
-        decay: 0.45,
-        peak: 0.2,
-      },
+      { kind: 'tone', waveform: 'sine', frequency: 240, attack: 0.003, decay: 0.09, peak: 0.25 },
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1400, filterQ: 1, attack: 0.001, decay: 0.02, peak: 0.08 },
     ],
   },
 };
@@ -591,8 +583,8 @@ const AIR_NOISE_S = 2;
  *  a small wobble is near silent, shallower than drag's square, so a lazy
  *  turn is still heard. Kept well under the presses: the air is felt more
  *  than heard. */
-const AIR_GAIN = 0.09;
-const AIR_CURVE = 1.8;
+const AIR_GAIN = 0.045;
+const AIR_CURVE = 2;
 /** Nothing under this: the air is a whisper, not a rumble. */
 const AIR_FLOOR = 250;
 /** The lowpass opens with speed: a breath at a lazy turn, a rush at a fling. */

@@ -22,7 +22,7 @@ mkdir -p "$out"
 
 # name | source | start (s) | end (s) | fade-out (s, optional; 0.02 default)
 clips=(
-  "whoosh|$refs/epidemic/swoosh_light.wav|0.25|1.45|0.10"
+  "pop|$refs/studies/payment-panel/01_ui-plop-soft-panel.wav|0|0.14"
   "approval|$refs/epidemic/approval_success.caf|0|1.09"
   "applepay|$refs/processed/applepay-success.caf|0.05|1.0"
   "keyclick|$refs/sampled/ios-keyboard-click-tight.caf|0.028|0.105"

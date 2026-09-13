@@ -231,9 +231,8 @@ export interface IntroSound {
 
 /** Sounds on the intro's clock: a tick as each line of the blueprint starts
  *  to draw (the crosses, the outline, the dimensions, the leader, the chip
- *  plate, then the six pads in a quick run), resolving into the whoosh as
- *  the card comes through behind it. The whoosh starts as the pads finish,
- *  so its crest (0.45 s in) lands as the blueprint begins to go. */
+ *  plate, then the six pads in a quick run), and a soft pop as the card
+ *  lands: the moment the blueprint starts to go and the card is there. */
 const TICKS: ReadonlyArray<[key: string, name: SoundName, gain: number]> = [
   ['cross-0', 'tickBright', 0.5],
   ['outline', 'tick', 0.6],
@@ -248,10 +247,9 @@ const TICKS: ReadonlyArray<[key: string, name: SoundName, gain: number]> = [
   ['pad-4', 'snap', 0.9],
   ['pad-5', 'snap', 0.9],
 ];
-const lastPad = CUES['pad-5'].at;
 export const INTRO_SOUNDS: ReadonlyArray<IntroSound> = [
   ...TICKS.map(([key, name, gain]) => ({ at: CUES[key].at * TIME_SCALE, name, gain, gap: 0 })),
-  { at: (lastPad + 0.05) * TIME_SCALE, name: 'whoosh' as const },
+  { at: REVEAL_AT * TIME_SCALE, name: 'pop' as const },
 ].sort((a, b) => a.at - b.at);
 
 const clamp01 = (u: number) => Math.min(1, Math.max(0, u));
