@@ -84,9 +84,6 @@ export class CardMotion {
   /** Where the spin and pitch settle; re-picked on release and when the wants change. */
   private targetY = 0;
   private targetX = 0;
-  /** The face the card was settling on when grabbed, so the release can say
-   *  whether it turned the card over. */
-  private faceAtGrab: 0 | 1 = 0;
   private lastWantBack = false;
   private lastHold = false;
   private time = 0;
@@ -112,7 +109,6 @@ export class CardMotion {
     this.lastDragT = now;
     this.dragVY = 0;
     this.dragVX = 0;
-    this.faceAtGrab = faceParity(this.targetY, this.targetX);
   }
 
   /** Pointer travel since the last event, in stage px. */
@@ -131,10 +127,8 @@ export class CardMotion {
     this.dragVX = this.dragVX * 0.6 + (dxDeg / dt) * 0.4;
   }
 
-  /** Lets go. Returns whether the card is now headed for the other face
-   *  than the one it was grabbed on (a turn-over, not a spin that came back). */
-  endDrag(now = performance.now()): { turned: boolean } {
-    if (!this.dragging) return { turned: false };
+  endDrag(now = performance.now()) {
+    if (!this.dragging) return;
     this.dragging = false;
     // The smoothed velocity is only updated by moves: a drag that paused
     // before letting go still holds the speed it had, which would fling the
@@ -152,7 +146,6 @@ export class CardMotion {
       this.spinVY = (this.targetY - this.spinY) * RELEASE_KICK;
       this.pitchV = (this.targetX - this.pitch) * RELEASE_KICK;
     }
-    return { turned: faceParity(this.targetY, this.targetX) !== this.faceAtGrab };
   }
 
   /** The spin to settle on, given where the pitch is settling: the reveal
@@ -177,6 +170,18 @@ export class CardMotion {
 
   get isDragging() {
     return this.dragging;
+  }
+
+  /** How fast the card is turning, 0..1 of the fastest release it takes:
+   *  under the hand, the smoothed drag rate (fading once the hand pauses, as
+   *  the release does); let go, the spring's. */
+  get turnSpeed() {
+    if (this.dragging) {
+      const since = performance.now() - this.lastDragT;
+      const carry = since > FLING_STALE_MS ? 0 : 1 - since / FLING_STALE_MS;
+      return Math.min(1, (Math.hypot(this.dragVY, this.dragVX) * carry) / MAX_FLING);
+    }
+    return Math.min(1, Math.hypot(this.spinVY, this.pitchV) / MAX_FLING);
   }
 
   /** Settled on a face: not being dragged, not spinning. (The cursor tilt
@@ -242,12 +247,6 @@ export class CardMotion {
     const facing = Math.cos((rotY * Math.PI) / 180) * Math.cos((rotX * Math.PI) / 180);
     return { rotX, rotY, rotZ: flop ? 180 : 0, facing, dx, dy };
   }
-}
-
-/** Which face a card settled at these angles shows: 0 the front, 1 the back.
- *  Either axis turns it over, so the half turns on both count together. */
-export function faceParity(spinDeg: number, pitchDeg: number): 0 | 1 {
-  return ((Math.abs(Math.round(spinDeg / 180)) + Math.abs(Math.round(pitchDeg / 180))) % 2) as 0 | 1;
 }
 
 /** Nearest angle to `a` that is `parity` × 180 modulo `period` (360 = a fixed

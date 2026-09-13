@@ -10,7 +10,7 @@ import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetri
 import { AnimatedLock } from '@/apps/shared/icons';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { canScrollBy } from '@/lib/scroll';
-import { play, playHover } from '@/lib/sounds';
+import { airflow, play, playHover, type Airflow } from '@/lib/sounds';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import type { CardHome } from '@/apps/shared/card';
 import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
@@ -50,6 +50,10 @@ const GLIDE_TAU = 0.14;
 const CAMERA_Z = 2000;
 /** How far outside the brand's box (spec px) still grabs it. */
 const BRAND_GRAB_MARGIN = 24;
+/** The card's air: opens above this turn speed (0..1 of the fastest
+ *  release), and closes once the card has been under it this long (s). */
+const AIR_ON = 0.04;
+const AIR_OFF_S = 0.35;
 /** A press that travels less than this (screen px) is a click. */
 const CLICK_SLOP = 4;
 /** A move snaps within this many screen px of a guide. */
@@ -311,7 +315,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     setLockMark((m) => (card.frozen ? 'locked' : m === 'locked' ? 'unlocking' : m));
   }, [card.frozen]);
   const dimmed = card.closed || lockMark !== null;
-  useCardMomentSounds({ issued, issuing, revealed, frozen: card.frozen, closed: card.closed });
+  useCardMomentSounds({ issued, issuing, frozen: card.frozen, closed: card.closed });
   live.current.reduceMotion = reduceMotion;
   live.current.orientation = design.orientation;
   // The composed face and the card's footprint on screen, for the card as held.
@@ -783,8 +787,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     }
     if (!drag.current || e.pointerId !== drag.current.id) return;
     drag.current = null;
-    // The turn-over swishes as it is let go; a spin that comes back is silent.
-    if (motion.endDrag(e.timeStamp).turned) play('swish');
+    motion.endDrag(e.timeStamp);
     e.currentTarget.classList.remove(styles.hitDragging);
     // A press on the brand that did not become a drag: select it.
     if (pendingSelect.current?.id === e.pointerId) {
@@ -812,7 +815,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (drag.current) {
       drag.current = null;
       pendingSelect.current = null;
-      if (motion.endDrag(performance.now()).turned) play('swish');
+      motion.endDrag(performance.now());
       hit?.classList.remove(styles.hitDragging);
     }
   };
@@ -1326,6 +1329,16 @@ const CardRig = memo(function CardRig({
   const dpr = useThree((s) => s.viewport.dpr);
   const get = useThree((s) => s.get);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
+  // The turning card's air (see the frame loop), and how long it has been still.
+  const airRef = useRef<Airflow | null>(null);
+  const airStill = useRef(0);
+  useEffect(
+    () => () => {
+      airRef.current?.stop();
+      airRef.current = null;
+    },
+    [],
+  );
   // The last frame painted: the carrier's place, the card's turn, and the
   // canvas's size. A frame that lands within the epsilons of it, with
   // nothing marked dirty, isn't painted again (see the gate below).
@@ -1449,6 +1462,24 @@ const CardRig = memo(function CardRig({
     });
     const bob = pose.dy * (1 - t);
     live.current.facing = pose.facing;
+    // The air the turning card moves: a voice that follows its speed, so a
+    // lazy turn breathes and a fling rushes, and it dies as the spring
+    // settles. Opened when the card starts turning, closed once it has been
+    // still for a moment. Held or in flight the card does not spin.
+    const speed = motion.turnSpeed;
+    const air = airRef.current;
+    if (speed > AIR_ON) {
+      if (!air) airRef.current = airflow();
+      airRef.current!.set(speed);
+      airStill.current = 0;
+    } else if (air) {
+      air.set(speed);
+      airStill.current += dt;
+      if (airStill.current > AIR_OFF_S && !motion.isDragging) {
+        air.stop();
+        airRef.current = null;
+      }
+    }
     // Stage px → scene: origin at the stage center, y up.
     c.position.set(x + pose.dx * s - size.width / 2, size.height / 2 - (y + bob), 0);
     c.scale.setScalar(s);

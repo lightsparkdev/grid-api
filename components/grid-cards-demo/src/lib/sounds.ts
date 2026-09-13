@@ -6,10 +6,13 @@
  *
  * Two kinds of cue. The small ones (hover tick, press, snap, decline) are
  * synthesized live with Web Audio; the rich ones (approval, Apple Pay,
- * lock, notification, key click, the card's swish) are short samples in
- * `/assets/sounds/`, built by `scripts/build-sounds.sh`. Every sampled cue
- * has a synthesized stand-in that plays until its sample has decoded, or
- * when the asset is missing, so nothing depends on the files being there.
+ * lock, notification, key click) are short samples in `/assets/sounds/`,
+ * built by `scripts/build-sounds.sh`. Every sampled cue has a synthesized
+ * stand-in that plays until its sample has decoded, or when the asset is
+ * missing, so nothing depends on the files being there. Besides the cues
+ * there is `airflow()`: a continuous voice for something turning through
+ * the air, which the caller writes a speed into every frame (the card's
+ * turn-over).
  *
  * Rules, in the order `play` applies them: nothing during SSR; nothing
  * while muted (`localStorage['ls-demo-sounds-muted']`, shared across the
@@ -55,7 +58,7 @@ export type SoundName =
   | 'pressLow'
   /** Keyboard-driven text and nudges. Sampled iOS key click. */
   | 'keyClick'
-  /** The card turning over. */
+  /** A short thin swish (a sheet turning). The card uses `airflow()` instead. */
   | 'swish'
   /** A declined purchase: a short low double. */
   | 'decline'
@@ -458,7 +461,7 @@ export function subscribeMuted(cb: (muted: boolean) => void): () => void {
 type Suppressed = 'muted' | 'hidden' | 'no-gesture' | 'throttled' | 'no-audio';
 
 interface LogEntry {
-  name: SoundName;
+  name: SoundName | 'airflow';
   at: number;
   played: boolean;
   reason?: Suppressed;
@@ -536,6 +539,128 @@ export function playHover(name: SoundName = 'tick', pointerType?: string) {
  *  `onPointerEnter={hoverSound()}`. */
 export function hoverSound(name: SoundName = 'tick') {
   return (e: { pointerType?: string }) => playHover(name, e.pointerType);
+}
+
+// ── Airflow: a continuous voice driven by speed ───────────────────────────────
+
+/** A voice for something turning or moving through the air, written to
+ *  every frame. `set(speed)` takes 0..1 (0 still, 1 the fastest the thing
+ *  goes); the voice follows it with a short lag. `stop()` fades it out. */
+export interface Airflow {
+  set(speed: number): void;
+  stop(): void;
+}
+
+const AIR_NOISE_S = 2;
+/** Loudness at full speed, and the curve under it: steeper than linear, so
+ *  a small wobble is near silent, shallower than drag's square, so a lazy
+ *  turn is still heard. */
+const AIR_GAIN = 0.55;
+const AIR_CURVE = 1.6;
+/** The lowpass opens with speed: a breath at a lazy turn, a rush at a fling. */
+const AIR_LOW_MIN = 180;
+const AIR_LOW_MAX = 1400;
+/** A resonant body under it, for depth. */
+const AIR_BODY_MIN = 220;
+const AIR_BODY_MAX = 600;
+const AIR_BODY_MIX = 0.6;
+/** How fast the voice follows the speed (s). */
+const AIR_LAG = 0.035;
+const AIR_FADE_S = 0.12;
+/** A voice nobody has written to for this long is stopped (a paused frame loop). */
+const AIR_WATCHDOG_MS = 500;
+
+let airNoise: AudioBuffer | null = null;
+function noiseBuffer(context: AudioContext): AudioBuffer {
+  if (airNoise && airNoise.sampleRate === context.sampleRate) return airNoise;
+  const length = Math.floor(AIR_NOISE_S * context.sampleRate);
+  const buffer = context.createBuffer(1, length, context.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) data[i] = 2 * Math.random() - 1;
+  airNoise = buffer;
+  return buffer;
+}
+
+const NO_AIR: Airflow = { set: () => {}, stop: () => {} };
+
+/**
+ * Starts an airflow voice, silent until `set` is written. Subject to the
+ * same gates as `play` (muted, hidden, no gesture yet, no Web Audio), in
+ * which case the voice is a no-op and safe to write to.
+ */
+export function airflow(): Airflow {
+  if (typeof window === 'undefined') return NO_AIR;
+  if (isMuted() || document.visibilityState !== 'visible' || !hasGesture()) return NO_AIR;
+  const context = getAudioContext();
+  if (!context) return NO_AIR;
+  if (context.state !== 'running') {
+    try {
+      void context.resume();
+    } catch {
+      return NO_AIR;
+    }
+  }
+  const destination = bus ?? context.destination;
+  const now = context.currentTime;
+
+  const source = context.createBufferSource();
+  source.buffer = noiseBuffer(context);
+  source.loop = true;
+
+  const rumble = context.createBiquadFilter();
+  rumble.type = 'highpass';
+  rumble.frequency.value = 70;
+
+  const low = context.createBiquadFilter();
+  low.type = 'lowpass';
+  low.Q.value = 0.8;
+  low.frequency.setValueAtTime(AIR_LOW_MIN, now);
+
+  const body = context.createBiquadFilter();
+  body.type = 'bandpass';
+  body.Q.value = 1.6;
+  body.frequency.setValueAtTime(AIR_BODY_MIN, now);
+  const bodyGain = context.createGain();
+  bodyGain.gain.value = AIR_BODY_MIX;
+
+  const gain = context.createGain();
+  gain.gain.setValueAtTime(0, now);
+
+  source.connect(rumble);
+  rumble.connect(low).connect(gain);
+  rumble.connect(body).connect(bodyGain).connect(gain);
+  gain.connect(destination);
+  source.start(now);
+
+  let stopped = false;
+  let watchdog = 0;
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    window.clearTimeout(watchdog);
+    const t = context.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setTargetAtTime(0, t, AIR_FADE_S / 4);
+    source.stop(t + AIR_FADE_S);
+    source.onended = () => gain.disconnect();
+  };
+  const set = (speed: number) => {
+    if (stopped) return;
+    if (isMuted()) {
+      stop();
+      return;
+    }
+    window.clearTimeout(watchdog);
+    watchdog = window.setTimeout(stop, AIR_WATCHDOG_MS);
+    const s = Math.max(0, Math.min(1, speed));
+    const t = context.currentTime;
+    gain.gain.setTargetAtTime(AIR_GAIN * s ** AIR_CURVE, t, AIR_LAG);
+    low.frequency.setTargetAtTime(AIR_LOW_MIN + (AIR_LOW_MAX - AIR_LOW_MIN) * s, t, AIR_LAG);
+    body.frequency.setTargetAtTime(AIR_BODY_MIN + (AIR_BODY_MAX - AIR_BODY_MIN) * s, t, AIR_LAG);
+  };
+  watchdog = window.setTimeout(stop, AIR_WATCHDOG_MS);
+  record({ name: 'airflow', at: performance.now(), played: true, via: 'synth' });
+  return { set, stop };
 }
 
 type Handler<E> = (e: E) => void;
