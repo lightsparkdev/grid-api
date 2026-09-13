@@ -70,7 +70,7 @@ export type SoundName =
   | 'decline'
   /** The lock seating on the card (Apple's lock click). */
   | 'lock'
-  /** The lock leaving. The same click, quieter. */
+  /** The lock leaving (iOS 7's unlock click). */
   | 'unlock'
   /** A push notification landing (iOS "Rebound"). */
   | 'notify'
@@ -100,7 +100,7 @@ const MASTER_GAIN = 0.6;
  *  and the gain applied to it. Files peak at -3 dBFS. */
 const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
   lock: { file: 'lock', gain: 0.24 },
-  unlock: { file: 'lock', gain: 0.16 },
+  unlock: { file: 'unlock', gain: 0.24 },
   notify: { file: 'notify', gain: 0.18 },
   success: { file: 'approval', gain: 0.32 },
   issued: { file: 'issued', gain: 0.34 },
