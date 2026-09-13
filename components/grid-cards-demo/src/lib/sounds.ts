@@ -56,6 +56,9 @@ export type SoundName =
   | 'press'
   /** A lower press: Remove, Close card. */
   | 'pressLow'
+  /** A primary CTA: a deeper press and its release, two beats (the iOS
+   *  demo's confirm tap). */
+  | 'confirm'
   /** Keyboard-driven text and nudges. Sampled iOS key click. */
   | 'keyClick'
   /** A short thin swish (a sheet turning). The card uses `airflow()` instead. */
@@ -81,6 +84,7 @@ const ASSET_BASE = '/assets/sounds/';
 /** Sampled cues: the file (without extension; `.m4a` first, `.mp3` fallback)
  *  and the gain applied to it. Files peak at -3 dBFS. */
 const SAMPLES: Partial<Record<SoundName, { file: string; gain: number }>> = {
+  confirm: { file: 'confirm', gain: 0.3 },
   keyClick: { file: 'keyclick', gain: 0.14 },
   swish: { file: 'swish', gain: 0.22 },
   lock: { file: 'lock', gain: 0.3 },
@@ -162,6 +166,14 @@ const SYNTH: Record<SoundName, Recipe> = {
     masterGain: 0.5,
     layers: [
       { kind: 'noise', filterType: 'bandpass', filterFrequency: 750, filterQ: 1.2, attack: 0.001, decay: 0.035, peak: 0.16 },
+    ],
+  },
+  /** Stand-in: the knock, lower, and its release 180 ms on. */
+  confirm: {
+    masterGain: 0.5,
+    layers: [
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 900, filterQ: 1.2, attack: 0.001, decay: 0.03, peak: 0.16 },
+      { kind: 'noise', filterType: 'bandpass', filterFrequency: 1200, filterQ: 1.4, attack: 0.001, decay: 0.02, peak: 0.1, offset: 0.18 },
     ],
   },
   keyClick: {

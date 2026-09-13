@@ -22,6 +22,7 @@ mkdir -p "$out"
 
 # name | source | start (s) | end (s)
 clips=(
+  "confirm|$refs/epidemic/confirm_tap.caf|0|0.245"
   "approval|$refs/epidemic/approval_success.caf|0|1.09"
   "applepay|$refs/processed/applepay-success.caf|0.05|1.0"
   "keyclick|$refs/sampled/ios-keyboard-click-tight.caf|0.028|0.105"

@@ -163,7 +163,7 @@ export function ApplePayAddCard({ card }: { card: CardControls }) {
               type="button"
               className={clsx(styles.continue, !intro && styles.continueDim)}
               disabled={!intro}
-              {...pressable({ onClick: card.confirmAddToWallet, disabled: !intro })}
+              {...pressable({ onClick: card.confirmAddToWallet, disabled: !intro }, { press: 'confirm' })}
             >
               {intro ? (
                 // Apple's prominent button, as iOS draws it now: blue glass.

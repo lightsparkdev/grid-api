@@ -57,7 +57,7 @@ export function FlowPicker({ wallet, running, onAction }: FlowPickerProps) {
             type="button"
             className={clsx(styles.option, enabled && styles.optionEnabled)}
             disabled={!enabled}
-            {...pressable({ onClick: () => enabled && onAction(action.id), disabled: !enabled })}
+            {...pressable({ onClick: () => enabled && onAction(action.id), disabled: !enabled }, { press: 'confirm' })}
           >
             <span className={styles.optionIcon}>
               <Icon size={24} />
