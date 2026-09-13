@@ -487,3 +487,16 @@ export function getSurfaceMaps(
   }
   return maps;
 }
+
+/** Let a bake go. The worker calls this once a bake's bitmaps have shipped:
+ *  the page caches those, so the worker's canvases (two 2048-wide maps a
+ *  bake, some 500 MB across every variant) would only sit there. */
+export function forgetSurfaceMaps(
+  surface: Surface,
+  side: 'front' | 'back',
+  plain: boolean,
+  mark: boolean,
+  orientation: Orientation,
+): void {
+  surfaceCache.delete(surfaceKey(surface, side, plain, mark, orientation));
+}

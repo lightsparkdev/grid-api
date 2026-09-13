@@ -6,8 +6,8 @@
  * the page's own (`surfaceMaps`, `facePaint`); `makeCanvas` gives it an
  * OffscreenCanvas where there is no document.
  */
-import type { FaceAssets } from './facePaint';
-import { getSurfaceMaps, type Surface } from './surfaceMaps';
+import { makeCanvas, type FaceAssets } from './facePaint';
+import { forgetSurfaceMaps, getSurfaceMaps, type Surface } from './surfaceMaps';
 import type { Orientation } from '@/data/design';
 
 export interface BakeJob {
@@ -32,8 +32,20 @@ self.onmessage = async (e: MessageEvent<BakeRequest>) => {
   const msg = e.data;
   if (msg.type === 'init') {
     // The bake code draws these with drawImage / createPattern, which take a
-    // bitmap as they take an image; the type is the page's.
-    assets = msg.assets as unknown as FaceAssets;
+    // canvas as they take an image; the type is the page's. The bitmaps
+    // arrive living on the GPU, and every bake that drew one into its
+    // (software) canvas read it back from there: a stall in the GPU process
+    // per bake, which the page's compositor shares. Each is drawn once into a
+    // software canvas of its own size here, and the bakes draw from that.
+    const soft: Partial<Record<keyof FaceAssets, HTMLCanvasElement>> = {};
+    for (const name of Object.keys(msg.assets) as Array<keyof FaceAssets>) {
+      const bitmap = msg.assets[name];
+      const c = makeCanvas(bitmap.width, bitmap.height);
+      c.getContext('2d')!.drawImage(bitmap, 0, 0);
+      bitmap.close();
+      soft[name] = c;
+    }
+    assets = soft as unknown as FaceAssets;
     return;
   }
   if (!assets) {
@@ -53,6 +65,7 @@ self.onmessage = async (e: MessageEvent<BakeRequest>) => {
       createImageBitmap(maps.normal as unknown as OffscreenCanvas, { imageOrientation: 'flipY' }),
     ]);
     (self as unknown as Worker).postMessage({ type: 'baked', id: msg.id, orm, normal } satisfies BakeResponse, [orm, normal]);
+    forgetSurfaceMaps(surface, side, plain, mark, orientation);
   } catch (err) {
     (self as unknown as Worker).postMessage({
       type: 'failed',
