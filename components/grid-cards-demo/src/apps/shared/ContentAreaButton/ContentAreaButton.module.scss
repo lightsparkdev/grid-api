@@ -106,6 +106,14 @@
   }
 }
 
+/* A filled button for an action that can't be undone: iOS's red, white ink. */
+.destructive {
+  background: var(--ios-system-red, #ff3b30);
+  color: #ffffff;
+  --content-area-hover: rgba(255, 255, 255, 0.12);
+  --content-area-active: rgba(255, 255, 255, 0.2);
+}
+
 .icon {
   position: relative;
   z-index: 1;

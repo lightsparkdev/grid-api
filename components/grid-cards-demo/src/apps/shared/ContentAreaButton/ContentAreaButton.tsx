@@ -7,7 +7,7 @@ interface ContentAreaButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   children?: ReactNode;
   /** Auth hero = quaternary; wallet sheet = bordered (Figma 90:13451); primary
    *  CTA = filled; inline chip on a card (Use max) = secondary. */
-  variant?: 'quaternary' | 'secondary' | 'bordered' | 'filled';
+  variant?: 'quaternary' | 'secondary' | 'bordered' | 'filled' | 'destructive';
   /** Small = the iOS Small content-area chip (Figma 109:29074) — hugs its label. */
   size?: 'default' | 'small';
 }
@@ -33,9 +33,11 @@ export function ContentAreaButton({
           ? styles.bordered
           : variant === 'filled'
             ? styles.filled
-            : variant === 'secondary'
-              ? styles.secondary
-              : styles.quaternary,
+            : variant === 'destructive'
+              ? clsx(styles.filled, styles.destructive)
+              : variant === 'secondary'
+                ? styles.secondary
+                : styles.quaternary,
         size === 'small' && styles.small,
         iconOnly && styles.iconOnly,
         className,

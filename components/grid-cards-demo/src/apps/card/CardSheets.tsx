@@ -3,7 +3,6 @@
 import clsx from 'clsx';
 import { useEffect, useState, type ReactNode } from 'react';
 import { IconWallet1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconWallet1';
-import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconArrowUndoUp } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowUndoUp';
 import { BottomSheet } from '@/apps/shared/BottomSheet';
 import { ContentAreaButton } from '@/apps/shared/ContentAreaButton';
@@ -24,10 +23,9 @@ interface ShellProps {
   title: string;
   sub?: ReactNode;
   children: ReactNode;
-  tone?: 'default' | 'danger';
 }
 
-function SheetShell({ open, onDismiss, icon, title, sub, children, tone = 'default' }: ShellProps) {
+function SheetShell({ open, onDismiss, icon, title, sub, children }: ShellProps) {
   const theme = useThemeMode();
   return (
     <BottomSheet
@@ -38,7 +36,7 @@ function SheetShell({ open, onDismiss, icon, title, sub, children, tone = 'defau
       glass={{ ...SHEET_GLASS, tint: 'var(--float-sheet-tint)' }}
     >
       <div className={styles.header}>
-        <span className={clsx(styles.tile, tone === 'danger' && styles.tileDanger)} aria-hidden>
+        <span className={styles.tile} aria-hidden>
           {icon}
         </span>
       </div>
@@ -208,8 +206,7 @@ export function CloseCardSheet({ card }: { card: CardControls }) {
     <SheetShell
       open={open}
       onDismiss={card.closeSheet}
-      tone="danger"
-      icon={<IconCrossMedium size={28} />}
+      icon={<SfSymbol name="xmark" size={24} />}
       title={closed ? 'Card is closed' : 'Close this card?'}
       sub={
         closed
@@ -218,7 +215,7 @@ export function CloseCardSheet({ card }: { card: CardControls }) {
       }
     >
       <div className={styles.actions}>
-        <ContentAreaButton type="button" variant="filled" onClick={card.closeCard}>
+        <ContentAreaButton type="button" variant={closed ? 'filled' : 'destructive'} onClick={card.closeCard}>
           {closed ? 'Try closing again' : 'Close card'}
         </ContentAreaButton>
         <ContentAreaButton type="button" variant="bordered" onClick={card.closeSheet}>

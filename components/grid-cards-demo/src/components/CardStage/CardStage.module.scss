@@ -405,12 +405,14 @@
 /* Closed: the line in the middle of the dimmed card, quiet: the Activity
    rows' description type, the label ink at 30%. */
 .closedMark {
+  /* Centered by its box (Motion owns the transform for the entrance; a
+     translate here was overwritten and the line sat low). */
   position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
-  transform: translateY(-50%);
   @include ios.ios-text-footnote;
   text-align: center;
   color: color-mix(in srgb, var(--text-primary) 30%, transparent);
