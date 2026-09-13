@@ -44,7 +44,7 @@ export function ContentAreaButton({
         className,
       )}
       {...rest}
-      {...pressable(rest, { press: variant === 'destructive' ? 'pressLow' : variant === 'filled' ? 'confirm' : 'press' })}
+      {...pressable(rest, { press: variant === 'destructive' ? 'pressLow' : 'press' })}
     >
       {icon ? <span className={styles.icon}>{icon}</span> : null}
       {children != null ? <span className={styles.label}>{children}</span> : null}

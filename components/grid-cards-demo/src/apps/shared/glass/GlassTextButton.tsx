@@ -28,12 +28,7 @@ export function GlassTextButton({
   const overlayGlass = useOverlayGlass();
 
   return (
-    <button
-      type={type}
-      className={clsx(styles.root, className)}
-      {...rest}
-      {...pressable(rest, { press: isPrimary ? 'confirm' : 'press' })}
-    >
+    <button type={type} className={clsx(styles.root, className)} {...rest} {...pressable(rest)}>
       <GlassOver
         className={styles.glass}
         backdrop={isPrimary ? TEXT_GLASS_PRIMARY_BACKDROP : TEXT_GLASS_BACKDROP}
