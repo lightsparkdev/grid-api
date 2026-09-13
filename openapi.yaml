@@ -8589,7 +8589,7 @@ paths:
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` status do not count toward the limit.
 
-        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails).
+        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails).
       operationId: createCard
       tags:
         - Cards
@@ -8815,7 +8815,7 @@ paths:
         - `status: CLOSED`: terminal close. The card transitions to `status: "CLOSED"` with `statusReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. The funding source is detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
         - `fundingSource` change: returns the updated card with the new binding and fires no webhook.
 
-        The `card.state_change` webhook fires on every successful `status` transition.
+        The `card.status_change` webhook fires on every successful `status` transition.
       operationId: updateCardById
       tags:
         - Cards
