@@ -67,10 +67,11 @@ The card comes back in `status: "PROCESSING"` and activates through the
 no active delegated key declines every authorization, so complete the next
 section before you show the card to the cardholder.
 
-Set `maxSpendPerTransaction` and `maxSpendPerDay`. The delegated key itself
-carries no limits: while it is `ACTIVE`, Grid can sign any transfer from the
-wallet with it. The card's spend limits are the control on how much a
-compromised card can pull.
+Set `maxSpendPerTransaction` and `maxSpendPerDay`. Spend controls work the same
+way for a wallet-funded card as for any other card: the values on the card cap
+what that card can authorize, and `cardConfigs` in your platform config can set
+platform-wide caps that apply to every card you issue. When both are set, Grid
+enforces the lower of the two.
 
 ## Create the delegated key
 
