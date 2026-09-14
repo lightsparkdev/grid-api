@@ -21,9 +21,14 @@ Two card-statement corrections to `CardTransaction`:
   folding into the purchase's `refundedAmount`. The purchase stays `SETTLED`; the refund
   fires its own `CARD_TRANSACTION.*` webhooks on the refund row. To reverse a sandbox
   return, pass the refund row's id to `POST /sandbox/cards/{id}/simulate/return_reversal`.
-- **`DECLINED` status.** An authorization declined before any money moved now reports
-  `DECLINED` (and fires `CARD_TRANSACTION.DECLINED`) instead of `EXCEPTION`, which is
-  reserved for settlement anomalies. Declines must be excluded from cardholder
+- **`DECLINED` status with `cardDeclinedReason`.** An authorization declined before any
+  money moved now reports `DECLINED` (and fires `CARD_TRANSACTION.DECLINED`) instead of
+  `EXCEPTION`, which is reserved for settlement anomalies. The new `cardDeclinedReason`
+  field explains why Grid declined the authorization: `CARD_NOT_ACTIVE` (frozen or closed
+  card), `SPEND_LIMIT_EXCEEDED`, `INSUFFICIENT_FUNDS` (sandbox only—production approves
+  underfunded auths and resolves them as `EXCEPTION`), `NO_ELIGIBLE_FUNDING_SOURCE` (e.g.,
+  Embedded Wallet with no delegated key), `BLOCKED` (merchant category or transaction
+  blocked), `UNSUPPORTED_NETWORK`, or `OTHER`. Declines must be excluded from cardholder
   statements.
 - Card rows now carry the same full currency metadata (`decimals`, `name`, `symbol`) as
   payment rows, and `merchant` gains `city` and `state` when the network reports them.
