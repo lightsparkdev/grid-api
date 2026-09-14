@@ -1,0 +1,138 @@
+parameters:
+  - name: id
+    in: path
+    description: System-generated unique card identifier
+    required: true
+    schema:
+      type: string
+post:
+  summary: Add a card to a digital wallet
+  description: >-
+    Exchange the values your app received from Apple Pay, Google Pay, or
+    Samsung Pay for the encrypted provisioning payload that completes adding
+    the card to that wallet (in-app push provisioning). Call it from your
+    backend inside the wallet SDK's credentials callback and hand the
+    response straight back to the SDK.
+
+
+    The payload is encrypted to the wallet provider's keys, so neither your
+    app nor your servers ever see card data. Do not store or log it; it is
+    valid for one provisioning attempt.
+
+
+    Cardholders can always add a card to a wallet by typing its details in
+    manually — that path needs nothing from you. This endpoint is for the
+    in-app "Add to Wallet" button, which additionally requires approval from
+    each wallet provider. See
+    [Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
+
+    Only `ACTIVE` cards can be added. Every call is audit-logged with the
+    requesting actor and the target wallet.
+  operationId: tokenizeCard
+  tags:
+    - Cards
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/cards/CardTokenizationRequest.yaml
+        examples:
+          applePay:
+            summary: Apple Pay
+            value:
+              wallet: APPLE_PAY
+              certificate: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM=
+              nonce: MTIzNDU2Nzg=
+              nonceSignature: c2lnbmF0dXJl
+          googlePay:
+            summary: Google Pay (Unified Push Provisioning)
+            value:
+              wallet: GOOGLE_PAY
+              walletAccountId: wallet-account-8f14e45f
+              serverSessionId: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+              opaquePaymentCardRequested: false
+          samsungPay:
+            summary: Samsung Pay
+            value:
+              wallet: SAMSUNG_PAY
+              walletAccountId: wallet-account-8f14e45f
+              deviceId: device-3c59dc04
+  responses:
+    '200':
+      description: Provisioning payload minted.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/cards/CardTokenizationResponse.yaml
+          examples:
+            applePay:
+              summary: Apple Pay
+              value:
+                wallet: APPLE_PAY
+                applePay:
+                  activationData: YWN0aXZhdGlvbi1kYXRh
+                  encryptedPassData: ZW5jcnlwdGVkLXBhc3MtZGF0YQ==
+                  ephemeralPublicKey: ZXBoZW1lcmFsLXB1YmxpYy1rZXk=
+            googlePay:
+              summary: Google Pay
+              value:
+                wallet: GOOGLE_PAY
+                provisioningPayload: eyJjYXJkIjoiLi4uIn0=
+    '400':
+      description: >-
+        Invalid input. A field required by the chosen `wallet` is missing, a
+        field belonging to a different wallet was supplied, or the wallet
+        provider rejected the values (for example, an expired Apple nonce).
+        Restart the add-to-wallet flow in the app to obtain fresh values.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        Forbidden. The session has no attributable actor to audit the request
+        against (for example, an impersonated dashboard session).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. `CARD_NOT_MUTABLE` when the card is `CLOSED`; `CONFLICT`
+        when the card's `cardCapabilities.supportsDigitalWalletTokenization`
+        is false or the card is not `ACTIVE`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Not implemented in this environment. Cards are not enabled for
+        every Grid deployment; environments without a configured card
+        issuer return `501 NOT_IMPLEMENTED`.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

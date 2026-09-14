@@ -65,6 +65,12 @@ Both freeze and close use Grid's `202 → signed-retry` pattern (the same
 pattern as Embedded Wallet credential revocation). See
 [Freezing and closing cards](/cards/card-management/freezing-and-closing).
 
+Cardholders can add a card to Apple Pay, Google Pay, or Samsung Pay by
+typing its details into the wallet with no work on your side. An
+in-app "Add to Wallet" button needs wallet-provider approval plus one
+`POST /cards/{id}/tokenize` call from your backend. See
+[Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
 ## Transactions and reconciliation
 
 Each authorization on a card produces a `CardTransaction` row, with
