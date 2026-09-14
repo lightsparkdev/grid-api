@@ -36,24 +36,21 @@ ships a library your app integrates to start that flow:
 
 When the cardholder taps the button, the wallet SDK produces those
 values, which identify the device and the wallet session. Your app sends
-them to your backend, your backend exchanges them with Grid for an
-encrypted payload, and the wallet SDK uses that payload to finish adding
-the card. The payload is encrypted to the wallet provider's keys, so
-neither your app nor your servers ever see card data.
+them to Grid, an encrypted payload is returned, and the wallet SDK uses
+that payload to finish adding the card. The payload is encrypted to the
+wallet provider's keys, so neither your app nor your servers ever see
+card data.
 
 ```mermaid
 sequenceDiagram
   participant W as Wallet SDK (on device)
   participant A as Your app
-  participant B as Your backend
   participant G as Grid
 
   A->>W: Cardholder taps "Add to Wallet"
   W-->>A: Wallet-specific values (nonce, session id, …)
-  A->>B: Relay values
-  B->>G: POST /cards/{id}/tokenize { wallet, … }
-  G-->>B: 200 { encrypted provisioning payload }
-  B-->>A: Relay payload
+  A->>G: POST /cards/{id}/tokenize { wallet, … }
+  G-->>A: 200 { encrypted provisioning payload }
   A->>W: Hand payload to the SDK
   W-->>A: Card added
 ```
