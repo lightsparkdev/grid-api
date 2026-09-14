@@ -23,13 +23,21 @@
  * first gesture here, or an activation the parent page delegated to the
  * iframe through `allow="autoplay"` (so the intro can sound when the
  * visitor clicked their way to the docs page, and stays silent on a cold
- * load). A play blocked that way is dropped, never fired late on the first
- * click. Hover cues also require a real pointer: `(hover: hover) and
- * (pointer: fine)` and `pointerType === 'mouse'`.
+ * load). A play that was waiting on a gesture is dropped, never fired late
+ * on the first click; a play that was only waiting on the output device to
+ * start (Safari takes a while the first time) plays when it does. Hover
+ * cues also require a real pointer: `(hover: hover) and (pointer: fine)`
+ * and `pointerType === 'mouse'`.
  *
- * The AudioContext is built during idle time and resumed on the first
- * gesture, so the first press only pays a cheap `resume()`: building the
- * context inside the gesture froze it for hundreds of ms.
+ * The AudioContext is built during idle time and resumed on every gesture
+ * that finds it stopped, so the first press only pays a cheap `resume()`
+ * (building the context inside the gesture froze it for hundreds of ms),
+ * and Safari, which interrupts a silent context behind a tab switch and
+ * only lets a gesture start it again, comes back on the next click. The
+ * gesture also starts a silent source: WebKit checks the gesture for that
+ * synchronously, where `resume()` defers the check to a later task. A
+ * context that reports running with a stopped clock (a WebKit stall) is
+ * kicked with a suspend and resume.
  *
  * Levels: `press` is the reference. Hovers sit about 30 dB under it; the
  * sampled cues peak at -3 dBFS on disk and are scaled here. A compressor
@@ -455,7 +463,84 @@ function getAudioContext(): AudioContext | null {
   master.gain.value = MASTER_GAIN;
   master.connect(limiter);
   bus = master;
+  watchState(sharedContext);
   return sharedContext;
+}
+
+// ── Keeping the context running ───────────────────────────────────────────────
+
+/** When the last gesture that can start sound landed in this window, ms on
+ *  the `performance.now()` clock; 0 before any. */
+let lastGestureAt = 0;
+
+/** A `resume()` that takes longer than this was not the output device
+ *  starting: the cue's moment has passed. Safari's first start goes through
+ *  its GPU process and CoreAudio, and a Bluetooth output adds more. */
+const RESUME_LATE_MS = 1500;
+
+/** How long a running context gets to move its clock before it is taken
+ *  for stalled. Rendering advances `currentTime` every few ms. */
+const CLOCK_CHECK_MS = 400;
+
+/** True while `watchState` is kicking a stalled context, so its own
+ *  suspend is not mistaken for an interruption. */
+let kicking = false;
+/** Kicks so far; a context still stalled after these is left alone. */
+let kicks = 0;
+const MAX_KICKS = 3;
+
+/**
+ * Wakes a stopped context from inside a gesture. `resume()` is what does it
+ * in every browser; the one-sample source is for WebKit, which clears its
+ * gesture requirement synchronously when a source starts during the gesture
+ * (`sourceNodeWillBeginPlayback`), where `resume()` runs its gesture check
+ * in a later task.
+ */
+function wake(context: AudioContext) {
+  try {
+    const source = context.createBufferSource();
+    source.buffer = context.createBuffer(1, 1, context.sampleRate);
+    source.connect(context.destination);
+    source.start();
+  } catch {
+    // A context that cannot start a source is not one a gesture will fix.
+  }
+  try {
+    void context.resume().catch(() => {});
+  } catch {
+    // Same.
+  }
+}
+
+/**
+ * Follows the context's state. Running: check that the clock moves, and
+ * kick a stalled context once with a suspend and resume (WebKit can report
+ * running with a stopped destination). Stopped behind our back while the
+ * page is visible (Safari interrupts a silent context on a tab switch and
+ * does not always bring it back): ask for it back; a gesture asks again.
+ */
+function watchState(context: AudioContext) {
+  context.addEventListener('statechange', () => {
+    if (context.state === 'running') {
+      const t0 = context.currentTime;
+      window.setTimeout(() => {
+        if (kicking || context.state !== 'running' || context.currentTime !== t0) return;
+        if (kicks >= MAX_KICKS) return;
+        kicks += 1;
+        kicking = true;
+        void context
+          .suspend()
+          .then(() => context.resume())
+          .catch(() => {})
+          .finally(() => {
+            kicking = false;
+          });
+      }, CLOCK_CHECK_MS);
+      return;
+    }
+    if (kicking || context.state === 'closed') return;
+    if (document.visibilityState === 'visible') void context.resume().catch(() => {});
+  });
 }
 
 const buffers = new Map<string, AudioBuffer>();
@@ -587,16 +672,15 @@ function render(context: AudioContext, name: SoundName, gainScale: number) {
   return 'synth' as const;
 }
 
-/** A `resume()` that takes longer than this was waiting on a gesture: the
- *  cue it was for has passed, and must not fire late on the first click. */
-const RESUME_STALE_MS = 250;
-
 /**
  * Runs `go` against a running context: at once when it is running, or
- * after a prompt `resume()`. Before the browser allows sound (no gesture in
- * this window yet, and no activation delegated to it), `resume()` waits for
- * the gesture; a resume that takes that long is dropped, so nothing plays
- * late. Calls `blocked` when nothing will play.
+ * once `resume()` has brought it back. Before the browser allows sound (no
+ * gesture in this window yet, and no activation delegated to it),
+ * `resume()` waits for the gesture; a resume that a gesture arrived during
+ * was waiting on it, and the cue is dropped so nothing plays late. A resume
+ * with no gesture in between was only waiting on the output device, and
+ * the cue plays when it is up, within `RESUME_LATE_MS`. Calls `blocked`
+ * when nothing will play.
  */
 function whenRunning(context: AudioContext, go: () => void, blocked: () => void) {
   if (context.state === 'running') {
@@ -607,7 +691,9 @@ function whenRunning(context: AudioContext, go: () => void, blocked: () => void)
   try {
     void context.resume().then(
       () => {
-        if (context.state === 'running' && performance.now() - asked < RESUME_STALE_MS) go();
+        const waitedOnGesture = lastGestureAt > asked;
+        const late = performance.now() - asked >= RESUME_LATE_MS;
+        if (context.state === 'running' && !waitedOnGesture && !late) go();
         else blocked();
       },
       () => blocked(),
@@ -940,15 +1026,26 @@ if (typeof window !== 'undefined') {
     setTimeout(preheat, 1500);
   }
 
-  // The first gesture resumes the context, so the cue it carries (and every
-  // one after) plays without waiting on `resume()`.
-  const events = ['pointerdown', 'touchstart', 'keydown'] as const;
+  // Every gesture that finds the context stopped wakes it, so the cue it
+  // carries (and every one after) plays without waiting on `resume()`, and
+  // a context Safari interrupted (a tab switch, another app's audio) is back
+  // on the next click. Capture, so this runs before the handler that plays.
+  // Both ends of a touch: iOS has counted only `touchend` as activation.
+  const events = ['pointerdown', 'touchstart', 'touchend', 'keydown'] as const;
   const onGesture = () => {
+    lastGestureAt = performance.now();
     const context = getAudioContext();
-    if (context?.state === 'suspended') void context.resume();
-    events.forEach((e) => window.removeEventListener(e, onGesture, true));
+    if (context && context.state !== 'running' && context.state !== 'closed') wake(context);
   };
   events.forEach((e) => window.addEventListener(e, onGesture, { capture: true, passive: true }));
+
+  // Back in view: a context stopped while the page was hidden (Safari
+  // interrupts a silent one) does not always come back on its own.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    const context = sharedContext;
+    if (context && context.state !== 'running' && context.state !== 'closed') void context.resume().catch(() => {});
+  });
 
   window.addEventListener('storage', (e) => {
     if (e.key === MUTE_KEY) muteListeners.forEach((cb) => cb(e.newValue === '1'));

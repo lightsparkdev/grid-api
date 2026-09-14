@@ -5,6 +5,7 @@ import { FUNDING_SOURCE_CENTS } from '@/data/actions';
 import type { ToastData } from '@/apps/shared/Toast';
 import {
   LOCK_SEQUENCE_MS,
+  REFUND_MS,
   UNLOCK_SEQUENCE_MS,
   useCardControls,
   type DeclineReason,
@@ -39,10 +40,6 @@ const PHONE_GONE_MS = 900;
 const WALLET_TOAST_MS = 350;
 /** The app's toast lands as the Spending limits page finishes popping. */
 const LIMITS_TOAST_MS = 350;
-/** Dwell on the transaction sheet before the refund runs. */
-const REFUND_START_MS = 1100;
-/** Dwell after a refund before the sheet closes. */
-const REFUND_HOLD_MS = 2200;
 /** Simple state changes (freeze, close) settle after the notification. */
 const NOTICE_SETTLE_MS = 1400;
 /** A page push (the Spending limits page). */
@@ -515,13 +512,16 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           settle(PAGE_PUSH_MS);
           break;
         case 'refund': {
-          // Only a settled purchase can be returned, and only once. None
-          // left: provision one (state only, like the other fast-forwards; it
-          // was spent from the funding source) so the flow has something to
-          // act on.
-          let target = card.rows.find(
-            (r) => r.status === 'SETTLED' && r.direction !== 'CREDIT' && !card.refundOf(r.id),
-          );
+          // The merchant returns the latest purchase not yet returned (the
+          // rows run newest first): the one the visitor just watched. Only a
+          // settled purchase can be returned, so one still pending clears
+          // now, the way the sandbox clearing would. Nothing to return at
+          // all: provision a purchase (state only, like the other
+          // fast-forwards; it was spent from the funding source) so the flow
+          // has something to act on.
+          const c = cardRef.current; // the rows now, not at the tile's click
+          let target = c.rows.find((r) => r.direction !== 'CREDIT' && !c.refundOf(r.id));
+          if (target?.status === 'AUTHORIZED') c.settleRow(target.id);
           if (!target) {
             const seed = TAP_MERCHANTS[0];
             target = {
@@ -531,17 +531,14 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
               cents: parseCents(seed.amount),
               status: 'SETTLED',
             };
-            card.seedSettledRow(target);
-            setDeltaCents((c) => c - target!.cents);
+            c.seedSettledRow(target);
+            setDeltaCents((cents) => cents - target!.cents);
           }
-          const row = target;
-          card.openTransaction(row.id);
-          // The notice and the balance follow the row's flip (onRefund above).
-          later(() => cardRef.current.refundRow(row.id), REFUND_START_MS);
-          later(() => {
-            cardRef.current.closeSheet();
-            settle(500);
-          }, REFUND_START_MS + REFUND_HOLD_MS);
+          // The return lands on its own: the credit row, the push, and the
+          // balance follow (onRefund above). No sheet: that is the
+          // cardholder's, from a tap on the row.
+          c.refundRow(target.id);
+          settle(REFUND_MS + NOTICE_SETTLE_MS);
           break;
         }
         case 'close':

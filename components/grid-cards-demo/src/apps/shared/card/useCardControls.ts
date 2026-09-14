@@ -90,7 +90,8 @@ const WALLET_SETUP_MS = 1500;
 const WALLET_ADDED_MS = 1100;
 /** Authorizations clear a few seconds after they land (the sandbox clearing). */
 const SETTLE_MS = 4500;
-const REFUND_MS = 900;
+/** The merchant's return lands this long after it is asked for. */
+export const REFUND_MS = 900;
 /** A sheet's dismiss, a page's pop, or Apple's cover sliding away, plus a
  *  beat: an event from behind one of them shows in Activity after this. */
 const EVENT_SETTLE_MS = 550;
@@ -155,7 +156,11 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
       fn();
     }, ms);
     timers.current.add(t);
+    return t;
   }, []);
+  /** The clearing that will settle each pending purchase, by row id, so a
+   *  flow that needs the purchase settled now can run it early instead. */
+  const settleTimers = useRef(new Map<string, number>());
   useEffect(() => {
     const set = timers.current;
     return () => set.forEach((t) => window.clearTimeout(t));
@@ -325,6 +330,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   const resetAll = useCallback(() => {
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current.clear();
+    settleTimers.current.clear();
     clearWalletTimers();
     reissue();
     setLimitsState({ perTransactionCents: null, perDayCents: null });
@@ -335,19 +341,41 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     setEvents([]);
   }, [clearWalletTimers, reissue]);
 
+  // The rows at call time, for delayed callers and for the id checks below.
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+
+  /** The purchase `id` clears: the row is SETTLED and the clearing is logged.
+   *  A no-op unless the row is pending. */
+  const settleRow = useCallback(
+    (id: string) => {
+      const pending = settleTimers.current.get(id);
+      if (pending !== undefined) {
+        window.clearTimeout(pending);
+        timers.current.delete(pending);
+        settleTimers.current.delete(id);
+      }
+      const row = rowsRef.current.find((r) => r.id === id);
+      if (!row || row.status !== 'AUTHORIZED') return;
+      const settled: CardTransactionRow = { ...row, status: 'SETTLED' };
+      setRows((prev) => prev.map((r) => (r.id === id ? settled : r)));
+      onSettle?.(settled);
+    },
+    [onSettle],
+  );
+
   /** Record an approved authorization; it settles on its own a few seconds later. */
   const recordAuthorization = useCallback(
     (row: Omit<CardTransactionRow, 'status'>) => {
       const authorized: CardTransactionRow = { ...row, status: 'AUTHORIZED' };
       setRows((prev) => [authorized, ...prev]);
-      later(() => {
-        setRows((prev) =>
-          prev.map((r) => (r.id === row.id && r.status === 'AUTHORIZED' ? { ...r, status: 'SETTLED' } : r)),
-        );
-        onSettle?.({ ...authorized, status: 'SETTLED' });
+      const t = later(() => {
+        settleTimers.current.delete(row.id);
+        settleRow(row.id);
       }, SETTLE_MS);
+      settleTimers.current.set(row.id, t);
     },
-    [later, onSettle],
+    [later, settleRow],
   );
 
   /** Fast-forward helper: a settled purchase that exists without having been
@@ -355,10 +383,6 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
   const seedSettledRow = useCallback((row: Omit<CardTransactionRow, 'status'>, status: TransactionStatus = 'SETTLED') => {
     setRows((prev) => [{ ...row, status }, ...prev]);
   }, []);
-
-  // The rows at call time, for delayed callers and for the id checks below.
-  const rowsRef = useRef(rows);
-  rowsRef.current = rows;
 
   /** A purchase row opens its sheet; a card event row has nothing to open. */
   const openTransaction = useCallback((id: string) => {
@@ -455,6 +479,7 @@ export function useCardControls(options: UseCardControlsOptions = {}) {
     confirmAddToWallet,
     finishAddToWallet,
     recordAuthorization,
+    settleRow,
     seedSettledRow,
     openTransaction,
     refundRow,

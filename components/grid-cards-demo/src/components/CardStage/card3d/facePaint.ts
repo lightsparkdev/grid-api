@@ -329,6 +329,27 @@ export function chipPocketPath(ctx: CanvasRenderingContext2D) {
   roundRectPath(ctx, CHIP.x - CHIP_GAP, CHIP.y - CHIP_GAP, CHIP.w + CHIP_GAP * 2, CHIP_H + CHIP_GAP * 2, CHIP.r + CHIP_GAP);
 }
 
+/** An etched mark's edge is blurred over this many texels each way (the
+ *  relief bake in `surfaceMaps.decorateNormal`). */
+export const ETCH_BLUR = 6;
+
+/**
+ * Takes the chip out of a mask: the module is set into its pocket after the
+ * print, so no ink, varnish, foil, or cut reaches its plate. Clears the
+ * pocket and the relief's blur around it, so an etch stops short of the gap
+ * instead of laying its bevel over the plate's edge. Texels.
+ */
+export function clearChip(ctx: CanvasRenderingContext2D) {
+  const m = CHIP_GAP + ETCH_BLUR;
+  texelSpace(ctx);
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillStyle = '#000';
+  roundRectPath(ctx, CHIP.x - m, CHIP.y - m, CHIP.w + m * 2, CHIP_H + m * 2, CHIP.r + m);
+  ctx.fill();
+  ctx.restore();
+}
+
 /** The 2 × 3 contact outlines in texels (one path). */
 export function chipContactsPath(ctx: CanvasRenderingContext2D) {
   const sx = CHIP_SCALE;
@@ -364,32 +385,33 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, face: {
 
 /**
  * The face's ground. With no print, the bare stock shows: PVC in its own
- * color, or the steel. A printed face is the solid color, or the uploaded art
- * on the front. The studio does all the shading. Leaves the context in
- * texels.
+ * color, or the steel. A printed face is the solid color or the gradient,
+ * and on the front the uploaded art over that, so art with clear areas (an
+ * SVG, a PNG) shows the color through them rather than whatever the canvas
+ * held last (a dragged logo left a trail of itself). The studio does all the
+ * shading. Leaves the context in texels.
  */
 function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, side: Side, art: HTMLImageElement | null) {
   const o = design.orientation;
   const face = faceSize(o);
   texelSpace(ctx);
-  if (art && side === 'front') {
-    specSpace(ctx, o, side);
-    drawCover(ctx, art, face);
-    texelSpace(ctx);
-    return;
-  }
   if (isBare(design)) {
     ctx.fillStyle = stockOf(design).face;
     ctx.fillRect(0, 0, TEX_W, TEX_H);
-    return;
+  } else {
+    // A solid print; the studio does the shading.
+    ctx.fillStyle = design.color!;
+    ctx.fillRect(0, 0, TEX_W, TEX_H);
+    if (design.gradient) {
+      specSpace(ctx, o, side);
+      ctx.fillStyle = gradientPaint(ctx, design.gradient, face, side);
+      ctx.fillRect(0, 0, face.w, face.h);
+      texelSpace(ctx);
+    }
   }
-  // A solid print; the studio does the shading.
-  ctx.fillStyle = design.color!;
-  ctx.fillRect(0, 0, TEX_W, TEX_H);
-  if (design.gradient) {
+  if (art && side === 'front') {
     specSpace(ctx, o, side);
-    ctx.fillStyle = gradientPaint(ctx, design.gradient, face, side);
-    ctx.fillRect(0, 0, face.w, face.h);
+    drawCover(ctx, art, face);
     texelSpace(ctx);
   }
 }
@@ -762,9 +784,9 @@ function drawBrand(ctx: CanvasRenderingContext2D, design: CardDesign, logo: HTML
 
 /**
  * The brand's shape in white on a transparent canvas: the logo's alpha, or the
- * program name as a wordmark, at the layout's opacity. Both the albedo (for
- * foil and etch) and the surface maps (for every treatment but ink) are cut
- * from this.
+ * program name as a wordmark, at the layout's opacity, with the chip's
+ * pocket taken out. Both the albedo (for foil and etch) and the surface maps
+ * (for every treatment but ink) are cut from this.
  */
 export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
@@ -774,12 +796,14 @@ export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null
     ctx.globalCompositeOperation = 'source-in';
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, TEX_W, TEX_H);
+    ctx.globalCompositeOperation = 'source-over';
   }
+  clearChip(ctx);
   return c;
 }
 
-/** The art's alpha as a mask (cover-fit on the composed face), for spot
- *  gloss over art. */
+/** The art's alpha as a mask (cover-fit on the composed face), with the
+ *  chip's pocket taken out, for spot gloss over art. */
 export function paintArtMask(art: HTMLImageElement, o: Orientation): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
@@ -789,6 +813,8 @@ export function paintArtMask(art: HTMLImageElement, o: Orientation): HTMLCanvasE
   ctx.globalCompositeOperation = 'source-in';
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, TEX_W, TEX_H);
+  ctx.globalCompositeOperation = 'source-over';
+  clearChip(ctx);
   return c;
 }
 
