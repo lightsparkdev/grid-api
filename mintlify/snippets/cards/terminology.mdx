@@ -38,6 +38,13 @@ A transaction can have multiple clearings (e.g. split shipments) and
 goes through `AUTHORIZED → PARTIALLY_SETTLED → SETTLED` as clearings
 land.
 
+## Void
+
+A full authorization reversal or an authorization expiry before any
+clearing closes the hold without moving money. The card transaction is
+terminal with `status: "VOIDED"`, `authorizedAmount: 0`, and no
+`settledAmount`.
+
 ## Refund
 
 A merchant-initiated `RETURN` against a settled transaction. Refunds

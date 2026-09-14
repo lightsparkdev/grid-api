@@ -4,6 +4,7 @@ enum:
   - PARTIALLY_SETTLED
   - SETTLED
   - DECLINED
+  - VOIDED
   - EXCEPTION
 description: |
   Lifecycle status of a card transaction. The status tracks settlement only —
@@ -16,4 +17,5 @@ description: |
   | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
   | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. A `RETURN` received afterwards keeps the purchase `SETTLED`; the return appears as its own `CREDIT` transaction. |
   | `DECLINED` | The authorization was declined before any money moved. Declines carry no settlement and must be excluded from cardholder statements. |
+  | `VOIDED` | The authorization was fully reversed or expired before any clearing posted, so the hold closed without moving money. `authorizedAmount` is 0 and `settledAmount` is absent. |
   | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |

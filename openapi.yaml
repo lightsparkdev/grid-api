@@ -11898,7 +11898,7 @@ webhooks:
     post:
       summary: Card transaction
       description: |
-        Webhook that is called on every lifecycle update of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when the authorization is declined (`CARD_TRANSACTION.DECLINED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
+        Webhook that is called on every lifecycle update of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when the authorization is declined (`CARD_TRANSACTION.DECLINED`), when an authorization is fully reversed or expires (`CARD_TRANSACTION.VOIDED`), and when a transaction settles to the card network but the funding-source pull fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
 
         A merchant return is its own `CardTransaction` row (`direction: CREDIT`) linked to the purchase via `originalTransactionId`, and fires its own `CARD_TRANSACTION.*` deliveries on that row — the purchase row is not re-fired for the return.
 
@@ -23930,6 +23930,7 @@ components:
         - PARTIALLY_SETTLED
         - SETTLED
         - DECLINED
+        - VOIDED
         - EXCEPTION
       description: |
         Lifecycle status of a card transaction. The status tracks settlement only —
@@ -23942,6 +23943,7 @@ components:
         | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
         | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. A `RETURN` received afterwards keeps the purchase `SETTLED`; the return appears as its own `CREDIT` transaction. |
         | `DECLINED` | The authorization was declined before any money moved. Declines carry no settlement and must be excluded from cardholder statements. |
+        | `VOIDED` | The authorization was fully reversed or expired before any clearing posted, so the hold closed without moving money. `authorizedAmount` is 0 and `settledAmount` is absent. |
         | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
     CardDeclinedReason:
       type: string
@@ -27421,6 +27423,7 @@ components:
         - CARD_TRANSACTION.PARTIALLY_SETTLED
         - CARD_TRANSACTION.SETTLED
         - CARD_TRANSACTION.DECLINED
+        - CARD_TRANSACTION.VOIDED
         - CARD_TRANSACTION.EXCEPTION
         - WALLET_OPERATION.COMPLETED
         - WALLET_OPERATION.FAILED
@@ -27666,6 +27669,7 @@ components:
                 - CARD_TRANSACTION.PARTIALLY_SETTLED
                 - CARD_TRANSACTION.SETTLED
                 - CARD_TRANSACTION.DECLINED
+                - CARD_TRANSACTION.VOIDED
                 - CARD_TRANSACTION.EXCEPTION
     WalletOperationCompletedData:
       title: Wallet Operation Completed Data
