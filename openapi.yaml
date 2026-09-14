@@ -12650,10 +12650,14 @@ components:
           example: PlatformConfig:019542f5-b3e7-1d02-0000-000000000003
         umaDomain:
           type: string
+          pattern: ^[^\u0000-\u001f\u007f]*$
+          maxLength: 200
           description: UMA domain for this platform
           example: platform.uma.domain
         proxyUmaSubdomain:
           type: string
+          pattern: ^[^\u0000-\u001f\u007f]*$
+          maxLength: 200
           description: The subdomain that incoming requests will be proxied to
           example: platform
         webhookEndpoint:
@@ -12780,6 +12784,8 @@ components:
       properties:
         umaDomain:
           type: string
+          pattern: ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$
+          maxLength: 200
           example: mycompany.com
         webhookEndpoint:
           type: string

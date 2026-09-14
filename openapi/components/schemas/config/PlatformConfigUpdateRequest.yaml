@@ -2,6 +2,8 @@ type: object
 properties:
   umaDomain:
     type: string
+    pattern: ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$
+    maxLength: 200
     example: mycompany.com
   webhookEndpoint:
     type: string
