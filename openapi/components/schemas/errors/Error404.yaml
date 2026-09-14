@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 404
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -35,7 +29,7 @@ properties:
       - REFERENCE_NOT_FOUND
       - UMA_NOT_FOUND
       - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
-  message:
+  reason:
     type: string
     description: Error message
   details:

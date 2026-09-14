@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 424
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -25,7 +19,7 @@ properties:
       - NO_COMPATIBLE_UMA_VERSION
       - LNURLP_REQUEST_FAILED
       - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
-  message:
+  reason:
     type: string
     description: Error message
   details:

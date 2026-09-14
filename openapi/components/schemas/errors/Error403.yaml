@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 403
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -25,7 +19,7 @@ properties:
       - COUNTERPARTY_NOT_ALLOWED
       - VELOCITY_LIMIT_EXCEEDED
       - END_USER_TERMS_NOT_ACCEPTED
-  message:
+  reason:
     type: string
     description: Error message
   details:
