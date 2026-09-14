@@ -72,9 +72,11 @@ the approvals are the slowest step, start them early.
 3. Send your Lightspark contact the app's Application Identifiers, Adam
    ID, and launch URL. We register them with the card processor so the
    wallet can hand off to your app.
-4. In the app, present `PKAddPaymentPassViewController`. Apple calls
-   your delegate with `certificates`, `nonce`, and `nonceSignature`;
-   relay them to your backend and call Grid.
+4. In the app, open Apple's add-to-Wallet screen
+   (`PKAddPaymentPassViewController`). When the cardholder continues,
+   Apple hands your app three values that identify this device's Wallet
+   and this session: `certificates`, `nonce`, and `nonceSignature`. Send
+   them to Grid with `POST /cards/{id}/tokenize`.
 
 ### Google Pay
 
@@ -83,10 +85,13 @@ the approvals are the slowest step, start them early.
    through Google's support form.
 2. Submit your "Add to Google Wallet" flow for Google's UX review.
 3. Google approves and allowlists your app. Integrate the TapAndPay SDK.
-4. Under Google's Unified Push Provisioning (UPP), the SDK starts the
-   flow and calls your app back for payment credentials with a
-   `serverSessionId`. Relay it to your backend and call Grid inside
-   that callback.
+4. In the app, start the add-to-Wallet flow through the TapAndPay SDK.
+   Under Google's Unified Push Provisioning (UPP), Google Wallet runs the
+   screens itself and then calls your app back asking for the card's
+   payment credentials, handing you a `serverSessionId` that identifies
+   this session. Send it, with the wallet account id, to Grid with
+   `POST /cards/{id}/tokenize`, and return Grid's payload from that
+   callback.
 
 <Warning>
 Google is ending support for its legacy in-app push provisioning at the
@@ -103,8 +108,11 @@ UPP credentials callback.
 3. Submit your production app for Samsung's review. Once released,
    integrate the Samsung Pay SDK and use Samsung's official
    "Add to Samsung Wallet" button assets.
-4. The SDK reports the wallet's `walletUserId` and `deviceId`; relay
-   them to your backend and call Grid.
+4. In the app, start the add-to-Wallet flow through the Samsung Pay
+   SDK. It hands your app two values that identify the cardholder's
+   Samsung Wallet and this device: `walletUserId` and `deviceId`. Send
+   them to Grid with `POST /cards/{id}/tokenize`, and pass Grid's payload
+   to the SDK's `addCard` call.
 
 ## The API call
 
