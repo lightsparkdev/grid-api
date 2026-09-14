@@ -1,0 +1,348 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ApiCall } from '@/data/flow';
+import {
+  ACTIONS,
+  initialCompleted,
+  initialWallet,
+  type ActionId,
+  type CompletedFlows,
+  type WalletState,
+} from '@/data/actions';
+import {
+  cardCalls,
+  clearingCalls,
+  closeRejectedCall,
+  declineCalls,
+  limitsCalls,
+  newSpendRef,
+  refundCalls,
+  revealCalls,
+  stateChangeCalls,
+  tapCalls,
+  walletBrandingCalls,
+  type CardSpendLimits,
+  type SpendRef,
+} from '@/data/cardApiCalls';
+import { initialDesign, initialDesignFor, sameDesign, type CardDesign } from '@/data/design';
+import { useThemeMode } from './useThemeMode';
+import { applyPreset, PRESETS, presetOf, type PresetId } from '@/data/presets';
+import type { Entry } from '@/components/ApiPanel/types';
+import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
+
+// Matches ISSUE_MS in apps/shared/card/useCardHome: the activation webhook
+// arrives as the card's chip flips from PROCESSING to ACTIVE on the phone.
+const CARD_ACTIVE_DELAY_MS = 2700;
+// A state-change webhook lands a beat after its PATCH so the rows arrive 1-by-1.
+const WEBHOOK_DELAY_MS = 650;
+/** The phone's flight out, with the card coming back to the stage: the brain
+ *  resets once it has gone. */
+const PHONE_OUT_MS = 1000;
+const GROUP_LABEL: Record<ActionId, string> = {
+  card: 'Issue a card',
+  tap: 'Spend',
+  reveal: 'Reveal details',
+  wallet: 'Add to wallet',
+  freeze: 'Freeze',
+  limits: 'Limits',
+  refund: 'Refund',
+  close: 'Close',
+};
+
+let groupSeq = 0;
+function newGroupId() {
+  groupSeq += 1;
+  return `g${Date.now().toString(36)}${groupSeq}`;
+}
+
+/**
+ * The Cards playground brain: the card design, the wallet mirror the phone
+ * renders from, the API-call log, and the flow jumps. There is no sign-in — the
+ * cardholder is a Customer the platform already onboarded, so the phone boots
+ * straight into the app.
+ */
+export function useCardsDemoLogic() {
+  // The flow playing out on the phone; null between flows.
+  const [activeFlow, setActiveFlow] = useState<ActionId | null>(null);
+  // The cardholder's phone is on stage with the card in it. The first flow
+  // brings it in; it stays through the flows that follow, so their residue
+  // (rows settling, notifications, the card's state) is there to see, until
+  // the visitor sends it away to get back to the card alone.
+  const [phoneUp, setPhoneUp] = useState(false);
+  const theme = useThemeMode();
+  const [design, setDesign] = useState<CardDesign>(initialDesign);
+  // Until the visitor designs something, the card is the theme's default:
+  // ink on dark, white on light, following the theme if it changes. Reset
+  // (a design equal to a theme's default) hands it back to the theme.
+  const designed = useRef(false);
+  useEffect(() => {
+    if (!designed.current) setDesign(initialDesignFor(theme));
+  }, [theme]);
+  const updateDesign = useCallback(
+    (patch: Partial<CardDesign>) => {
+      setDesign((d) => {
+        const next = { ...d, ...patch };
+        // Spot gloss has nothing to contrast against on a gloss card.
+        if (next.finish === 'gloss') {
+          if (next.logoTreatment === 'spotGloss') next.logoTreatment = 'print';
+          if (next.artTreatment === 'spotGloss') next.artTreatment = 'print';
+        }
+        designed.current = !sameDesign(next, initialDesignFor(theme));
+        return next;
+      });
+    },
+    [theme],
+  );
+  // The latest design, readable from callbacks without re-binding them.
+  const designRef = useRef(design);
+  designRef.current = design;
+
+  // The selected preset is read off the design: one while the design equals
+  // it, none as soon as any control is edited away.
+  const preset = useMemo(() => presetOf(design), [design]);
+  const selectPreset = useCallback((id: PresetId) => {
+    const next = PRESETS.find((p) => p.id === id)?.design;
+    if (!next) return;
+    designed.current = true;
+    setDesign((d) => applyPreset(next, d));
+  }, []);
+
+  const [wallet, setWallet] = useState<WalletState>(initialWallet);
+  const [completed, setCompleted] = useState<CompletedFlows>(initialCompleted);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [walletEntry, setWalletEntry] = useState<WalletEntry | undefined>(undefined);
+  // Remounts the phone app on reset so the wallet brain starts clean.
+  /** The brain's reset command (see useCardHome). */
+  const [brainReset, setBrainReset] = useState({ nonce: 0, afterMs: 0 });
+  // The card's current caps, mirrored so later PATCH responses show them.
+  const limitsRef = useRef<CardSpendLimits>({});
+  // The wallet-verification branding is platform config: set once, then only
+  // when the brand changes. Adding the card itself makes no Grid call, so
+  // repeat adds log nothing. Holds the brand the last PATCH sent.
+  const walletBrandingRef = useRef<string | null>(null);
+  // Each purchase keeps one CardTransaction id across auth → clearing → return,
+  // and the group it logged under so the clearing lands in the same group.
+  const spendRefs = useRef(new Map<string, { ref: SpendRef; gid: string }>());
+
+  // Pending delayed pushes (webhooks that land after an on-phone animation);
+  // cleared on reset so a late push can't re-add a row to a wiped panel.
+  const pendingTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  useEffect(() => {
+    const timers = pendingTimers.current;
+    return () => timers.forEach((t) => clearTimeout(t));
+  }, []);
+
+  const pushCalls = useCallback((calls: ApiCall[], groupLabel: string, groupId?: string) => {
+    if (!calls?.length) return;
+    const gid = groupId ?? newGroupId();
+    const baseTime = Date.now();
+    setEntries((prev) => [
+      ...prev,
+      ...calls.map((c, i) => ({
+        ...c,
+        key: `${baseTime}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+        createdAt: baseTime + i,
+        groupId: gid,
+        groupLabel,
+      })),
+    ]);
+  }, []);
+
+  const pushLater = useCallback(
+    (calls: ApiCall[], groupLabel: string, groupId: string, delayMs: number) => {
+      const timer = setTimeout(() => {
+        pendingTimers.current.delete(timer);
+        pushCalls(calls, groupLabel, groupId);
+      }, delayMs);
+      pendingTimers.current.add(timer);
+    },
+    [pushCalls],
+  );
+
+  /** A request now, its webhook a beat later, in one group. */
+  const pushWithWebhook = useCallback(
+    (calls: ApiCall[], label: string, delayMs = WEBHOOK_DELAY_MS) => {
+      const gid = newGroupId();
+      const [first, ...rest] = calls;
+      pushCalls([first], label, gid);
+      if (rest.length) pushLater(rest, label, gid, delayMs);
+      return gid;
+    },
+    [pushCalls, pushLater],
+  );
+
+  const markDone = useCallback((id: keyof CompletedFlows) => {
+    setCompleted((c) => (c[id] ? c : { ...c, [id]: true }));
+  }, []);
+
+  const onCardIssued = useCallback(() => {
+    // POST /cards lands now (card is PROCESSING); CARD.STATE_CHANGE lands when
+    // the phone brain flips the card to ACTIVE.
+    pushWithWebhook(cardCalls(limitsRef.current), GROUP_LABEL.card, CARD_ACTIVE_DELAY_MS);
+    // A new card: not frozen, whatever the last one was.
+    setWallet((w) => ({ ...w, hasCard: true, frozen: false }));
+    markDone('card');
+  }, [pushWithWebhook, markDone]);
+
+  const onTapToPay = useCallback<NonNullable<UseCardHomeOptions['onTapToPay']>>(
+    (cents, merchant, rowId) => {
+      const ref = newSpendRef(merchant, cents);
+      const gid = pushWithWebhook(tapCalls(ref), GROUP_LABEL.tap);
+      spendRefs.current.set(rowId, { ref, gid });
+      setWallet((w) => ({ ...w, balanceCents: Math.max(0, w.balanceCents - cents) }));
+      markDone('tap');
+    },
+    [pushWithWebhook, markDone],
+  );
+
+  const onTapDeclined = useCallback<NonNullable<UseCardHomeOptions['onTapDeclined']>>(
+    (reason, cents, merchant) => {
+      // The simulate now; CARD_TRANSACTION.DECLINED a beat later.
+      pushWithWebhook(declineCalls(reason, merchant, cents), GROUP_LABEL.tap);
+      // A decline proves the control that caused it.
+      if (reason === 'CARD_PAUSED') markDone('freeze');
+      if (reason === 'OVER_PER_TXN_LIMIT' || reason === 'OVER_DAILY_LIMIT') markDone('limits');
+    },
+    [pushWithWebhook, markDone],
+  );
+
+  const cardOptions = useMemo<NonNullable<UseCardHomeOptions['card']>>(
+    () => ({
+      onStateChange: (state) => {
+        const label = state === 'CLOSED' ? GROUP_LABEL.close : GROUP_LABEL.freeze;
+        pushWithWebhook(stateChangeCalls(state, limitsRef.current), label);
+        setWallet((w) => ({ ...w, frozen: state === 'FROZEN' }));
+        markDone(state === 'CLOSED' ? 'close' : 'freeze');
+      },
+      onCloseRejected: () => pushCalls([closeRejectedCall()], GROUP_LABEL.close),
+      onLimitsChange: (limits) => {
+        limitsRef.current = {
+          maxSpendPerTransaction: limits.perTransactionCents,
+          maxSpendPerDay: limits.perDayCents,
+        };
+        pushCalls(limitsCalls(limitsRef.current), GROUP_LABEL.limits);
+        markDone('limits');
+      },
+      onReveal: () => {
+        pushCalls(revealCalls(), GROUP_LABEL.reveal);
+        markDone('reveal');
+      },
+      onAddToWallet: () => {
+        const d = designRef.current;
+        const brand = `${d.programName.trim()}|${d.logoUrl ?? ''}`;
+        if (walletBrandingRef.current !== brand) {
+          walletBrandingRef.current = brand;
+          pushCalls(walletBrandingCalls(d.programName, d.logoUrl), GROUP_LABEL.wallet);
+        }
+        markDone('wallet');
+      },
+      onSettle: (row) => {
+        const known = spendRefs.current.get(row.id);
+        const ref = known?.ref ?? newSpendRef(row.title, row.cents);
+        // The clearing joins the purchase's own group so auth → settle reads as
+        // one lifecycle; the webhook lands a beat after the simulate.
+        const gid = known?.gid ?? newGroupId();
+        const [simulate, webhook] = clearingCalls(ref);
+        pushCalls([simulate], GROUP_LABEL.tap, gid);
+        pushLater([webhook], GROUP_LABEL.tap, gid, WEBHOOK_DELAY_MS);
+        if (!known) spendRefs.current.set(row.id, { ref, gid });
+      },
+      onRefund: (row) => {
+        const known = spendRefs.current.get(row.id);
+        const ref = known?.ref ?? newSpendRef(row.title, row.cents);
+        if (!known) spendRefs.current.set(row.id, { ref, gid: newGroupId() });
+        pushWithWebhook(refundCalls(ref), GROUP_LABEL.refund);
+        setWallet((w) => ({ ...w, balanceCents: w.balanceCents + row.cents }));
+        markDone('refund');
+      },
+    }),
+    [pushCalls, pushLater, pushWithWebhook, markDone],
+  );
+
+  const handleAction = useCallback(
+    (id: ActionId) => {
+      if (!ACTIONS.find((a) => a.id === id)?.available(wallet)) return;
+      // Fast-forward: every flow but Issue needs a card, so silently provision
+      // one from any starting point. STATE only — no API calls are logged for
+      // the provisioning and it earns no checkmark. Each flow logs only its own
+      // calls when the user actually runs it. The first flow brings the phone
+      // in; the brain starts a later one at once since the phone is already up.
+      const needsCard = id !== 'card' && !wallet.hasCard;
+      if (needsCard) setWallet({ ...wallet, hasCard: true });
+      setActiveFlow(id);
+      setPhoneUp(true);
+      setWalletEntry({
+        nonce: Date.now(),
+        provision: needsCard ? { issued: true } : undefined,
+        open: id,
+        phoneUp,
+      });
+    },
+    [wallet, phoneUp],
+  );
+
+  // The phone brain reports the flow has played out; the tiles unlock. The
+  // phone stays.
+  const onSettled = useCallback(() => setActiveFlow(null), []);
+
+  // Back to the card alone. Not while a flow is playing.
+  const dismissPhone = useCallback(() => {
+    if (activeFlow !== null) return;
+    setPhoneUp(false);
+  }, [activeFlow]);
+
+  // Dev: bring the phone up or send it away from the console, for posing its
+  // screens with `__cardHome.pose(...)` (see useCardHome).
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    const w = window as unknown as Record<string, unknown>;
+    w.__cardsDemo = { phone: (up = true) => setPhoneUp(up) };
+    return () => {
+      delete w.__cardsDemo;
+    };
+  }, []);
+
+  // Reset: the phone flies away with whatever it was showing (the card comes
+  // back to the stage), the API log clears, and once the phone has gone the
+  // brain resets in place to a fresh card (see useCardHome's `reset`). No
+  // remount: everything animates through it.
+  const reset = useCallback(() => {
+    pendingTimers.current.forEach((t) => clearTimeout(t));
+    pendingTimers.current.clear();
+    spendRefs.current.clear();
+    limitsRef.current = {};
+    walletBrandingRef.current = null;
+    setWallet(initialWallet);
+    setActiveFlow(null);
+    setCompleted(initialCompleted);
+    setEntries([]);
+    setWalletEntry(undefined);
+    setBrainReset((r) => ({ nonce: r.nonce + 1, afterMs: phoneUp ? PHONE_OUT_MS : 0 }));
+    setPhoneUp(false);
+  }, [phoneUp]);
+
+  return {
+    activeFlow,
+    // A flow is playing out on the phone; the panel holds tiles and Reset.
+    running: activeFlow !== null,
+    phoneUp,
+    dismissPhone,
+    design,
+    updateDesign,
+    preset,
+    selectPreset,
+    wallet,
+    completed,
+    entries,
+    walletEntry,
+    brainReset,
+    handleAction,
+    reset,
+    onCardIssued,
+    onTapToPay,
+    onTapDeclined,
+    cardOptions,
+    onSettled,
+  };
+}

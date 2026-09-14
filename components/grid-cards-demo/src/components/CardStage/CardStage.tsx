@@ -1,0 +1,1650 @@
+'use client';
+
+import clsx from 'clsx';
+import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { AnimatePresence, cancelFrame, frame, motion as m, useReducedMotion } from 'motion/react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import * as THREE from 'three';
+import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetrics';
+import { AnimatedLock } from '@/apps/shared/icons';
+import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import { canScrollBy } from '@/lib/scroll';
+import { airflow, play, playHover, type Airflow } from '@/lib/sounds';
+import { programNameOf } from '@/apps/shared/brand/BrandContext';
+import type { CardHome } from '@/apps/shared/card';
+import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
+import { useThemeMode } from '@/hooks/useThemeMode';
+import { useGradientEditing } from '@/components/DesignPicker/gradientEditing';
+import {
+  brandDefaultLayout,
+  BRAND_MARGIN,
+  BRAND_MAX_H,
+  BRAND_MIN_H,
+  type BrandLayout,
+  type CardDesign,
+  type CardGradient,
+  type Orientation,
+} from '@/data/design';
+import { CardEnv } from './card3d/CardEnv';
+import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/CardMesh';
+import { localToSpec } from './card3d/faceFrame';
+import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
+import { CARD_FONT_FAMILY } from './card3d/cardFont';
+import { CardMotion } from './cardMotion';
+import { useCardMomentSounds } from './cardSounds';
+import { resizeCursor, rotateCursor } from './cursors';
+import { CardIntro } from './CardIntro';
+import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from './introTimeline';
+import styles from './CardStage.module.scss';
+
+/** Largest the card gets on stage, relative to its size in the phone. */
+const MAX_SCALE = 1.4;
+const MIN_SCALE = 0.55;
+/** Stage margin around the card. */
+const GUTTER_X = 28;
+const GUTTER_Y = 120;
+/** Glide time constant toward the rest position (seconds). */
+const GLIDE_TAU = 0.14;
+/** Camera distance, stage px. Scene units are stage px at z = 0. */
+const CAMERA_Z = 2000;
+/** How far outside the brand's box (spec px) still grabs it. */
+const BRAND_GRAB_MARGIN = 24;
+/** The card's air: opens above this turn speed (0..1 of the fastest
+ *  release), and closes once the card has been under it this long (s). */
+const AIR_ON = 0.04;
+const AIR_OFF_S = 0.35;
+/** A press that travels less than this (screen px) is a click. */
+const CLICK_SLOP = 4;
+/** A move snaps within this many screen px of a guide. */
+const SNAP_PX = 6;
+/** Rotation snaps to multiples of this, within SNAP_DEG. */
+const ROTATE_STEP = 15;
+const SNAP_DEG = 3;
+/** Spec px → card px, the hit box's unit (the same along either axis). */
+const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
+/** Upright, the blank has been turned a quarter turn clockwise: the roll the
+ *  mesh carries about its own normal, degrees (three's positive z is
+ *  counterclockwise seen from the front). */
+const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 };
+/** The card's fade under the screen's scroll edge has run out this far down
+ *  the strip (the header's bottom edge). */
+const EDGE_FADE_RAMP_END = 0.8;
+const EDGE_FADE_STOPS = 8;
+
+/** The parked card's mask under the scroll edge: from `top` (stage px) it
+ *  fades in over `run` px, the alpha easing on a smoothstep so neither end of
+ *  the ramp shows as a line, and reaching only as deep as `strength` (0..1). */
+function edgeMask(top: number, run: number, strength: number): string {
+  const stops: string[] = [];
+  for (let i = 0; i <= EDGE_FADE_STOPS; i++) {
+    const t = i / EDGE_FADE_STOPS;
+    const ease = t * t * (3 - 2 * t);
+    const alpha = 1 - strength * (1 - ease);
+    stops.push(`rgba(0,0,0,${alpha.toFixed(3)}) ${(top + run * t).toFixed(1)}px`);
+  }
+  return `linear-gradient(to bottom, ${stops.join(', ')})`;
+}
+
+// Khronos PBR-neutral tone map keeps silver true (ACES warms highlights).
+const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
+const EXPOSURE_LIGHT = 1.25;
+const EXPOSURE_DARK = 1.0;
+
+/** Locked or closed: the card dims and blurs, and its mark (a lock that
+ *  locks; the closed line) comes up out of its middle (blur, scale, a short
+ *  rise). Unlocking runs it back. */
+const LOCK_MARK_HIDDEN = { opacity: 0, filter: 'blur(10px)', scale: 0.6, y: 16 };
+const LOCK_MARK_SHOWN = { opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 };
+const LOCK_MARK_IN = motionTransition(easeOutSnappy, 0.5, { delay: 0.1 });
+const LOCK_MARK_OUT = motionTransition(easeOutQuick, 0.25);
+
+/** Inputs the frame loop reads without re-subscribing. */
+interface Live {
+  /** Phone boot curve, eased. */
+  t: number;
+  wantBack: boolean;
+  reduceMotion: boolean;
+  /** The brand is selected: the card holds flat under the selection box. */
+  editing: boolean;
+  /** Text is being typed on a face: the card holds still on that face. */
+  freeze: boolean;
+  /** Tap-to-pay is running: the card is held to the reader, front up. */
+  tap: boolean;
+  /** Locked or closed: the card can't be used, and doesn't answer the pointer
+   *  (no tilt, no turning it over). */
+  inert: boolean;
+  /** Which face is toward the camera, from the last frame (+ front, - back). */
+  facing: number;
+  /** How the card is held: the footprint, the roll, and the pick's frame. */
+  orientation: Orientation;
+  intro: Intro;
+  /** Something the camera sees changed off the frame loop (a material, a
+   *  map, the exposure): the next frame paints. See CardRig's render gate. */
+  dirty: boolean;
+}
+
+/** A frame paints when the card has moved more than this since the last
+ *  one painted: degrees of rotation, stage px of position, and scale.
+ *  Well under a device pixel and a color step at any stage size, so a
+ *  settling spring stops painting once it has visibly stopped. */
+const RENDER_EPS_DEG = 1e-3;
+const RENDER_EPS_PX = 1e-3;
+const RENDER_EPS_SCALE = 1e-5;
+/** And at least this often regardless (frames), a safety net for a change
+ *  the gate didn't see. */
+const RENDER_EVERY = 30;
+
+/** The intro's clock, stepped by the frame loop once the front has painted. */
+interface Intro {
+  /** Seconds since the blueprint started drawing; -1 until the card is ready. */
+  t: number;
+  done: boolean;
+  /** How many of `INTRO_SOUNDS` have played. */
+  cued: number;
+  overlay: React.RefObject<SVGSVGElement>;
+  /** The stage canvas, blurred and faded in behind the dissolving blueprint. */
+  canvas: React.RefObject<HTMLCanvasElement>;
+  onDone: () => void;
+  /** Run it again from the top (dev: `__cardStage.intro.replay()`). */
+  replay: () => void;
+  /** Dev: freeze the clock (set `t`, then `paused = true`) to pose a frame. */
+  paused: boolean;
+}
+
+/** A point on the front face, in spec px; null when the pointer misses the
+ *  card's plane or the back is showing. */
+type Pick = (clientX: number, clientY: number) => { x: number; y: number } | null;
+type Pt = { x: number; y: number };
+
+/** The selection box's handles: edges and corners scale, the zones just
+ *  outside the corners rotate. */
+type Handle = 'n' | 'e' | 's' | 'w' | 'nw' | 'ne' | 'se' | 'sw';
+const CORNERS: Handle[] = ['nw', 'ne', 'se', 'sw'];
+const EDGES: Handle[] = ['n', 'e', 's', 'w'];
+/** A handle's direction from the box's center, in its own frame. */
+const HANDLE_DIR: Record<Handle, Pt> = {
+  n: { x: 0, y: -1 },
+  e: { x: 1, y: 0 },
+  s: { x: 0, y: 1 },
+  w: { x: -1, y: 0 },
+  nw: { x: -1, y: -1 },
+  ne: { x: 1, y: -1 },
+  se: { x: 1, y: 1 },
+  sw: { x: -1, y: 1 },
+};
+/** The angle a handle's resize arrow lies along, in the box's frame. */
+const handleAngle = (h: Handle) => (Math.atan2(HANDLE_DIR[h].y, HANDLE_DIR[h].x) * 180) / Math.PI;
+/** The rotate cursor's arch turns to bulge toward its corner. */
+const CORNER_ANGLE: Record<Handle, number> = { nw: -45, ne: 45, se: 135, sw: -135, n: 0, e: 90, s: 180, w: -90 };
+
+/** A brand edit in flight, from the pointer that started it. */
+interface BrandDrag {
+  id: number;
+  mode: 'move' | 'scale' | 'rotate';
+  handle?: Handle;
+  /** Where the pointer started on the face, and what the brand was. */
+  start: Pt;
+  layout0: BrandLayout;
+  box0: SpecRect;
+}
+
+/** Snap guides shown during a move, in spec px: the lines, and an × at each
+ *  point being aligned (on the brand, and on what it snapped to). */
+/** An equal-gap snap: the box sits midway between two lines `a` and `b`
+ *  across one axis; the two gaps (a to the box, the box to b) are drawn as
+ *  matched spacing bars along `at` on the other axis. */
+interface Gap {
+  a: number;
+  b: number;
+  /** The box's near and far edges on the gap's axis, after the snap. */
+  lo: number;
+  hi: number;
+  /** Where along the other axis the bars are drawn (the box's center). */
+  at: number;
+}
+
+interface Guides {
+  x?: number;
+  y?: number;
+  marks?: Pt[];
+  /** Equal gaps left and right of the box (bars run along x). */
+  gapX?: Gap;
+  /** Equal gaps above and below the box (bars run along y). */
+  gapY?: Gap;
+}
+
+interface CardStageProps {
+  design: CardDesign;
+  home: CardHome;
+  /** Lets the stage edit the design: the brand is placed on the card itself. */
+  onDesignChange?: (patch: Partial<CardDesign>) => void;
+}
+
+/** Capture the pointer for a drag. A pointer that is already gone (a touch
+ *  lifted, a synthetic event) makes this throw; the drag then goes on
+ *  uncaptured and the window-level release still ends it. */
+function capture(e: ReactPointerEvent<HTMLDivElement>) {
+  try {
+    e.currentTarget.setPointerCapture(e.pointerId);
+  } catch {
+    // Not capturable; see above.
+  }
+}
+
+const rad = (deg: number) => (deg * Math.PI) / 180;
+function rotate(p: Pt, deg: number): Pt {
+  const c = Math.cos(rad(deg));
+  const s = Math.sin(rad(deg));
+  return { x: p.x * c - p.y * s, y: p.x * s + p.y * c };
+}
+const center = (b: SpecRect): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+const clampH = (h: number) => Math.min(BRAND_MAX_H, Math.max(BRAND_MIN_H, h));
+/** The layout that puts a box of width `w` and height `h` (spec px) at center `c`. */
+function layoutAt(layout: BrandLayout, c: Pt, w: number, h: number): BrandLayout {
+  const x = layout.anchor === 'left' ? c.x - w / 2 : layout.anchor === 'center' ? c.x : c.x + w / 2;
+  return { ...layout, x, y: c.y, h };
+}
+
+/**
+ * The card, always. One mesh in one transparent canvas over the stage. Two
+ * states: floating alone (cursor tilt, drag to spin, idle bob), or parked in
+ * the phone. Every flow brings the phone in and the card flies into its slot;
+ * flows act on it there (frost, flip, shake) while the phone shows the
+ * cardholder's side; the phone leaves and the card floats back out.
+ *
+ * Position is imperative, per frame: the rest point is the stage center; while
+ * the phone is up the card interpolates toward the live rect of the phone's
+ * `[data-card-slot]` on the phone's boot curve. The slot is an empty box, so
+ * nothing ever swaps or unmounts. A DOM hit box rides along with the card for
+ * pointer input, the state pill, the accessible name, and the brand's
+ * selection box.
+ */
+export function CardStage({ design, home, onDesignChange }: CardStageProps) {
+  const { bootProgress } = usePhoneBoot();
+  const reduceMotion = useReducedMotion() ?? false;
+  const dark = useThemeMode() === 'dark';
+  const rootRef = useRef<HTMLDivElement>(null);
+  const hitRef = useRef<HTMLDivElement>(null);
+  const motion = useMemo(() => new CardMotion(), []);
+
+  const { issued, issuing, card, isDeclined, isTap } = home;
+  const revealed = card.page === 'numbers';
+  const phoneUp = bootProgress > 0;
+  const inFlightNow = phoneUp && easeInOutCubic(bootProgress) < CARD_PARKED_T;
+
+  // The intro plays once, when the card first appears: the blueprint draws,
+  // then dissolves as the card comes into focus. Until it's done the card is
+  // held flat and the pointer is off.
+  const [introDone, setIntroDone] = useState(false);
+  const overlayRef = useRef<SVGSVGElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const live = useRef<Live>({
+    t: 0,
+    wantBack: false,
+    reduceMotion,
+    editing: false,
+    freeze: false,
+    tap: false,
+    inert: false,
+    facing: 1,
+    orientation: design.orientation,
+    dirty: true,
+    intro: {
+      t: -1,
+      done: false,
+      cued: 0,
+      overlay: overlayRef,
+      canvas: canvasRef,
+      onDone: () => setIntroDone(true),
+      paused: false,
+      replay: () => {
+        const { intro } = live.current;
+        intro.t = 0;
+        intro.done = false;
+        intro.cued = 0;
+        setIntroDone(false);
+      },
+    },
+  });
+  live.current.t = easeInOutCubic(bootProgress);
+  live.current.wantBack = revealed;
+  live.current.tap = isTap;
+  // The card's state shows on the card only in the phone: parked, a locked
+  // or closed card dims under its mark and holds still. Out on the stage it
+  // is the card as an object, to be turned over and looked at, whatever the
+  // account says.
+  const stateShown = phoneUp && !inFlightNow;
+  live.current.inert = stateShown && (card.frozen || card.closed);
+  // The lock on the card outlives the lock state by its unlocking (the
+  // shackle lifting out and turning away), then the mark leaves. It locks
+  // (and sounds) only for a lock that happens in the phone; a card that
+  // comes back into the phone already locked shows the lock as it is.
+  const [lockMark, setLockMark] = useState<{ kind: 'locked' | 'unlocking'; locking: boolean } | null>(
+    card.frozen && stateShown ? { kind: 'locked', locking: false } : null,
+  );
+  const stateWasShown = useRef(stateShown);
+  useEffect(() => {
+    const reshown = stateShown && !stateWasShown.current;
+    stateWasShown.current = stateShown;
+    if (!stateShown) {
+      setLockMark(null);
+      return;
+    }
+    setLockMark((m) => {
+      if (card.frozen) return m?.kind === 'locked' ? m : { kind: 'locked', locking: !reshown };
+      return m?.kind === 'locked' ? { kind: 'unlocking', locking: true } : m;
+    });
+  }, [card.frozen, stateShown]);
+  const dimmed = stateShown && (card.closed || lockMark !== null);
+  useCardMomentSounds({ issued, issuing, frozen: card.frozen, closed: card.closed });
+  live.current.reduceMotion = reduceMotion;
+  live.current.orientation = design.orientation;
+  // The composed face and the card's footprint on screen, for the card as held.
+  const face = faceSize(design.orientation);
+  const foot = footprint(design.orientation);
+
+  // Decline: shake once per bounce, with the low double.
+  useEffect(() => {
+    if (!isDeclined) return;
+    motion.shake();
+    play('decline');
+  }, [isDeclined, motion]);
+
+  // ── The brand on the card ──────────────────────────────────────────────────
+  // The mesh reports the brand's box after each front paint (a ref for the
+  // handlers, state for the selection box); the rig provides a picker from
+  // the pointer to the front face's plane.
+  const placement = useRef<BrandPlacement | null>(null);
+  const [placed, setPlaced] = useState<BrandPlacement | null>(null);
+  const onBrandPlacement = useCallback((p: BrandPlacement) => {
+    placement.current = p;
+    setPlaced(p);
+  }, []);
+  const pick = useRef<Pick | null>(null);
+  /** The same, for the back face (null while the front shows). */
+  const pickBack = useRef<Pick | null>(null);
+  const brandEditable = !!onDesignChange;
+  const setLayout = (layout: BrandLayout | null) => onDesignChange?.({ brandLayout: layout });
+
+  /** The face point under the pointer if it is on (or just outside) the brand,
+   *  allowing for the brand's rotation. */
+  const hitBrand = (clientX: number, clientY: number) => {
+    const p = pick.current?.(clientX, clientY);
+    const pl = placement.current;
+    if (!p || !pl) return null;
+    const b = pl.box;
+    const c = center(b);
+    const q = rotate({ x: p.x - c.x, y: p.y - c.y }, -pl.layout.rotation);
+    const m = Math.max(BRAND_GRAB_MARGIN, b.h * 0.15);
+    const inside = Math.abs(q.x) <= b.w / 2 + m && Math.abs(q.y) <= b.h / 2 + m;
+    return inside ? p : null;
+  };
+
+  // Selected: the selection box shows and the card holds flat under it. A
+  // flow, the intro, Escape, or any change to the design other than the
+  // brand's placement (a color, a finish, a preset, Reset) deselects: the
+  // box is for placing, and those edits are something else.
+  const [selected, setSelected] = useState(false);
+  // A gradient being edited in the picker: its handles show on the card,
+  // which holds flat under them too.
+  const gradEditing = useGradientEditing() && !!design.gradient && brandEditable;
+  live.current.editing = selected || gradEditing;
+  useEffect(() => {
+    if (phoneUp || !introDone) setSelected(false);
+  }, [phoneUp, introDone]);
+  const lastDesign = useRef(design);
+  useEffect(() => {
+    const prev = lastDesign.current;
+    lastDesign.current = design;
+    if (prev === design) return;
+    const { brandLayout: _a, ...restPrev } = prev;
+    const { brandLayout: _b, ...restNext } = design;
+    const changed = (Object.keys(restNext) as Array<keyof typeof restNext>).some((k) => restNext[k] !== restPrev[k]);
+    if (changed) setSelected(false);
+  }, [design]);
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelected(false);
+        return;
+      }
+      // Arrows nudge the brand a screen pixel, ten with Shift, as Figma does.
+      const dir: Record<string, Pt> = {
+        ArrowLeft: { x: -1, y: 0 },
+        ArrowRight: { x: 1, y: 0 },
+        ArrowUp: { x: 0, y: -1 },
+        ArrowDown: { x: 0, y: 1 },
+      };
+      const d = dir[e.key];
+      const pl = placement.current;
+      const hit = hitRef.current;
+      if (!d || !pl || !hit || (e.target as HTMLElement | null)?.tagName === 'INPUT') return;
+      e.preventDefault();
+      play('type');
+      const perPx = face.w / hit.getBoundingClientRect().width;
+      const step = (e.shiftKey ? 10 : 1) * perPx;
+      setLayout({ ...pl.layout, x: pl.layout.x + d.x * step, y: pl.layout.y + d.y * step });
+    };
+    // A click on the stage off the card deselects; the panels beside it
+    // don't, so a control can be used on the selection.
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node | null;
+      const stage = rootRef.current?.closest('section');
+      if (!t || !stage?.contains(t) || hitRef.current?.contains(t)) return;
+      setSelected(false);
+    };
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
+  }, [selected]);
+
+  const [guides, setGuides] = useState<Guides>({});
+  const [overBrand, setOverBrand] = useState(false);
+  const overBrandRef = useRef(false);
+  const hover = (over: boolean) => {
+    if (over === overBrandRef.current) return;
+    overBrandRef.current = over;
+    setOverBrand(over);
+    // The outline coming up is the hover; the callers only pass a mouse.
+    if (over) playHover('tick');
+  };
+  // A guide caught during a drag ticks once, as the snapped target changes;
+  // a drag that stays on the same guide is silent.
+  const lastSnap = useRef('');
+  const snapTick = (key: string) => {
+    if (key === lastSnap.current) return;
+    lastSnap.current = key;
+    if (key) play('snap');
+  };
+  const snapKeyOf = (g: Guides) =>
+    [g.x, g.y, g.gapX && `gx${g.gapX.a},${g.gapX.b}`, g.gapY && `gy${g.gapY.a},${g.gapY.b}`]
+      .map((v) => v ?? '')
+      .join('|')
+      .replace(/^\|+$/, '');
+
+  /** The composed face's landmarks, in its spec px: its center, the chip's
+   *  center (its row and its column), and the row the brand sits on by
+   *  default (the chip's row flat; the lockup's row upright). */
+  const landmarks = () => {
+    const chip = chipBox(design.orientation);
+    return {
+      cardCenter: { x: face.w / 2, y: face.h / 2 } as Pt,
+      chipCenter: { x: chip.x + chip.w / 2, y: chip.y + chip.h / 2 } as Pt,
+      brandRow: brandDefaultLayout(design.orientation).y,
+    };
+  };
+  /** A screen distance in the face's spec px. */
+  const snapTolerance = () => {
+    const hit = hitRef.current;
+    return hit ? (SNAP_PX * face.w) / hit.getBoundingClientRect().width : 0;
+  };
+
+  /** Snap a moved box to the card's center, the chip's row and column, the
+   *  brand's default row, and the print margins; a turned box snaps by its
+   *  center only. Each snap comes with its guide and the points it aligned:
+   *  on the brand, and on the card feature (its center, the chip) when there
+   *  is one to mark. */
+  const snapMove = (box: SpecRect, rotation: number): { dx: number; dy: number; guides: Guides } => {
+    const tol = snapTolerance();
+    const turned = Math.abs(rotation) > 0.5;
+    const c = center(box);
+    const { cardCenter, chipCenter, brandRow } = landmarks();
+    const chip = chipBox(design.orientation);
+    // [from, to, the feature's point to mark, if any, the gap it equalizes, if any]
+    type Pair = [number, number, Pt | null, [number, number] | null];
+    const xs: Pair[] = [
+      [c.x, cardCenter.x, cardCenter, null],
+      [c.x, chipCenter.x, chipCenter, null],
+    ];
+    const ys: Pair[] = [
+      [c.y, cardCenter.y, cardCenter, null],
+      [c.y, chipCenter.y, chipCenter, null],
+      [c.y, brandRow, null, null],
+    ];
+    if (!turned) {
+      xs.push([box.x, BRAND_MARGIN, null, null], [box.x + box.w, face.w - BRAND_MARGIN, null, null]);
+      ys.push([box.y, BRAND_MARGIN, null, null], [box.y + box.h, face.h - BRAND_MARGIN, null, null]);
+      // Equal gaps: the box midway between two of the card's edges and the
+      // chip's edges, on each axis, when it fits between them.
+      const linesX = [0, chip.x, chip.x + chip.w, face.w];
+      const linesY = [0, chip.y, chip.y + chip.h, face.h];
+      const between = (lines: number[], size: number, pairs: Pair[], from: number) => {
+        for (let i = 0; i < lines.length; i++) {
+          for (let j = i + 1; j < lines.length; j++) {
+            const a = lines[i];
+            const b = lines[j];
+            if (b - a <= size) continue;
+            pairs.push([from, (a + b) / 2, null, [a, b]]);
+          }
+        }
+      };
+      between(linesX, box.w, xs, c.x);
+      between(linesY, box.h, ys, c.y);
+    }
+    const best = (pairs: Pair[]) => {
+      let d = 0;
+      let at: number | undefined;
+      let feature: Pt | null = null;
+      let gap: [number, number] | null = null;
+      let min = tol;
+      for (const [from, to, pt, g] of pairs) {
+        const dist = Math.abs(to - from);
+        // The plain alignments come first in the list; an equal-gap snap
+        // only wins when it is strictly nearer.
+        if (dist < min || (dist === min && at === undefined)) {
+          min = dist;
+          d = to - from;
+          at = to;
+          feature = pt;
+          gap = g;
+        }
+      }
+      return { d, at, feature, gap };
+    };
+    const sx = best(xs);
+    const sy = best(ys);
+    // Where the brand's snapped edge or center sits once moved.
+    const snapped: Pt = { x: c.x + sx.d, y: c.y + sy.d };
+    const marks: Pt[] = [];
+    const mark = (p: Pt) => {
+      if (!marks.some((m) => Math.hypot(m.x - p.x, m.y - p.y) < 3)) marks.push(p);
+    };
+    const guides: Guides = { marks };
+    if (sx.at !== undefined) {
+      if (sx.gap) {
+        guides.gapX = { a: sx.gap[0], b: sx.gap[1], lo: snapped.x - box.w / 2, hi: snapped.x + box.w / 2, at: snapped.y };
+      } else {
+        guides.x = sx.at;
+        mark({ x: sx.at, y: snapped.y });
+        if (sx.feature) mark(sx.feature);
+      }
+    }
+    if (sy.at !== undefined) {
+      if (sy.gap) {
+        guides.gapY = { a: sy.gap[0], b: sy.gap[1], lo: snapped.y - box.h / 2, hi: snapped.y + box.h / 2, at: snapped.x };
+      } else {
+        guides.y = sy.at;
+        mark({ x: snapped.x, y: sy.at });
+        if (sy.feature) mark(sy.feature);
+      }
+    }
+    return { dx: sx.d, dy: sy.d, guides };
+  };
+
+  /** Snap a gradient's end to the card's corners, edges and center, the
+   *  chip's row, and the line's other end (so the line can be held straight),
+   *  with the same guides a brand move shows. */
+  const snapPoint = (p: Pt, other: Pt): { p: Pt; guides: Guides } => {
+    const tol = snapTolerance();
+    const { cardCenter, chipCenter } = landmarks();
+    type Target = [number, Pt | null];
+    const xs: Target[] = [[cardCenter.x, cardCenter], [chipCenter.x, chipCenter], [0, null], [face.w, null], [other.x, other]];
+    const ys: Target[] = [[cardCenter.y, cardCenter], [chipCenter.y, chipCenter], [0, null], [face.h, null], [other.y, other]];
+    const best = (v: number, targets: Target[]) => {
+      let at: number | undefined;
+      let feature: Pt | null = null;
+      let min = tol;
+      for (const [to, pt] of targets) {
+        const dist = Math.abs(to - v);
+        if (dist <= min) {
+          min = dist;
+          at = to;
+          feature = pt;
+        }
+      }
+      return { at, feature };
+    };
+    const sx = best(p.x, xs);
+    const sy = best(p.y, ys);
+    const snapped: Pt = { x: sx.at ?? p.x, y: sy.at ?? p.y };
+    const marks: Pt[] = [];
+    const mark = (q: Pt) => {
+      if (!marks.some((m) => Math.hypot(m.x - q.x, m.y - q.y) < 3)) marks.push(q);
+    };
+    if (sx.at !== undefined) {
+      mark(snapped);
+      if (sx.feature) mark(sx.feature);
+    }
+    if (sy.at !== undefined) {
+      mark(snapped);
+      if (sy.feature) mark(sy.feature);
+    }
+    return { p: snapped, guides: { x: sx.at, y: sy.at, marks } };
+  };
+
+  // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
+  // Parked in the phone the card still tilts and turns; only the flight in
+  // and out is off limits, and the brand is only placed on the stage.
+  const inFlight = () => live.current.t > 0 && live.current.t < CARD_PARKED_T;
+  const inPhone = () => live.current.t >= CARD_PARKED_T;
+  const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+  /** A press on the unselected brand: a click if it ends within CLICK_SLOP. */
+  const pendingSelect = useRef<{ id: number; x: number; y: number } | null>(null);
+  const brandDrag = useRef<BrandDrag | null>(null);
+  /** A gradient handle in flight: which end, from which pointer. */
+  const gradDrag = useRef<{ id: number; end: 'from' | 'to' } | null>(null);
+  const moveGradEnd = (end: 'from' | 'to', p: Pt) => {
+    const g = design.gradient;
+    if (!g) return;
+    const snap = snapPoint(p, end === 'from' ? g.to : g.from);
+    setGuides(snap.guides);
+    snapTick(snapKeyOf(snap.guides));
+    const next: CardGradient = { ...g, [end]: { x: Math.round(snap.p.x), y: Math.round(snap.p.y) } };
+    onDesignChange?.({ gradient: next });
+  };
+  /** The cursor a brand edit shows while the pointer is captured: the
+   *  handle's own, turning with the box as it rotates. */
+  const dragCursor = (bd: BrandDrag, rotation: number) =>
+    bd.mode === 'rotate'
+      ? rotateCursor(CORNER_ANGLE[bd.handle!] + rotation)
+      : bd.mode === 'scale'
+        ? resizeCursor(handleAngle(bd.handle!) + rotation)
+        : 'default';
+  const beginBrandDrag = (e: ReactPointerEvent<HTMLDivElement>, start: Pt, mode: BrandDrag['mode'], handle?: Handle) => {
+    const pl = placement.current;
+    if (!pl) return;
+    capture(e);
+    const bd: BrandDrag = { id: e.pointerId, mode, handle, start, layout0: pl.layout, box0: pl.box };
+    brandDrag.current = bd;
+    motion.clearTilt();
+    setSelected(true);
+    e.currentTarget.classList.add(styles.hitMoving);
+    // With the pointer captured, the hit box's cursor is the one shown.
+    e.currentTarget.style.cursor = dragCursor(bd, pl.layout.rotation);
+  };
+  const moveBrand = (bd: BrandDrag, p: Pt) => {
+    const { layout0: l0, box0: b0 } = bd;
+    if (bd.mode === 'move') {
+      let dx = p.x - bd.start.x;
+      let dy = p.y - bd.start.y;
+      const moved = { ...b0, x: b0.x + dx, y: b0.y + dy };
+      const snap = snapMove(moved, l0.rotation);
+      dx += snap.dx;
+      dy += snap.dy;
+      setGuides(snap.guides);
+      snapTick(snapKeyOf(snap.guides));
+      setLayout({ ...l0, x: l0.x + dx, y: l0.y + dy });
+      return;
+    }
+    const c0 = center(b0);
+    if (bd.mode === 'rotate') {
+      const a0 = Math.atan2(bd.start.y - c0.y, bd.start.x - c0.x);
+      const a = Math.atan2(p.y - c0.y, p.x - c0.x);
+      let rotation = l0.rotation + ((a - a0) * 180) / Math.PI;
+      rotation = ((((rotation + 180) % 360) + 360) % 360) - 180;
+      const step = Math.round(rotation / ROTATE_STEP) * ROTATE_STEP;
+      const caught = Math.abs(step - rotation) <= SNAP_DEG;
+      if (caught) rotation = ((((step + 180) % 360) + 360) % 360) - 180;
+      snapTick(caught ? `r${rotation}` : '');
+      setLayout({ ...l0, rotation });
+      if (hitRef.current) hitRef.current.style.cursor = dragCursor(bd, rotation);
+      return;
+    }
+    // Scale: the aspect is the artwork's, so every handle scales uniformly,
+    // about the side or corner opposite the one being dragged.
+    const dir = HANDLE_DIR[bd.handle!];
+    const q = rotate({ x: p.x - c0.x, y: p.y - c0.y }, -l0.rotation);
+    const anchor = { x: (-dir.x * b0.w) / 2, y: (-dir.y * b0.h) / 2 };
+    const reach = { x: dir.x * b0.w, y: dir.y * b0.h };
+    const len = Math.hypot(reach.x, reach.y);
+    const along = ((q.x - anchor.x) * reach.x + (q.y - anchor.y) * reach.y) / len;
+    const s = Math.max(BRAND_MIN_H / l0.h, Math.min(BRAND_MAX_H / l0.h, along / len));
+    const h = clampH(l0.h * s);
+    const scale = h / l0.h;
+    const w = b0.w * scale;
+    const bh = b0.h * scale;
+    const local = { x: anchor.x + (dir.x * w) / 2, y: anchor.y + (dir.y * bh) / 2 };
+    const world = rotate(local, l0.rotation);
+    setLayout(layoutAt(l0, { x: c0.x + world.x, y: c0.y + world.y }, w, h));
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const gd = gradDrag.current;
+    if (gd) {
+      if (e.pointerId !== gd.id) return;
+      const p = pick.current?.(e.clientX, e.clientY);
+      if (p) moveGradEnd(gd.end, p);
+      return;
+    }
+    const bd = brandDrag.current;
+    if (bd) {
+      if (e.pointerId !== bd.id) return;
+      const p = pick.current?.(e.clientX, e.clientY);
+      if (p) moveBrand(bd, p);
+      return;
+    }
+    if (drag.current && e.pointerId === drag.current.id) {
+      motion.drag(e.clientX - drag.current.x, e.clientY - drag.current.y, e.timeStamp);
+      drag.current.x = e.clientX;
+      drag.current.y = e.clientY;
+      const ps = pendingSelect.current;
+      if (ps && Math.hypot(e.clientX - ps.x, e.clientY - ps.y) > CLICK_SLOP) pendingSelect.current = null;
+      return;
+    }
+    if (inFlight()) return;
+    // The outline is for a card at rest, on the stage (the brand is not
+    // placed on the card in the phone): not while it turns or settles.
+    const canEdit = brandEditable && !inPhone();
+    hover(canEdit && e.pointerType === 'mouse' && motion.atRest && hitBrand(e.clientX, e.clientY) !== null);
+    hoverName(canEdit && e.pointerType === 'mouse' && !textEdit && motion.atRest && hitName(e.clientX, e.clientY));
+    if (reduceMotion || selected || live.current.inert) return;
+    const b = e.currentTarget.getBoundingClientRect();
+    motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
+  };
+  // Nothing says the card can be turned; say it once, until the first drag.
+  const [dragged, setDragged] = useState(false);
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (inFlight() || e.button !== 0 || brandDrag.current || gradDrag.current) return;
+    if (gradEditing && !inPhone()) {
+      const gradEl = (e.target as HTMLElement).closest<HTMLElement>('[data-grad]');
+      if (gradEl) {
+        capture(e);
+        gradDrag.current = { id: e.pointerId, end: gradEl.dataset.grad as 'from' | 'to' };
+        motion.clearTilt();
+        e.currentTarget.classList.add(styles.hitMoving);
+        return;
+      }
+    }
+    if (brandEditable && !inPhone()) {
+      // A handle of the selection box: scale, or rotate from just outside a corner.
+      const handleEl = (e.target as HTMLElement).closest<HTMLElement>('[data-handle]');
+      const p = pick.current?.(e.clientX, e.clientY);
+      if (handleEl && p) {
+        const handle = handleEl.dataset.handle as Handle;
+        beginBrandDrag(e, p, handleEl.dataset.rotate ? 'rotate' : 'scale', handle);
+        return;
+      }
+      // The brand itself: selected, a drag moves it. Not yet selected, a
+      // click selects it and a drag spins the card, so turning a card over
+      // by its big logo does not carry the logo off.
+      const hit = hitBrand(e.clientX, e.clientY);
+      if (hit) {
+        if (selected) {
+          beginBrandDrag(e, hit, 'move');
+          return;
+        }
+        pendingSelect.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      } else {
+        setSelected(false);
+      }
+    } else {
+      setSelected(false);
+    }
+    // On Card numbers the card is turned over for the reveal and stays so:
+    // no spinning it (it still tilts). At the reader it is held; locked or
+    // closed it is inert.
+    if (live.current.wantBack || live.current.tap || live.current.inert) return;
+    // The card: spin. The brand's and the name's outlines come off for the turn.
+    hover(false);
+    hoverName(false);
+    capture(e);
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    setDragged(true);
+    motion.beginDrag(e.timeStamp);
+    e.currentTarget.classList.add(styles.hitDragging);
+  };
+  const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const gd = gradDrag.current;
+    if (gd) {
+      if (e.pointerId !== gd.id) return;
+      gradDrag.current = null;
+      setGuides({});
+      lastSnap.current = '';
+      e.currentTarget.classList.remove(styles.hitMoving);
+      return;
+    }
+    const bd = brandDrag.current;
+    if (bd) {
+      if (e.pointerId !== bd.id) return;
+      brandDrag.current = null;
+      setGuides({});
+      lastSnap.current = '';
+      e.currentTarget.classList.remove(styles.hitMoving);
+      e.currentTarget.style.cursor = '';
+      return;
+    }
+    if (!drag.current || e.pointerId !== drag.current.id) return;
+    drag.current = null;
+    motion.endDrag(e.timeStamp);
+    e.currentTarget.classList.remove(styles.hitDragging);
+    // A press on the brand that did not become a drag: select it.
+    if (pendingSelect.current?.id === e.pointerId) {
+      pendingSelect.current = null;
+      motion.clearTilt();
+      setSelected(true);
+      play('press');
+    }
+  };
+  /** Let go of whatever is in flight, whichever pointer had it. The capture
+   *  can end without a pointerup reaching the hit box (the button released
+   *  outside the window or the embed's iframe, the hit box losing its pointer
+   *  events mid-drag), and a drag left set would hold the card in mid-turn
+   *  until the next click. */
+  const releaseAll = () => {
+    const hit = hitRef.current;
+    if (gradDrag.current || brandDrag.current) {
+      gradDrag.current = null;
+      brandDrag.current = null;
+      setGuides({});
+      lastSnap.current = '';
+      hit?.classList.remove(styles.hitMoving);
+      if (hit) hit.style.cursor = '';
+    }
+    if (drag.current) {
+      drag.current = null;
+      pendingSelect.current = null;
+      motion.endDrag(performance.now());
+      hit?.classList.remove(styles.hitDragging);
+    }
+  };
+  // Through a ref, so the listeners always call this render's release (with
+  // this render's motion), not the one from the mount.
+  const releaseRef = useRef(releaseAll);
+  releaseRef.current = releaseAll;
+  useEffect(() => {
+    const onUp = () => {
+      if (drag.current || brandDrag.current || gradDrag.current) releaseRef.current();
+    };
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    window.addEventListener('blur', onUp);
+    return () => {
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener('blur', onUp);
+    };
+  }, []);
+  const onPointerLeave = () => {
+    hover(false);
+    hoverName(false);
+    if (!drag.current) motion.clearTilt();
+  };
+
+  // Parked, the card rides in the phone's page scroll, but its hit box lives
+  // in the stage's layer where no scroller is an ancestor: the wheel over the
+  // card is handed to the scroller so the home moves as it does anywhere
+  // else on it, and the page around the phone doesn't (a native listener:
+  // React's wheel is passive and can't hold the default). At the home's end
+  // the wheel is left alone and goes on to the page, as over the home itself.
+  useEffect(() => {
+    const hit = hitRef.current;
+    if (!hit) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!inPhone() || e.ctrlKey) return;
+      const scroller = hit.ownerDocument.querySelector<HTMLElement>('[data-card-scroller]');
+      if (!scroller || getComputedStyle(scroller).overflowY !== 'auto' || !canScrollBy(scroller, e.deltaY)) return;
+      e.preventDefault();
+      scroller.scrollTop += e.deltaY;
+    };
+    hit.addEventListener('wheel', onWheel, { passive: false });
+    return () => hit.removeEventListener('wheel', onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // ── Typing on the card ─────────────────────────────────────────────────────
+  // Double-click the wordmark (front) or the cardholder's name (back) to type
+  // it in place: a transparent input rides the hit box over the painted text,
+  // in the card's face, size, and tracking, so the caret sits in the paint.
+  // A logo has no text: double-clicking it puts it back where the sample has it.
+  const [textEdit, setTextEdit] = useState<'brand' | 'name' | null>(null);
+  live.current.freeze = textEdit !== null;
+  const textInput = useRef<HTMLInputElement>(null);
+  // What the editor shows: the design's text, or, while it is empty, the
+  // specimen text the face paints in its place, so there is something to
+  // select and type over. The specimen is never written to the design.
+  const textValue = textEdit === 'brand' ? design.programName : design.cardholderName;
+  const specimen = textEdit === 'brand' ? 'Your brand' : 'Cardholder name';
+  const [draft, setDraft] = useState<string | null>(null);
+  const editorText = draft ?? (textValue || specimen);
+  useEffect(() => {
+    if (!textEdit) return;
+    setDraft(null);
+    const el = textInput.current;
+    if (!el) return;
+    el.focus();
+    // As a double-click on text does: everything selected, ready to replace.
+    el.select();
+  }, [textEdit]);
+  // (The keystrokes sound from the module's global typing rule: the editor
+  // is a text input.)
+  const onTextChange = (v: string) => {
+    setDraft(v);
+    onDesignChange?.(textEdit === 'brand' ? { programName: v } : { cardholderName: v });
+  };
+  useEffect(() => {
+    if (phoneUp || !introDone) setTextEdit(null);
+  }, [phoneUp, introDone]);
+  // Over the name on the back: its outline shows (no handles; it only edits).
+  const [overName, setOverName] = useState(false);
+  const overNameRef = useRef(false);
+  const hoverName = (over: boolean) => {
+    if (over === overNameRef.current) return;
+    overNameRef.current = over;
+    setOverName(over);
+    if (over) playHover('tick');
+  };
+  const hitName = (clientX: number, clientY: number) => {
+    const p = pickBack.current?.(clientX, clientY);
+    if (!p) return false;
+    const b = backNameBox(design);
+    const m = 12;
+    return p.x >= b.x - m && p.x <= b.x + b.w + m && p.y >= b.y - m && p.y <= b.y + b.h + m;
+  };
+  const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!brandEditable || live.current.t > 0) return;
+    if (hitBrand(e.clientX, e.clientY)) {
+      play('press');
+      if (design.logoUrl) setLayout(null);
+      else {
+        setSelected(false);
+        setTextEdit('brand');
+      }
+      return;
+    }
+    if (hitName(e.clientX, e.clientY)) {
+      play('press');
+      setTextEdit('name');
+    }
+  };
+  const onTextKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      e.preventDefault();
+      setTextEdit(null);
+    }
+  };
+  // The editor's box in card px: the wordmark's em box, anchored the way its
+  // layout is and wide enough to type into; or the name line on the back.
+  const k = CARD_PER_SPEC;
+  let textStyle: React.CSSProperties | undefined;
+  if (textEdit === 'brand' && placed) {
+    const b = placed.box;
+    const em = b.h * k;
+    const anchor = placed.layout.anchor;
+    const width = foot.w * 0.6;
+    const placeX: React.CSSProperties =
+      anchor === 'right'
+        ? { right: foot.w - (b.x + b.w) * k }
+        : anchor === 'center'
+          ? { left: (b.x + b.w / 2) * k - width / 2 }
+          : { left: b.x * k };
+    textStyle = {
+      ...placeX,
+      top: b.y * k,
+      width,
+      height: em,
+      fontSize: em,
+      fontWeight: BRAND_TEXT_WEIGHT,
+      letterSpacing: `${BRAND_TRACKING}em`,
+      textAlign: anchor,
+      // The paint centers the caps in the em box; the face's ascent is 85%.
+      lineHeight: `${em}px`,
+      transform: `translateY(${(0.5 + BRAND_CAP / 2 - 0.85) * em}px)`,
+    };
+  } else if (textEdit === 'name') {
+    const b = backNameBox(design);
+    const em = b.h * k;
+    textStyle = {
+      left: b.x * k,
+      top: b.y * k,
+      width: foot.w - b.x * k - 40 * k,
+      height: em,
+      fontSize: em,
+      fontWeight: 400,
+      letterSpacing: 0,
+      textAlign: 'left',
+      lineHeight: `${em}px`,
+    };
+  }
+
+
+  // What the mesh paints from. One object per change, so the rig (memoized)
+  // sits out the renders the phone's boot curve drives every frame.
+  const meshState = useMemo<CardMeshState>(
+    () => ({ design, issued, frozen: card.frozen, closed: card.closed }),
+    [design, issued, card.frozen, card.closed],
+  );
+
+  // The selection box, in card px on the hit box.
+  const box = placed && (selected || overBrand) && !textEdit ? placed.box : null;
+  const boxStyle = box
+    ? {
+        left: box.x * CARD_PER_SPEC,
+        top: box.y * CARD_PER_SPEC,
+        width: box.w * CARD_PER_SPEC,
+        height: box.h * CARD_PER_SPEC,
+        transform: `rotate(${placed!.layout.rotation}deg)`,
+      }
+    : undefined;
+
+  return (
+    <div ref={rootRef} className={styles.root} data-phone-up={phoneUp || undefined}>
+      <Canvas
+        ref={canvasRef}
+        className={clsx(styles.canvas, dimmed && styles.canvasDimmed)}
+        dpr={[1, 2]}
+        // Stepped by StageClock from Motion's frame loop, not R3F's own: the
+        // rig reads the phone's DOM (the slot, the pages) every frame, and
+        // must read it after Motion has written that frame's transforms.
+        frameloop="never"
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        camera={{ position: [0, 0, CAMERA_Z], near: 200, far: 6000 }}
+        onCreated={({ gl }) => {
+          gl.toneMapping = NEUTRAL_TONE_MAPPING;
+        }}
+      >
+        <StageClock />
+        <StageCamera dark={dark} live={live} />
+        <CardEnv />
+        <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
+        <CardRig
+          rootRef={rootRef}
+          hitRef={hitRef}
+          live={live}
+          motion={motion}
+          pick={pick}
+          pickBack={pickBack}
+          placement={placement}
+          onBrandPlacement={onBrandPlacement}
+          state={meshState}
+        />
+      </Canvas>
+
+      {/* Rides with the card: pointer input, the state pill, the accessible
+          name. Its box is the card's footprint as held, so everything laid on
+          it is the composed face in card px. */}
+      <div
+        ref={hitRef}
+        className={clsx(
+          styles.hit,
+          overBrand && styles.hitOverBrand,
+          overName && styles.hitOverName,
+          stateShown && (card.frozen || card.closed) && styles.hitInert,
+          stateShown && card.frozen && styles.hitLocked,
+        )}
+        data-card-hit
+        style={{ width: foot.w, height: foot.h, pointerEvents: inFlightNow || !introDone ? 'none' : 'auto' }}
+        onPointerMove={onPointerMove}
+        onPointerDown={onPointerDown}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onLostPointerCapture={() => releaseRef.current()}
+        onPointerLeave={onPointerLeave}
+        onDoubleClick={onDoubleClick}
+        // Locked, in the phone: the whole card is the tap for its status.
+        onClick={() => {
+          if (inPhone() && card.frozen) card.setSheet('freeze');
+        }}
+      >
+        <span className={styles.srOnly} role="img" aria-label={`${programNameOf(design)} card`} />
+        {!introDone && <CardIntro ref={overlayRef} brand={programNameOf(design)} orientation={design.orientation} />}
+        {/* The card's state, on the card: locked, it dims and blurs under a lock
+            that locks; closed, the same under a line that says so. Nothing
+            while it is being issued (the creating screen says so) and nothing
+            for Apple Wallet (Activity has it). */}
+        <AnimatePresence initial={false}>
+          {stateShown && card.closed ? (
+            <m.span
+              key="closed"
+              className={styles.closedMark}
+              initial={reduceMotion ? { opacity: 0 } : LOCK_MARK_HIDDEN}
+              animate={reduceMotion ? { opacity: 1 } : { ...LOCK_MARK_SHOWN, transition: LOCK_MARK_IN }}
+              exit={reduceMotion ? { opacity: 0 } : { ...LOCK_MARK_HIDDEN, transition: LOCK_MARK_OUT }}
+              aria-hidden
+            >
+              This card has been closed
+            </m.span>
+          ) : lockMark ? (
+            <m.span
+              key="lock"
+              className={styles.lockMark}
+              initial={reduceMotion ? { opacity: 0 } : LOCK_MARK_HIDDEN}
+              animate={reduceMotion ? { opacity: 1 } : { ...LOCK_MARK_SHOWN, transition: LOCK_MARK_IN }}
+              exit={reduceMotion ? { opacity: 0 } : { ...LOCK_MARK_HIDDEN, transition: LOCK_MARK_OUT }}
+              aria-hidden
+            >
+              <AnimatedLock
+                size={56}
+                locking={lockMark.locking}
+                locked={lockMark.kind === 'locked'}
+                onLocked={lockMark.locking ? () => play('lock') : undefined}
+                onUnlocked={() => setLockMark(null)}
+              />
+            </m.span>
+          ) : null}
+        </AnimatePresence>
+
+        {/* The brand's box: an outline on hover; selected, the handles too. */}
+        {overName && !textEdit && (
+          <div
+            className={styles.selection}
+            style={(() => {
+              const b = backNameBox(design);
+              return { left: b.x * k, top: b.y * k, width: b.w * k, height: b.h * k };
+            })()}
+            aria-hidden
+          />
+        )}
+        {box && (
+          <div className={styles.selection} style={boxStyle} aria-hidden>
+            {selected &&
+              CORNERS.map((h) => (
+                <span
+                  key={`r${h}`}
+                  className={clsx(styles.rotateZone, styles[`zone_${h}`])}
+                  style={{ cursor: rotateCursor(CORNER_ANGLE[h] + placed!.layout.rotation) }}
+                  data-handle={h}
+                  data-rotate="true"
+                />
+              ))}
+            {/* The edges resize along their whole length; the corners carry the handles. */}
+            {selected &&
+              EDGES.map((h) => (
+                <span
+                  key={h}
+                  className={clsx(styles.edge, styles[`edge_${h}`])}
+                  style={{ cursor: resizeCursor(handleAngle(h) + placed!.layout.rotation) }}
+                  data-handle={h}
+                />
+              ))}
+            {selected &&
+              CORNERS.map((h) => (
+                <span
+                  key={h}
+                  className={clsx(styles.handle, styles[`handle_${h}`])}
+                  style={{ cursor: resizeCursor(handleAngle(h) + placed!.layout.rotation) }}
+                  data-handle={h}
+                />
+              ))}
+          </div>
+        )}
+        {/* The gradient's line and its two ends, while its picker is open. */}
+        {gradEditing && design.gradient && <GradientHandles gradient={design.gradient} />}
+        {guides.x !== undefined && (
+          <span className={styles.guideV} style={{ left: guides.x * CARD_PER_SPEC }} aria-hidden />
+        )}
+        {guides.y !== undefined && (
+          <span className={styles.guideH} style={{ top: guides.y * CARD_PER_SPEC }} aria-hidden />
+        )}
+        {guides.gapY && <GapBars gap={guides.gapY} axis="y" />}
+        {guides.gapX && <GapBars gap={guides.gapX} axis="x" />}
+        {guides.marks?.map((m, i) => (
+          <span
+            key={i}
+            className={styles.guideMark}
+            style={{ left: m.x * CARD_PER_SPEC, top: m.y * CARD_PER_SPEC }}
+            aria-hidden
+          />
+        ))}
+
+        {textEdit && textStyle && (
+          <input
+            ref={textInput}
+            className={styles.textEdit}
+            style={{ ...textStyle, fontFamily: `"${CARD_FONT_FAMILY}"` }}
+            value={editorText}
+            maxLength={textEdit === 'brand' ? 18 : 24}
+            aria-label={textEdit === 'brand' ? 'Brand name' : 'Cardholder name'}
+            onChange={(e) => onTextChange(e.target.value)}
+            onKeyDown={onTextKey}
+            onBlur={() => setTextEdit(null)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+          />
+        )}
+
+        <span
+          className={clsx(
+            styles.hint,
+            (dragged || overBrand || selected || !introDone || phoneUp) && styles.hintGone,
+          )}
+          aria-hidden
+        >
+          <IconRotate360Right size={14} />
+          Drag to turn it over
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Equal-spacing bars, as Figma draws them: one bar across each of the two
+ * matched gaps, with a tick at each end, along the box's center line.
+ */
+function GapBars({ gap, axis }: { gap: Gap; axis: 'x' | 'y' }) {
+  const k = CARD_PER_SPEC;
+  const spans: Array<[number, number]> = [
+    [gap.a, gap.lo],
+    [gap.hi, gap.b],
+  ];
+  return (
+    <>
+      {spans.map(([from, to], i) =>
+        axis === 'y' ? (
+          <span
+            key={i}
+            className={clsx(styles.gapBar, styles.gapBarV)}
+            style={{ left: gap.at * k, top: from * k, height: (to - from) * k }}
+            aria-hidden
+          />
+        ) : (
+          <span
+            key={i}
+            className={clsx(styles.gapBar, styles.gapBarH)}
+            style={{ top: gap.at * k, left: from * k, width: (to - from) * k }}
+            aria-hidden
+          />
+        ),
+      )}
+    </>
+  );
+}
+
+/**
+ * Figma's gradient handles: the line from the first stop to the last, a ring
+ * at each end to drag, and a dot at each stop along it. In card px on the
+ * hit box; the ends are grips (`data-grad`), the rest is click-through.
+ */
+function GradientHandles({ gradient: g }: { gradient: CardGradient }) {
+  const k = CARD_PER_SPEC;
+  const a = { x: g.from.x * k, y: g.from.y * k };
+  const b = { x: g.to.x * k, y: g.to.y * k };
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+  return (
+    <div className={styles.gradient} aria-hidden>
+      <span
+        className={styles.gradientLine}
+        style={{ left: a.x, top: a.y, width: len, transform: `rotate(${angle}deg)` }}
+      />
+      {g.type === 'radial' && (
+        <span
+          className={styles.gradientRadius}
+          style={{ left: a.x - len, top: a.y - len, width: len * 2, height: len * 2 }}
+        />
+      )}
+      {g.stops.map((s, i) => (
+        <span
+          key={i}
+          className={styles.gradientStop}
+          style={{ left: a.x + (b.x - a.x) * s.at, top: a.y + (b.y - a.y) * s.at, background: s.color }}
+        />
+      ))}
+      <span className={styles.gradientEnd} style={{ left: a.x, top: a.y }} data-grad="from" />
+      <span className={styles.gradientEnd} style={{ left: b.x, top: b.y }} data-grad="to" />
+    </div>
+  );
+}
+
+/**
+ * Advances the R3F frame from Motion's loop, in its `postRender` step, so the
+ * rig's per-frame reads of the phone (the slot's rect, a page's edge) see the
+ * transforms Motion wrote this frame and the card paints in step with the
+ * DOM. Two independent rAF loops would leave the card a frame behind whenever
+ * R3F's happened to run first, which showed on a fast push.
+ */
+function StageClock() {
+  const advance = useThree((s) => s.advance);
+  useEffect(() => {
+    // With frameloop="never" R3F takes each frame's delta from this timestamp,
+    // in SECONDS (it becomes the clock's elapsed time); Motion's is in ms. In
+    // ms every delta read as seconds and hit the rig's 0.05s clamp, and all
+    // the card's time-based motion ran 3× at 60Hz, 6× at 120Hz.
+    const step = ({ timestamp }: { timestamp: number }) => advance(timestamp / 1000);
+    frame.postRender(step, true);
+    return () => cancelFrame(step);
+  }, [advance]);
+  return null;
+}
+
+/** Perspective camera whose view at z = 0 is exactly the stage in px. */
+function StageCamera({ dark, live }: { dark: boolean; live: React.MutableRefObject<Live> }) {
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
+  const size = useThree((s) => s.size);
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    camera.fov = (2 * Math.atan(size.height / 2 / CAMERA_Z) * 180) / Math.PI;
+    camera.updateProjectionMatrix();
+    live.current.dirty = true;
+  }, [camera, size.height, live]);
+  useEffect(() => {
+    gl.toneMappingExposure = dark ? EXPOSURE_DARK : EXPOSURE_LIGHT;
+    live.current.dirty = true;
+  }, [gl, dark, live]);
+  return null;
+}
+
+interface CardRigProps {
+  rootRef: React.RefObject<HTMLDivElement>;
+  hitRef: React.RefObject<HTMLDivElement>;
+  live: React.MutableRefObject<Live>;
+  motion: CardMotion;
+  /** Filled with a picker from the pointer to the front face (spec px). */
+  pick: React.MutableRefObject<Pick | null>;
+  pickBack: React.MutableRefObject<Pick | null>;
+  /** Where the brand last painted (for the dev hook). */
+  placement: React.MutableRefObject<BrandPlacement | null>;
+  onBrandPlacement: (p: BrandPlacement) => void;
+  state: CardMeshState;
+}
+
+/** Drives the mesh and the DOM hit box every frame. Memoized: every prop
+ *  but `state` is a ref or a stable callback, and the stage renders every
+ *  frame of the phone's boot for values the rig reads through `live`. */
+const CardRig = memo(function CardRig({
+  rootRef,
+  hitRef,
+  live,
+  motion,
+  pick,
+  pickBack,
+  placement,
+  onBrandPlacement,
+  state,
+}: CardRigProps) {
+  // Carrier takes position and scale; the card inside it takes the spin.
+  const carrier = useRef<THREE.Group>(null);
+  const group = useRef<THREE.Group>(null);
+  const size = useThree((s) => s.size);
+  const dpr = useThree((s) => s.viewport.dpr);
+  const get = useThree((s) => s.get);
+  const pos = useRef<{ x: number; y: number; s: number } | null>(null);
+  // The turning card's air (see the frame loop), and how long it has been still.
+  const airRef = useRef<Airflow | null>(null);
+  const airStill = useRef(0);
+  useEffect(
+    () => () => {
+      airRef.current?.stop();
+      airRef.current = null;
+    },
+    [],
+  );
+  // The last frame painted: the carrier's place, the card's turn, and the
+  // canvas's size. A frame that lands within the epsilons of it, with
+  // nothing marked dirty, isn't painted again (see the gate below).
+  const painted = useRef({ x: NaN, y: NaN, s: NaN, rx: NaN, ry: NaN, rz: NaN, w: 0, h: 0, dpr: 0, age: 0 });
+  const markDirty = useCallback(() => {
+    live.current.dirty = true;
+  }, [live]);
+  // The canvas coming back from a lost context is blank until painted.
+  useEffect(() => {
+    const el = get().gl.domElement;
+    el.addEventListener('webglcontextrestored', markDirty);
+    return () => el.removeEventListener('webglcontextrestored', markDirty);
+  }, [get, markDirty]);
+
+  // Pointer → the card's plane → the composed face's spec px. The plane, not
+  // the mesh, so a drag can carry the brand past the card's edge; null when
+  // the other face is toward the camera. The back is the same plane seen from
+  // behind (its paint is mirrored in u on the mesh, so seen from behind it
+  // reads the right way round); `localToSpec` knows both frames and the
+  // card's orientation.
+  useEffect(() => {
+    const ray = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const plane = new THREE.Plane();
+    const origin = new THREE.Vector3();
+    const normal = new THREE.Vector3();
+    const q = new THREE.Quaternion();
+    const hit = new THREE.Vector3();
+    const pickSide = (side: 'front' | 'back'): Pick => (clientX, clientY) => {
+      const g = group.current;
+      if (!g) return null;
+      const { camera, gl } = get();
+      const r = gl.domElement.getBoundingClientRect();
+      ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      g.getWorldPosition(origin);
+      normal.set(0, 0, 1).applyQuaternion(g.getWorldQuaternion(q));
+      const toward = ray.ray.direction.dot(normal);
+      if (side === 'front' ? toward >= 0 : toward <= 0) return null;
+      plane.setFromNormalAndCoplanarPoint(normal, origin);
+      if (!ray.ray.intersectPlane(plane, hit)) return null;
+      g.worldToLocal(hit);
+      return localToSpec(live.current.orientation, side, hit);
+    };
+    pick.current = pickSide('front');
+    pickBack.current = pickSide('back');
+    return () => {
+      pick.current = null;
+      pickBack.current = null;
+    };
+  }, [get, live, pick, pickBack]);
+
+  // Dev: expose the scene state and the pose for tracing from the console.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    (window as unknown as Record<string, unknown>).__cardStage = {
+      get,
+      group,
+      motion,
+      intro: live.current.intro,
+      brand: placement,
+    };
+  }, [get, motion, live, placement]);
+
+  // Priority 1: R3F leaves the paint to this callback (the mesh's and the
+  // hologram's frame callbacks, at 0, have run by then), which paints only
+  // when the frame would look different from the last one painted. Parked
+  // in the phone, held still, the card is the same picture for whole flows
+  // while the screen animates around it, and a paint of the stage-sized
+  // canvas each frame was the largest fixed cost in WebKit.
+  useFrame(({ gl, scene, camera }, delta) => {
+    const g = group.current;
+    const c = carrier.current;
+    const root = rootRef.current;
+    if (!g || !c || !root) return;
+    const dt = Math.min(0.05, delta);
+    const r = root.getBoundingClientRect();
+    // The card's footprint on screen: flat or upright.
+    const { orientation } = live.current;
+    const foot = footprint(orientation);
+    // Rest position: centered on the stage, scaled to fit it.
+    const rest = {
+      x: r.width / 2,
+      y: r.height / 2,
+      s: Math.max(MIN_SCALE, Math.min(MAX_SCALE, (r.width - GUTTER_X * 2) / foot.w, (r.height - GUTTER_Y) / foot.h)),
+    };
+    // Glide toward rest (exponential approach), snapping on the first frame.
+    const k = pos.current ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
+    const p = pos.current ?? { ...rest };
+    p.x += (rest.x - p.x) * k;
+    p.y += (rest.y - p.y) * k;
+    p.s += (rest.s - p.s) * k;
+    pos.current = p;
+    // Phone up: interpolate toward the phone's live card slot and park there,
+    // at the scale that fits the slot (its width or its height, whichever
+    // the footprint needs).
+    let { x, y, s } = p;
+    const { t } = live.current;
+    if (t > 0) {
+      const slot = root.ownerDocument.querySelector<HTMLElement>('[data-card-slot]');
+      if (slot) {
+        const b = slot.getBoundingClientRect();
+        x += (b.left + b.width / 2 - r.left - x) * t;
+        y += (b.top + b.height / 2 - r.top - y) * t;
+        s += (Math.min(b.width / foot.w, b.height / foot.h) - s) * t;
+      }
+    }
+
+    const { intro } = live.current;
+    const pose = motion.step(dt, {
+      wantBack: live.current.wantBack,
+      // Held flat: in flight to or from the phone, during the intro, under
+      // the brand's selection box (which is DOM, and must sit on the face),
+      // or at the reader for tap-to-pay (front up, whichever face it was
+      // showing). Parked otherwise, the card is free again: it tilts under
+      // the pointer and can be turned over in the slot.
+      hold:
+        (t > 0 && t < CARD_PARKED_T) || !intro.done || live.current.editing || live.current.tap || live.current.inert,
+      freeze: live.current.freeze,
+      reduceMotion: live.current.reduceMotion,
+    });
+    const bob = pose.dy * (1 - t);
+    live.current.facing = pose.facing;
+    // The air the turning card moves: a voice that follows its speed, so a
+    // lazy turn breathes and a fling rushes, and it dies as the spring
+    // settles. Opened when the card starts turning, closed once it has been
+    // still for a moment. Held or in flight the card does not spin.
+    const speed = motion.turnSpeed;
+    const air = airRef.current;
+    if (speed > AIR_ON) {
+      if (!air) airRef.current = airflow();
+      airRef.current!.set(speed);
+      airStill.current = 0;
+    } else if (air) {
+      air.set(speed);
+      airStill.current += dt;
+      if (airStill.current > AIR_OFF_S && !motion.isDragging) {
+        air.stop();
+        airRef.current = null;
+      }
+    }
+    // Stage px → scene: origin at the stage center, y up.
+    c.position.set(x + pose.dx * s - size.width / 2, size.height / 2 - (y + bob), 0);
+    c.scale.setScalar(s);
+
+    // The intro: step the blueprint and bring the card's canvas into focus off
+    // one clock. The canvas is hidden from the first frame (before the card is
+    // ready, t is -1). A flow starting mid-intro (or reduced motion) ends it now.
+    if (!intro.done) {
+      if (intro.t >= 0 && !intro.paused) intro.t += dt;
+      if (t > 0 || live.current.reduceMotion) {
+        intro.t = INTRO_END;
+        intro.cued = INTRO_SOUNDS.length;
+      }
+      // The ticks and the whoosh, on the same clock (silent when the browser
+      // has not yet allowed sound; the module drops them, nothing fires late).
+      while (intro.cued < INTRO_SOUNDS.length && intro.t >= INTRO_SOUNDS[intro.cued].at) {
+        const cue = INTRO_SOUNDS[intro.cued];
+        play(cue.name, { gain: cue.gain, gap: cue.gap });
+        intro.cued += 1;
+      }
+      if (intro.overlay.current) stepIntro(intro.overlay.current, intro.t);
+      const canvas = intro.canvas.current;
+      const look = introCard(intro.t);
+      // The mesh alone settles down to size; the blueprint and hit box stay put.
+      c.scale.setScalar(s * look.scale);
+      if (canvas) {
+        canvas.style.opacity = String(look.opacity);
+        canvas.style.filter = look.blur > 0.05 ? `blur(${look.blur.toFixed(2)}px)` : '';
+      }
+      if (intro.t >= INTRO_END) {
+        intro.done = true;
+        if (canvas) {
+          canvas.style.opacity = '';
+          canvas.style.filter = '';
+        }
+        intro.onDone();
+      }
+    }
+    // Euler XYZ: Rx(pitch) · Ry(spin) · Rz(roll), the roll innermost so it
+    // turns the faces about the card's own normal. An upright card carries a
+    // quarter turn in the same roll, so the spin stays about the screen's
+    // vertical (its long axis now) and a flop still brings the back up the
+    // right way: Rx(180)·Rz(180 − 90) = Ry(180)·Rz(−90).
+    g.rotation.set(
+      THREE.MathUtils.degToRad(pose.rotX),
+      THREE.MathUtils.degToRad(pose.rotY),
+      THREE.MathUtils.degToRad(pose.rotZ + ORIENT_ROLL[orientation]),
+    );
+
+    const hit = hitRef.current;
+    if (hit) {
+      hit.style.transform = `translate(${x + pose.dx * s - foot.w / 2}px, ${y + bob - foot.h / 2}px) scale(${s})`;
+      // The hit box scales with the card; text riding on it undoes that.
+      hit.style.setProperty('--card-scale', s.toFixed(4));
+    }
+
+    // Parked, the card is screen content: the phone's content layer paints
+    // over it (AppShell), and the card is clipped to the screen, so a push
+    // that slides its slot past the bezel can't show it over the shell. (Not
+    // during the flight in or out, when it crosses the bezel on purpose.)
+    // The screen's scroll edge ([data-card-fade], the strip under the status
+    // bar and header) blurs and tints the content scrolling under it; the card
+    // is in this layer, out of the blur's reach, so it fades out over the
+    // strip instead as the page scroll carries it up there.
+    let clip = '';
+    let mask = '';
+    if (t >= CARD_PARKED_T) {
+      const doc = root.ownerDocument;
+      const screen = doc.querySelector<HTMLElement>('[data-screen-body]');
+      if (screen) {
+        const b = screen.getBoundingClientRect();
+        const ins = (v: number) => Math.max(0, v).toFixed(1);
+        clip = `inset(${ins(b.top - r.top)}px ${ins(r.right - b.right)}px ${ins(r.bottom - b.bottom)}px ${ins(b.left - r.left)}px)`;
+      }
+      const fade = doc.querySelector<HTMLElement>('[data-card-fade]');
+      if (fade) {
+        // The strip's own strength (it comes in with the scroll) scales the
+        // card's fade; the stops ease like the strip's tint.
+        const strength = Number(fade.style.getPropertyValue('--edge-fade')) || 0;
+        if (strength > 0.005) {
+          const f = fade.getBoundingClientRect();
+          mask = edgeMask(f.top - r.top, f.height * EDGE_FADE_RAMP_END, strength);
+        }
+      }
+    }
+    if (root.style.clipPath !== clip) root.style.clipPath = clip;
+    if (root.style.maskImage !== mask) root.style.maskImage = mask;
+
+    // ── The render gate ──────────────────────────────────────────────────
+    const last = painted.current;
+    const at = c.position;
+    const moved =
+      Math.abs(at.x - last.x) > RENDER_EPS_PX ||
+      Math.abs(at.y - last.y) > RENDER_EPS_PX ||
+      Math.abs(c.scale.x - last.s) > RENDER_EPS_SCALE ||
+      Math.abs(pose.rotX - last.rx) > RENDER_EPS_DEG ||
+      Math.abs(pose.rotY - last.ry) > RENDER_EPS_DEG ||
+      Math.abs(pose.rotZ - last.rz) > RENDER_EPS_DEG ||
+      size.width !== last.w ||
+      size.height !== last.h ||
+      dpr !== last.dpr;
+    last.age += 1;
+    if (!moved && !live.current.dirty && intro.done && last.age < RENDER_EVERY) return;
+    live.current.dirty = false;
+    painted.current = {
+      x: at.x,
+      y: at.y,
+      s: c.scale.x,
+      rx: pose.rotX,
+      ry: pose.rotY,
+      rz: pose.rotZ,
+      w: size.width,
+      h: size.height,
+      dpr,
+      age: 0,
+    };
+    gl.render(scene, camera);
+  }, 1);
+
+  // The blueprint starts drawing once the front has painted.
+  const onReady = useCallback(() => {
+    const { intro } = live.current;
+    if (intro.t < 0) intro.t = 0;
+  }, [live]);
+  // A material change plays out on the floating card; parked, mid-intro, or
+  // with reduced motion the body swaps at once.
+  const swapContext = useCallback(() => {
+    const l = live.current;
+    return { animate: l.intro.done && l.t === 0 && !l.reduceMotion, backShowing: l.facing < 0 };
+  }, [live]);
+
+  return (
+    <group ref={carrier}>
+      <CardMesh
+        ref={group}
+        state={state}
+        onReady={onReady}
+        onBrandPlacement={onBrandPlacement}
+        swapContext={swapContext}
+        onChange={markDirty}
+      />
+    </group>
+  );
+});
