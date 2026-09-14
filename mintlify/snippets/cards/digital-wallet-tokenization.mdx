@@ -25,11 +25,22 @@ your behalf. Brand those messages with `cardTokenization2faConfig` on
 ## In-app provisioning: the "Add to Wallet" button
 
 In-app (push) provisioning lets the cardholder add the card from inside
-your app with one tap, without typing anything. The wallet SDK on the
-device produces a set of values, your backend exchanges them with Grid
-for an encrypted payload, and the SDK completes the add. The payload is
-encrypted to the wallet provider's keys, so neither your app nor your
-servers ever see card data.
+your app with one tap, without typing anything. Each wallet provider
+ships a library your app integrates to start that flow; this page calls
+it the wallet SDK:
+
+| Wallet | Wallet SDK | What it hands your app |
+|--------|------------|------------------------|
+| Apple Pay | PassKit, built into iOS (`PKAddPaymentPassViewController`) | `certificates`, `nonce`, `nonceSignature` |
+| Google Pay | Google's TapAndPay SDK for Android | `serverSessionId` and the wallet account id |
+| Samsung Pay | Samsung Pay SDK for Android | `walletUserId`, `deviceId` |
+
+When the cardholder taps the button, the wallet SDK produces those
+values, which identify the device and the wallet session. Your app sends
+them to your backend, your backend exchanges them with Grid for an
+encrypted payload, and the wallet SDK uses that payload to finish adding
+the card. The payload is encrypted to the wallet provider's keys, so
+neither your app nor your servers ever see card data.
 
 ```mermaid
 sequenceDiagram
