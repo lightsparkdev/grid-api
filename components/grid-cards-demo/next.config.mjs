@@ -26,7 +26,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' https://docs.lightspark.com https://*.lightspark.com https://*.mintlify.app https://*.mintlify.dev http://localhost:*",
+            value: "frame-ancestors 'self' https://docs.lightspark.com https://*.lightspark.com https://*.mintlify.app https://*.mintlify.dev https://*.mintlify.site http://localhost:*",
           },
         ],
       },
