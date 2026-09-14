@@ -1,0 +1,19 @@
+type: object
+required:
+  - reason
+  - code
+properties:
+  code:
+    type: string
+    description: |
+      | Error Code | Description |
+      |------------|-------------|
+      | REQUEST_TIMEOUT | Timed out reading the request; retry |
+    enum:
+      - REQUEST_TIMEOUT
+  reason:
+    type: string
+    description: Error message
+  details:
+    type: object
+    description: Additional error details

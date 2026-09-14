@@ -4335,6 +4335,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
+        '408':
+          description: Request Timeout - the request body could not be read in time; retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error408'
         '409':
           description: Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
           content:
@@ -12909,6 +12915,23 @@ components:
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+            | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
+            | QUOTE_EXPIRED | The quote has expired; request a new quote |
+            | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
+            | STABLECOIN_AMOUNT_NOT_REPRESENTABLE | The amount cannot be represented at the token's precision |
+            | STABLECOIN_BURN_SOURCE_NOT_SUPPORTED | The burn source account cannot be used for this operation |
+            | STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED | Linking the external account for stablecoin operations failed |
+            | STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED | The external account needs a link method before it can be used |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED | The external account is not linked for stablecoin operations |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED | This external account type is not supported for stablecoin operations |
+            | STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_FAILED | The provider could not link the external account |
+            | STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_REQUIRED | The external account must be linked with the provider first |
+            | STABLECOIN_GRID_OPERATIONS_NOT_ENABLED | The stablecoin is not enabled for Grid operations |
+            | STABLECOIN_NOT_PROVISIONED | The stablecoin is not provisioned for issuer operations |
+            | STABLECOIN_OPERATION_NOT_SUPPORTED | The stablecoin does not support this operation |
+            | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected the operation |
+            | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
+            | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -12953,6 +12976,23 @@ components:
             - CARDHOLDER_KYC_NOT_APPROVED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
+            - INSUFFICIENT_FUNDS
+            - QUOTE_EXPIRED
+            - QUOTE_RATE_UNAVAILABLE
+            - STABLECOIN_AMOUNT_NOT_REPRESENTABLE
+            - STABLECOIN_BURN_SOURCE_NOT_SUPPORTED
+            - STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED
+            - STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED
+            - STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_FAILED
+            - STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_REQUIRED
+            - STABLECOIN_GRID_OPERATIONS_NOT_ENABLED
+            - STABLECOIN_NOT_PROVISIONED
+            - STABLECOIN_OPERATION_NOT_SUPPORTED
+            - STABLECOIN_PROVIDER_ERROR
+            - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
+            - STABLECOIN_VERIFICATION_FAILED
         reason:
           type: string
           description: Error message
@@ -12979,9 +13019,11 @@ components:
             |------------|-------------|
             | UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY | Unrecognized mandatory payee data key |
             | NOT_IMPLEMENTED | Feature not implemented |
+            | UNRECOGNIZED_MANDATORY_COUNTERPARTY_DATA_KEY | The counterparty requires a data key Grid does not recognise |
           enum:
             - UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY
             - NOT_IMPLEMENTED
+            - UNRECOGNIZED_MANDATORY_COUNTERPARTY_DATA_KEY
         reason:
           type: string
           description: Error message
@@ -14177,6 +14219,14 @@ components:
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
+            | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
+            | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists |
+            | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
+            | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |
+            | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |
+            | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
+            | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
+            | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - TRANSACTION_NOT_CANCELLABLE
@@ -14193,6 +14243,14 @@ components:
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - CONFLICT
+            - DOCUMENT_ALREADY_EXISTS
+            - DUPLICATE_EXTERNAL_ACCOUNT
+            - DUPLICATE_PAY_REQUEST
+            - SMS_OTP_CREDENTIAL_SET_CHANGED
+            - SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS
+            - STABLECOIN_SYMBOL_ALREADY_EXISTS
+            - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
+            - WALLET_NOT_PROVISIONED
         reason:
           type: string
           description: Error message
@@ -14221,6 +14279,19 @@ components:
             | REFERENCE_NOT_FOUND | Reference not found |
             | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
             | STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND | Stablecoin provider account link not found |
+            | ACCOUNT_NOT_FOUND | Account not found |
+            | AUTH_METHOD_NOT_FOUND | Authentication credential not found |
+            | CUSTOMER_NOT_FOUND | Customer not found |
+            | DOCUMENT_HOLDER_NOT_FOUND | Document holder not found |
+            | NOT_FOUND | The requested resource was not found |
+            | PAYMENT_URL_NOT_FOUND | Payment URL not found |
+            | PLATFORM_NOT_FOUND | Platform not found |
+            | REQUEST_NOT_FOUND | Pending request not found |
+            | SESSION_NOT_FOUND | Session not found |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND | Stablecoin external account not found |
+            | STABLECOIN_NOT_FOUND | Stablecoin not found |
+            | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
+            | VERIFICATION_NOT_FOUND | Verification not found |
           enum:
             - TRANSACTION_NOT_FOUND
             - INVITATION_NOT_FOUND
@@ -14232,6 +14303,19 @@ components:
             - REFERENCE_NOT_FOUND
             - UMA_NOT_FOUND
             - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
+            - ACCOUNT_NOT_FOUND
+            - AUTH_METHOD_NOT_FOUND
+            - CUSTOMER_NOT_FOUND
+            - DOCUMENT_HOLDER_NOT_FOUND
+            - NOT_FOUND
+            - PAYMENT_URL_NOT_FOUND
+            - PLATFORM_NOT_FOUND
+            - REQUEST_NOT_FOUND
+            - SESSION_NOT_FOUND
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND
+            - STABLECOIN_NOT_FOUND
+            - STABLECOIN_OPERATION_NOT_FOUND
+            - VERIFICATION_NOT_FOUND
         reason:
           type: string
           description: Error message
@@ -14352,12 +14436,14 @@ components:
             | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
             | LNURLP_REQUEST_FAILED | LNURLP request failed |
             | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
+            | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
           enum:
             - PAYREQ_REQUEST_FAILED
             - COUNTERPARTY_PUBKEY_FETCH_ERROR
             - NO_COMPATIBLE_UMA_VERSION
             - LNURLP_REQUEST_FAILED
             - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
+            - SMS_OTP_CREDENTIAL_SYNC_FAILED
         reason:
           type: string
           description: Error message
@@ -18162,12 +18248,16 @@ components:
             | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
             | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
             | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+            | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
+            | SANCTION_BLOCKED | Blocked by sanction screening |
           enum:
             - FORBIDDEN
             - USER_NOT_READY
             - COUNTERPARTY_NOT_ALLOWED
             - VELOCITY_LIMIT_EXCEEDED
             - END_USER_TERMS_NOT_ACCEPTED
+            - CUSTOMER_NOT_VERIFIED
+            - SANCTION_BLOCKED
         reason:
           type: string
           description: Error message
@@ -24461,6 +24551,26 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
+    Error408:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | REQUEST_TIMEOUT | Timed out reading the request; retry |
+          enum:
+            - REQUEST_TIMEOUT
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.

@@ -51,6 +51,23 @@ properties:
       | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
       | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
       | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+      | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
+      | QUOTE_EXPIRED | The quote has expired; request a new quote |
+      | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
+      | STABLECOIN_AMOUNT_NOT_REPRESENTABLE | The amount cannot be represented at the token's precision |
+      | STABLECOIN_BURN_SOURCE_NOT_SUPPORTED | The burn source account cannot be used for this operation |
+      | STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED | Linking the external account for stablecoin operations failed |
+      | STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED | The external account needs a link method before it can be used |
+      | STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED | The external account is not linked for stablecoin operations |
+      | STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED | This external account type is not supported for stablecoin operations |
+      | STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_FAILED | The provider could not link the external account |
+      | STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_REQUIRED | The external account must be linked with the provider first |
+      | STABLECOIN_GRID_OPERATIONS_NOT_ENABLED | The stablecoin is not enabled for Grid operations |
+      | STABLECOIN_NOT_PROVISIONED | The stablecoin is not provisioned for issuer operations |
+      | STABLECOIN_OPERATION_NOT_SUPPORTED | The stablecoin does not support this operation |
+      | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected the operation |
+      | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
+      | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
     enum:
       - INVALID_INPUT
       - END_USER_TERMS_VERSION_NOT_FOUND
@@ -95,6 +112,23 @@ properties:
       - CARDHOLDER_KYC_NOT_APPROVED
       - TRANSACTION_SIZE_LIMIT_EXCEEDED
       - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
+      - INSUFFICIENT_FUNDS
+      - QUOTE_EXPIRED
+      - QUOTE_RATE_UNAVAILABLE
+      - STABLECOIN_AMOUNT_NOT_REPRESENTABLE
+      - STABLECOIN_BURN_SOURCE_NOT_SUPPORTED
+      - STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED
+      - STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED
+      - STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED
+      - STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED
+      - STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_FAILED
+      - STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_REQUIRED
+      - STABLECOIN_GRID_OPERATIONS_NOT_ENABLED
+      - STABLECOIN_NOT_PROVISIONED
+      - STABLECOIN_OPERATION_NOT_SUPPORTED
+      - STABLECOIN_PROVIDER_ERROR
+      - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
+      - STABLECOIN_VERIFICATION_FAILED
   reason:
     type: string
     description: Error message
