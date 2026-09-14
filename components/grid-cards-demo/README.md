@@ -54,7 +54,12 @@ physical cards and PIN are not in the API yet.
 
 Keep these byte-identical to `components/grid-wallet-demo` so fixes port with `cp`:
 `src/app/page.tsx`, `src/app/page.module.scss`, `src/lib/layout.ts`,
-`src/styles/breakpoints.scss`, `src/components/{ConfigurePanel,AppPanel,ApiPanel,PanelHeader,
+`src/styles/breakpoints.scss`, `src/components/{ConfigurePanel,AppPanel,PanelHeader,
 ColumnResizeHandle,DotGridCanvas,SectionDivider,liquid-glass,glass-gl}`,
 `src/components/ThemeSync.tsx`, `src/hooks/{useTheme,useThemeMode,useColumnResize}.ts`,
 `src/lib/{groupApiEntries.ts,easing.ts}`.
+
+`src/components/ApiPanel` and `src/lib/apiCodeFormat.tsx` have diverged: webhook rows here
+render as the API reference lists them (`WEBHOOK card-status-change`, a Payload tab with the
+JSON Grid delivered, a Response tab with your 2xx) instead of as a curl the client would run.
+Port that to the wallet demo before treating the two as identical again.
