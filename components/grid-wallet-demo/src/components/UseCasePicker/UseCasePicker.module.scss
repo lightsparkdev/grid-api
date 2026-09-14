@@ -39,6 +39,18 @@ $ease-out-swift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
       --tile-bg: var(--color-gray-950);
     }
   }
+
+  /* Stacked with the docs sidebar collapsed, the panel wears the chrome gray
+     too (see ConfigurePanel) — step the tiles down with it, same as wide. */
+  @media (min-width: ($breakpoint-layout-mobile + 1px)) {
+    :global(html[data-layout='stacked'][data-nav='collapsed']) & {
+      --tile-bg: var(--surface-primary);
+    }
+
+    :global(html[data-layout='stacked'][data-nav='collapsed'][data-theme='dark']) & {
+      --tile-bg: var(--color-gray-950);
+    }
+  }
 }
 
 .card {
