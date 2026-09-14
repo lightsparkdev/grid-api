@@ -314,7 +314,7 @@ function uploadBackRegion(
 
 /** The steel blank's stock, for the change only: the finished card's steel
  *  (`STOCKS[2]`), a shade cooler and brighter, as mill stainless is. */
-const BLANK_STEEL: CardStock = { ...STOCKS[2], face: '#d3d5da' };
+const BLANK_STEEL: CardStock = { ...STOCKS[2], face: '#e0e2e7' };
 
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
   { state, onReady, onBrandPlacement, swapContext, onChange },
