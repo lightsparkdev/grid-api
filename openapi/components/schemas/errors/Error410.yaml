@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 410
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -17,7 +11,7 @@ properties:
       | CUSTOMER_DELETED | Customer has been permanently deleted |
     enum:
       - CUSTOMER_DELETED
-  message:
+  reason:
     type: string
     description: Error message
   details:

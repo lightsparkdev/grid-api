@@ -29,9 +29,8 @@ All error responses include a structured format:
 
 ```json
 {
-  "status": 400,
   "code": "INVALID_AMOUNT",
-  "message": "Amount must be greater than 0",
+  "reason": "Amount must be greater than 0",
   "details": {
     "field": "amount",
     "value": -100
@@ -50,9 +49,8 @@ All error responses include a structured format:
 ```javascript
 // Error
 {
-  "status": 400,
   "code": "INVALID_INPUT",
-  "message": "Invalid account ID format"
+  "reason": "Invalid account ID format"
 }
 
 // Fix: Ensure proper ID format
