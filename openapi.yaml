@@ -9934,6 +9934,318 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/dispute_open:
+    post:
+      summary: Simulate opening a card dispute
+      description: |
+        Open a dispute against an existing settled card transaction in the sandbox environment, as the card issuer would when a cardholder files a claim. Creates the dispute with an `OPENED` event on its timeline. The card issuer offers no dispute simulator, so the sandbox delivers the same dispute record the issuer's webhook would.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardDisputeOpen
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the dispute is filed against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardDisputeOpenRequest'
+            examples:
+              fullDispute:
+                summary: Dispute the whole $15.00 settled transaction
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  reason: Merchandise not received
+              partialDispute:
+                summary: Dispute $4.00 of a larger settled transaction
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 400
+                  reason: Overcharged for one item
+      responses:
+        '202':
+          description: The dispute was opened.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+        '400':
+          description: Bad request - Invalid parameters, or the transaction has no settled clearings to dispute
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Either the transaction already has an open dispute, or the simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/dispute_provisional_credit:
+    post:
+      summary: Simulate a provisional credit on a card dispute
+      description: |
+        Instruct a provisional credit to the cardholder on the transaction's open dispute, as the card issuer does while a dispute runs. The credit is paid from the card's funding source when the platform is enabled for dispute funding.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardDisputeProvisionalCredit
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the dispute is filed against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardDisputeCreditRequest'
+            examples:
+              fullProvisionalCredit:
+                summary: Credit the cardholder the whole $15.00 disputed amount
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 1500
+      responses:
+        '202':
+          description: The credit was instructed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+        '400':
+          description: Bad request - Invalid parameters, the transaction has no open dispute, or the amount exceeds the disputed amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/dispute_provisional_credit_reversal:
+    post:
+      summary: Simulate reversing a provisional credit on a card dispute
+      description: |
+        Instruct a previously granted provisional credit back from the cardholder on the transaction's open dispute, as the card issuer does when the cardholder is found liable.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardDisputeProvisionalCreditReversal
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the dispute is filed against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardDisputeCreditRequest'
+            examples:
+              fullReversal:
+                summary: Take back the whole $15.00 provisional credit
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 1500
+      responses:
+        '202':
+          description: The reversal was instructed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+        '400':
+          description: Bad request - Invalid parameters, the transaction has no open dispute, or the amount exceeds the disputed amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/dispute_close:
+    post:
+      summary: Simulate closing a card dispute
+      description: |
+        Close the transaction's open dispute with a disposition, as the card issuer does when the network process ends. A `PARTIALLY_WON` close is the one outcome whose split the caller names, with `recoveredAmount`; every other disposition recovers all of the disputed amount or none of it.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardDisputeClose
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the dispute is filed against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardDisputeCloseRequest'
+            examples:
+              wonDispute:
+                summary: The cardholder wins the whole disputed amount
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  disposition: WON
+              partiallyWonDispute:
+                summary: The network gives back $4.00 of a $15.00 dispute
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  disposition: PARTIALLY_WON
+                  recoveredAmount: 400
+      responses:
+        '202':
+          description: The dispute was closed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+        '400':
+          description: Bad request - Invalid parameters, the transaction has no open dispute, or a `PARTIALLY_WON` close named a `recoveredAmount` that is not strictly between 0 and the disputed amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /stablecoins:
     post:
       summary: Register an existing provider-created stablecoin
@@ -26592,6 +26904,106 @@ components:
           description: How much to reverse, in the smallest unit of the transaction's currency (cents for USD). Leave it out to reverse the whole authorization. Send an amount to reverse only that much and leave the rest on hold.
           exclusiveMinimum: 0
           example: 1250
+    SandboxCardDisputeOpenRequest:
+      type: object
+      required:
+        - cardTransactionId
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/dispute_open`. Opens a dispute against a settled `CardTransaction`, as the card issuer does when a cardholder files a claim.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the settled `CardTransaction` to dispute. Must have at least one settled clearing and no dispute already open.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: The disputed amount in the smallest unit of the transaction's currency. Defaults to the settled amount; must not exceed it.
+          exclusiveMinimum: 0
+          example: 1500
+        reason:
+          type: string
+          description: Free-text reason recorded on the opening event.
+          example: Merchandise not received
+    SandboxCardDisputeResponse:
+      type: object
+      required:
+        - disputeId
+        - disputeToken
+        - status
+      description: The simulated dispute after the request was applied. The dispute simulators report the resulting dispute in this response; the cardholder money a dispute event moves settles asynchronously.
+      properties:
+        disputeId:
+          type: string
+          description: The id of the dispute record.
+          example: 019542f5-b3e7-1d02-0000-000000000200
+        disputeToken:
+          type: string
+          description: The card issuer's token for the dispute.
+          example: dispute_transaction_sandbox_5f8d2c1a
+        status:
+          type: string
+          enum:
+            - OPEN
+            - CLOSED
+          description: Whether the dispute is still active.
+          example: OPEN
+        disposition:
+          type:
+            - string
+            - 'null'
+          enum:
+            - WON
+            - PARTIALLY_WON
+            - LOST
+            - WITHDRAWN
+            - DENIED
+            - null
+          description: The outcome once the dispute closes. Null while it is open.
+          example: WON
+    SandboxCardDisputeCreditRequest:
+      type: object
+      required:
+        - cardTransactionId
+        - amount
+      description: 'Sandbox-only request body for the provisional-credit simulators: `POST /sandbox/cards/{id}/simulate/dispute_provisional_credit` and `POST /sandbox/cards/{id}/simulate/dispute_provisional_credit_reversal`.'
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the disputed `CardTransaction`; it must have an open dispute.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: The amount to credit, or to take back, in the smallest unit of the transaction's currency. Must not exceed the disputed amount.
+          exclusiveMinimum: 0
+          example: 1500
+    SandboxCardDisputeCloseRequest:
+      type: object
+      required:
+        - cardTransactionId
+        - disposition
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/dispute_close`. Closes the transaction's open dispute with a disposition, as the card issuer does when the network process ends.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the disputed `CardTransaction`; it must have an open dispute.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        disposition:
+          type: string
+          enum:
+            - WON
+            - PARTIALLY_WON
+            - LOST
+            - WITHDRAWN
+            - DENIED
+          description: The outcome the dispute closes with.
+          example: WON
+        recoveredAmount:
+          type: integer
+          format: int64
+          description: For `PARTIALLY_WON` only, how much of the disputed amount the network gave back, in the smallest unit of the transaction's currency. Must be strictly between 0 and the disputed amount; defaults to half.
+          exclusiveMinimum: 0
+          example: 400
     StablecoinIssuanceStatus:
       type: string
       enum:

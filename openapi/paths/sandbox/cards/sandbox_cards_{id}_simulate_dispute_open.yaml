@@ -1,0 +1,92 @@
+post:
+  summary: Simulate opening a card dispute
+  description: >
+    Open a dispute against an existing settled card transaction in the
+    sandbox environment, as the card issuer would when a cardholder files a
+    claim. Creates the dispute with an `OPENED` event on its timeline. The
+    card issuer offers no dispute simulator, so the sandbox delivers the same
+    dispute record the issuer's webhook would.
+
+
+    Production returns `404` on this path.
+  operationId: sandboxSimulateCardDisputeOpen
+  tags:
+    - Sandbox
+  security:
+    - BasicAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The id of the card the dispute is filed against.
+      schema:
+        type: string
+      example: Card:019542f5-b3e7-1d02-0000-000000000010
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../../components/schemas/cards/SandboxCardDisputeOpenRequest.yaml
+        examples:
+          fullDispute:
+            summary: Dispute the whole $15.00 settled transaction
+            value:
+              cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+              reason: Merchandise not received
+          partialDispute:
+            summary: Dispute $4.00 of a larger settled transaction
+            value:
+              cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+              amount: 400
+              reason: Overcharged for one item
+  responses:
+    '202':
+      description: The dispute was opened.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/cards/SandboxCardDisputeResponse.yaml
+    '400':
+      description: >-
+        Bad request - Invalid parameters, or the transaction has no settled
+        clearings to dispute
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error400.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Forbidden - request was made with a production platform token
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Card or card transaction not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        Conflict. Either the transaction already has an open dispute, or the
+        simulation targets a card in a program where the card issuer makes
+        authorization decisions. These sandbox simulators support only card
+        programs where Grid makes authorization decisions. This is a property
+        of the card's program, so retrying will not help.
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error409.yaml
+    '500':
+      description: Internal service error
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error500.yaml
