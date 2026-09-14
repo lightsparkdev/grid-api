@@ -192,6 +192,37 @@ post:
                 authorizedAt: '2026-05-09T16:10:00Z'
                 createdAt: '2026-05-09T16:10:00Z'
                 updatedAt: '2026-05-09T16:10:00Z'
+          voided:
+            summary: Authorization fully reversed before clearing
+            value:
+              id: Webhook:019542f5-b3e7-1d02-0000-000000000045
+              type: CARD_TRANSACTION.VOIDED
+              timestamp: '2026-05-09T16:20:00Z'
+              data:
+                type: CARD
+                id: Transaction:019542f5-b3e7-1d02-0000-000000000103
+                cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                platformCustomerId: 18d3e5f7b4a9c2
+                issuerTransactionToken: lithic_txn_e52b8c13
+                status: VOIDED
+                direction: DEBIT
+                description: HOTEL AUTHORIZATION
+                merchant:
+                  descriptor: HOTEL AUTHORIZATION
+                  mcc: '7011'
+                  country: US
+                authorizedAmount:
+                  amount: 0
+                  currency:
+                    code: USD
+                    name: United States Dollar
+                    symbol: $
+                    decimals: 2
+                accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                authorizedAt: '2026-05-09T15:50:00Z'
+                createdAt: '2026-05-09T15:50:00Z'
+                updatedAt: '2026-05-09T16:20:00Z'
           exception:
             summary: Settled to the network but the funding-source pull failed
             value:

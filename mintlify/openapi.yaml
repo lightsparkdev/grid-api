@@ -9791,7 +9791,7 @@ paths:
       description: |
         Simulate a merchant cancelling a card authorization before it settles — a hotel releasing a hold, or a store voiding a purchase that never went through. Use it to see how your integration handles an authorization that disappears without ever clearing.
         Send `amount` to reverse only part of the authorization, or leave it out to reverse all of it. The transaction must still be fully open: once any part of it has settled, it can no longer be reversed.
-        Grid processes the reversal in the background and sends a card transaction webhook once it lands, the same as the other simulators.
+        Grid processes the reversal in the background. A full reversal sets `status: VOIDED` and sends a `CARD_TRANSACTION.VOIDED` webhook. A partial reversal leaves the transaction `AUTHORIZED` with a smaller hold.
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardAuthorizationReversal
@@ -9872,7 +9872,7 @@ paths:
       description: |
         Simulate an authorization the merchant never followed through on, so the card network lets it lapse and releases the held funds. Use it to see how your integration handles a hold that quietly goes away instead of settling.
         The transaction must still be fully open: once any part of it has settled, it can no longer expire.
-        Grid processes the expiry in the background and sends a card transaction webhook once it lands, the same as the other simulators.
+        Grid processes the expiry in the background. Once it lands, the transaction has `status: VOIDED` and Grid sends a `CARD_TRANSACTION.VOIDED` webhook.
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardAuthorizationExpiry
@@ -12066,6 +12066,37 @@ webhooks:
                     authorizedAt: '2026-05-09T16:10:00Z'
                     createdAt: '2026-05-09T16:10:00Z'
                     updatedAt: '2026-05-09T16:10:00Z'
+              voided:
+                summary: Authorization fully reversed before clearing
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000045
+                  type: CARD_TRANSACTION.VOIDED
+                  timestamp: '2026-05-09T16:20:00Z'
+                  data:
+                    type: CARD
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000103
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_e52b8c13
+                    status: VOIDED
+                    direction: DEBIT
+                    description: HOTEL AUTHORIZATION
+                    merchant:
+                      descriptor: HOTEL AUTHORIZATION
+                      mcc: '7011'
+                      country: US
+                    authorizedAmount:
+                      amount: 0
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    authorizedAt: '2026-05-09T15:50:00Z'
+                    createdAt: '2026-05-09T15:50:00Z'
+                    updatedAt: '2026-05-09T16:20:00Z'
               exception:
                 summary: Settled to the network but the funding-source pull failed
                 value:
@@ -23933,9 +23964,10 @@ components:
         - VOIDED
         - EXCEPTION
       description: |
-        Lifecycle status of a card transaction. The status tracks settlement only —
-        a return against a purchase is its own dated `CREDIT` row linked to the
-        purchase via `originalTransactionId`, not a status of its own.
+        Lifecycle status of a card transaction. The status tracks the authorization
+        outcome and settlement — a return against a purchase is its own dated
+        `CREDIT` row linked to the purchase via `originalTransactionId`, not a
+        status of its own.
 
         | Status | Description |
         |--------|-------------|
@@ -23943,7 +23975,7 @@ components:
         | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
         | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. A `RETURN` received afterwards keeps the purchase `SETTLED`; the return appears as its own `CREDIT` transaction. |
         | `DECLINED` | The authorization was declined before any money moved. Declines carry no settlement and must be excluded from cardholder statements. |
-        | `VOIDED` | The authorization was fully reversed or expired before any clearing posted, so the hold closed without moving money. `authorizedAmount` is 0 and `settledAmount` is absent. |
+        | `VOIDED` | The authorization was fully reversed or expired before any clearing posted, so the hold closed without moving money. `authorizedAmount` reports what is still held, normally 0, and `settledAmount` is absent. |
         | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
     CardDeclinedReason:
       type: string

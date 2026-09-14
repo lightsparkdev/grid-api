@@ -42,8 +42,8 @@ land.
 
 A full authorization reversal or an authorization expiry before any
 clearing closes the hold without moving money. The card transaction is
-terminal with `status: "VOIDED"`, `authorizedAmount: 0`, and no
-`settledAmount`.
+terminal with `status: "VOIDED"`. `authorizedAmount` reports what is
+still held, normally 0, and `settledAmount` is absent.
 
 ## Refund
 

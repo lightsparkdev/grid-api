@@ -23,11 +23,10 @@ Clearings are reconciled against the purchase and rolled up into its
 ## Status transitions
 
 ```text
-             ┌──► DECLINED   (auth declined, no money moved)
-AUTH REQUEST ┤
-             └──► AUTHORIZED ──► PARTIALLY_SETTLED ──► SETTLED
-                      ├──► VOIDED     (full reversal or expiry, no clearing)
-                      └──► EXCEPTION  (pull failed after settlement)
+AUTH REQUEST ──┬──► DECLINED
+               └──► AUTHORIZED ──┬──► VOIDED
+                                 └──► CLEARING ──┬──► PARTIALLY_SETTLED ──► SETTLED
+                                                └──► EXCEPTION
 ```
 
 A merchant `RETURN` does not move the purchase's status. The purchase stays
@@ -39,7 +38,7 @@ A merchant `RETURN` does not move the purchase's status. The purchase stays
 | `PARTIALLY_SETTLED` | At least one clearing landed, but more are still expected (split shipments, multi-leg trips). |
 | `SETTLED` | All clearings for the auth have posted. The transaction is closed against the funding source. A `RETURN` received afterwards keeps it `SETTLED`; the return appears as its own `CREDIT` transaction. |
 | `DECLINED` | The authorization was declined before any money moved. Declines must be excluded from cardholder statements. |
-| `VOIDED` | The authorization was fully reversed or expired before any clearing posted. The hold closed without moving money, `authorizedAmount` is 0, and `settledAmount` is absent. |
+| `VOIDED` | The authorization was fully reversed or expired before any clearing posted. The hold closed without moving money, `authorizedAmount` reports what is still held (normally 0), and `settledAmount` is absent. |
 | `EXCEPTION` | The transaction settled to the network but the corresponding pull from the funding source failed. |
 
 Every transition is delivered as a `CARD_TRANSACTION.*` webhook whose

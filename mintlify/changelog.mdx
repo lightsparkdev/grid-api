@@ -11,9 +11,9 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
-## Card refunds post as their own rows, declines report as `DECLINED`
+## Card refunds, declines, and voids report distinct outcomes
 
-Two card-statement corrections to `CardTransaction`:
+Three card-statement corrections to `CardTransaction`:
 
 - **Refunds are their own dated rows.** A merchant `RETURN` against a purchase now opens
   its own `CardTransaction` (`direction: CREDIT`, credited value in `settledAmount`)
@@ -25,6 +25,9 @@ Two card-statement corrections to `CardTransaction`:
   `DECLINED` (and fires `CARD_TRANSACTION.DECLINED`) instead of `EXCEPTION`, which is
   reserved for settlement anomalies. Declines must be excluded from cardholder
   statements.
+- **`VOIDED` status.** An approved authorization that is fully reversed or expires
+  before any clearing posts now reports `VOIDED` (and fires
+  `CARD_TRANSACTION.VOIDED`) instead of `SETTLED`.
 - Card rows now carry the same full currency metadata (`decimals`, `name`, `symbol`) as
   payment rows, and `merchant` gains `city` and `state` when the network reports them.
 - `GET /transactions` accepts a `cardId` filter (`Card:` LSID or UUID) for listing one
