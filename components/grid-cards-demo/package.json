@@ -2,7 +2,7 @@
   "name": "grid-cards-demo",
   "version": "1.0.0",
   "private": true,
-  "description": "Interactive Grid Cards playground, embedded in the Grid docs.",
+  "description": "Interactive Lightspark Cards playground, embedded in the Grid docs.",
   "scripts": {
     "dev": "next dev -p 4002",
     "build": "next build",

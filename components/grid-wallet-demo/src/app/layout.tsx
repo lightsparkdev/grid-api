@@ -4,7 +4,7 @@ import { easingVarsStylesheet } from '@/lib/easing';
 import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
 import './globals.scss';
 
-const TITLE = 'Grid Global Accounts — Live demo';
+const TITLE = 'Lightspark Global Accounts — Playground';
 const DESCRIPTION =
   'Create a branded, self-custody dollar account and watch the Grid API calls fire in real time.';
 
