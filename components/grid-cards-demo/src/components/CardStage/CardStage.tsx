@@ -624,8 +624,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const inFlight = () => live.current.t > 0 && live.current.t < CARD_PARKED_T;
   const inPhone = () => live.current.t >= CARD_PARKED_T;
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
-  /** A press on the unselected brand: a click if it ends within CLICK_SLOP. */
-  const pendingSelect = useRef<{ id: number; x: number; y: number } | null>(null);
+  /** A press on the unselected brand, or on the name: a click if it ends
+   *  within CLICK_SLOP (the brand selects, the name opens its editor). */
+  const pendingSelect = useRef<{ id: number; x: number; y: number; on: 'brand' | 'name' } | null>(null);
   const brandDrag = useRef<BrandDrag | null>(null);
   /** A gradient handle in flight: which end, from which pointer. */
   const gradDrag = useRef<{ id: number; end: 'from' | 'to' } | null>(null);
@@ -768,9 +769,13 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           beginBrandDrag(e, hit, 'move');
           return;
         }
-        pendingSelect.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+        pendingSelect.current = { id: e.pointerId, x: e.clientX, y: e.clientY, on: 'brand' };
       } else {
         setSelected(false);
+        // The name on the back edits on a click; a drag from it spins the card.
+        if (!textEdit && hitName(e.clientX, e.clientY)) {
+          pendingSelect.current = { id: e.pointerId, x: e.clientX, y: e.clientY, on: 'name' };
+        }
       }
     } else {
       setSelected(false);
@@ -812,11 +817,14 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     drag.current = null;
     motion.endDrag(e.timeStamp);
     e.currentTarget.classList.remove(styles.hitDragging);
-    // A press on the brand that did not become a drag: select it.
-    if (pendingSelect.current?.id === e.pointerId) {
+    // A press on the brand or the name that did not become a drag: select
+    // the brand; open the name's editor.
+    const ps = pendingSelect.current;
+    if (ps?.id === e.pointerId) {
       pendingSelect.current = null;
       motion.clearTilt();
-      setSelected(true);
+      if (ps.on === 'brand') setSelected(true);
+      else setTextEdit('name');
       play('press');
     }
   };
@@ -886,8 +894,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // ── Typing on the card ─────────────────────────────────────────────────────
-  // Double-click the wordmark (front) or the cardholder's name (back) to type
-  // it in place: a transparent input rides the hit box over the painted text,
+  // Double-click the wordmark (front), or click the cardholder's name (back),
+  // to type it in place: a transparent input rides the hit box over the painted text,
   // in the card's face, size, and tracking, so the caret sits in the paint.
   // A logo has no text: double-clicking it puts it back where the sample has it.
   const [textEdit, setTextEdit] = useState<'brand' | 'name' | null>(null);
