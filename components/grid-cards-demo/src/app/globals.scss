@@ -13,6 +13,7 @@
 @use './fonts/geist';
 @use './fonts/circular';
 @use '../apps/shared/typography/ios-type';
+@use '../styles/breakpoints' as *;
 
 /* Origin sets --font-family-sans/-mono to just "Suisse Intl" with NO fallback,
    and its @font-face uses font-display: swap. So any frame the webfont isn't
@@ -167,6 +168,38 @@ body {
    (StageGL's ResizeObserver), which every arrangement flip triggers. */
 html:not([data-theme='dark']):not([data-layout='stacked']) {
   --dot-grid-bg: #f4f4f3;
+}
+
+/* Configure panel chrome — single source for the panel surface and the tile
+   groups sitting on it (FlowPicker, DesignPicker, …), which mix their press
+   states from --panel-tile-bg. Default: the stacked layout, panel on primary
+   with tiles a step up. Chrome gray (the docs sidebar's own #F0F0EE / #111111,
+   = surface-secondary) with tiles stepped down to primary whenever the panel
+   abuts docs chrome: side-by-side, OR stacked with the docs sidebar collapsed
+   to its rail — then the panel is the only chrome left beside the playground.
+   Both keyed to html attributes set pre-paint (layout.tsx) and kept live
+   (page.tsx / useColumnResize) so the color rides the arrangement's clock.
+   data-nav is only present embedded, so standalone never goes gray; the
+   mobile floor keeps the full-screen configure view on its own surface. */
+:root {
+  --panel-bg: var(--surface-primary);
+  --panel-tile-bg: var(--surface-base);
+}
+
+[data-theme='dark'] {
+  --panel-bg: var(--color-gray-950);
+  --panel-tile-bg: var(--color-gray-925);
+}
+
+@media (min-width: ($breakpoint-layout-mobile + 1px)) {
+  html:is(:not([data-layout='stacked']), [data-nav='collapsed']) {
+    --panel-bg: var(--surface-secondary);
+    --panel-tile-bg: var(--surface-primary);
+
+    &[data-theme='dark'] {
+      --panel-tile-bg: var(--color-gray-950);
+    }
+  }
 }
 
 :root {

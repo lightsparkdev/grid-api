@@ -1,5 +1,4 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
-@use '../../styles/breakpoints' as *;
 
 /* Same tile surface as the other pickers (UseCasePicker / FlowPicker). Every
    piece of text in the tile is the `label` style the flow tiles use: row
@@ -22,7 +21,9 @@
 
 .group {
   corner-shape: var(--corner-shape);
-  --tile-bg: var(--surface-base);
+  /* Tile surface — press states mix from it. The token (globals.scss) steps
+     it down whenever the panel wears the chrome gray. */
+  --tile-bg: var(--panel-tile-bg);
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -31,18 +32,6 @@
   border-radius: var(--corner-radius-md);
   overflow: clip;
   transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1), opacity 200ms ease;
-
-  :global([data-theme='dark']) & {
-    --tile-bg: var(--color-gray-925);
-  }
-
-  @media (min-width: $breakpoint-layout-wide) {
-    --tile-bg: var(--surface-primary);
-
-    :global([data-theme='dark']) & {
-      --tile-bg: var(--color-gray-950);
-    }
-  }
 }
 
 
