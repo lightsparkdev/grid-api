@@ -13,6 +13,7 @@ import {
   chipPocketPath,
   drawDilated,
   drawTinted,
+  ETCH_BLUR,
   FOIL_CARRIER,
   K,
   lockupBox,
@@ -390,7 +391,7 @@ export function decorateOrm(
  * front's normal map wherever the height departs from flat (the same
  * composition as the beadblast's structure). The cut is the Z card's deboss
  * (grid-wallet-demo `cardTextures`): a fifth of the height range, its edge
- * blurred over 6 texels, which reads as a shallow, soft basin rather than a
+ * blurred over `ETCH_BLUR` texels, which reads as a shallow, soft basin rather than a
  * chamfer. The Z card Sobels it at 2.5 under a normal scale of 1.6; ours is
  * 0.6, so the strength carries the difference. Built at texel size, not map size: the
  * wordmark's strokes are only a few texels wide, and a bevel wider than a
@@ -413,7 +414,7 @@ export function decorateNormal(
   const hc = height.getContext('2d')!;
   hc.fillStyle = '#808080';
   hc.fillRect(0, 0, rw, rh);
-  hc.filter = 'blur(6px)';
+  hc.filter = `blur(${ETCH_BLUR}px)`;
   const m = makeCanvas(rw, rh);
   const mc = m.getContext('2d')!;
   const sx = brandMask.width / TEX_W;
