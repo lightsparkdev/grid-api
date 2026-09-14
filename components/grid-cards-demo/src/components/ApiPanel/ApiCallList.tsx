@@ -10,8 +10,11 @@ import type { ApiCall } from '@/data/flow';
 import {
   formatCurlString,
   formatResponseString,
+  formatWebhookPayload,
+  formatWebhookResponse,
   highlightCurl,
   highlightJson,
+  highlightStatus,
   stepTitle,
 } from '@/lib/apiCodeFormat';
 import { formatAbsoluteTime, formatRelativeTime } from '@/lib/formatRelativeTime';
@@ -31,15 +34,38 @@ const syntaxClasses = {
   string: styles.syntaxString,
 };
 
-function methodBadgeVariant(method: ApiCall['method']): 'blue' | 'green' {
-  return method === 'GET' ? 'green' : 'blue';
+/** Method colours as the API reference shows them (Mintlify's defaults):
+ *  GET green, POST blue, PATCH orange (yellow is the nearest the Badge has),
+ *  DELETE red. Webhooks take the reference's blue WEBHOOK pill. */
+function methodBadgeVariant(method: ApiCall['method']): 'blue' | 'green' | 'yellow' | 'red' {
+  switch (method) {
+    case 'GET':
+      return 'green';
+    case 'POST':
+      return 'blue';
+    case 'PATCH':
+      return 'yellow';
+    case 'DELETE':
+      return 'red';
+    default: {
+      const never: never = method;
+      throw new Error(`Unknown method ${String(never)}`);
+    }
+  }
 }
+
+/** Tab labels: what you send / what comes back for a call you make; the
+ *  payload Grid delivered / what your endpoint answered for a webhook. */
+const CALL_TAB_LABELS: Record<CodeTab, string> = { request: 'Request', response: 'Response' };
+const WEBHOOK_TAB_LABELS: Record<CodeTab, string> = { request: 'Payload', response: 'Response' };
 
 function CodeTabs({
   tab,
+  labels,
   onTabChange,
 }: {
   tab: CodeTab;
+  labels: Record<CodeTab, string>;
   onTabChange: (tab: CodeTab) => void;
 }) {
   const tabGroupRef = useRef<HTMLDivElement>(null);
@@ -92,7 +118,7 @@ function CodeTabs({
         className={clsx(styles.tab, tab === 'request' && styles.tabActive)}
         onClick={() => onTabChange('request')}
       >
-        Request
+        {labels.request}
       </button>
       <button
         ref={responseRef}
@@ -102,7 +128,7 @@ function CodeTabs({
         className={clsx(styles.tab, tab === 'response' && styles.tabActive)}
         onClick={() => onTabChange('response')}
       >
-        Response
+        {labels.response}
       </button>
     </div>
   );
@@ -163,12 +189,18 @@ function CopyButton({
   );
 }
 
+/** The endpoint line. A call you make: its method and path on the Grid API.
+ *  A webhook you receive: the way the API reference lists it — a WEBHOOK
+ *  badge and the webhook's name in the spec (`card-status-change`) — so the
+ *  row points straight at its reference page. */
 function EndpointBlock({
   method,
   path,
+  inbound,
 }: {
   method: ApiCall['method'];
   path: string;
+  inbound?: boolean;
 }) {
   const copyPath = useCallback(async () => {
     await navigator.clipboard.writeText(path);
@@ -200,7 +232,7 @@ function EndpointBlock({
       aria-label={`Copy endpoint ${path}`}
     >
       <div className={styles.endpointScroll}>
-        <Badge variant={methodBadgeVariant(method)}>{method}</Badge>
+        {inbound ? <Badge variant="blue">WEBHOOK</Badge> : <Badge variant={methodBadgeVariant(method)}>{method}</Badge>}
         <span className={styles.path}>{path}</span>
       </div>
       <div className={styles.endpointFade} aria-hidden />
@@ -228,15 +260,24 @@ function FeedTimestamp({ timestamp, now }: { timestamp: number; now: number }) {
 
 function ApiCallBlock({ entry, now, isNew }: { entry: Entry; now: number; isNew: boolean }) {
   const [tab, setTab] = useState<CodeTab>('request');
+  const inbound = Boolean(entry.inbound);
 
-  const curl = useMemo(() => formatCurlString(entry), [entry]);
-  const response = useMemo(() => formatResponseString(entry), [entry]);
-  const copyText = tab === 'request' ? curl : response;
-
-  const highlighted = useMemo(
-    () => (tab === 'request' ? highlightCurl(curl, syntaxClasses) : highlightJson(response, syntaxClasses)),
-    [tab, curl, response],
+  // A call you make reads as the curl you'd run and the JSON you'd get back.
+  // A webhook reads as the JSON Grid delivered (its signature header above
+  // it) and the status your endpoint answered with.
+  const request = useMemo(() => (inbound ? formatWebhookPayload(entry) : formatCurlString(entry)), [entry, inbound]);
+  const response = useMemo(
+    () => (inbound ? formatWebhookResponse(entry) : formatResponseString(entry)),
+    [entry, inbound],
   );
+  const copyText = tab === 'request' ? request : response;
+  // The endpoint line names the webhook as the API reference does.
+  const endpoint = inbound ? entry.webhook ?? entry.path : entry.path;
+
+  const highlighted = useMemo(() => {
+    if (tab === 'request') return inbound ? highlightJson(request, syntaxClasses) : highlightCurl(request, syntaxClasses);
+    return inbound ? highlightStatus(response, syntaxClasses) : highlightJson(response, syntaxClasses);
+  }, [inbound, tab, request, response]);
 
   return (
     <div className={styles.callCard}>
@@ -255,10 +296,10 @@ function ApiCallBlock({ entry, now, isNew }: { entry: Entry; now: number; isNew:
         </span>
         <FeedTimestamp timestamp={entry.createdAt} now={now} />
       </div>
-      <EndpointBlock method={entry.method} path={entry.path} />
+      <EndpointBlock method={entry.method} path={endpoint} inbound={inbound} />
       <div className={styles.codeBlock}>
         <div className={styles.codeBlockToolbar}>
-          <CodeTabs tab={tab} onTabChange={setTab} />
+          <CodeTabs tab={tab} labels={inbound ? WEBHOOK_TAB_LABELS : CALL_TAB_LABELS} onTabChange={setTab} />
           <CopyButton text={copyText} />
         </div>
         <div className={styles.codeBlockContent}>

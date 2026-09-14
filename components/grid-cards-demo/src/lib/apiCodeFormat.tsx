@@ -45,6 +45,21 @@ export function formatCurlString(entry: ApiCall): string {
   return lines.join('\n');
 }
 
+/* ── Inbound webhooks ─────────────────────────────────────────────────────
+   Grid → your endpoint. The payload is the JSON Grid delivered (not a curl
+   you would run); the response is the status your endpoint answered with. */
+
+/** The JSON body Grid POSTed to your endpoint. */
+export function formatWebhookPayload(entry: ApiCall): string {
+  return JSON.stringify(entry.reqBody ?? {}, null, 2);
+}
+
+/** What your endpoint answered, e.g. "200 OK". Grid treats any 2xx as
+ *  delivered and retries anything else. */
+export function formatWebhookResponse(entry: ApiCall): string {
+  return entry.status;
+}
+
 function objectField(value: unknown, key: string): unknown {
   return typeof value === 'object' && value !== null
     ? (value as Record<string, unknown>)[key]
@@ -455,6 +470,16 @@ export function highlightCurl(code: string, s: SyntaxClass): ReactNode[] {
       </span>
     );
   });
+}
+
+/** An HTTP status line such as "200 OK": the code, then the reason. */
+export function highlightStatus(code: string, s: SyntaxClass): ReactNode[] {
+  const m = code.match(/^(\d{3})(.*)$/);
+  if (!m) return [<span key="s" className={s.default}>{code}</span>];
+  return [
+    <span key="code" className={s.command}>{m[1]}</span>,
+    <span key="reason" className={s.default}>{m[2]}</span>,
+  ];
 }
 
 export function highlightJson(code: string, s: SyntaxClass): ReactNode[] {

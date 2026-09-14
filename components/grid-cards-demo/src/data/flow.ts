@@ -20,4 +20,7 @@ export interface ApiCall {
   /** Inbound webhook (Grid → your endpoint): `path` is your full URL, and the
    *  curl drops the Grid `Authorization` header (Grid signs it instead). */
   inbound?: boolean;
+  /** The webhook's name in the OpenAPI spec (`webhooks.<name>`), shown the
+   *  way the API reference shows it: `WEBHOOK card-status-change`. */
+  webhook?: string;
 }
