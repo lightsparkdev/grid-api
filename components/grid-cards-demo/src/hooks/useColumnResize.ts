@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { CONFIGURE_COL_PX } from '@/lib/layout';
+import { CONFIGURE_COL_PX, navState } from '@/lib/layout';
 
 const MIN_APP = 320;
 // Never resize the API column below the configure column width; dragging only
@@ -80,6 +80,9 @@ export function useColumnResize() {
         easeTimer.current = window.setTimeout(() => el.removeAttribute('data-easing'), 300);
       }
       setDefaultApi(Math.round(e.data.sidebarWidth) + CONFIGURE_COL_PX);
+      // Mirror the sidebar state onto <html> (the boot script set it from
+      // ?nav) so attribute-keyed chrome flips in step with the docs wipe.
+      document.documentElement.setAttribute('data-nav', navState(e.data.sidebarWidth));
     };
     window.addEventListener('message', onMessage);
     if (window.parent && window.parent !== window) {

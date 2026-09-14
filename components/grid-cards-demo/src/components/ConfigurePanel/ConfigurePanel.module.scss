@@ -24,6 +24,19 @@
   :global(html:not([data-layout='stacked'])) & {
     background: var(--surface-secondary);
   }
+
+  /* Stacked with the docs sidebar collapsed to its rail: this column is the
+     only chrome left beside the playground, so it takes the docs sidebar's
+     own color (surface-secondary IS that gray — #F0F0EE / #111111 — in both
+     themes) instead of sitting a step lighter against the rail. data-nav is
+     only present embedded (set from ?nav / nav-sync), so standalone and
+     mobile are untouched; the mobile floor keeps the full-screen configure
+     view on its own surface regardless. */
+  @media (min-width: ($breakpoint-layout-mobile + 1px)) {
+    :global(html[data-layout='stacked'][data-nav='collapsed']) & {
+      background: var(--surface-secondary);
+    }
+  }
 }
 
 @media (max-width: $breakpoint-layout-mobile) {

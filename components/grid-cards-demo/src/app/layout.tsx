@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { easingVarsStylesheet } from '@/lib/easing';
-import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX } from '@/lib/layout';
+import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
 import './globals.scss';
 
 const TITLE = 'Grid Cards — Playground';
@@ -51,7 +51,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             - --api-col-default from the embed's ?nav param (the live docs
               sidebar width), so the wide layout's code column paints at its
               real default — sidebar + configure column — instead of the
-              expanded-sidebar assumption and re-fitting after hydration. */}
+              expanded-sidebar assumption and re-fitting after hydration.
+            - data-nav (collapsed ⇄ expanded) from the same ?nav param, so
+              chrome keyed on the docs sidebar state paints right first time.
+              Absent standalone (no ?nav), where the rules don't apply. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{
@@ -67,7 +70,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               document.documentElement.setAttribute('data-theme',t);
               document.documentElement.setAttribute('data-layout',window.innerWidth<${LAYOUT_WIDE_PX}?'stacked':'wide');
               var nav=parseFloat(p.get('nav'));
-              if(isFinite(nav)&&nav>=0){document.documentElement.style.setProperty('--api-col-default',(Math.round(nav)+${CONFIGURE_COL_PX})+'px');}
+              if(isFinite(nav)&&nav>=0){
+                document.documentElement.style.setProperty('--api-col-default',(Math.round(nav)+${CONFIGURE_COL_PX})+'px');
+                document.documentElement.setAttribute('data-nav',nav<=${NAV_COLLAPSED_MAX_PX}?'collapsed':'expanded');
+              }
             }catch(e){}})();`,
           }}
         />
