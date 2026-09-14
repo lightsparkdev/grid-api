@@ -73,7 +73,8 @@ curl -X POST "$GRID_BASE_URL/sandbox/cards/Card:019542f5-b3e7-1d02-0000-00000000
 - `amount > authorizedAmount` exercises the over-auth post-hoc pull
   path (restaurant tip / tip-on-top).
 - `amount = 0` exercises `AUTHORIZATION_EXPIRY` — the auth expires
-  with no clearing posted.
+  with no clearing posted, moves to `VOIDED`, and sends
+  `CARD_TRANSACTION.VOIDED`.
 
 Suffix-driven outcomes on the parent transaction's id govern whether
 the post-hoc pull succeeds — use them with the

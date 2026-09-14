@@ -10,8 +10,9 @@ post:
     to reverse all of it. The transaction must still be fully open: once any
     part of it has settled, it can no longer be reversed.
 
-    Grid processes the reversal in the background and sends a card
-    transaction webhook once it lands, the same as the other simulators.
+    Grid processes the reversal in the background. A full reversal sets
+    `status: VOIDED` and sends a `CARD_TRANSACTION.VOIDED` webhook. A partial
+    reversal leaves the transaction `AUTHORIZED` with a smaller hold.
 
 
     Production returns `404` on this path.

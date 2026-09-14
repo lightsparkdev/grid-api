@@ -1,4 +1,4 @@
-Cards add six webhook event types on top of Grid's existing webhook
+Cards add seven webhook event types on top of Grid's existing webhook
 infrastructure. Signature verification (`X-Grid-Signature`) and
 retry behavior are identical to the rest of Grid — see
 [Authentication](/api-reference/authentication) and
@@ -16,6 +16,7 @@ lifecycle.
 | `CARD_TRANSACTION.PARTIALLY_SETTLED` | A clearing posted, but more are still expected. |
 | `CARD_TRANSACTION.SETTLED` | All clearings have posted. Also fires for a merchant return, which posts as its own `CREDIT` row linked via `originalTransactionId`. |
 | `CARD_TRANSACTION.DECLINED` | The authorization was declined before any money moved. The payload carries `cardDeclinedReason`. |
+| `CARD_TRANSACTION.VOIDED` | An approved authorization was fully reversed or expired before any clearing posted. |
 | `CARD_TRANSACTION.EXCEPTION` | The transaction settled to the network but the pull from the funding source failed. |
 
 All of them carry the standard envelope:
@@ -118,9 +119,10 @@ approved:
 }
 ```
 
-Later deliveries for the same `data.id` carry the updated resource:
+Later deliveries for this approved authorization carry the updated resource:
 `settledAmount` appears once a clearing posts, and `status` moves to
-`PARTIALLY_SETTLED`, `SETTLED`, `DECLINED`, or `EXCEPTION`. A merchant
+`PARTIALLY_SETTLED`, `SETTLED`, `VOIDED`, or `EXCEPTION`. A declined
+authorization instead reports `DECLINED` as its terminal decision. A merchant
 return has no event type of its own — it arrives as a
 `CARD_TRANSACTION.SETTLED` delivery for a new `data.id` with
 `direction: "CREDIT"` and `originalTransactionId` pointing at the
