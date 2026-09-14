@@ -18400,6 +18400,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18409,9 +18410,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18432,18 +18435,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -18483,6 +18491,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18492,9 +18501,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18615,6 +18626,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18624,9 +18636,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18646,18 +18660,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -18697,6 +18716,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18706,9 +18726,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18730,18 +18752,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -18893,6 +18920,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18902,9 +18930,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18913,6 +18943,7 @@ components:
           $ref: '#/components/schemas/Address'
         documentType:
           type: string
+          maxLength: 32
           description: Identity document type (Colombia)
           enum:
             - CC
@@ -18922,9 +18953,9 @@ components:
             - PP
         documentNumber:
           type: string
+          maxLength: 50
           description: The identity document number
           minLength: 1
-          maxLength: 50
     CopExternalAccountInfo:
       title: COP Account
       allOf:
@@ -18958,6 +18989,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18967,9 +18999,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18989,18 +19023,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19040,6 +19079,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19049,9 +19089,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19092,6 +19134,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19101,9 +19144,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19126,18 +19171,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19177,6 +19227,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19186,9 +19237,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19208,18 +19261,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19259,6 +19317,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19268,9 +19327,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19312,6 +19373,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19321,9 +19383,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19363,6 +19427,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19372,9 +19437,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19394,18 +19461,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19445,6 +19517,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19454,9 +19527,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19496,6 +19571,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19505,9 +19581,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19527,18 +19605,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19578,6 +19661,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19587,9 +19671,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19609,18 +19695,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19662,6 +19753,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19671,9 +19763,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19713,6 +19807,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19722,9 +19817,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19746,18 +19843,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19797,6 +19899,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19806,9 +19909,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19830,18 +19935,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19881,6 +19991,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19890,9 +20001,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19912,18 +20025,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19963,6 +20081,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19972,9 +20091,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19994,18 +20115,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20045,6 +20171,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20054,9 +20181,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20078,18 +20207,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20129,6 +20263,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20138,9 +20273,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20160,18 +20297,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20211,6 +20353,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20220,9 +20363,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20262,6 +20407,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20271,9 +20417,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20295,18 +20443,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20346,6 +20499,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20355,9 +20509,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20377,18 +20533,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20479,6 +20640,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20488,9 +20650,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20510,18 +20674,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20561,6 +20730,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20570,9 +20740,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20594,18 +20766,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20645,6 +20822,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20654,9 +20832,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20678,18 +20858,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20729,6 +20914,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20738,9 +20924,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20760,18 +20948,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20811,6 +21004,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20820,9 +21014,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20842,18 +21038,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20893,6 +21094,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20902,9 +21104,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20926,18 +21130,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20977,6 +21186,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20986,9 +21196,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21010,18 +21222,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21061,6 +21278,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21070,9 +21288,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21094,18 +21314,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21145,6 +21370,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21154,9 +21380,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21178,18 +21406,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21409,6 +21642,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21418,9 +21652,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21441,18 +21677,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21492,6 +21733,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21501,9 +21743,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21524,18 +21768,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
