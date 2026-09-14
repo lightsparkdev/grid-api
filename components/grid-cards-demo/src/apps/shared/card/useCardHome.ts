@@ -8,7 +8,6 @@ import {
   REFUND_MS,
   UNLOCK_SEQUENCE_MS,
   useCardControls,
-  type CardTransactionRow,
   type DeclineReason,
   type TransactionStatus,
   type UseCardControlsOptions,
@@ -513,22 +512,16 @@ export function useCardHome(options: UseCardHomeOptions = {}) {
           settle(PAGE_PUSH_MS);
           break;
         case 'refund': {
-          // Only a settled purchase can be returned, and only once. A purchase
-          // still pending (a spend a moment ago) clears now, the way the
-          // sandbox clearing would, so the return is of the purchase the
-          // visitor just watched. Nothing to return at all: provision a
-          // purchase (state only, like the other fast-forwards; it was spent
-          // from the funding source) so the flow has something to act on.
+          // The merchant returns the latest purchase not yet returned (the
+          // rows run newest first): the one the visitor just watched. Only a
+          // settled purchase can be returned, so one still pending clears
+          // now, the way the sandbox clearing would. Nothing to return at
+          // all: provision a purchase (state only, like the other
+          // fast-forwards; it was spent from the funding source) so the flow
+          // has something to act on.
           const c = cardRef.current; // the rows now, not at the tile's click
-          const purchase = (r: CardTransactionRow) => r.direction !== 'CREDIT' && !c.refundOf(r.id);
-          let target = c.rows.find((r) => r.status === 'SETTLED' && purchase(r));
-          if (!target) {
-            const pending = c.rows.find((r) => r.status === 'AUTHORIZED' && purchase(r));
-            if (pending) {
-              c.settleRow(pending.id);
-              target = pending;
-            }
-          }
+          let target = c.rows.find((r) => r.direction !== 'CREDIT' && !c.refundOf(r.id));
+          if (target?.status === 'AUTHORIZED') c.settleRow(target.id);
           if (!target) {
             const seed = TAP_MERCHANTS[0];
             target = {
