@@ -2,7 +2,7 @@ Cardholders can add a Grid-issued card to Apple Pay, Google Pay, or
 Samsung Pay in two ways. Manual entry works today for every card and
 needs nothing from you. In-app provisioning, an "Add to Wallet" button
 in your app, needs approval from each wallet provider plus one API call
-from your backend.
+to Grid.
 
 ## Manual entry
 
@@ -121,10 +121,15 @@ end of 2026 and will not work with Grid.
 ## The API call
 
 `POST /cards/{id}/tokenize` takes the wallet name plus the values the
-SDK produced and returns the payload the SDK needs. Call it from your
-backend with your platform credentials — never from the app — and hand
-the response straight back to the SDK. Do not store or log the payload;
-it is valid for one provisioning attempt.
+SDK produced and returns the payload the SDK needs. Hand the response
+straight back to the SDK. Do not store or log the payload; it is valid
+for one provisioning attempt.
+
+<Note>
+This call is authenticated with your platform credentials like every
+other Grid call, so make it from your server and relay the result to
+the app rather than embedding the credentials in the app.
+</Note>
 
 | `wallet` | Required fields | Optional fields | Response field |
 |----------|-----------------|-----------------|----------------|
