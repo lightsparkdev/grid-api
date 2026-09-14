@@ -101,7 +101,7 @@ function CodeTabs({
       className={clsx(styles.tabGroup, tab === 'request' && styles.tabGroupLeadingActive)}
       ref={tabGroupRef}
       role="tablist"
-      aria-label="Request or response"
+      aria-label={`${labels.request} or ${labels.response}`}
     >
       <motion.span
         className={styles.tabIndicator}
@@ -263,8 +263,9 @@ function ApiCallBlock({ entry, now, isNew }: { entry: Entry; now: number; isNew:
   const inbound = Boolean(entry.inbound);
 
   // A call you make reads as the curl you'd run and the JSON you'd get back.
-  // A webhook reads as the JSON Grid delivered (its signature header above
-  // it) and the status your endpoint answered with.
+  // A webhook reads as the JSON Grid delivered and the status your endpoint
+  // answered with. Its headers (the signature) aren't shown: they're the same
+  // on every event, and verifying them is the docs' Webhooks page's job.
   const request = useMemo(() => (inbound ? formatWebhookPayload(entry) : formatCurlString(entry)), [entry, inbound]);
   const response = useMemo(
     () => (inbound ? formatWebhookResponse(entry) : formatResponseString(entry)),
