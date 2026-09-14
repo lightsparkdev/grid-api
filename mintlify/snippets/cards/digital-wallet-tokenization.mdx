@@ -89,18 +89,18 @@ the approvals are the slowest step, start them early.
    [Push Provisioning API UX Review Request](https://support.google.com/faqs/contact/pp_api_ux)
    form.
 3. Google approves and allowlists your app. Integrate the TapAndPay SDK.
-4. In the app, start the add-to-Wallet flow through the TapAndPay SDK.
-   Under Google's Unified Push Provisioning (UPP), Google Wallet runs the
-   screens itself and then calls your app back asking for the card's
-   payment credentials, handing you a `serverSessionId` that identifies
-   this session. Send it, with the wallet account id, to Grid with
-   `POST /cards/{id}/tokenize`, and return Grid's payload from that
+4. In the app, start the add-to-Wallet flow through the TapAndPay SDK
+   using Google's current flow, Unified Push Provisioning (UPP). Google
+   Wallet runs the screens itself and then calls your app back asking for
+   the card's payment credentials, handing you a `serverSessionId` that
+   identifies this session. Send it, with the wallet account id, to Grid
+   with `POST /cards/{id}/tokenize`, and return Grid's payload from that
    callback.
 
 <Warning>
-Google is ending support for its legacy in-app push provisioning at the
-end of 2026. Grid supports UPP only, so new integrations must use the
-UPP credentials callback.
+Grid supports UPP only. Google's older push provisioning flow, where the
+app fetches the payload before starting the SDK, is being retired at the
+end of 2026 and will not work with Grid.
 </Warning>
 
 ### Samsung Pay
