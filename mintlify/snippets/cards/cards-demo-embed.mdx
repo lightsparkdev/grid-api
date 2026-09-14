@@ -1,11 +1,11 @@
 export const CardsDemoEmbed = () => {
   React.useEffect(() => {
-    const host = window.location.hostname;
-    const isLocal = ['localhost', '127.0.0.1'].includes(host);
+    const hostname = window.location.hostname;
+    const isLocal = ['localhost', '127.0.0.1'].includes(hostname);
     // A Mintlify PR preview (<project>-<branch>.mintlify.site) frames the
     // matching Vercel branch deployment, so the preview shows the branch's
     // app rather than production. Vercel slugs the branch the same way.
-    const preview = host.match(/^ramps-(.+)\.mintlify\.site$/);
+    const preview = hostname.match(/^ramps-(.+)\.mintlify\.site$/);
     const base = isLocal
       ? 'http://localhost:4002'
       : preview
