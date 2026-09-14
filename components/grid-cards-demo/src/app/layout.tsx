@@ -6,7 +6,7 @@ import './globals.scss';
 
 const TITLE = 'Grid Cards — Playground';
 const DESCRIPTION =
-  'Issue a branded virtual card, add it to Apple Wallet, and watch the Grid API calls fire in real time.';
+  'Issue a branded Visa debit card and watch the API calls fire as you go.';
 
 export const metadata: Metadata = {
   // Absolute base for social-card image URLs (scrapers need full URLs).
