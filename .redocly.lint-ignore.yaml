@@ -30,3 +30,8 @@ openapi.yaml:
     - '#/paths/~1sandbox~1cards~1{id}~1simulate~1authorization_advice'
     - '#/paths/~1sandbox~1cards~1{id}~1simulate~1credit_authorization_advice'
     - '#/paths/~1sandbox~1cards~1{id}~1simulate~1return_reversal'
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1dispute_open'
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1dispute_provisional_credit'
+    - >-
+      #/paths/~1sandbox~1cards~1{id}~1simulate~1dispute_provisional_credit_reversal
+    - '#/paths/~1sandbox~1cards~1{id}~1simulate~1dispute_close'

@@ -1,0 +1,28 @@
+type: object
+required:
+  - disputeId
+  - disputeToken
+  - status
+description: >-
+  The simulated dispute after the request was applied. The dispute simulators
+  report the resulting dispute in this response; the cardholder money a
+  dispute event moves settles asynchronously.
+properties:
+  disputeId:
+    type: string
+    description: The id of the dispute record.
+    example: 019542f5-b3e7-1d02-0000-000000000200
+  disputeToken:
+    type: string
+    description: The card issuer's token for the dispute.
+    example: dispute_transaction_sandbox_5f8d2c1a
+  status:
+    type: string
+    description: Whether the dispute is still active, `OPEN` or `CLOSED`.
+    example: OPEN
+  disposition:
+    type:
+      - string
+      - 'null'
+    description: The outcome once the dispute closes. Null while it is open.
+    example: WON
