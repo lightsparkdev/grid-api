@@ -273,8 +273,6 @@ paths:
     $ref: paths/sandbox/sandbox_uma_receive.yaml
   /sandbox/internal-accounts/{accountId}/fund:
     $ref: paths/sandbox/sandbox_internal_accounts_{accountId}_fund.yaml
-  /uma-providers:
-    $ref: paths/uma_providers/uma_providers.yaml
   /tokens:
     $ref: paths/tokens/tokens.yaml
   /tokens/{tokenId}:
