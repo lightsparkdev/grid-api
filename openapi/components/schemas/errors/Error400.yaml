@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 400
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -101,7 +95,7 @@ properties:
       - CARDHOLDER_KYC_NOT_APPROVED
       - TRANSACTION_SIZE_LIMIT_EXCEEDED
       - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
-  message:
+  reason:
     type: string
     description: Error message
   details:

@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 422
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -17,7 +11,7 @@ properties:
       | DOCUMENT_REJECTED | The verification provider screened the uploaded file and marked it unusable. `precheckErrors` names each problem it found |
     enum:
       - DOCUMENT_REJECTED
-  message:
+  reason:
     type: string
     description: Error message
   precheckErrors:

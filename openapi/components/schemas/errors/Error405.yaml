@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum:
-      - 405
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -17,7 +11,7 @@ properties:
       | METHOD_NOT_ALLOWED | The HTTP method is not supported for this endpoint |
     enum:
       - METHOD_NOT_ALLOWED
-  message:
+  reason:
     type: string
     description: Error message
   details:

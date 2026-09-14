@@ -12714,15 +12714,9 @@ components:
     Error401:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 401
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -12743,7 +12737,7 @@ components:
             - WALLET_SIGNATURE_BODY_MISMATCH
             - WALLET_SIGNATURE_INVALID
             - REQUEST_ID_MISSING
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -12753,15 +12747,9 @@ components:
     Error500:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 500
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -12772,7 +12760,7 @@ components:
           enum:
             - GRID_SWITCH_ERROR
             - INTERNAL_ERROR
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -12868,15 +12856,9 @@ components:
     Error400:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 400
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -12969,7 +12951,7 @@ components:
             - CARDHOLDER_KYC_NOT_APPROVED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -12985,15 +12967,9 @@ components:
     Error501:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 501
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -13004,7 +12980,7 @@ components:
           enum:
             - UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY
             - NOT_IMPLEMENTED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -13971,15 +13947,9 @@ components:
     Error405:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 405
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -13988,7 +13958,7 @@ components:
             | METHOD_NOT_ALLOWED | The HTTP method is not supported for this endpoint |
           enum:
             - METHOD_NOT_ALLOWED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -14182,15 +14152,9 @@ components:
     Error409:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 409
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14227,7 +14191,7 @@ components:
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - CONFLICT
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -14237,15 +14201,9 @@ components:
     Error404:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 404
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14272,7 +14230,7 @@ components:
             - REFERENCE_NOT_FOUND
             - UMA_NOT_FOUND
             - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -14282,15 +14240,9 @@ components:
     Error410:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 410
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14299,7 +14251,7 @@ components:
             | CUSTOMER_DELETED | Customer has been permanently deleted |
           enum:
             - CUSTOMER_DELETED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -14385,15 +14337,9 @@ components:
     Error424:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 424
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14410,7 +14356,7 @@ components:
             - NO_COMPATIBLE_UMA_VERSION
             - LNURLP_REQUEST_FAILED
             - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -14826,15 +14772,9 @@ components:
     Error423:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 423
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14843,7 +14783,7 @@ components:
             | ACCOUNT_LOCKED | The customer's login is temporarily locked (or suspended) after too many failed attempts. Inspect `details.lockedUntil` for when the customer may retry, and `details.failedAttempts` for the current count. |
           enum:
             - ACCOUNT_LOCKED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -14956,15 +14896,9 @@ components:
     Error429:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 429
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14975,7 +14909,7 @@ components:
           enum:
             - RATE_LIMITED
             - DAILY_VOLUME_LIMIT_EXCEEDED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -18213,15 +18147,9 @@ components:
     Error403:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 403
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -18238,7 +18166,7 @@ components:
             - COUNTERPARTY_NOT_ALLOWED
             - VELOCITY_LIMIT_EXCEEDED
             - END_USER_TERMS_NOT_ACCEPTED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -23031,15 +22959,9 @@ components:
     Error422:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 422
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -23048,7 +22970,7 @@ components:
             | DOCUMENT_REJECTED | The verification provider screened the uploaded file and marked it unusable. `precheckErrors` names each problem it found |
           enum:
             - DOCUMENT_REJECTED
-        message:
+        reason:
           type: string
           description: Error message
         precheckErrors:
@@ -24191,15 +24113,9 @@ components:
     Error412:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 412
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -24208,7 +24124,7 @@ components:
             | UNSUPPORTED_UMA_VERSION | Counterparty doesn't support the Grid UMA version |
           enum:
             - UNSUPPORTED_UMA_VERSION
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -27105,15 +27021,9 @@ components:
     Error503:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 503
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -27122,7 +27032,7 @@ components:
             | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
           enum:
             - SERVICE_UNAVAILABLE
-        message:
+        reason:
           type: string
           description: Error message
         details:
