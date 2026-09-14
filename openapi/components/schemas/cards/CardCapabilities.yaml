@@ -2,6 +2,7 @@ type: object
 description: Actions supported by the card program associated with this resource.
 required:
   - supportsSpendLimits
+  - supportsSpendLimitsAtIssuance
   - supportsTransactionCountLimit
   - supports3dSecurePassword
   - supportsPanReveal
@@ -9,8 +10,19 @@ properties:
   supportsSpendLimits:
     type: boolean
     description: >-
-      Whether cards in this program accept `maxSpendPerTransaction` and
-      `maxSpendPerDay`.
+      Whether a card in this program can have `maxSpendPerTransaction` and
+      `maxSpendPerDay` at all. On card programs where the card issuer makes
+      authorization decisions, these limits can only be set after issuance
+      through `PATCH /cards/{id}`. Check `supportsSpendLimitsAtIssuance` to
+      determine whether you can supply them when issuing a card.
+    example: true
+  supportsSpendLimitsAtIssuance:
+    type: boolean
+    description: >-
+      Whether `maxSpendPerTransaction` and `maxSpendPerDay` may be supplied on
+      `POST /cards`. This is true for card programs where Grid makes the
+      authorization decision and false for card programs where the card issuer
+      makes authorization decisions.
     example: true
   supportsTransactionCountLimit:
     type: boolean

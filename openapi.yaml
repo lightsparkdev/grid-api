@@ -8514,7 +8514,7 @@ paths:
 
         Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Retries must carry the same key.
 
-        Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and `maxTransactionsPerDay` values set the card-specific caps on one transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Check the funding-source internal account's `cardCapabilities.supportsSpendLimits` before supplying either spend limit, and `cardCapabilities.supportsTransactionCountLimit` before supplying the transaction count limit. If the platform config sets the corresponding `cardConfigs` value, Grid enforces the lower of the card and platform caps. Amounts use the smallest unit of the card's currency.
+        Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and `maxTransactionsPerDay` values set the card-specific caps on one transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Check the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` before supplying either spend limit, and `cardCapabilities.supportsTransactionCountLimit` before supplying the transaction count limit. If the platform config sets the corresponding `cardConfigs` value, Grid enforces the lower of the card and platform caps. Amounts use the smallest unit of the card's currency.
 
         If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
@@ -18076,13 +18076,18 @@ components:
       description: Actions supported by the card program associated with this resource.
       required:
         - supportsSpendLimits
+        - supportsSpendLimitsAtIssuance
         - supportsTransactionCountLimit
         - supports3dSecurePassword
         - supportsPanReveal
       properties:
         supportsSpendLimits:
           type: boolean
-          description: Whether cards in this program accept `maxSpendPerTransaction` and `maxSpendPerDay`.
+          description: Whether a card in this program can have `maxSpendPerTransaction` and `maxSpendPerDay` at all. On card programs where the card issuer makes authorization decisions, these limits can only be set after issuance through `PATCH /cards/{id}`. Check `supportsSpendLimitsAtIssuance` to determine whether you can supply them when issuing a card.
+          example: true
+        supportsSpendLimitsAtIssuance:
+          type: boolean
+          description: Whether `maxSpendPerTransaction` and `maxSpendPerDay` may be supplied on `POST /cards`. This is true for card programs where Grid makes the authorization decision and false for card programs where the card issuer makes authorization decisions.
           example: true
         supportsTransactionCountLimit:
           type: boolean
@@ -26305,14 +26310,14 @@ components:
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Omit the field to set no limit. If your platform config also sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true.
+          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Omit the field to set no limit. If your platform config also sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true.
           example: 5000
         maxSpendPerDay:
           type: integer
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. Spend exactly equal to the effective limit is allowed.
+          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true. Spend exactly equal to the effective limit is allowed.
           example: 25000
         maxTransactionsPerDay:
           type: integer

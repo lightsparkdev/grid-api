@@ -52,7 +52,7 @@ properties:
       final settled amount. Omit the field to set no limit. If your platform
       config also sets `cardConfigs.maxSpendPerTransaction`, the lower of the
       two applies. You can only send this when the funding-source internal
-      account's `cardCapabilities.supportsSpendLimits` is true.
+      account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true.
     example: 5000
   maxSpendPerDay:
     type: integer
@@ -67,8 +67,8 @@ properties:
       the lower of the two values. The window resets at 00:00 UTC, and refunds,
       reversals, and authorization expiries do not restore capacity during the
       day. Accepted only when the funding-source internal account's
-      `cardCapabilities.supportsSpendLimits` is true. Spend exactly equal to
-      the effective limit is allowed.
+      `cardCapabilities.supportsSpendLimitsAtIssuance` is true. Spend exactly
+      equal to the effective limit is allowed.
     example: 25000
   maxTransactionsPerDay:
     type: integer
