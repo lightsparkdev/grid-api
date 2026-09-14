@@ -178,6 +178,12 @@
               "payouts-and-b2b/platform-tools/sandbox-testing",
               "payouts-and-b2b/platform-tools/postman-collection"
             ]
+          },
+          {
+            "group": "Launch",
+            "pages": [
+              "payouts-and-b2b/launch/checklist"
+            ]
           }
         ]
       },
