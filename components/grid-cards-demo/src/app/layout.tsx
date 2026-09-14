@@ -4,7 +4,7 @@ import { easingVarsStylesheet } from '@/lib/easing';
 import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
 import './globals.scss';
 
-const TITLE = 'Grid Cards — Playground';
+const TITLE = 'Lightspark Cards — Playground';
 const DESCRIPTION =
   'Issue a branded Visa debit card and watch the API calls fire as you go.';
 

@@ -1,4 +1,4 @@
-# Grid Cards Playground
+# Lightspark Cards Playground
 
 Interactive demo of the Grid Cards lifecycle, embedded in the Grid docs at
 `docs.lightspark.com/cards/demo`. Forked from `components/grid-wallet-demo` (the Global
