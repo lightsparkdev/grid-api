@@ -1,13 +1,14 @@
 /* The brand's app icon, for the phone's push notifications. A preset's is the
    platform's own icon; a design of the visitor's gets one made from the brand
-   on its card: the logo (as a mark, in the ink) or the wordmark's initial, on
-   a square of the brand color, held to the sheet tile's fill so it reads on
-   the surface. */
+   on its card: the logo as the card carries it (printed, in its own colors;
+   foiled or etched, as a one-tone mark, here in the ink) or the wordmark's
+   initial, on a square of the brand color, held to the sheet tile's fill so
+   it reads on the surface. */
 
 import { useEffect, useState } from 'react';
 import { CARD_FONT_FAMILY, loadCardFont } from '@/components/CardStage/card3d/cardFont';
 import { BRAND_CAP, BRAND_TEXT_WEIGHT, loadImage } from '@/components/CardStage/card3d/facePaint';
-import { brandColorOf, type CardDesign } from '@/data/design';
+import { brandColorOf, type CardDesign, type LogoTreatment } from '@/data/design';
 import { PRESETS, presetOf } from '@/data/presets';
 import type { Theme } from '@/hooks/useTheme';
 import { brandFill } from './brandPalette';
@@ -20,6 +21,22 @@ const RADIUS = (SIZE * 17) / 76;
 const LOGO_SHARE = 0.56;
 /** The monogram's em, as a share of the side. */
 const MONOGRAM_EM = 0.5;
+
+/** The treatments that carry the logo as a shape alone (no colors). */
+function oneTone(treatment: LogoTreatment): boolean {
+  switch (treatment) {
+    case 'foil':
+    case 'etch':
+      return true;
+    case 'print':
+    case 'spotGloss':
+      return false;
+    default: {
+      const never: never = treatment;
+      throw new Error(`Unknown logo treatment ${String(never)}`);
+    }
+  }
+}
 
 function roundedSquare(ctx: CanvasRenderingContext2D, fill: string) {
   ctx.fillStyle = fill;
@@ -44,20 +61,29 @@ async function paintAppIcon(design: CardDesign, fill: string, ink: string): Prom
 
   const logo = design.logoUrl ? await loadImage(design.logoUrl) : null;
   if (logo) {
-    // The logo's alpha in the ink: the shape as a mark, whatever its colors.
     const box = SIZE * LOGO_SHARE;
     const scale = Math.min(box / logo.naturalWidth, box / logo.naturalHeight);
     const w = logo.naturalWidth * scale;
     const h = logo.naturalHeight * scale;
-    const mark = document.createElement('canvas');
-    mark.width = SIZE;
-    mark.height = SIZE;
-    const m = mark.getContext('2d')!;
-    m.drawImage(logo, (SIZE - w) / 2, (SIZE - h) / 2, w, h);
-    m.globalCompositeOperation = 'source-in';
-    m.fillStyle = ink;
-    m.fillRect(0, 0, SIZE, SIZE);
-    ctx.drawImage(mark, 0, 0);
+    const x = (SIZE - w) / 2;
+    const y = (SIZE - h) / 2;
+    if (oneTone(design.logoTreatment)) {
+      // Foil and etch keep the logo's shape and drop its colors on the card;
+      // the icon does the same, the shape in the ink.
+      const mark = document.createElement('canvas');
+      mark.width = SIZE;
+      mark.height = SIZE;
+      const m = mark.getContext('2d')!;
+      m.drawImage(logo, x, y, w, h);
+      m.globalCompositeOperation = 'source-in';
+      m.fillStyle = ink;
+      m.fillRect(0, 0, SIZE, SIZE);
+      ctx.drawImage(mark, 0, 0);
+    } else {
+      // Printed: the logo as uploaded, colors and all (a raster logo as a
+      // one-tone mark was a white blot in the logo's outline).
+      ctx.drawImage(logo, x, y, w, h);
+    }
   } else {
     // The wordmark's initial, in the card's face.
     await loadCardFont();
@@ -77,7 +103,7 @@ export function useAppIcon(design: CardDesign, theme: Theme): string {
   const presetId = presetOf(design);
   const presetIcon = presetId ? PRESETS.find((p) => p.id === presetId)?.iconSrc ?? null : null;
   const { fill, ink } = brandFill(brandColorOf(design), theme);
-  const key = `${fill}|${ink}|${design.logoUrl ?? ''}|${design.programName}`;
+  const key = `${fill}|${ink}|${design.logoUrl ?? ''}|${design.logoTreatment}|${design.programName}`;
   const [made, setMade] = useState<{ key: string; url: string } | null>(null);
   useEffect(() => {
     if (presetIcon) return;
