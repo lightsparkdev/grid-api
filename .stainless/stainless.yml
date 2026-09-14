@@ -404,13 +404,6 @@ resources:
               refund_request: "#/components/schemas/SandboxCardReturnRequest"
               refund: "#/components/schemas/Refund"
 
-  uma_providers:
-    models:
-      uma_provider: '#/components/schemas/UmaProvider'
-      uma_provider_list_response: '#/components/schemas/UmaProviderListResponse'
-    methods:
-      list: get /uma-providers
-
   tokens:
     models:
       permission: '#/components/schemas/Permission'

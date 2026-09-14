@@ -373,12 +373,6 @@ Use these account number endings for testing:
 | GET | `/tokens/{tokenId}` | Get API token by ID |
 | DELETE | `/tokens/{tokenId}` | Delete API token by ID |
 
-## UMA Providers
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/uma-providers` | List available Counterparty Providers |
-
 ## Pagination
 
 List endpoints support cursor-based pagination:
