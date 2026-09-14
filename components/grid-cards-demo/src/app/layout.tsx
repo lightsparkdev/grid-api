@@ -21,13 +21,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    images: [{ url: '/og-global-accounts-playground.webp', width: 2400, height: 1260 }],
+    images: [{ url: '/og-cards-playground.webp', width: 2400, height: 1260 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
-    images: ['/og-global-accounts-playground.webp'],
+    images: ['/og-cards-playground.webp'],
   },
 };
 
