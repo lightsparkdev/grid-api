@@ -9942,6 +9942,7 @@ paths:
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardDisputeOpen
+      x-hidden: true
       tags:
         - Sandbox
       security:
@@ -10023,6 +10024,7 @@ paths:
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardDisputeProvisionalCredit
+      x-hidden: true
       tags:
         - Sandbox
       security:
@@ -10098,6 +10100,7 @@ paths:
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardDisputeProvisionalCreditReversal
+      x-hidden: true
       tags:
         - Sandbox
       security:
@@ -10173,6 +10176,7 @@ paths:
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardDisputeClose
+      x-hidden: true
       tags:
         - Sandbox
       security:

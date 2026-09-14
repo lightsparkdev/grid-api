@@ -9,6 +9,7 @@ post:
 
     Production returns `404` on this path.
   operationId: sandboxSimulateCardDisputeClose
+  x-hidden: true
   tags:
     - Sandbox
   security:
