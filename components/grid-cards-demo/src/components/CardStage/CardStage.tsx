@@ -782,8 +782,12 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     }
     // On Card numbers the card is turned over for the reveal and stays so:
     // no spinning it (it still tilts). At the reader it is held; locked or
-    // closed it is inert.
-    if (live.current.wantBack || live.current.tap || live.current.inert) return;
+    // closed it is inert. No drag starts, so no pointerup would settle a
+    // press on the name: drop it, or the next drag's end would open the editor.
+    if (live.current.wantBack || live.current.tap || live.current.inert) {
+      pendingSelect.current = null;
+      return;
+    }
     // The card: spin. The brand's and the name's outlines come off for the turn.
     hover(false);
     hoverName(false);
