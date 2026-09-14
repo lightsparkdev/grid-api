@@ -168,6 +168,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error403.yaml
+    '408':
+      description: Request Timeout - the request body could not be read in time; retry
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error408.yaml
     '409':
       description: >-
         Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US

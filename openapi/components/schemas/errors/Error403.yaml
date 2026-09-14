@@ -13,12 +13,16 @@ properties:
       | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
       | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
       | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+      | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
+      | SANCTION_BLOCKED | Blocked by sanction screening |
     enum:
       - FORBIDDEN
       - USER_NOT_READY
       - COUNTERPARTY_NOT_ALLOWED
       - VELOCITY_LIMIT_EXCEEDED
       - END_USER_TERMS_NOT_ACCEPTED
+      - CUSTOMER_NOT_VERIFIED
+      - SANCTION_BLOCKED
   reason:
     type: string
     description: Error message

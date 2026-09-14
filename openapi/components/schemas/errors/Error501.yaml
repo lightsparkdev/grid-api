@@ -10,9 +10,11 @@ properties:
       |------------|-------------|
       | UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY | Unrecognized mandatory payee data key |
       | NOT_IMPLEMENTED | Feature not implemented |
+      | UNRECOGNIZED_MANDATORY_COUNTERPARTY_DATA_KEY | The counterparty requires a data key Grid does not recognise |
     enum:
       - UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY
       - NOT_IMPLEMENTED
+      - UNRECOGNIZED_MANDATORY_COUNTERPARTY_DATA_KEY
   reason:
     type: string
     description: Error message

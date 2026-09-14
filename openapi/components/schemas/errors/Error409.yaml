@@ -23,6 +23,14 @@ properties:
       | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
       | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
       | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
+      | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
+      | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists |
+      | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
+      | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |
+      | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |
+      | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
+      | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
+      | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
     enum:
       - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
       - TRANSACTION_NOT_CANCELLABLE
@@ -39,6 +47,14 @@ properties:
       - CARD_LIMIT_REACHED
       - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
       - CONFLICT
+      - DOCUMENT_ALREADY_EXISTS
+      - DUPLICATE_EXTERNAL_ACCOUNT
+      - DUPLICATE_PAY_REQUEST
+      - SMS_OTP_CREDENTIAL_SET_CHANGED
+      - SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS
+      - STABLECOIN_SYMBOL_ALREADY_EXISTS
+      - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
+      - WALLET_NOT_PROVISIONED
   reason:
     type: string
     description: Error message
