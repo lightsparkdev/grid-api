@@ -2,14 +2,15 @@ export const CardsDemoEmbed = () => {
   React.useEffect(() => {
     const hostname = window.location.hostname;
     const isLocal = ['localhost', '127.0.0.1'].includes(hostname);
-    // A Mintlify PR preview (<project>-<branch>.mintlify.site) frames the
-    // matching Vercel branch deployment, so the preview shows the branch's
-    // app rather than production. Vercel slugs the branch the same way.
-    const preview = hostname.match(/^ramps-(.+)\.mintlify\.site$/);
+    // Mintlify PR previews (ramps-BRANCH.mintlify.site) frame the matching Vercel branch deployment.
+    const previewSuffix = '.mintlify.site';
+    const previewPrefix = 'ramps-';
+    const isPreview = hostname.endsWith(previewSuffix) && hostname.startsWith(previewPrefix);
+    const branch = isPreview ? hostname.slice(previewPrefix.length, -previewSuffix.length) : '';
     const base = isLocal
       ? 'http://localhost:4002'
-      : preview
-        ? `https://grid-cards-demo-git-${preview[1]}-lightspark-team.vercel.app`
+      : branch
+        ? 'https://grid-cards-demo-git-' + branch + '-lightspark-team.vercel.app'
         : 'https://grid-cards-demo.vercel.app';
     const isDark = () => document.documentElement.classList.contains('dark');
 
