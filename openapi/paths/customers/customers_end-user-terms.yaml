@@ -1,7 +1,12 @@
 get:
   summary: Get the current Grid End User Terms
-  description: Retrieve the current version and Grid-hosted URL of the End User Terms.
+  description: >-
+    Deprecated; use `GET /customers/agreements`, which lists every agreement Grid
+    supports rather than the End User Terms alone. This operation keeps its
+    original single-document response, so existing integrations continue to work
+    unchanged.
   operationId: getEndUserTerms
+  deprecated: true
   tags:
     - Customers
   security:
