@@ -70,14 +70,16 @@ type VideoState =
   | { status: 'idle' }
   | { status: 'rendering'; done: number; total: number }
   | { status: 'uploading' }
-  | { status: 'done'; url: string; blob: Blob }
+  /** Rendered (and attached to the share when `url` is set), for the
+   *  surface and design in `key`. */
+  | { status: 'done'; url: string | null; blob: Blob; key: string }
   | { status: 'unavailable' }
   | { status: 'failed' };
 
 const LABEL_MORPH_MS = 280;
 /** A tile's glyph giving way to the spinner and back. */
-const GLYPH_IN = motionTransition(easeOutSnappy, 0.3);
-const GLYPH_OUT = motionTransition(easeOutQuick, 0.14);
+const GLYPH_IN = motionTransition(easeOutSnappy, 0.42);
+const GLYPH_OUT = motionTransition(easeOutQuick, 0.2);
 const PANEL_IN = motionTransition(easeOutSnappy, 0.5);
 const PANEL_OUT = motionTransition(easeOutQuick, 0.45);
 /** The panel's growth, and the controls' rise inside it: a gentler curve
@@ -149,11 +151,20 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [video, setVideo] = useState<VideoState>({ status: 'idle' });
+  // A save just happened: the tile says so for a moment.
+  const [savedWhat, setSavedWhat] = useState<'image' | 'video' | null>(null);
+  const setSaved = (what: 'image' | 'video') => {
+    setSavedWhat(what);
+    play('success');
+    setTimeout(() => setSavedWhat((w) => (w === what ? null : w)), 1800);
+  };
   useEffect(() => {
     if (!shared?.editToken) return;
     setHandle({ record: shared.record, editToken: shared.editToken, url: shareUrl(shared.record.slug) });
     setHandleDesign(shared.record.design);
-    if (shared.record.assets.video) setVideo({ status: 'done', url: shared.record.assets.video, blob: new Blob() });
+    if (shared.record.assets.video) {
+      setVideo({ status: 'done', url: shared.record.assets.video, blob: new Blob(), key: '' });
+    }
   }, [shared]);
   const stale = !!handle && !!handleDesign && !sameDesign(handleDesign, design);
 
@@ -210,8 +221,16 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   // it is done (making the share starts it; otherwise it is started there).
   const saveWhenDone = useRef(false);
 
+  /** What a rendered video depends on: the surface and the design (the spin
+   *  is a full turn, so not the pose). */
+  const videoKey = useMemo(() => `${palette.bg}|${palette.ink}|${JSON.stringify(design)}`, [palette, design]);
+
+  /**
+   * Render the spin for the current surface, attach it to `h` when there is a
+   * share, and save it if that was asked. Rendering never needs the link.
+   */
   const makeVideo = useCallback(
-    async (h: ShareHandle) => {
+    async (h: ShareHandle | null) => {
       const ex = exporterRef.current;
       if (!ex) return;
       if (!canEncodeVideo()) {
@@ -221,6 +240,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       videoRun.current?.abort();
       const ctl = new AbortController();
       videoRun.current = ctl;
+      const key = videoKey;
       try {
         setVideo({ status: 'rendering', done: 0, total: 1 });
         const blob = await renderSpinVideo(ex, {
@@ -234,22 +254,56 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
           setVideo({ status: 'unavailable' });
           return;
         }
-        setVideo({ status: 'uploading' });
-        const record = await attachVideo(h, blob);
-        if (ctl.signal.aborted) return;
-        setVideo({ status: 'done', url: record.assets.video ?? '', blob });
-        setHandle((cur) => (cur && cur.record.id === record.id ? { ...cur, record } : cur));
         if (saveWhenDone.current) {
           saveWhenDone.current = false;
           download(blob, `${fileStem(design)}-spin.mp4`);
+          setSaved('video');
         }
+        let url: string | null = null;
+        if (h) {
+          setVideo({ status: 'uploading' });
+          const record = await attachVideo(h, blob);
+          if (ctl.signal.aborted) return;
+          url = record.assets.video ?? null;
+          setHandle((cur) => (cur && cur.record.id === record.id ? { ...cur, record } : cur));
+        }
+        setVideo({ status: 'done', url, blob, key });
       } catch (e) {
         if ((e as Error).name === 'AbortError') return;
         setVideo({ status: 'failed' });
       }
     },
-    [palette, cardColor, exporterRef, design],
+    [palette, cardColor, exporterRef, design, videoKey],
   );
+
+  /** The share's video: the one already rendered for these settings, attached
+   *  now; otherwise a fresh render. */
+  const videoForShare = useCallback(
+    async (h: ShareHandle) => {
+      if (video.status === 'done' && video.blob.size > 0 && video.key === videoKey) {
+        if (video.url) return;
+        setVideo({ status: 'uploading' });
+        try {
+          const record = await attachVideo(h, video.blob);
+          setVideo({ status: 'done', url: record.assets.video ?? null, blob: video.blob, key: videoKey });
+          setHandle((cur) => (cur && cur.record.id === record.id ? { ...cur, record } : cur));
+        } catch {
+          setVideo({ status: 'failed' });
+        }
+        return;
+      }
+      await makeVideo(h);
+    },
+    [video, videoKey, makeVideo],
+  );
+
+  // Cancel (the panel closing) stops a render in flight and forgets the ask.
+  useEffect(() => {
+    if (open) return;
+    videoRun.current?.abort();
+    saveWhenDone.current = false;
+    setVideo((v) => (v.status === 'rendering' || v.status === 'uploading' ? { status: 'idle' } : v));
+  }, [open]);
 
   /** Make the share, or bring the existing one up to date. */
   const ensureShare = useCallback(async (): Promise<ShareHandle | null> => {
@@ -271,7 +325,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       });
       setHandle(made);
       setHandleDesign(design);
-      void makeVideo(made);
+      void videoForShare(made);
       return made;
     } catch (e) {
       const code = e instanceof ShareError ? e.code : 'failed';
@@ -283,7 +337,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       setProgress(null);
       return null;
     }
-  }, [cardColor, design, exporterRef, handle, makeVideo, palette, stale]);
+  }, [cardColor, design, exporterRef, handle, videoForShare, palette, stale]);
 
   const copy = async (text: string) => {
     try {
@@ -314,20 +368,17 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     await warmTemplate();
     const blob = await renderStill(ex, { format: 'square', palette, cardColor, pose: ex.livePose });
     download(blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
+    setSaved('image');
   };
   const onDownloadVideo = async () => {
-    if (video.status === 'done' && video.blob.size > 0) {
+    if (video.status === 'done' && video.blob.size > 0 && video.key === videoKey) {
       download(video.blob, `${fileStem(design)}-spin.mp4`);
+      setSaved('video');
       return;
     }
     saveWhenDone.current = true;
-    const hadShare = !!handle && !stale;
-    const h = await ensureShare();
-    if (!h) {
-      saveWhenDone.current = false;
-      return;
-    }
-    if (hadShare && video.status !== 'rendering' && video.status !== 'uploading') await makeVideo(h);
+    if (video.status === 'rendering' || video.status === 'uploading') return;
+    await makeVideo(handle && !stale ? handle : null);
   };
 
   // The tiles say what is happening; the panel speaks up only when it went wrong.
@@ -353,11 +404,17 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       loading: busy,
     },
     { id: 'x', label: 'Share on X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
-    { id: 'image', label: 'Save image', icon: <IconImages1 size={24} />, onClick: onDownloadImage, disabled: busy },
+    {
+      id: 'image',
+      label: savedWhat === 'image' ? 'Saved' : 'Save image',
+      icon: savedWhat === 'image' ? <IconCheckmark1 size={24} /> : <IconImages1 size={24} />,
+      onClick: onDownloadImage,
+      disabled: busy,
+    },
     {
       id: 'video',
-      label: videoBusy ? 'Rendering…' : 'Save video',
-      icon: <IconVideoClip size={24} />,
+      label: videoBusy ? 'Rendering…' : savedWhat === 'video' ? 'Saved' : 'Save video',
+      icon: savedWhat === 'video' ? <IconCheckmark1 size={24} /> : <IconVideoClip size={24} />,
       onClick: onDownloadVideo,
       disabled: busy || videoBusy || video.status === 'unavailable',
       loading: videoBusy,
@@ -374,7 +431,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
           initial: false as const,
           animate: grown
             ? { opacity: 1, y: 0, transition: { ...ROW_IN, delay: 0.1 + i * 0.1 } }
-            : { opacity: 0, y: 14, transition: { duration: 0 } },
+            : { opacity: 0, y: -14, transition: { duration: 0 } },
         };
 
   return (
@@ -483,11 +540,19 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
                     <span className={styles.tileIcon}>
                       <AnimatePresence mode="popLayout" initial={false}>
                         <m.span
-                          key={t.loading ? 'spinner' : 'icon'}
+                          key={t.loading ? 'spinner' : t.label}
                           className={styles.tileGlyph}
-                          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
-                          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, transition: GLYPH_IN }}
-                          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6, transition: GLYPH_OUT }}
+                          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.5, filter: 'blur(4px)' }}
+                          animate={
+                            reduceMotion
+                              ? { opacity: 1 }
+                              : { opacity: 1, scale: 1, filter: 'blur(0px)', transition: GLYPH_IN }
+                          }
+                          exit={
+                            reduceMotion
+                              ? { opacity: 0 }
+                              : { opacity: 0, scale: 0.5, filter: 'blur(4px)', transition: GLYPH_OUT }
+                          }
                         >
                           {t.loading ? <Spinner /> : t.icon}
                         </m.span>

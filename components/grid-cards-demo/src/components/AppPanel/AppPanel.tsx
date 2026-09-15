@@ -43,6 +43,8 @@ export interface AppPanelProps {
   /** Share, on the stage: the card parks in the panel's frame. */
   shareOpen?: boolean;
   shared?: SharedCard | null;
+  /** The card's intro has played (see CardStage). */
+  onIntroDone?: () => void;
 }
 
 /** The stage: the card, always; the cardholder's phone comes in with the first flow, the card goes into it, and it stays until sent away. */
@@ -63,6 +65,7 @@ export function AppPanel({
   stageActions,
   shareOpen = false,
   shared = null,
+  onIntroDone,
 }: AppPanelProps) {
   // What the share panel asks of the stage (the frame's exposure and pose).
   const [shareStage, setShareStage] = useState<ShareStageState>({ open: false, exposure: 1, pose: null });
@@ -135,6 +138,7 @@ export function AppPanel({
               onDesignChange={onDesignChange}
               exportRef={exportRef}
               share={shareStage}
+              onIntroDone={onIntroDone}
             />
             {stageActions}
           </DotGridCanvas>

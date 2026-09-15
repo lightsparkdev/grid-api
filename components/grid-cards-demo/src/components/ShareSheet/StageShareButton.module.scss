@@ -8,13 +8,18 @@
   bottom: 28px;
   z-index: 4;
   transform: translateX(-50%);
-  transition: opacity 400ms ease, transform 400ms ease;
+  /* Comes in as the card did: out of a blur, rising into place. */
+  transition:
+    opacity 600ms var(--ease-out-snappy),
+    transform 600ms var(--ease-out-snappy),
+    filter 600ms var(--ease-out-snappy);
 }
 
 .hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-50%) translateY(6px);
+  transform: translateX(-50%) translateY(10px);
+  filter: blur(8px);
 }
 
 /* The filled button (Origin's, and the mobile "Explore playground"): ink on

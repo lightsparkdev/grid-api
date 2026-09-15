@@ -244,6 +244,9 @@ interface CardStageProps {
    *  renders stills and video through it). */
   exportRef?: React.MutableRefObject<CardExporter | null>;
   share?: ShareStageState;
+  /** The blueprint has dissolved and the card stands alone (the stage's
+   *  chrome waits for this). */
+  onIntroDone?: () => void;
 }
 
 /** Capture the pointer for a drag. A pointer that is already gone (a touch
@@ -285,7 +288,7 @@ function layoutAt(layout: BrandLayout, c: Pt, w: number, h: number): BrandLayout
  * pointer input, the state pill, the accessible name, and the brand's
  * selection box.
  */
-export function CardStage({ design, home, onDesignChange, exportRef, share }: CardStageProps) {
+export function CardStage({ design, home, onDesignChange, exportRef, share, onIntroDone }: CardStageProps) {
   const { bootProgress } = usePhoneBoot();
   const reduceMotion = useReducedMotion() ?? false;
   const dark = useThemeMode() === 'dark';
@@ -302,6 +305,9 @@ export function CardStage({ design, home, onDesignChange, exportRef, share }: Ca
   // then dissolves as the card comes into focus. Until it's done the card is
   // held flat and the pointer is off.
   const [introDone, setIntroDone] = useState(false);
+  useEffect(() => {
+    if (introDone) onIntroDone?.();
+  }, [introDone, onIntroDone]);
   const overlayRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 

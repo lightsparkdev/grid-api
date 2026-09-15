@@ -41,6 +41,9 @@ export default function Page() {
   const exportRef = useRef<CardExporter | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const toggleShare = useCallback(() => setShareOpen((o) => !o), []);
+  // The stage's chrome (the Share button) comes in once the card has.
+  const [introDone, setIntroDone] = useState(false);
+  const onIntroDone = useCallback(() => setIntroDone(true), []);
 
   // Stacked ⇄ 3-col as a data-layout attribute on <html> so the arrangement,
   // the panel chrome colors, and the API header all flip on one clock. The
@@ -150,7 +153,10 @@ export default function Page() {
             exportRef={exportRef}
             shareOpen={shareOpen}
             shared={logic.shared}
-            stageActions={<StageShareButton visible={!logic.phoneUp} open={shareOpen} onClick={toggleShare} />}
+            onIntroDone={onIntroDone}
+            stageActions={
+              <StageShareButton visible={introDone && !logic.phoneUp} open={shareOpen} onClick={toggleShare} />
+            }
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />
