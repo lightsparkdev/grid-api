@@ -10,14 +10,18 @@
  *
  *   gen-keypair [--compressed]
  *       Generate an ephemeral P-256 keypair. Prints JSON with `pubHex` and
- *       `privHex`. By default `pubHex` is uncompressed SEC1 (`04...`), which
- *       only the legacy PASSKEY/OAUTH decrypt flow uses. With `--compressed`,
- *       `pubHex` is compressed SEC1 (`02`/`03...`). Use `--compressed` for
- *       EMAIL_OTP: the enclave rejects an uncompressed key inside the OTP
- *       bundle, and verify returns `400 INVALID_INPUT`. Also use it for the
- *       OAuth/PASSKEY client-held-key flow, where you pass `pubHex` as
- *       `clientPublicKey`. In both flows the private key becomes the session
- *       signing key directly.
+ *       `privHex`. `pubHex` is uncompressed (`04...`) by default, or
+ *       compressed (`02...`/`03...`) with `--compressed`.
+ *
+ *       Use `--compressed` for:
+ *       - EMAIL_OTP. The enclave rejects an uncompressed key inside the OTP
+ *         bundle, and verify returns `400 INVALID_INPUT`.
+ *       - The OAuth/PASSKEY client-held-key flow, where you pass `pubHex` as
+ *         `clientPublicKey`.
+ *       In both, the private key becomes the session signing key directly.
+ *
+ *       The uncompressed default is only for the legacy PASSKEY/OAUTH flow,
+ *       where you decrypt the session key with `decrypt-bundle`.
  *
  *   encrypt-otp <otpEncryptionTargetBundle> <pubHex> <otpCode>
  *       HPKE-encrypt `{otp_code, public_key}` under the target bundle
