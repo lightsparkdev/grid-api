@@ -1,21 +1,22 @@
-/* The spin: the card turns once through the studio over a few seconds, the
-   foil and the hologram catching the lights as it goes. Rendered a frame at
-   a time at a fixed step, so it is the same video on every machine whatever
-   the frame rate, and encoded in the browser (WebCodecs H.264 into an MP4),
-   which is what X, iMessage, and a download all want. */
+/* The spin, square like the still: the card turns once through the studio
+   over a few seconds, the foil and the hologram catching the lights as it
+   goes. Rendered a frame at a time at a fixed step, so it is the same video
+   on every machine whatever the frame rate, and encoded in the browser
+   (WebCodecs H.264 into an MP4), which is what X, iMessage, and a download
+   all want. */
 
 import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
 import { compose, exposureFor, prepareTemplate, type Palette } from './compose';
 import type { CardExporter } from './exportRenderer';
 import { cardFracFor } from './stills';
 
-export const VIDEO_W = 1920;
+export const VIDEO_W = 1080;
 export const VIDEO_H = 1080;
 export const VIDEO_FPS = 60;
 export const VIDEO_SECONDS = 5;
 /** The pitch the card holds through the turn. */
 const PITCH_DEG = -8;
-/** Kbit/s. 1080p of a slow turn compresses well; this keeps the foil's
+/** Bit/s. A 1080 square of a slow turn compresses well; this keeps the foil's
  *  detail without the file outrunning a text message. */
 const BITRATE = 5_000_000;
 /** H.264 profiles to try, best first: High 4.0, Main 4.0, Baseline 3.1. */

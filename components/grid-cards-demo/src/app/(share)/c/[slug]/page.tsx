@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: Pick<Props, 'params'>): Promi
       url: shareUrl(record.slug),
       type: 'website',
       images: og ? [{ url: og, width: 2400, height: 1256 }] : [],
-      videos: video ? [{ url: video, type: 'video/mp4', width: 1920, height: 1080 }] : undefined,
+      videos: video ? [{ url: video, type: 'video/mp4', width: 1080, height: 1080 }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
