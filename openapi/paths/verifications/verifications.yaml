@@ -120,6 +120,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Not supported by the customer's payment provider.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
 get:
   summary: List verifications
   description: >

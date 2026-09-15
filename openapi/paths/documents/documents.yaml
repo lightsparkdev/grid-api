@@ -54,6 +54,13 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error404.yaml
+    '409':
+      description: >-
+        A document of this type already exists for the customer (`DOCUMENT_ALREADY_EXISTS`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error409.yaml
     '422':
       description: >-
         The verification provider rejected the file. `precheckErrors` names
@@ -69,6 +76,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Not supported by the customer's payment provider.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
 get:
   summary: List documents
   description: >

@@ -40,6 +40,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Stablecoin operations are not enabled for this platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Referenced stablecoin provider account not found
       content:
@@ -58,6 +64,13 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '503':
+      description: >-
+        A dependency is temporarily unavailable; retry later (`SERVICE_UNAVAILABLE`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml
 get:
   summary: List stablecoins
   description: Retrieve stablecoins registered to the authenticated platform.
@@ -116,6 +129,12 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Stablecoin operations are not enabled for this platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '500':
       description: Internal service error
       content:

@@ -131,6 +131,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: This external account type is not enabled for the platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '409':
       description: Conflict - External account already exists
       content:
