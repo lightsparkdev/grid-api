@@ -134,13 +134,16 @@ export function SwatchRow({ label, active, children }: { label: string; active: 
       if (!el) return;
       // Sub-pixel: the row is right-aligned, so a swatch often sits on a half
       // pixel that offsetLeft rounds away. Measure from the swatch's center so
-      // the hover scale does not move it.
+      // the hover scale does not move it. The rects are in screen space; an
+      // ancestor mid-transform (a dialog scaling in) shrinks them all alike,
+      // so they are read back through the row's own scale into layout px.
       const rr = row.getBoundingClientRect();
       const er = el.getBoundingClientRect();
       const bw = el.offsetWidth;
       const bh = el.offsetHeight;
-      const nx = er.left + er.width / 2 - rr.left - bw / 2;
-      const ny = er.top + er.height / 2 - rr.top - bh / 2;
+      const k = row.offsetWidth > 0 && rr.width > 0 ? rr.width / row.offsetWidth : 1;
+      const nx = (er.left + er.width / 2 - rr.left) / k - bw / 2;
+      const ny = (er.top + er.height / 2 - rr.top) / k - bh / 2;
       x.set(nx);
       y.set(ny);
       w.set(bw);
@@ -161,8 +164,12 @@ export function SwatchRow({ label, active, children }: { label: string; active: 
     Array.from(row.children).forEach((el) => ro.observe(el));
     document.fonts?.ready.then(follow);
     window.addEventListener('resize', follow);
+    // A row inside something still arriving (a dialog's entrance) is read
+    // again once it has landed; a transform moves nothing the observer sees.
+    const settle = window.setTimeout(follow, 320);
     return () => {
       ro.disconnect();
+      window.clearTimeout(settle);
       window.removeEventListener('resize', follow);
     };
   }, [active, placed, x, y, w, h, sx, sy]);
