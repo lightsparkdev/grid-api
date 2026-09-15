@@ -164,10 +164,13 @@ the credential — we just need a fresh OTP and an ephemeral keypair.
 
 Generate a fresh P-256 pair (the TEK — Target Encryption Key) for this
 session. The public key is encrypted inside the OTP bundle; the private key
-becomes the session signing key after successful verify.
+becomes the session signing key after successful verify. Pass `--compressed`:
+the enclave only accepts a compressed public key (`02`/`03` prefix) in the
+OTP bundle. With the uncompressed default, step 3.4 fails with
+`{"code":"INVALID_INPUT","reason":"Invalid wallet request."}`.
 
 ```bash
-$SIGN gen-keypair > /tmp/keys.json
+$SIGN gen-keypair --compressed > /tmp/keys.json
 PUB_HEX=$(jq -r .pubHex /tmp/keys.json)
 PRIV_HEX=$(jq -r .privHex /tmp/keys.json)
 ```
@@ -308,6 +311,7 @@ On `COMPLETED`, the user's bank receives the USD via RTP.
 |---|---|
 | `to_network INTERNAL_FUNDED_FIAT does not support USDB` on the first on-ramp quote | Embedded wallet not bootstrapped. Register an EMAIL_OTP credential first (step 1.4). |
 | `EMAIL_OTP_CREDENTIAL_ALREADY_EXISTS` on `POST /auth/credentials` | The wallet already has a credential. Use `POST /auth/credentials/{id}/challenge` to re-issue an OTP. |
+| `400 INVALID_INPUT` `Invalid wallet request.` on the first `/verify` call, with a correct and unexpired OTP code | The TEK public key in the OTP bundle is uncompressed. Regenerate it with `gen-keypair --compressed` (step 3.1). |
 | `No pending OTP for this credential` on `/verify` | OTP expired (typically ~5 min). Re-run `/challenge` and verify quickly. |
 | `INSUFFICIENT_FUNDS` on offramp quote create | USDB on-chain balance at the embedded wallet's Spark address is below the requested amount. The Grid book balance can be ahead of the chain — check the on-chain side via `spark-cli` or your Spark explorer. |
 | Execute returns 500 / "INTERNAL_ERROR" | Often: bad `Grid-Wallet-Signature`. Verify `$SESSION_PRIV_HEX` matches the active session and `$PAYLOAD` is the exact `payloadToSign` byte string. |

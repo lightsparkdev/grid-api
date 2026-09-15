@@ -31,7 +31,8 @@ allOf:
           `POST /auth/credentials/{id}/challenge` for the new credential if
           it is absent. The client generates an ephemeral P-256 keypair
           (the Target Encryption Key, or TEK) and uses this bundle as the
-          recipient when HPKE-encrypting `{otp_code, public_key}`; the
+          recipient when HPKE-encrypting `{otp_code, public_key}`, with
+          `public_key` as the compressed TEK public key; the
           encrypted payload is submitted as `encryptedOtpBundle` on
           `POST /auth/credentials/{id}/verify`. The bundle is one-time-use
           per OTP issuance — re-issue via

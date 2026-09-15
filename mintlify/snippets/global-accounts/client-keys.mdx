@@ -19,7 +19,7 @@ To use it, send `clientPublicKey` in **compressed** SEC1 form — a 66-character
 
 ## 1. Generate a client key pair
 
-Generate a fresh P-256 key pair for every authentication, session refresh, and wallet export. The public key is sent to Grid as `clientPublicKey` — for `PASSKEY` credentials this happens on `POST /auth/credentials/{id}/challenge`; for `EMAIL_OTP` and `OAUTH` it happens on `POST /auth/credentials/{id}/verify`; for session refresh it goes on both `/auth/sessions/{id}/refresh` calls; for wallet export it goes on both `/export` calls. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded through your integrator backend. For the recommended client-held-key flow, send the **compressed** form — a 66-character string starting with `02` or `03` (see [Client-held session key](#client-held-session-key)). For the legacy flow, send the **uncompressed** form — a 130-character string starting with `04`, which the Web Crypto, iOS, and Android APIs below produce natively.
+Generate a fresh P-256 key pair for every authentication, session refresh, and wallet export. The public key is sent to Grid as `clientPublicKey` — for `PASSKEY` credentials this happens on `POST /auth/credentials/{id}/challenge`; for `OAUTH` it happens on `POST /auth/credentials/{id}/verify`; for `EMAIL_OTP` the public key travels inside `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify` (see <a href="#encrypt-the-otp-code-email_otp-only">Encrypt the OTP code</a>); for session refresh it goes on both `/auth/sessions/{id}/refresh` calls; for wallet export it goes on both `/export` calls. Keep the private key in device-local secure storage (browser `IndexedDB` gated by Web Crypto's non-extractable flag, iOS Keychain, Android Keystore). Send the public key hex-encoded through your integrator backend. For the recommended client-held-key flow, send the **compressed** form — a 66-character string starting with `02` or `03` (see [Client-held session key](#client-held-session-key)). For the legacy flow, send the **uncompressed** form — a 130-character string starting with `04`, which the Web Crypto, iOS, and Android APIs below produce natively.
 
 <Tip>
   For local development, you can generate a P-256 key pair from the command line:
@@ -126,16 +126,23 @@ func generateClientKeyPair() -> ClientKeyPair {
 
 ## Encrypt the OTP code (`EMAIL_OTP` only)
 
-`EMAIL_OTP` credentials never send the OTP code in plaintext. Instead, the client HPKE-encrypts the code (together with its `publicKeyHex`) to an enclave key, so the code is unreadable in transit and Grid is only a pass-through.
+`EMAIL_OTP` credentials never send the OTP code in plaintext. Instead, the client HPKE-encrypts the code (together with the compressed form of its public key) to an enclave key, so the code is unreadable in transit and Grid is only a pass-through.
 
 Grid returns an `otpEncryptionTargetBundle` whenever it initiates or reissues an OTP challenge, including `POST /auth/credentials/{id}/challenge` and add-EMAIL_OTP signed-retry responses. First-time EMAIL_OTP wallet bootstrap registration can omit it; if the registration response has no bundle, call `POST /auth/credentials/{id}/challenge` for that credential before verifying. The bundle is a signed enclave bundle whose `data` field is hex-encoded JSON carrying the enclave's HPKE target key as `targetPublic`. Pull out `targetPublic`, HPKE-encrypt `{ otp_code, public_key }` to it, and submit the library's `{ encappedPublic, ciphertext }` output as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`.
+
+Set `public_key` to the **compressed** SEC1 public key: a 66-character hex string starting with `02` or `03`. The step 1 samples export the uncompressed form (130 characters, `04` prefix), so compress it first. If the bundle carries an uncompressed key, the enclave rejects the OTP code and the first verify call returns:
+
+```json
+{"code": "INVALID_INPUT", "reason": "Invalid wallet request."}
+```
 
 Use an HPKE library so you don't hand-roll the suite, `info`, or AAD. The
 helper below assumes your crypto layer returns the JSON string Grid expects for
 `encryptedOtpBundle`.
 
 ```typescript Web (TypeScript)
-// npm i @noble/hashes
+// npm i @noble/curves @noble/hashes
+import { p256 } from "@noble/curves/nist.js";
 import { hexToBytes } from "@noble/hashes/utils";
 
 declare function hpkeEncryptToGridBundle(args: {
@@ -144,7 +151,7 @@ declare function hpkeEncryptToGridBundle(args: {
 }): string;
 
 // otpEncryptionTargetBundle: from the registration response when present, or /challenge
-// clientPublicKeyHex: the uncompressed public key you generated in step 1
+// clientPublicKeyHex: the public key you generated in step 1, compressed or uncompressed
 // otp: the code the user typed ("000000" in sandbox)
 function buildEncryptedOtpBundle(
   otpEncryptionTargetBundle: string,
@@ -157,9 +164,11 @@ function buildEncryptedOtpBundle(
     new TextDecoder().decode(hexToBytes(data)),
   ) as { targetPublic: string };
 
-  // Note the snake_case { otp_code, public_key } — that's what the enclave expects.
+  // The enclave expects snake_case { otp_code, public_key } and a compressed
+  // public key (66 hex characters, 02 or 03 prefix).
+  const compressedPublicKeyHex = p256.Point.fromHex(clientPublicKeyHex).toHex(true);
   const plainTextBuf = new TextEncoder().encode(
-    JSON.stringify({ otp_code: otp, public_key: clientPublicKeyHex }),
+    JSON.stringify({ otp_code: otp, public_key: compressedPublicKeyHex }),
   );
   return hpkeEncryptToGridBundle({
     plainTextBuf,

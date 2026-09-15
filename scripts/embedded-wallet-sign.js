@@ -10,13 +10,14 @@
  *
  *   gen-keypair [--compressed]
  *       Generate an ephemeral P-256 keypair. Prints JSON with `pubHex` and
- *       `privHex`. By default `pubHex` is uncompressed SEC1 (`04...`): for
- *       EMAIL_OTP, it's encrypted inside the OTP bundle and the private key
- *       becomes the session signing key after successful verify. With
- *       `--compressed`, `pubHex` is compressed SEC1 (`02`/`03...`) — pass it
- *       as `clientPublicKey` on the OAuth/PASSKEY challenge or verify call to
- *       select the client-held-key flow, where this private key becomes the
- *       session signing key directly.
+ *       `privHex`. By default `pubHex` is uncompressed SEC1 (`04...`), which
+ *       only the legacy PASSKEY/OAUTH decrypt flow uses. With `--compressed`,
+ *       `pubHex` is compressed SEC1 (`02`/`03...`). Use `--compressed` for
+ *       EMAIL_OTP: the enclave rejects an uncompressed key inside the OTP
+ *       bundle, and verify returns `400 INVALID_INPUT`. Also use it for the
+ *       OAuth/PASSKEY client-held-key flow, where you pass `pubHex` as
+ *       `clientPublicKey`. In both flows the private key becomes the session
+ *       signing key directly.
  *
  *   encrypt-otp <otpEncryptionTargetBundle> <pubHex> <otpCode>
  *       HPKE-encrypt `{otp_code, public_key}` under the target bundle
@@ -166,7 +167,7 @@ function usage(code) {
     "embedded-wallet-sign — signing helpers for the Grid offramp flow",
     "",
     "Subcommands:",
-    "  gen-keypair [--compressed]                        Generate ephemeral P-256 keypair; --compressed for the OAuth/PASSKEY client-held flow",
+    "  gen-keypair [--compressed]                        Generate ephemeral P-256 keypair; --compressed for EMAIL_OTP and the OAuth/PASSKEY client-held flow",
     "  encrypt-otp <targetBundle> <pubHex> <otpCode>     HPKE-encrypt OTP for EMAIL_OTP verify",
     "  decrypt-bundle <bundle> <privHex>                 HPKE-open the session signing key (legacy PASSKEY/OAUTH flow)",
     "  stamp <sessionPrivHex> <payload>                  Build a Grid-Wallet-Signature stamp",

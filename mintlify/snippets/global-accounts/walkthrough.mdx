@@ -263,7 +263,7 @@ The customer has an outstanding quote with a `payloadToSign`. Now we need a sess
     Return `otpEncryptionTargetBundle` to the client.
   </Step>
   <Step title="Client encrypts the OTP and verifies">
-    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 key pair (the TEK)</a>, <a href="client-keys#encrypt-the-otp-code-email_otp-only">HPKE-encrypts</a> `{otp_code, public_key}` under `otpEncryptionTargetBundle`, and sends the encrypted bundle to your backend. In sandbox, use OTP code `000000`.
+    The client generates a fresh <a href="client-keys#1-generate-a-client-key-pair">P-256 key pair (the TEK)</a>, <a href="client-keys#encrypt-the-otp-code-email_otp-only">HPKE-encrypts</a> `{otp_code, public_key}` under `otpEncryptionTargetBundle` with `public_key` in compressed form, and sends the encrypted bundle to your backend. In sandbox, use OTP code `000000`.
 
     Your backend calls verify with the encrypted bundle:
 
