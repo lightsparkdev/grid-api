@@ -31,4 +31,3 @@ properties:
         format: date-time
       failedAttempts:
         type: integer
-    additionalProperties: true
