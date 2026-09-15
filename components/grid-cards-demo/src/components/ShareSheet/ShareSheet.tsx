@@ -345,6 +345,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
     onClick: () => void;
     disabled?: boolean;
     title?: string;
+    primary?: boolean;
   }> = [
     {
       id: 'link',
@@ -352,6 +353,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       icon: copied ? <IconCheckmark1 size={24} /> : <IconChainLink1 size={24} />,
       onClick: onCopyLink,
       disabled: busy,
+      primary: true,
     },
     { id: 'x', label: 'Post to X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
     { id: 'image', label: 'Download image', icon: <IconImages1 size={24} />, onClick: onDownloadImage, disabled: busy },
@@ -461,7 +463,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
               <button
                 key={t.id}
                 type="button"
-                className={styles.tile}
+                className={clsx(styles.tile, t.primary && styles.tilePrimary)}
                 disabled={t.disabled}
                 title={t.title}
                 {...pressable({ onClick: t.onClick, disabled: t.disabled })}
