@@ -99,6 +99,41 @@ function download(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
 }
 
+/** Where a file goes: a handle from the browser's save dialog (asked for
+ *  in the click, since the dialog needs the gesture), or null for a plain
+ *  download. Undefined when the visitor dismissed the dialog. */
+type SaveTarget = FileSystemFileHandle | null;
+async function askWhereToSave(name: string, kind: 'image' | 'video'): Promise<SaveTarget | undefined> {
+  if (typeof window.showSaveFilePicker !== 'function') return null;
+  try {
+    return await window.showSaveFilePicker({
+      suggestedName: name,
+      types: [
+        kind === 'video'
+          ? { description: 'MP4 video', accept: { 'video/mp4': ['.mp4'] } }
+          : {
+              description: 'Image',
+              accept: { 'image/webp': ['.webp'], 'image/png': ['.png'], 'image/jpeg': ['.jpg'] },
+            },
+      ],
+    });
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') return undefined;
+    return null;
+  }
+}
+
+/** Write the file where it goes; resolves once it is on disk. */
+async function saveTo(target: SaveTarget, blob: Blob, name: string): Promise<void> {
+  if (!target) {
+    download(blob, name);
+    return;
+  }
+  const w = await target.createWritable();
+  await w.write(blob);
+  await w.close();
+}
+
 function fileStem(design: CardDesign) {
   return (
     (programNameOf(design)
@@ -153,9 +188,11 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [video, setVideo] = useState<VideoState>({ status: 'idle' });
-  // A save just happened: the tile says so for a moment.
+  // A save under way, and one just done: the tile says so.
+  const [savingWhat, setSavingWhat] = useState<'image' | 'video' | null>(null);
   const [savedWhat, setSavedWhat] = useState<'image' | 'video' | null>(null);
   const setSaved = (what: 'image' | 'video') => {
+    setSavingWhat((w) => (w === what ? null : w));
     setSavedWhat(what);
     play('success');
     setTimeout(() => setSavedWhat((w) => (w === what ? null : w)), 1800);
@@ -236,7 +273,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const videoRun = useRef<AbortController | null>(null);
   // Save video before the video exists: it is asked for, and saved the moment
   // it is done (making the share starts it; otherwise it is started there).
-  const saveWhenDone = useRef(false);
+  const saveWhenDone = useRef<{ target: SaveTarget } | null>(null);
 
   /** What a rendered video depends on: the surface and the design (the spin
    *  is a full turn, so not the pose). */
@@ -270,10 +307,16 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
           setVideo({ status: 'unavailable' });
           return;
         }
-        if (saveWhenDone.current) {
-          saveWhenDone.current = false;
-          download(blob, `${fileStem(design)}-spin.mp4`);
-          setSaved('video');
+        const ask = saveWhenDone.current;
+        if (ask) {
+          saveWhenDone.current = null;
+          setSavingWhat('video');
+          try {
+            await saveTo(ask.target, blob, `${fileStem(design)}-spin.mp4`);
+            setSaved('video');
+          } catch {
+            setSavingWhat(null);
+          }
         }
         let url: string | null = null;
         if (h) {
@@ -317,7 +360,8 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   useEffect(() => {
     if (open) return;
     videoRun.current?.abort();
-    saveWhenDone.current = false;
+    saveWhenDone.current = null;
+    setSavingWhat(null);
     setVideo((v) => (v.status === 'rendering' || v.status === 'uploading' ? { status: 'idle' } : v));
   }, [open]);
 
@@ -380,18 +424,35 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const onDownloadImage = async () => {
     const ex = exporterRef.current;
     if (!ex?.ready) return;
-    await warmTemplate();
-    const blob = await renderStill(ex, { format: 'square', palette, pose: ex.livePose });
-    download(blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
-    setSaved('image');
+    // The dialog first, in the click; then the picture, then the write.
+    const target = await askWhereToSave(`${fileStem(design)}.webp`, 'image');
+    if (target === undefined) return;
+    setSavingWhat('image');
+    try {
+      await warmTemplate();
+      const blob = await renderStill(ex, { format: 'square', palette, pose: ex.livePose });
+      await saveTo(target, blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
+      setSaved('image');
+    } catch {
+      setSavingWhat(null);
+    }
   };
   const onDownloadVideo = async () => {
+    const name = `${fileStem(design)}-spin.mp4`;
+    const target = await askWhereToSave(name, 'video');
+    if (target === undefined) return;
     if (video.status === 'done' && video.blob.size > 0 && video.key === videoKey) {
-      download(video.blob, `${fileStem(design)}-spin.mp4`);
-      setSaved('video');
+      setSavingWhat('video');
+      try {
+        await saveTo(target, video.blob, name);
+        setSaved('video');
+      } catch {
+        setSavingWhat(null);
+      }
       return;
     }
-    saveWhenDone.current = true;
+    // Rendered first; written where it goes the moment it is done.
+    saveWhenDone.current = { target };
     if (video.status === 'rendering' || video.status === 'uploading') return;
     await makeVideo(handle && !stale ? handle : null);
   };
@@ -421,18 +482,25 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     { id: 'x', label: 'Share on X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
     {
       id: 'image',
-      label: savedWhat === 'image' ? 'Saved' : 'Save image',
+      label: savingWhat === 'image' ? 'Saving…' : savedWhat === 'image' ? 'Saved' : 'Save image',
       icon: savedWhat === 'image' ? <IconCheckmark1 size={24} /> : <IconImages1 size={24} />,
       onClick: onDownloadImage,
-      disabled: busy,
+      disabled: busy || savingWhat === 'image',
+      loading: savingWhat === 'image',
     },
     {
       id: 'video',
-      label: videoBusy ? 'Rendering…' : savedWhat === 'video' ? 'Saved' : 'Save video',
+      label: videoBusy
+        ? 'Rendering…'
+        : savingWhat === 'video'
+          ? 'Saving…'
+          : savedWhat === 'video'
+            ? 'Saved'
+            : 'Save video',
       icon: savedWhat === 'video' ? <IconCheckmark1 size={24} /> : <IconVideoClip size={24} />,
       onClick: onDownloadVideo,
-      disabled: busy || videoBusy || video.status === 'unavailable',
-      loading: videoBusy,
+      disabled: busy || videoBusy || savingWhat === 'video' || video.status === 'unavailable',
+      loading: videoBusy || savingWhat === 'video',
       title: video.status === 'unavailable' ? 'This browser has no video encoder' : undefined,
     },
   ];
