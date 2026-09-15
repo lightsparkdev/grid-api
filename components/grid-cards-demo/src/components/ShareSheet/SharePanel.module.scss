@@ -191,12 +191,44 @@
   }
 }
 
+/* The tile at work is the one lit; the others wait dimmed. */
+.tileLoading:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
 .tileIcon {
+  position: relative;
   display: flex;
+  width: 24px;
+  height: 24px;
   color: var(--icon-primary);
 
   svg path {
     vector-effect: non-scaling-stroke;
+  }
+}
+
+.tileGlyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  display: block;
+  animation: spin 900ms linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 1800ms;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -225,17 +257,3 @@
   color: var(--text-critical, #c0392b);
 }
 
-.bar {
-  display: block;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--surface-secondary);
-  overflow: hidden;
-}
-
-.barFill {
-  display: block;
-  height: 100%;
-  background: var(--text-primary);
-  transition: width 120ms linear;
-}

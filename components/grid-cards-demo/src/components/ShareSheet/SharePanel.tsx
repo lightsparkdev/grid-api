@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion as m, useReducedMotion } from 'motion/react';
+import { TextMorph } from 'torph/react';
 import { IconChainLink1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChainLink1';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconImages1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconImages1';
@@ -34,7 +35,7 @@ import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import { brandColorOf, sameDesign, type CardDesign } from '@/data/design';
 import type { SharedCard } from '@/hooks/useCardsDemoLogic';
 import { useThemeMode } from '@/hooks/useThemeMode';
-import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
+import { cubicBezierCss, easeOutQuick, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import { attachVideo, createShare, ShareError, type ShareHandle, type ShareProgress } from '@/lib/share/client';
 import { shareUrl, xIntentUrl } from '@/lib/share/urls';
 import { play, pressable } from '@/lib/sounds';
@@ -73,6 +74,10 @@ type VideoState =
   | { status: 'unavailable' }
   | { status: 'failed' };
 
+const LABEL_MORPH_MS = 280;
+/** A tile's glyph giving way to the spinner and back. */
+const GLYPH_IN = motionTransition(easeOutSnappy, 0.3);
+const GLYPH_OUT = motionTransition(easeOutQuick, 0.14);
 const PANEL_IN = motionTransition(easeOutSnappy, 0.5);
 const PANEL_OUT = motionTransition(easeOutQuick, 0.45);
 /** The panel's growth, and the controls' rise inside it: a gentler curve
@@ -325,35 +330,8 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     if (hadShare && video.status !== 'rendering' && video.status !== 'uploading') await makeVideo(h);
   };
 
-  // What the panel says while something is happening; nothing at rest.
-  const status = useMemo<{ text: string; progress?: number; error?: boolean } | null>(() => {
-    if (error) return { text: error, error: true };
-    if (progress && progress.stage !== 'done') {
-      return {
-        text:
-          progress.stage === 'record' ? 'Making the link…' : progress.stage === 'render' ? 'Rendering…' : 'Uploading…',
-      };
-    }
-    switch (video.status) {
-      case 'rendering':
-        return {
-          text: `Rendering video · ${Math.round((video.done / video.total) * 100)}%`,
-          progress: video.done / video.total,
-        };
-      case 'uploading':
-        return { text: 'Uploading video…' };
-      case 'failed':
-        return { text: 'The video failed. Try Save video again.', error: true };
-      case 'idle':
-      case 'done':
-      case 'unavailable':
-        return null;
-      default: {
-        const never: never = video;
-        return never;
-      }
-    }
-  }, [error, progress, video]);
+  // The tiles say what is happening; the panel speaks up only when it went wrong.
+  const errorLine = error ?? (video.status === 'failed' ? 'The video failed. Try Save video again.' : null);
 
   const videoBusy = video.status === 'rendering' || video.status === 'uploading';
   const tiles: Array<{
@@ -362,23 +340,27 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     icon: React.ReactNode;
     onClick: () => void;
     disabled?: boolean;
+    /** Working: the glyph becomes a spinner and the label says so. */
+    loading?: boolean;
     title?: string;
   }> = [
     {
       id: 'link',
-      label: copied ? 'Copied' : stale ? 'Update link' : 'Copy link',
+      label: busy ? 'Making link…' : copied ? 'Copied' : stale ? 'Update link' : 'Copy link',
       icon: copied ? <IconCheckmark1 size={24} /> : <IconChainLink1 size={24} />,
       onClick: onCopyLink,
       disabled: busy,
+      loading: busy,
     },
     { id: 'x', label: 'Share on X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
     { id: 'image', label: 'Save image', icon: <IconImages1 size={24} />, onClick: onDownloadImage, disabled: busy },
     {
       id: 'video',
-      label: 'Save video',
+      label: videoBusy ? 'Rendering…' : 'Save video',
       icon: <IconVideoClip size={24} />,
       onClick: onDownloadVideo,
       disabled: busy || videoBusy || video.status === 'unavailable',
+      loading: videoBusy,
       title: video.status === 'unavailable' ? 'This browser has no video encoder' : undefined,
     },
   ];
@@ -493,25 +475,39 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
                   <button
                     key={t.id}
                     type="button"
-                    className={styles.tile}
+                    className={clsx(styles.tile, t.loading && styles.tileLoading)}
                     disabled={t.disabled}
                     title={t.title}
                     {...pressable({ onClick: t.onClick, disabled: t.disabled })}
                   >
-                    <span className={styles.tileIcon}>{t.icon}</span>
-                    <span className={styles.tileLabel}>{t.label}</span>
+                    <span className={styles.tileIcon}>
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        <m.span
+                          key={t.loading ? 'spinner' : 'icon'}
+                          className={styles.tileGlyph}
+                          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
+                          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, transition: GLYPH_IN }}
+                          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6, transition: GLYPH_OUT }}
+                        >
+                          {t.loading ? <Spinner /> : t.icon}
+                        </m.span>
+                      </AnimatePresence>
+                    </span>
+                    <TextMorph
+                      as="span"
+                      className={styles.tileLabel}
+                      duration={LABEL_MORPH_MS}
+                      ease={cubicBezierCss(easeOutSwift)}
+                    >
+                      {t.label}
+                    </TextMorph>
                   </button>
                 ))}
               </m.div>
 
-              {status && (
-                <div className={styles.status} role="status">
-                  <span className={clsx(styles.statusLine, status.error && styles.statusError)}>{status.text}</span>
-                  {status.progress !== undefined && (
-                    <span className={styles.bar} aria-hidden>
-                      <span className={styles.barFill} style={{ width: `${status.progress * 100}%` }} />
-                    </span>
-                  )}
+              {errorLine && (
+                <div className={styles.status} role="alert">
+                  <span className={clsx(styles.statusLine, styles.statusError)}>{errorLine}</span>
                 </div>
               )}
             </m.div>
@@ -519,6 +515,16 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** A ring turning: the tile's glyph while it works, in the icon set's stroke. */
+function Spinner() {
+  return (
+    <svg className={styles.spinner} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.2" strokeWidth="1.5" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }
 

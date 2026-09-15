@@ -107,9 +107,11 @@ export class CardExporter {
       depthBuffer: true,
       stencilBuffer: false,
     });
+    // Plain bytes: the output pass writes sRGB-encoded values itself. An
+    // SRGBColorSpace target would be an sRGB framebuffer, which encodes on
+    // write as well, and the darks came up twice-encoded (near-black to gray).
     this.outRT = new THREE.WebGLRenderTarget(width, height, {
       type: THREE.UnsignedByteType,
-      colorSpace: THREE.SRGBColorSpace,
       depthBuffer: false,
       stencilBuffer: false,
     });
