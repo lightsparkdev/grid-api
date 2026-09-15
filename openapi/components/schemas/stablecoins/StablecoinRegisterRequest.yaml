@@ -10,6 +10,7 @@ properties:
     example: ACME
   networkTokenIdentifier:
     type: string
+    maxLength: 255
     description: Token identifier in the namespace selected by `network`.
     example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
   network:

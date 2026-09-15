@@ -53,6 +53,7 @@ properties:
     example: false
   description:
     type: string
+    maxLength: 1024
     description: Optional description/memo for the transfer
     example: 'Invoice #1234 payment'
   remittanceInformation:

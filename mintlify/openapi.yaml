@@ -896,6 +896,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
       requestBody:
         required: false
@@ -2139,6 +2140,7 @@ paths:
           required: true
           schema:
             type: string
+            maxLength: 255
             example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
@@ -3820,6 +3822,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
@@ -3905,6 +3908,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
@@ -4210,6 +4214,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
       requestBody:
         required: true
@@ -4421,6 +4426,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
         - name: Grid-Wallet-Signature
           in: header
@@ -7981,6 +7987,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
       requestBody:
         required: true
@@ -8101,6 +8108,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
         - name: Grid-Wallet-Signature
           in: header
@@ -13153,6 +13161,7 @@ components:
           example: 198.51.100.24
         termsVersion:
           type: string
+          maxLength: 64
           description: Version identifier of the accepted Grid End User Terms.
           example: V1
         acceptanceMethod:
@@ -13399,6 +13408,7 @@ components:
       properties:
         sourceOfFundsCategories:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/IndividualSourceOfFundsCategory'
           description: Structured source-of-funds categories (FLOW of funds for this account).
@@ -13406,10 +13416,12 @@ components:
             - SALARY
         sourceOfFundsOtherDescription:
           type: string
+          maxLength: 500
           description: Free-form description of the customer's source of funds. Required when `sourceOfFundsCategories` includes `OTHER`; otherwise omitted.
           example: Contest winnings
         sourceOfWealthCategories:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/SourceOfWealthCategory'
           description: Structured source-of-wealth categories (STOCK — origin of accumulated wealth).
@@ -13418,12 +13430,14 @@ components:
             - INVESTMENTS
         sourceOfWealthOtherDescription:
           type: string
+          maxLength: 500
           description: Free-form description of the customer's source of wealth. Required when `sourceOfWealthCategories` includes `OTHER`; otherwise omitted.
           example: Royalty income from published works
         purposeOfAccount:
           $ref: '#/components/schemas/PurposeOfAccount'
         purposeOfAccountOtherDescription:
           type: string
+          maxLength: 500
           description: Free-form description of the customer's intended purpose for the Grid account. Required when `purposeOfAccount` is `OTHER`; otherwise omitted.
           example: Household budgeting between spouses
         expectedMonthlyTransactionCount:
@@ -13450,6 +13464,7 @@ components:
               $ref: '#/components/schemas/KycStatus'
             fullName:
               type: string
+              maxLength: 250
               description: Individual's full name
               example: John Michael Doe
             birthDate:
@@ -13467,6 +13482,7 @@ components:
               $ref: '#/components/schemas/IdentificationType'
             identifier:
               type: string
+              maxLength: 100
               writeOnly: true
               description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only — never returned in customer responses.
               example: 123-45-6789
@@ -13548,10 +13564,12 @@ components:
       properties:
         legalName:
           type: string
+          maxLength: 250
           description: Legal name of the business
           example: Acme Corporation, Inc.
         doingBusinessAs:
           type: string
+          maxLength: 250
           description: Trade name or DBA name of the business, if different from the legal name
           example: Acme
         country:
@@ -13560,6 +13578,7 @@ components:
           example: US
         registrationNumber:
           type: string
+          maxLength: 100
           description: Business registration number
           example: '5523041'
         incorporatedOn:
@@ -13571,6 +13590,7 @@ components:
           $ref: '#/components/schemas/EntityType'
         taxId:
           type: string
+          maxLength: 100
           description: Tax identification number
           example: 47-1234567
         countriesOfOperation:
@@ -13586,6 +13606,7 @@ components:
           $ref: '#/components/schemas/PurposeOfAccount'
         sourceOfFunds:
           type: string
+          maxLength: 500
           description: The primary source of funds for the business
           example: Funds derived from customer payments for software services
         expectedMonthlyTransactionCount:
@@ -13814,14 +13835,17 @@ components:
       properties:
         firstName:
           type: string
+          maxLength: 250
           description: First name of the individual
           example: Jane
         middleName:
           type: string
+          maxLength: 250
           description: Middle name of the individual
           example: Marie
         lastName:
           type: string
+          maxLength: 250
           description: Last name of the individual
           example: Smith
         birthDate:
@@ -13836,6 +13860,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           description: Email address of the individual
           example: jane.smith@acmecorp.com
         phoneNumber:
@@ -13849,6 +13874,7 @@ components:
           $ref: '#/components/schemas/IdentificationType'
         identifier:
           type: string
+          maxLength: 100
           description: The identification number or value
           example: 123-45-6789
         countryOfIssuance:
@@ -13991,6 +14017,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           description: Email address for the customer. **Required in regions that verify the email address before identity verification** (e.g. the EU); optional otherwise.
           example: john.doe@example.com
         phoneNumber:
@@ -14021,10 +14048,12 @@ components:
       properties:
         legalName:
           type: string
+          maxLength: 250
           description: Legal name of the business
           example: Acme Corporation, Inc.
         doingBusinessAs:
           type: string
+          maxLength: 250
           description: Trade name or DBA name of the business, if different from the legal name
           example: Acme
         country:
@@ -14033,6 +14062,7 @@ components:
           example: US
         registrationNumber:
           type: string
+          maxLength: 100
           description: Business registration number
           example: '5523041'
         incorporatedOn:
@@ -14044,6 +14074,7 @@ components:
           $ref: '#/components/schemas/EntityType'
         taxId:
           type: string
+          maxLength: 100
           description: Tax identification number
           example: 47-1234567
         countriesOfOperation:
@@ -14059,6 +14090,7 @@ components:
           $ref: '#/components/schemas/PurposeOfAccount'
         sourceOfFunds:
           type: string
+          maxLength: 500
           description: The primary source of funds for the business
           example: Funds derived from customer payments for software services
         expectedMonthlyTransactionCount:
@@ -14321,6 +14353,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
           example: john.doe@example.com
         phoneNumber:
@@ -18506,18 +18539,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         registrationNumber:
           type: string
+          maxLength: 100
           description: The registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18789,6 +18827,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18798,12 +18837,15 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The registration number of the beneficiary
         countryOfResidence:
           type: string
@@ -20570,6 +20612,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20579,9 +20622,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21443,6 +21488,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21452,9 +21498,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21495,6 +21543,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
           example: John Michael Doe
         countryOfResidence:
@@ -22855,6 +22904,7 @@ components:
               example: USD
             platformAccountId:
               type: string
+              maxLength: 255
               description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
               example: ext_acc_123456
             ownershipType:
@@ -22979,6 +23029,7 @@ components:
           example: USD
         platformAccountId:
           type: string
+          maxLength: 255
           description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
           example: ext_acc_123456
         ownershipType:
@@ -23019,6 +23070,7 @@ components:
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         roles:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/BeneficialOwnerRole'
           description: Roles of this person within the business
@@ -23039,14 +23091,17 @@ components:
       properties:
         firstName:
           type: string
+          maxLength: 250
           description: First name of the individual
           example: Jane
         middleName:
           type: string
+          maxLength: 250
           description: Middle name of the individual
           example: Marie
         lastName:
           type: string
+          maxLength: 250
           description: Last name of the individual
           example: Smith
         birthDate:
@@ -23061,6 +23116,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           description: Email address of the individual
           example: jane.smith@acmecorp.com
         phoneNumber:
@@ -23074,6 +23130,7 @@ components:
           $ref: '#/components/schemas/IdentificationType'
         identifier:
           type: string
+          maxLength: 100
           description: The identification number or value
           example: 123-45-6789
         countryOfIssuance:
@@ -23085,6 +23142,7 @@ components:
       properties:
         roles:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/BeneficialOwnerRole'
           description: Roles of this person within the business
@@ -23240,10 +23298,12 @@ components:
           example: US
         documentNumber:
           type: string
+          maxLength: 100
           description: Document identification number (e.g., passport number)
           example: A12345678
         issuingAuthority:
           type: string
+          maxLength: 255
           description: Name of the government agency or organization that issued the document
           example: U.S. Department of State
     DocumentUploadRequest:
@@ -24569,6 +24629,7 @@ components:
                 - UMA_ADDRESS
             umaAddress:
               type: string
+              maxLength: 200
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
             currency:
@@ -24741,6 +24802,7 @@ components:
           example: false
         description:
           type: string
+          maxLength: 1024
           description: Optional description/memo for the transfer
           example: 'Invoice #1234 payment'
         remittanceInformation:
@@ -26922,6 +26984,7 @@ components:
           example: ACME
         networkTokenIdentifier:
           type: string
+          maxLength: 255
           description: Token identifier in the namespace selected by `network`.
           example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
         network:

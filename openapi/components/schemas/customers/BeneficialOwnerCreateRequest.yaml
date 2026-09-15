@@ -11,6 +11,7 @@ properties:
     example: Customer:019542f5-b3e7-1d02-0000-000000000001
   roles:
     type: array
+    minItems: 1
     items:
       $ref: ./BeneficialOwnerRole.yaml
     description: Roles of this person within the business

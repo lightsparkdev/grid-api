@@ -16,6 +16,7 @@ properties:
     example: 198.51.100.24
   termsVersion:
     type: string
+    maxLength: 64
     description: Version identifier of the accepted Grid End User Terms.
     example: V1
   acceptanceMethod:
