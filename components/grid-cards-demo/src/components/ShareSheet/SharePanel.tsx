@@ -86,11 +86,14 @@ const LABEL_MORPH_MS = 280;
 /** A tile's glyph giving way to the spinner and back. */
 const GLYPH_IN = motionTransition(easeOutSnappy, 0.42);
 const GLYPH_OUT = motionTransition(easeOutQuick, 0.2);
-/** The phone's own entrance (AppShell: 128 px up, 0.9 to 1, a 48 px blur
- *  clearing, 0.7 s in and 0.45 s out on an ease-out quart), for the panel. */
+/** The phone's own entrance and exit (AppShell): 128 px up, 0.9 to 1, a
+ *  48 px blur clearing, 0.7 s in on an ease-out quart; and out over 0.45 s
+ *  on the same curve run backward (the boot's linear clock reversing
+ *  through the ease-out), so it gathers speed as it goes. */
 const easeOutQuart = [0.165, 0.84, 0.44, 1] as const;
+const easeInQuart = [0.56, 0, 0.835, 0.16] as const;
 const PANEL_IN = motionTransition(easeOutQuart, 0.7);
-const PANEL_OUT = motionTransition(easeOutQuart, 0.45);
+const PANEL_OUT = motionTransition(easeInQuart, 0.45);
 const PANEL_AWAY = { opacity: 0, scale: 0.9, y: 128, filter: 'blur(48px)' };
 /** The panel's growth, and the controls' rise inside it: a gentler curve
  *  than the snappy one (which front-loads so hard the growth reads as a
