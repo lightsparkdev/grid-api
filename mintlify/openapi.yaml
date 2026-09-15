@@ -12998,14 +12998,13 @@ components:
           description: Error message
         details:
           type: object
-          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.errors[]` enumerates every invalid field so platforms can render form-field-level UX for the entire request in a single round-trip.
+          description: Field-level detail. On field-validation errors from submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.errors[]` enumerates every invalid field so platforms can render form-field-level UX for the entire request in a single round-trip.
           properties:
             errors:
               type: array
               description: One entry per invalid field. Present on field-validation errors from submit endpoints.
               items:
                 $ref: '#/components/schemas/FieldError'
-          additionalProperties: true
     Error501:
       type: object
       required:
@@ -14887,7 +14886,6 @@ components:
               format: date-time
             failedAttempts:
               type: integer
-          additionalProperties: true
     RecordSecurityEventRequest:
       type: object
       description: Records a client-side security event for the customer so Grid can maintain the customer's login-security state (SCA session revocation and failed-login lockout).
