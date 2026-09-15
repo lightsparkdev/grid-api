@@ -10,19 +10,16 @@
   position: absolute;
   inset: 0;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Clear of the Share/Close button along the bottom. */
-  padding-bottom: 68px;
   pointer-events: none;
 }
 
+/* Anchored where its grown height sits centered (see the panel's `top`), so
+   the growth runs downward and nothing above it moves. */
 .panel {
+  position: absolute;
+  left: 50%;
+  transform-origin: 50% 0;
   corner-shape: var(--corner-shape);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
   padding: var(--spacing-sm);
   background: var(--surface-panel, var(--surface-primary));
   border: var(--stroke-xs) solid var(--border-secondary, var(--border-primary));
@@ -30,6 +27,14 @@
   border-radius: calc(var(--corner-radius-md) + var(--spacing-sm));
   box-shadow: var(--shadow-lg);
   pointer-events: auto;
+}
+
+/* The clip the panel grows inside: the frame, then the controls. */
+.grow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  overflow: hidden;
 }
 
 /* ── The frame: the share template, with the card's slot in the middle ──── */

@@ -62,9 +62,23 @@
   }
 }
 
-/* The label and glyph swap (Share, Close) as one piece. */
-.content {
-  display: inline-flex;
+/* The glyph's box holds still; the two glyphs turn through it. */
+.glyph {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.glyphLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  justify-content: center;
+}
+
+.label {
+  display: inline-block;
 }

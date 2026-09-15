@@ -75,7 +75,12 @@ type VideoState =
 
 const PANEL_IN = motionTransition(easeOutSnappy, 0.5);
 const PANEL_OUT = motionTransition(easeOutQuick, 0.45);
-const ROW_IN = motionTransition(easeOutSnappy, 0.45);
+/** The panel's growth, and the controls' rise inside it: a gentler curve
+ *  than the snappy one (which front-loads so hard the growth reads as a
+ *  jump), on the same clock so they land together. */
+const easeOutGentle = [0.32, 0.72, 0, 1] as const;
+const GROW = motionTransition(easeOutGentle, 0.7);
+const ROW_IN = motionTransition(easeOutGentle, 0.6);
 
 function download(blob: Blob, name: string) {
   const a = document.createElement('a');
@@ -157,13 +162,18 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   // once the rows and tiles are under it.
   const rootRef = useRef<HTMLDivElement>(null);
   const [frameSide, setFrameSide] = useState(PANEL_W - 16);
+  const [panelTop, setPanelTop] = useState(PANEL_GUTTER);
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
     const measure = () => {
       const w = Math.min(PANEL_W, el.clientWidth - PANEL_GUTTER * 2) - 16;
-      const h = el.clientHeight - BUTTON_STRIP - PANEL_GUTTER * 2 - CONTROLS_H - 16;
-      setFrameSide(Math.max(160, Math.min(w, h)));
+      const room = el.clientHeight - BUTTON_STRIP;
+      const h = room - PANEL_GUTTER * 2 - CONTROLS_H - 16;
+      const side = Math.max(160, Math.min(w, h));
+      setFrameSide(side);
+      // Where the grown panel sits centered in the room; it grows down to it.
+      setPanelTop(Math.max(PANEL_GUTTER, (room - (side + 16 + CONTROLS_H)) / 2));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -171,24 +181,21 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     return () => ro.disconnect();
   }, []);
 
-  // The controls come in after the frame, one after the other, and the panel
-  // grows under them.
-  const [stage, setStage] = useState(0);
+  // The panel opens at the frame's height and grows to hold the controls,
+  // which rise in as the room for them arrives: one height animation, the
+  // rows and the tiles on their own delays inside it.
+  const [grown, setGrown] = useState(false);
   useEffect(() => {
     if (!open) {
-      setStage(0);
+      setGrown(false);
       return;
     }
     if (reduceMotion) {
-      setStage(2);
+      setGrown(true);
       return;
     }
-    const a = setTimeout(() => setStage(1), 260);
-    const b = setTimeout(() => setStage(2), 420);
-    return () => {
-      clearTimeout(a);
-      clearTimeout(b);
-    };
+    const t = setTimeout(() => setGrown(true), 180);
+    return () => clearTimeout(t);
   }, [open, reduceMotion]);
 
   // ── Making the share ───────────────────────────────────────────────────
@@ -364,13 +371,16 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     },
   ];
 
+  /** A control's arrival: risen into place once the panel has room, the
+   *  later ones a beat after the first. */
   const rowMotion = (i: number) =>
     reduceMotion
-      ? {}
+      ? { animate: { opacity: grown ? 1 : 0 } }
       : {
-          initial: { opacity: 0, y: 10 },
-          animate: { opacity: 1, y: 0, transition: { ...ROW_IN, delay: i * 0.06 } },
-          exit: { opacity: 0, y: 6, transition: motionTransition(easeOutQuick, 0.2) },
+          initial: false as const,
+          animate: grown
+            ? { opacity: 1, y: 0, transition: { ...ROW_IN, delay: 0.1 + i * 0.1 } }
+            : { opacity: 0, y: 14, transition: { duration: 0 } },
         };
 
   return (
@@ -378,113 +388,121 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       <AnimatePresence>
         {open && (
           <m.div
-            layout
             className={styles.panel}
-            style={{ width: frameSide + 16 }}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, transition: PANEL_IN }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98, transition: PANEL_OUT }}
-            transition={PANEL_IN}
+            style={{ width: frameSide + 16, top: panelTop }}
+            // Centered by Motion's own x (a CSS transform would be overwritten
+            // by the scale it animates).
+            initial={reduceMotion ? { opacity: 0, x: '-50%' } : { opacity: 0, scale: 0.98, x: '-50%' }}
+            animate={
+              reduceMotion ? { opacity: 1, x: '-50%' } : { opacity: 1, scale: 1, x: '-50%', transition: PANEL_IN }
+            }
+            exit={
+              reduceMotion ? { opacity: 0, x: '-50%' } : { opacity: 0, scale: 0.98, x: '-50%', transition: PANEL_OUT }
+            }
           >
-            <ShareFrame side={frameSide} palette={palette} cardColor={cardColor} orientation={design.orientation} />
+            {/* Grows from the frame alone to the frame with its controls. */}
+            <m.div
+              className={styles.grow}
+              initial={false}
+              animate={{ height: grown ? 'auto' : frameSide }}
+              transition={reduceMotion ? { duration: 0 } : GROW}
+            >
+              <ShareFrame side={frameSide} palette={palette} cardColor={cardColor} orientation={design.orientation} />
 
-            <AnimatePresence>
-              {stage >= 1 && (
-                <m.div key="rows" layout className={picker.groups} {...rowMotion(0)}>
-                  <div className={picker.group}>
-                    <div className={picker.row}>
-                      <span className={picker.rowLabel}>Backdrop</span>
-                      <SwatchRow label="Backdrop" active={backdrop}>
-                        {BACKDROPS.map((b) => {
-                          const p = paletteFor(b.id, surfaces);
-                          return (
-                            <Tooltip key={b.id} text={b.label}>
-                              {(tip) => (
-                                <button
-                                  type="button"
-                                  role="radio"
-                                  aria-checked={backdrop === b.id}
-                                  aria-label={b.label}
-                                  className={clsx(picker.swatch, styles.swatch)}
-                                  style={{ background: p.bg, color: p.ink }}
-                                  {...tip}
-                                  {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
-                                />
-                              )}
-                            </Tooltip>
-                          );
-                        })}
-                        <ColorPicker
-                          value={customBg ?? paletteOn(surfaces.brand).bg}
-                          gradient={null}
-                          orientation={design.orientation}
-                          solidOnly
-                          onChange={(color) => {
-                            setCustomBg(color);
-                            setBackdropPick('custom');
-                          }}
-                          triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
-                          triggerActive={backdrop === 'custom'}
-                          triggerLabel="Custom color"
-                          tooltip="Custom color"
-                        >
-                          {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
-                        </ColorPicker>
-                      </SwatchRow>
-                    </div>
-                    <div className={picker.row}>
-                      <span className={picker.rowLabel}>Pose</span>
-                      <SwatchRow label="Pose" active={poseId}>
-                        {POSES.map((p) => (
-                          <Tooltip key={p.id} text={p.label}>
+              <m.div className={picker.groups} {...rowMotion(0)}>
+                <div className={picker.group}>
+                  <div className={picker.row}>
+                    <span className={picker.rowLabel}>Backdrop</span>
+                    <SwatchRow label="Backdrop" active={backdrop}>
+                      {BACKDROPS.map((b) => {
+                        const p = paletteFor(b.id, surfaces);
+                        return (
+                          <Tooltip key={b.id} text={b.label}>
                             {(tip) => (
                               <button
                                 type="button"
                                 role="radio"
-                                aria-checked={poseId === p.id}
-                                aria-label={p.label}
-                                className={clsx(picker.swatch, styles.poseSwatch, styles[`pose_${p.id}`])}
+                                aria-checked={backdrop === b.id}
+                                aria-label={b.label}
+                                className={clsx(picker.swatch, styles.swatch)}
+                                style={{ background: p.bg, color: p.ink }}
                                 {...tip}
-                                {...pressable({ onClick: () => setPoseId(p.id) }, { press: 'tickBright' })}
-                              >
-                                <span className={styles.poseCard} aria-hidden />
-                              </button>
+                                {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
+                              />
                             )}
                           </Tooltip>
-                        ))}
-                      </SwatchRow>
-                    </div>
+                        );
+                      })}
+                      <ColorPicker
+                        value={customBg ?? paletteOn(surfaces.brand).bg}
+                        gradient={null}
+                        orientation={design.orientation}
+                        solidOnly
+                        onChange={(color) => {
+                          setCustomBg(color);
+                          setBackdropPick('custom');
+                        }}
+                        triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
+                        triggerActive={backdrop === 'custom'}
+                        triggerLabel="Custom color"
+                        tooltip="Custom color"
+                      >
+                        {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
+                      </ColorPicker>
+                    </SwatchRow>
                   </div>
-                </m.div>
-              )}
-              {stage >= 2 && (
-                <m.div key="tiles" layout className={styles.tiles} {...rowMotion(1)}>
-                  {tiles.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className={styles.tile}
-                      disabled={t.disabled}
-                      title={t.title}
-                      {...pressable({ onClick: t.onClick, disabled: t.disabled })}
-                    >
-                      <span className={styles.tileIcon}>{t.icon}</span>
-                      <span className={styles.tileLabel}>{t.label}</span>
-                    </button>
-                  ))}
-                </m.div>
-              )}
-              {stage >= 2 && status && (
-                <m.div key="status" layout className={styles.status} role="status" {...rowMotion(0)}>
+                  <div className={picker.row}>
+                    <span className={picker.rowLabel}>Pose</span>
+                    <SwatchRow label="Pose" active={poseId}>
+                      {POSES.map((p) => (
+                        <Tooltip key={p.id} text={p.label}>
+                          {(tip) => (
+                            <button
+                              type="button"
+                              role="radio"
+                              aria-checked={poseId === p.id}
+                              aria-label={p.label}
+                              className={clsx(picker.swatch, styles.poseSwatch, styles[`pose_${p.id}`])}
+                              {...tip}
+                              {...pressable({ onClick: () => setPoseId(p.id) }, { press: 'tickBright' })}
+                            >
+                              <span className={styles.poseCard} aria-hidden />
+                            </button>
+                          )}
+                        </Tooltip>
+                      ))}
+                    </SwatchRow>
+                  </div>
+                </div>
+              </m.div>
+
+              <m.div className={styles.tiles} {...rowMotion(1)}>
+                {tiles.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={styles.tile}
+                    disabled={t.disabled}
+                    title={t.title}
+                    {...pressable({ onClick: t.onClick, disabled: t.disabled })}
+                  >
+                    <span className={styles.tileIcon}>{t.icon}</span>
+                    <span className={styles.tileLabel}>{t.label}</span>
+                  </button>
+                ))}
+              </m.div>
+
+              {status && (
+                <div className={styles.status} role="status">
                   <span className={clsx(styles.statusLine, status.error && styles.statusError)}>{status.text}</span>
                   {status.progress !== undefined && (
                     <span className={styles.bar} aria-hidden>
                       <span className={styles.barFill} style={{ width: `${status.progress * 100}%` }} />
                     </span>
                   )}
-                </m.div>
+                </div>
               )}
-            </AnimatePresence>
+            </m.div>
           </m.div>
         )}
       </AnimatePresence>
