@@ -17,7 +17,6 @@ import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGri
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useGradientEditing } from '@/components/DesignPicker/gradientEditing';
 import {
-  brandColorOf,
   brandDefaultLayout,
   BRAND_MARGIN,
   BRAND_MAX_H,
@@ -1385,7 +1384,7 @@ const CardRig = memo(function CardRig({
       },
     });
     exportRef.current = exporter;
-    const uninstall = installExportDevHook(exporter, () => brandColorOf(stateRef.current.design));
+    const uninstall = installExportDevHook(exporter, () => stateRef.current.design);
     return () => {
       uninstall();
       if (exportRef.current === exporter) exportRef.current = null;

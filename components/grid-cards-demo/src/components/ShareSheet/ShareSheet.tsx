@@ -1,44 +1,34 @@
 'use client';
 
 import clsx from 'clsx';
-import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion as m, useReducedMotion } from 'motion/react';
-import { IconArrowDownWall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowDownWall';
 import { IconChainLink1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChainLink1';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
-import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
-import { IconEyeOpen } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconEyeOpen';
-import { IconShareOs } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconShareOs';
+import { IconImages1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconImages1';
+import { IconVideo } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconVideo';
 import { IconX } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconX';
-import { FrostPanel } from '@/components/liquid-glass';
+import { Button } from '@lightsparkdev/origin/button';
+import { Dialog } from '@lightsparkdev/origin/dialog';
 import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
-import { BACKDROPS, type BackdropId } from '@/components/CardStage/export/compose';
-import { canEncodeVideo, renderSpinVideo } from '@/components/CardStage/export/exportVideo';
 import {
-  renderStill,
-  renderStillCanvas,
-  STILLS,
-  stillSize,
-  type StillFormat,
-} from '@/components/CardStage/export/stills';
+  BACKDROPS,
+  brandSurfaceFor,
+  paletteFor,
+  warmTemplate,
+  type BackdropId,
+  type Palette,
+} from '@/components/CardStage/export/compose';
+import { canEncodeVideo, renderSpinVideo } from '@/components/CardStage/export/exportVideo';
+import { renderStill, renderStillCanvas } from '@/components/CardStage/export/stills';
+import { SwatchRow } from '@/components/DesignPicker/DesignPicker';
+import picker from '@/components/DesignPicker/DesignPicker.module.scss';
+import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
-import { brandColorOf, luminance, sameDesign, type CardDesign } from '@/data/design';
+import { brandColorOf, sameDesign, type CardDesign } from '@/data/design';
 import type { SharedCard } from '@/hooks/useCardsDemoLogic';
 import { useThemeMode } from '@/hooks/useThemeMode';
-import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
-import {
-  attachVideo,
-  checkSlug,
-  createShare,
-  fetchViews,
-  ShareError,
-  teamUnlocked,
-  type ShareHandle,
-  type ShareProgress,
-} from '@/lib/share/client';
-import { normalizeSlug } from '@/lib/share/types';
-import { shareEditUrl, shareOrigin, shareUrl, xIntentUrl } from '@/lib/share/urls';
+import { attachVideo, createShare, ShareError, type ShareHandle, type ShareProgress } from '@/lib/share/client';
+import { shareOrigin, shareUrl, xIntentUrl } from '@/lib/share/urls';
 import { play, pressable } from '@/lib/sounds';
 import styles from './ShareSheet.module.scss';
 
@@ -51,9 +41,8 @@ interface ShareSheetProps {
   shared: SharedCard | null;
 }
 
-/** The preview renders at this fraction of the format's size. */
-const PREVIEW_SCALE = 0.3;
-const FORMATS: StillFormat[] = ['post', 'square', 'card'];
+/** The preview renders at this fraction of the square's size. */
+const PREVIEW_SCALE = 0.4;
 
 type VideoState =
   | { status: 'idle' }
@@ -62,9 +51,6 @@ type VideoState =
   | { status: 'done'; url: string; blob: Blob }
   | { status: 'unavailable' }
   | { status: 'failed' };
-
-const SHEET_IN = motionTransition(easeOutSnappy, 0.42);
-const SHEET_OUT = motionTransition(easeOutQuick, 0.2);
 
 function download(blob: Blob, name: string) {
   const a = document.createElement('a');
@@ -84,61 +70,44 @@ function fileStem(design: CardDesign) {
 }
 
 /**
- * Share the card: a picture of it on a backdrop, a link whose preview is that
- * picture (and, where the browser can encode, the spin video), the X
- * composer, downloads. Team members can make it for a customer, under a
- * name, with an edit link and a view count.
+ * Share the card: the square picture the link will show, on the light or
+ * dark template or one in the card's own color; the link; the X composer;
+ * the downloads. The spin video renders in the background once the link is
+ * made and attaches to it.
  */
 export function ShareSheet({ open, onClose, exporterRef, design, shared }: ShareSheetProps) {
   const theme = useThemeMode();
-  const reduceMotion = useReducedMotion() ?? false;
-  // The portal exists only on the client; the server renders nothing here.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const [format, setFormat] = useState<StillFormat>('post');
-  const brandColor = brandColorOf(design);
-  // The backdrop follows the theme until the visitor picks one; a pale card
-  // on the light stage would vanish, so it takes the dark one.
+  const cardColor = brandColorOf(design);
+
+  // The backdrop follows the theme until the visitor picks one.
   const [backdropPick, setBackdropPick] = useState<BackdropId | null>(null);
-  const paleCard = luminance(brandColor) > 0.72;
-  const backdrop: BackdropId = backdropPick ?? (theme === 'dark' || paleCard ? 'dark' : 'light');
-  const setBackdrop = setBackdropPick;
-  const team = teamUnlocked();
+  const backdrop: BackdropId = backdropPick ?? (theme === 'dark' ? 'dark' : 'light');
+  // The Brand surface comes from the card's color or its art (loaded async).
+  const [brandBg, setBrandBg] = useState(cardColor);
+  useEffect(() => {
+    let alive = true;
+    brandSurfaceFor(design, cardColor).then((c) => alive && setBrandBg(c));
+    return () => {
+      alive = false;
+    };
+  }, [design, cardColor]);
+  const palette: Palette = useMemo(() => paletteFor(backdrop, brandBg), [backdrop, brandBg]);
 
   // The share made from this sheet (or the one the page opened from).
   const [handle, setHandle] = useState<ShareHandle | null>(null);
   const [handleDesign, setHandleDesign] = useState<CardDesign | null>(null);
   const [progress, setProgress] = useState<ShareProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<'link' | 'edit' | null>(null);
+  const [copied, setCopied] = useState(false);
   const [video, setVideo] = useState<VideoState>({ status: 'idle' });
-  const [views, setViews] = useState<number | null>(null);
-  // For a customer.
-  const [forCustomer, setForCustomer] = useState(false);
-  const [forName, setForName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [slugState, setSlugState] = useState<{ slug: string; available: boolean; valid: boolean } | null>(null);
 
   // Opened from a share this visitor may edit: updates go to it.
   useEffect(() => {
-    if (!shared) return;
-    if (shared.editToken) {
-      setHandle({ record: shared.record, editToken: shared.editToken, url: shareUrl(shared.record.slug) });
-      setHandleDesign(shared.record.design);
-      if (shared.record.kind === 'pitch') {
-        setForCustomer(true);
-        setForName(shared.record.forName ?? '');
-        setSlug(shared.record.slug);
-      }
-      if (shared.record.assets.video) setVideo({ status: 'done', url: shared.record.assets.video, blob: new Blob() });
-    }
+    if (!shared?.editToken) return;
+    setHandle({ record: shared.record, editToken: shared.editToken, url: shareUrl(shared.record.slug) });
+    setHandleDesign(shared.record.design);
+    if (shared.record.assets.video) setVideo({ status: 'done', url: shared.record.assets.video, blob: new Blob() });
   }, [shared]);
-  useEffect(() => {
-    if (!open || !handle) return;
-    fetchViews(handle.record.id, handle.editToken)
-      .then(setViews)
-      .catch(() => setViews(null));
-  }, [open, handle]);
 
   // The design has moved on since the link was made: the link needs updating.
   const stale = !!handle && !!handleDesign && !sameDesign(handleDesign, design);
@@ -146,12 +115,13 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
   // ── Preview ────────────────────────────────────────────────────────────
   const previewRef = useRef<HTMLCanvasElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
-  const size = stillSize(format, exporterRef.current?.orientation ?? design.orientation);
   useEffect(() => {
     if (!open) return;
     let raf = 0;
     let tries = 0;
+    let alive = true;
     const draw = () => {
+      if (!alive) return;
       const ex = exporterRef.current;
       const canvas = previewRef.current;
       if (!ex || !canvas) return;
@@ -159,34 +129,20 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
         if (tries++ < 120) raf = requestAnimationFrame(draw);
         return;
       }
-      const src = renderStillCanvas(ex, { format, backdrop, brandColor, scale: PREVIEW_SCALE });
+      const src = renderStillCanvas(ex, { format: 'square', palette, cardColor, scale: PREVIEW_SCALE });
       canvas.width = src.width;
       canvas.height = src.height;
       canvas.getContext('2d')!.drawImage(src, 0, 0);
       setPreviewReady(true);
     };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, [open, format, backdrop, brandColor, design, exporterRef]);
-
-  // ── Slug ───────────────────────────────────────────────────────────────
-  const slugWanted = normalizeSlug(slug || forName);
-  useEffect(() => {
-    if (!forCustomer || !slugWanted || (handle && handle.record.slug === slugWanted)) {
-      setSlugState(null);
-      return;
-    }
-    let alive = true;
-    const t = setTimeout(() => {
-      checkSlug(slugWanted)
-        .then((s) => alive && setSlugState(s))
-        .catch(() => alive && setSlugState(null));
-    }, 250);
+    warmTemplate().then(() => {
+      raf = requestAnimationFrame(draw);
+    });
     return () => {
       alive = false;
-      clearTimeout(t);
+      cancelAnimationFrame(raf);
     };
-  }, [forCustomer, slugWanted, handle]);
+  }, [open, palette, cardColor, design, exporterRef]);
 
   // ── Making the share ───────────────────────────────────────────────────
   const busy = progress !== null && progress.stage !== 'done';
@@ -206,8 +162,8 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       try {
         setVideo({ status: 'rendering', done: 0, total: 1 });
         const blob = await renderSpinVideo(ex, {
-          backdrop: backdrop === 'none' ? (theme === 'dark' ? 'dark' : 'light') : backdrop,
-          brandColor,
+          palette,
+          cardColor,
           signal: ctl.signal,
           onProgress: (done, total) => setVideo({ status: 'rendering', done, total }),
         });
@@ -226,7 +182,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
         setVideo({ status: 'failed' });
       }
     },
-    [backdrop, brandColor, exporterRef, theme],
+    [palette, cardColor, exporterRef],
   );
 
   /** Make the share, or bring the existing one up to date. */
@@ -239,11 +195,10 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       const made = await createShare({
         exporter: ex,
         design,
-        kind: forCustomer ? 'pitch' : 'public',
-        slug: forCustomer ? slugWanted : undefined,
-        forName: forCustomer ? forName.trim() || null : null,
-        backdrop: backdrop === 'none' ? (theme === 'dark' ? 'dark' : 'light') : backdrop,
-        brandColor,
+        kind: handle?.record.kind ?? 'public',
+        forName: handle?.record.forName ?? null,
+        palette,
+        cardColor,
         onProgress: setProgress,
         existing: handle ? { id: handle.record.id, editToken: handle.editToken, url: handle.url } : undefined,
       });
@@ -254,25 +209,21 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
     } catch (e) {
       const code = e instanceof ShareError ? e.code : 'failed';
       setError(
-        code === 'slug-taken'
-          ? 'That name is taken.'
-          : code === 'slug-invalid'
-            ? 'Use letters, numbers, and dashes.'
-            : code === 'http-401' || code === 'http-403'
-              ? 'This link belongs to someone else. Make a new one.'
-              : 'Something went wrong. Try again.',
+        code === 'http-401' || code === 'http-403'
+          ? 'This link belongs to someone else. Make a new one.'
+          : 'Something went wrong. Try again.',
       );
       setProgress(null);
       return null;
     }
-  }, [backdrop, brandColor, design, exporterRef, forCustomer, forName, handle, makeVideo, slugWanted, stale, theme]);
+  }, [cardColor, design, exporterRef, handle, makeVideo, palette, stale]);
 
-  const copy = async (text: string, what: 'link' | 'edit') => {
+  const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(what);
+      setCopied(true);
       play('success');
-      setTimeout(() => setCopied((c) => (c === what ? null : c)), 1800);
+      setTimeout(() => setCopied(false), 1800);
     } catch {
       setError('Could not copy. Select the link and copy it.');
     }
@@ -280,19 +231,23 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
 
   const onCopyLink = async () => {
     const h = await ensureShare();
-    if (h) await copy(h.url, 'link');
+    if (h) await copy(h.url);
   };
   const onPostToX = async () => {
     const h = await ensureShare();
     if (!h) return;
-    const text = `I designed the ${programNameOf(design)} card on @lightspark Grid`;
-    window.open(xIntentUrl(text, h.url), '_blank', 'noopener');
+    window.open(
+      xIntentUrl(`I designed the ${programNameOf(design)} card on @lightspark Grid`, h.url),
+      '_blank',
+      'noopener',
+    );
   };
   const onDownloadImage = async () => {
     const ex = exporterRef.current;
     if (!ex?.ready) return;
-    const blob = await renderStill(ex, { format, backdrop, brandColor });
-    download(blob, `${fileStem(design)}-${format}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
+    await warmTemplate();
+    const blob = await renderStill(ex, { format: 'square', palette, cardColor });
+    download(blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
   };
   const onDownloadVideo = async () => {
     if (video.status === 'done' && video.blob.size > 0) {
@@ -303,345 +258,142 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
     if (!h) return;
     if (video.status !== 'rendering' && video.status !== 'uploading') await makeVideo(h);
   };
-  const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
-  const onNativeShare = async () => {
-    const h = await ensureShare();
-    if (!h) return;
-    const files =
-      video.status === 'done' && video.blob.size > 0
-        ? [new File([video.blob], `${fileStem(design)}-spin.mp4`, { type: 'video/mp4' })]
-        : [];
-    const data: ShareData = { title: `${programNameOf(design)} card`, url: h.url };
-    if (files.length && navigator.canShare?.({ files })) data.files = files;
-    try {
-      await navigator.share(data);
-    } catch {
-      // Dismissed.
-    }
-  };
 
-  // Escape closes.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
-
-  const statusLine = useMemo(() => {
-    if (error) return error;
+  // What the sheet says while something is happening; nothing at rest.
+  const status = useMemo<{ text: string; progress?: number; error?: boolean } | null>(() => {
+    if (error) return { text: error, error: true };
     if (progress && progress.stage !== 'done') {
-      return progress.stage === 'record'
-        ? 'Making the link…'
-        : progress.stage === 'render'
-          ? `Rendering ${progress.detail === 'post' ? 'the preview' : progress.detail === 'square' ? 'the square' : 'the card'}…`
-          : `Uploading…`;
+      return {
+        text:
+          progress.stage === 'record' ? 'Making the link…' : progress.stage === 'render' ? 'Rendering…' : 'Uploading…',
+      };
     }
-    return null;
-  }, [error, progress]);
-
-  const videoLine = (() => {
     switch (video.status) {
-      case 'idle':
-        return canEncodeVideo()
-          ? 'Spin video renders when you copy the link'
-          : 'Spin video needs Chrome, Edge, or Safari 16.4+';
       case 'rendering':
-        return `Rendering spin video · ${Math.round((video.done / video.total) * 100)}%`;
+        return {
+          text: `Rendering video · ${Math.round((video.done / video.total) * 100)}%`,
+          progress: video.done / video.total,
+        };
       case 'uploading':
-        return 'Uploading spin video…';
-      case 'done':
-        return 'Spin video attached. iMessage plays it in the preview.';
-      case 'unavailable':
-        return 'Spin video needs Chrome, Edge, or Safari 16.4+';
+        return { text: 'Uploading video…' };
       case 'failed':
-        return 'Spin video failed. Download to try again.';
+        return { text: 'The video failed. Try Download video again.', error: true };
+      case 'idle':
+      case 'done':
+      case 'unavailable':
+        return null;
       default: {
         const never: never = video;
         return never;
       }
     }
-  })();
+  }, [error, progress, video]);
 
   const origin = shareOrigin().replace(/^https?:\/\//, '');
-  const linkPreview =
-    forCustomer && slugWanted
-      ? `${origin}/${slugWanted}`
-      : handle
-        ? handle.url.replace(/^https?:\/\//, '')
-        : `${origin}/…`;
+  const linkText = handle ? handle.url.replace(/^https?:\/\//, '') : `${origin}/…`;
+  const videoBusy = video.status === 'rendering' || video.status === 'uploading';
 
-  if (!mounted) return null;
-  return createPortal(
-    <AnimatePresence>
-      {open && (
-        <m.div
-          className={styles.scrim}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={reduceMotion ? { duration: 0 } : SHEET_OUT}
-          onPointerDown={(e) => {
-            if (e.target === e.currentTarget) onClose();
-          }}
-        >
-          <m.div
-            className={styles.sheetWrap}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Share your card"
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0, transition: SHEET_IN }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 8, transition: SHEET_OUT }}
-          >
-            <FrostPanel
-              className={styles.sheet}
-              radius={24}
-              cornerSmoothing={0.6}
-              tint="var(--share-sheet-tint)"
-              tintBlur={28}
-              shadow="0 24px 80px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08)"
-            >
-              <div className={styles.body}>
-                <header className={styles.header}>
-                  <div>
-                    <h2 className={styles.title}>Share your card</h2>
-                    <p className={styles.subtitle}>
-                      {handle && !stale
-                        ? 'Your link is ready.'
-                        : stale
-                          ? 'The design changed since the link was made.'
-                          : 'The link shows this picture wherever you paste it.'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.close}
-                    aria-label="Close"
-                    {...pressable({ onClick: onClose })}
-                  >
-                    <IconCrossMedium size={16} />
-                  </button>
-                </header>
-
-                <div
-                  className={clsx(styles.preview, styles[`preview_${format}`], !previewReady && styles.previewPending)}
-                  style={{ aspectRatio: `${size.width} / ${size.height}` }}
-                >
-                  <canvas ref={previewRef} className={styles.previewCanvas} aria-label="Preview of the picture" />
-                  {!previewReady && <span className={styles.previewHint}>Rendering…</span>}
-                </div>
-
-                <div className={styles.controls}>
-                  <Segmented
-                    label="Format"
-                    value={format}
-                    options={FORMATS.map((f) => ({ id: f, label: STILLS[f].label }))}
-                    onChange={setFormat}
-                  />
-                  <Segmented
-                    label="Backdrop"
-                    value={backdrop}
-                    options={BACKDROPS.filter((b) => b.id !== 'none')}
-                    onChange={setBackdrop}
-                    disabled={format === 'card'}
-                  />
-                </div>
-
-                {team && (
-                  <div className={styles.team}>
-                    <label className={styles.toggleRow}>
-                      <input
-                        type="checkbox"
-                        checked={forCustomer}
-                        disabled={!!handle && handle.record.kind === 'pitch'}
-                        onChange={(e) => {
-                          setForCustomer(e.target.checked);
-                          play('press');
-                        }}
-                      />
-                      <span>For a customer</span>
-                      <span className={styles.toggleHint}>A named link, an edit link, and a view count</span>
-                    </label>
-                    {forCustomer && (
-                      <div className={styles.teamFields}>
-                        <input
-                          className={styles.field}
-                          placeholder="Customer name"
-                          value={forName}
-                          maxLength={40}
-                          onChange={(e) => setForName(e.target.value)}
-                          disabled={busy}
-                        />
-                        <input
-                          className={styles.field}
-                          placeholder={normalizeSlug(forName) || 'link-name'}
-                          value={slug}
-                          maxLength={40}
-                          onChange={(e) => setSlug(e.target.value)}
-                          disabled={busy || (!!handle && handle.record.kind === 'pitch')}
-                          aria-label="Link name"
-                        />
-                        <span
-                          className={clsx(
-                            styles.slugState,
-                            slugState && (!slugState.available || !slugState.valid) && styles.slugBad,
-                          )}
-                        >
-                          {slugState === null
-                            ? ''
-                            : !slugState.valid
-                              ? 'Letters, numbers, dashes'
-                              : slugState.available
-                                ? 'Available'
-                                : 'Taken'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className={styles.linkRow}>
-                  <IconChainLink1 size={14} className={styles.linkIcon} />
-                  <span className={styles.linkText} title={handle?.url}>
-                    {linkPreview}
-                  </span>
-                  {handle && views !== null && (
-                    <span className={styles.views} title="Opens of the link">
-                      <IconEyeOpen size={13} />
-                      {views}
-                    </span>
-                  )}
-                </div>
-
-                <div className={styles.actions}>
-                  <button
-                    type="button"
-                    className={clsx(styles.btn, styles.btnPrimary)}
-                    disabled={busy || (forCustomer && slugState !== null && (!slugState.available || !slugState.valid))}
-                    {...pressable({ onClick: onCopyLink, disabled: busy })}
-                  >
-                    {copied === 'link' ? <IconCheckmark1 size={16} /> : <IconChainLink1 size={16} />}
-                    {copied === 'link' ? 'Copied' : stale ? 'Update link' : handle ? 'Copy link' : 'Copy link'}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btn}
-                    disabled={busy}
-                    {...pressable({ onClick: onPostToX, disabled: busy })}
-                  >
-                    <IconX size={15} />
-                    Post to X
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btn}
-                    disabled={busy}
-                    {...pressable({ onClick: onDownloadImage, disabled: busy })}
-                  >
-                    <IconArrowDownWall size={16} />
-                    Image
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btn}
-                    disabled={
-                      busy ||
-                      video.status === 'unavailable' ||
-                      video.status === 'rendering' ||
-                      video.status === 'uploading'
-                    }
-                    title={video.status === 'unavailable' ? 'This browser has no video encoder' : undefined}
-                    {...pressable({ onClick: onDownloadVideo, disabled: busy })}
-                  >
-                    <IconArrowDownWall size={16} />
-                    Video
-                  </button>
-                  {canNativeShare && (
-                    <button
-                      type="button"
-                      className={styles.btn}
-                      disabled={busy}
-                      {...pressable({ onClick: onNativeShare, disabled: busy })}
-                    >
-                      <IconShareOs size={16} />
-                      Share
-                    </button>
-                  )}
-                </div>
-
-                <div className={styles.status}>
-                  <span className={clsx(styles.statusLine, error && styles.statusError)}>
-                    {statusLine ?? videoLine}
-                  </span>
-                  {video.status === 'rendering' && (
-                    <span className={styles.bar} aria-hidden>
-                      <span className={styles.barFill} style={{ width: `${(video.done / video.total) * 100}%` }} />
-                    </span>
-                  )}
-                </div>
-
-                {handle && (forCustomer || handle.record.kind === 'pitch') && (
-                  <div className={styles.editRow}>
-                    <span className={styles.editLabel}>Edit link</span>
-                    <span className={styles.editText}>
-                      {shareEditUrl(handle.record.slug, handle.editToken).replace(/^https?:\/\//, '')}
-                    </span>
-                    <button
-                      type="button"
-                      className={styles.editCopy}
-                      {...pressable({
-                        onClick: () => copy(shareEditUrl(handle.record.slug, handle.editToken), 'edit'),
-                      })}
-                    >
-                      {copied === 'edit' ? 'Copied' : 'Copy'}
-                    </button>
-                    <span className={styles.editHint}>Keep it. Anyone with it can change this card.</span>
-                  </div>
-                )}
-              </div>
-            </FrostPanel>
-          </m.div>
-        </m.div>
-      )}
-    </AnimatePresence>,
-    document.body,
-  );
-}
-
-function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  value: T;
-  options: ReadonlyArray<{ id: T; label: string }>;
-  onChange: (id: T) => void;
-  disabled?: boolean;
-}) {
   return (
-    <div className={clsx(styles.segRow, disabled && styles.segDisabled)}>
-      <span className={styles.segLabel}>{label}</span>
-      <div className={styles.seg} role="radiogroup" aria-label={label}>
-        {options.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            role="radio"
-            aria-checked={value === o.id}
-            className={clsx(styles.segBtn, value === o.id && styles.segOn)}
-            disabled={disabled}
-            {...pressable({ onClick: () => onChange(o.id), disabled }, { press: 'tickBright' })}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <Dialog.Portal>
+        <Dialog.Backdrop className={styles.backdrop} />
+        <Dialog.Popup className={styles.popup} aria-label="Share your card">
+          <div className={clsx(styles.preview, !previewReady && styles.previewPending)}>
+            <canvas ref={previewRef} className={styles.previewCanvas} aria-label="The picture the link shows" />
+          </div>
+
+          <div className={picker.groups}>
+            <div className={picker.group}>
+              <div className={picker.row}>
+                <span className={picker.rowLabel}>Backdrop</span>
+                <SwatchRow label="Backdrop" active={backdrop}>
+                  {BACKDROPS.map((b) => {
+                    const p = paletteFor(b.id, brandBg);
+                    return (
+                      <Tooltip key={b.id} text={b.label}>
+                        {(tip) => (
+                          <button
+                            type="button"
+                            role="radio"
+                            aria-checked={backdrop === b.id}
+                            aria-label={b.label}
+                            className={clsx(picker.swatch, styles.swatch)}
+                            style={{ background: p.bg, color: p.ink }}
+                            {...tip}
+                            {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
+                          />
+                        )}
+                      </Tooltip>
+                    );
+                  })}
+                </SwatchRow>
+              </div>
+              <div className={picker.row}>
+                <span className={picker.rowLabel}>Link</span>
+                <span className={clsx(styles.link, !handle && styles.linkPending)} title={handle?.url}>
+                  {linkText}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.actions}>
+            <Button
+              variant="filled"
+              size="compact"
+              disabled={busy}
+              leadingIcon={copied ? <IconCheckmark1 size={14} /> : <IconChainLink1 size={14} />}
+              {...pressable({ onClick: onCopyLink, disabled: busy })}
+            >
+              {copied ? 'Copied' : stale ? 'Update link' : 'Copy link'}
+            </Button>
+            <Button
+              variant="secondary"
+              size="compact"
+              disabled={busy}
+              leadingIcon={<IconX size={13} />}
+              {...pressable({ onClick: onPostToX, disabled: busy })}
+            >
+              Post to X
+            </Button>
+            <Button
+              variant="secondary"
+              size="compact"
+              disabled={busy}
+              leadingIcon={<IconImages1 size={14} />}
+              {...pressable({ onClick: onDownloadImage, disabled: busy })}
+            >
+              Download image
+            </Button>
+            <Button
+              variant="secondary"
+              size="compact"
+              disabled={busy || videoBusy || video.status === 'unavailable'}
+              title={video.status === 'unavailable' ? 'This browser has no video encoder' : undefined}
+              leadingIcon={<IconVideo size={14} />}
+              {...pressable({ onClick: onDownloadVideo, disabled: busy || videoBusy })}
+            >
+              Download video
+            </Button>
+          </div>
+
+          {status && (
+            <div className={styles.status} role="status">
+              <span className={clsx(styles.statusLine, status.error && styles.statusError)}>{status.text}</span>
+              {status.progress !== undefined && (
+                <span className={styles.bar} aria-hidden>
+                  <span className={styles.barFill} style={{ width: `${status.progress * 100}%` }} />
+                </span>
+              )}
+            </div>
+          )}
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

@@ -88,7 +88,8 @@ export default async function SharePage({ params, searchParams }: Props) {
   const { design } = record;
   const assets = {
     og: record.assets.og && absoluteAssetUrl(record.assets.og),
-    card: record.assets.card && absoluteAssetUrl(record.assets.card),
+    // The download is the square; older shares carried the card alone.
+    card: (record.assets.square ?? record.assets.card) && absoluteAssetUrl((record.assets.square ?? record.assets.card)!),
     video: record.assets.video && absoluteAssetUrl(record.assets.video),
   };
   const brand = programName || 'Your brand';

@@ -1,90 +1,27 @@
 @use '../../styles/breakpoints' as *;
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
-.scrim {
-  --share-sheet-tint: rgba(248, 248, 247, 0.82);
+/* Origin's Dialog, sized to the picture: the square preview, then the
+   sidebar's list rows, then the buttons. No header and no close control;
+   a press on the backdrop closes it. */
 
-  :global([data-theme='dark']) & {
-    --share-sheet-tint: rgba(26, 26, 26, 0.84);
-  }
-
-  position: fixed;
-  inset: 0;
+.backdrop {
   z-index: 400;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl);
-  background: rgba(0, 0, 0, 0.32);
-
-  @media (max-width: $breakpoint-layout-mobile) {
-    align-items: flex-end;
-    padding: 0;
-  }
 }
 
-.sheetWrap {
-  width: min(520px, 100%);
-  max-height: calc(100vh - 2 * var(--spacing-xl));
+.popup {
+  --dialog-width: 440px;
+  z-index: 401;
+  /* Tall enough that Origin's 38% optical center would crowd the top. */
+  top: 50%;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  max-height: calc(100vh - var(--spacing-2xl));
   overflow: auto;
   overscroll-behavior: contain;
-  border-radius: 24px;
 
   @media (max-width: $breakpoint-layout-mobile) {
-    max-height: 92vh;
-    border-radius: 24px 24px 0 0;
-  }
-}
-
-.sheet {
-  color: var(--text-primary);
-}
-
-/* FrostPanel wraps its children in a plain block; the layout lives here. */
-.body {
-  padding: var(--spacing-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-}
-
-.title {
-  @include label-lg;
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.subtitle {
-  @include body-sm;
-  margin: 2px 0 0;
-  color: var(--text-secondary);
-}
-
-.close {
-  all: unset;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  color: var(--icon-secondary);
-  cursor: pointer;
-  transition: background-color 150ms ease, color 150ms ease;
-
-  @media (hover: hover) {
-    &:hover {
-      background: var(--surface-hover);
-      color: var(--text-primary);
-    }
+    --dialog-width: calc(100vw - var(--spacing-md) * 2);
   }
 }
 
@@ -92,270 +29,61 @@
 .preview {
   position: relative;
   width: 100%;
-  border-radius: var(--corner-radius-lg);
+  aspect-ratio: 1;
+  border-radius: var(--corner-radius-md);
+  corner-shape: var(--corner-shape);
   overflow: hidden;
   background: var(--surface-secondary);
-  box-shadow: inset 0 0 0 1px var(--border-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* The square and the card-only frames would take the whole sheet at full
-   width: they stand at a fixed height, centered, their width from the aspect. */
-.preview_card,
-.preview_square {
-  height: 300px;
-  width: auto;
-  max-width: 100%;
-  margin: 0 auto;
+  box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-primary);
 }
 
 .previewCanvas {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  transition: opacity 200ms ease;
 }
 
 .previewPending .previewCanvas {
   opacity: 0;
 }
 
-.previewHint {
-  @include label-sm;
-  position: absolute;
-  color: var(--text-tertiary);
+/* ── Rows (DesignPicker's tile, its row, its swatches) ────────────────────── */
+/* A backdrop as a sample of its surface; the ring picks it out. */
+.swatch {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
 }
 
-/* ── Controls ────────────────────────────────────────────────────────────── */
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.segRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  min-height: 36px;
-}
-
-.segLabel {
+.link {
   @include label;
-  color: var(--text-secondary);
-}
-
-.seg {
-  display: inline-flex;
-  padding: 2px;
-  border-radius: var(--corner-radius-md);
-  background: var(--surface-secondary);
-  box-shadow: inset 0 0 0 1px var(--border-primary);
-}
-
-.segBtn {
-  all: unset;
-  box-sizing: border-box;
-  @include label-sm;
-  padding: 0 var(--spacing-sm);
-  height: 28px;
-  border-radius: calc(var(--corner-radius-md) - 2px);
-  color: var(--text-secondary);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
-
-  @media (hover: hover) {
-    &:hover:not(:disabled):not(.segOn) {
-      color: var(--text-primary);
-    }
-  }
-
-  &:disabled {
-    cursor: default;
-  }
-}
-
-.segOn {
-  background: var(--surface-primary);
-  color: var(--text-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--border-primary);
-}
-
-.segDisabled {
-  opacity: 0.45;
-}
-
-/* ── Team ────────────────────────────────────────────────────────────────── */
-.team {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--corner-radius-lg);
-  background: var(--surface-secondary);
-  box-shadow: inset 0 0 0 1px var(--border-primary);
-}
-
-.toggleRow {
-  @include label;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: var(--spacing-xs);
-  align-items: center;
-  color: var(--text-primary);
-  cursor: pointer;
-
-  input {
-    accent-color: var(--text-primary);
-    margin: 0;
-  }
-}
-
-.toggleHint {
-  @include body-sm;
-  grid-column: 2;
-  color: var(--text-tertiary);
-}
-
-.teamFields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-xs);
-  align-items: center;
-}
-
-.field {
-  all: unset;
-  box-sizing: border-box;
-  @include input;
-  height: 36px;
-  padding: 0 var(--spacing-sm);
-  border-radius: var(--corner-radius-md);
-  background: var(--surface-primary);
-  box-shadow: inset 0 0 0 1px var(--border-primary);
-  color: var(--text-primary);
-  min-width: 0;
-
-  &::placeholder {
-    color: var(--text-tertiary);
-  }
-
-  &:focus-visible {
-    box-shadow: inset 0 0 0 1px var(--text-primary);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-  }
-}
-
-.slugState {
-  @include label-xs;
-  grid-column: 2;
-  min-height: 14px;
-  color: var(--text-tertiary);
-}
-
-.slugBad {
-  color: #c0392b;
-}
-
-/* ── Link ────────────────────────────────────────────────────────────────── */
-.linkRow {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  min-height: 24px;
-  color: var(--text-secondary);
-}
-
-.linkIcon {
-  flex: none;
-  color: var(--icon-tertiary);
-}
-
-.linkText {
-  @include code;
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-secondary);
+  text-align: right;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
 }
 
-.views {
-  @include label-xs;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.linkPending {
   color: var(--text-tertiary);
 }
 
 /* ── Actions ─────────────────────────────────────────────────────────────── */
+/* Two by two: the link and the post, then the two downloads. */
 .actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-}
-
-.btn {
-  all: unset;
-  box-sizing: border-box;
-  @include btn;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--spacing-2xs);
-  height: 40px;
-  padding: 0 var(--spacing-md);
-  border-radius: 999px;
-  background: var(--surface-primary);
-  color: var(--text-primary);
-  box-shadow: inset 0 0 0 1px var(--border-primary);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: transform 120ms ease, background-color 150ms ease, opacity 150ms ease;
+  padding: 0 var(--spacing-3xs) var(--spacing-3xs);
 
-  @media (hover: hover) {
-    &:hover:not(:disabled) {
-      background: var(--surface-hover);
-    }
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.98);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.btnPrimary {
-  flex: 1 1 auto;
-  background: var(--color-gray-950);
-  color: var(--color-gray-050);
-  box-shadow: none;
-
-  :global([data-theme='dark']) & {
-    background: var(--color-gray-050);
-    color: var(--color-gray-950);
-  }
-
-  @media (hover: hover) {
-    &:hover:not(:disabled) {
-      background: var(--color-gray-900);
-
-      :global([data-theme='dark']) & {
-        background: var(--color-gray-200);
-      }
-    }
+  > * {
+    min-width: 0;
   }
 }
 
@@ -364,7 +92,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xs);
-  min-height: 18px;
+  padding: 0 var(--spacing-3xs) var(--spacing-2xs);
 }
 
 .statusLine {
@@ -373,7 +101,7 @@
 }
 
 .statusError {
-  color: #c0392b;
+  color: var(--text-critical, #c0392b);
 }
 
 .bar {
@@ -389,50 +117,4 @@
   height: 100%;
   background: var(--text-primary);
   transition: width 120ms linear;
-}
-
-/* ── Edit link ───────────────────────────────────────────────────────────── */
-.editRow {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  column-gap: var(--spacing-xs);
-  row-gap: 2px;
-  padding-top: var(--spacing-sm);
-  border-top: 1px solid var(--border-primary);
-}
-
-.editLabel {
-  @include label-xs;
-  color: var(--text-secondary);
-}
-
-.editText {
-  @include code;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-secondary);
-}
-
-.editCopy {
-  all: unset;
-  @include label-xs;
-  color: var(--text-primary);
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: var(--corner-radius-xs);
-
-  @media (hover: hover) {
-    &:hover {
-      background: var(--surface-hover);
-    }
-  }
-}
-
-.editHint {
-  @include label-xs;
-  grid-column: 1 / -1;
-  color: var(--text-tertiary);
 }

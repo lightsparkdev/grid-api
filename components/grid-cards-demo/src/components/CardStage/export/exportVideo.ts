@@ -5,14 +5,14 @@
    which is what X, iMessage, and a download all want. */
 
 import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
-import { compose, exposureFor, type BackdropId } from './compose';
+import { compose, exposureFor, prepareTemplate, type Palette } from './compose';
 import type { CardExporter } from './exportRenderer';
+import { cardFracFor } from './stills';
 
 export const VIDEO_W = 1920;
 export const VIDEO_H = 1080;
 export const VIDEO_FPS = 60;
 export const VIDEO_SECONDS = 5;
-const CARD_FRAC = 0.58;
 /** The pitch the card holds through the turn. */
 const PITCH_DEG = -8;
 /** Kbit/s. 1080p of a slow turn compresses well; this keeps the foil's
@@ -55,8 +55,8 @@ function turn(u: number): number {
 }
 
 export interface VideoOptions {
-  backdrop: BackdropId;
-  brandColor: string;
+  palette: Palette;
+  cardColor: string;
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
 }
@@ -69,6 +69,7 @@ export async function renderSpinVideo(exporter: CardExporter, opts: VideoOptions
   if (!canEncodeVideo()) return null;
   const codec = await pickCodec();
   if (!codec) return null;
+  await prepareTemplate();
 
   const total = VIDEO_FPS * VIDEO_SECONDS;
   const muxer = new Muxer({
@@ -93,8 +94,8 @@ export async function renderSpinVideo(exporter: CardExporter, opts: VideoOptions
     avc: { format: 'avc' },
   });
 
-  const exposure = exposureFor(opts.backdrop, opts.brandColor);
-  const cardPx = (exporter.orientation === 'portrait' ? VIDEO_H : VIDEO_W) * CARD_FRAC;
+  const exposure = exposureFor(opts.palette);
+  const cardFrac = cardFracFor(VIDEO_W, VIDEO_H, exporter.orientation);
   const scratch: { card?: HTMLCanvasElement; target?: HTMLCanvasElement } = {};
   const frameUs = 1_000_000 / VIDEO_FPS;
   const yieldToUi = () => new Promise<void>((r) => setTimeout(r, 0));
@@ -108,10 +109,10 @@ export async function renderSpinVideo(exporter: CardExporter, opts: VideoOptions
         width: VIDEO_W,
         height: VIDEO_H,
         pose: { rotX: PITCH_DEG, rotY: turn(u) },
-        cardFrac: CARD_FRAC,
+        cardFrac,
         exposure,
       });
-      const canvas = compose(frame, opts.backdrop, opts.brandColor, cardPx, scratch);
+      const canvas = compose(frame, { palette: opts.palette, cardColor: opts.cardColor }, scratch);
       const vf = new VideoFrame(canvas, { timestamp: Math.round(i * frameUs), duration: Math.round(frameUs) });
       encoder.encode(vf, { keyFrame: i % VIDEO_FPS === 0 });
       vf.close();

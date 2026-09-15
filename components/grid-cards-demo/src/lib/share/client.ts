@@ -3,7 +3,7 @@
    tokens so a card they come back to is still theirs. */
 
 import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
-import type { BackdropId } from '@/components/CardStage/export/compose';
+import { prepareTemplate, type Palette } from '@/components/CardStage/export/compose';
 import { renderStill, type StillFormat } from '@/components/CardStage/export/stills';
 import type { CardDesign } from '@/data/design';
 import type { ShareAssets, ShareCreateInput, ShareFileRole, SharePatch, ShareRecord } from './types';
@@ -108,8 +108,9 @@ export interface CreateShareOptions {
   kind: ShareCreateInput['kind'];
   slug?: string;
   forName?: string | null;
-  backdrop: BackdropId;
-  brandColor: string;
+  /** The template's colors, and the card's color for its tuple. */
+  palette: Palette;
+  cardColor: string;
   onProgress?: (p: ShareProgress) => void;
   /** Update this share instead of making a new one. */
   existing?: { id: string; editToken: string; url: string };
@@ -119,7 +120,6 @@ export interface CreateShareOptions {
 const STILL_ROLES: Array<[StillFormat, ShareFileRole]> = [
   ['post', 'og'],
   ['square', 'square'],
-  ['card', 'card'],
 ];
 
 /**
@@ -162,9 +162,10 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   }
 
   // The link preview first: it is what the link shows.
+  await prepareTemplate();
   for (const [format, role] of STILL_ROLES) {
     onProgress?.({ stage: 'render', detail: format });
-    const blob = await renderStill(exporter, { format, backdrop: opts.backdrop, brandColor: opts.brandColor });
+    const blob = await renderStill(exporter, { format, palette: opts.palette, cardColor: opts.cardColor });
     onProgress?.({ stage: 'upload', detail: format });
     record = await uploadFile(id, editToken, role, blob);
   }

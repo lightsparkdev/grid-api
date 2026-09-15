@@ -88,7 +88,7 @@ const RING_STROKE = 2;
  * the ring toward it, so the move begins under the finger; letting go off
  * the swatch relaxes it back.
  */
-function SwatchRow({ label, active, children }: { label: string; active: string | null; children: ReactNode }) {
+export function SwatchRow({ label, active, children }: { label: string; active: string | null; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
