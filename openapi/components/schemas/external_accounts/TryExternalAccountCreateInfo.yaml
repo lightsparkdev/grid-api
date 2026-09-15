@@ -1,7 +1,7 @@
-title: EGP Account
+title: TRY Account
 allOf:
 - $ref: ./BaseExternalAccountInfo.yaml
-- $ref: ../common/EgpAccountInfo.yaml
+- $ref: ../common/TryAccountInfoBase.yaml
 - type: object
   required:
   - beneficiary
@@ -9,11 +9,11 @@ allOf:
     beneficiary:
       oneOf:
       - title: Individual Beneficiary
-        $ref: ../common/EgpBeneficiary.yaml
+        $ref: ../common/TryBeneficiary.yaml
       - title: Business Beneficiary
-        $ref: ../common/EgpBusinessBeneficiary.yaml
+        $ref: ../common/TryBusinessBeneficiary.yaml
       discriminator:
         propertyName: beneficiaryType
         mapping:
-          INDIVIDUAL: ../common/EgpBeneficiary.yaml
-          BUSINESS: ../common/EgpBusinessBeneficiary.yaml
+          INDIVIDUAL: ../common/TryBeneficiary.yaml
+          BUSINESS: ../common/TryBusinessBeneficiary.yaml

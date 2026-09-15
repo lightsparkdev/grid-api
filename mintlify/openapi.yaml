@@ -18521,6 +18521,60 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    TryAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - iban
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - TRY_ACCOUNT
+        iban:
+          type: string
+          description: Turkish IBAN (26 characters, starting with TR)
+          example: TR330006100519786457841326
+          minLength: 26
+          maxLength: 26
+          pattern: ^TR[0-9]{2}[0-9A-Z]{22}$
+        bankName:
+          type: string
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
+          minLength: 1
+          maxLength: 255
+          example: <bankName from GET /discoveries>
+      example:
+        accountType: TRY_ACCOUNT
+        iban: TR330006100519786457841326
+        bankName: <bankName from GET /discoveries>
+    TryAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/TryAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    PaymentTryAccountInfo:
+      title: TRY Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/TryAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -18576,6 +18630,7 @@ components:
             - $ref: '#/components/schemas/PaymentSwiftAccountInfo'
             - $ref: '#/components/schemas/PaymentCnyAccountInfo'
             - $ref: '#/components/schemas/PaymentIlsAccountInfo'
+            - $ref: '#/components/schemas/PaymentTryAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -18641,6 +18696,7 @@ components:
               SWIFT_ACCOUNT: '#/components/schemas/PaymentSwiftAccountInfo'
               CNY_ACCOUNT: '#/components/schemas/PaymentCnyAccountInfo'
               ILS_ACCOUNT: '#/components/schemas/PaymentIlsAccountInfo'
+              TRY_ACCOUNT: '#/components/schemas/PaymentTryAccountInfo'
     SweepRuleDestination:
       title: Sweep Rule Destination
       type: object
@@ -18975,6 +19031,7 @@ components:
         - TRON_WALLET
         - CNY_ACCOUNT
         - ILS_ACCOUNT
+        - TRY_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -19707,6 +19764,43 @@ components:
           description: The country of residence of the beneficiary
         address:
           $ref: '#/components/schemas/Address'
+    EgpBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
     EgpExternalAccountInfo:
       title: EGP Account
       allOf:
@@ -19721,12 +19815,12 @@ components:
                 - title: Individual Beneficiary
                   $ref: '#/components/schemas/EgpBeneficiary'
                 - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                  $ref: '#/components/schemas/EgpBusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+                  BUSINESS: '#/components/schemas/EgpBusinessBeneficiary'
     EurBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -22425,6 +22519,98 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/IlsBeneficiary'
                   BUSINESS: '#/components/schemas/IlsBusinessBeneficiary'
+    TryBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    TryBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    TryExternalAccountInfo:
+      title: TRY Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TryAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/TryBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/TryBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/TryBeneficiary'
+                  BUSINESS: '#/components/schemas/TryBusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -22475,6 +22661,7 @@ components:
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/CnyExternalAccountInfo'
         - $ref: '#/components/schemas/IlsExternalAccountInfo'
+        - $ref: '#/components/schemas/TryExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -22527,6 +22714,7 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           CNY_ACCOUNT: '#/components/schemas/CnyExternalAccountInfo'
           ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountInfo'
+          TRY_ACCOUNT: '#/components/schemas/TryExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -22764,12 +22952,12 @@ components:
                 - title: Individual Beneficiary
                   $ref: '#/components/schemas/EgpBeneficiary'
                 - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                  $ref: '#/components/schemas/EgpBusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+                  BUSINESS: '#/components/schemas/EgpBusinessBeneficiary'
     EurExternalAccountCreateInfo:
       title: EUR Account
       allOf:
@@ -23370,6 +23558,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/IlsBeneficiary'
                   BUSINESS: '#/components/schemas/IlsBusinessBeneficiary'
+    TryExternalAccountCreateInfo:
+      title: TRY Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TryAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/TryBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/TryBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/TryBeneficiary'
+                  BUSINESS: '#/components/schemas/TryBusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
@@ -23420,6 +23628,7 @@ components:
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/IlsExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/TryExternalAccountCreateInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -23471,6 +23680,7 @@ components:
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountCreateInfo'
+          TRY_ACCOUNT: '#/components/schemas/TryExternalAccountCreateInfo'
     ExternalAccountCreateRequest:
       allOf:
         - type: object

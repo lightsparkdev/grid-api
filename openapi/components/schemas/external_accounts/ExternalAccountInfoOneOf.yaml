@@ -47,6 +47,7 @@ oneOf:
 - $ref: ./TronWalletExternalAccountInfo.yaml
 - $ref: ./CnyExternalAccountInfo.yaml
 - $ref: ./IlsExternalAccountInfo.yaml
+- $ref: ./TryExternalAccountInfo.yaml
 discriminator:
   propertyName: accountType
   mapping:
@@ -99,3 +100,4 @@ discriminator:
     TRON_WALLET: ./TronWalletExternalAccountInfo.yaml
     CNY_ACCOUNT: ./CnyExternalAccountInfo.yaml
     ILS_ACCOUNT: ./IlsExternalAccountInfo.yaml
+    TRY_ACCOUNT: ./TryExternalAccountInfo.yaml
