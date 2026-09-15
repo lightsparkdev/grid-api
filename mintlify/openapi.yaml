@@ -841,11 +841,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/agreements:
+    get:
+      summary: List the current Grid agreement documents
+      description: Retrieve the current version and Grid-hosted URL of every agreement Grid supports. Supply an entry's `version` as `termsVersion` when recording a customer's acceptance of that agreement. The list is a catalog of available agreements, not a list of the agreements a given customer is required to accept.
+      operationId: listAgreementDocuments
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Current agreement documents retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgreementDocumentListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
   /customers/end-user-terms:
     get:
       summary: Get the current Grid End User Terms
-      description: Retrieve the current version and Grid-hosted URL of the End User Terms.
+      description: Deprecated; use `GET /customers/agreements`, which lists every agreement Grid supports rather than the End User Terms alone. This operation keeps its original single-document response, so existing integrations continue to work unchanged.
       operationId: getEndUserTerms
+      deprecated: true
       tags:
         - Customers
       security:
@@ -11699,6 +11722,12 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 9f84e0c2a72c4fa
                     customerType: INDIVIDUAL
+                    agreementConsents:
+                      - type: LIGHTSPARK_END_USER_TERMS
+                        acceptedAt: '2025-07-21T17:30:00Z'
+                        ipAddress: 203.0.113.42
+                        termsVersion: '2025-10-13'
+                        acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -11728,11 +11757,12 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000002
                     platformCustomerId: 4b7c1e9d3f5a8e2
                     customerType: INDIVIDUAL
-                    endUserTermsConsent:
-                      acceptedAt: '2025-07-21T17:30:00Z'
-                      ipAddress: 203.0.113.42
-                      termsVersion: '2025-10-13'
-                      acceptanceMethod: CHECKBOX
+                    agreementConsents:
+                      - type: LIGHTSPARK_END_USER_TERMS
+                        acceptedAt: '2025-07-21T17:30:00Z'
+                        ipAddress: 203.0.113.42
+                        termsVersion: '2025-10-13'
+                        acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -11755,11 +11785,12 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000003
                     platformCustomerId: 7a2f9d4e1b8c3f5
                     customerType: BUSINESS
-                    endUserTermsConsent:
-                      acceptedAt: '2025-07-21T17:30:00Z'
-                      ipAddress: 203.0.113.42
-                      termsVersion: '2025-10-13'
-                      acceptanceMethod: CHECKBOX
+                    agreementConsents:
+                      - type: LIGHTSPARK_END_USER_TERMS
+                        acceptedAt: '2025-07-21T17:30:00Z'
+                        ipAddress: 203.0.113.42
+                        termsVersion: '2025-10-13'
+                        acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -11790,6 +11821,12 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000004
                     platformCustomerId: 3c8e5f2a9d1b7e4
                     customerType: BUSINESS
+                    agreementConsents:
+                      - type: LIGHTSPARK_END_USER_TERMS
+                        acceptedAt: '2025-07-21T17:30:00Z'
+                        ipAddress: 203.0.113.42
+                        termsVersion: '2025-10-13'
+                        acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -13284,7 +13321,7 @@ components:
             | Error Code | Description |
             |------------|-------------|
             | INVALID_INPUT | Invalid input provided |
-            | END_USER_TERMS_VERSION_NOT_FOUND | The submitted End User Terms version is not supported |
+            | END_USER_TERMS_VERSION_NOT_FOUND | The submitted version is not supported for the agreement it was sent for |
             | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
             | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
             | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
@@ -13582,20 +13619,22 @@ components:
         - BUSINESS
       description: Whether the customer is an individual or a business entity
       example: INDIVIDUAL
-    EndUserTermsAcceptanceMethod:
+    AgreementAcceptanceMethod:
       type: string
-      description: Method the customer used to affirmatively accept the End User Terms.
+      description: Method the customer used to affirmatively accept an agreement.
       enum:
         - CHECKBOX
         - CLICK_TO_ACCEPT
       example: CHECKBOX
-    EndUserTermsConsentRequest:
+    EndUserTermsConsent:
       type: object
+      deprecated: true
       required:
         - acceptedAt
         - ipAddress
         - termsVersion
         - acceptanceMethod
+      description: Deprecated; use `agreementConsents` instead, which records acceptance of each agreement separately. Reported only for a customer whose acceptance predates that field, and always as the `LIGHTSPARK_END_USER_TERMS` agreement.
       properties:
         acceptedAt:
           type: string
@@ -13608,14 +13647,52 @@ components:
           example: 198.51.100.24
         termsVersion:
           type: string
-          maxLength: 64
           description: Version identifier of the accepted Grid End User Terms.
           example: V1
         acceptanceMethod:
-          $ref: '#/components/schemas/EndUserTermsAcceptanceMethod'
-    EndUserTermsConsent:
+          $ref: '#/components/schemas/AgreementAcceptanceMethod'
+    AgreementType:
+      type: string
+      description: 'Identifies which Grid agreement a consent record or document refers to. Values are stable identifiers: a document''s hosted URL or version may change, but its type does not. Accepting one agreement never implies acceptance of another, even when two agreements share a hosted page.'
+      enum:
+        - LIGHTSPARK_END_USER_TERMS
+        - LIGHTSPARK_E_SIGN_CONSENT
+        - LIGHTSPARK_PRIVACY_POLICY
+        - LEAD_E_SIGN_CONSENT
+        - LEAD_ACCOUNTHOLDER_AGREEMENT
+        - LEAD_PRIVACY_POLICY
+        - LEAD_CARDHOLDER_AGREEMENT
+      example: LIGHTSPARK_END_USER_TERMS
+    AgreementConsentRequest:
+      type: object
+      required:
+        - type
+        - acceptedAt
+        - ipAddress
+        - termsVersion
+        - acceptanceMethod
+      properties:
+        type:
+          $ref: '#/components/schemas/AgreementType'
+        acceptedAt:
+          type: string
+          format: date-time
+          description: Date and time when the customer accepted this agreement. Must include a timezone offset and must not be in the future.
+        ipAddress:
+          type: string
+          maxLength: 45
+          description: IP address of the device the customer used when accepting this agreement.
+          example: 198.51.100.24
+        termsVersion:
+          type: string
+          maxLength: 64
+          description: Version identifier of the accepted agreement, as returned for this type by the agreement documents endpoint. A version is scoped to its type; a version valid for one agreement is not valid for another.
+          example: '2025-10-13'
+        acceptanceMethod:
+          $ref: '#/components/schemas/AgreementAcceptanceMethod'
+    AgreementConsent:
       allOf:
-        - $ref: '#/components/schemas/EndUserTermsConsentRequest'
+        - $ref: '#/components/schemas/AgreementConsentRequest'
     ContactVerificationStatus:
       type: string
       description: Status of an individual contact-verification channel (email or phone). `PENDING` means verification is required but not yet completed; `VERIFIED` means the channel has been confirmed.
@@ -13654,8 +13731,17 @@ components:
         customerType:
           $ref: '#/components/schemas/CustomerType'
         endUserTermsConsent:
-          $ref: '#/components/schemas/EndUserTermsConsent'
-          description: The customer's recorded acceptance of the End User Terms. Omitted until acceptance has been recorded.
+          deprecated: true
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/EndUserTermsConsent'
+          description: Deprecated; read `agreementConsents` instead. Mirrors the customer's `LIGHTSPARK_END_USER_TERMS` acceptance when one is on file, and is omitted otherwise.
+        agreementConsents:
+          type: array
+          readOnly: true
+          description: The customer's recorded agreement acceptances, one entry per accepted type holding that type's most recent acceptance. Omitted when the customer has not accepted any agreement yet.
+          items:
+            $ref: '#/components/schemas/AgreementConsent'
         region:
           type: string
           description: Country code (ISO 3166-1 alpha-2) representing the customer's regional identity and regulatory jurisdiction.
@@ -14477,8 +14563,16 @@ components:
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
         endUserTermsConsent:
-          $ref: '#/components/schemas/EndUserTermsConsentRequest'
-          description: Evidence that the customer accepted the Grid End User Terms. Unregulated platforms must provide this before initiating customer-scoped transactions; those transactions fail until consent is recorded. This can be supplied during customer creation or in a later customer update.
+          deprecated: true
+          allOf:
+            - $ref: '#/components/schemas/EndUserTermsConsent'
+          description: Deprecated; send `agreementConsents` instead. Supplying this records acceptance of the Lightspark End User Terms, equivalent to a single `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying both fields in one request is rejected.
+        agreementConsents:
+          type: array
+          maxItems: 7
+          description: Evidence that the customer accepted Grid agreements, at most one entry per type. Unregulated platforms must record acceptance of the Lightspark End User Terms before initiating customer-scoped transactions; those transactions fail until that consent is recorded. Consents can be supplied during customer creation or in a later customer update.
+          items:
+            $ref: '#/components/schemas/AgreementConsentRequest'
     IndividualCustomerCreateRequest:
       title: Individual Customer Create Request
       allOf:
@@ -14813,8 +14907,16 @@ components:
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
         endUserTermsConsent:
-          $ref: '#/components/schemas/EndUserTermsConsentRequest'
-          description: Evidence that the customer accepted the Grid End User Terms. Unregulated platforms must provide this before initiating customer-scoped transactions; those transactions fail until consent is recorded.
+          deprecated: true
+          allOf:
+            - $ref: '#/components/schemas/EndUserTermsConsent'
+          description: Deprecated; send `agreementConsents` instead. Supplying this records acceptance of the Lightspark End User Terms, equivalent to a single `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying both fields in one request is rejected.
+        agreementConsents:
+          type: array
+          maxItems: 7
+          description: Evidence that the customer accepted Grid agreements, at most one entry per type. Supplying this records additional acceptances; it never withdraws or replaces evidence already recorded for other types. Omitting the field leaves recorded consents unchanged.
+          items:
+            $ref: '#/components/schemas/AgreementConsentRequest'
     IndividualCustomerUpdateRequest:
       title: Individual Customer Update Request
       allOf:
@@ -14887,11 +14989,41 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    AgreementDocument:
+      type: object
+      required:
+        - type
+        - version
+        - url
+      properties:
+        type:
+          $ref: '#/components/schemas/AgreementType'
+        version:
+          type: string
+          description: Current version identifier of this agreement. Supply it as `termsVersion` when recording the customer's acceptance. Versions are independent per type.
+          example: '2025-10-13'
+        url:
+          type: string
+          format: uri
+          description: URL where Grid hosts this version of the agreement. Platform-specific agreements resolve to a URL for the authenticated platform.
+          example: https://www.lightspark.com/legal/grid/enduserterms
+    AgreementDocumentListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: Every agreement Grid supports, one entry per type. The list is a catalog of available agreements, not a list of the agreements a given customer is required to accept.
+          items:
+            $ref: '#/components/schemas/AgreementDocument'
     EndUserTerms:
       type: object
+      deprecated: true
       required:
         - version
         - url
+      description: Deprecated; read the agreement documents list instead, which reports every agreement Grid supports rather than the End User Terms alone.
       properties:
         version:
           type: string
