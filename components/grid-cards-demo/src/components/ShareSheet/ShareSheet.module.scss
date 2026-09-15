@@ -184,7 +184,7 @@
 }
 
 .tileLabel {
-  @include label;
+  @include label-sm;
   color: var(--text-primary);
   text-align: center;
   text-wrap: balance;
