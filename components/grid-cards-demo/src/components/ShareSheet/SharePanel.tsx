@@ -165,7 +165,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const setSaved = (what: 'image' | 'video') => {
     setSavingWhat((w) => (w === what ? null : w));
     setSavedWhat(what);
-    play('success');
+    play('issued');
     setTimeout(() => setSavedWhat((w) => (w === what ? null : w)), 1800);
   };
   useEffect(() => {
@@ -340,7 +340,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      play('success');
+      play('issued');
       setTimeout(() => setCopied(false), 1800);
     } catch {
       setError('Could not copy. Select the link and copy it.');
