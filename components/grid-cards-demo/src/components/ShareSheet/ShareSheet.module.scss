@@ -179,6 +179,9 @@
 .tilePrimary {
   background: var(--surface-inverse, var(--color-gray-950));
   border-right-color: transparent;
+  /* Its own corners, the card's radius, all four: a block set into the row. */
+  corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-md);
 
   .tileIcon,
   .tileLabel {

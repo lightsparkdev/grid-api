@@ -17,33 +17,36 @@
   transform: translateX(-50%) translateY(6px);
 }
 
-/* The playground's pill (the mobile "Configure" pill): frosted, hairline. */
+/* The filled button (Origin's, and the mobile "Explore playground"): ink on
+   light, paper on dark, the small corner radius. */
 .button {
   all: unset;
   box-sizing: border-box;
   @include label-sm;
+  corner-shape: var(--corner-shape);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  height: 40px;
-  padding: 0 var(--spacing-md) 0 14px;
-  background: color-mix(in srgb, var(--surface-primary) 72%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: var(--text-primary);
-  border: var(--stroke-xs) solid var(--border-tertiary);
-  border-radius: 999px;
+  height: 36px;
+  padding: 0 var(--spacing-md) 0 var(--spacing-sm);
+  background: var(--surface-inverse, var(--color-gray-950));
+  color: var(--text-inverse, var(--color-gray-050));
+  border-radius: var(--corner-radius-md);
   box-shadow: var(--shadow-md);
   font-feature-settings: 'salt' 1;
   white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 200ms ease, background-color 200ms ease;
+  transition: transform 200ms ease, background-image 150ms ease;
 
   @media (hover: hover) {
     &:hover {
-      background: color-mix(in srgb, var(--surface-primary) 92%, transparent);
+      background-image: linear-gradient(var(--surface-inverse-hover, rgba(255, 255, 255, 0.08)), var(--surface-inverse-hover, rgba(255, 255, 255, 0.08)));
+
+      :global([data-theme='dark']) & {
+        background-image: linear-gradient(var(--surface-inverse-hover, rgba(0, 0, 0, 0.06)), var(--surface-inverse-hover, rgba(0, 0, 0, 0.06)));
+      }
     }
   }
 
