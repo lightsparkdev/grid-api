@@ -1,0 +1,53 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+/* Under the floating card, centered on the stage. Above the card's layer so
+   it takes the pointer; fades with the phone's arrival. */
+.root {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  z-index: 4;
+  transform: translateX(-50%);
+  transition: opacity 400ms ease, transform 400ms ease;
+}
+
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(6px);
+}
+
+/* The playground's pill (the mobile "Configure" pill): frosted, hairline. */
+.button {
+  all: unset;
+  box-sizing: border-box;
+  @include label-sm;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  height: 40px;
+  padding: 0 var(--spacing-md) 0 14px;
+  background: color-mix(in srgb, var(--surface-primary) 72%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: var(--stroke-xs) solid var(--border-tertiary);
+  border-radius: 999px;
+  box-shadow: var(--shadow-md);
+  font-feature-settings: 'salt' 1;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 200ms ease, background-color 200ms ease;
+
+  @media (hover: hover) {
+    &:hover {
+      background: color-mix(in srgb, var(--surface-primary) 92%, transparent);
+    }
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}

@@ -17,6 +17,7 @@ import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGri
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useGradientEditing } from '@/components/DesignPicker/gradientEditing';
 import {
+  brandColorOf,
   brandDefaultLayout,
   BRAND_MARGIN,
   BRAND_MAX_H,
@@ -31,7 +32,9 @@ import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/Card
 import { localToSpec } from './card3d/faceFrame';
 import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
-import { CardMotion } from './cardMotion';
+import { CardMotion, ORIENT_ROLL } from './cardMotion';
+import { installExportDevHook } from './export/devHook';
+import { CardExporter } from './export/exportRenderer';
 import { useCardMomentSounds } from './cardSounds';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
@@ -63,10 +66,6 @@ const ROTATE_STEP = 15;
 const SNAP_DEG = 3;
 /** Spec px → card px, the hit box's unit (the same along either axis). */
 const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
-/** Upright, the blank has been turned a quarter turn clockwise: the roll the
- *  mesh carries about its own normal, degrees (three's positive z is
- *  counterclockwise seen from the front). */
-const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 };
 /** The card's fade under the screen's scroll edge has run out this far down
  *  the strip (the header's bottom edge). */
 const EDGE_FADE_RAMP_END = 0.8;
@@ -219,6 +218,9 @@ interface CardStageProps {
   home: CardHome;
   /** Lets the stage edit the design: the brand is placed on the card itself. */
   onDesignChange?: (patch: Partial<CardDesign>) => void;
+  /** Filled with the card's exporter once the mesh is mounted (the share flow
+   *  renders stills and video through it). */
+  exportRef?: React.MutableRefObject<CardExporter | null>;
 }
 
 /** Capture the pointer for a drag. A pointer that is already gone (a touch
@@ -260,7 +262,7 @@ function layoutAt(layout: BrandLayout, c: Pt, w: number, h: number): BrandLayout
  * pointer input, the state pill, the accessible name, and the brand's
  * selection box.
  */
-export function CardStage({ design, home, onDesignChange }: CardStageProps) {
+export function CardStage({ design, home, onDesignChange, exportRef }: CardStageProps) {
   const { bootProgress } = usePhoneBoot();
   const reduceMotion = useReducedMotion() ?? false;
   const dark = useThemeMode() === 'dark';
@@ -1062,6 +1064,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           placement={placement}
           onBrandPlacement={onBrandPlacement}
           state={meshState}
+          exportRef={exportRef}
         />
       </Canvas>
 
@@ -1342,6 +1345,7 @@ interface CardRigProps {
   placement: React.MutableRefObject<BrandPlacement | null>;
   onBrandPlacement: (p: BrandPlacement) => void;
   state: CardMeshState;
+  exportRef?: React.MutableRefObject<CardExporter | null>;
 }
 
 /** Drives the mesh and the DOM hit box every frame. Memoized: every prop
@@ -1357,6 +1361,7 @@ const CardRig = memo(function CardRig({
   placement,
   onBrandPlacement,
   state,
+  exportRef,
 }: CardRigProps) {
   // Carrier takes position and scale; the card inside it takes the spin.
   const carrier = useRef<THREE.Group>(null);
@@ -1364,6 +1369,29 @@ const CardRig = memo(function CardRig({
   const size = useThree((s) => s.size);
   const dpr = useThree((s) => s.viewport.dpr);
   const get = useThree((s) => s.get);
+  // The card's exporter, for the share flow: renders the same mesh through
+  // its own camera into offscreen targets, between the stage's frames.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  useEffect(() => {
+    if (!exportRef || !carrier.current || !group.current) return;
+    const exporter = new CardExporter({
+      get,
+      carrier: carrier.current,
+      group: group.current,
+      orientation: () => live.current.orientation,
+      markDirty: () => {
+        live.current.dirty = true;
+      },
+    });
+    exportRef.current = exporter;
+    const uninstall = installExportDevHook(exporter, () => brandColorOf(stateRef.current.design));
+    return () => {
+      uninstall();
+      if (exportRef.current === exporter) exportRef.current = null;
+      exporter.dispose();
+    };
+  }, [exportRef, get, live]);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
   // The turning card's air (see the frame loop), and how long it has been still.
   const airRef = useRef<Airflow | null>(null);

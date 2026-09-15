@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import { CardStage } from '@/components/CardStage/CardStage';
+import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
@@ -32,6 +33,10 @@ export interface AppPanelProps {
   onTapDeclined?: UseCardHomeOptions['onTapDeclined'];
   cardOptions?: UseCardHomeOptions['card'];
   onSettled?: () => void;
+  /** The card's exporter, filled by the stage (see CardStage). */
+  exportRef?: React.MutableRefObject<CardExporter | null>;
+  /** Extra chrome on the stage under the floating card (the Share button). */
+  stageActions?: React.ReactNode;
 }
 
 /** The stage: the card, always; the cardholder's phone comes in with the first flow, the card goes into it, and it stays until sent away. */
@@ -48,6 +53,8 @@ export function AppPanel({
   cardOptions,
   onSettled,
   brainReset,
+  exportRef,
+  stageActions,
 }: AppPanelProps) {
   const home = useCardHome({
     entry: walletEntry,
@@ -103,7 +110,8 @@ export function AppPanel({
               externalGlass
               stageChrome={closePhone}
             />
-            <CardStage design={design} home={home} onDesignChange={onDesignChange} />
+            <CardStage design={design} home={home} onDesignChange={onDesignChange} exportRef={exportRef} />
+            {stageActions}
           </DotGridCanvas>
         </div>
       </div>

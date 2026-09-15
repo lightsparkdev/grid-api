@@ -15,8 +15,14 @@
  * following the cursor.
  */
 
+import type { Orientation } from '@/data/design';
+
 /** Cursor tilt, degrees at the card's edge. */
 export const TILT_DEG = 9;
+/** Upright, the blank has been turned a quarter turn clockwise: the roll the
+ *  mesh carries about its own normal, degrees (three's positive z is
+ *  counterclockwise seen from the front). Added to the pose's roll, innermost. */
+export const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 };
 /** Drag: degrees of spin per pixel of pointer travel. */
 const DRAG_DEG_PER_PX = 0.55;
 /** Spring that settles the spin onto a face (per second, per degree). */

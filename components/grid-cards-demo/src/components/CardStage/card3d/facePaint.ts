@@ -197,6 +197,10 @@ export interface FaceAssets {
 export function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
+    // A shared card's logo or art comes from the share store, another
+    // origin once deployed: asked for with CORS so it can be drawn into the
+    // face canvases and read back (the store answers with an open policy).
+    img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;

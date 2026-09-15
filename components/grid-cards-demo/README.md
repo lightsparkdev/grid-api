@@ -30,6 +30,16 @@ The port is pinned to 4002 (4000 is the wallet demo) so the docs page can embed 
 while you preview the docs with `make mint`. The docs page targets `localhost:4002` when served
 locally.
 
+### Share
+
+Share (under the card) renders the card to stills and a spin video in the browser and makes a
+link whose preview is that card. Locally, shares are written to `.shares/` (gitignored) and served
+by the app itself: the link is `http://localhost:4002/c/{slug}`, and `?preview=unfurl` on it mocks
+the X, Slack, and iMessage previews. The team layer ("For a customer") is always unlocked in dev;
+in production it needs `SHARE_TEAM_KEY` and a visit to `/api/team?key=…`. Dev hook:
+`__cardExport.still('post', 'dark')` opens a still; `__cardExport.video('dark')` downloads the spin.
+See the 2026-09-15 entry in `APPROACH.md`.
+
 ## Deploy
 
 Deploy to Vercel as its own project. `vercel.json` sets an `ignoreCommand` so a commit only

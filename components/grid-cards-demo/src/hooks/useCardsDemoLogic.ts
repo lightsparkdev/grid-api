@@ -30,6 +30,15 @@ import { useThemeMode } from './useThemeMode';
 import { applyPreset, PRESETS, presetOf, type PresetId } from '@/data/presets';
 import type { Entry } from '@/components/ApiPanel/types';
 import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
+import { fetchShare, rememberedToken } from '@/lib/share/client';
+import type { ShareRecord } from '@/lib/share/types';
+
+/** A share the playground was opened from. */
+export interface SharedCard {
+  record: ShareRecord;
+  /** Present when this visitor may update it. */
+  editToken: string | null;
+}
 
 // Matches ISSUE_MS in apps/shared/card/useCardHome: the activation webhook
 // arrives as the card's chip flips from PROCESSING to ACTIVE on the phone.
@@ -97,6 +106,29 @@ export function useCardsDemoLogic() {
   // The latest design, readable from callbacks without re-binding them.
   const designRef = useRef(design);
   designRef.current = design;
+
+  // A shared card opened by its link: `?c=<id>` loads that design (the intro
+  // then plays it), and `?edit=<token>`, or a token this browser kept from
+  // making it, lets the visitor update the same share.
+  const [shared, setShared] = useState<SharedCard | null>(null);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const c = p.get('c');
+    if (!c) return;
+    let alive = true;
+    fetchShare(c)
+      .then((record) => {
+        if (!alive || !record) return;
+        designed.current = true;
+        // Fields added since the share was made take their defaults.
+        setDesign({ ...initialDesign, ...record.design });
+        setShared({ record, editToken: p.get('edit') ?? rememberedToken(record.id) });
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // The selected preset is read off the design: one while the design equals
   // it, none as soon as any control is edited away.
@@ -330,6 +362,7 @@ export function useCardsDemoLogic() {
     dismissPhone,
     design,
     updateDesign,
+    shared,
     preset,
     selectPreset,
     wallet,

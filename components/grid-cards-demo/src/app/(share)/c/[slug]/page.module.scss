@@ -1,0 +1,152 @@
+.page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 64px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* The body's surface (globals.scss) is the page's; these are the type. */
+  color: var(--share-text-primary);
+  font-family: var(--share-font);
+  -webkit-font-smoothing: antialiased;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 720px) {
+    padding: 96px 40px 48px;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--share-text-secondary);
+}
+
+.headline {
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+
+  @media (min-width: 720px) {
+    font-size: 40px;
+  }
+}
+
+.figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hero {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 24px;
+  background: var(--share-border);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.25);
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px dashed var(--share-border);
+  color: var(--share-text-secondary);
+  font-size: 14px;
+  box-shadow: none;
+}
+
+.caption {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--share-text-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.primary {
+  background: var(--share-text-primary);
+  color: var(--share-bg);
+}
+
+.secondary {
+  border: 1px solid var(--share-border);
+  color: var(--share-text-primary);
+}
+
+.tertiary {
+  font-size: 14px;
+  color: var(--share-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--share-border);
+
+  &:hover {
+    color: var(--share-text-primary);
+  }
+}
+
+.editPanel {
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid var(--share-border);
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--share-text-secondary);
+
+  p {
+    margin: 0 0 6px;
+  }
+}
+
+.views {
+  color: var(--share-text-primary);
+  font-weight: 500;
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: 40px;
+  font-size: 12px;
+  color: var(--share-text-secondary);
+
+  a {
+    text-decoration: none;
+    opacity: 0.8;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
