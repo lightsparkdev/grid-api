@@ -55,13 +55,6 @@
   gap: var(--spacing-md);
   width: 100%;
 }
-/* The divider's controls, side by side (Reset, then Share). */
-.actions {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
 /* Reset control, right-aligned in the Explore flows divider. Matches the section
    label exactly (type + tertiary color, no padding) so it never changes the
    divider height. */

@@ -132,7 +132,6 @@ export default function Page() {
           running={logic.running}
           onAction={onConfigureAction}
           onReset={logic.reset}
-          onShare={openShare}
         />
       </div>
       <div ref={stackColRef} className={styles.stackCol}>
