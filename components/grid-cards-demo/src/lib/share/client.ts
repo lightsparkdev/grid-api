@@ -3,7 +3,7 @@
    tokens so a card they come back to is still theirs. */
 
 import type { CardExporter, ExportPose } from '@/components/CardStage/export/exportRenderer';
-import { prepareTemplate, type Palette } from '@/components/CardStage/export/compose';
+import { prepareHand, prepareTemplate, type Palette, type Treatment } from '@/components/CardStage/export/compose';
 import { renderStill, type StillFormat } from '@/components/CardStage/export/stills';
 import type { CardDesign } from '@/data/design';
 import type { ShareAssets, ShareCreateInput, ShareFileRole, SharePatch, ShareRecord } from './types';
@@ -113,6 +113,8 @@ export interface CreateShareOptions {
   forName?: string | null;
   /** The template's colors. */
   palette: Palette;
+  /** The template, or the hand. */
+  treatment?: Treatment;
   /** How the card is held in the stills. */
   pose: ExportPose;
   onProgress?: (p: ShareProgress) => void;
@@ -169,6 +171,7 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   // synchronous frame; a paint is let through before it so the tile's own
   // change (its spinner, its label) is on screen first.
   await prepareTemplate();
+  if (opts.treatment === 'hand') await prepareHand();
   for (const [format, role] of STILL_ROLES) {
     onProgress?.({ stage: 'render', detail: format });
     await paintFirst();
@@ -176,6 +179,7 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
       format,
       palette: opts.palette,
       pose: opts.pose,
+      treatment: opts.treatment,
     });
     onProgress?.({ stage: 'upload', detail: format });
     record = await uploadFile(id, editToken, role, blob);

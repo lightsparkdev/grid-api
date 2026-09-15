@@ -11,6 +11,10 @@
 import { loadImage } from '../card3d/facePaint';
 import { EXPOSURE_DARK, EXPOSURE_LIGHT, type ExportFrame } from './exportRenderer';
 
+/** How the picture is dressed: the share template on a surface, or a hand
+ *  holding the card on white. */
+export type Treatment = 'template' | 'hand';
+
 /** The three surfaces offered, and a color of the visitor's own. */
 export type BackdropId = 'light' | 'dark' | 'brand' | 'custom';
 
@@ -73,6 +77,57 @@ function mix(a: RGB, b: RGB, t: number): RGB {
 }
 function luminance([r, g, b]: RGB): number {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+}
+
+// ── The hand ──────────────────────────────────────────────────────────────
+// A right hand presenting the card, in two layers around it: what is behind
+// the card (palm, thumb's back, wrist; the card's rectangle cut out) and what
+// passes in front (the fingertips over the left edge, the thumb's pad on the
+// right). Made from a photograph of the hand holding a chroma plate, keyed
+// out (see the 2026-09-15 Decisions entry); `HAND_HOLE` is where the plate
+// was, as fractions of the square, and the card is drawn exactly there.
+
+export const HAND_URLS = { behind: '/assets/share/hand/behind.png', front: '/assets/share/hand/front.png' };
+export const HAND_HOLE = { x: 0.26953, y: 0.20508, w: 0.48975, h: 0.30713 };
+/** The hand's surface: white, as the photograph's cyclorama. */
+export const HAND_PALETTE: Palette = { bg: '#ffffff', ink: '#1a1a1a' };
+/** Face on: the plate was held parallel to the camera. */
+export const HAND_POSE = { rotX: 0, rotY: 0 };
+
+let hand: { behind: HTMLImageElement; front: HTMLImageElement } | null = null;
+let handPromise: Promise<void> | null = null;
+
+function loadLayer(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`hand layer failed: ${url}`));
+    img.src = url;
+  });
+}
+
+/** Load the hand's two layers once. */
+export function prepareHand(): Promise<void> {
+  if (!handPromise) {
+    handPromise = Promise.all([loadLayer(HAND_URLS.behind), loadLayer(HAND_URLS.front)])
+      .then(([behind, front]) => {
+        hand = { behind, front };
+      })
+      .catch(() => {
+        handPromise = null;
+      });
+  }
+  return handPromise;
+}
+
+export function handReady(): boolean {
+  return hand !== null;
+}
+
+/** The card's rectangle in the hand, in frame px, for a frame `w` × `h`. */
+export function handHoleIn(w: number, h: number): { x: number; y: number; w: number; h: number } {
+  const { side, x: ox, y: oy } = layoutIn(w, h);
+  return { x: ox + HAND_HOLE.x * side, y: oy + HAND_HOLE.y * side, w: HAND_HOLE.w * side, h: HAND_HOLE.h * side };
 }
 
 // ── Assets ────────────────────────────────────────────────────────────────
@@ -288,9 +343,17 @@ export function frameToCanvas(frame: ExportFrame, into?: HTMLCanvasElement): HTM
 
 export interface ComposeOptions {
   palette: Palette;
+  treatment?: Treatment;
+  /** Where the card's frame lands, off the frame's own origin (px). The
+   *  exporter centers the card; the hand wants it in the hole. */
+  offset?: { dx: number; dy: number };
 }
 
-/** The template, then the card over it, onto `target` (made if absent). */
+/**
+ * The dressing, then the card over it, onto `target` (made if absent). The
+ * template: its surface and type, the card. The hand: white, the hand's back
+ * layer, the card in the hole, the hand's front layer.
+ */
 export function compose(
   frame: ExportFrame,
   opts: ComposeOptions,
@@ -305,8 +368,19 @@ export function compose(
     target.height = frame.height;
   }
   const ctx = target.getContext('2d')!;
+  const { dx, dy } = opts.offset ?? { dx: 0, dy: 0 };
+  if (opts.treatment === 'hand' && hand) {
+    const { side, x, y } = layoutIn(frame.width, frame.height);
+    ctx.clearRect(0, 0, frame.width, frame.height);
+    ctx.fillStyle = HAND_PALETTE.bg;
+    ctx.fillRect(0, 0, frame.width, frame.height);
+    ctx.drawImage(hand.behind, x, y, side, side);
+    ctx.drawImage(card, dx, dy);
+    ctx.drawImage(hand.front, x, y, side, side);
+    return target;
+  }
   paintTemplate(ctx, frame.width, frame.height, opts.palette);
-  ctx.drawImage(card, 0, 0);
+  ctx.drawImage(card, dx, dy);
   return target;
 }
 

@@ -33,7 +33,9 @@ locally.
 ### Share
 
 Share (under the card) parks the card in a frame on the stage, renders it to a still in the browser, and
-makes a link whose preview is that card; Save video renders a spin the visitor keeps. Locally, shares are written to `.shares/` (gitignored) and served
+makes a link whose preview is that card; Save video renders a spin the visitor keeps. The Style
+row's Hand puts the card in a photographed hand (two keyed layers around the real mesh; see
+`scripts/hand-layers.py` to make them from a new photo). Locally, shares are written to `.shares/` (gitignored) and served
 by the app itself: the link is `http://localhost:4002/c/{slug}`, and `?preview=unfurl` on it mocks
 the X, Slack, and iMessage previews. The team layer ("For a customer") is always unlocked in dev;
 in production it needs `SHARE_TEAM_KEY` and a visit to `/api/team?key=…`. Dev hook:
