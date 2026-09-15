@@ -201,6 +201,9 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   // ── Making the share ───────────────────────────────────────────────────
   const busy = progress !== null && progress.stage !== 'done';
   const videoRun = useRef<AbortController | null>(null);
+  // Save video before the video exists: it is asked for, and saved the moment
+  // it is done (making the share starts it; otherwise it is started there).
+  const saveWhenDone = useRef(false);
 
   const makeVideo = useCallback(
     async (h: ShareHandle) => {
@@ -231,12 +234,16 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
         if (ctl.signal.aborted) return;
         setVideo({ status: 'done', url: record.assets.video ?? '', blob });
         setHandle((cur) => (cur && cur.record.id === record.id ? { ...cur, record } : cur));
+        if (saveWhenDone.current) {
+          saveWhenDone.current = false;
+          download(blob, `${fileStem(design)}-spin.mp4`);
+        }
       } catch (e) {
         if ((e as Error).name === 'AbortError') return;
         setVideo({ status: 'failed' });
       }
     },
-    [palette, cardColor, exporterRef],
+    [palette, cardColor, exporterRef, design],
   );
 
   /** Make the share, or bring the existing one up to date. */
@@ -308,9 +315,14 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       download(video.blob, `${fileStem(design)}-spin.mp4`);
       return;
     }
+    saveWhenDone.current = true;
+    const hadShare = !!handle && !stale;
     const h = await ensureShare();
-    if (!h) return;
-    if (video.status !== 'rendering' && video.status !== 'uploading') await makeVideo(h);
+    if (!h) {
+      saveWhenDone.current = false;
+      return;
+    }
+    if (hadShare && video.status !== 'rendering' && video.status !== 'uploading') await makeVideo(h);
   };
 
   // What the panel says while something is happening; nothing at rest.
