@@ -151,7 +151,7 @@ declare function hpkeEncryptToGridBundle(args: {
 }): string;
 
 // otpEncryptionTargetBundle: from the registration response when present, or /challenge
-// clientPublicKeyHex: the public key you generated in step 1, compressed or uncompressed
+// clientPublicKeyHex: the public key from step 1; this function compresses it before encrypting
 // otp: the code the user typed ("000000" in sandbox)
 function buildEncryptedOtpBundle(
   otpEncryptionTargetBundle: string,
