@@ -11,13 +11,20 @@
 import { loadImage } from '../card3d/facePaint';
 import { EXPOSURE_DARK, EXPOSURE_LIGHT, type ExportFrame } from './exportRenderer';
 
-export type BackdropId = 'light' | 'dark' | 'brand';
+/** The three surfaces offered, and a color of the visitor's own. */
+export type BackdropId = 'light' | 'dark' | 'brand' | 'custom';
 
-export const BACKDROPS: Array<{ id: BackdropId; label: string }> = [
+export const BACKDROPS: Array<{ id: Exclude<BackdropId, 'custom'>; label: string }> = [
   { id: 'light', label: 'Light' },
   { id: 'dark', label: 'Dark' },
   { id: 'brand', label: 'Brand' },
 ];
+
+/** The surfaces a design offers beyond the two fixed ones. */
+export interface Surfaces {
+  brand: string;
+  custom: string | null;
+}
 
 /** The template's own colors (Origin: surface/primary, text/primary). */
 export interface Palette {
@@ -180,14 +187,21 @@ export async function brandSurfaceFor(design: { backgroundUrl: string | null }, 
   return brandSurface(brandColor);
 }
 
-export function paletteFor(backdrop: BackdropId, brandBg: string): Palette {
+/** A surface with the ink that reads on it. */
+export function paletteOn(bg: string): Palette {
+  return { bg, ink: luminance(hexToRgb(bg)) > 0.5 ? LIGHT.ink : DARK.ink };
+}
+
+export function paletteFor(backdrop: BackdropId, surfaces: Surfaces): Palette {
   switch (backdrop) {
     case 'light':
       return LIGHT;
     case 'dark':
       return DARK;
     case 'brand':
-      return { bg: brandBg, ink: luminance(hexToRgb(brandBg)) > 0.5 ? LIGHT.ink : DARK.ink };
+      return paletteOn(surfaces.brand);
+    case 'custom':
+      return paletteOn(surfaces.custom ?? surfaces.brand);
     default: {
       const never: never = backdrop;
       return never;

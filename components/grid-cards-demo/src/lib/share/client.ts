@@ -2,7 +2,7 @@
    pictures, attach the video when it's done, and remember the maker's edit
    tokens so a card they come back to is still theirs. */
 
-import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
+import type { CardExporter, ExportPose } from '@/components/CardStage/export/exportRenderer';
 import { prepareTemplate, type Palette } from '@/components/CardStage/export/compose';
 import { renderStill, type StillFormat } from '@/components/CardStage/export/stills';
 import type { CardDesign } from '@/data/design';
@@ -111,6 +111,8 @@ export interface CreateShareOptions {
   /** The template's colors, and the card's color for its tuple. */
   palette: Palette;
   cardColor: string;
+  /** How the card is held in the stills. */
+  pose: ExportPose;
   onProgress?: (p: ShareProgress) => void;
   /** Update this share instead of making a new one. */
   existing?: { id: string; editToken: string; url: string };
@@ -165,7 +167,12 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   await prepareTemplate();
   for (const [format, role] of STILL_ROLES) {
     onProgress?.({ stage: 'render', detail: format });
-    const blob = await renderStill(exporter, { format, palette: opts.palette, cardColor: opts.cardColor });
+    const blob = await renderStill(exporter, {
+      format,
+      palette: opts.palette,
+      cardColor: opts.cardColor,
+      pose: opts.pose,
+    });
     onProgress?.({ stage: 'upload', detail: format });
     record = await uploadFile(id, editToken, role, blob);
   }

@@ -1,25 +1,28 @@
 'use client';
 
 import clsx from 'clsx';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { IconChainLink1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChainLink1';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconImages1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconImages1';
+import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconVideo } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconVideo';
 import { IconX } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconX';
-import { Button } from '@lightsparkdev/origin/button';
 import { Dialog } from '@lightsparkdev/origin/dialog';
-import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
+import type { CardExporter, ExportPose } from '@/components/CardStage/export/exportRenderer';
 import {
   BACKDROPS,
   brandSurfaceFor,
   paletteFor,
+  paletteOn,
   warmTemplate,
   type BackdropId,
   type Palette,
+  type Surfaces,
 } from '@/components/CardStage/export/compose';
 import { canEncodeVideo, renderSpinVideo } from '@/components/CardStage/export/exportVideo';
-import { renderStill, renderStillCanvas } from '@/components/CardStage/export/stills';
+import { HERO_POSE, POSES, poseIdOf, renderStill, renderStillCanvas } from '@/components/CardStage/export/stills';
+import { ColorPicker } from '@/components/DesignPicker/ColorPicker';
 import { SwatchRow } from '@/components/DesignPicker/DesignPicker';
 import picker from '@/components/DesignPicker/DesignPicker.module.scss';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
@@ -41,8 +44,12 @@ interface ShareSheetProps {
   shared: SharedCard | null;
 }
 
-/** The preview renders at this fraction of the square's size. */
+/** The preview renders at this fraction of the square's size; less while
+ *  the card is being turned by hand, so it keeps up with the pointer. */
 const PREVIEW_SCALE = 0.4;
+const PREVIEW_SCALE_DRAGGING = 0.24;
+/** Degrees of turn per pixel of drag on the preview (the stage's rate). */
+const DRAG_DEG_PER_PX = 0.55;
 
 type VideoState =
   | { status: 'idle' }
@@ -71,9 +78,10 @@ function fileStem(design: CardDesign) {
 
 /**
  * Share the card: the square picture the link will show, on the light or
- * dark template or one in the card's own color; the link; the X composer;
- * the downloads. The spin video renders in the background once the link is
- * made and attaches to it.
+ * dark template, one in the card's own color, or a color of the visitor's
+ * own; the card in a pose from the row, or turned by hand on the preview;
+ * the link; the X composer; the downloads. The spin video renders in the
+ * background once the link is made and attaches to it.
  */
 export function ShareSheet({ open, onClose, exporterRef, design, shared }: ShareSheetProps) {
   const theme = useThemeMode();
@@ -82,8 +90,10 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
   // The backdrop follows the theme until the visitor picks one.
   const [backdropPick, setBackdropPick] = useState<BackdropId | null>(null);
   const backdrop: BackdropId = backdropPick ?? (theme === 'dark' ? 'dark' : 'light');
-  // The Brand surface comes from the card's color or its art (loaded async).
+  // The Brand surface comes from the card's color or its art (loaded async);
+  // the custom one is the visitor's, kept once picked.
   const [brandBg, setBrandBg] = useState(cardColor);
+  const [customBg, setCustomBg] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
     brandSurfaceFor(design, cardColor).then((c) => alive && setBrandBg(c));
@@ -91,7 +101,12 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       alive = false;
     };
   }, [design, cardColor]);
-  const palette: Palette = useMemo(() => paletteFor(backdrop, brandBg), [backdrop, brandBg]);
+  const surfaces = useMemo<Surfaces>(() => ({ brand: brandBg, custom: customBg }), [brandBg, customBg]);
+  const palette: Palette = useMemo(() => paletteFor(backdrop, surfaces), [backdrop, surfaces]);
+
+  // How the card is held: a pose from the row, or wherever a drag left it.
+  const [pose, setPose] = useState<ExportPose>(HERO_POSE);
+  const poseId = poseIdOf(pose);
 
   // The share made from this sheet (or the one the page opened from).
   const [handle, setHandle] = useState<ShareHandle | null>(null);
@@ -115,6 +130,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
   // ── Preview ────────────────────────────────────────────────────────────
   const previewRef = useRef<HTMLCanvasElement>(null);
   const [previewReady, setPreviewReady] = useState(false);
+  const [dragging, setDragging] = useState(false);
   useEffect(() => {
     if (!open) return;
     let raf = 0;
@@ -129,7 +145,13 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
         if (tries++ < 120) raf = requestAnimationFrame(draw);
         return;
       }
-      const src = renderStillCanvas(ex, { format: 'square', palette, cardColor, scale: PREVIEW_SCALE });
+      const src = renderStillCanvas(ex, {
+        format: 'square',
+        palette,
+        cardColor,
+        pose,
+        scale: dragging ? PREVIEW_SCALE_DRAGGING : PREVIEW_SCALE,
+      });
       canvas.width = src.width;
       canvas.height = src.height;
       canvas.getContext('2d')!.drawImage(src, 0, 0);
@@ -142,7 +164,31 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       alive = false;
       cancelAnimationFrame(raf);
     };
-  }, [open, palette, cardColor, design, exporterRef]);
+  }, [open, palette, cardColor, pose, dragging, design, exporterRef]);
+
+  // Drag on the preview turns the card: sideways spins it, up and down
+  // pitches it, at the stage's rate. Letting go leaves it where it is.
+  const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const onPreviewDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    setDragging(true);
+  };
+  const onPreviewMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    const d = drag.current;
+    if (!d || e.pointerId !== d.id) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    d.x = e.clientX;
+    d.y = e.clientY;
+    setPose((p) => ({ rotX: p.rotX + dy * DRAG_DEG_PER_PX, rotY: p.rotY + dx * DRAG_DEG_PER_PX }));
+  };
+  const onPreviewUp = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (drag.current?.id !== e.pointerId) return;
+    drag.current = null;
+    setDragging(false);
+  };
 
   // ── Making the share ───────────────────────────────────────────────────
   const busy = progress !== null && progress.stage !== 'done';
@@ -199,6 +245,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
         forName: handle?.record.forName ?? null,
         palette,
         cardColor,
+        pose,
         onProgress: setProgress,
         existing: handle ? { id: handle.record.id, editToken: handle.editToken, url: handle.url } : undefined,
       });
@@ -216,7 +263,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       setProgress(null);
       return null;
     }
-  }, [cardColor, design, exporterRef, handle, makeVideo, palette, stale]);
+  }, [cardColor, design, exporterRef, handle, makeVideo, palette, pose, stale]);
 
   const copy = async (text: string) => {
     try {
@@ -246,7 +293,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
     const ex = exporterRef.current;
     if (!ex?.ready) return;
     await warmTemplate();
-    const blob = await renderStill(ex, { format: 'square', palette, cardColor });
+    const blob = await renderStill(ex, { format: 'square', palette, cardColor, pose });
     download(blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
   };
   const onDownloadVideo = async () => {
@@ -293,6 +340,33 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
   const linkText = handle ? handle.url.replace(/^https?:\/\//, '') : `${origin}/…`;
   const videoBusy = video.status === 'rendering' || video.status === 'uploading';
 
+  const tiles: Array<{
+    id: string;
+    label: string;
+    icon: React.ReactNode;
+    onClick: () => void;
+    disabled?: boolean;
+    title?: string;
+  }> = [
+    {
+      id: 'link',
+      label: copied ? 'Copied' : stale ? 'Update link' : 'Copy link',
+      icon: copied ? <IconCheckmark1 size={24} /> : <IconChainLink1 size={24} />,
+      onClick: onCopyLink,
+      disabled: busy,
+    },
+    { id: 'x', label: 'Post to X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
+    { id: 'image', label: 'Download image', icon: <IconImages1 size={24} />, onClick: onDownloadImage, disabled: busy },
+    {
+      id: 'video',
+      label: 'Download video',
+      icon: <IconVideo size={24} />,
+      onClick: onDownloadVideo,
+      disabled: busy || videoBusy || video.status === 'unavailable',
+      title: video.status === 'unavailable' ? 'This browser has no video encoder' : undefined,
+    },
+  ];
+
   return (
     <Dialog.Root
       open={open}
@@ -303,8 +377,18 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} />
         <Dialog.Popup className={styles.popup} aria-label="Share your card">
-          <div className={clsx(styles.preview, !previewReady && styles.previewPending)}>
-            <canvas ref={previewRef} className={styles.previewCanvas} aria-label="The picture the link shows" />
+          <div
+            className={clsx(styles.preview, !previewReady && styles.previewPending, dragging && styles.previewDragging)}
+          >
+            <canvas
+              ref={previewRef}
+              className={styles.previewCanvas}
+              aria-label="The picture the link shows. Drag to turn the card."
+              onPointerDown={onPreviewDown}
+              onPointerMove={onPreviewMove}
+              onPointerUp={onPreviewUp}
+              onPointerCancel={onPreviewUp}
+            />
           </div>
 
           <div className={picker.groups}>
@@ -313,7 +397,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
                 <span className={picker.rowLabel}>Backdrop</span>
                 <SwatchRow label="Backdrop" active={backdrop}>
                   {BACKDROPS.map((b) => {
-                    const p = paletteFor(b.id, brandBg);
+                    const p = paletteFor(b.id, surfaces);
                     return (
                       <Tooltip key={b.id} text={b.label}>
                         {(tip) => (
@@ -331,6 +415,44 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
                       </Tooltip>
                     );
                   })}
+                  <ColorPicker
+                    value={customBg ?? paletteOn(surfaces.brand).bg}
+                    gradient={null}
+                    orientation={design.orientation}
+                    solidOnly
+                    onChange={(color) => {
+                      setCustomBg(color);
+                      setBackdropPick('custom');
+                    }}
+                    triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
+                    triggerActive={backdrop === 'custom'}
+                    triggerLabel="Custom color"
+                    tooltip="Custom color"
+                  >
+                    {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
+                  </ColorPicker>
+                </SwatchRow>
+              </div>
+              <div className={picker.row}>
+                <span className={picker.rowLabel}>Pose</span>
+                <SwatchRow label="Pose" active={poseId}>
+                  {POSES.map((p) => (
+                    <Tooltip key={p.id} text={p.label}>
+                      {(tip) => (
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={poseId === p.id}
+                          aria-label={p.label}
+                          className={clsx(picker.swatch, styles.poseSwatch, styles[`pose_${p.id}`])}
+                          {...tip}
+                          {...pressable({ onClick: () => setPose(p.pose) }, { press: 'tickBright' })}
+                        >
+                          <span className={styles.poseCard} aria-hidden />
+                        </button>
+                      )}
+                    </Tooltip>
+                  ))}
                 </SwatchRow>
               </div>
               <div className={picker.row}>
@@ -342,44 +464,20 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
             </div>
           </div>
 
-          <div className={styles.actions}>
-            <Button
-              variant="filled"
-              size="compact"
-              disabled={busy}
-              leadingIcon={copied ? <IconCheckmark1 size={14} /> : <IconChainLink1 size={14} />}
-              {...pressable({ onClick: onCopyLink, disabled: busy })}
-            >
-              {copied ? 'Copied' : stale ? 'Update link' : 'Copy link'}
-            </Button>
-            <Button
-              variant="secondary"
-              size="compact"
-              disabled={busy}
-              leadingIcon={<IconX size={13} />}
-              {...pressable({ onClick: onPostToX, disabled: busy })}
-            >
-              Post to X
-            </Button>
-            <Button
-              variant="secondary"
-              size="compact"
-              disabled={busy}
-              leadingIcon={<IconImages1 size={14} />}
-              {...pressable({ onClick: onDownloadImage, disabled: busy })}
-            >
-              Download image
-            </Button>
-            <Button
-              variant="secondary"
-              size="compact"
-              disabled={busy || videoBusy || video.status === 'unavailable'}
-              title={video.status === 'unavailable' ? 'This browser has no video encoder' : undefined}
-              leadingIcon={<IconVideo size={14} />}
-              {...pressable({ onClick: onDownloadVideo, disabled: busy || videoBusy })}
-            >
-              Download video
-            </Button>
+          <div className={styles.tiles}>
+            {tiles.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={styles.tile}
+                disabled={t.disabled}
+                title={t.title}
+                {...pressable({ onClick: t.onClick, disabled: t.disabled })}
+              >
+                <span className={styles.tileIcon}>{t.icon}</span>
+                <span className={styles.tileLabel}>{t.label}</span>
+              </button>
+            ))}
           </div>
 
           {status && (

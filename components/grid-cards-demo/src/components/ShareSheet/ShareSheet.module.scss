@@ -48,6 +48,48 @@
   opacity: 0;
 }
 
+/* The card turns under the hand. */
+.previewCanvas {
+  cursor: grab;
+  touch-action: none;
+}
+
+.previewDragging .previewCanvas {
+  cursor: grabbing;
+}
+
+/* A pose as a small card held that way, on the tile's surface. */
+.poseSwatch {
+  display: grid;
+  place-items: center;
+  background: var(--picker-fill, var(--surface-secondary));
+  box-shadow: inset 0 0 0 1px var(--picker-border, var(--border-primary));
+  perspective: 40px;
+}
+
+.poseCard {
+  display: block;
+  width: 12px;
+  height: 8px;
+  border-radius: 1.5px;
+  background: var(--text-secondary);
+  transform-style: preserve-3d;
+}
+
+.pose_angle .poseCard {
+  transform: rotateX(-9deg) rotateY(21deg);
+}
+
+.pose_turned .poseCard {
+  transform: rotateX(-6deg) rotateY(56deg);
+}
+
+/* The back: the same card the other way round, with its stripe. */
+.pose_back .poseCard {
+  transform: rotateX(-9deg) rotateY(201deg);
+  background: linear-gradient(to bottom, var(--text-secondary) 0 2px, var(--text-tertiary) 2px);
+}
+
 /* ── Rows (DesignPicker's tile, its row, its swatches) ────────────────────── */
 /* A backdrop as a sample of its surface; the ring picks it out. */
 .swatch {
@@ -74,17 +116,82 @@
   color: var(--text-tertiary);
 }
 
-/* ── Actions ─────────────────────────────────────────────────────────────── */
-/* Two by two: the link and the post, then the two downloads. */
-.actions {
+/* ── Actions: the flow tiles' idiom, four square tiles in one card ───────── */
+.tiles {
+  --tile-bg: var(--panel-tile-bg);
+  corner-shape: var(--corner-shape);
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-2xs);
-  padding: 0 var(--spacing-3xs) var(--spacing-3xs);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  background: var(--tile-bg);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+}
 
-  > * {
-    min-width: 0;
+.tile {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: var(--spacing-sm) var(--spacing-xs);
+  background: var(--tile-bg);
+  border-right: var(--stroke-xs) solid var(--border-primary);
+  cursor: pointer;
+  transition: background 100ms ease, opacity 150ms ease;
+
+  &:last-child {
+    border-right: none;
   }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--tile-bg) 98%, black);
+
+      :global([data-theme='dark']) & {
+        background: var(--color-alpha-white-04);
+      }
+    }
+  }
+
+  &:active:not(:disabled) {
+    background: color-mix(in srgb, var(--tile-bg) 98%, black);
+
+    :global([data-theme='dark']) & {
+      background: var(--color-alpha-white-04);
+    }
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--state-focus, var(--text-primary));
+  }
+}
+
+.tileIcon {
+  display: flex;
+  color: var(--icon-primary);
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.tileLabel {
+  @include label-sm;
+  color: var(--text-primary);
+  text-align: center;
+  text-wrap: balance;
+  font-feature-settings: 'salt' 1;
 }
 
 /* ── Status ──────────────────────────────────────────────────────────────── */

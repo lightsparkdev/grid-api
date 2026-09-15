@@ -16,7 +16,7 @@ export function installExportDevHook(exporter: CardExporter, design: () => CardD
     await warmTemplate();
     const d = design();
     const cardColor = brandColorOf(d);
-    return { palette: paletteFor(backdrop, await brandSurfaceFor(d, cardColor)), cardColor };
+    return { palette: paletteFor(backdrop, { brand: await brandSurfaceFor(d, cardColor), custom: null }), cardColor };
   };
   const render = async (format: StillFormat = 'square', backdrop: BackdropId = 'light') => {
     await prepareTemplate();
