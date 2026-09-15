@@ -86,8 +86,12 @@ const LABEL_MORPH_MS = 280;
 /** A tile's glyph giving way to the spinner and back. */
 const GLYPH_IN = motionTransition(easeOutSnappy, 0.42);
 const GLYPH_OUT = motionTransition(easeOutQuick, 0.2);
-const PANEL_IN = motionTransition(easeOutSnappy, 0.55);
-const PANEL_OUT = motionTransition(easeOutQuick, 0.4);
+/** The phone's own entrance (AppShell: 128 px up, 0.9 to 1, a 48 px blur
+ *  clearing, 0.7 s in and 0.45 s out on an ease-out quart), for the panel. */
+const easeOutQuart = [0.165, 0.84, 0.44, 1] as const;
+const PANEL_IN = motionTransition(easeOutQuart, 0.7);
+const PANEL_OUT = motionTransition(easeOutQuart, 0.45);
+const PANEL_AWAY = { opacity: 0, scale: 0.9, y: 128, filter: 'blur(48px)' };
 /** The panel's growth, and the controls' rise inside it: a gentler curve
  *  than the snappy one (which front-loads so hard the growth reads as a
  *  jump), on the same clock so they land together. */
@@ -449,15 +453,16 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
           <m.div
             className={styles.panel}
             style={{ top: panelTop }}
-            // Centered by Motion's own x (a CSS transform would be overwritten
-            // by the scale it animates).
-            initial={reduceMotion ? { opacity: 0, x: '-50%' } : { opacity: 0, scale: 0.98, x: '-50%' }}
+            // As the phone comes in (AppShell's boot): up from below, out of
+            // a blur, growing to size. Centered by Motion's own x (a CSS
+            // transform would be overwritten by the ones it animates).
+            initial={reduceMotion ? { opacity: 0, x: '-50%' } : { ...PANEL_AWAY, x: '-50%' }}
             animate={
-              reduceMotion ? { opacity: 1, x: '-50%' } : { opacity: 1, scale: 1, x: '-50%', transition: PANEL_IN }
+              reduceMotion
+                ? { opacity: 1, x: '-50%' }
+                : { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', x: '-50%', transition: PANEL_IN }
             }
-            exit={
-              reduceMotion ? { opacity: 0, x: '-50%' } : { opacity: 0, scale: 0.98, x: '-50%', transition: PANEL_OUT }
-            }
+            exit={reduceMotion ? { opacity: 0, x: '-50%' } : { ...PANEL_AWAY, x: '-50%', transition: PANEL_OUT }}
           >
             {/* Grows from the frame alone to the frame with its controls. */}
             <m.div
