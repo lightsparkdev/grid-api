@@ -1,0 +1,25 @@
+type: object
+description: >-
+  The agent's opening line, recorded as the chat's first message. Returned
+  only by the call that opened the chat, never on a resume: a greeting
+  arriving mid-conversation reads as the agent introducing itself a second
+  time. Absent when the agent produced no opening line.
+required:
+  - id
+  - content
+  - createdAt
+properties:
+  id:
+    type: string
+    description: Id of the recorded greeting message.
+    example: CareMessage:019542f5-b3e7-1d02-0000-000000000031
+  content:
+    type: string
+    description: >-
+      The greeting text to render in the transcript, in the chat's locale.
+    example: Hi, I'm the support assistant. What can I help you with today?
+  createdAt:
+    type: string
+    format: date-time
+    description: ISO 8601 timestamp, in UTC, of when the greeting was recorded.
+    example: '2026-09-12T14:10:00.123456Z'

@@ -1,0 +1,94 @@
+type: object
+description: >-
+  The result of one call to the message route. Which fields are present
+  depends on what the call did: a turn adds `id`, `displayMessage`, `reply`
+  and `replayed`; the call that opened the chat adds `greeting`; an
+  outstanding verification adds `destinationMasked`, `alreadySent` and,
+  where the service could be read, `codeLength`.
+required:
+  - chatId
+  - verificationStatus
+  - verificationRequired
+properties:
+  chatId:
+    type: string
+    description: >-
+      The chat this call ran on. When the request addressed a cardholder
+      (`Customer:<uuid>` in the path) this is the chat that was found or
+      opened for them. Use it for every later call on this conversation:
+      confirming the code, resending it, and closing the chat.
+    example: CareChat:019542f5-b3e7-1d02-0000-000000000030
+  verificationStatus:
+    $ref: ./CareChatVerificationStatus.yaml
+  verificationRequired:
+    type: boolean
+    description: >-
+      Whether the cardholder still has to prove they are present before the
+      agent can reach their account. Present on every response, true or
+      false, so a client reads a field rather than an absence. When true,
+      `destinationMasked` and `alreadySent` are present and your UI should
+      collect the code and post it to
+      `POST /care/chats/{chatId}/verifications/confirm`. A verification that
+      is outstanding is never reported as a `401`: on this surface a `401`
+      means the platform credential is wrong, or a verified chat was driven
+      without its session token.
+    example: true
+  id:
+    type: string
+    description: >-
+      Id of the cardholder's recorded message. Present only when a turn ran,
+      so absent on an opening or a resume.
+    example: CareMessage:019542f5-b3e7-1d02-0000-000000000032
+  displayMessage:
+    type: string
+    description: >-
+      The redacted echo of what the cardholder typed, and **the string your
+      app must render in the transcript**. Grid masks card numbers and other
+      sensitive digit strings here, so rendering your own copy of the input
+      instead puts a PAN the cardholder pasted back on their screen and into
+      your logs. Present only when a turn ran.
+    example: My card [redacted card number ending 1111] was declined
+  reply:
+    type: string
+    description: >-
+      The agent's answer to this message, to render as the assistant's turn.
+      Present only when a turn ran. When verification is outstanding the
+      agent's own sentence asks for the code, so render it beside your code
+      input rather than instead of it.
+    example: I can help with that. To look at your account I've texted you a code — what does it say?
+  replayed:
+    type: boolean
+    description: >-
+      Whether this answer came from the record of an earlier call under the
+      same `Idempotency-Key` rather than from a turn run now. Present only
+      when a turn ran. There is no route that reads a transcript, so a retry
+      under the original key is the only way to recover a reply that was
+      produced but never delivered.
+    example: false
+  greeting:
+    $ref: ./CareChatGreeting.yaml
+  destinationMasked:
+    type: string
+    description: >-
+      The masked phone number the code was sent to, for a UI to show as "we
+      texted ...". Present whenever `verificationRequired` is true. The
+      destination is the number already on file for the cardholder and cannot
+      be nominated by the caller.
+    example: '***0001'
+  alreadySent:
+    type: boolean
+    description: >-
+      Whether a code was already outstanding, so this call sent no new SMS.
+      Present whenever `verificationRequired` is true. It reads against the
+      call you made: on an opening, true means some earlier call left a code
+      outstanding; on a message, true means an earlier message already sent
+      one. Say "we already texted you" rather than implying a fresh send.
+    example: false
+  codeLength:
+    type: integer
+    description: >-
+      Number of digits in the code, read from the verification service's own
+      configuration. Absent when it could not be read — leave the input
+      unbounded in that case rather than guessing, since a guess that
+      disagrees with the service makes every correct code look like a typo.
+    example: 6

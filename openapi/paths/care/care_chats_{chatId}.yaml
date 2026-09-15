@@ -1,0 +1,78 @@
+parameters:
+  - name: chatId
+    in: path
+    description: >-
+      The chat to close, as returned in `chatId` by
+      `POST /care/chats/{chatId}/messages`.
+    required: true
+    schema:
+      type: string
+    example: CareChat:019542f5-b3e7-1d02-0000-000000000030
+delete:
+  summary: End a care chat
+  description: |
+    Close a chat the cardholder has finished with or navigated away from. The
+    conversation stops accepting messages; sending one afterwards is refused
+    with `CARE_CHAT_ENDED`, and the cardholder starts a new chat by sending
+    another message.
+
+    No session token is required, even on a verified chat. Ending a chat is
+    the one thing the second factor is exempt from: it reaches nothing but the
+    chat's own closing timestamp, and requiring a live session would mean a
+    partner whose cardholder walked away could not close the chat without
+    texting them another code first. Ownership of the chat by the calling
+    platform is the whole bound.
+
+    Closing a chat that is already closed is not an error — that is the state
+    the caller asked for.
+  operationId: endCareChat
+  tags:
+    - Embedded Care
+  security:
+    - BasicAuth: []
+  responses:
+    '204':
+      description: The chat is closed. No content.
+    '401':
+      description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '403':
+      description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '404':
+      description: >-
+        `NOT_FOUND` — no such chat for this platform. A chat that belongs to
+        another platform, one that never existed, and a malformed chat id are
+        one answer.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '429':
+      description: >-
+        `RATE_LIMITED` — the platform is calling this endpoint too often. Back
+        off for the interval in the `Retry-After` header.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '503':
+      description: >-
+        `SERVICE_UNAVAILABLE` when embedded care is not available in this
+        deployment, or the support agent is temporarily turned off.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml

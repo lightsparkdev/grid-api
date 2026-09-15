@@ -1,0 +1,26 @@
+type: string
+enum:
+  - PENDING
+  - SENT
+  - VERIFIED
+  - TRUSTED
+  - FAILED
+description: |
+  Where the cardholder's proof of presence stands on this chat, as of the
+  moment the call was received. A chat in `VERIFIED` or `TRUSTED` can reach
+  the cardholder's account, and every message on it must carry the
+  `X-Ls-Care-Session` header; a chat in any other status cannot, and the
+  agent answers general questions only.
+
+  This field reports the chat as it was when the turn started. The agent can
+  verify a cardholder during a turn, so a chat that was verified by the turn
+  you just made still reads `SENT` in that response and `VERIFIED` on the next
+  call.
+
+  | Status | Description |
+  |--------|-------------|
+  | `PENDING` | No code has been sent on this chat yet. This is where every new chat starts. |
+  | `SENT` | A code has been sent to the cardholder and is outstanding. |
+  | `VERIFIED` | The cardholder answered the code. Account-reaching tools are available and `POST /care/chats/{chatId}/verifications/confirm` has issued a session token. |
+  | `TRUSTED` | The cardholder is treated as present without an SMS code on this chat. Reserved for channels Grid can already attribute; a partner chat does not start here. |
+  | `FAILED` | The last code was answered incorrectly or expired. Send another code with `POST /care/chats/{chatId}/verifications`. |

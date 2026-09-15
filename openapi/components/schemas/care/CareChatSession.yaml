@@ -1,0 +1,44 @@
+type: object
+description: >-
+  Proof that the cardholder answered their code, as a signed token the
+  partner sends back on every later message.
+required:
+  - status
+  - sessionToken
+  - expiresAt
+properties:
+  status:
+    type: string
+    enum:
+      - VERIFIED
+    description: Always `VERIFIED`; a code that did not match is an error, not a status.
+    example: VERIFIED
+  sessionToken:
+    type: string
+    description: >-
+      The value to send as the `X-Ls-Care-Session` header on every later
+      message on this chat.
+
+
+      **It is returned here and never again.** There is no route that reads
+      it back, and there is no revocation: the short expiry is what makes
+      that acceptable. Hold it in the cardholder's session on your side for
+      as long as they are chatting, and treat losing it as re-verification —
+      send a new code with `POST /care/chats/{chatId}/verifications` and
+      confirm it again. Never log it, never put it in a URL, and never store
+      it past `expiresAt`.
+
+
+      The token is bound to this platform, this chat and this cardholder, so
+      it cannot drive another chat and does not survive being handed to
+      another platform.
+    example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      ISO 8601 timestamp, in UTC, after which the token is refused with
+      `CARE_SESSION_EXPIRED`. Sessions are short-lived by design — fifteen
+      minutes in the default deployment. Read this field rather than assuming
+      a duration.
+    example: '2026-09-12T14:25:00Z'

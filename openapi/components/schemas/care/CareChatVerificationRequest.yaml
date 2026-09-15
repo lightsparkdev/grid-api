@@ -1,0 +1,21 @@
+type: object
+description: >-
+  Options for re-sending the cardholder's verification code. The body may be
+  omitted entirely, which is the same as `{"resend": false}`.
+properties:
+  resend:
+    type: boolean
+    default: false
+    description: >-
+      `false` asks for a code and is content to be told one is already
+      outstanding: the response then carries `alreadySent: true` and no new
+      SMS is sent. That is a success, not an error — the cardholder should
+      read back the code they already have.
+
+
+      `true` is the deliberate second code, for a cardholder who says the
+      first never arrived. Ask before you send one: codes are sent from a
+      pool of numbers, so a second code arrives from a different sender than
+      the first and leaves the cardholder holding two codes from two
+      strangers, deciding which to read back.
+    example: false

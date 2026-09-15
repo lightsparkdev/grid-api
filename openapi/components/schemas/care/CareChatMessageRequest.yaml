@@ -1,0 +1,29 @@
+type: object
+description: >-
+  One turn of the cardholder's conversation, or — with `message` empty or
+  absent — the call that opens or resumes the chat without saying anything.
+  Unknown fields are rejected with `INVALID_INPUT`.
+properties:
+  message:
+    type: string
+    description: >-
+      What the cardholder typed, verbatim and unredacted. Send it exactly as
+      they entered it: Grid redacts it on the way in and returns the redacted
+      form as `displayMessage`, which is what your UI must render.
+
+
+      Empty, absent, or whitespace-only opens the chat (or resumes an open
+      one) and runs no turn: no model call, no SMS, no `Idempotency-Key`
+      consumed, nothing billed. A non-empty value runs exactly one turn
+      synchronously and requires an `Idempotency-Key` header.
+    example: My card was declined at the grocery store
+  locale:
+    type: string
+    minLength: 2
+    maxLength: 32
+    description: >-
+      BCP 47 locale the agent should answer in. Read only by the call that
+      opens the chat and ignored afterwards, because changing it later would
+      rewrite the language earlier turns were answered in. Defaults to
+      `en-US`.
+    example: en-US

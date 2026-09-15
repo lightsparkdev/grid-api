@@ -1,0 +1,133 @@
+parameters:
+  - name: chatId
+    in: path
+    description: >-
+      The chat the code was sent on, as returned in `chatId` by
+      `POST /care/chats/{chatId}/messages`.
+    required: true
+    schema:
+      type: string
+    example: CareChat:019542f5-b3e7-1d02-0000-000000000030
+post:
+  summary: Confirm a care chat verification code
+  description: |
+    Check the code the cardholder read back, and hand over the session that
+    every later message on this chat rides on.
+
+    **The session token is returned here and never again.** No endpoint reads
+    it back, and there is no revocation — the short expiry is what makes that
+    acceptable. Keep it in the cardholder's own session on your side, send it
+    as the `X-Ls-Care-Session` header on every later message, and treat losing
+    it as re-verification: send a new code with
+    `POST /care/chats/{chatId}/verifications` and confirm it again. Read
+    `expiresAt` rather than assuming a lifetime.
+
+    The token is bound to this platform, this chat and this cardholder. It
+    cannot drive another chat, and presenting it to another platform's chat is
+    refused with `CARE_SESSION_PLATFORM_MISMATCH`.
+
+    A code that does not match is `CARE_VERIFICATION_FAILED` — ask the
+    cardholder again. A provider that could not be reached is
+    `CARE_VERIFICATION_UNAVAILABLE` — retry; nothing the cardholder does will
+    help. The two are kept apart deliberately, because they call for opposite
+    reactions.
+
+    A chat whose verification is older than the session lifetime will not mint
+    a fresh session off it: that would be the platform issuing itself a
+    session for a cardholder who has not shown themselves in longer than a
+    session lasts. It is refused with `CARE_VERIFICATION_FAILED`, and the way
+    forward is a new code.
+  operationId: confirmCareChatVerification
+  tags:
+    - Embedded Care
+  security:
+    - BasicAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../../components/schemas/care/CareChatVerificationConfirmRequest.yaml
+        example:
+          code: '482913'
+  responses:
+    '200':
+      description: >-
+        The cardholder is verified on this chat, and the session token is in
+        this body — it is not retrievable afterwards.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareChatSession.yaml
+    '400':
+      description: >-
+        `CARE_VERIFICATION_FAILED` when the code did not match, or when the
+        chat's existing verification is too old to mint another session.
+        `INVALID_INPUT` when the code is not of the shape the SMS carries,
+        when the body is missing or carries an unknown field, or when
+        verification is not available for this chat.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '401':
+      description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '403':
+      description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '404':
+      description: >-
+        `NOT_FOUND` — no such chat for this platform. A chat that belongs to
+        another platform, one that never existed, and a malformed chat id are
+        one answer.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '409':
+      description: >-
+        `CARE_CHAT_ENDED` when the chat has been closed, or `CONFLICT` when it
+        has no cardholder bound to it.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '429':
+      description: >-
+        `CARE_BUDGET_EXCEEDED` when this chat has reached its limit, or
+        `RATE_LIMITED` when the platform is calling this endpoint too often;
+        back off for the interval in the `Retry-After` header.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '500':
+      description: Internal service error.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '502':
+      description: >-
+        `CARE_VERIFICATION_UNAVAILABLE` — the SMS provider could not be
+        reached, so the code could not be checked. Retry; the cardholder has
+        done nothing wrong.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
+    '503':
+      description: >-
+        `SERVICE_UNAVAILABLE` when embedded care is not available in this
+        deployment, or the support agent is temporarily turned off.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/care/CareError.yaml
