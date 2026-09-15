@@ -17,7 +17,7 @@ export function StageShareButton({ visible, onClick }: StageShareButtonProps) {
   return (
     <div className={clsx(styles.root, !visible && styles.hidden)} aria-hidden={!visible}>
       <button type="button" className={styles.button} tabIndex={visible ? 0 : -1} {...pressable({ onClick })}>
-        <IconShareOs size={15} aria-hidden />
+        <IconShareOs size={16} aria-hidden />
         Share
       </button>
     </div>

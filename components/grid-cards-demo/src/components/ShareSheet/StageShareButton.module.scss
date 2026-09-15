@@ -22,14 +22,15 @@
 .button {
   all: unset;
   box-sizing: border-box;
-  @include label-sm;
+  @include label;
   corner-shape: var(--corner-shape);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  height: 36px;
-  padding: 0 var(--spacing-md) 0 var(--spacing-sm);
+  /* The height of the stage's other control (Back to the card, 44). */
+  height: 44px;
+  padding: 0 var(--spacing-lg) 0 var(--spacing-md);
   background: var(--surface-inverse, var(--color-gray-950));
   color: var(--text-inverse, var(--color-gray-050));
   border-radius: var(--corner-radius-md);
