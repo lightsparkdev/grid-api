@@ -55,14 +55,6 @@ const nextConfig = {
         __dirname,
         'node_modules/@lightsparkdev/origin/src/components/Popover/index.ts',
       ),
-      '@lightsparkdev/origin/dialog': path.resolve(
-        __dirname,
-        'node_modules/@lightsparkdev/origin/src/components/Dialog/index.ts',
-      ),
-      '@lightsparkdev/origin/button': path.resolve(
-        __dirname,
-        'node_modules/@lightsparkdev/origin/src/components/Button/index.ts',
-      ),
     };
 
     return config;

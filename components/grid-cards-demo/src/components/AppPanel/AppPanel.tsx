@@ -1,9 +1,12 @@
 'use client';
 
 import clsx from 'clsx';
+import { useState } from 'react';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
-import { CardStage } from '@/components/CardStage/CardStage';
+import { CardStage, type ShareStageState } from '@/components/CardStage/CardStage';
 import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
+import { SharePanel } from '@/components/ShareSheet/SharePanel';
+import type { SharedCard } from '@/hooks/useCardsDemoLogic';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
@@ -37,6 +40,9 @@ export interface AppPanelProps {
   exportRef?: React.MutableRefObject<CardExporter | null>;
   /** Extra chrome on the stage under the floating card (the Share button). */
   stageActions?: React.ReactNode;
+  /** Share, on the stage: the card parks in the panel's frame. */
+  shareOpen?: boolean;
+  shared?: SharedCard | null;
 }
 
 /** The stage: the card, always; the cardholder's phone comes in with the first flow, the card goes into it, and it stays until sent away. */
@@ -55,7 +61,11 @@ export function AppPanel({
   brainReset,
   exportRef,
   stageActions,
+  shareOpen = false,
+  shared = null,
 }: AppPanelProps) {
+  // What the share panel asks of the stage (the frame's exposure and pose).
+  const [shareStage, setShareStage] = useState<ShareStageState>({ open: false, exposure: 1, pose: null });
   const home = useCardHome({
     entry: walletEntry,
     onCardIssued,
@@ -110,7 +120,22 @@ export function AppPanel({
               externalGlass
               stageChrome={closePhone}
             />
-            <CardStage design={design} home={home} onDesignChange={onDesignChange} exportRef={exportRef} />
+            {exportRef && (
+              <SharePanel
+                open={shareOpen && !phoneUp}
+                exporterRef={exportRef}
+                design={design}
+                shared={shared}
+                onStage={setShareStage}
+              />
+            )}
+            <CardStage
+              design={design}
+              home={home}
+              onDesignChange={onDesignChange}
+              exportRef={exportRef}
+              share={shareStage}
+            />
             {stageActions}
           </DotGridCanvas>
         </div>

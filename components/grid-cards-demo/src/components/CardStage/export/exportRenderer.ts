@@ -51,6 +51,8 @@ interface Deps {
   carrier: THREE.Group;
   group: THREE.Group;
   orientation: () => Orientation;
+  /** How the card is turned on the stage right now (its pitch and spin). */
+  livePose: () => ExportPose;
   /** The stage paints its next frame regardless of the render gate. */
   markDirty: () => void;
 }
@@ -84,6 +86,11 @@ export class CardExporter {
 
   get orientation(): Orientation {
     return this.deps.orientation();
+  }
+
+  /** The card as it is turned on the stage, for a picture of what is seen. */
+  get livePose(): ExportPose {
+    return this.deps.livePose();
   }
 
   private targets(width: number, height: number) {

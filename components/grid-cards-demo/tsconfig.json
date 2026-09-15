@@ -28,12 +28,6 @@
       ],
       "@lightsparkdev/origin/popover": [
         "./node_modules/@lightsparkdev/origin/src/components/Popover/index.ts"
-      ],
-      "@lightsparkdev/origin/dialog": [
-        "./node_modules/@lightsparkdev/origin/src/components/Dialog/index.ts"
-      ],
-      "@lightsparkdev/origin/button": [
-        "./node_modules/@lightsparkdev/origin/src/components/Button/index.ts"
       ]
     }
   },

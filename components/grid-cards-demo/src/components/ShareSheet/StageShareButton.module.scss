@@ -61,3 +61,10 @@
     stroke-width: 1.55;
   }
 }
+
+/* The label and glyph swap (Share, Close) as one piece. */
+.content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}

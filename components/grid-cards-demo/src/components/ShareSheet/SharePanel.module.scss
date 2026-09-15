@@ -1,44 +1,46 @@
 @use '../../styles/breakpoints' as *;
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
-/* Origin's Dialog, sized to the picture: the square preview, then the
-   sidebar's list rows, then the buttons. No header and no close control;
-   a press on the backdrop closes it. */
+/* Share, on the stage: a panel centered over the dot grid, under the card's
+   layer (the stage canvas is above, click-through except at the card), so
+   the card parks in the frame's slot and the controls under it take the
+   pointer. */
 
-.backdrop {
-  z-index: 400;
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Clear of the Share/Close button along the bottom. */
+  padding-bottom: 68px;
+  pointer-events: none;
 }
 
-.popup {
-  --dialog-width: 440px;
-  z-index: 401;
-  /* Tall enough that Origin's 38% optical center would crowd the top. */
-  top: 50%;
+.panel {
+  corner-shape: var(--corner-shape);
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm);
+  background: var(--surface-panel, var(--surface-primary));
+  border: var(--stroke-xs) solid var(--border-secondary, var(--border-primary));
   /* Concentric with the tiles inside: their radius plus the padding. */
   border-radius: calc(var(--corner-radius-md) + var(--spacing-sm));
-  max-height: calc(100vh - var(--spacing-2xl));
-  overflow: auto;
-  overscroll-behavior: contain;
-
-  @media (max-width: $breakpoint-layout-mobile) {
-    --dialog-width: calc(100vw - var(--spacing-md) * 2);
-  }
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
 }
 
-/* ── Preview ─────────────────────────────────────────────────────────────── */
-.preview {
+/* ── The frame: the share template, with the card's slot in the middle ──── */
+.frame {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: var(--corner-radius-md);
+  flex: none;
   corner-shape: var(--corner-shape);
+  border-radius: var(--corner-radius-md);
   overflow: hidden;
-  background: var(--surface-secondary);
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1), color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 
-  /* The hairline sits over the canvas (a box-shadow on the box would be
-     painted under it). */
   &::after {
     content: '';
     position: absolute;
@@ -49,26 +51,47 @@
   }
 }
 
-.previewCanvas {
+.rule {
+  position: absolute;
+  width: 1px;
+  background: currentColor;
+}
+
+.logo {
+  position: absolute;
   display: block;
-  width: 100%;
-  height: 100%;
-  transition: opacity 200ms ease;
 }
 
-.previewPending .previewCanvas {
-  opacity: 0;
+.text {
+  position: absolute;
+  font-family: var(--font-family-sans);
+  font-weight: 400;
+  white-space: nowrap;
+  font-feature-settings: 'salt' 1, 'zero' 1;
 }
 
-/* The card turns under the hand. */
-.previewCanvas {
-  cursor: grab;
-  touch-action: none;
+.textRight {
+  text-align: right;
 }
 
-.previewDragging .previewCanvas {
-  cursor: grabbing;
+/* Where the stage parks the card: an empty box, centered. */
+.slot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
+
+/* ── Rows (DesignPicker's tile, its row, its swatches) ────────────────────── */
+/* A backdrop as a sample of its surface; the ring picks it out. */
+.swatch {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+
+  :global([data-theme='dark']) & {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+}
+
 
 /* A pose as a small card held that way, on the tile's surface. */
 .poseSwatch {
@@ -101,17 +124,6 @@
   transform: rotateX(-9deg) rotateY(201deg);
   background: linear-gradient(to bottom, var(--text-secondary) 0 2px, var(--text-tertiary) 2px);
 }
-
-/* ── Rows (DesignPicker's tile, its row, its swatches) ────────────────────── */
-/* A backdrop as a sample of its surface; the ring picks it out. */
-.swatch {
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
-
-  :global([data-theme='dark']) & {
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-  }
-}
-
 
 /* ── Actions: the flow tiles' idiom, four square tiles in one card ───────── */
 .tiles {

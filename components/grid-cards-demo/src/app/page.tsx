@@ -7,7 +7,6 @@ import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stro
 import { ConfigurePanel } from '@/components/ConfigurePanel/ConfigurePanel';
 import { AppPanel } from '@/components/AppPanel/AppPanel';
 import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
-import { ShareSheet } from '@/components/ShareSheet/ShareSheet';
 import { StageShareButton } from '@/components/ShareSheet/StageShareButton';
 import { ApiPanel } from '@/components/ApiPanel/ApiPanel';
 import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResizeHandle';
@@ -41,8 +40,7 @@ export default function Page() {
   // The card's exporter (filled by the stage) and the share sheet over it.
   const exportRef = useRef<CardExporter | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const openShare = useCallback(() => setShareOpen(true), []);
-  const closeShare = useCallback(() => setShareOpen(false), []);
+  const toggleShare = useCallback(() => setShareOpen((o) => !o), []);
 
   // Stacked ⇄ 3-col as a data-layout attribute on <html> so the arrangement,
   // the panel chrome colors, and the API header all flip on one clock. The
@@ -150,7 +148,9 @@ export default function Page() {
             cardOptions={logic.cardOptions}
             onSettled={logic.onSettled}
             exportRef={exportRef}
-            stageActions={<StageShareButton visible={!logic.phoneUp} onClick={openShare} />}
+            shareOpen={shareOpen}
+            shared={logic.shared}
+            stageActions={<StageShareButton visible={!logic.phoneUp} open={shareOpen} onClick={toggleShare} />}
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />
@@ -187,8 +187,6 @@ export default function Page() {
         <IconArrowLeft size={16} />
         Configure
       </button>
-
-      <ShareSheet open={shareOpen} onClose={closeShare} exporterRef={exportRef} design={logic.design} shared={logic.shared} />
     </main>
   );
 }
