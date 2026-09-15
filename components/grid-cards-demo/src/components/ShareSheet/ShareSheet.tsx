@@ -25,7 +25,6 @@ import { HERO_POSE, POSES, poseIdOf, renderStill, renderStillCanvas } from '@/co
 import { ColorPicker } from '@/components/DesignPicker/ColorPicker';
 import { SwatchRow } from '@/components/DesignPicker/DesignPicker';
 import picker from '@/components/DesignPicker/DesignPicker.module.scss';
-import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import { brandColorOf, sameDesign, type CardDesign } from '@/data/design';
@@ -390,7 +389,6 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
             />
           </div>
 
-          <SectionDivider label="Picture" />
           <div className={picker.groups}>
             <div className={picker.group}>
               <div className={picker.row}>
@@ -458,7 +456,6 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
             </div>
           </div>
 
-          <SectionDivider label="Share" />
           <div className={styles.tiles}>
             {tiles.map((t) => (
               <button
