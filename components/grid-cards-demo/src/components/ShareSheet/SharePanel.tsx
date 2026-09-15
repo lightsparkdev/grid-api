@@ -105,41 +105,6 @@ function download(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
 }
 
-/** Where a file goes: a handle from the browser's save dialog (asked for
- *  in the click, since the dialog needs the gesture), or null for a plain
- *  download. Undefined when the visitor dismissed the dialog. */
-type SaveTarget = FileSystemFileHandle | null;
-async function askWhereToSave(name: string, kind: 'image' | 'video'): Promise<SaveTarget | undefined> {
-  if (typeof window.showSaveFilePicker !== 'function') return null;
-  try {
-    return await window.showSaveFilePicker({
-      suggestedName: name,
-      types: [
-        kind === 'video'
-          ? { description: 'MP4 video', accept: { 'video/mp4': ['.mp4'] } }
-          : {
-              description: 'Image',
-              accept: { 'image/webp': ['.webp'], 'image/png': ['.png'], 'image/jpeg': ['.jpg'] },
-            },
-      ],
-    });
-  } catch (e) {
-    if ((e as Error).name === 'AbortError') return undefined;
-    return null;
-  }
-}
-
-/** Write the file where it goes; resolves once it is on disk. */
-async function saveTo(target: SaveTarget, blob: Blob, name: string): Promise<void> {
-  if (!target) {
-    download(blob, name);
-    return;
-  }
-  const w = await target.createWritable();
-  await w.write(blob);
-  await w.close();
-}
-
 function fileStem(design: CardDesign) {
   return (
     (programNameOf(design)
@@ -285,7 +250,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const videoRun = useRef<AbortController | null>(null);
   // Save video before the video exists: it is asked for, and saved the moment
   // it is done (making the share starts it; otherwise it is started there).
-  const saveWhenDone = useRef<{ target: SaveTarget } | null>(null);
+  const saveWhenDone = useRef(false);
 
   /** What a rendered video depends on: the surface and the design (the spin
    *  is a full turn, so not the pose). */
@@ -318,16 +283,10 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
         setVideo({ status: 'unavailable' });
         return;
       }
-      const ask = saveWhenDone.current;
-      if (ask) {
-        saveWhenDone.current = null;
-        setSavingWhat('video');
-        try {
-          await saveTo(ask.target, blob, `${fileStem(design)}-spin.mp4`);
-          setSaved('video');
-        } catch {
-          setSavingWhat(null);
-        }
+      if (saveWhenDone.current) {
+        saveWhenDone.current = false;
+        download(blob, `${fileStem(design)}-spin.mp4`);
+        setSaved('video');
       }
       setVideo({ status: 'done', blob, key });
     } catch (e) {
@@ -340,7 +299,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   useEffect(() => {
     if (open) return;
     videoRun.current?.abort();
-    saveWhenDone.current = null;
+    saveWhenDone.current = false;
     setSavingWhat(null);
     setVideo((v) => (v.status === 'rendering' ? { status: 'idle' } : v));
   }, [open]);
@@ -403,35 +362,24 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const onDownloadImage = async () => {
     const ex = exporterRef.current;
     if (!ex?.ready) return;
-    // The dialog first, in the click; then the picture, then the write.
-    const target = await askWhereToSave(`${fileStem(design)}.webp`, 'image');
-    if (target === undefined) return;
     setSavingWhat('image');
     try {
       await warmTemplate();
       const blob = await renderStill(ex, { format: 'square', palette, pose: ex.livePose, scale: SAVE_SCALE });
-      await saveTo(target, blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
+      download(blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
       setSaved('image');
     } catch {
       setSavingWhat(null);
     }
   };
   const onDownloadVideo = async () => {
-    const name = `${fileStem(design)}-spin.mp4`;
-    const target = await askWhereToSave(name, 'video');
-    if (target === undefined) return;
     if (video.status === 'done' && video.blob.size > 0 && video.key === videoKey) {
-      setSavingWhat('video');
-      try {
-        await saveTo(target, video.blob, name);
-        setSaved('video');
-      } catch {
-        setSavingWhat(null);
-      }
+      download(video.blob, `${fileStem(design)}-spin.mp4`);
+      setSaved('video');
       return;
     }
-    // Rendered first; written where it goes the moment it is done.
-    saveWhenDone.current = { target };
+    // Rendered first; handed to the browser the moment it is done.
+    saveWhenDone.current = true;
     if (video.status === 'rendering') return;
     await makeVideo();
   };
