@@ -1208,6 +1208,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScaFactorList'
+        '400':
+          description: The authentication provider rejected the request as caller input, for example a malformed factor or reset reference.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
@@ -1403,6 +1409,12 @@ paths:
       responses:
         '204':
           description: Factor deleted; no content is returned.
+        '400':
+          description: The authentication provider rejected the request as caller input, for example a malformed factor or reset reference.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
@@ -1747,6 +1759,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TwoFactorResetStatus'
+        '400':
+          description: The authentication provider rejected the request as caller input, for example a malformed factor or reset reference.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
