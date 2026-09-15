@@ -6,7 +6,7 @@ import { IconChainLink1 } from '@central-icons-react/round-outlined-radius-3-str
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
 import { IconImages1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconImages1';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
-import { IconVideo } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconVideo';
+import { IconVideoClip } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconVideoClip';
 import { IconX } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconX';
 import { Dialog } from '@lightsparkdev/origin/dialog';
 import type { CardExporter, ExportPose } from '@/components/CardStage/export/exportRenderer';
@@ -358,7 +358,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
     {
       id: 'video',
       label: 'Save video',
-      icon: <IconVideo size={24} />,
+      icon: <IconVideoClip size={24} />,
       onClick: onDownloadVideo,
       disabled: busy || videoBusy || video.status === 'unavailable',
       title: video.status === 'unavailable' ? 'This browser has no video encoder' : undefined,
