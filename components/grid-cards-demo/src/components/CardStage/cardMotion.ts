@@ -238,7 +238,17 @@ export class CardMotion {
    */
   step(
     dt: number,
-    opts: { wantBack: boolean; hold: boolean; freeze?: boolean; reduceMotion: boolean; bob?: boolean },
+    opts: {
+      wantBack: boolean;
+      hold: boolean;
+      freeze?: boolean;
+      reduceMotion: boolean;
+      bob?: boolean;
+      /** On a path: the angles are `u` of the way from `from` to the targets
+       *  (a flight whose turn should take as long as the flight does); the
+       *  spring picks up where the path leaves off. */
+      path?: { from: { rotX: number; rotY: number }; u: number };
+    },
   ): Pose {
     this.time += dt;
     const still = opts.hold || !!opts.freeze;
@@ -258,7 +268,13 @@ export class CardMotion {
       }
     }
 
-    if (!this.dragging) {
+    if (opts.path && !this.dragging) {
+      const { from, u } = opts.path;
+      this.pitch = from.rotX + (this.targetX - from.rotX) * u;
+      this.spinY = from.rotY + (this.targetY - from.rotY) * u;
+      this.pitchV = 0;
+      this.spinVY = 0;
+    } else if (!this.dragging) {
       this.spinVY += (SPIN_K * (this.targetY - this.spinY) - SPIN_C * this.spinVY) * dt;
       this.spinY += this.spinVY * dt;
       this.pitchV += (SPIN_K * (this.targetX - this.pitch) - SPIN_C * this.pitchV) * dt;

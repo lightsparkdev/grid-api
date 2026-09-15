@@ -120,6 +120,9 @@ interface Live {
    *  stepped by the frame loop). */
   shareWanted: boolean;
   shareT: number;
+  /** The angles the card had when the flight began: it turns to the pose
+   *  along the flight, arriving as it lands. Null between flights. */
+  shareFrom: ExportPose | null;
   onTurned: (() => void) | undefined;
   intro: Intro;
   /** Something the camera sees changed off the frame loop (a material, a
@@ -314,6 +317,7 @@ export function CardStage({ design, home, onDesignChange, exportRef, share }: Ca
     orientation: design.orientation,
     shareWanted: false,
     shareT: 0,
+    shareFrom: null,
     onTurned: undefined,
     dirty: true,
     intro: {
@@ -1601,8 +1605,16 @@ const CardRig = memo(function CardRig({
     // interpolates to the frame's slot on the eased curve, as for the phone.
     const lv = live.current;
     const shareDir = lv.shareWanted ? 1 : -1;
+    const shareWas = lv.shareT;
     lv.shareT = Math.max(0, Math.min(1, lv.shareT + (shareDir * dt) / (lv.reduceMotion ? 0.001 : SHARE_FLIGHT_S)));
     const st = easeInOutCubic(lv.shareT);
+    // The turn rides the flight: where the card starts is read as the flight
+    // begins (either way), and the angles follow the flight's own curve so
+    // the pose lands with the card. Settled, the spring has it again.
+    const shareLanded = lv.shareT === 0 || lv.shareT === 1;
+    if (!shareLanded && shareWas !== lv.shareT && lv.shareFrom === null) lv.shareFrom = motion.pose;
+    if (shareLanded) lv.shareFrom = null;
+    const sharePath = lv.shareFrom ? { from: lv.shareFrom, u: lv.shareWanted ? st : 1 - st } : undefined;
     if (st > 0) {
       const slot = root.ownerDocument.querySelector<HTMLElement>('[data-share-card-slot]');
       if (slot) {
@@ -1633,6 +1645,7 @@ const CardRig = memo(function CardRig({
       reduceMotion: live.current.reduceMotion,
       // Posed in the frame the card holds still (it still tilts).
       bob: lv.shareT === 0,
+      path: sharePath,
     });
     const bob = pose.dy * (1 - t);
     live.current.facing = pose.facing;
