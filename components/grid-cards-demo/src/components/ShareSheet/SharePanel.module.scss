@@ -18,7 +18,8 @@
 .panel {
   position: absolute;
   left: 50%;
-  transform-origin: 50% 0;
+  /* Scales about its bottom, the side the Share button is on. */
+  transform-origin: 50% 100%;
   corner-shape: var(--corner-shape);
   /* As wide as the frame plus its padding and border, whatever those are. */
   width: fit-content;
@@ -33,10 +34,13 @@
 
 /* The clip the panel grows inside: the frame, then the controls. */
 .grow {
+  overflow: hidden;
+}
+
+.growInner {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  overflow: hidden;
 }
 
 /* ── The frame: the share template, with the card's slot in the middle ──── */

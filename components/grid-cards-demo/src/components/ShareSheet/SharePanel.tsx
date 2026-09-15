@@ -80,8 +80,10 @@ const LABEL_MORPH_MS = 280;
 /** A tile's glyph giving way to the spinner and back. */
 const GLYPH_IN = motionTransition(easeOutSnappy, 0.42);
 const GLYPH_OUT = motionTransition(easeOutQuick, 0.2);
-const PANEL_IN = motionTransition(easeOutSnappy, 0.5);
-const PANEL_OUT = motionTransition(easeOutQuick, 0.45);
+const PANEL_IN = motionTransition(easeOutSnappy, 0.55);
+const PANEL_OUT = motionTransition(easeOutQuick, 0.4);
+/** How far below its place the panel starts (toward the Share button). */
+const PANEL_RISE = 36;
 /** The panel's growth, and the controls' rise inside it: a gentler curve
  *  than the snappy one (which front-loads so hard the growth reads as a
  *  jump), on the same clock so they land together. */
@@ -198,9 +200,24 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   }, []);
 
   // The panel opens at the frame's height and grows to hold the controls,
-  // which rise in as the room for them arrives: one height animation, the
-  // rows and the tiles on their own delays inside it.
+  // which come in as the room for them arrives: one height animation, the
+  // rows and the tiles on their own delays inside it. The target is the
+  // content's measured height (not `auto`, which Motion reads once at the
+  // start and which the labels' fonts and the rows' ring then nudge by a
+  // pixel or two, landing with a jump).
   const [grown, setGrown] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentH, setContentH] = useState<number | null>(null);
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    // Layout height: the panel is mid-scale as it arrives, and a rect would be too.
+    const measure = () => setContentH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open]);
   useEffect(() => {
     if (!open) {
       setGrown(false);
@@ -441,138 +458,144 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
             style={{ top: panelTop }}
             // Centered by Motion's own x (a CSS transform would be overwritten
             // by the scale it animates).
-            initial={reduceMotion ? { opacity: 0, x: '-50%' } : { opacity: 0, scale: 0.98, x: '-50%' }}
+            // From the Share button below and back into it: scaled about its
+            // bottom edge, risen into place.
+            initial={reduceMotion ? { opacity: 0, x: '-50%' } : { opacity: 0, scale: 0.94, y: PANEL_RISE, x: '-50%' }}
             animate={
-              reduceMotion ? { opacity: 1, x: '-50%' } : { opacity: 1, scale: 1, x: '-50%', transition: PANEL_IN }
+              reduceMotion ? { opacity: 1, x: '-50%' } : { opacity: 1, scale: 1, y: 0, x: '-50%', transition: PANEL_IN }
             }
             exit={
-              reduceMotion ? { opacity: 0, x: '-50%' } : { opacity: 0, scale: 0.98, x: '-50%', transition: PANEL_OUT }
+              reduceMotion
+                ? { opacity: 0, x: '-50%' }
+                : { opacity: 0, scale: 0.94, y: PANEL_RISE, x: '-50%', transition: PANEL_OUT }
             }
           >
             {/* Grows from the frame alone to the frame with its controls. */}
             <m.div
               className={styles.grow}
               initial={false}
-              animate={{ height: grown ? 'auto' : frameSide }}
+              animate={{ height: grown ? (contentH ?? frameSide + CONTROLS_H) : frameSide }}
               transition={reduceMotion ? { duration: 0 } : GROW}
             >
-              <ShareFrame side={frameSide} palette={palette} orientation={design.orientation} />
+              <div ref={contentRef} className={styles.growInner}>
+                <ShareFrame side={frameSide} palette={palette} orientation={design.orientation} />
 
-              <m.div className={picker.groups} {...rowMotion(0)}>
-                <div className={picker.group}>
-                  <div className={picker.row}>
-                    <span className={picker.rowLabel}>Backdrop</span>
-                    <SwatchRow label="Backdrop" active={backdrop}>
-                      {BACKDROPS.map((b) => {
-                        const p = paletteFor(b.id, surfaces);
-                        return (
-                          <Tooltip key={b.id} text={b.label}>
+                <m.div className={picker.groups} {...rowMotion(0)}>
+                  <div className={picker.group}>
+                    <div className={picker.row}>
+                      <span className={picker.rowLabel}>Backdrop</span>
+                      <SwatchRow label="Backdrop" active={backdrop}>
+                        {BACKDROPS.map((b) => {
+                          const p = paletteFor(b.id, surfaces);
+                          return (
+                            <Tooltip key={b.id} text={b.label}>
+                              {(tip) => (
+                                <button
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={backdrop === b.id}
+                                  aria-label={b.label}
+                                  className={clsx(picker.swatch, styles.swatch)}
+                                  style={{ background: p.bg, color: p.ink }}
+                                  {...tip}
+                                  {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
+                                />
+                              )}
+                            </Tooltip>
+                          );
+                        })}
+                        <ColorPicker
+                          value={customBg ?? paletteOn(surfaces.brand).bg}
+                          gradient={null}
+                          orientation={design.orientation}
+                          solidOnly
+                          onChange={(color) => {
+                            setCustomBg(color);
+                            setBackdropPick('custom');
+                          }}
+                          triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
+                          triggerActive={backdrop === 'custom'}
+                          triggerLabel="Custom color"
+                          tooltip="Custom color"
+                        >
+                          {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
+                        </ColorPicker>
+                      </SwatchRow>
+                    </div>
+                    <div className={picker.row}>
+                      <span className={picker.rowLabel}>Pose</span>
+                      <SwatchRow label="Pose" active={poseId}>
+                        {POSES.map((p) => (
+                          <Tooltip key={p.id} text={p.label}>
                             {(tip) => (
                               <button
                                 type="button"
                                 role="radio"
-                                aria-checked={backdrop === b.id}
-                                aria-label={b.label}
-                                className={clsx(picker.swatch, styles.swatch)}
-                                style={{ background: p.bg, color: p.ink }}
+                                aria-checked={poseId === p.id}
+                                aria-label={p.label}
+                                className={clsx(picker.swatch, styles.poseSwatch, styles[`pose_${p.id}`])}
                                 {...tip}
-                                {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
-                              />
+                                {...pressable({ onClick: () => setPoseId(p.id) }, { press: 'tickBright' })}
+                              >
+                                <span className={styles.poseCard} aria-hidden />
+                              </button>
                             )}
                           </Tooltip>
-                        );
-                      })}
-                      <ColorPicker
-                        value={customBg ?? paletteOn(surfaces.brand).bg}
-                        gradient={null}
-                        orientation={design.orientation}
-                        solidOnly
-                        onChange={(color) => {
-                          setCustomBg(color);
-                          setBackdropPick('custom');
-                        }}
-                        triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
-                        triggerActive={backdrop === 'custom'}
-                        triggerLabel="Custom color"
-                        tooltip="Custom color"
-                      >
-                        {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
-                      </ColorPicker>
-                    </SwatchRow>
+                        ))}
+                      </SwatchRow>
+                    </div>
                   </div>
-                  <div className={picker.row}>
-                    <span className={picker.rowLabel}>Pose</span>
-                    <SwatchRow label="Pose" active={poseId}>
-                      {POSES.map((p) => (
-                        <Tooltip key={p.id} text={p.label}>
-                          {(tip) => (
-                            <button
-                              type="button"
-                              role="radio"
-                              aria-checked={poseId === p.id}
-                              aria-label={p.label}
-                              className={clsx(picker.swatch, styles.poseSwatch, styles[`pose_${p.id}`])}
-                              {...tip}
-                              {...pressable({ onClick: () => setPoseId(p.id) }, { press: 'tickBright' })}
-                            >
-                              <span className={styles.poseCard} aria-hidden />
-                            </button>
-                          )}
-                        </Tooltip>
-                      ))}
-                    </SwatchRow>
-                  </div>
-                </div>
-              </m.div>
+                </m.div>
 
-              <m.div className={styles.tiles} {...rowMotion(1)}>
-                {tiles.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={clsx(styles.tile, t.loading && styles.tileLoading)}
-                    disabled={t.disabled}
-                    title={t.title}
-                    {...pressable({ onClick: t.onClick, disabled: t.disabled })}
-                  >
-                    <span className={styles.tileIcon}>
-                      <AnimatePresence mode="popLayout" initial={false}>
-                        <m.span
-                          key={t.loading ? 'spinner' : t.label}
-                          className={styles.tileGlyph}
-                          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.5, filter: 'blur(4px)' }}
-                          animate={
-                            reduceMotion
-                              ? { opacity: 1 }
-                              : { opacity: 1, scale: 1, filter: 'blur(0px)', transition: GLYPH_IN }
-                          }
-                          exit={
-                            reduceMotion
-                              ? { opacity: 0 }
-                              : { opacity: 0, scale: 0.5, filter: 'blur(4px)', transition: GLYPH_OUT }
-                          }
-                        >
-                          {t.loading ? <Spinner /> : t.icon}
-                        </m.span>
-                      </AnimatePresence>
-                    </span>
-                    <TextMorph
-                      as="span"
-                      className={styles.tileLabel}
-                      duration={LABEL_MORPH_MS}
-                      ease={cubicBezierCss(easeOutSwift)}
+                <m.div className={styles.tiles} {...rowMotion(1)}>
+                  {tiles.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={clsx(styles.tile, t.loading && styles.tileLoading)}
+                      disabled={t.disabled}
+                      title={t.title}
+                      {...pressable({ onClick: t.onClick, disabled: t.disabled })}
                     >
-                      {t.label}
-                    </TextMorph>
-                  </button>
-                ))}
-              </m.div>
+                      <span className={styles.tileIcon}>
+                        <AnimatePresence mode="popLayout" initial={false}>
+                          <m.span
+                            key={t.loading ? 'spinner' : t.label}
+                            className={styles.tileGlyph}
+                            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.5, filter: 'blur(4px)' }}
+                            animate={
+                              reduceMotion
+                                ? { opacity: 1 }
+                                : { opacity: 1, scale: 1, filter: 'blur(0px)', transition: GLYPH_IN }
+                            }
+                            exit={
+                              reduceMotion
+                                ? { opacity: 0 }
+                                : { opacity: 0, scale: 0.5, filter: 'blur(4px)', transition: GLYPH_OUT }
+                            }
+                          >
+                            {t.loading ? <Spinner /> : t.icon}
+                          </m.span>
+                        </AnimatePresence>
+                      </span>
+                      <TextMorph
+                        as="span"
+                        className={styles.tileLabel}
+                        duration={LABEL_MORPH_MS}
+                        ease={cubicBezierCss(easeOutSwift)}
+                      >
+                        {t.label}
+                      </TextMorph>
+                    </button>
+                  ))}
+                </m.div>
 
-              {errorLine && (
-                <div className={styles.status} role="alert">
-                  <span className={clsx(styles.statusLine, styles.statusError)}>{errorLine}</span>
-                </div>
-              )}
+                {errorLine && (
+                  <div className={styles.status} role="alert">
+                    <span className={clsx(styles.statusLine, styles.statusError)}>{errorLine}</span>
+                  </div>
+                )}
+              </div>
             </m.div>
           </m.div>
         )}
