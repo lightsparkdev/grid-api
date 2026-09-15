@@ -18,8 +18,7 @@
 .panel {
   position: absolute;
   left: 50%;
-  /* Scales about its bottom, the side the Share button is on. */
-  transform-origin: 50% 100%;
+  transform-origin: 50% 0;
   corner-shape: var(--corner-shape);
   /* As wide as the frame plus its padding and border, whatever those are. */
   width: fit-content;
