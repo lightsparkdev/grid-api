@@ -14,12 +14,10 @@ post:
     `INTERNAL_CRYPTO`, and `EMBEDDED_WALLET` accounts are provisioned
     automatically when an account holder is created or approved.
 
-    The account is returned `PENDING` with no `fundingPaymentInstructions`: its
-    own routable number is issued by the partner bank shortly afterwards, and
-    the account reads `ACTIVE` with its `fundingPaymentInstructions` once it
-    has been. Rule-based accounts are currently available in `USD`, for
-    individual customers, and must be enabled for your platform before this
-    endpoint accepts requests.
+    The response carries the account's own `fundingPaymentInstructions` — the
+    routable number payers send to. Rule-based accounts are currently available
+    in `USD`, for individual customers, and must be enabled for your platform
+    before this endpoint accepts requests.
 
     Sandbox platforms can create rule-based accounts and exercise the whole
     flow. The account number is generated locally rather than issued by a
@@ -90,9 +88,8 @@ post:
             $ref: ../components/schemas/customers/InternalAccount.yaml
     '201':
       description: >-
-        Internal account created, `PENDING` until the partner bank issues its
-        account number. Read the account back for its
-        `fundingPaymentInstructions`.
+        Internal account created. `fundingPaymentInstructions` carries the
+        account's own number.
       content:
         application/json:
           schema:
