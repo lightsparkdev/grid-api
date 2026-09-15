@@ -64,8 +64,6 @@ export function cardFracFor(width: number, height: number, orientation: Orientat
 export interface StillOptions {
   format: StillFormat;
   palette: Palette;
-  /** The card's color, for the template's tuple. */
-  cardColor: string;
   pose?: ExportPose;
   /** Render at this fraction of the format's size (a preview). */
   scale?: number;
@@ -85,7 +83,7 @@ export function renderStillCanvas(exporter: CardExporter, opts: StillOptions): H
     cardFrac: cardFracFor(width, height, exporter.orientation),
     exposure: exposureFor(opts.palette),
   });
-  return compose(frame, { palette: opts.palette, cardColor: opts.cardColor });
+  return compose(frame, { palette: opts.palette });
 }
 
 export async function renderStill(exporter: CardExporter, opts: StillOptions): Promise<Blob> {

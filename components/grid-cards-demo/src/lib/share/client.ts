@@ -108,9 +108,8 @@ export interface CreateShareOptions {
   kind: ShareCreateInput['kind'];
   slug?: string;
   forName?: string | null;
-  /** The template's colors, and the card's color for its tuple. */
+  /** The template's colors. */
   palette: Palette;
-  cardColor: string;
   /** How the card is held in the stills. */
   pose: ExportPose;
   onProgress?: (p: ShareProgress) => void;
@@ -170,7 +169,6 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
     const blob = await renderStill(exporter, {
       format,
       palette: opts.palette,
-      cardColor: opts.cardColor,
       pose: opts.pose,
     });
     onProgress?.({ stage: 'upload', detail: format });

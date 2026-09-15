@@ -16,9 +16,9 @@ import {
   BACKDROPS,
   brandSurfaceFor,
   exposureFor,
-  hexToRgb,
   paletteFor,
   paletteOn,
+  TEMPLATE_TUPLE,
   warmTemplate,
   type BackdropId,
   type Palette,
@@ -245,7 +245,6 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
         setVideo({ status: 'rendering', done: 0, total: 1 });
         const blob = await renderSpinVideo(ex, {
           palette,
-          cardColor,
           signal: ctl.signal,
           onProgress: (done, total) => setVideo({ status: 'rendering', done, total }),
         });
@@ -273,7 +272,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
         setVideo({ status: 'failed' });
       }
     },
-    [palette, cardColor, exporterRef, design, videoKey],
+    [palette, exporterRef, design, videoKey],
   );
 
   /** The share's video: the one already rendered for these settings, attached
@@ -318,7 +317,6 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
         kind: handle?.record.kind ?? 'public',
         forName: handle?.record.forName ?? null,
         palette,
-        cardColor,
         pose: ex.livePose,
         onProgress: setProgress,
         existing: handle ? { id: handle.record.id, editToken: handle.editToken, url: handle.url } : undefined,
@@ -337,7 +335,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       setProgress(null);
       return null;
     }
-  }, [cardColor, design, exporterRef, handle, videoForShare, palette, stale]);
+  }, [design, exporterRef, handle, videoForShare, palette, stale]);
 
   const copy = async (text: string) => {
     try {
@@ -366,7 +364,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     const ex = exporterRef.current;
     if (!ex?.ready) return;
     await warmTemplate();
-    const blob = await renderStill(ex, { format: 'square', palette, cardColor, pose: ex.livePose });
+    const blob = await renderStill(ex, { format: 'square', palette, pose: ex.livePose });
     download(blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
     setSaved('image');
   };
@@ -458,7 +456,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
               animate={{ height: grown ? 'auto' : frameSide }}
               transition={reduceMotion ? { duration: 0 } : GROW}
             >
-              <ShareFrame side={frameSide} palette={palette} cardColor={cardColor} orientation={design.orientation} />
+              <ShareFrame side={frameSide} palette={palette} orientation={design.orientation} />
 
               <m.div className={picker.groups} {...rowMotion(0)}>
                 <div className={picker.group}>
@@ -601,12 +599,10 @@ function Spinner() {
 function ShareFrame({
   side,
   palette,
-  cardColor,
   orientation,
 }: {
   side: number;
   palette: Palette;
-  cardColor: string;
   orientation: CardDesign['orientation'];
 }) {
   const k = side / LAYOUT;
@@ -616,7 +612,6 @@ function ShareFrame({
     orientation === 'portrait'
       ? { width: (long * foot.w) / foot.h, height: long }
       : { width: long, height: (long * foot.h) / foot.w };
-  const rgb = hexToRgb(cardColor).map((v) => Math.round(v));
   const text = { fontSize: TEXT * k, lineHeight: 1 } as const;
   return (
     <div className={styles.frame} style={{ width: side, height: side, background: palette.bg, color: palette.ink }}>
@@ -635,7 +630,7 @@ function ShareFrame({
         />
       </svg>
       <span className={styles.text} style={{ ...text, left: (PAD + COL_PAD) * k, bottom: PAD * k }}>
-        ({rgb.join(', ')})
+        {TEMPLATE_TUPLE}
       </span>
       <span
         className={clsx(styles.text, styles.textRight)}

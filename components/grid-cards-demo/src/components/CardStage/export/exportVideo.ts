@@ -57,7 +57,6 @@ function turn(u: number): number {
 
 export interface VideoOptions {
   palette: Palette;
-  cardColor: string;
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
 }
@@ -113,7 +112,7 @@ export async function renderSpinVideo(exporter: CardExporter, opts: VideoOptions
         cardFrac,
         exposure,
       });
-      const canvas = compose(frame, { palette: opts.palette, cardColor: opts.cardColor }, scratch);
+      const canvas = compose(frame, { palette: opts.palette }, scratch);
       const vf = new VideoFrame(canvas, { timestamp: Math.round(i * frameUs), duration: Math.round(frameUs) });
       encoder.encode(vf, { keyFrame: i % VIDEO_FPS === 0 });
       vf.close();

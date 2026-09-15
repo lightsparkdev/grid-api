@@ -819,7 +819,9 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     const canEdit = brandEditable && !inPhone() && !inShare();
     hover(canEdit && e.pointerType === 'mouse' && motion.atRest && hitBrand(e.clientX, e.clientY) !== null);
     hoverName(canEdit && e.pointerType === 'mouse' && !textEdit && motion.atRest && hitName(e.clientX, e.clientY));
-    if (reduceMotion || selected || live.current.inert) return;
+    // Posed in the share frame the card holds its angles: no tilt under the
+    // pointer, so what is seen is what the picture will be.
+    if (reduceMotion || selected || live.current.inert || inShare()) return;
     const b = e.currentTarget.getBoundingClientRect();
     motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
   };

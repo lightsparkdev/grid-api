@@ -2,7 +2,7 @@
    og-image-template-light 2018:9911 and -dark 2018:9950) drawn in 2D under
    the rendered frame. An 800-unit square layout centered in the frame, 24
    of padding, a hairline rule down each outer edge, the Lightspark logomark
-   top left, the card's color as an RGB tuple bottom left, "Lightspark /
+   top left, "(0, 0, 0)" bottom left as the design has it, "Lightspark /
    Cards Playground" top right, "docs.lightspark.com" bottom right, all in
    8-unit Suisse. Light and dark are the app's surfaces; Brand takes the
    card's own color (or the dominant color of its art), pushed a step so the
@@ -223,11 +223,14 @@ export function layoutIn(w: number, h: number): { side: number; x: number; y: nu
   return { side, x: (w - side) / 2, y: (h - side) / 2, k: side / LAYOUT };
 }
 
+/** The tuple bottom left, as the design has it. */
+export const TEMPLATE_TUPLE = '(0, 0, 0)';
+
 /**
  * Draw the template across `ctx` for a frame `w` × `h`: the surface, the
- * rules, and the type, with `cardRgb` as the tuple bottom left.
+ * rules, and the type.
  */
-export function paintTemplate(ctx: CanvasRenderingContext2D, w: number, h: number, palette: Palette, cardRgb: RGB) {
+export function paintTemplate(ctx: CanvasRenderingContext2D, w: number, h: number, palette: Palette) {
   const { side, x: ox, y: oy, k } = layoutIn(w, h);
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = palette.bg;
@@ -263,7 +266,7 @@ export function paintTemplate(ctx: CanvasRenderingContext2D, w: number, h: numbe
   const textRight = right - COL_PAD * k;
 
   ctx.textAlign = 'left';
-  ctx.fillText(`(${cardRgb.map((v) => Math.round(v)).join(', ')})`, textLeft, bottom);
+  ctx.fillText(TEMPLATE_TUPLE, textLeft, bottom);
 
   ctx.textAlign = 'right';
   ctx.fillText('Lightspark', textRight, top + capRise);
@@ -285,7 +288,6 @@ export function frameToCanvas(frame: ExportFrame, into?: HTMLCanvasElement): HTM
 
 export interface ComposeOptions {
   palette: Palette;
-  cardColor: string;
 }
 
 /** The template, then the card over it, onto `target` (made if absent). */
@@ -303,7 +305,7 @@ export function compose(
     target.height = frame.height;
   }
   const ctx = target.getContext('2d')!;
-  paintTemplate(ctx, frame.width, frame.height, opts.palette, hexToRgb(opts.cardColor));
+  paintTemplate(ctx, frame.width, frame.height, opts.palette);
   ctx.drawImage(card, 0, 0);
   return target;
 }
