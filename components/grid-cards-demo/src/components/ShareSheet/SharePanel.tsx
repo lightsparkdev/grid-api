@@ -383,7 +383,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
         {open && (
           <m.div
             className={styles.panel}
-            style={{ width: frameSide + 16, top: panelTop }}
+            style={{ top: panelTop }}
             // Centered by Motion's own x (a CSS transform would be overwritten
             // by the scale it animates).
             initial={reduceMotion ? { opacity: 0, x: '-50%' } : { opacity: 0, scale: 0.98, x: '-50%' }}
