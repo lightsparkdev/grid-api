@@ -1,63 +1,10 @@
 type: object
 description: >-
-  The wallet SDK hands your app a set of values when the cardholder taps
-  "Add to Wallet". Pass them here unchanged. Which fields are required
-  depends on `wallet`; a request missing one of them, or carrying a field
-  that belongs to a different wallet, is rejected with `INVALID_INPUT`.
+  Fields shared by every add-to-wallet request. The wallet SDK hands your app
+  a set of values when the cardholder taps "Add to Wallet"; pass them here
+  unchanged in the request shape for that `wallet`.
 required:
   - wallet
 properties:
   wallet:
     $ref: ./DigitalWallet.yaml
-  certificate:
-    type: string
-    description: >-
-      **Apple Pay only, required.** The leaf certificate from the
-      `certificates` array Apple passes to your
-      `PKAddPaymentPassViewControllerDelegate`, base64-encoded in PEM form.
-    example: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM=
-  nonce:
-    type: string
-    description: >-
-      **Apple Pay only, required.** The `nonce` Apple passes to your delegate,
-      base64-encoded.
-    example: MTIzNDU2Nzg=
-  nonceSignature:
-    type: string
-    description: >-
-      **Apple Pay only, required.** The `nonceSignature` Apple passes to your
-      delegate, base64-encoded.
-    example: c2lnbmF0dXJl
-  walletAccountId:
-    type: string
-    description: >-
-      **Google Pay and Samsung Pay, required.** The stable identifier of the
-      wallet account the card is being added to: Google's `walletAccountId`
-      (from `getStableHardwareId` / the TapAndPay client) or Samsung's
-      `walletUserId`.
-    example: wallet-account-8f14e45f
-  deviceId:
-    type: string
-    description: >-
-      **Samsung Pay required; Google Pay optional.** The stable device
-      identifier the wallet SDK reports (Google `getStableHardwareId`,
-      Samsung `deviceId`). Google's Unified Push Provisioning flow does not
-      always supply one, so it is optional there.
-    example: device-3c59dc04
-  serverSessionId:
-    type: string
-    format: uuid
-    description: >-
-      **Google Pay only, required.** The `serverSessionId` Google supplies in
-      the TapAndPay payment-credentials callback under Unified Push
-      Provisioning.
-    example: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
-  opaquePaymentCardRequested:
-    type: boolean
-    default: false
-    description: >-
-      **Google Pay only.** Set to the value Google supplies in the
-      payment-credentials callback. When `true`, the response also carries
-      `googleAccountPayload`, which saves the card to the cardholder's Google
-      Account for online payments in addition to the device token.
-    example: false

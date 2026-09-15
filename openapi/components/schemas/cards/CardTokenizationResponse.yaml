@@ -1,29 +1,11 @@
 type: object
 description: >-
-  Encrypted provisioning data for the wallet named in the request. The
-  payloads are encrypted to the wallet provider's keys: neither your app nor
-  your servers can read the card data inside them. Hand them to the wallet
-  SDK immediately and do not persist them; each one is valid for a single
+  Fields shared by every add-to-wallet response. The payload is encrypted to
+  the wallet provider's keys: neither your app nor your servers can read the
+  card data inside it. Hand it to the wallet SDK; it is valid for a single
   provisioning attempt.
 required:
   - wallet
 properties:
   wallet:
     $ref: ./DigitalWallet.yaml
-  applePay:
-    $ref: ./CardTokenizationApplePayPayload.yaml
-    description: Present when `wallet` is `APPLE_PAY`; absent otherwise.
-  provisioningPayload:
-    type: string
-    description: >-
-      Present when `wallet` is `GOOGLE_PAY` or `SAMSUNG_PAY`. A base64-encoded
-      opaque payload; return it from the TapAndPay payment-credentials
-      callback (Google) or pass it to `addCard` (Samsung).
-    example: eyJjYXJkIjoiLi4uIn0=
-  googleAccountPayload:
-    type: string
-    description: >-
-      Present when `wallet` is `GOOGLE_PAY` and `opaquePaymentCardRequested`
-      was `true`. Return it alongside `provisioningPayload` so Google also
-      saves the card to the cardholder's Google Account.
-    example: eyJmcGFuIjoiLi4uIn0=

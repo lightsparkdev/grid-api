@@ -130,11 +130,15 @@ other Grid call, so make it from your server and relay the result to
 the app rather than embedding the credentials in the app.
 </Note>
 
-| `wallet` | Required fields | Optional fields | Response field |
-|----------|-----------------|-----------------|----------------|
-| `APPLE_PAY` | `certificate`, `nonce`, `nonceSignature` | — | `applePay` |
-| `GOOGLE_PAY` | `walletAccountId`, `serverSessionId` | `deviceId`, `opaquePaymentCardRequested` | `provisioningPayload`, plus `googleAccountPayload` when requested |
-| `SAMSUNG_PAY` | `walletAccountId`, `deviceId` | — | `provisioningPayload` |
+The request and response bodies are discriminated by `wallet`: each
+wallet has its own request shape and its own response shape, so a
+request carrying a field from another wallet's shape is rejected.
+
+| `wallet` | Request shape | Response shape |
+|----------|---------------|----------------|
+| `APPLE_PAY` | `certificate`, `nonce`, `nonceSignature` (all required) | `applePay` object |
+| `GOOGLE_PAY` | `walletAccountId`, `serverSessionId` (required); `deviceId`, `opaquePaymentCardRequested` (optional) | `provisioningPayload`, plus `googleAccountPayload` when requested |
+| `SAMSUNG_PAY` | `walletAccountId`, `deviceId` (both required) | `provisioningPayload` |
 
 Pass every value exactly as the SDK gave it. `certificate` is the leaf
 certificate (the first element of Apple's `certificates` array),
@@ -220,10 +224,13 @@ base64-encoded in PEM form; `nonce` and `nonceSignature` are base64.
 
 | Status | Code | When |
 |--------|------|------|
-| `400` | `INVALID_INPUT` | A field the chosen `wallet` requires is missing, a field for a different wallet was supplied, or the wallet provider rejected the values (for example, an expired Apple nonce). Restart the add-to-wallet flow in the app to get fresh values. |
+| `400` | `INVALID_INPUT` | The body does not match the request shape for its `wallet` (a required field is missing, or a field from another wallet's shape was supplied), or the wallet provider rejected the values (for example, an expired Apple nonce). Restart the add-to-wallet flow in the app to get fresh values. |
+| `401` | `UNAUTHORIZED` | Your platform credentials were rejected, or your production platform is not yet enabled for card issuing. Contact your Lightspark representative for the latter. |
+| `403` | `FORBIDDEN` | The credential lacks `uma:manage`, or the session has no attributable actor to audit the request against (for example, an impersonated dashboard session). Retry with a platform API credential. |
 | `404` | `NOT_FOUND` | The card does not exist on your platform. |
 | `409` | `CARD_NOT_MUTABLE` | The card is `CLOSED`. |
 | `409` | `CONFLICT` | The card is not `ACTIVE`, or its `cardCapabilities.supportsDigitalWalletTokenization` is false. Unfreeze the card first; the capability itself is fixed for the card's lifetime. |
+| `500` | `INTERNAL_ERROR` | The card issuer could not be reached or returned an unusable response. Retry; if it persists, contact support. |
 | `501` | `NOT_IMPLEMENTED` | Cards are not enabled in this environment. |
 
 Every call is audit-logged with the requesting actor and the target

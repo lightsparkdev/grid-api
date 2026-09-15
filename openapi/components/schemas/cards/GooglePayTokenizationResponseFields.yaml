@@ -1,0 +1,24 @@
+type: object
+required:
+  - wallet
+  - provisioningPayload
+properties:
+  wallet:
+    type: string
+    enum:
+      - GOOGLE_PAY
+    description: Discriminator value identifying a Google Pay response.
+    example: GOOGLE_PAY
+  provisioningPayload:
+    type: string
+    description: >-
+      Base64-encoded opaque payload for the device token. Return it from the
+      TapAndPay payment-credentials callback.
+    example: eyJjYXJkIjoiLi4uIn0=
+  googleAccountPayload:
+    type: string
+    description: >-
+      Present when `opaquePaymentCardRequested` was `true`. Return it
+      alongside `provisioningPayload` so Google also saves the card to the
+      cardholder's Google Account.
+    example: eyJmcGFuIjoiLi4uIn0=

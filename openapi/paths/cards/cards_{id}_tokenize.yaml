@@ -39,7 +39,7 @@ post:
     content:
       application/json:
         schema:
-          $ref: ../../components/schemas/cards/CardTokenizationRequest.yaml
+          $ref: ../../components/schemas/cards/CardTokenizationRequestOneOf.yaml
         examples:
           applePay:
             summary: Apple Pay
@@ -67,7 +67,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../../components/schemas/cards/CardTokenizationResponse.yaml
+            $ref: ../../components/schemas/cards/CardTokenizationResponseOneOf.yaml
           examples:
             applePay:
               summary: Apple Pay
@@ -84,10 +84,11 @@ post:
                 provisioningPayload: eyJjYXJkIjoiLi4uIn0=
     '400':
       description: >-
-        Invalid input. A field required by the chosen `wallet` is missing, a
-        field belonging to a different wallet was supplied, or the wallet
-        provider rejected the values (for example, an expired Apple nonce).
-        Restart the add-to-wallet flow in the app to obtain fresh values.
+        Invalid input. The body does not match the request shape for its
+        `wallet` (a required field is missing, or a field from another
+        wallet's shape was supplied), or the wallet provider rejected the
+        values (for example, an expired Apple nonce). Restart the
+        add-to-wallet flow in the app to obtain fresh values.
       content:
         application/json:
           schema:
