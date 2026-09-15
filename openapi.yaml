@@ -1029,7 +1029,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Customer'
+                $ref: '#/components/schemas/CustomerOneOf'
         '400':
           description: Invalid or expired code
           content:
@@ -1149,7 +1149,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Customer'
+                $ref: '#/components/schemas/CustomerOneOf'
         '400':
           description: Invalid or expired code
           content:
