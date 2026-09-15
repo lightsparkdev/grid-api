@@ -54,4 +54,10 @@
   &:active {
     transform: scale(0.97);
   }
+
+  /* The glyph a shade heavier than the set's 1.5, to hold its own on ink. */
+  svg path {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1.65;
+  }
 }
