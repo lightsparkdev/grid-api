@@ -31,7 +31,7 @@ import { brandColorOf, sameDesign, type CardDesign } from '@/data/design';
 import type { SharedCard } from '@/hooks/useCardsDemoLogic';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { attachVideo, createShare, ShareError, type ShareHandle, type ShareProgress } from '@/lib/share/client';
-import { shareOrigin, shareUrl, xIntentUrl } from '@/lib/share/urls';
+import { shareUrl, xIntentUrl } from '@/lib/share/urls';
 import { play, pressable } from '@/lib/sounds';
 import styles from './ShareSheet.module.scss';
 
@@ -336,8 +336,6 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
     }
   }, [error, progress, video]);
 
-  const origin = shareOrigin().replace(/^https?:\/\//, '');
-  const linkText = handle ? handle.url.replace(/^https?:\/\//, '') : `${origin}/…`;
   const videoBusy = video.status === 'rendering' || video.status === 'uploading';
 
   const tiles: Array<{
@@ -454,12 +452,6 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
                     </Tooltip>
                   ))}
                 </SwatchRow>
-              </div>
-              <div className={picker.row}>
-                <span className={picker.rowLabel}>Link</span>
-                <span className={clsx(styles.link, !handle && styles.linkPending)} title={handle?.url}>
-                  {linkText}
-                </span>
               </div>
             </div>
           </div>
