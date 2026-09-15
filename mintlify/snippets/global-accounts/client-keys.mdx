@@ -138,7 +138,7 @@ func generateClientKeyPair() -> ClientKeyPair {
 
 Grid returns an `otpEncryptionTargetBundle` whenever it initiates or reissues an OTP challenge, including `POST /auth/credentials/{id}/challenge` and add-EMAIL_OTP signed-retry responses. First-time EMAIL_OTP wallet bootstrap registration can omit it; if the registration response has no bundle, call `POST /auth/credentials/{id}/challenge` for that credential before verifying. The bundle is a signed enclave bundle whose `data` field is hex-encoded JSON carrying the enclave's HPKE target key as `targetPublic`. Pull out `targetPublic`, HPKE-encrypt `{ otp_code, public_key }` to it, and submit the library's `{ encappedPublic, ciphertext }` output as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`.
 
-`public_key` must be the **compressed** public key: 66 hex characters starting with `02` or `03`. The step 1 samples produce the uncompressed form (130 hex characters starting with `04`), so compress the key before you encrypt it. The example below does this for you.
+`public_key` must be the **compressed** public key: 66 hex characters starting with `02` or `03`. The step 1 samples produce the uncompressed form (130 hex characters starting with `04`), so compress the key before you encrypt it. The example below does this for you. The `verificationToken` Grid returns is bound to this exact key, so the same compressed hex must be the `publicKey` in the `Grid-Wallet-Signature` stamp on the signed retry (see <a href="#4-sign-a-payloadtosign">step 4</a>); a different value there fails the login.
 
 In production, an uncompressed key makes the enclave reject the OTP code, even when the code is correct. The first verify call then returns:
 
