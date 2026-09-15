@@ -22,6 +22,7 @@ properties:
     example: 198.51.100.24
   termsVersion:
     type: string
+    maxLength: 64
     description: >-
       Version identifier of the accepted agreement, as returned for this type by
       the agreement documents endpoint. A version is scoped to its type; a

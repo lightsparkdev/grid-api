@@ -3,7 +3,6 @@ required:
   - umaAddress
   - platformCustomerId
   - customerType
-  - agreementConsents
 properties:
   id:
     type: string
@@ -29,8 +28,8 @@ properties:
     readOnly: true
     description: >-
       The customer's recorded agreement acceptances, one entry per accepted
-      type holding that type's most recent acceptance. Empty until an
-      acceptance has been recorded.
+      type holding that type's most recent acceptance. Omitted when the
+      customer has not accepted any agreement yet.
     items:
       $ref: ./AgreementConsent.yaml
   region:

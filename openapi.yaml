@@ -13647,7 +13647,6 @@ components:
           example: 198.51.100.24
         termsVersion:
           type: string
-          maxLength: 64
           description: Version identifier of the accepted Grid End User Terms.
           example: V1
         acceptanceMethod:
@@ -13686,6 +13685,7 @@ components:
           example: 198.51.100.24
         termsVersion:
           type: string
+          maxLength: 64
           description: Version identifier of the accepted agreement, as returned for this type by the agreement documents endpoint. A version is scoped to its type; a version valid for one agreement is not valid for another.
           example: '2025-10-13'
         acceptanceMethod:
@@ -13719,7 +13719,6 @@ components:
         - umaAddress
         - platformCustomerId
         - customerType
-        - agreementConsents
       properties:
         id:
           type: string
@@ -13740,7 +13739,7 @@ components:
         agreementConsents:
           type: array
           readOnly: true
-          description: The customer's recorded agreement acceptances, one entry per accepted type holding that type's most recent acceptance. Empty until an acceptance has been recorded.
+          description: The customer's recorded agreement acceptances, one entry per accepted type holding that type's most recent acceptance. Omitted when the customer has not accepted any agreement yet.
           items:
             $ref: '#/components/schemas/AgreementConsent'
         region:
