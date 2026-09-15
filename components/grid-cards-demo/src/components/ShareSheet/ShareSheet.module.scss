@@ -16,6 +16,8 @@
   top: 50%;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm);
+  /* Concentric with the tiles inside: their radius plus the padding. */
+  border-radius: calc(var(--corner-radius-md) + var(--spacing-sm));
   max-height: calc(100vh - var(--spacing-2xl));
   overflow: auto;
   overscroll-behavior: contain;
@@ -34,7 +36,17 @@
   corner-shape: var(--corner-shape);
   overflow: hidden;
   background: var(--surface-secondary);
-  box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-primary);
+
+  /* The hairline sits over the canvas (a box-shadow on the box would be
+     painted under it). */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-primary);
+    pointer-events: none;
+  }
 }
 
 .previewCanvas {
