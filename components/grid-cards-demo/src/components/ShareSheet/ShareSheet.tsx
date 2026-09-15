@@ -25,6 +25,7 @@ import { HERO_POSE, POSES, poseIdOf, renderStill, renderStillCanvas } from '@/co
 import { ColorPicker } from '@/components/DesignPicker/ColorPicker';
 import { SwatchRow } from '@/components/DesignPicker/DesignPicker';
 import picker from '@/components/DesignPicker/DesignPicker.module.scss';
+import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import { brandColorOf, sameDesign, type CardDesign } from '@/data/design';
@@ -345,7 +346,6 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
     onClick: () => void;
     disabled?: boolean;
     title?: string;
-    primary?: boolean;
   }> = [
     {
       id: 'link',
@@ -353,7 +353,6 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       icon: copied ? <IconCheckmark1 size={24} /> : <IconChainLink1 size={24} />,
       onClick: onCopyLink,
       disabled: busy,
-      primary: true,
     },
     { id: 'x', label: 'Share on X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
     { id: 'image', label: 'Save image', icon: <IconImages1 size={24} />, onClick: onDownloadImage, disabled: busy },
@@ -391,6 +390,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
             />
           </div>
 
+          <SectionDivider label="Picture" />
           <div className={picker.groups}>
             <div className={picker.group}>
               <div className={picker.row}>
@@ -458,12 +458,13 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
             </div>
           </div>
 
+          <SectionDivider label="Share" />
           <div className={styles.tiles}>
             {tiles.map((t) => (
               <button
                 key={t.id}
                 type="button"
-                className={clsx(styles.tile, t.primary && styles.tilePrimary)}
+                className={styles.tile}
                 disabled={t.disabled}
                 title={t.title}
                 {...pressable({ onClick: t.onClick, disabled: t.disabled })}

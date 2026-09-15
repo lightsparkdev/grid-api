@@ -174,41 +174,6 @@
   }
 }
 
-/* The one action that makes the link: filled, as Origin's filled button
-   (ink on light, paper on dark). */
-.tilePrimary {
-  background: var(--surface-inverse, var(--color-gray-950));
-  border-right-color: transparent;
-  /* Its own corners, the card's radius, all four: a block set into the row. */
-  corner-shape: var(--corner-shape);
-  border-radius: var(--corner-radius-md);
-
-  .tileIcon,
-  .tileLabel {
-    color: var(--text-inverse, var(--color-gray-050));
-  }
-
-  @media (hover: hover) {
-    &:hover:not(:disabled) {
-      background: var(--surface-inverse, var(--color-gray-950));
-      background-image: linear-gradient(var(--surface-inverse-hover, rgba(255, 255, 255, 0.08)), var(--surface-inverse-hover, rgba(255, 255, 255, 0.08)));
-
-      :global([data-theme='dark']) & {
-        background: var(--surface-inverse, var(--color-gray-050));
-        background-image: linear-gradient(var(--surface-inverse-hover, rgba(0, 0, 0, 0.06)), var(--surface-inverse-hover, rgba(0, 0, 0, 0.06)));
-      }
-    }
-  }
-
-  &:active:not(:disabled) {
-    background: var(--surface-inverse, var(--color-gray-950));
-
-    :global([data-theme='dark']) & {
-      background: var(--surface-inverse, var(--color-gray-050));
-    }
-  }
-}
-
 .tileIcon {
   display: flex;
   color: var(--icon-primary);
