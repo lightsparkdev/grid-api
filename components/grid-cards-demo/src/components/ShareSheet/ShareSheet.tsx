@@ -324,7 +324,7 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       case 'uploading':
         return { text: 'Uploading video…' };
       case 'failed':
-        return { text: 'The video failed. Try Download video again.', error: true };
+        return { text: 'The video failed. Try Save video again.', error: true };
       case 'idle':
       case 'done':
       case 'unavailable':
@@ -355,11 +355,11 @@ export function ShareSheet({ open, onClose, exporterRef, design, shared }: Share
       disabled: busy,
       primary: true,
     },
-    { id: 'x', label: 'Post to X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
-    { id: 'image', label: 'Download image', icon: <IconImages1 size={24} />, onClick: onDownloadImage, disabled: busy },
+    { id: 'x', label: 'Share on X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
+    { id: 'image', label: 'Save image', icon: <IconImages1 size={24} />, onClick: onDownloadImage, disabled: busy },
     {
       id: 'video',
-      label: 'Download video',
+      label: 'Save video',
       icon: <IconVideo size={24} />,
       onClick: onDownloadVideo,
       disabled: busy || videoBusy || video.status === 'unavailable',
