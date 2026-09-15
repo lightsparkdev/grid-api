@@ -42,10 +42,8 @@ export async function generateMetadata({ params }: Pick<Props, 'params'>): Promi
     record.kind === 'pitch' && record.forName
       ? `A card for ${record.forName}, issued on Lightspark Grid.`
       : 'Design a card and watch the Grid API calls fire as you go.';
-  // Full URLs: Next resolves images against metadataBase but not videos,
-  // and the page may be served through another host's proxy.
+  // A full URL: the page may be served through another host's proxy.
   const og = record.assets.og && absoluteAssetUrl(record.assets.og);
-  const video = record.assets.video && absoluteAssetUrl(record.assets.video);
   return {
     title,
     description,
@@ -55,7 +53,6 @@ export async function generateMetadata({ params }: Pick<Props, 'params'>): Promi
       url: shareUrl(record.slug),
       type: 'website',
       images: og ? [{ url: og, width: 2400, height: 1256 }] : [],
-      videos: video ? [{ url: video, type: 'video/mp4', width: 1080, height: 1080 }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -90,7 +87,6 @@ export default async function SharePage({ params, searchParams }: Props) {
     og: record.assets.og && absoluteAssetUrl(record.assets.og),
     // The download is the square; older shares carried the card alone.
     card: (record.assets.square ?? record.assets.card) && absoluteAssetUrl((record.assets.square ?? record.assets.card)!),
-    video: record.assets.video && absoluteAssetUrl(record.assets.video),
   };
   const brand = programName || 'Your brand';
   const openHref = playgroundUrl(record.id, editing ? edit : null);
@@ -101,13 +97,9 @@ export default async function SharePage({ params, searchParams }: Props) {
       <h1 className={styles.headline}>{pitch ? 'Here\u2019s what your card could look like.' : brand}</h1>
 
       <figure className={styles.figure}>
-        {assets.video ? (
-          <video className={styles.hero} autoPlay muted loop playsInline poster={assets.og ?? undefined}>
-            <source src={assets.video} type="video/mp4" />
-          </video>
-        ) : assets.og ? (
+        {assets.card ?? assets.og ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.hero} src={assets.og} alt={`${brand} card`} />
+          <img className={styles.hero} src={assets.card ?? assets.og ?? undefined} alt={`${brand} card`} />
         ) : (
           <div className={`${styles.hero} ${styles.placeholder}`}>Rendering…</div>
         )}
@@ -137,11 +129,6 @@ export default async function SharePage({ params, searchParams }: Props) {
         {assets.card && (
           <a className={styles.tertiary} href={assets.card} download>
             Download image
-          </a>
-        )}
-        {assets.video && (
-          <a className={styles.tertiary} href={assets.video} download>
-            Download video
           </a>
         )}
       </div>

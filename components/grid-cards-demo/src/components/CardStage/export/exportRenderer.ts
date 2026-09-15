@@ -64,12 +64,18 @@ export interface ExportFrame {
   data: Uint8ClampedArray<ArrayBuffer>;
 }
 
+/** Targets kept ready, by size: the share renders a few sizes in turn. */
+interface Targets {
+  scene: THREE.WebGLRenderTarget;
+  out: THREE.WebGLRenderTarget;
+  buffer: Uint8Array;
+}
+const TARGET_SIZES_KEPT = 3;
+
 export class CardExporter {
-  private sceneRT: THREE.WebGLRenderTarget | null = null;
-  private outRT: THREE.WebGLRenderTarget | null = null;
+  private readonly targetsBySize = new Map<string, Targets>();
   private readonly output = new OutputPass();
   private readonly camera = new THREE.PerspectiveCamera(30, 1, 200, 6000);
-  private buffer: Uint8Array | null = null;
   private multisample = true;
 
   constructor(private readonly deps: Deps) {
@@ -93,15 +99,18 @@ export class CardExporter {
     return this.deps.livePose();
   }
 
-  private targets(width: number, height: number) {
-    if (this.sceneRT && this.sceneRT.width === width && this.sceneRT.height === height) {
-      return { scene: this.sceneRT, out: this.outRT! };
+  private targets(width: number, height: number): Targets {
+    const key = `${width}x${height}`;
+    const kept = this.targetsBySize.get(key);
+    if (kept) {
+      // Most recently used last, so the oldest is the one let go.
+      this.targetsBySize.delete(key);
+      this.targetsBySize.set(key, kept);
+      return kept;
     }
-    this.sceneRT?.dispose();
-    this.outRT?.dispose();
     // The scene renders linear, in half floats, so the tone map has the
     // highlights to work with; the output pass writes bytes in sRGB.
-    this.sceneRT = new THREE.WebGLRenderTarget(width, height, {
+    const scene = new THREE.WebGLRenderTarget(width, height, {
       type: THREE.HalfFloatType,
       samples: this.multisample ? 4 : 0,
       depthBuffer: true,
@@ -110,13 +119,33 @@ export class CardExporter {
     // Plain bytes: the output pass writes sRGB-encoded values itself. An
     // SRGBColorSpace target would be an sRGB framebuffer, which encodes on
     // write as well, and the darks came up twice-encoded (near-black to gray).
-    this.outRT = new THREE.WebGLRenderTarget(width, height, {
+    const out = new THREE.WebGLRenderTarget(width, height, {
       type: THREE.UnsignedByteType,
       depthBuffer: false,
       stencilBuffer: false,
     });
-    this.buffer = new Uint8Array(width * height * 4);
-    return { scene: this.sceneRT, out: this.outRT };
+    const made = { scene, out, buffer: new Uint8Array(width * height * 4) };
+    this.targetsBySize.set(key, made);
+    if (this.targetsBySize.size > TARGET_SIZES_KEPT) {
+      const oldest = this.targetsBySize.keys().next().value!;
+      const t = this.targetsBySize.get(oldest)!;
+      t.scene.dispose();
+      t.out.dispose();
+      this.targetsBySize.delete(oldest);
+    }
+    return made;
+  }
+
+  /**
+   * Pay the first render's costs ahead (the output program's compile, the
+   * targets' allocation, the first readback's stall) at these sizes, so the
+   * picture asked for later doesn't hold up whatever is animating then.
+   */
+  warm(sizes: Array<{ width: number; height: number }>) {
+    if (!this.ready) return;
+    for (const { width, height } of sizes) {
+      this.renderSafe({ width, height, pose: { rotX: 0, rotY: 0 }, cardFrac: 0.7, exposure: 1 });
+    }
   }
 
   /**
@@ -172,7 +201,7 @@ export class CardExporter {
         if (update) update(this.camera);
       });
 
-      const { scene: sceneRT, out } = this.targets(width, height);
+      const { scene: sceneRT, out, buffer } = this.targets(width, height);
       gl.toneMappingExposure = exposure;
       gl.setClearColor(0x000000, 0);
       gl.autoClear = true;
@@ -181,7 +210,7 @@ export class CardExporter {
       gl.render(scene, this.camera);
       // Tone map and encode, as the stage's canvas would.
       this.output.render(gl, out, sceneRT, 0, false);
-      gl.readRenderTargetPixels(out, 0, 0, width, height, this.buffer!);
+      gl.readRenderTargetPixels(out, 0, 0, width, height, buffer);
     } finally {
       gl.setRenderTarget(savedTarget);
       gl.toneMappingExposure = savedExposure;
@@ -196,7 +225,7 @@ export class CardExporter {
 
     // Rows come up bottom first, and an edge's samples resolve to
     // premultiplied color: turn both around for the 2D canvas.
-    const src = this.buffer!;
+    const src = this.targets(width, height).buffer;
     const data = new Uint8ClampedArray(new ArrayBuffer(width * height * 4));
     const rowBytes = width * 4;
     for (let y = 0; y < height; y++) {
@@ -229,18 +258,21 @@ export class CardExporter {
     } catch (e) {
       if (!this.multisample) throw e;
       this.multisample = false;
-      this.sceneRT?.dispose();
-      this.sceneRT = null;
+      this.disposeTargets();
       return this.render(opts);
     }
   }
 
+  private disposeTargets() {
+    this.targetsBySize.forEach((t) => {
+      t.scene.dispose();
+      t.out.dispose();
+    });
+    this.targetsBySize.clear();
+  }
+
   dispose() {
-    this.sceneRT?.dispose();
-    this.outRT?.dispose();
+    this.disposeTargets();
     this.output.dispose();
-    this.sceneRT = null;
-    this.outRT = null;
-    this.buffer = null;
   }
 }

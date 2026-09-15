@@ -30,6 +30,9 @@ class ShareError extends Error {
   }
 }
 
+/** Resolves after the next paint. */
+const paintFirst = () => new Promise<void>((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+
 async function api<T>(path: string, init: RequestInit): Promise<T> {
   const res = await fetch(path, init);
   if (!res.ok) {
@@ -162,10 +165,13 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
     }
   }
 
-  // The link preview first: it is what the link shows.
+  // The link preview first: it is what the link shows. Each render is a
+  // synchronous frame; a paint is let through before it so the tile's own
+  // change (its spinner, its label) is on screen first.
   await prepareTemplate();
   for (const [format, role] of STILL_ROLES) {
     onProgress?.({ stage: 'render', detail: format });
+    await paintFirst();
     const blob = await renderStill(exporter, {
       format,
       palette: opts.palette,

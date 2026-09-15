@@ -3,7 +3,7 @@ import { shareUrl } from '@/lib/share/urls';
 import styles from './UnfurlPreview.module.scss';
 
 /* Dev view (`?preview=unfurl`): the share link as X, Slack and iMessage draw
-   it, mocked in CSS around the real OG image and video. */
+   it, mocked in CSS around the real OG image. */
 
 interface Props {
   record: ShareRecord;
@@ -20,7 +20,7 @@ export function UnfurlPreview({ record }: Props) {
     record.kind === 'pitch' && record.forName
       ? `A card for ${record.forName}, issued on Lightspark Grid.`
       : 'Design a card and watch the Grid API calls fire as you go.';
-  const { og, video } = record.assets;
+  const { og } = record.assets;
 
   return (
     <main className={styles.page}>
@@ -80,15 +80,11 @@ export function UnfurlPreview({ record }: Props) {
         <p className={styles.label}>iMessage</p>
         <article className={styles.imessage}>
           <div className={styles.imessageMedia}>
-            {video ? (
-              <video autoPlay muted loop playsInline poster={og ?? undefined}>
-                <source src={video} type="video/mp4" />
-              </video>
-            ) : og ? (
+            {og ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={og} alt="" />
             ) : (
-              <Missing label="No video" />
+              <Missing label="No image" />
             )}
           </div>
           <div className={styles.imessageCaption}>

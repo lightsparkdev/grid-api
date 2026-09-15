@@ -25,7 +25,15 @@ import {
   type Surfaces,
 } from '@/components/CardStage/export/compose';
 import { canEncodeVideo, renderSpinVideo } from '@/components/CardStage/export/exportVideo';
-import { CARD_IN_LAYOUT, HERO_POSE, POSES, renderStill, type PoseId } from '@/components/CardStage/export/stills';
+import {
+  CARD_IN_LAYOUT,
+  HERO_POSE,
+  POSES,
+  renderStill,
+  SAVE_SCALE,
+  stillSize,
+  type PoseId,
+} from '@/components/CardStage/export/stills';
 import { ColorPicker } from '@/components/DesignPicker/ColorPicker';
 import { SwatchRow } from '@/components/DesignPicker/DesignPicker';
 import picker from '@/components/DesignPicker/DesignPicker.module.scss';
@@ -36,7 +44,7 @@ import { brandColorOf, sameDesign, type CardDesign } from '@/data/design';
 import type { SharedCard } from '@/hooks/useCardsDemoLogic';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutQuick, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
-import { attachVideo, createShare, ShareError, type ShareHandle, type ShareProgress } from '@/lib/share/client';
+import { createShare, ShareError, type ShareHandle, type ShareProgress } from '@/lib/share/client';
 import { shareUrl, xIntentUrl } from '@/lib/share/urls';
 import { play, pressable } from '@/lib/sounds';
 import styles from './SharePanel.module.scss';
@@ -69,10 +77,8 @@ const TEXT = 8;
 type VideoState =
   | { status: 'idle' }
   | { status: 'rendering'; done: number; total: number }
-  | { status: 'uploading' }
-  /** Rendered (and attached to the share when `url` is set), for the
-   *  surface and design in `key`. */
-  | { status: 'done'; url: string | null; blob: Blob; key: string }
+  /** Rendered, for the surface and design in `key`. */
+  | { status: 'done'; blob: Blob; key: string }
   | { status: 'unavailable' }
   | { status: 'failed' };
 
@@ -201,16 +207,22 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     if (!shared?.editToken) return;
     setHandle({ record: shared.record, editToken: shared.editToken, url: shareUrl(shared.record.slug) });
     setHandleDesign(shared.record.design);
-    if (shared.record.assets.video) {
-      setVideo({ status: 'done', url: shared.record.assets.video, blob: new Blob(), key: '' });
-    }
   }, [shared]);
   const stale = !!handle && !!handleDesign && !sameDesign(handleDesign, design);
 
-  // The template's assets, ready before a picture is asked for.
+  // Ready before a picture is asked for: the template's assets, and the
+  // exporter's first-render costs at the share's sizes, paid once the panel
+  // has settled (the first Copy link used to stutter through them).
   useEffect(() => {
-    if (open) void warmTemplate();
-  }, [open]);
+    if (!open) return;
+    void warmTemplate();
+    const t = setTimeout(() => {
+      const ex = exporterRef.current;
+      if (!ex?.ready) return;
+      ex.warm([stillSize('post'), stillSize('square')]);
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [open, exporterRef]);
 
   // ── The panel's place on the stage ─────────────────────────────────────
   // Fit the frame to the stage: the panel's width, or what the height leaves
@@ -280,81 +292,49 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const videoKey = useMemo(() => `${palette.bg}|${palette.ink}|${JSON.stringify(design)}`, [palette, design]);
 
   /**
-   * Render the spin for the current surface, attach it to `h` when there is a
-   * share, and save it if that was asked. Rendering never needs the link.
+   * Render the spin for the current surface and save it where it was asked
+   * to go. The video is the visitor's own file; the link carries the still.
    */
-  const makeVideo = useCallback(
-    async (h: ShareHandle | null) => {
-      const ex = exporterRef.current;
-      if (!ex) return;
-      if (!canEncodeVideo()) {
+  const makeVideo = useCallback(async () => {
+    const ex = exporterRef.current;
+    if (!ex) return;
+    if (!canEncodeVideo()) {
+      setVideo({ status: 'unavailable' });
+      return;
+    }
+    videoRun.current?.abort();
+    const ctl = new AbortController();
+    videoRun.current = ctl;
+    const key = videoKey;
+    try {
+      setVideo({ status: 'rendering', done: 0, total: 1 });
+      const blob = await renderSpinVideo(ex, {
+        palette,
+        signal: ctl.signal,
+        onProgress: (done, total) => setVideo({ status: 'rendering', done, total }),
+      });
+      if (ctl.signal.aborted) return;
+      if (!blob) {
         setVideo({ status: 'unavailable' });
         return;
       }
-      videoRun.current?.abort();
-      const ctl = new AbortController();
-      videoRun.current = ctl;
-      const key = videoKey;
-      try {
-        setVideo({ status: 'rendering', done: 0, total: 1 });
-        const blob = await renderSpinVideo(ex, {
-          palette,
-          signal: ctl.signal,
-          onProgress: (done, total) => setVideo({ status: 'rendering', done, total }),
-        });
-        if (ctl.signal.aborted) return;
-        if (!blob) {
-          setVideo({ status: 'unavailable' });
-          return;
-        }
-        const ask = saveWhenDone.current;
-        if (ask) {
-          saveWhenDone.current = null;
-          setSavingWhat('video');
-          try {
-            await saveTo(ask.target, blob, `${fileStem(design)}-spin.mp4`);
-            setSaved('video');
-          } catch {
-            setSavingWhat(null);
-          }
-        }
-        let url: string | null = null;
-        if (h) {
-          setVideo({ status: 'uploading' });
-          const record = await attachVideo(h, blob);
-          if (ctl.signal.aborted) return;
-          url = record.assets.video ?? null;
-          setHandle((cur) => (cur && cur.record.id === record.id ? { ...cur, record } : cur));
-        }
-        setVideo({ status: 'done', url, blob, key });
-      } catch (e) {
-        if ((e as Error).name === 'AbortError') return;
-        setVideo({ status: 'failed' });
-      }
-    },
-    [palette, exporterRef, design, videoKey],
-  );
-
-  /** The share's video: the one already rendered for these settings, attached
-   *  now; otherwise a fresh render. */
-  const videoForShare = useCallback(
-    async (h: ShareHandle) => {
-      if (video.status === 'done' && video.blob.size > 0 && video.key === videoKey) {
-        if (video.url) return;
-        setVideo({ status: 'uploading' });
+      const ask = saveWhenDone.current;
+      if (ask) {
+        saveWhenDone.current = null;
+        setSavingWhat('video');
         try {
-          const record = await attachVideo(h, video.blob);
-          setVideo({ status: 'done', url: record.assets.video ?? null, blob: video.blob, key: videoKey });
-          setHandle((cur) => (cur && cur.record.id === record.id ? { ...cur, record } : cur));
+          await saveTo(ask.target, blob, `${fileStem(design)}-spin.mp4`);
+          setSaved('video');
         } catch {
-          setVideo({ status: 'failed' });
+          setSavingWhat(null);
         }
-        return;
       }
-      await makeVideo(h);
-    },
-    [video, videoKey, makeVideo],
-  );
+      setVideo({ status: 'done', blob, key });
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
+      setVideo({ status: 'failed' });
+    }
+  }, [palette, exporterRef, design, videoKey]);
 
   // Cancel (the panel closing) stops a render in flight and forgets the ask.
   useEffect(() => {
@@ -362,7 +342,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     videoRun.current?.abort();
     saveWhenDone.current = null;
     setSavingWhat(null);
-    setVideo((v) => (v.status === 'rendering' || v.status === 'uploading' ? { status: 'idle' } : v));
+    setVideo((v) => (v.status === 'rendering' ? { status: 'idle' } : v));
   }, [open]);
 
   /** Make the share, or bring the existing one up to date. */
@@ -384,7 +364,6 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       });
       setHandle(made);
       setHandleDesign(design);
-      void videoForShare(made);
       return made;
     } catch (e) {
       const code = e instanceof ShareError ? e.code : 'failed';
@@ -396,7 +375,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       setProgress(null);
       return null;
     }
-  }, [design, exporterRef, handle, videoForShare, palette, stale]);
+  }, [design, exporterRef, handle, palette, stale]);
 
   const copy = async (text: string) => {
     try {
@@ -430,7 +409,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     setSavingWhat('image');
     try {
       await warmTemplate();
-      const blob = await renderStill(ex, { format: 'square', palette, pose: ex.livePose });
+      const blob = await renderStill(ex, { format: 'square', palette, pose: ex.livePose, scale: SAVE_SCALE });
       await saveTo(target, blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
       setSaved('image');
     } catch {
@@ -453,14 +432,14 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     }
     // Rendered first; written where it goes the moment it is done.
     saveWhenDone.current = { target };
-    if (video.status === 'rendering' || video.status === 'uploading') return;
-    await makeVideo(handle && !stale ? handle : null);
+    if (video.status === 'rendering') return;
+    await makeVideo();
   };
 
   // The tiles say what is happening; the panel speaks up only when it went wrong.
   const errorLine = error ?? (video.status === 'failed' ? 'The video failed. Try Save video again.' : null);
 
-  const videoBusy = video.status === 'rendering' || video.status === 'uploading';
+  const videoBusy = video.status === 'rendering';
   const tiles: Array<{
     id: string;
     label: string;

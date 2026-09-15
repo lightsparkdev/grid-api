@@ -16,10 +16,14 @@ export interface StillSpec {
   height: number;
 }
 
+/** The link's pictures. The square a visitor saves renders at `SAVE_SCALE`
+ *  of this (2160), the link's at 1: half the pixels to read back and encode
+ *  while the tile is animating. */
 export const STILLS: Record<StillFormat, StillSpec> = {
   post: { id: 'post', label: 'Post', width: 2400, height: 1256 },
-  square: { id: 'square', label: 'Square', width: 2160, height: 2160 },
+  square: { id: 'square', label: 'Square', width: 1600, height: 1600 },
 };
+export const SAVE_SCALE = 2160 / 1600;
 
 /** The card's long edge as a fraction of the template's layout square. */
 export const CARD_IN_LAYOUT = 0.7;
