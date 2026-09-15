@@ -6,6 +6,7 @@ required:
   - supportsTransactionCountLimit
   - supports3dSecurePassword
   - supportsPanReveal
+  - supportsDigitalWalletTokenization
 properties:
   supportsSpendLimits:
     type: boolean
@@ -40,4 +41,11 @@ properties:
     description: >-
       Whether cards in this program can be revealed through
       `POST /cards/{id}/reveal`.
+    example: true
+  supportsDigitalWalletTokenization:
+    type: boolean
+    description: >-
+      Whether cards in this program can be added to Apple Pay, Google Pay,
+      or Samsung Pay from your app through `POST /cards/{id}/tokenize`.
+      Manual entry into a wallet works regardless of this flag.
     example: true

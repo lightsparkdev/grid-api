@@ -11,6 +11,16 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
+## Add cards to Apple Pay, Google Pay, and Samsung Pay from your app
+
+New `POST /cards/{id}/tokenize` exchanges the values a wallet SDK produces
+for the encrypted provisioning payload that completes an in-app "Add to
+Wallet" tap. The payload is encrypted to the wallet provider's keys, so
+card data never crosses your servers. `Card.cardCapabilities` gains
+`supportsDigitalWalletTokenization`. Manual entry into a wallet continues
+to work for every card with no integration. See
+[Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
 ## Card refunds, declines, and voids report distinct outcomes
 
 Three card-statement corrections to `CardTransaction`:

@@ -1,0 +1,10 @@
+oneOf:
+  - $ref: ./ApplePayTokenizationResponse.yaml
+  - $ref: ./GooglePayTokenizationResponse.yaml
+  - $ref: ./SamsungPayTokenizationResponse.yaml
+discriminator:
+  propertyName: wallet
+  mapping:
+    APPLE_PAY: ./ApplePayTokenizationResponse.yaml
+    GOOGLE_PAY: ./GooglePayTokenizationResponse.yaml
+    SAMSUNG_PAY: ./SamsungPayTokenizationResponse.yaml

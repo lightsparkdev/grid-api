@@ -1,0 +1,4 @@
+title: Google Pay Tokenization Response
+allOf:
+  - $ref: ./CardTokenizationResponse.yaml
+  - $ref: ./GooglePayTokenizationResponseFields.yaml

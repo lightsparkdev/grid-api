@@ -8909,6 +8909,119 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+  /cards/{id}/tokenize:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Add a card to a digital wallet
+      description: |-
+        Exchange the values your app received from Apple Pay, Google Pay, or Samsung Pay for the encrypted provisioning payload that completes adding the card to that wallet (in-app push provisioning). Call it from your backend inside the wallet SDK's credentials callback and hand the response straight back to the SDK.
+
+        The payload is encrypted to the wallet provider's keys, so neither your app nor your servers ever see card data. Do not store or log it; it is valid for one provisioning attempt.
+
+        Cardholders can always add a card to a wallet by typing its details in manually — that path needs nothing from you. This endpoint is for the in-app "Add to Wallet" button, which additionally requires approval from each wallet provider. See [Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
+        Only `ACTIVE` cards can be added. Every call is audit-logged with the requesting actor and the target wallet.
+      operationId: tokenizeCard
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardTokenizationRequestOneOf'
+            examples:
+              applePay:
+                summary: Apple Pay
+                value:
+                  wallet: APPLE_PAY
+                  certificate: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM=
+                  nonce: MTIzNDU2Nzg=
+                  nonceSignature: c2lnbmF0dXJl
+              googlePay:
+                summary: Google Pay (Unified Push Provisioning)
+                value:
+                  wallet: GOOGLE_PAY
+                  walletAccountId: wallet-account-8f14e45f
+                  serverSessionId: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+                  opaquePaymentCardRequested: false
+              samsungPay:
+                summary: Samsung Pay
+                value:
+                  wallet: SAMSUNG_PAY
+                  walletAccountId: wallet-account-8f14e45f
+                  deviceId: device-3c59dc04
+      responses:
+        '200':
+          description: Provisioning payload minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardTokenizationResponseOneOf'
+              examples:
+                applePay:
+                  summary: Apple Pay
+                  value:
+                    wallet: APPLE_PAY
+                    applePay:
+                      activationData: YWN0aXZhdGlvbi1kYXRh
+                      encryptedPassData: ZW5jcnlwdGVkLXBhc3MtZGF0YQ==
+                      ephemeralPublicKey: ZXBoZW1lcmFsLXB1YmxpYy1rZXk=
+                googlePay:
+                  summary: Google Pay
+                  value:
+                    wallet: GOOGLE_PAY
+                    provisioningPayload: eyJjYXJkIjoiLi4uIn0=
+        '400':
+          description: Invalid input. The body does not match the request shape for its `wallet` (a required field is missing, or a field from another wallet's shape was supplied), or the wallet provider rejected the values (for example, an expired Apple nonce). Restart the add-to-wallet flow in the app to obtain fresh values.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the request against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. `CARD_NOT_MUTABLE` when the card is `CLOSED`; `CONFLICT` when the card's `cardCapabilities.supportsDigitalWalletTokenization` is false or the card is not `ACTIVE`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /sandbox/cards/{id}/simulate/authorization:
     post:
       summary: Simulate a card authorization
@@ -18144,6 +18257,7 @@ components:
         - supportsTransactionCountLimit
         - supports3dSecurePassword
         - supportsPanReveal
+        - supportsDigitalWalletTokenization
       properties:
         supportsSpendLimits:
           type: boolean
@@ -18164,6 +18278,10 @@ components:
         supportsPanReveal:
           type: boolean
           description: Whether cards in this program can be revealed through `POST /cards/{id}/reveal`.
+          example: true
+        supportsDigitalWalletTokenization:
+          type: boolean
+          description: Whether cards in this program can be added to Apple Pay, Google Pay, or Samsung Pay from your app through `POST /cards/{id}/tokenize`. Manual entry into a wallet works regardless of this flag.
           example: true
     InternalAccount:
       type: object
@@ -26730,6 +26848,230 @@ components:
           format: date-time
           description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
           example: '2026-05-08T14:16:00Z'
+    DigitalWallet:
+      type: string
+      enum:
+        - APPLE_PAY
+        - GOOGLE_PAY
+        - SAMSUNG_PAY
+      description: The digital wallet a card is being added to.
+      example: APPLE_PAY
+    CardTokenizationRequest:
+      type: object
+      description: Fields shared by every add-to-wallet request. The wallet SDK hands your app a set of values when the cardholder taps "Add to Wallet"; pass them here unchanged in the request shape for that `wallet`.
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/DigitalWallet'
+    ApplePayTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+        - certificate
+        - nonce
+        - nonceSignature
+      properties:
+        wallet:
+          type: string
+          enum:
+            - APPLE_PAY
+          description: Discriminator value identifying an Apple Pay request.
+          example: APPLE_PAY
+        certificate:
+          type: string
+          description: The leaf certificate from the `certificates` array Apple passes to your `PKAddPaymentPassViewControllerDelegate`, base64-encoded in PEM form.
+          example: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM=
+        nonce:
+          type: string
+          description: The `nonce` Apple passes to your delegate, base64-encoded.
+          example: MTIzNDU2Nzg=
+        nonceSignature:
+          type: string
+          description: The `nonceSignature` Apple passes to your delegate, base64-encoded.
+          example: c2lnbmF0dXJl
+    ApplePayTokenizationRequest:
+      title: Apple Pay Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationRequest'
+        - $ref: '#/components/schemas/ApplePayTokenizationRequestFields'
+    GooglePayTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+        - walletAccountId
+        - serverSessionId
+      properties:
+        wallet:
+          type: string
+          enum:
+            - GOOGLE_PAY
+          description: Discriminator value identifying a Google Pay request.
+          example: GOOGLE_PAY
+        walletAccountId:
+          type: string
+          description: The stable identifier of the Google Wallet account the card is being added to, as reported by the TapAndPay client.
+          example: wallet-account-8f14e45f
+        serverSessionId:
+          type: string
+          format: uuid
+          description: The `serverSessionId` Google supplies in the TapAndPay payment-credentials callback under Unified Push Provisioning.
+          example: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+        deviceId:
+          type: string
+          description: The stable device identifier from `getStableHardwareId`, when the SDK supplies one. Unified Push Provisioning does not always.
+          example: device-3c59dc04
+        opaquePaymentCardRequested:
+          type: boolean
+          default: false
+          description: Set to the value Google supplies in the payment-credentials callback. When `true`, the response also carries `googleAccountPayload`, which saves the card to the cardholder's Google Account for online payments in addition to the device token.
+          example: false
+    GooglePayTokenizationRequest:
+      title: Google Pay Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationRequest'
+        - $ref: '#/components/schemas/GooglePayTokenizationRequestFields'
+    SamsungPayTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+        - walletAccountId
+        - deviceId
+      properties:
+        wallet:
+          type: string
+          enum:
+            - SAMSUNG_PAY
+          description: Discriminator value identifying a Samsung Pay request.
+          example: SAMSUNG_PAY
+        walletAccountId:
+          type: string
+          description: The cardholder's Samsung Wallet identifier (`walletUserId`) reported by the Samsung Pay SDK.
+          example: wallet-account-8f14e45f
+        deviceId:
+          type: string
+          description: The stable device identifier reported by the Samsung Pay SDK.
+          example: device-3c59dc04
+    SamsungPayTokenizationRequest:
+      title: Samsung Pay Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationRequest'
+        - $ref: '#/components/schemas/SamsungPayTokenizationRequestFields'
+    CardTokenizationRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/ApplePayTokenizationRequest'
+        - $ref: '#/components/schemas/GooglePayTokenizationRequest'
+        - $ref: '#/components/schemas/SamsungPayTokenizationRequest'
+      discriminator:
+        propertyName: wallet
+        mapping:
+          APPLE_PAY: '#/components/schemas/ApplePayTokenizationRequest'
+          GOOGLE_PAY: '#/components/schemas/GooglePayTokenizationRequest'
+          SAMSUNG_PAY: '#/components/schemas/SamsungPayTokenizationRequest'
+    CardTokenizationResponse:
+      type: object
+      description: 'Fields shared by every add-to-wallet response. The payload is encrypted to the wallet provider''s keys: neither your app nor your servers can read the card data inside it. Hand it to the wallet SDK; it is valid for a single provisioning attempt.'
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/DigitalWallet'
+    CardTokenizationApplePayPayload:
+      type: object
+      description: The encrypted pass data for Apple Wallet. Pass the three fields straight into the `PKAddPaymentPassRequest` your delegate's completion handler expects.
+      required:
+        - activationData
+        - encryptedPassData
+        - ephemeralPublicKey
+      properties:
+        activationData:
+          type: string
+          description: Base64 `activationData` for `PKAddPaymentPassRequest`.
+          example: YWN0aXZhdGlvbi1kYXRh
+        encryptedPassData:
+          type: string
+          description: Base64 `encryptedPassData` for `PKAddPaymentPassRequest`.
+          example: ZW5jcnlwdGVkLXBhc3MtZGF0YQ==
+        ephemeralPublicKey:
+          type: string
+          description: Base64 `ephemeralPublicKey` for `PKAddPaymentPassRequest`.
+          example: ZXBoZW1lcmFsLXB1YmxpYy1rZXk=
+    ApplePayTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - applePay
+      properties:
+        wallet:
+          type: string
+          enum:
+            - APPLE_PAY
+          description: Discriminator value identifying an Apple Pay response.
+          example: APPLE_PAY
+        applePay:
+          $ref: '#/components/schemas/CardTokenizationApplePayPayload'
+    ApplePayTokenizationResponse:
+      title: Apple Pay Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationResponse'
+        - $ref: '#/components/schemas/ApplePayTokenizationResponseFields'
+    GooglePayTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - provisioningPayload
+      properties:
+        wallet:
+          type: string
+          enum:
+            - GOOGLE_PAY
+          description: Discriminator value identifying a Google Pay response.
+          example: GOOGLE_PAY
+        provisioningPayload:
+          type: string
+          description: Base64-encoded opaque payload for the device token. Return it from the TapAndPay payment-credentials callback.
+          example: eyJjYXJkIjoiLi4uIn0=
+        googleAccountPayload:
+          type: string
+          description: Present when `opaquePaymentCardRequested` was `true`. Return it alongside `provisioningPayload` so Google also saves the card to the cardholder's Google Account.
+          example: eyJmcGFuIjoiLi4uIn0=
+    GooglePayTokenizationResponse:
+      title: Google Pay Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationResponse'
+        - $ref: '#/components/schemas/GooglePayTokenizationResponseFields'
+    SamsungPayTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - provisioningPayload
+      properties:
+        wallet:
+          type: string
+          enum:
+            - SAMSUNG_PAY
+          description: Discriminator value identifying a Samsung Pay response.
+          example: SAMSUNG_PAY
+        provisioningPayload:
+          type: string
+          description: Base64-encoded opaque payload. Pass it to the Samsung Pay SDK's `addCard` call.
+          example: eyJjYXJkIjoiLi4uIn0=
+    SamsungPayTokenizationResponse:
+      title: Samsung Pay Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationResponse'
+        - $ref: '#/components/schemas/SamsungPayTokenizationResponseFields'
+    CardTokenizationResponseOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/ApplePayTokenizationResponse'
+        - $ref: '#/components/schemas/GooglePayTokenizationResponse'
+        - $ref: '#/components/schemas/SamsungPayTokenizationResponse'
+      discriminator:
+        propertyName: wallet
+        mapping:
+          APPLE_PAY: '#/components/schemas/ApplePayTokenizationResponse'
+          GOOGLE_PAY: '#/components/schemas/GooglePayTokenizationResponse'
+          SAMSUNG_PAY: '#/components/schemas/SamsungPayTokenizationResponse'
     SandboxCardAuthorizationRequest:
       type: object
       required:
