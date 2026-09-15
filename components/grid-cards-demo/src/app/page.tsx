@@ -41,6 +41,11 @@ export default function Page() {
   const exportRef = useRef<CardExporter | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const toggleShare = useCallback(() => setShareOpen((o) => !o), []);
+  // A flow brings the phone in and takes the card: the share is over, so
+  // sending the phone away returns the card to the designer, not the frame.
+  useEffect(() => {
+    if (logic.phoneUp) setShareOpen(false);
+  }, [logic.phoneUp]);
   // The stage's chrome (the Share button) comes in once the card has.
   const [introDone, setIntroDone] = useState(false);
   const onIntroDone = useCallback(() => setIntroDone(true), []);
