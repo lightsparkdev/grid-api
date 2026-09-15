@@ -26,6 +26,12 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: Stablecoin operations are not enabled for this platform.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Stablecoin provider account link not found
       content:

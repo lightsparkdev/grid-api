@@ -168,6 +168,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error403.yaml
+    '404':
+      description: Source account not found
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error404.yaml
     '408':
       description: Request Timeout - the request body could not be read in time; retry
       content:
@@ -219,3 +225,10 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error501.yaml
+    '503':
+      description: >-
+        A dependency is temporarily unavailable; retry later (`SERVICE_UNAVAILABLE`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml

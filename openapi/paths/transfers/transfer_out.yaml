@@ -74,6 +74,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: The customer's identity is not verified (`CUSTOMER_NOT_VERIFIED`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Customer or account not found
       content:

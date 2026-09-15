@@ -134,3 +134,17 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Executing a quote from this source is not supported by the customer's payment provider.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
+    '503':
+      description: >-
+        A dependency is temporarily unavailable; retry later (`SERVICE_UNAVAILABLE`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error503.yaml
