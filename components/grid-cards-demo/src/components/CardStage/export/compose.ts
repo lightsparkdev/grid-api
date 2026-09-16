@@ -172,13 +172,6 @@ export function handReady(id: string): boolean {
   return layers.has(id);
 }
 
-/** Decode a loaded hand's layer, so an `<img>` of the same URL paints on
- *  its first frame (loaded is not decoded; an undecoded swap flashes). */
-export function decodeHand(id: string): Promise<void> {
-  const img = layers.get(id);
-  return img?.decode ? img.decode().catch(() => {}) : Promise.resolve();
-}
-
 /** The card's long edge in the hand, as a fraction of the layout square,
  *  and where its center sits: the middle of the frame. At this size the
  *  photograph's bottom edge, where the wrist is cropped, is past the
@@ -200,55 +193,102 @@ export function handLayerIn(w: number, h: number, id: string): { x: number; y: n
   return { x: cx - (hole.x + hole.w / 2) * size, y: cy - (hole.y + hole.h / 2) * size, size };
 }
 
-/** A wash over the hand, as the surface's light would fall on it. The
- *  photographs were lit for white: on a dark surface their highlights are
- *  the studio's, not the scene's, and the hand reads as pasted on.
- *  Darkening it toward the surface's own darkness settles it: nothing on
- *  white, about a quarter on black. The wash is the surface's grey, not its
- *  color: a colored surface bounces some hue onto skin in life, but here it
- *  read as a tint (a blue backdrop, a blue hand), so only a trace of the
- *  hue is kept. */
-export function handWashFor(palette: Palette): { color: string; alpha: number } {
-  const rgb = hexToRgb(palette.bg);
-  const L = luminance(rgb);
-  const grey = L * 255;
-  return { color: rgbToHex(mix([grey, grey, grey], rgb, 0.15)), alpha: 0.3 * (1 - L) ** 1.5 };
+// ── Toning the hand to the surface ────────────────────────────────────────
+// The photographs were lit for white. On a dark surface their highlights
+// (the rims of the fingers, the sheen on the knuckles) are the studio's,
+// not the scene's, and the hand reads as pasted on. Rather than wash the
+// whole hand darker, the highlights alone are rolled off: a soft knee
+// compresses the brightest tones toward a ceiling set by the surface's
+// darkness, and the shadows and midtones stay as photographed. Hue and
+// saturation are kept (each pixel is scaled, not shifted).
+
+/** How much to roll the highlights off for a surface: 0 on white, most of
+ *  the way on black. */
+export function handToneFor(palette: Palette): number {
+  const L = luminance(hexToRgb(palette.bg));
+  // Bucketed, so a custom color sliding through its range doesn't make a
+  // toned layer for every step.
+  return Math.round(((1 - L) ** 1.5) * 20) / 20;
 }
 
-let washScratch: HTMLCanvasElement | null = null;
+/** The ceiling and knee of the roll-off, in luminance, for a strength. */
+function toneCurve(strength: number): { ceiling: number; knee: number } {
+  const ceiling = 1 - 0.38 * strength;
+  return { ceiling, knee: ceiling - 0.32 };
+}
 
-/** Draw a hand's layer with its wash: the layer into a scratch canvas, the
- *  wash over it where it is opaque (`source-atop` keeps the layer's alpha),
- *  then that onto `ctx`. */
-function drawHand(
-  ctx: CanvasRenderingContext2D,
-  layer: HTMLImageElement,
-  at: { x: number; y: number; size: number },
-  palette: Palette,
-) {
-  const wash = handWashFor(palette);
-  if (wash.alpha < 0.005) {
-    ctx.drawImage(layer, at.x, at.y, at.size, at.size);
-    return;
+type Toned = { canvas: HTMLCanvasElement; url: string };
+const toned = new Map<string, Toned>();
+const tonedPromises = new Map<string, Promise<Toned>>();
+const toneKey = (id: string, strength: number) => `${id}@${strength.toFixed(2)}`;
+
+/** A hand's layer with its highlights rolled off for `strength`, as a
+ *  canvas (the export draws it) and a URL (the stage shows it), made once. */
+export function prepareTonedHand(id: string, strength: number): Promise<Toned> {
+  const key = toneKey(id, strength);
+  let p = tonedPromises.get(key);
+  if (!p) {
+    p = prepareHand(id)
+      .then(() => {
+        const layer = layers.get(id)!;
+        const c = document.createElement('canvas');
+        c.width = layer.naturalWidth;
+        c.height = layer.naturalHeight;
+        const ctx = c.getContext('2d', { willReadFrequently: true })!;
+        ctx.drawImage(layer, 0, 0);
+        if (strength > 0) rollOffHighlights(ctx, strength);
+        return new Promise<Toned>((resolve, reject) => {
+          c.toBlob((blob) => {
+            if (!blob) return reject(new Error('tone encode failed'));
+            resolve({ canvas: c, url: URL.createObjectURL(blob) });
+          }, 'image/webp', 0.95);
+        });
+      })
+      .then((t) => {
+        toned.set(key, t);
+        return t;
+      })
+      .catch((e) => {
+        tonedPromises.delete(key);
+        throw e;
+      });
+    tonedPromises.set(key, p);
   }
-  const w = ctx.canvas.width;
-  const h = ctx.canvas.height;
-  const s = washScratch ?? (washScratch = document.createElement('canvas'));
-  if (s.width !== w || s.height !== h) {
-    s.width = w;
-    s.height = h;
+  return p;
+}
+
+/** The toned layer, if made. */
+export function tonedHand(id: string, strength: number): Toned | null {
+  return toned.get(toneKey(id, strength)) ?? null;
+}
+
+function rollOffHighlights(ctx: CanvasRenderingContext2D, strength: number) {
+  const { ceiling, knee } = toneCurve(strength);
+  const range = ceiling - knee;
+  const { width, height } = ctx.canvas;
+  const img = ctx.getImageData(0, 0, width, height);
+  const d = img.data;
+  // Luminance in, luminance out, by 8-bit luminance: the curve once.
+  const gain = new Float32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const L = i / 255;
+    if (L <= knee) {
+      gain[i] = 1;
+      continue;
+    }
+    const out = knee + range * Math.tanh((L - knee) / range);
+    gain[i] = out / L;
   }
-  const sc = s.getContext('2d')!;
-  sc.globalCompositeOperation = 'source-over';
-  sc.clearRect(0, 0, w, h);
-  sc.drawImage(layer, at.x, at.y, at.size, at.size);
-  sc.globalCompositeOperation = 'source-atop';
-  sc.globalAlpha = wash.alpha;
-  sc.fillStyle = wash.color;
-  sc.fillRect(0, 0, w, h);
-  sc.globalAlpha = 1;
-  sc.globalCompositeOperation = 'source-over';
-  ctx.drawImage(s, 0, 0);
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] === 0) continue;
+    const L = Math.round(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
+    const g = gain[L];
+    if (g === 1) continue;
+    d[i] = Math.min(255, d[i] * g);
+    d[i + 1] = Math.min(255, d[i + 1] * g);
+    d[i + 2] = Math.min(255, d[i + 2] * g);
+  }
+  ctx.putImageData(img, 0, 0);
 }
 
 /** The card's rectangle in the hand, in frame px, for a frame `w` × `h`. */
@@ -541,8 +581,12 @@ export function compose(
   paintTemplate(ctx, frame.width, frame.height, opts.palette);
   ctx.drawImage(card, dx, dy);
   if (opts.treatment === 'hand' && opts.hand) {
-    const layer = layers.get(opts.hand);
-    if (layer) drawHand(ctx, layer, handLayerIn(frame.width, frame.height, opts.hand), opts.palette);
+    // Toned for the surface where that has been made, else as photographed.
+    const layer = tonedHand(opts.hand, handToneFor(opts.palette))?.canvas ?? layers.get(opts.hand);
+    if (layer) {
+      const { x, y, size } = handLayerIn(frame.width, frame.height, opts.hand);
+      ctx.drawImage(layer, x, y, size, size);
+    }
   }
   return target;
 }

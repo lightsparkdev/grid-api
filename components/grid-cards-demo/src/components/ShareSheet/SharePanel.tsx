@@ -23,10 +23,9 @@ import {
   handById,
   handHoleIn,
   handLayerIn,
-  handReady,
   handsLoaded,
-  handWashFor,
-  decodeHand,
+  handToneFor,
+  prepareTonedHand,
   paletteFor,
   prepareHand,
   prepareHands,
@@ -80,6 +79,13 @@ interface SharePanelProps {
 
 /** The hand shown first. */
 const DEFAULT_HAND = 'h1';
+
+/** Load and decode an image URL, so an `<img>` of it paints on its first frame. */
+function decodeUrl(url: string): Promise<void> {
+  const img = new Image();
+  img.src = url;
+  return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+}
 /** How long into the hand's leaving (SharePanel.module.scss, .handMotion)
  *  the card starts moving off to the template's slot: the two overlap, as
  *  they do arriving. And when the hand has gone, and can be unmounted. */
@@ -128,8 +134,8 @@ const PANEL_AWAY = { opacity: 0, scale: 0.9, y: 128, filter: 'blur(48px)' };
 const easeOutGentle = [0.32, 0.72, 0, 1] as const;
 const GROW = motionTransition(easeOutGentle, 0.7);
 const ROW_IN = motionTransition(easeOutGentle, 0.6);
-/** A row arriving or leaving as the Style changes (Skin for Pose): it fades
- *  where it stands while Backdrop slides to its place. */
+/** The third row arriving or leaving as the Style changes (Skin for Pose):
+ *  each fades where it stands. */
 const ROW_SWAP = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
@@ -192,7 +198,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
   // with no gap for the frame behind to show through.
   const [hands, setHands] = useState<Hand[] | null>(handsLoaded());
   const [handId, setHandId] = useState<string>(DEFAULT_HAND);
-  const [shownHand, setShownHand] = useState<string | null>(handReady(DEFAULT_HAND) ? DEFAULT_HAND : null);
+  const [shownHand, setShownHand] = useState<string | null>(null);
   useEffect(() => {
     if (!hand || hands) return;
     let alive = true;
@@ -207,17 +213,26 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
       alive = false;
     };
   }, [hand, hands]);
+  // The shown layer is the picked hand toned for the surface: made (once
+  // per hand and strength) and decoded before it replaces what is shown,
+  // so the swap is one frame to the next.
+  const tone = handToneFor(palette);
+  const [shownLayer, setShownLayer] = useState<{ id: string; tone: number; url: string } | null>(null);
   useEffect(() => {
-    if (!hand || shownHand === handId) return;
+    if (!hand || (shownLayer && shownLayer.id === handId && shownLayer.tone === tone)) return;
     let alive = true;
-    prepareHand(handId)
-      .then(() => decodeHand(handId))
-      .then(() => alive && setShownHand(handId))
+    prepareTonedHand(handId, tone)
+      .then((t) => decodeUrl(t.url).then(() => t))
+      .then((t) => {
+        if (!alive) return;
+        setShownLayer({ id: handId, tone, url: t.url });
+        setShownHand(handId);
+      })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [hand, handId, shownHand]);
+  }, [hand, handId, tone, shownLayer]);
   const handLoaded = shownHand !== null;
   const handShown = hand && handLoaded;
   // What the frame and the stage hold. Going to the hand, the card moves
@@ -521,7 +536,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
     setSavingWhat('image');
     try {
       await warmTemplate();
-      if (hand) await prepareHand(handId);
+      if (hand) await prepareTonedHand(handId, handToneFor(palette));
       const blob = await renderStill(ex, {
         format: 'square',
         palette,
@@ -640,25 +655,9 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                 if (!rect || !handMounted || !shownHand) return null;
                 const l = handLayerIn(rect.side, rect.side, shownHand);
                 const at = { left: l.x, top: l.y, width: l.size, height: l.size };
-                const url = handById(shownHand)?.url;
-                const wash = handWashFor(palette);
                 return (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" className={styles.handLayer} style={at} />
-                    {/* The surface's wash over the hand (see handWashFor),
-                        masked by the hand itself so it lands on skin alone. */}
-                    <span
-                      className={styles.handWash}
-                      style={{
-                        ...at,
-                        background: wash.color,
-                        opacity: wash.alpha,
-                        maskImage: `url(${url})`,
-                        WebkitMaskImage: `url(${url})`,
-                      }}
-                    />
-                  </>
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={shownLayer?.url ?? handById(shownHand)?.url} alt="" className={styles.handLayer} style={at} />
                 );
               })()}
             </div>
@@ -739,14 +738,54 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                         ))}
                       </SwatchRow>
                     </div>
-                    {/* Skin and Backdrop, or Backdrop and Pose: Backdrop slides to its
-                        place while the other row fades in over the one leaving. */}
+                    <div className={picker.row}>
+                      <span className={picker.rowLabel}>Backdrop</span>
+                      <SwatchRow label="Backdrop" active={backdrop}>
+                        {BACKDROPS.map((b) => {
+                          const p = paletteFor(b.id, surfaces);
+                          return (
+                            <Tooltip key={b.id} text={b.label}>
+                              {(tip) => (
+                                <button
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={backdrop === b.id}
+                                  aria-label={b.label}
+                                  className={clsx(picker.swatch, styles.swatch)}
+                                  style={{ background: p.bg, color: p.ink }}
+                                  {...tip}
+                                  {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
+                                />
+                              )}
+                            </Tooltip>
+                          );
+                        })}
+                        <ColorPicker
+                          value={customBg ?? paletteOn(surfaces.brand).bg}
+                          gradient={null}
+                          orientation={design.orientation}
+                          solidOnly
+                          onChange={(color) => {
+                            setCustomBg(color);
+                            setBackdropPick('custom');
+                          }}
+                          triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
+                          triggerActive={backdrop === 'custom'}
+                          triggerLabel="Custom color"
+                          tooltip="Custom color"
+                        >
+                          {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
+                        </ColorPicker>
+                      </SwatchRow>
+                    </div>
+                    {/* The third row is Pose, or Skin with the hand: one fades in
+                        over the other on its way out (lifted out of the flow, so
+                        the row holds its place and height). */}
                     <AnimatePresence mode="popLayout" initial={false}>
-                      {hand && hands && (
+                      {hand && hands ? (
                       <m.div
                         key="skin"
                         className={picker.row}
-                        layout="position"
                         {...ROW_SWAP}
                       >
                         <span className={picker.rowLabel}>Skin</span>
@@ -769,52 +808,10 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                           ))}
                         </SwatchRow>
                       </m.div>
-                      )}
-                      <m.div key="backdrop" className={picker.row} layout="position" transition={ROW_SWAP.transition}>
-                        <span className={picker.rowLabel}>Backdrop</span>
-                        <SwatchRow label="Backdrop" active={backdrop}>
-                          {BACKDROPS.map((b) => {
-                            const p = paletteFor(b.id, surfaces);
-                            return (
-                              <Tooltip key={b.id} text={b.label}>
-                                {(tip) => (
-                                  <button
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={backdrop === b.id}
-                                    aria-label={b.label}
-                                    className={clsx(picker.swatch, styles.swatch)}
-                                    style={{ background: p.bg, color: p.ink }}
-                                    {...tip}
-                                    {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
-                                  />
-                                )}
-                              </Tooltip>
-                            );
-                          })}
-                          <ColorPicker
-                            value={customBg ?? paletteOn(surfaces.brand).bg}
-                            gradient={null}
-                            orientation={design.orientation}
-                            solidOnly
-                            onChange={(color) => {
-                              setCustomBg(color);
-                              setBackdropPick('custom');
-                            }}
-                            triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
-                            triggerActive={backdrop === 'custom'}
-                            triggerLabel="Custom color"
-                            tooltip="Custom color"
-                          >
-                            {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
-                          </ColorPicker>
-                        </SwatchRow>
-                      </m.div>
-                      {!hand && (
+                      ) : (
                       <m.div
                         key="pose"
                         className={picker.row}
-                        layout="position"
                         {...ROW_SWAP}
                       >
                         <span className={picker.rowLabel}>Pose</span>
