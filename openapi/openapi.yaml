@@ -111,10 +111,11 @@ tags:
 
       1. **Open the chat.** `POST /care/chats/{chatId}/messages` with an empty
          `message`, addressed to the cardholder as `Customer:<uuid>`. Returns
-         the chat's id and the agent's `greeting`, which is what a chat window
-         renders before anybody has typed. Sends no SMS, runs no turn, bills
-         nothing, and is safe to call again: a widget that reloaded gets the
-         same chat back, this time without a greeting.
+         the chat's id and the agent's opening line in `reply`, which is what
+         a chat window renders before anybody has typed. Sends no SMS, runs no
+         turn, needs no `Idempotency-Key`, bills nothing, and is safe to call
+         again: a widget that reloaded gets the same chat back, this time
+         without a `reply`.
       2. **Send the cardholder's first message.** The same route with their
          text and an `Idempotency-Key` header. One turn runs synchronously and
          the agent's answer comes back in `reply`. On a chat that cannot yet
@@ -135,6 +136,9 @@ tags:
       one.** The agent sends a new code to the number on file and says so in
       its `reply`. There is no separate route for it.
 
+      **Render `displayMessage` if present, then `reply` if present.** That one
+      rule covers an opening, a resume and a turn.
+
       Step 1 is optional. A message addressed to a `Customer:` id opens that
       cardholder's chat if they have none, so a partner whose cardholder has
       just typed something spends one call rather than two.
@@ -143,24 +147,21 @@ tags:
       reported inside a `200`, because the first message from every new
       cardholder is unverified and a `401` there would be indistinguishable
       from a bad credential. On these endpoints a `401` means the platform's
-      Grid credential is wrong, or a chat whose verification is still current
-      was driven without its session token.
+      Grid credential is wrong, or the session token presented is malformed.
 
-      **Verification expires, and expiry is recoverable in the chat.** A chat
-      reaches the cardholder's account only while its verification is newer
-      than the session lifetime, fifteen minutes in the default deployment,
-      which is also how long a session token lives. Past that window the chat
-      stops requiring the header: a message sent without one gets a fresh
-      code, and the agent asks the cardholder to send it back inside the
-      conversation, which hands the partner the next session token. Sending
-      the dead token anyway is still a `401 CARE_SESSION_EXPIRED`, so the
-      handling is to discard the token on that error and resend the message
-      with no `X-Ls-Care-Session` header rather than to tear the chat down.
-      If that resend is refused too, the chat's verification is still current
-      and its token has been lost. Close the chat with
-      `DELETE /care/chats/{chatId}`, which needs no token, and send the
-      message to the cardholder as `Customer:<uuid>`: that opens a fresh chat
-      and sends a new code.
+      **Verification expires, and a lost session is recoverable in the
+      chat.** A chat reaches the cardholder's account only while its
+      verification is newer than the session lifetime, fifteen minutes in the
+      default deployment, which is also how long a session token lives. Past
+      that window a message gets a fresh code, and the agent asks the
+      cardholder to send it back inside the conversation, which hands the
+      partner the next session token. A message sent with no
+      `X-Ls-Care-Session` header, or with a token past its expiry, on a chat
+      whose verification is still current is treated the same way: the
+      verification is taken away before the turn runs, a new code is sent, and
+      the agent asks for it. So a client that lost its token, or held one too
+      long, simply keeps sending messages. Only a token that is malformed, or
+      that was minted for another platform, chat or cardholder, is refused.
 
       Two things an integration has to get right:
 
@@ -173,7 +174,8 @@ tags:
         endpoint hands it back, there is no revocation, and it is short-lived
         by design. Hold it for the life of the cardholder's session. It
         arrives on the message response to the turn in which the cardholder
-        sent their code, and on no other.
+        sent their code, and on no other. Losing it costs the cardholder a new
+        code, never access to the chat.
 
       Some things are absent by construction, so no integration can come to
       depend on them: nothing returns a transcript or an earlier turn's reply

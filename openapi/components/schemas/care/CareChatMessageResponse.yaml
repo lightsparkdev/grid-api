@@ -2,11 +2,12 @@ type: object
 description: >-
   The result of one call to the message route. Which fields are present
   depends on what the call did: a turn adds `id`, `displayMessage`, `reply`
-  and `replayed`; the call that opened the chat adds `greeting`; an
-  outstanding verification adds `destinationMasked`, `alreadySent` and,
-  where the service could be read, `codeLength`; and the turn in which the
+  and `replayed`; the call that opened the chat adds `reply` alone, carrying
+  the agent's opening line; an outstanding verification adds
+  `destinationMasked`, `alreadySent` and, where the service could be read,
+  `codeLength`; and the turn in which the
   cardholder sent their verification code adds `sessionToken` and
-  `expiresAt`.
+  `expiresAt`. Render `displayMessage` if present, then `reply` if present.
 required:
   - chatId
   - verificationStatus
@@ -30,10 +31,10 @@ properties:
       false, so a client reads a field rather than an absence. When true,
       `destinationMasked` and `alreadySent` are present, and the cardholder
       completes verification by sending the code as an ordinary message. A
-      verification that
-      is outstanding is never reported as a `401`: on this surface a `401`
-      means the platform credential is wrong, or a chat whose verification is
-      still current was driven without its session token.
+      verification that is outstanding, or one taken away because a message
+      arrived without a live session token, is never reported as a `401`: on
+      this surface a `401` means the platform credential is wrong, or the
+      session token presented is malformed.
 
 
       Read this field rather than `verificationStatus`. A chat whose
@@ -68,11 +69,14 @@ properties:
   reply:
     type: string
     description: >-
-      The agent's answer to this message, to render as the assistant's turn.
-      Present only when a turn ran. When verification is outstanding the
-      agent's own sentence asks for the code, and when a code the cardholder
-      sent did not match, this is where they are told so.
-    example: I can help with that. To look at your account I've texted you a code — what does it say?
+      What the agent said on this call, to render as the assistant's message.
+      Present whenever the agent said something: its answer when a turn ran,
+      or its opening line on the call that opened the chat. Absent on a
+      resume. An opening needs no `Idempotency-Key`, consumes none and bills
+      nothing, even though it carries a `reply`. When verification is
+      outstanding the agent's own sentence asks for the code, and when a code
+      the cardholder sent did not match, this is where they are told so.
+    example: I can help with that. To look at your account I've texted you a code. What does it say?
   replayed:
     type: boolean
     description: >-
@@ -82,8 +86,6 @@ properties:
       under the original key is the only way to recover a reply that was
       produced but never delivered.
     example: false
-  greeting:
-    $ref: ./CareChatGreeting.yaml
   destinationMasked:
     type: string
     description: >-
@@ -120,9 +122,9 @@ properties:
       ordinary message. The agent checks it with the SMS provider, and the
       chat comes out of that turn able to reach the account. This field is
       how the partner is handed the credential that turn earned, and it is the
-      only place a session token is ever issued. Without it you would hold a
-      chat that is privileged and unusable at once, because every later
-      message on it is refused with `CARE_SESSION_EXPIRED`.
+      only place a session token is ever issued. A later message sent without
+      it takes the verification away again and asks the cardholder for a new
+      code.
 
 
       Send it as the `X-Ls-Care-Session` header from the next call onwards.
@@ -139,7 +141,8 @@ properties:
     type: string
     format: date-time
     description: >-
-      ISO 8601 timestamp, in UTC, after which the `sessionToken` beside it is
-      refused with `CARE_SESSION_EXPIRED`. Present exactly when
+      ISO 8601 timestamp, in UTC, after which the `sessionToken` beside it no
+      longer counts as a session: a message carrying it past this time is
+      treated as carrying none, and the cardholder is asked to verify again. Present exactly when
       `sessionToken` is present. Read it rather than assuming a duration.
     example: '2026-09-12T14:25:00Z'

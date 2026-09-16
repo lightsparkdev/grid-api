@@ -691,7 +691,6 @@ resources:
         models:
           care_chat_message_request: "#/components/schemas/CareChatMessageRequest"
           care_chat_message_response: "#/components/schemas/CareChatMessageResponse"
-          care_chat_greeting: "#/components/schemas/CareChatGreeting"
           care_chat_verification_status: "#/components/schemas/CareChatVerificationStatus"
           care_error: "#/components/schemas/CareError"
 

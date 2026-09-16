@@ -25,7 +25,7 @@ properties:
       | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `customerId` that is not a `Customer` id, or a chat that cannot be verified at all. |
       | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused at the content boundary and no turn ran. `reason` carries the sentence to show them. |
       | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified — that is signalled in a `200` body. |
-      | `CARE_SESSION_EXPIRED` | 401 | The chat's verification is still current, so it requires `X-Ls-Care-Session`, and the header was missing; or the token presented was malformed or past its expiry. Retry the message with no `X-Ls-Care-Session` header. If that is refused too, the token for a live verification has been lost: close the chat and send the message to the cardholder as `Customer:<uuid>`, which opens a fresh chat and sends a new code. Once the chat's own verification has aged past the session lifetime this error stops: the header is no longer required, and the next message sends a fresh code instead of being refused. |
+      | `CARE_SESSION_EXPIRED` | 401 | The `X-Ls-Care-Session` token presented is malformed, or not a care session token at all. A missing or expired token is never this error: the message verifies the cardholder again inside a `200` instead. Rarely, also returned when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again. |
       | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
       | `CARE_SESSION_PLATFORM_MISMATCH` | 403 | The session token was minted for a different platform. Stop; retrying will not help. |
       | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
@@ -67,4 +67,4 @@ properties:
       branching, and not always safe to show a cardholder verbatim — the
       exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be
       shown.
-    example: The care session has expired. Verify the cardholder again.
+    example: The care session token is not valid.
