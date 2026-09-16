@@ -124,15 +124,12 @@
   align-items: flex-start;
 }
 
-/* Only the outer rules: the middle column has no edges of its own. */
 .colMid {
   padding: 0;
-  border-left: 0;
 }
 
 .colRight {
   align-items: flex-end;
-  border-left: 0;
   border-right: 1px solid var(--rule);
   text-align: right;
 }
@@ -184,9 +181,11 @@
   }
 }
 
-/* The tuple: 8.5px, with the slashed zero (as the template paints it). */
+/* The tuple: lightspark.com's numeric mousetype, 8.5px a touch heavier on
+   the variable axis, with the slashed zero. */
 .tuple {
   font-size: 8.5px;
+  font-variation-settings: 'wght' 420;
   font-feature-settings: 'ss01' 1, 'salt' 1, 'zero' 1;
 }
 
@@ -208,9 +207,10 @@
   font-feature-settings: 'salt' 1;
 }
 
+/* The gap lightspark.com runs between paired CTAs. */
 .actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 /* ── Small screens: the columns stack ──────────────────────────────────── */
