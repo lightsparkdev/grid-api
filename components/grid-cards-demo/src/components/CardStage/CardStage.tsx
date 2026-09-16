@@ -236,8 +236,8 @@ export interface ShareStageState {
   locked?: boolean;
   /** The visitor turned the card by hand: the picked pose no longer holds. */
   onTurned?: () => void;
-  /** The card has landed in the frame's slot and come to rest (or has left
-   *  it): what must wait for the card to be in place (the hand) listens. */
+  /** The card has landed in the frame's slot and is all but still (or has
+   *  left it): what must wait for the card to be in place (the hand) listens. */
   onSettled?: (settled: boolean) => void;
 }
 
@@ -1666,13 +1666,17 @@ const CardRig = memo(function CardRig({
         x += (tgt.x - x) * st;
         y += (tgt.y - y) * st;
         s += (tgt.s - s) * st;
-        // In place: landed, the glide done (within a pixel), and still.
+        // Nearly in place: landed, the glide within a tenth of the card's
+        // width of the slot, the turn within twenty degrees. The glide and
+        // the spring take about half a second from here, and what waits on
+        // the card (the hand) arrives over that.
+        const near = want.s * foot.w * 0.1;
         shareInPlace =
           lv.shareT === 1 &&
-          Math.abs(want.x - tgt.x) < 1 &&
-          Math.abs(want.y - tgt.y) < 1 &&
-          Math.abs(want.s - tgt.s) < want.s * 0.004 &&
-          motion.atRest;
+          Math.abs(want.x - tgt.x) < near &&
+          Math.abs(want.y - tgt.y) < near &&
+          Math.abs(want.s - tgt.s) < want.s * 0.1 &&
+          motion.nearRest(20);
       }
     } else {
       shareSlot.current = null;

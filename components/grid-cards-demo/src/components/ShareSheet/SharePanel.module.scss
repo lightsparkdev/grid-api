@@ -107,23 +107,29 @@
   position: absolute;
   overflow: hidden;
   border-radius: var(--corner-radius-md);
+  pointer-events: none;
+}
+
+/* What moves, inside the clip (a filter on the clip itself would bleed its
+   blur past the frame): leaving (the transition into this state) is the
+   mirror of arriving, so it lingers, then goes into the blur. */
+.handMotion {
+  position: absolute;
+  inset: 0;
   opacity: 0;
   filter: blur(16px);
   transform: scale(1.06);
-  pointer-events: none;
-  /* Leaving (the transition into this state): the mirror of arriving, so
-     it lingers, then goes into the blur. */
   transition:
     opacity 440ms cubic-bezier(0.7, 0, 0.84, 0),
     filter 500ms cubic-bezier(0.7, 0, 0.84, 0),
     transform 500ms cubic-bezier(0.7, 0, 0.84, 0);
 }
 
-.handClipOn {
+/* Arriving: quick out of the blur, settling slowly. */
+.handMotionOn {
   opacity: 1;
   filter: blur(0);
   transform: scale(1);
-  /* Arriving: quick out of the blur, settling slowly. */
   transition:
     opacity 480ms cubic-bezier(0.19, 1, 0.22, 1),
     filter 620ms cubic-bezier(0.19, 1, 0.22, 1),

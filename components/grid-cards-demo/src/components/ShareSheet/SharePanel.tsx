@@ -79,9 +79,11 @@ interface SharePanelProps {
 
 /** The hand shown first. */
 const DEFAULT_HAND = 'h1';
-/** How long the hand takes to leave (SharePanel.module.scss, .handClip):
- *  the card waits this long before moving off to the template's slot. */
-const HAND_OUT_MS = 520;
+/** How long into the hand's leaving (SharePanel.module.scss, .handMotion)
+ *  the card starts moving off to the template's slot: the two overlap, as
+ *  they do arriving. And when the hand has gone, and can be unmounted. */
+const HAND_OUT_MS = 260;
+const HAND_GONE_MS = 560;
 
 /** The panel's width on the stage, the room kept around it, and the strip
  *  at the bottom the Share/Close button stands in. */
@@ -210,13 +212,20 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
   // first, and only then does the card move to the template's slot (the
   // hold outlasts the hand's exit).
   const [held, setHeld] = useState<Treatment>(treatment);
+  // The hand stays mounted (fading) past the hold, until it has gone.
+  const [handMounted, setHandMounted] = useState(hand);
   useEffect(() => {
     if (treatment === 'hand') {
       setHeld('hand');
+      setHandMounted(true);
       return;
     }
     const t = setTimeout(() => setHeld('template'), HAND_OUT_MS);
-    return () => clearTimeout(t);
+    const gone = setTimeout(() => setHandMounted(false), HAND_GONE_MS);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(gone);
+    };
   }, [treatment]);
   const heldHand = held === 'hand';
 
@@ -602,7 +611,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
       {frontHost &&
         createPortal(
           <div
-            className={clsx(styles.handClip, frontRect && handShown && styles.handClipOn)}
+            className={styles.handClip}
             style={(() => {
               // The clip keeps its place while the hand leaves.
               const rect = frontRect ?? lastRect.current;
@@ -610,34 +619,36 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
             })()}
             aria-hidden
           >
-            {(() => {
-              // Mounted from the moment the hand is held (so it is decoded
-              // before it shows) until the hold ends after it has left.
-              const rect = frontRect ?? lastRect.current;
-              if (!rect || !heldHand || !handLoaded) return null;
-              const l = handLayerIn(rect.side, rect.side, handId);
-              const at = { left: l.x, top: l.y, width: l.size, height: l.size };
-              const url = handById(handId)?.url;
-              const wash = handWashFor(palette);
-              return (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" className={styles.handLayer} style={at} />
-                  {/* The surface's wash over the hand (see handWashFor),
-                      masked by the hand itself so it lands on skin alone. */}
-                  <span
-                    className={styles.handWash}
-                    style={{
-                      ...at,
-                      background: wash.color,
-                      opacity: wash.alpha,
-                      maskImage: `url(${url})`,
-                      WebkitMaskImage: `url(${url})`,
-                    }}
-                  />
-                </>
-              );
-            })()}
+            <div className={clsx(styles.handMotion, frontRect && handShown && styles.handMotionOn)}>
+              {(() => {
+                // Mounted from the moment the hand is picked (so it is
+                // decoded before it shows) until it has left.
+                const rect = frontRect ?? lastRect.current;
+                if (!rect || !handMounted || !handLoaded) return null;
+                const l = handLayerIn(rect.side, rect.side, handId);
+                const at = { left: l.x, top: l.y, width: l.size, height: l.size };
+                const url = handById(handId)?.url;
+                const wash = handWashFor(palette);
+                return (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className={styles.handLayer} style={at} />
+                    {/* The surface's wash over the hand (see handWashFor),
+                        masked by the hand itself so it lands on skin alone. */}
+                    <span
+                      className={styles.handWash}
+                      style={{
+                        ...at,
+                        background: wash.color,
+                        opacity: wash.alpha,
+                        maskImage: `url(${url})`,
+                        WebkitMaskImage: `url(${url})`,
+                      }}
+                    />
+                  </>
+                );
+              })()}
+            </div>
           </div>,
           frontHost,
         )}

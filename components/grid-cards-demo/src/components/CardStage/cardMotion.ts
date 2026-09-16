@@ -226,6 +226,14 @@ export class CardMotion {
     );
   }
 
+  /** Within `deg` of settling on its targets, and not being dragged: the
+   *  last of a turn, when what waits on the card can begin. */
+  nearRest(deg: number) {
+    return (
+      !this.dragging && Math.abs(this.spinY - this.targetY) < deg && Math.abs(this.pitch - this.targetX) < deg
+    );
+  }
+
   /** A purchase bounced: shake now. */
   shake() {
     this.shakeAt = this.time;
