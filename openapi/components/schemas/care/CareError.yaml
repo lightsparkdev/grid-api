@@ -24,12 +24,12 @@ properties:
       |------------|------|-------------|
       | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `customerId` that is not a `Customer` id, a code of the wrong shape, or a chat that cannot be verified at all. |
       | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused at the content boundary and no turn ran. `reason` carries the sentence to show them. |
-      | `CARE_VERIFICATION_FAILED` | 400 | The code did not match, or the chat's existing verification is too old to mint another session. Send a new code and confirm it. |
+      | `CARE_VERIFICATION_FAILED` | 400 | The code did not match, or the chat's existing verification is older than the session lifetime and so cannot mint another session. Send a new code and confirm it, or send the next message and let the agent ask for one. |
       | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified — that is signalled in a `200` body. |
-      | `CARE_SESSION_EXPIRED` | 401 | The chat is verified, so it requires `X-Ls-Care-Session`, and the header was missing, malformed, or past its expiry. Send the cardholder a new code and confirm it. |
+      | `CARE_SESSION_EXPIRED` | 401 | The chat's verification is still current, so it requires `X-Ls-Care-Session`, and the header was missing; or the token presented was malformed or past its expiry. Send the cardholder a new code and confirm it. Once the chat's own verification has aged past the session lifetime this error stops: the header is no longer required, and the next message sends a fresh code instead of being refused. |
       | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
       | `CARE_SESSION_PLATFORM_MISMATCH` | 403 | The session token was minted for a different platform. Stop; retrying will not help. |
-      | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, and a malformed chat id are one answer. |
+      | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
       | `CUSTOMER_NOT_FOUND` | 404 | No such cardholder for this platform. |
       | `CONFLICT` | 409 | The `Idempotency-Key` was already used for a different message or a different chat — use a new key — or the chat has no cardholder bound to it. |
       | `CARE_CHAT_ENDED` | 409 | The chat has been closed. Open a new one by sending an empty message to the cardholder. |

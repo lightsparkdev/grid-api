@@ -22,6 +22,13 @@ post:
     `POST /care/chats/{chatId}/verifications` and confirm it again. Read
     `expiresAt` rather than assuming a lifetime.
 
+    **This is not the only door.** A cardholder can read the code back to the
+    agent as an ordinary message, and `POST /care/chats/{chatId}/messages`
+    then returns the same `sessionToken` and `expiresAt` on that turn. Call
+    this route when your own UI collects the code, because only it can tell
+    you where the code went, whether one was already in flight, and how many
+    digits it has.
+
     The token is bound to this platform, this chat and this cardholder. It
     cannot drive another chat, and presenting it to another platform's chat is
     refused with `CARE_SESSION_PLATFORM_MISMATCH`.
@@ -35,8 +42,12 @@ post:
     A chat whose verification is older than the session lifetime will not mint
     a fresh session off it: that would be the platform issuing itself a
     session for a cardholder who has not shown themselves in longer than a
-    session lasts. It is refused with `CARE_VERIFICATION_FAILED`, and the way
-    forward is a new code.
+    session lasts. It is refused with `CARE_VERIFICATION_FAILED` before the
+    provider is reached, and the way forward is a new code. That is the same
+    window that decides whether the chat reaches the cardholder's account at
+    all, so a stale chat is not a locked one: sending a code with
+    `POST /care/chats/{chatId}/verifications`, or simply sending the next
+    message and letting the agent ask, both open it again.
   operationId: confirmCareChatVerification
   tags:
     - Embedded Care

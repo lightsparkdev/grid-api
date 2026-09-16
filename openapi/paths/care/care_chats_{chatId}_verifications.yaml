@@ -16,7 +16,9 @@ post:
     **This is the resend, not the first send.** The cardholder's first message
     already sent a code and said so in its own body; this is what the *Send
     another code* button calls when they say it never arrived. A partner never
-    has to call it to start verification.
+    has to call it to start verification, and does not have to call it to
+    recover a chat whose verification has gone stale either, because the next
+    message sends a code by itself.
 
     With `resend` false — the default, and the same as sending no body — the
     call asks for a code and is content to be told one is already outstanding:
@@ -34,8 +36,10 @@ post:
 
     A chat that is already verified is refused with `INVALID_INPUT` while its
     verification is recent — there is nothing left to prove. Once that
-    verification has aged past the session lifetime the refusal lifts and a
-    fresh code can be sent.
+    verification has aged past the session lifetime the chat no longer reaches
+    the cardholder's account, so there is something to prove again: the
+    refusal lifts on its own and this route sends a fresh code, whatever
+    `verificationStatus` still says.
   operationId: resendCareChatVerification
   tags:
     - Embedded Care

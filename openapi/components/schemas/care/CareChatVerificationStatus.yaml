@@ -7,10 +7,18 @@ enum:
   - FAILED
 description: |
   Where the cardholder's proof of presence stands on this chat, as of the
-  moment the call was received. A chat in `VERIFIED` or `TRUSTED` can reach
-  the cardholder's account, and every message on it must carry the
-  `X-Ls-Care-Session` header; a chat in any other status cannot, and the
-  agent answers general questions only.
+  moment the call was received.
+
+  **This status alone does not say whether the agent can reach the account.**
+  A chat reaches it only while it is in `VERIFIED` or `TRUSTED` *and* the
+  verification behind that status is newer than the session lifetime, fifteen
+  minutes in the default deployment. Once it ages past that window the status
+  still reads `VERIFIED`, the chat no longer reaches the account, the
+  `X-Ls-Care-Session` header stops being required, and the next message sends
+  a fresh code and has the agent ask for it. The field that answers "can the
+  agent act now" is `verificationRequired` on the message response, so branch
+  on that and treat this status as a record of what has happened rather than
+  of what is permitted.
 
   This field reports the chat as it was when the turn started. The agent can
   verify a cardholder during a turn, so a chat that was verified by the turn
@@ -21,6 +29,6 @@ description: |
   |--------|-------------|
   | `PENDING` | No code has been sent on this chat yet. This is where every new chat starts. |
   | `SENT` | A code has been sent to the cardholder and is outstanding. |
-  | `VERIFIED` | The cardholder answered the code. Account-reaching tools are available and `POST /care/chats/{chatId}/verifications/confirm` has issued a session token. |
-  | `TRUSTED` | The cardholder is treated as present without an SMS code on this chat. Reserved for channels Grid can already attribute; a partner chat does not start here. |
+  | `VERIFIED` | The cardholder answered the code, either at `POST /care/chats/{chatId}/verifications/confirm` or by reading it back to the agent. Account-reaching tools are available for as long as that answer is newer than the session lifetime, and a session token was issued by whichever of the two doors took the code. |
+  | `TRUSTED` | The cardholder is treated as present without an SMS code on this chat. Reserved for channels Grid can already attribute; a partner chat does not start here. Bounded by the same freshness window as `VERIFIED`. |
   | `FAILED` | The last code was answered incorrectly or expired. Send another code with `POST /care/chats/{chatId}/verifications`. |

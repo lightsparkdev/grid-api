@@ -1,7 +1,9 @@
 type: object
 description: >-
   Proof that the cardholder answered their code, as a signed token the
-  partner sends back on every later message.
+  partner sends back on every later message. The message route returns the
+  same two fields, under the same names, on the turn in which the cardholder
+  read their code back to the agent instead of into a code input.
 required:
   - status
   - sessionToken
@@ -29,6 +31,11 @@ properties:
       it past `expiresAt`.
 
 
+      One session is issued per verification rather than per message. A later
+      message on a chat that is already verified returns no new token, and the
+      one you hold stays the right one until `expiresAt`.
+
+
       The token is bound to this platform, this chat and this cardholder, so
       it cannot drive another chat and does not survive being handed to
       another platform.
@@ -41,4 +48,11 @@ properties:
       `CARE_SESSION_EXPIRED`. Sessions are short-lived by design — fifteen
       minutes in the default deployment. Read this field rather than assuming
       a duration.
+
+
+      The same window governs the chat itself: a verification older than the
+      session lifetime no longer reaches the cardholder's account, so a chat
+      whose token has expired is not a chat waiting for a token. It is a chat
+      that needs a new code, and the next message on it will send one and have
+      the agent ask for it.
     example: '2026-09-12T14:25:00Z'

@@ -124,7 +124,10 @@ tags:
       3. **Confirm the code.**
          `POST /care/chats/{chatId}/verifications/confirm` returns a
          `sessionToken` and its `expiresAt`. Send that token as the
-         `X-Ls-Care-Session` header on every message from then on.
+         `X-Ls-Care-Session` header on every message from then on. A
+         cardholder who reads the code back to the agent as an ordinary
+         message instead is confirmed the same way, and that turn's own
+         response carries the same two fields.
       4. **Close the chat** with `DELETE /care/chats/{chatId}` when the
          cardholder is done.
 
@@ -140,8 +143,21 @@ tags:
       reported inside a `200`, because the first message from every new
       cardholder is unverified and a `401` there would be indistinguishable
       from a bad credential. On these endpoints a `401` means the platform's
-      Grid credential is wrong, or a verified chat was driven without its
-      session token.
+      Grid credential is wrong, or a chat whose verification is still current
+      was driven without its session token.
+
+      **Verification expires, and expiry is recoverable in the chat.** A chat
+      reaches the cardholder's account only while its verification is newer
+      than the session lifetime, fifteen minutes in the default deployment,
+      which is also how long a session token lives. Past that window the chat
+      stops requiring the header: a message sent without one gets a fresh
+      code, and the agent asks the cardholder to read it back inside the
+      conversation, which hands the partner the next session token. Sending
+      the dead token anyway is still a `401 CARE_SESSION_EXPIRED`, so the
+      handling is to discard the token on that error and resend the message
+      with no `X-Ls-Care-Session` header rather than to tear the chat down.
+      If that resend is refused too, the chat's verification is still current
+      and the way back is a new code.
 
       Two things an integration has to get right:
 
@@ -153,7 +169,9 @@ tags:
       - **The session token is returned once and is never re-readable.** No
         endpoint hands it back, there is no revocation, and it is short-lived
         by design. Hold it for the life of the cardholder's session; a partner
-        that drops it has to send a new code and confirm it again.
+        that drops it has to send a new code and confirm it again. It arrives
+        from whichever door took the code, so read `sessionToken` on the
+        message response as well as on the confirm response.
 
       Some things are absent by construction, so no integration can come to
       depend on them: nothing returns a transcript or an earlier turn's reply
