@@ -26,6 +26,7 @@ import {
   handReady,
   handsLoaded,
   handWashFor,
+  decodeHand,
   paletteFor,
   prepareHand,
   prepareHands,
@@ -177,35 +178,39 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
   const handOk = design.orientation === 'landscape';
   const treatment: Treatment = handOk ? treatmentPick : 'template';
   const hand = treatment === 'hand';
-  // The set of hands (the manifest), then the one picked, its layer loaded.
+  // The set of hands (the manifest; then every layer, so a swap is instant),
+  // the one picked, and the one shown: the pick becomes the shown hand once
+  // its layer is loaded and decoded, so the swap is one frame to the next,
+  // with no gap for the frame behind to show through.
   const [hands, setHands] = useState<Hand[] | null>(handsLoaded());
   const [handId, setHandId] = useState<string>(DEFAULT_HAND);
-  const [handLoaded, setHandLoaded] = useState(handReady(handId));
+  const [shownHand, setShownHand] = useState<string | null>(handReady(DEFAULT_HAND) ? DEFAULT_HAND : null);
   useEffect(() => {
     if (!hand || hands) return;
     let alive = true;
     prepareHands()
-      .then((list) => alive && setHands(list))
+      .then((list) => {
+        if (!alive) return;
+        setHands(list);
+        for (const h of list) prepareHand(h.id).catch(() => {});
+      })
       .catch(() => {});
     return () => {
       alive = false;
     };
   }, [hand, hands]);
   useEffect(() => {
-    if (!hand) return;
-    if (handReady(handId)) {
-      setHandLoaded(true);
-      return;
-    }
-    setHandLoaded(false);
+    if (!hand || shownHand === handId) return;
     let alive = true;
     prepareHand(handId)
-      .then(() => alive && setHandLoaded(handReady(handId)))
+      .then(() => decodeHand(handId))
+      .then(() => alive && setShownHand(handId))
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [hand, handId]);
+  }, [hand, handId, shownHand]);
+  const handLoaded = shownHand !== null;
   const handShown = hand && handLoaded;
   // What the frame and the stage hold. Going to the hand, the card moves
   // first and the hand arrives once it is still; leaving, the hand goes
@@ -624,10 +629,10 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                 // Mounted from the moment the hand is picked (so it is
                 // decoded before it shows) until it has left.
                 const rect = frontRect ?? lastRect.current;
-                if (!rect || !handMounted || !handLoaded) return null;
-                const l = handLayerIn(rect.side, rect.side, handId);
+                if (!rect || !handMounted || !shownHand) return null;
+                const l = handLayerIn(rect.side, rect.side, shownHand);
                 const at = { left: l.x, top: l.y, width: l.size, height: l.size };
-                const url = handById(handId)?.url;
+                const url = handById(shownHand)?.url;
                 const wash = handWashFor(palette);
                 return (
                   <>
@@ -681,7 +686,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                   side={frameSide}
                   palette={palette}
                   orientation={design.orientation}
-                  hand={heldHand && handLoaded ? handId : null}
+                  hand={heldHand ? shownHand : null}
                 />
 
                 <m.div className={picker.groups} {...rowMotion(0)}>

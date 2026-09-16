@@ -170,6 +170,13 @@ export function handReady(id: string): boolean {
   return layers.has(id);
 }
 
+/** Decode a loaded hand's layer, so an `<img>` of the same URL paints on
+ *  its first frame (loaded is not decoded; an undecoded swap flashes). */
+export function decodeHand(id: string): Promise<void> {
+  const img = layers.get(id);
+  return img?.decode ? img.decode().catch(() => {}) : Promise.resolve();
+}
+
 /** The card's long edge in the hand, as a fraction of the layout square,
  *  and where its center sits: the middle of the frame. At this size the
  *  photograph's bottom edge, where the wrist is cropped, is past the
