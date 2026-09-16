@@ -1498,6 +1498,10 @@ const CardRig = memo(function CardRig({
     };
   }, [exportRef, get, live, motion]);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
+  /** The share frame's slot as the card follows it: the slot moves and
+   *  resizes with what the panel shows (Template, a hand), and the card
+   *  glides after it rather than jumping. Null between flights. */
+  const shareSlot = useRef<{ x: number; y: number; s: number } | null>(null);
   // The turning card's air (see the frame loop), and how long it has been still.
   const airRef = useRef<Airflow | null>(null);
   const airStill = useRef(0);
@@ -1635,10 +1639,26 @@ const CardRig = memo(function CardRig({
       const slot = root.ownerDocument.querySelector<HTMLElement>('[data-share-card-slot]');
       if (slot) {
         const b = slot.getBoundingClientRect();
-        x += (b.left + b.width / 2 - r.left - x) * st;
-        y += (b.top + b.height / 2 - r.top - y) * st;
-        s += (Math.min(b.width / foot.w, b.height / foot.h) - s) * st;
+        const want = {
+          x: b.left + b.width / 2 - r.left,
+          y: b.top + b.height / 2 - r.top,
+          s: Math.min(b.width / foot.w, b.height / foot.h),
+        };
+        // As the flight begins the slot is where it is; landed, the card
+        // glides after a slot that moves (the same approach as toward rest).
+        const g = shareSlot.current;
+        const sk = g && shareWas > 0 ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
+        const tgt = g ?? { ...want };
+        tgt.x += (want.x - tgt.x) * sk;
+        tgt.y += (want.y - tgt.y) * sk;
+        tgt.s += (want.s - tgt.s) * sk;
+        shareSlot.current = tgt;
+        x += (tgt.x - x) * st;
+        y += (tgt.y - y) * st;
+        s += (tgt.s - s) * st;
       }
+    } else {
+      shareSlot.current = null;
     }
     const shareFlying = lv.shareT > 0 && lv.shareT < 1;
 

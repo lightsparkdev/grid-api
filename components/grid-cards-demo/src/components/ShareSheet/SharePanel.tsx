@@ -25,6 +25,7 @@ import {
   handLayerIn,
   handReady,
   handsLoaded,
+  handWashFor,
   paletteFor,
   prepareHand,
   prepareHands,
@@ -592,18 +593,32 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
             }
             aria-hidden
           >
-            {frontRect && handShown && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={handById(handId)?.url}
-                alt=""
-                className={styles.handLayer}
-                style={(() => {
-                  const l = handLayerIn(frontRect.side, frontRect.side, handId);
-                  return { left: l.x, top: l.y, width: l.size, height: l.size };
-                })()}
-              />
-            )}
+            {frontRect &&
+              handShown &&
+              (() => {
+                const l = handLayerIn(frontRect.side, frontRect.side, handId);
+                const at = { left: l.x, top: l.y, width: l.size, height: l.size };
+                const url = handById(handId)?.url;
+                const wash = handWashFor(palette);
+                return (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className={styles.handLayer} style={at} />
+                    {/* The surface's wash over the hand (see handWashFor),
+                        masked by the hand itself so it lands on skin alone. */}
+                    <span
+                      className={styles.handWash}
+                      style={{
+                        ...at,
+                        background: wash.color,
+                        opacity: wash.alpha,
+                        maskImage: `url(${url})`,
+                        WebkitMaskImage: `url(${url})`,
+                      }}
+                    />
+                  </>
+                );
+              })()}
           </div>,
           frontHost,
         )}

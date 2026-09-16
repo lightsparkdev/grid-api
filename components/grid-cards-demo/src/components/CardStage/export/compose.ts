@@ -171,12 +171,11 @@ export function handReady(id: string): boolean {
 }
 
 /** The card's long edge in the hand, as a fraction of the layout square,
- *  and where its center sits: a touch right of the middle, since the hand's
- *  mass is to the left (from the comp), and low enough that the
+ *  and where its center sits: the middle of the frame. At this size the
  *  photograph's bottom edge, where the wrist is cropped, is past the
  *  frame's. */
-export const HAND_CARD_IN_LAYOUT = 0.42;
-export const HAND_CARD_CENTER = { x: 0.525, y: 0.53 };
+export const HAND_CARD_IN_LAYOUT = 0.46;
+export const HAND_CARD_CENTER = { x: 0.5, y: 0.5 };
 
 /** Where a hand's layer (the square photograph) is drawn in a frame `w` × `h`:
  *  scaled so the card is `HAND_CARD_IN_LAYOUT` of the layout, placed so the
@@ -190,6 +189,52 @@ export function handLayerIn(w: number, h: number, id: string): { x: number; y: n
   const cx = ox + HAND_CARD_CENTER.x * side;
   const cy = oy + HAND_CARD_CENTER.y * side;
   return { x: cx - (hole.x + hole.w / 2) * size, y: cy - (hole.y + hole.h / 2) * size, size };
+}
+
+/** A wash of the surface over the hand, as the surface's light would fall
+ *  on it. The photographs were lit for white: on a dark surface their
+ *  highlights are the studio's, not the scene's, and the hand reads as
+ *  pasted on. Darkening it toward the surface (and tinting it, on a colored
+ *  one) settles it: nothing on white, about a quarter on black. */
+export function handWashFor(palette: Palette): { color: string; alpha: number } {
+  const L = luminance(hexToRgb(palette.bg));
+  return { color: palette.bg, alpha: 0.3 * (1 - L) ** 1.5 };
+}
+
+let washScratch: HTMLCanvasElement | null = null;
+
+/** Draw a hand's layer with its wash: the layer into a scratch canvas, the
+ *  wash over it where it is opaque (`source-atop` keeps the layer's alpha),
+ *  then that onto `ctx`. */
+function drawHand(
+  ctx: CanvasRenderingContext2D,
+  layer: HTMLImageElement,
+  at: { x: number; y: number; size: number },
+  palette: Palette,
+) {
+  const wash = handWashFor(palette);
+  if (wash.alpha < 0.005) {
+    ctx.drawImage(layer, at.x, at.y, at.size, at.size);
+    return;
+  }
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  const s = washScratch ?? (washScratch = document.createElement('canvas'));
+  if (s.width !== w || s.height !== h) {
+    s.width = w;
+    s.height = h;
+  }
+  const sc = s.getContext('2d')!;
+  sc.globalCompositeOperation = 'source-over';
+  sc.clearRect(0, 0, w, h);
+  sc.drawImage(layer, at.x, at.y, at.size, at.size);
+  sc.globalCompositeOperation = 'source-atop';
+  sc.globalAlpha = wash.alpha;
+  sc.fillStyle = wash.color;
+  sc.fillRect(0, 0, w, h);
+  sc.globalAlpha = 1;
+  sc.globalCompositeOperation = 'source-over';
+  ctx.drawImage(s, 0, 0);
 }
 
 /** The card's rectangle in the hand, in frame px, for a frame `w` × `h`. */
@@ -482,10 +527,7 @@ export function compose(
   ctx.drawImage(card, dx, dy);
   if (opts.treatment === 'hand' && opts.hand) {
     const layer = layers.get(opts.hand);
-    if (layer) {
-      const { x, y, size } = handLayerIn(frame.width, frame.height, opts.hand);
-      ctx.drawImage(layer, x, y, size, size);
-    }
+    if (layer) drawHand(ctx, layer, handLayerIn(frame.width, frame.height, opts.hand), opts.palette);
   }
   return target;
 }

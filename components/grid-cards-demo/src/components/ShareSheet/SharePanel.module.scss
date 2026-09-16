@@ -23,7 +23,9 @@
   /* As wide as the frame plus its padding and border, whatever those are. */
   width: fit-content;
   padding: var(--spacing-sm);
-  background: var(--surface-panel, var(--surface-primary));
+  /* The configure panel's own surface (globals.scss: primary, or the docs
+     chrome gray beside docs chrome), so the two read as one piece of chrome. */
+  background: var(--panel-bg);
   border: var(--stroke-xs) solid var(--border-secondary, var(--border-primary));
   /* Concentric with the tiles inside: their radius plus the padding. */
   border-radius: calc(var(--corner-radius-md) + var(--spacing-sm));
@@ -98,24 +100,39 @@
 }
 
 /* The hand, in the host above the stage's canvas: a clip the size of the
-   frame, placed over it once the panel has landed, shown with a short fade;
-   the photograph inside it, scaled about the card. */
+   frame, placed over it once the panel has landed, arriving out of a blur
+   (as the panel and the phone do); the photograph inside it, scaled about
+   the card. */
 .handClip {
   position: absolute;
   overflow: hidden;
   border-radius: var(--corner-radius-md);
   opacity: 0;
+  filter: blur(14px);
   pointer-events: none;
-  transition: opacity 220ms ease;
+  transition: opacity 320ms cubic-bezier(0.19, 1, 0.22, 1), filter 420ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .handClipOn {
   opacity: 1;
+  filter: blur(0);
 }
 
 .handLayer {
   position: absolute;
   display: block;
+}
+
+/* The surface's wash over the hand: a fill masked by the hand's own alpha,
+   so it darkens (and tints) the skin and nothing else. */
+.handWash {
+  position: absolute;
+  display: block;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  transition: opacity 240ms cubic-bezier(0.19, 1, 0.22, 1), background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 /* A choice as a glyph on the tile's surface (the Style row). */
