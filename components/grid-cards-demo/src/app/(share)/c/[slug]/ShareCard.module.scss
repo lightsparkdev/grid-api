@@ -190,27 +190,13 @@
   font-feature-settings: 'ss01' 1, 'salt' 1, 'zero' 1;
 }
 
-/* The pitch and the buttons: come in as the card did once the intro is
-   over, out of a blur, rising into place. */
+/* The pitch and the buttons, on screen from the first paint. */
 .pitch {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
   max-width: 260px;
-  opacity: 0;
-  transform: translateY(10px);
-  filter: blur(8px);
-  transition:
-    opacity 600ms var(--ease-out-snappy, ease-out),
-    transform 600ms var(--ease-out-snappy, ease-out),
-    filter 600ms var(--ease-out-snappy, ease-out);
-
-  .introDone & {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
 }
 
 .pitchText {
@@ -293,7 +279,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pitch {
+  .hint {
     transition: none;
   }
 }
