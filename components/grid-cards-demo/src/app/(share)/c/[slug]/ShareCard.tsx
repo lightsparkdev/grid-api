@@ -45,11 +45,11 @@ const CAMERA_Z = 2000;
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
 /** A press that travels less than this (screen px) is a click, not a turn. */
 const DRAG_SLOP = 3;
-/** The card's long edge: a share of the stage's width or of its height
- *  (whichever binds), and never more than this many px. */
-const CARD_OF_WIDTH = 0.382;
+/** The card's long edge: a share of the stage's width (the Figma's 550 of
+ *  1440) or of its height, whichever binds, and never under this many px. */
+const CARD_OF_WIDTH = 550 / 1440;
 const CARD_OF_HEIGHT = 0.5;
-const CARD_MAX_LONG = 560;
+const CARD_MIN_LONG = 320;
 /** The page's surfaces by theme (the docs'), and the ink on each. */
 const LIGHT_SURFACE = '#f8f8f7';
 const DARK_SURFACE = '#111111';
@@ -242,7 +242,7 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
           <br />
           <span className={styles.titleMuted}>Card</span>
         </h1>
-        <p className={styles.mouse}>{TEMPLATE_TUPLE}</p>
+        <p className={clsx(styles.mouse, styles.tuple)}>{TEMPLATE_TUPLE}</p>
       </div>
       <div className={clsx(styles.col, styles.colMid)} aria-hidden />
       <div className={clsx(styles.col, styles.colRight)}>
@@ -258,9 +258,9 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
 }
 
 /** The card's scale for a stage of `w` × `h`: its long edge at
- *  `CARD_OF_WIDTH` of the width or `CARD_OF_HEIGHT` of the height, capped. */
+ *  `CARD_OF_WIDTH` of the width or `CARD_OF_HEIGHT` of the height, floored. */
 function cardScale(w: number, h: number, foot: { w: number; h: number }): number {
-  const long = Math.min(CARD_OF_WIDTH * w, CARD_OF_HEIGHT * h, CARD_MAX_LONG);
+  const long = Math.max(CARD_MIN_LONG, Math.min(CARD_OF_WIDTH * w, CARD_OF_HEIGHT * h));
   return long / Math.max(foot.w, foot.h);
 }
 
