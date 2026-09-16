@@ -217,7 +217,7 @@ paths:
           schema:
             type: integer
             format: int64
-            minimum: 0
+            exclusiveMinimum: 0
             default: 10000
           example: 10000
       responses:
