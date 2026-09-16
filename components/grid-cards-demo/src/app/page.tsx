@@ -12,6 +12,7 @@ import { ApiPanel } from '@/components/ApiPanel/ApiPanel';
 import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResizeHandle';
 import { ThemeSync } from '@/components/ThemeSync';
 import { useColumnResize } from '@/hooks/useColumnResize';
+import { SHARE_LEAVES_MS } from '@/components/ShareSheet/SharePanel';
 import { useCardsDemoLogic } from '@/hooks/useCardsDemoLogic';
 import { LAYOUT_WIDE_PX } from '@/lib/layout';
 import type { ActionId } from '@/data/actions';
@@ -80,13 +81,32 @@ export default function Page() {
   }, []);
 
   // Tapping a flow in Configure runs it and jumps to the Playground (mobile);
-  // on desktop goPlayground no-ops, so it behaves exactly as before.
+  // on desktop goPlayground no-ops, so it behaves exactly as before. With
+  // the share open, the share leaves first and the phone comes only once it
+  // has gone: the two at once (the panel sinking while the card flew from
+  // its frame to the phone) was too much moving at one time.
+  const pendingAction = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (pendingAction.current) clearTimeout(pendingAction.current);
+    },
+    [],
+  );
   const onConfigureAction = useCallback(
     (id: ActionId) => {
       goPlayground();
+      if (shareOpen) {
+        setShareOpen(false);
+        if (pendingAction.current) clearTimeout(pendingAction.current);
+        pendingAction.current = setTimeout(() => {
+          pendingAction.current = null;
+          logic.handleAction(id);
+        }, SHARE_LEAVES_MS);
+        return;
+      }
       logic.handleAction(id);
     },
-    [goPlayground, logic],
+    [goPlayground, logic, shareOpen],
   );
 
   // Floating back pill hides on scroll-down, shows on scroll-up (Playground only).

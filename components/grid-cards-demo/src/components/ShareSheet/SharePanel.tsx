@@ -120,6 +120,8 @@ const easeOutQuart = [0.165, 0.84, 0.44, 1] as const;
 const easeInQuart = [0.56, 0, 0.835, 0.16] as const;
 const PANEL_IN = motionTransition(easeOutQuart, 0.7);
 const PANEL_OUT = motionTransition(easeInQuart, 0.45);
+/** How long the panel takes to leave (PANEL_OUT), for what waits on it. */
+export const SHARE_LEAVES_MS = 450;
 const PANEL_AWAY = { opacity: 0, scale: 0.9, y: 128, filter: 'blur(48px)' };
 /** The panel's growth, and the controls' rise inside it: a gentler curve
  *  than the snappy one (which front-loads so hard the growth reads as a
