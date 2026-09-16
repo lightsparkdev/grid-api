@@ -4,7 +4,16 @@
    pose for both (the hero: a little pitched back, turned toward the light). */
 
 import type { Orientation } from '@/data/design';
-import { compose, encodeCanvas, exposureFor, layoutIn, type Palette } from './compose';
+import {
+  compose,
+  encodeCanvas,
+  exposureFor,
+  HAND_POSE,
+  handHoleIn,
+  layoutIn,
+  type Palette,
+  type Treatment,
+} from './compose';
 import type { CardExporter, ExportPose } from './exportRenderer';
 
 export type StillFormat = 'post' | 'square';
@@ -27,6 +36,9 @@ export const SAVE_SCALE = 2160 / 1600;
 
 /** The card's long edge as a fraction of the template's layout square. */
 export const CARD_IN_LAYOUT = 0.7;
+/** In the hand, the card is drawn this much larger than the hole, so its
+ *  anti-aliased edge runs under the skin that touches it. */
+export const HAND_OVERLAP = 1.004;
 
 /** The hero pose: the top edge pitched back a touch, the right edge turned
  *  away so the studio's key runs across the face and the edge shows. */
@@ -69,17 +81,39 @@ export interface StillOptions {
   format: StillFormat;
   palette: Palette;
   pose?: ExportPose;
+  /** The card alone (default) or in the hand. The hand fixes the pose (face
+   *  on, as the card was held) and where the card sits. */
+  treatment?: Treatment;
+  /** Which hand, with the hand. */
+  hand?: string;
   /** Render at this fraction of the format's size (a preview). */
   scale?: number;
 }
 
 /** Render a still to a canvas (the sheet's preview draws it; the share
- *  encodes it). `prepareTemplate` must have resolved. */
+ *  encodes it). `prepareTemplate` (and `prepareHand(id)`, for the hand) must
+ *  have resolved. */
 export function renderStillCanvas(exporter: CardExporter, opts: StillOptions): HTMLCanvasElement {
   const size = stillSize(opts.format);
   const scale = opts.scale ?? 1;
   const width = Math.round(size.width * scale);
   const height = Math.round(size.height * scale);
+  if (opts.treatment === 'hand' && opts.hand) {
+    // The card's long edge is the hole's width, a hair over (the hand's
+    // layer goes on top, so where skin meets the card the card's edge is
+    // under skin, and where nothing does the extra is just card), and the
+    // card is drawn where the hole is rather than at the frame's center.
+    const hole = handHoleIn(width, height, opts.hand);
+    const frame = exporter.renderSafe({
+      width,
+      height,
+      pose: HAND_POSE,
+      cardFrac: (hole.w * HAND_OVERLAP) / width,
+      exposure: exposureFor(opts.palette),
+    });
+    const offset = { dx: hole.x + hole.w / 2 - width / 2, dy: hole.y + hole.h / 2 - height / 2 };
+    return compose(frame, { palette: opts.palette, treatment: 'hand', hand: opts.hand, offset });
+  }
   const frame = exporter.renderSafe({
     width,
     height,

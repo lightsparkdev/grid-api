@@ -92,6 +92,50 @@
   transform: translate(-50%, -50%);
 }
 
+/* With the hand, the slot is where its card was. */
+.slotHand {
+  position: absolute;
+}
+
+/* The hand, in the host above the stage's canvas: a clip the size of the
+   frame, placed over it once the panel has landed, shown with a short fade;
+   the photograph inside it, scaled about the card. */
+.handClip {
+  position: absolute;
+  overflow: hidden;
+  border-radius: var(--corner-radius-md);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.handClipOn {
+  opacity: 1;
+}
+
+.handLayer {
+  position: absolute;
+  display: block;
+}
+
+/* A choice as a glyph on the tile's surface (the Style row). */
+.iconSwatch {
+  display: grid;
+  place-items: center;
+  background: var(--picker-fill, var(--surface-secondary));
+  color: var(--text-secondary);
+  box-shadow: inset 0 0 0 1px var(--picker-border, var(--border-primary));
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
 /* ── Rows (DesignPicker's tile, its row, its swatches) ────────────────────── */
 /* A backdrop as a sample of its surface; the ring picks it out. */
 .swatch {

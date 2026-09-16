@@ -11,6 +11,9 @@
 import { loadImage } from '../card3d/facePaint';
 import { EXPOSURE_DARK, EXPOSURE_LIGHT, type ExportFrame } from './exportRenderer';
 
+/** What holds the card on the template: nothing, or a hand. */
+export type Treatment = 'template' | 'hand';
+
 /** The three surfaces offered, and a color of the visitor's own. */
 export type BackdropId = 'light' | 'dark' | 'brand' | 'custom';
 
@@ -73,6 +76,129 @@ function mix(a: RGB, b: RGB, t: number): RGB {
 }
 function luminance([r, g, b]: RGB): number {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+}
+
+// ── The hand ──────────────────────────────────────────────────────────────
+// A right hand pinching the card by its left side, over the template, in
+// one layer: a photograph of the hand holding a matte charcoal card in
+// front of a grey backdrop, cut out by hand (the backdrop and the card
+// removed, the skin that passes in front of the card left in). The
+// composite paints the template, the real card at the hole, then the
+// layer: everything in the cutout is beside the card or in front of it.
+// hands.json says, for each hand, where the card was (`hole`, as fractions
+// of the square) and a swatch color for the picker. See the 2026-09-15
+// Decisions entry.
+
+const HAND_DIR = '/assets/share/hand';
+export const HANDS_URL = `${HAND_DIR}/hands.json`;
+/** Face on: the card was held parallel to the camera. */
+export const HAND_POSE = { rotX: 0, rotY: 0 };
+
+type Hole = { x: number; y: number; w: number; h: number };
+export interface Hand {
+  id: string;
+  hole: Hole;
+  /** The skin's median color, for the picker. */
+  swatch: string;
+  url: string;
+}
+
+let hands: Hand[] | null = null;
+let handsPromise: Promise<Hand[]> | null = null;
+const layers = new Map<string, HTMLImageElement>();
+const layerPromises = new Map<string, Promise<void>>();
+
+/** The set of hands (the manifest), once. */
+export function prepareHands(): Promise<Hand[]> {
+  if (!handsPromise) {
+    handsPromise = fetch(HANDS_URL)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`hands manifest failed: ${HANDS_URL}`);
+        const { hands: list } = (await res.json()) as { hands: Omit<Hand, 'url'>[] };
+        hands = list.map((h) => ({ ...h, url: `${HAND_DIR}/${h.id}.webp` }));
+        return hands;
+      })
+      .catch((e) => {
+        handsPromise = null;
+        throw e;
+      });
+  }
+  return handsPromise;
+}
+
+/** The hands, if the manifest has loaded. */
+export function handsLoaded(): Hand[] | null {
+  return hands;
+}
+
+export function handById(id: string): Hand | null {
+  return hands?.find((h) => h.id === id) ?? null;
+}
+
+function loadLayer(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`hand layer failed: ${url}`));
+    img.src = url;
+  });
+}
+
+/** Load one hand's layer (and the manifest, if not yet), once. */
+export function prepareHand(id: string): Promise<void> {
+  let p = layerPromises.get(id);
+  if (!p) {
+    p = prepareHands()
+      .then((list) => {
+        const h = list.find((x) => x.id === id);
+        if (!h) throw new Error(`no hand ${id}`);
+        return loadLayer(h.url);
+      })
+      .then((img) => {
+        layers.set(id, img);
+      })
+      .catch((e) => {
+        layerPromises.delete(id);
+        throw e;
+      });
+    layerPromises.set(id, p);
+  }
+  return p;
+}
+
+export function handReady(id: string): boolean {
+  return layers.has(id);
+}
+
+/** The card's long edge in the hand, as a fraction of the layout square,
+ *  and where its center sits: a touch right of the middle, since the hand's
+ *  mass is to the left (from the comp), and low enough that the
+ *  photograph's bottom edge, where the wrist is cropped, is past the
+ *  frame's. */
+export const HAND_CARD_IN_LAYOUT = 0.42;
+export const HAND_CARD_CENTER = { x: 0.525, y: 0.53 };
+
+/** Where a hand's layer (the square photograph) is drawn in a frame `w` × `h`:
+ *  scaled so the card is `HAND_CARD_IN_LAYOUT` of the layout, placed so the
+ *  card's center is at `HAND_CARD_CENTER`. Needs the manifest. */
+export function handLayerIn(w: number, h: number, id: string): { x: number; y: number; size: number } {
+  const hand = handById(id);
+  if (!hand) throw new Error(`hand ${id} not loaded`);
+  const { side, x: ox, y: oy } = layoutIn(w, h);
+  const { hole } = hand;
+  const size = (side * HAND_CARD_IN_LAYOUT) / hole.w;
+  const cx = ox + HAND_CARD_CENTER.x * side;
+  const cy = oy + HAND_CARD_CENTER.y * side;
+  return { x: cx - (hole.x + hole.w / 2) * size, y: cy - (hole.y + hole.h / 2) * size, size };
+}
+
+/** The card's rectangle in the hand, in frame px, for a frame `w` × `h`. */
+export function handHoleIn(w: number, h: number, id: string): Hole {
+  const hand = handById(id);
+  if (!hand) throw new Error(`hand ${id} not loaded`);
+  const { x, y, size } = handLayerIn(w, h, id);
+  const { hole } = hand;
+  return { x: x + hole.x * size, y: y + hole.y * size, w: hole.w * size, h: hole.h * size };
 }
 
 // ── Assets ────────────────────────────────────────────────────────────────
@@ -324,9 +450,19 @@ export function frameToCanvas(frame: ExportFrame, into?: HTMLCanvasElement): HTM
 
 export interface ComposeOptions {
   palette: Palette;
+  treatment?: Treatment;
+  /** Which hand, with the hand. */
+  hand?: string;
+  /** Where the card's frame lands, off the frame's own origin (px). The
+   *  exporter centers the card; the hand wants it in the hole. */
+  offset?: { dx: number; dy: number };
 }
 
-/** The template, then the card over it, onto `target` (made if absent). */
+/**
+ * The template (its surface and type), then the card over it, onto `target`
+ * (made if absent). With the hand: the card in the hole, the hand's layer
+ * over it, all over the template.
+ */
 export function compose(
   frame: ExportFrame,
   opts: ComposeOptions,
@@ -341,8 +477,16 @@ export function compose(
     target.height = frame.height;
   }
   const ctx = target.getContext('2d')!;
+  const { dx, dy } = opts.offset ?? { dx: 0, dy: 0 };
   paintTemplate(ctx, frame.width, frame.height, opts.palette);
-  ctx.drawImage(card, 0, 0);
+  ctx.drawImage(card, dx, dy);
+  if (opts.treatment === 'hand' && opts.hand) {
+    const layer = layers.get(opts.hand);
+    if (layer) {
+      const { x, y, size } = handLayerIn(frame.width, frame.height, opts.hand);
+      ctx.drawImage(layer, x, y, size, size);
+    }
+  }
   return target;
 }
 

@@ -1,11 +1,14 @@
 'use client';
 
 import clsx from 'clsx';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion as m, useReducedMotion } from 'motion/react';
 import { TextMorph } from 'torph/react';
 import { IconChainLink1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconChainLink1';
 import { IconCheckmark1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCheckmark1';
+import { IconHand5Finger } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconHand5Finger';
+import { IconLayoutWindow } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLayoutWindow';
 import { IconImages1 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconImages1';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
 import { IconVideoClip } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconVideoClip';
@@ -16,13 +19,23 @@ import {
   BACKDROPS,
   brandSurfaceFor,
   exposureFor,
+  HAND_POSE,
+  handById,
+  handHoleIn,
+  handLayerIn,
+  handReady,
+  handsLoaded,
   paletteFor,
+  prepareHand,
+  prepareHands,
   paletteOn,
   TEMPLATE_TUPLE,
   warmTemplate,
   type BackdropId,
+  type Hand,
   type Palette,
   type Surfaces,
+  type Treatment,
 } from '@/components/CardStage/export/compose';
 import { canEncodeVideo, renderSpinVideo } from '@/components/CardStage/export/exportVideo';
 import {
@@ -57,7 +70,13 @@ interface SharePanelProps {
   shared: SharedCard | null;
   /** What the stage needs to park and pose the card in the frame. */
   onStage: (state: ShareStageState) => void;
+  /** An element above the stage's canvas (pointer-events none) for what
+   *  must draw over the card: the hand. */
+  frontHost: HTMLElement | null;
 }
+
+/** The hand shown first. */
+const DEFAULT_HAND = 'h1';
 
 /** The panel's width on the stage, the room kept around it, and the strip
  *  at the bottom the Share/Close button stands in. */
@@ -126,7 +145,7 @@ function fileStem(design: CardDesign) {
  * card is the one on the stage: posed from the row, or turned by hand right
  * there. The pictures are rendered offscreen from that same pose.
  */
-export function SharePanel({ open, exporterRef, design, shared, onStage }: SharePanelProps) {
+export function SharePanel({ open, exporterRef, design, shared, onStage, frontHost }: SharePanelProps) {
   const theme = useThemeMode();
   const reduceMotion = useReducedMotion() ?? false;
   const cardColor = brandColorOf(design);
@@ -146,6 +165,42 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   const surfaces = useMemo<Surfaces>(() => ({ brand: brandBg, custom: customBg }), [brandBg, customBg]);
   const palette: Palette = useMemo(() => paletteFor(backdrop, surfaces), [backdrop, surfaces]);
 
+  // The template on a surface, or the hand. The hand holds a flat card only.
+  const [treatmentPick, setTreatmentPick] = useState<Treatment>('template');
+  const handOk = design.orientation === 'landscape';
+  const treatment: Treatment = handOk ? treatmentPick : 'template';
+  const hand = treatment === 'hand';
+  // The set of hands (the manifest), then the one picked, its layer loaded.
+  const [hands, setHands] = useState<Hand[] | null>(handsLoaded());
+  const [handId, setHandId] = useState<string>(DEFAULT_HAND);
+  const [handLoaded, setHandLoaded] = useState(handReady(handId));
+  useEffect(() => {
+    if (!hand || hands) return;
+    let alive = true;
+    prepareHands()
+      .then((list) => alive && setHands(list))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [hand, hands]);
+  useEffect(() => {
+    if (!hand) return;
+    if (handReady(handId)) {
+      setHandLoaded(true);
+      return;
+    }
+    setHandLoaded(false);
+    let alive = true;
+    prepareHand(handId)
+      .then(() => alive && setHandLoaded(handReady(handId)))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [hand, handId]);
+  const handShown = hand && handLoaded;
+
   // The pose from the row, or null once the card has been turned by hand.
   const [poseId, setPoseId] = useState<PoseId | null>('angle');
   const pose: ExportPose | null = useMemo(() => POSES.find((p) => p.id === poseId)?.pose ?? null, [poseId]);
@@ -154,8 +209,14 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     if (open) setPoseId((p) => p ?? 'angle');
   }, [open]);
   useEffect(() => {
-    onStage({ open, exposure: exposureFor(palette), pose: open ? pose : HERO_POSE, onTurned });
-  }, [open, palette, pose, onTurned, onStage]);
+    onStage({
+      open,
+      exposure: exposureFor(palette),
+      pose: !open ? HERO_POSE : hand ? HAND_POSE : pose,
+      locked: hand,
+      onTurned,
+    });
+  }, [open, palette, pose, hand, onTurned, onStage]);
 
   // The share made from this panel (or the one the page opened from).
   const [handle, setHandle] = useState<ShareHandle | null>(null);
@@ -250,6 +311,42 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     return () => clearTimeout(t);
   }, [open, reduceMotion]);
 
+  // ── The hand ───────────────────────────────────────────────────────────
+  // The hand passes in front of the card, so it can't be in the frame (the
+  // stage's canvas paints over the frame): it is drawn into a host above the
+  // canvas, in a clip the size of the frame placed over it once the panel
+  // has settled, and follows the frame when the stage resizes. It hides
+  // while the panel is arriving or leaving.
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [frontRect, setFrontRect] = useState<{ left: number; top: number; side: number } | null>(null);
+  useEffect(() => {
+    if (!open || !handShown || !grown || !frontHost) {
+      setFrontRect(null);
+      return;
+    }
+    let raf = 0;
+    const place = () => {
+      const f = frameRef.current;
+      if (!f) return;
+      const fr = f.getBoundingClientRect();
+      const hr = frontHost.getBoundingClientRect();
+      setFrontRect({ left: fr.left - hr.left, top: fr.top - hr.top, side: fr.width });
+    };
+    // After the entrance has landed (0.7 s), then on every change of size.
+    const settle = setTimeout(() => {
+      place();
+      raf = requestAnimationFrame(place);
+    }, 750);
+    const ro = new ResizeObserver(place);
+    if (rootRef.current) ro.observe(rootRef.current);
+    if (frameRef.current) ro.observe(frameRef.current);
+    return () => {
+      clearTimeout(settle);
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [open, handShown, grown, frontHost, frameSide]);
+
   // ── Making the share ───────────────────────────────────────────────────
   const busy = progress !== null && progress.stage !== 'done';
   // The tile that asked for the link is the one that says it's being made.
@@ -324,7 +421,9 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
         kind: handle?.record.kind ?? 'public',
         forName: handle?.record.forName ?? null,
         palette,
-        pose: ex.livePose,
+        pose: hand ? HAND_POSE : ex.livePose,
+        treatment,
+        hand: hand ? handId : undefined,
         onProgress: setProgress,
         existing: handle ? { id: handle.record.id, editToken: handle.editToken, url: handle.url } : undefined,
       });
@@ -341,7 +440,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
       setProgress(null);
       return null;
     }
-  }, [design, exporterRef, handle, palette, stale]);
+  }, [design, exporterRef, handle, palette, stale, hand, handId, treatment]);
 
   const copy = async (text: string) => {
     try {
@@ -382,7 +481,15 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     setSavingWhat('image');
     try {
       await warmTemplate();
-      const blob = await renderStill(ex, { format: 'square', palette, pose: ex.livePose, scale: SAVE_SCALE });
+      if (hand) await prepareHand(handId);
+      const blob = await renderStill(ex, {
+        format: 'square',
+        palette,
+        pose: hand ? HAND_POSE : ex.livePose,
+        treatment,
+        hand: hand ? handId : undefined,
+        scale: SAVE_SCALE,
+      });
       download(blob, `${fileStem(design)}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`);
       setSaved('image');
     } catch {
@@ -450,9 +557,13 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
             : 'Save video',
       icon: savedWhat === 'video' ? <IconCheckmark1 size={24} /> : <IconVideoClip size={24} />,
       onClick: onDownloadVideo,
-      disabled: busy || videoBusy || savingWhat === 'video' || video.status === 'unavailable',
+      disabled: busy || videoBusy || savingWhat === 'video' || video.status === 'unavailable' || hand,
       loading: videoBusy || savingWhat === 'video',
-      title: video.status === 'unavailable' ? 'This browser has no video encoder' : undefined,
+      title: hand
+        ? 'The spin video is the card alone; switch the style to Template'
+        : video.status === 'unavailable'
+          ? 'This browser has no video encoder'
+          : undefined,
     },
   ];
 
@@ -470,6 +581,32 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
 
   return (
     <div ref={rootRef} className={styles.root} aria-hidden={!open}>
+      {frontHost &&
+        createPortal(
+          <div
+            className={clsx(styles.handClip, frontRect && handShown && styles.handClipOn)}
+            style={
+              frontRect
+                ? { left: frontRect.left, top: frontRect.top, width: frontRect.side, height: frontRect.side }
+                : undefined
+            }
+            aria-hidden
+          >
+            {frontRect && handShown && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={handById(handId)?.url}
+                alt=""
+                className={styles.handLayer}
+                style={(() => {
+                  const l = handLayerIn(frontRect.side, frontRect.side, handId);
+                  return { left: l.x, top: l.y, width: l.size, height: l.size };
+                })()}
+              />
+            )}
+          </div>,
+          frontHost,
+        )}
       <AnimatePresence>
         {open && (
           <m.div
@@ -494,72 +631,139 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
               transition={reduceMotion ? { duration: 0 } : GROW}
             >
               <div ref={contentRef} className={styles.growInner}>
-                <ShareFrame side={frameSide} palette={palette} orientation={design.orientation} />
+                <ShareFrame
+                  ref={frameRef}
+                  side={frameSide}
+                  palette={palette}
+                  orientation={design.orientation}
+                  hand={handShown ? handId : null}
+                />
 
                 <m.div className={picker.groups} {...rowMotion(0)}>
                   <div className={picker.group}>
                     <div className={picker.row}>
-                      <span className={picker.rowLabel}>Backdrop</span>
-                      <SwatchRow label="Backdrop" active={backdrop}>
-                        {BACKDROPS.map((b) => {
-                          const p = paletteFor(b.id, surfaces);
-                          return (
-                            <Tooltip key={b.id} text={b.label}>
-                              {(tip) => (
-                                <button
-                                  type="button"
-                                  role="radio"
-                                  aria-checked={backdrop === b.id}
-                                  aria-label={b.label}
-                                  className={clsx(picker.swatch, styles.swatch)}
-                                  style={{ background: p.bg, color: p.ink }}
-                                  {...tip}
-                                  {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
-                                />
-                              )}
-                            </Tooltip>
-                          );
-                        })}
-                        <ColorPicker
-                          value={customBg ?? paletteOn(surfaces.brand).bg}
-                          gradient={null}
-                          orientation={design.orientation}
-                          solidOnly
-                          onChange={(color) => {
-                            setCustomBg(color);
-                            setBackdropPick('custom');
-                          }}
-                          triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
-                          triggerActive={backdrop === 'custom'}
-                          triggerLabel="Custom color"
-                          tooltip="Custom color"
-                        >
-                          {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
-                        </ColorPicker>
-                      </SwatchRow>
-                    </div>
-                    <div className={picker.row}>
-                      <span className={picker.rowLabel}>Pose</span>
-                      <SwatchRow label="Pose" active={poseId}>
-                        {POSES.map((p) => (
-                          <Tooltip key={p.id} text={p.label}>
+                      <span className={picker.rowLabel}>Style</span>
+                      <SwatchRow label="Style" active={treatment}>
+                        {(
+                          [
+                            { id: 'template', label: 'Template', Icon: IconLayoutWindow, why: null },
+                            {
+                              id: 'hand',
+                              label: 'Hand',
+                              Icon: IconHand5Finger,
+                              why: handOk ? null : 'The hand holds a landscape card',
+                            },
+                          ] as Array<{ id: Treatment; label: string; Icon: typeof IconHand5Finger; why: string | null }>
+                        ).map((t) => (
+                          <Tooltip key={t.id} text={t.why ?? t.label}>
                             {(tip) => (
                               <button
                                 type="button"
                                 role="radio"
-                                aria-checked={poseId === p.id}
-                                aria-label={p.label}
-                                className={clsx(picker.swatch, styles.poseSwatch, styles[`pose_${p.id}`])}
+                                aria-checked={treatment === t.id}
+                                aria-label={t.label}
+                                disabled={!!t.why}
+                                className={clsx(picker.swatch, styles.iconSwatch)}
                                 {...tip}
-                                {...pressable({ onClick: () => setPoseId(p.id) }, { press: 'tickBright' })}
+                                {...pressable(
+                                  { onClick: () => setTreatmentPick(t.id), disabled: !!t.why },
+                                  { press: 'tickBright' },
+                                )}
                               >
-                                <span className={styles.poseCard} aria-hidden />
+                                <t.Icon size={13} aria-hidden />
                               </button>
                             )}
                           </Tooltip>
                         ))}
                       </SwatchRow>
                     </div>
+                    {hand && hands && (
+                      <div className={picker.row}>
+                        <span className={picker.rowLabel}>Skin</span>
+                        <SwatchRow label="Skin" active={handId}>
+                          {hands.map((h, i) => (
+                            <Tooltip key={h.id} text={`Hand ${i + 1}`}>
+                              {(tip) => (
+                                <button
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={handId === h.id}
+                                  aria-label={`Hand ${i + 1}`}
+                                  className={clsx(picker.swatch, styles.swatch)}
+                                  style={{ background: h.swatch }}
+                                  {...tip}
+                                  {...pressable({ onClick: () => setHandId(h.id) }, { press: 'tickBright' })}
+                                />
+                              )}
+                            </Tooltip>
+                          ))}
+                        </SwatchRow>
+                      </div>
+                    )}
+                      <div className={picker.row}>
+                        <span className={picker.rowLabel}>Backdrop</span>
+                        <SwatchRow label="Backdrop" active={backdrop}>
+                          {BACKDROPS.map((b) => {
+                            const p = paletteFor(b.id, surfaces);
+                            return (
+                              <Tooltip key={b.id} text={b.label}>
+                                {(tip) => (
+                                  <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={backdrop === b.id}
+                                    aria-label={b.label}
+                                    className={clsx(picker.swatch, styles.swatch)}
+                                    style={{ background: p.bg, color: p.ink }}
+                                    {...tip}
+                                    {...pressable({ onClick: () => setBackdropPick(b.id) }, { press: 'tickBright' })}
+                                  />
+                                )}
+                              </Tooltip>
+                            );
+                          })}
+                          <ColorPicker
+                            value={customBg ?? paletteOn(surfaces.brand).bg}
+                            gradient={null}
+                            orientation={design.orientation}
+                            solidOnly
+                            onChange={(color) => {
+                              setCustomBg(color);
+                              setBackdropPick('custom');
+                            }}
+                            triggerClassName={clsx(picker.swatch, picker.swatchCustom)}
+                            triggerActive={backdrop === 'custom'}
+                            triggerLabel="Custom color"
+                            tooltip="Custom color"
+                          >
+                            {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
+                          </ColorPicker>
+                        </SwatchRow>
+                      </div>
+                    {!hand && (
+                      <div className={picker.row}>
+                        <span className={picker.rowLabel}>Pose</span>
+                        <SwatchRow label="Pose" active={poseId}>
+                          {POSES.map((p) => (
+                            <Tooltip key={p.id} text={p.label}>
+                              {(tip) => (
+                                <button
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={poseId === p.id}
+                                  aria-label={p.label}
+                                  className={clsx(picker.swatch, styles.poseSwatch, styles[`pose_${p.id}`])}
+                                  {...tip}
+                                  {...pressable({ onClick: () => setPoseId(p.id) }, { press: 'tickBright' })}
+                                >
+                                  <span className={styles.poseCard} aria-hidden />
+                                </button>
+                              )}
+                            </Tooltip>
+                          ))}
+                        </SwatchRow>
+                      </div>
+                    )}
                   </div>
                 </m.div>
 
@@ -635,25 +839,32 @@ function Spinner() {
  * surface, the two rules, the logomark, the type, and in the middle the
  * empty slot the stage parks the card in. `side` px for the 800-unit square.
  */
-function ShareFrame({
-  side,
-  palette,
-  orientation,
-}: {
-  side: number;
-  palette: Palette;
-  orientation: CardDesign['orientation'];
-}) {
+const ShareFrame = forwardRef<
+  HTMLDivElement,
+  {
+    side: number;
+    palette: Palette;
+    orientation: CardDesign['orientation'];
+    /** The hand over the template (the id of the one shown): the slot
+     *  moves to where its card was. The hand itself draws above the canvas. */
+    hand: string | null;
+  }
+>(function ShareFrame({ side, palette, orientation, hand }, ref) {
   const k = side / LAYOUT;
   const foot = footprint(orientation);
   const long = CARD_IN_LAYOUT * side;
-  const slot =
+  const cardSlot =
     orientation === 'portrait'
       ? { width: (long * foot.w) / foot.h, height: long }
       : { width: long, height: (long * foot.h) / foot.w };
   const text = { fontSize: TEXT * k, lineHeight: 1 } as const;
+  const hole = hand ? handHoleIn(side, side, hand) : null;
   return (
-    <div className={styles.frame} style={{ width: side, height: side, background: palette.bg, color: palette.ink }}>
+    <div
+      ref={ref}
+      className={styles.frame}
+      style={{ width: side, height: side, background: palette.bg, color: palette.ink }}
+    >
       <span className={styles.rule} style={{ left: PAD * k, top: PAD * k, bottom: PAD * k }} aria-hidden />
       <span className={styles.rule} style={{ right: PAD * k, top: PAD * k, bottom: PAD * k }} aria-hidden />
       <svg
@@ -685,7 +896,16 @@ function ShareFrame({
       >
         docs.lightspark.com
       </span>
-      <span className={styles.slot} style={slot} data-share-card-slot aria-hidden />
+      {hole ? (
+        <span
+          className={styles.slotHand}
+          style={{ left: hole.x, top: hole.y, width: hole.w, height: hole.h }}
+          data-share-card-slot
+          aria-hidden
+        />
+      ) : (
+        <span className={styles.slot} style={cardSlot} data-share-card-slot aria-hidden />
+      )}
     </div>
   );
-}
+});

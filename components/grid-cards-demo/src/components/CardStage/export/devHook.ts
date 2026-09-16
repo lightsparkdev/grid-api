@@ -1,11 +1,21 @@
 /* Dev: the exporter from the console. `__cardExport.still('square', 'dark')`
-   opens the still in a new tab; `__cardExport.video('brand')` downloads the
-   spin. For checking renders without the share sheet. */
+   opens the still in a new tab, `__cardExport.still('square', 'light', 'hand', 'h1')`
+   in a hand; `__cardExport.video('brand')` downloads the spin. For checking
+   renders without the share sheet. */
 
 import type { CardDesign } from '@/data/design';
 import { brandColorOf } from '@/data/design';
 import { loadImage } from '../card3d/facePaint';
-import { brandSurfaceFor, dominantColor, paletteFor, prepareTemplate, warmTemplate, type BackdropId } from './compose';
+import {
+  brandSurfaceFor,
+  dominantColor,
+  paletteFor,
+  prepareHand,
+  prepareTemplate,
+  warmTemplate,
+  type BackdropId,
+  type Treatment,
+} from './compose';
 import type { CardExporter } from './exportRenderer';
 import { renderSpinVideo } from './exportVideo';
 import { renderStill, type StillFormat } from './stills';
@@ -19,9 +29,15 @@ export function installExportDevHook(exporter: CardExporter, design: () => CardD
     const cardColor = brandColorOf(d);
     return { palette: paletteFor(backdrop, { brand: await brandSurfaceFor(d, cardColor), custom: null }) };
   };
-  const render = async (format: StillFormat = 'square', backdrop: BackdropId = 'light') => {
+  const render = async (
+    format: StillFormat = 'square',
+    backdrop: BackdropId = 'light',
+    treatment: Treatment = 'template',
+    hand = 'h1',
+  ) => {
     await prepareTemplate();
-    return renderStill(exporter, { format, ...(await paletteOf(backdrop)) });
+    if (treatment === 'hand') await prepareHand(hand);
+    return renderStill(exporter, { format, treatment, hand, ...(await paletteOf(backdrop)) });
   };
   w.__cardExport = {
     exporter,
@@ -31,8 +47,13 @@ export function installExportDevHook(exporter: CardExporter, design: () => CardD
       const img = await loadImage(url);
       return img ? dominantColor(img) : null;
     },
-    still: async (format: StillFormat = 'square', backdrop: BackdropId = 'light') => {
-      const blob = await render(format, backdrop);
+    still: async (
+      format: StillFormat = 'square',
+      backdrop: BackdropId = 'light',
+      treatment: Treatment = 'template',
+      hand = 'h1',
+    ) => {
+      const blob = await render(format, backdrop, treatment, hand);
       window.open(URL.createObjectURL(blob), '_blank');
       return blob;
     },
