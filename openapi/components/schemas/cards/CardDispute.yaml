@@ -1,0 +1,86 @@
+title: Card Dispute
+type: object
+required:
+  - id
+  - cardTransactionId
+  - status
+  - createdAt
+  - updatedAt
+description: >-
+  A dispute the card processor opened against a settled card transaction,
+  from the cardholder's claim to the network's decision. A dispute is a fact
+  about the transaction rather than a state of it: the transaction's own
+  `status` does not change while a dispute runs, so a dispute is its own
+  resource beside the transaction. Carries what a platform needs in order to
+  tell its cardholder where the claim stands — whether the dispute is still
+  open, how it ended, what was disputed, and what the cardholder has been
+  credited so far.
+
+
+  `disputedAmount` is the amount under dispute as filed, absent until the
+  processor allocates one. `provisionalCreditAmount` is the net provisional
+  credit the processor has instructed on this dispute, credits granted less
+  credits reversed, and is absent until the first credit event; the
+  cardholder money a dispute event moves settles asynchronously, so it can
+  lead the cardholder's balance.
+properties:
+  id:
+    type: string
+    description: System-generated unique dispute identifier.
+    readOnly: true
+    example: CardDispute:019542f5-b3e7-1d02-0000-000000000200
+  cardTransactionId:
+    type: string
+    description: The id of the disputed `CardTransaction`.
+    example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+  cardId:
+    type: string
+    description: The id of the `Card` the disputed transaction was made on.
+    example: Card:019542f5-b3e7-1d02-0000-000000000010
+  status:
+    type: string
+    enum:
+      - OPEN
+      - CLOSED
+    description: Whether the dispute is still active.
+    example: OPEN
+  disposition:
+    type: string
+    description: >-
+      How the dispute ended, present once it closes. The card processor's own
+      outcome, usually one of `WON`, `PARTIALLY_WON`, `LOST`, `WITHDRAWN` or
+      `DENIED`; it is not enum-constrained here because the processor may
+      report an outcome Grid has not seen before.
+    example: WON
+  network:
+    type: string
+    description: >-
+      The card network the dispute was filed with. Absent until the processor
+      reports one.
+    example: VISA
+  disputedAmount:
+    $ref: ../common/CurrencyAmount.yaml
+  provisionalCreditAmount:
+    $ref: ../common/CurrencyAmount.yaml
+  openedAt:
+    type: string
+    format: date-time
+    description: When the card processor opened the dispute.
+    example: '2026-05-08T14:30:00Z'
+  providerUpdatedAt:
+    type: string
+    format: date-time
+    description: >-
+      When the card processor last changed the dispute, as distinct from when
+      Grid last stored it.
+    example: '2026-05-09T09:12:44Z'
+  createdAt:
+    type: string
+    format: date-time
+    description: When Grid first recorded the dispute.
+    example: '2026-05-08T14:30:05Z'
+  updatedAt:
+    type: string
+    format: date-time
+    description: When Grid last updated the dispute.
+    example: '2026-05-09T09:12:46Z'

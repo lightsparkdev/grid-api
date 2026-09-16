@@ -1,0 +1,12 @@
+type: object
+required:
+  - data
+description: >-
+  The disputes on one card transaction, newest first. A transaction carries
+  few disputes, so the list is not paginated; at most 50 are returned.
+properties:
+  data:
+    type: array
+    description: The transaction's disputes, newest first.
+    items:
+      $ref: ./CardDispute.yaml

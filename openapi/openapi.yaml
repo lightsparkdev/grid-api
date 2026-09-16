@@ -253,6 +253,8 @@ paths:
     $ref: paths/transactions/transactions_{transactionId}_reject.yaml
   /transactions/{transactionId}/cancel:
     $ref: paths/transactions/transactions_{transactionId}_cancel.yaml
+  /transactions/{transactionId}/disputes:
+    $ref: paths/transactions/transactions_{transactionId}_disputes.yaml
   /crypto/estimate-withdrawal-fee:
     $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
   /sandbox/webhooks/test:
@@ -350,6 +352,8 @@ paths:
     $ref: paths/cards/cards_{id}_reveal.yaml
   /cards/{id}/tokenize:
     $ref: paths/cards/cards_{id}_tokenize.yaml
+  /card-disputes/{disputeId}:
+    $ref: paths/card-disputes/card-disputes_{disputeId}.yaml
   /sandbox/cards/{id}/simulate/authorization:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization.yaml
   /sandbox/cards/{id}/simulate/clearing:

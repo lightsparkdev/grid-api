@@ -5099,6 +5099,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /transactions/{transactionId}/disputes:
+    parameters:
+      - name: transactionId
+        in: path
+        description: The id of the card transaction.
+        required: true
+        schema:
+          type: string
+        example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+    get:
+      summary: List the disputes on a card transaction
+      description: |
+        Returns the disputes the card processor has opened against a card transaction, newest first. A dispute is a fact about a settled transaction rather than a lifecycle state of it, so it is its own resource beside the transaction and the transaction's own `status` does not change when a dispute opens.
+
+        Most disputed transactions carry exactly one dispute; a transaction the cardholder claims twice carries one per claim.
+      operationId: listCardTransactionDisputes
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The transaction's disputes, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDisputeListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /crypto/estimate-withdrawal-fee:
     post:
       summary: Estimate crypto withdrawal fee
@@ -9063,6 +9108,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+  /card-disputes/{disputeId}:
+    parameters:
+      - name: disputeId
+        in: path
+        description: The id of the dispute.
+        required: true
+        schema:
+          type: string
+        example: CardDispute:019542f5-b3e7-1d02-0000-000000000200
+    get:
+      summary: Get a card dispute
+      description: |
+        Returns one dispute on a card transaction the platform owns.
+
+        A dispute the card processor has not yet attributed to a transaction has no owner to read it, and returns `404` until Grid attributes it.
+      operationId: getCardDispute
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: The dispute.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDispute'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Dispute not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /sandbox/cards/{id}/simulate/authorization:
     post:
       summary: Simulate a card authorization
@@ -25724,6 +25814,83 @@ components:
           type: string
           description: Optional reason for cancelling the transaction. This is just for debugging purposes or can be used for a platform's own purposes.
           example: REQUESTED_AFTER_HOURS
+    CardDispute:
+      title: Card Dispute
+      type: object
+      required:
+        - id
+        - cardTransactionId
+        - status
+        - createdAt
+        - updatedAt
+      description: |-
+        A dispute the card processor opened against a settled card transaction, from the cardholder's claim to the network's decision. A dispute is a fact about the transaction rather than a state of it: the transaction's own `status` does not change while a dispute runs, so a dispute is its own resource beside the transaction. Carries what a platform needs in order to tell its cardholder where the claim stands — whether the dispute is still open, how it ended, what was disputed, and what the cardholder has been credited so far.
+
+        `disputedAmount` is the amount under dispute as filed, absent until the processor allocates one. `provisionalCreditAmount` is the net provisional credit the processor has instructed on this dispute, credits granted less credits reversed, and is absent until the first credit event; the cardholder money a dispute event moves settles asynchronously, so it can lead the cardholder's balance.
+      properties:
+        id:
+          type: string
+          description: System-generated unique dispute identifier.
+          readOnly: true
+          example: CardDispute:019542f5-b3e7-1d02-0000-000000000200
+        cardTransactionId:
+          type: string
+          description: The id of the disputed `CardTransaction`.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        cardId:
+          type: string
+          description: The id of the `Card` the disputed transaction was made on.
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+        status:
+          type: string
+          enum:
+            - OPEN
+            - CLOSED
+          description: Whether the dispute is still active.
+          example: OPEN
+        disposition:
+          type: string
+          description: How the dispute ended, present once it closes. The card processor's own outcome, usually one of `WON`, `PARTIALLY_WON`, `LOST`, `WITHDRAWN` or `DENIED`; it is not enum-constrained here because the processor may report an outcome Grid has not seen before.
+          example: WON
+        network:
+          type: string
+          description: The card network the dispute was filed with. Absent until the processor reports one.
+          example: VISA
+        disputedAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        provisionalCreditAmount:
+          $ref: '#/components/schemas/CurrencyAmount'
+        openedAt:
+          type: string
+          format: date-time
+          description: When the card processor opened the dispute.
+          example: '2026-05-08T14:30:00Z'
+        providerUpdatedAt:
+          type: string
+          format: date-time
+          description: When the card processor last changed the dispute, as distinct from when Grid last stored it.
+          example: '2026-05-09T09:12:44Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: When Grid first recorded the dispute.
+          example: '2026-05-08T14:30:05Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: When Grid last updated the dispute.
+          example: '2026-05-09T09:12:46Z'
+    CardDisputeListResponse:
+      type: object
+      required:
+        - data
+      description: The disputes on one card transaction, newest first. A transaction carries few disputes, so the list is not paginated; at most 50 are returned.
+      properties:
+        data:
+          type: array
+          description: The transaction's disputes, newest first.
+          items:
+            $ref: '#/components/schemas/CardDispute'
     EstimateCryptoWithdrawalFeeRequest:
       type: object
       required:
