@@ -128,6 +128,14 @@ const PANEL_AWAY = { opacity: 0, scale: 0.9, y: 128, filter: 'blur(48px)' };
 const easeOutGentle = [0.32, 0.72, 0, 1] as const;
 const GROW = motionTransition(easeOutGentle, 0.7);
 const ROW_IN = motionTransition(easeOutGentle, 0.6);
+/** A row arriving or leaving as the Style changes (Skin for Pose): it fades
+ *  where it stands while Backdrop slides to its place. */
+const ROW_SWAP = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: motionTransition(easeOutGentle, 0.4),
+} as const;
 
 function download(blob: Blob, name: string) {
   const a = document.createElement('a');
@@ -694,7 +702,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                 />
 
                 <m.div className={picker.groups} {...rowMotion(0)}>
-                  <div className={picker.group}>
+                  <div className={clsx(picker.group, styles.rows)}>
                     <div className={picker.row}>
                       <span className={picker.rowLabel}>Style</span>
                       <SwatchRow label="Style" active={treatment}>
@@ -731,8 +739,16 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                         ))}
                       </SwatchRow>
                     </div>
-                    {hand && hands && (
-                      <div className={picker.row}>
+                    {/* Skin and Backdrop, or Backdrop and Pose: Backdrop slides to its
+                        place while the other row fades in over the one leaving. */}
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {hand && hands && (
+                      <m.div
+                        key="skin"
+                        className={picker.row}
+                        layout="position"
+                        {...ROW_SWAP}
+                      >
                         <span className={picker.rowLabel}>Skin</span>
                         <SwatchRow label="Skin" active={handId}>
                           {hands.map((h, i) => (
@@ -752,9 +768,9 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                             </Tooltip>
                           ))}
                         </SwatchRow>
-                      </div>
-                    )}
-                      <div className={picker.row}>
+                      </m.div>
+                      )}
+                      <m.div key="backdrop" className={picker.row} layout="position" transition={ROW_SWAP.transition}>
                         <span className={picker.rowLabel}>Backdrop</span>
                         <SwatchRow label="Backdrop" active={backdrop}>
                           {BACKDROPS.map((b) => {
@@ -793,9 +809,14 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                             {backdrop !== 'custom' ? <IconPlusSmall size={16} aria-hidden /> : null}
                           </ColorPicker>
                         </SwatchRow>
-                      </div>
-                    {!hand && (
-                      <div className={picker.row}>
+                      </m.div>
+                      {!hand && (
+                      <m.div
+                        key="pose"
+                        className={picker.row}
+                        layout="position"
+                        {...ROW_SWAP}
+                      >
                         <span className={picker.rowLabel}>Pose</span>
                         <SwatchRow label="Pose" active={poseId}>
                           {POSES.map((p) => (
@@ -816,8 +837,9 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                             </Tooltip>
                           ))}
                         </SwatchRow>
-                      </div>
-                    )}
+                      </m.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </m.div>
 

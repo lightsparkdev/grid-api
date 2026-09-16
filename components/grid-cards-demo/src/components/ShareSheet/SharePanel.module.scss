@@ -156,6 +156,23 @@
   transition: opacity 240ms cubic-bezier(0.19, 1, 0.22, 1), background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
+/* The rows group, whose rows swap (Skin for Pose) with Backdrop sliding
+   between: a row leaving is lifted out of the flow (Motion's popLayout, so
+   it must have something to be positioned against), and the dividers sit
+   on the top of each row after the first rather than the bottom of each
+   before the last, so a lifted-out last row leaves no stray line behind. */
+.rows {
+  position: relative;
+
+  > * {
+    border-bottom: none;
+  }
+
+  > * + * {
+    border-top: var(--stroke-xs) solid var(--border-primary);
+  }
+}
+
 /* A choice as a glyph on the tile's surface (the Style row). */
 .iconSwatch {
   display: grid;
