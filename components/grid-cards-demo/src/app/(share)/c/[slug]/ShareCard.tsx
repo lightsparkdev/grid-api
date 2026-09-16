@@ -1,12 +1,12 @@
 'use client';
 
-/* The share page's stage: the whole viewport on the still's surface, two
-   rules running its height, the template's type in the corners, and the
-   card, big, in the middle, live. The same mesh and studio as the
+/* The share page's stage: the viewport in three columns between hairline
+   rules, the card live in the middle one, the brand's name in the left, the
+   pitch and the buttons in the right. The same mesh and studio as the
    playground, and the same intro: the blueprint draws, then dissolves as the
-   card comes into focus beneath it; the buttons follow. From then on the
-   card tilts under the pointer and turns by hand. Nothing here can edit the
-   design. */
+   card comes into focus beneath it, and the card turns to the still's angles
+   as the pitch comes in. From then on the card tilts under the pointer and
+   turns by hand. Nothing here can edit the design. */
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import clsx from 'clsx';
@@ -24,7 +24,6 @@ import {
 import * as THREE from 'three';
 
 import { footprint } from '@/apps/card/cardMetrics';
-import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import { CardEnv } from '@/components/CardStage/card3d/CardEnv';
 import { CardMesh, type CardMeshState } from '@/components/CardStage/card3d/CardMesh';
 import { CardIntro } from '@/components/CardStage/CardIntro';
@@ -33,6 +32,7 @@ import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/componen
 import type { ExportPose } from '@/components/CardStage/export/exportRenderer';
 import { FLAT_POSE } from '@/components/CardStage/export/stills';
 import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from '@/components/CardStage/introTimeline';
+import { LightsparkWordmark } from '@/components/LightsparkWordmark';
 import type { CardDesign } from '@/data/design';
 import { play } from '@/lib/sounds';
 import type { ShareLook } from '@/lib/share/types';
@@ -46,21 +46,13 @@ const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMap
 /** A press that travels less than this (screen px) is a click, not a turn. */
 const DRAG_SLOP = 3;
 /** The card's long edge: a share of the stage's width or of its height
- *  (whichever binds), and never more than this many px. Mirrored in the
- *  stylesheet for the buttons' place. */
-const CARD_OF_WIDTH = 0.64;
-const CARD_OF_HEIGHT = 0.78;
-const CARD_MAX_LONG = 520;
-/** The buttons hang this far under the card (px), and are this tall; the
- *  card sits half their run above the stage's middle so the two center as
- *  one. Mirrored into the stylesheet as `--under-gap` and `--lift`. */
-const UNDER_GAP = 40;
-const BUTTON_H = 44;
-const CARD_LIFT = (UNDER_GAP + BUTTON_H) / 2;
-/** The template's own surfaces, when the share was made before the look was
- *  recorded: the page's theme picks one. */
+ *  (whichever binds), and never more than this many px. */
+const CARD_OF_WIDTH = 0.382;
+const CARD_OF_HEIGHT = 0.5;
+const CARD_MAX_LONG = 560;
+/** The page's surfaces by theme (the docs'), and the ink on each. */
 const LIGHT_SURFACE = '#f8f8f7';
-const DARK_SURFACE = '#1a1a1a';
+const DARK_SURFACE = '#111111';
 
 /** The intro's clock, stepped by the frame loop once the front has painted. */
 interface Intro {
@@ -74,12 +66,16 @@ interface Intro {
 interface ShareCardProps {
   design: CardDesign;
   look: ShareLook | null | undefined;
+  /** The brand, for the title. */
+  brand: string;
+  /** The line over the buttons. */
+  pitch: string;
+  /** The buttons. Shown, with the pitch, once the intro is over. */
+  actions: ReactNode;
   alt: string;
-  /** What sits under the card (the buttons), shown once the intro is over. */
-  children?: ReactNode;
 }
 
-export function ShareCard({ design, look, alt, children }: ShareCardProps) {
+export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCardProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
@@ -88,16 +84,12 @@ export function ShareCard({ design, look, alt, children }: ShareCardProps) {
   const [introDone, setIntroDone] = useState(false);
   const [dragging, setDragging] = useState(false);
 
-  // The surface: the look's, or the theme's for an older share. The theme
-  // is on <html> (the root layout's boot script), read once mounted.
+  // The theme is on <html> (the root layout's boot script), read once mounted.
   const [themeDark, setThemeDark] = useState(false);
   useEffect(() => {
     setThemeDark(document.documentElement.dataset.theme === 'dark');
   }, []);
-  const palette = useMemo<Palette>(
-    () => paletteOn(look?.surface ?? (themeDark ? DARK_SURFACE : LIGHT_SURFACE)),
-    [look?.surface, themeDark],
-  );
+  const palette = useMemo<Palette>(() => paletteOn(themeDark ? DARK_SURFACE : LIGHT_SURFACE), [themeDark]);
   const pose = useMemo<ExportPose>(() => look?.pose ?? FLAT_POSE, [look?.pose]);
 
   const meshState = useMemo<CardMeshState>(
@@ -117,7 +109,7 @@ export function ShareCard({ design, look, alt, children }: ShareCardProps) {
       const foot = footprint(design.orientation);
       const s = cardScale(r.width, r.height, foot);
       const px = (clientX - (r.left + r.width / 2)) / (foot.w * s);
-      const py = (clientY - (r.top + r.height / 2 - CARD_LIFT)) / (foot.h * s);
+      const py = (clientY - (r.top + r.height / 2)) / (foot.h * s);
       return { x: Math.max(-0.5, Math.min(0.5, px)), y: Math.max(-0.5, Math.min(0.5, py)) };
     },
     [design.orientation],
@@ -151,8 +143,6 @@ export function ShareCard({ design, look, alt, children }: ShareCardProps) {
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!introDone || drag.current || e.button !== 0) return;
-    // The buttons under the card are theirs to handle.
-    if ((e.target as HTMLElement).closest('a, button')) return;
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -194,33 +184,12 @@ export function ShareCard({ design, look, alt, children }: ShareCardProps) {
   const vars = {
     '--surface': palette.bg,
     '--ink': palette.ink,
-    '--card-of-width': CARD_OF_WIDTH,
-    '--card-of-height': CARD_OF_HEIGHT,
-    '--card-max-long': `${CARD_MAX_LONG}px`,
-    // The card's height as a share of its long edge (1 held upright).
-    '--card-h-of-long': foot.h / Math.max(foot.w, foot.h),
-    '--under-gap': `${UNDER_GAP}px`,
-    '--lift': `${CARD_LIFT}px`,
+    '--text-primary': palette.ink,
   } as CSSProperties;
 
   return (
     <div className={clsx(styles.root, introDone && styles.introDone)} style={vars}>
-      {/* The template's chrome: the rules and the type. */}
-      <span className={styles.ruleLeft} aria-hidden />
-      <span className={styles.ruleRight} aria-hidden />
-      <span className={styles.logo} role="img" aria-label="Lightspark" />
-      <p className={clsx(styles.type, styles.typeTopRight)} aria-hidden>
-        Lightspark
-        <br />
-        Cards Playground
-      </p>
-      <p className={clsx(styles.type, styles.typeBottomLeft)} aria-hidden>
-        {TEMPLATE_TUPLE}
-      </p>
-      <p className={clsx(styles.type, styles.typeBottomRight)} aria-hidden>
-        docs.lightspark.com
-      </p>
-
+      {/* The card's stage: the whole page; the card sits at its center. */}
       <div
         ref={stageRef}
         className={clsx(styles.stage, introDone && styles.stageLive, dragging && styles.dragging)}
@@ -258,9 +227,31 @@ export function ShareCard({ design, look, alt, children }: ShareCardProps) {
         {/* Rides with the card, its footprint in card px: the blueprint is
             laid out on it. */}
         <div ref={hitRef} className={styles.hit} style={{ width: foot.w, height: foot.h }} aria-hidden>
-          {!introDone && <CardIntro ref={overlayRef} brand={programNameOf(design)} orientation={design.orientation} />}
+          {!introDone && <CardIntro ref={overlayRef} brand={brand} orientation={design.orientation} />}
         </div>
-        {children && <div className={styles.under}>{children}</div>}
+      </div>
+
+      {/* The three columns over the stage: their type takes the pointer, the
+          space between lets it through to the card. */}
+      <div className={clsx(styles.col, styles.colLeft)}>
+        <a className={styles.wordmark} href="https://www.lightspark.com" aria-label="Lightspark">
+          <LightsparkWordmark />
+        </a>
+        <h1 className={styles.title}>
+          {brand}
+          <br />
+          <span className={styles.titleMuted}>Card</span>
+        </h1>
+        <p className={styles.mouse}>{TEMPLATE_TUPLE}</p>
+      </div>
+      <div className={clsx(styles.col, styles.colMid)} aria-hidden />
+      <div className={clsx(styles.col, styles.colRight)}>
+        <p className={styles.mouse}>Cards playground</p>
+        <div className={styles.pitch}>
+          <p className={styles.pitchText}>{pitch}</p>
+          <div className={styles.actions}>{actions}</div>
+        </div>
+        <p className={styles.mouse}>docs.lightspark.com</p>
       </div>
     </div>
   );
@@ -300,8 +291,7 @@ interface RigProps {
 
 /** Drives the mesh every frame: the intro first (the blueprint draws, the
  *  card comes into focus under it, flat), then the turn to the still's pose,
- *  then the motion's (tilt, drag, bob). The card sits at the stage's center,
- *  lifted by `CARD_LIFT` so it and the buttons center as one. */
+ *  then the motion's (tilt, drag, bob). The card sits at the stage's center. */
 function Rig({ motion, state, pose, reduceMotion, hitRef, overlayRef, onIntroDone }: RigProps) {
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
@@ -311,8 +301,8 @@ function Rig({ motion, state, pose, reduceMotion, hitRef, overlayRef, onIntroDon
   const released = useRef(false);
   const intro = useRef<Intro>({ t: -1, done: false, cued: 0 });
 
-  // Start at the still's angles, not spring to them from flat. Set on the
-  // frame itself: R3F's first frame can run before an effect would.
+  // Start flat, set on the frame itself: R3F's first frame can run before
+  // an effect would.
   useEffect(() => {
     posed.current = false;
   }, [pose]);
@@ -350,7 +340,7 @@ function Rig({ motion, state, pose, reduceMotion, hitRef, overlayRef, onIntroDon
       motion.setPose(pose);
     }
     const bob = it.done ? p.dy : 0;
-    c.position.set(p.dx * s, CARD_LIFT - bob, 0);
+    c.position.set(p.dx * s, -bob, 0);
     c.scale.setScalar(s);
 
     // The intro: step the blueprint and bring the card's canvas into focus
@@ -393,7 +383,7 @@ function Rig({ motion, state, pose, reduceMotion, hitRef, overlayRef, onIntroDon
     const hit = hitRef.current;
     if (hit) {
       const x = size.width / 2 + p.dx * s - foot.w / 2;
-      const y = size.height / 2 - CARD_LIFT + bob - foot.h / 2;
+      const y = size.height / 2 + bob - foot.h / 2;
       hit.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
     }
   });

@@ -87,23 +87,33 @@ export default async function SharePage({ params, searchParams }: Props) {
 
   return (
     <main className={styles.page}>
-      <h1 className={styles.srOnly}>{pitch && record.forName ? `A card for ${record.forName}` : `${brand} card`}</h1>
-      <ShareCard design={design} look={record.look} alt={`${brand} card`}>
-        <div className={styles.actions}>
-          {pitch ? (
-            <a className={styles.primary} href="https://www.lightspark.com/contact">
-              Talk to us
+      <ShareCard
+        design={design}
+        look={record.look}
+        brand={brand}
+        pitch={
+          pitch && record.forName
+            ? `A card for ${record.forName}, issued on Lightspark Grid.`
+            : 'Issue a Visa debit card and watch the API calls fire as you go'
+        }
+        actions={
+          <>
+            <a className={styles.secondary} href={viewHref}>
+              View in playground
             </a>
-          ) : (
-            <a className={styles.primary} href={designHref}>
-              Design your card
-            </a>
-          )}
-          <a className={styles.secondary} href={viewHref}>
-            View in Playground
-          </a>
-        </div>
-      </ShareCard>
+            {pitch ? (
+              <a className={styles.primary} href="https://www.lightspark.com/contact">
+                Talk to us
+              </a>
+            ) : (
+              <a className={styles.primary} href={designHref}>
+                Build yours
+              </a>
+            )}
+          </>
+        }
+        alt={`${brand} card`}
+      />
     </main>
   );
 }

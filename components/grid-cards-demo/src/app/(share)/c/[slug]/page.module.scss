@@ -1,8 +1,6 @@
-@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
-
 /* The share page is its stage (ShareCard); this is the shell and the two
-   buttons under the card. Colors come from the stage's surface and ink, so
-   they read on whatever backdrop the maker picked. */
+   buttons in the right column. Colors come from the stage's surface and
+   ink, so they read on either theme. */
 
 .page {
   margin: 0;
@@ -13,37 +11,23 @@
   }
 }
 
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--spacing-sm, 8px);
-}
-
-/* The flow builder's buttons: the label style, 44 tall, the small radius.
-   Filled is ink on the surface; the outline is a hairline of ink. */
+/* The small button: 32 tall, the small radius, 12px Book. Filled is ink on
+   the surface; the quiet one is a wash of ink. */
 .primary,
 .secondary {
   all: unset;
   box-sizing: border-box;
-  @include label;
   corner-shape: var(--corner-shape);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
-  padding: 0 var(--spacing-lg, 16px);
-  border-radius: var(--corner-radius-md);
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--corner-radius-sm, 6px);
+  font-family: var(--font-family-sans);
+  font-size: 12px;
+  font-weight: var(--font-weight-book, 450);
+  line-height: 12px;
   font-feature-settings: 'salt' 1;
   white-space: nowrap;
   cursor: pointer;
@@ -74,12 +58,12 @@
 }
 
 .secondary {
-  border: var(--stroke-xs, 1px) solid color-mix(in srgb, var(--ink) 24%, transparent);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
   color: var(--ink);
 
   @media (hover: hover) {
     &:hover {
-      background: color-mix(in srgb, var(--ink) 6%, transparent);
+      background: color-mix(in srgb, var(--ink) 10%, transparent);
     }
   }
 }

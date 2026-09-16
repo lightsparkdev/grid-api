@@ -1,93 +1,33 @@
-/* The share page's stage: the viewport on the still's surface, the
-   template's rules and type, the card in the middle, the buttons under it. */
+/* The share page's stage: the viewport in three columns between hairline
+   rules, the card live in the middle, the brand left, the pitch right. */
 
 .root {
-  /* The template's pad, scaled to the viewport as the still's is to its side. */
-  --pad: clamp(16px, 3vw, 40px);
+  --pad: 24px;
   --col-pad: 8px;
-  --rule: 1px;
-  /* `--under-gap`, `--lift`, and the card's proportions are set inline by
-     the component, which shares them with the card's rig. */
+  /* Secondary type and the rules: the ink, stepped back. */
+  --ink-2: color-mix(in srgb, var(--ink) 50%, transparent);
+  --rule: color-mix(in srgb, var(--ink) 10%, transparent);
   position: relative;
-  display: flex;
-  flex-direction: column;
-  /* A set height, not a minimum: the stage's container-query height (the
-     card's size, the buttons' place) needs a definite block size above it. */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* A set height, not a minimum: the card's size and the columns' middles
+     want a definite block size. */
   height: 100dvh;
+  padding: var(--pad);
   background: var(--surface);
   color: var(--ink);
+  font-family: var(--font-family-sans);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── The template's chrome ─────────────────────────────────────────────── */
-
-.ruleLeft,
-.ruleRight {
-  position: absolute;
-  top: var(--pad);
-  bottom: var(--pad);
-  width: var(--rule);
-  background: var(--ink);
-  pointer-events: none;
-}
-
-.ruleLeft {
-  left: var(--pad);
-}
-
-.ruleRight {
-  right: var(--pad);
-}
-
-.logo {
-  position: absolute;
-  top: var(--pad);
-  left: calc(var(--pad) + var(--col-pad));
-  width: 32px;
-  height: 20px;
-  background: var(--ink);
-  mask: url('/assets/share/lightspark-logomark.svg') center / contain no-repeat;
-  -webkit-mask: url('/assets/share/lightspark-logomark.svg') center / contain no-repeat;
-}
-
-.type {
-  position: absolute;
-  margin: 0;
-  font-family: var(--font-family-sans);
-  font-size: 10px;
-  font-weight: var(--font-weight-regular, 400);
-  line-height: 12px;
-  color: var(--ink);
-  font-feature-settings: 'salt' 1;
-  pointer-events: none;
-  user-select: none;
-}
-
-.typeTopRight {
-  top: var(--pad);
-  right: calc(var(--pad) + var(--col-pad));
-  text-align: right;
-}
-
-.typeBottomLeft {
-  bottom: var(--pad);
-  left: calc(var(--pad) + var(--col-pad));
-}
-
-.typeBottomRight {
-  bottom: var(--pad);
-  right: calc(var(--pad) + var(--col-pad));
-  text-align: right;
-}
-
 /* ── The card ──────────────────────────────────────────────────────────── */
 
+/* Under the columns, the whole page: the card sits at its center. */
 .stage {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  container-type: size;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -124,31 +64,87 @@
   --card-blueprint: color-mix(in srgb, var(--ink) 55%, transparent);
 }
 
-/* ── Under the card ────────────────────────────────────────────────────── */
+/* ── The columns ───────────────────────────────────────────────────────── */
 
-/* Centered under the card: from the stage's middle, down half the card's
-   height (as held flat; a turned card's edge sweeps a little past this),
-   then a gap. The card's long edge is worked out from the stage's size (cq
-   units resolve against the stage, so this lives on its child). Comes in
-   as the card did once the intro is over: out of a blur, rising into place. */
-.under {
-  --card-long: min(
-    calc(var(--card-of-width) * 100cqw),
-    calc(var(--card-of-height) * 100cqh),
-    var(--card-max-long)
-  );
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(50% - var(--lift) + var(--card-long) * var(--card-h-of-long) / 2 + var(--under-gap));
+/* Each column: something at the top, something in the middle, something at
+   the bottom. The column itself lets the pointer through to the card; its
+   type takes it. The rules are the columns' edges. */
+.col {
+  position: relative;
   z-index: 1;
   display: flex;
-  justify-content: center;
-  padding: 0 var(--pad);
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0 var(--col-pad);
+  border-left: 1px solid var(--rule);
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+.colLeft {
+  align-items: flex-start;
+}
+
+.colMid {
+  padding: 0;
+}
+
+.colRight {
+  align-items: flex-end;
+  border-right: 1px solid var(--rule);
+  text-align: right;
+}
+
+.wordmark {
+  display: block;
+  color: var(--ink);
+  line-height: 0;
+
+  svg {
+    width: 87px;
+    height: 16px;
+    color: var(--ink) !important;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: 48px;
+  font-weight: var(--font-weight-regular, 400);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-feature-settings: 'salt' 1;
+}
+
+.titleMuted {
+  color: var(--ink-2);
+}
+
+.mouse {
+  margin: 0;
+  font-size: 10px;
+  line-height: 12px;
+  font-weight: var(--font-weight-regular, 400);
+  color: var(--ink-2);
+  font-feature-settings: 'salt' 1;
+  user-select: none;
+}
+
+/* The pitch and the buttons: come in as the card did once the intro is
+   over, out of a blur, rising into place. */
+.pitch {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 260px;
   opacity: 0;
   transform: translateY(10px);
   filter: blur(8px);
-  pointer-events: none;
   transition:
     opacity 600ms var(--ease-out-snappy, ease-out),
     transform 600ms var(--ease-out-snappy, ease-out),
@@ -158,12 +154,89 @@
     opacity: 1;
     transform: none;
     filter: none;
-    pointer-events: auto;
+  }
+}
+
+.pitchText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: var(--font-weight-regular, 400);
+  font-feature-settings: 'salt' 1;
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* ── Small screens: the columns stack ──────────────────────────────────── */
+
+@media (max-width: 899px) {
+  .root {
+    --pad: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .col {
+    flex: 0 0 auto;
+    border-left: 0;
+    padding: 0;
+  }
+
+  .colLeft {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    /* The title comes off the row and sits under it. */
+    .title {
+      order: 3;
+      flex-basis: 100%;
+      margin-top: 24px;
+    }
+
+    /* The tuple sits this one out. */
+    .mouse {
+      display: none;
+    }
+  }
+
+  .colLeft {
+    flex-wrap: wrap;
+  }
+
+  /* The middle column is the card's room. */
+  .colMid {
+    flex: 1 1 auto;
+    min-height: 200px;
+  }
+
+  .colRight {
+    border-right: 0;
+    text-align: left;
+    align-items: flex-start;
+    gap: 16px;
+
+    /* "Cards playground" goes to the top row; "docs" stays at the bottom. */
+    > .mouse:first-child {
+      display: none;
+    }
+  }
+
+  .pitch {
+    align-items: flex-start;
+    max-width: none;
+  }
+
+  .actions {
+    flex-wrap: wrap;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .under {
+  .pitch {
     transition: none;
   }
 }
