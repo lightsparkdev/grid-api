@@ -89,7 +89,6 @@ export default async function SharePage({ params, searchParams }: Props) {
     <main className={styles.page}>
       <ShareCard
         design={design}
-        look={record.look}
         brand={brand}
         pitch={
           pitch && record.forName

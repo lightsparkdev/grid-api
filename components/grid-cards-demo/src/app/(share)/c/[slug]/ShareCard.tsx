@@ -4,9 +4,8 @@
    rules, the card live in the middle one, the brand's name in the left, the
    pitch and the buttons in the right. The same mesh and studio as the
    playground, and the same intro: the blueprint draws, then dissolves as the
-   card comes into focus beneath it, and the card turns to the still's angles
-   as the pitch comes in. From then on the card tilts under the pointer and
-   turns by hand. Nothing here can edit the design. */
+   card comes into focus beneath it. From then on the card tilts under the
+   pointer and turns by hand. Nothing here can edit the design. */
 
 import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
@@ -30,14 +29,11 @@ import { CardMesh, type CardMeshState } from '@/components/CardStage/card3d/Card
 import { CardIntro } from '@/components/CardStage/CardIntro';
 import { CardMotion, ORIENT_ROLL } from '@/components/CardStage/cardMotion';
 import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/components/CardStage/export/compose';
-import type { ExportPose } from '@/components/CardStage/export/exportRenderer';
-import { FLAT_POSE } from '@/components/CardStage/export/stills';
 import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from '@/components/CardStage/introTimeline';
 import { StageGL } from '@/components/glass-gl/StageGL';
 import { LightsparkWordmark } from '@/components/LightsparkWordmark';
 import type { CardDesign } from '@/data/design';
 import { play } from '@/lib/sounds';
-import type { ShareLook } from '@/lib/share/types';
 
 import styles from './ShareCard.module.scss';
 
@@ -80,7 +76,6 @@ interface Intro {
 
 interface ShareCardProps {
   design: CardDesign;
-  look: ShareLook | null | undefined;
   /** The brand, for the title. */
   brand: string;
   /** The line over the buttons. */
@@ -90,7 +85,7 @@ interface ShareCardProps {
   alt: string;
 }
 
-export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCardProps) {
+export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
@@ -109,7 +104,6 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
     setThemeDark(document.documentElement.dataset.theme === 'dark');
   }, []);
   const palette = useMemo<Palette>(() => paletteOn(themeDark ? DARK_SURFACE : LIGHT_SURFACE), [themeDark]);
-  const pose = useMemo<ExportPose>(() => look?.pose ?? FLAT_POSE, [look?.pose]);
 
   const meshState = useMemo<CardMeshState>(
     () => ({ design, issued: false, frozen: false, closed: false }),
@@ -251,7 +245,6 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
           <Rig
             motion={motion}
             state={meshState}
-            pose={pose}
             reduceMotion={reduceMotion}
             hitRef={hitRef}
             overlayRef={overlayRef}
@@ -331,7 +324,6 @@ function StageCamera({ exposure }: { exposure: number }) {
 interface RigProps {
   motion: CardMotion;
   state: CardMeshState;
-  pose: ExportPose;
   reduceMotion: boolean;
   hitRef: React.RefObject<HTMLDivElement>;
   overlayRef: React.RefObject<SVGSVGElement>;
@@ -339,22 +331,15 @@ interface RigProps {
 }
 
 /** Drives the mesh every frame: the intro first (the blueprint draws, the
- *  card comes into focus under it, flat), then the turn to the still's pose,
- *  then the motion's (tilt, drag, bob). The card sits at the stage's center. */
-function Rig({ motion, state, pose, reduceMotion, hitRef, overlayRef, onIntroDone }: RigProps) {
+ *  card comes into focus under it), then the motion's (tilt, drag, bob). The
+ *  card sits at the stage's center, facing front. */
+function Rig({ motion, state, reduceMotion, hitRef, overlayRef, onIntroDone }: RigProps) {
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
   const size = useThree((s) => s.size);
   const gl = useThree((s) => s.gl);
-  const posed = useRef(false);
-  const released = useRef(false);
   const intro = useRef<Intro>({ t: -1, done: false, cued: 0 });
 
-  // Start flat, set on the frame itself: R3F's first frame can run before
-  // an effect would.
-  useEffect(() => {
-    posed.current = false;
-  }, [pose]);
 
   // The blueprint starts drawing once the front has painted.
   const onReady = useCallback(() => {
@@ -370,24 +355,14 @@ function Rig({ motion, state, pose, reduceMotion, hitRef, overlayRef, onIntroDon
     const foot = footprint(orientation);
     const s = cardScale(size.width, size.height, foot);
     const it = intro.current;
-    // Flat under the blueprint (a flat drawing); once it has dissolved, the
-    // card turns to the still's angles. Posed (`free`) through the intro and
-    // the frame that ends it, since `hold` changing would otherwise re-pick a
-    // face; not free from then on, so a turn by hand settles on a face.
-    if (!posed.current) motion.setPose(FLAT_POSE);
-    motion.free = !released.current;
+    // Flat, facing front, as on the playground: held through the intro, then
+    // floating (the tilt, the bob), and settling on a face after a turn.
     const p = motion.step(dt, {
       wantBack: false,
       hold: !it.done,
       reduceMotion,
       bob: it.done,
-      path: posed.current ? undefined : { from: FLAT_POSE, u: 1 },
     });
-    posed.current = true;
-    if (it.done && !released.current) {
-      released.current = true;
-      motion.setPose(pose);
-    }
     const bob = it.done ? p.dy : 0;
     c.position.set(p.dx * s, -bob, 0);
     c.scale.setScalar(s);
