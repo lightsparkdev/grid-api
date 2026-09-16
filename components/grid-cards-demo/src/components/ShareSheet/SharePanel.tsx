@@ -41,6 +41,7 @@ import {
 import { canEncodeVideo, renderSpinVideo } from '@/components/CardStage/export/exportVideo';
 import {
   CARD_IN_LAYOUT,
+  HAND_OVERLAP,
   HERO_POSE,
   POSES,
   renderStill,
@@ -78,6 +79,9 @@ interface SharePanelProps {
 
 /** The hand shown first. */
 const DEFAULT_HAND = 'h1';
+/** How long the hand takes to leave (SharePanel.module.scss, .handClip):
+ *  the card waits this long before moving off to the template's slot. */
+const HAND_OUT_MS = 520;
 
 /** The panel's width on the stage, the room kept around it, and the strip
  *  at the bottom the Share/Close button stands in. */
@@ -201,6 +205,20 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
     };
   }, [hand, handId]);
   const handShown = hand && handLoaded;
+  // What the frame and the stage hold. Going to the hand, the card moves
+  // first and the hand arrives once it is still; leaving, the hand goes
+  // first, and only then does the card move to the template's slot (the
+  // hold outlasts the hand's exit).
+  const [held, setHeld] = useState<Treatment>(treatment);
+  useEffect(() => {
+    if (treatment === 'hand') {
+      setHeld('hand');
+      return;
+    }
+    const t = setTimeout(() => setHeld('template'), HAND_OUT_MS);
+    return () => clearTimeout(t);
+  }, [treatment]);
+  const heldHand = held === 'hand';
 
   // The pose from the row, or null once the card has been turned by hand.
   const [poseId, setPoseId] = useState<PoseId | null>('angle');
@@ -209,15 +227,19 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
   useEffect(() => {
     if (open) setPoseId((p) => p ?? 'angle');
   }, [open]);
+  // The card is in the frame's slot and still (the stage says so): what
+  // must sit over the card in place (the hand) waits for it.
+  const [settled, setSettled] = useState(false);
   useEffect(() => {
     onStage({
       open,
       exposure: exposureFor(palette),
-      pose: !open ? HERO_POSE : hand ? HAND_POSE : pose,
-      locked: hand,
+      pose: !open ? HERO_POSE : heldHand ? HAND_POSE : pose,
+      locked: heldHand,
       onTurned,
+      onSettled: setSettled,
     });
-  }, [open, palette, pose, hand, onTurned, onStage]);
+  }, [open, palette, pose, heldHand, onTurned, onStage]);
 
   // The share made from this panel (or the one the page opened from).
   const [handle, setHandle] = useState<ShareHandle | null>(null);
@@ -315,17 +337,20 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
   // ── The hand ───────────────────────────────────────────────────────────
   // The hand passes in front of the card, so it can't be in the frame (the
   // stage's canvas paints over the frame): it is drawn into a host above the
-  // canvas, in a clip the size of the frame placed over it once the panel
-  // has settled, and follows the frame when the stage resizes. It hides
-  // while the panel is arriving or leaving.
+  // canvas, in a clip the size of the frame placed over it, and follows the
+  // frame when the stage resizes. It waits for the card to be in place and
+  // still (turned face on, glided into the hole), then arrives out of a
+  // blur; it hides again whenever the card is moving.
   const frameRef = useRef<HTMLDivElement>(null);
   const [frontRect, setFrontRect] = useState<{ left: number; top: number; side: number } | null>(null);
+  // Where the hand last was: it stays there, mounted, while it leaves.
+  const lastRect = useRef<{ left: number; top: number; side: number } | null>(null);
+  if (frontRect) lastRect.current = frontRect;
   useEffect(() => {
-    if (!open || !handShown || !grown || !frontHost) {
+    if (!open || !handShown || !grown || !frontHost || !settled) {
       setFrontRect(null);
       return;
     }
-    let raf = 0;
     const place = () => {
       const f = frameRef.current;
       if (!f) return;
@@ -333,20 +358,12 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
       const hr = frontHost.getBoundingClientRect();
       setFrontRect({ left: fr.left - hr.left, top: fr.top - hr.top, side: fr.width });
     };
-    // After the entrance has landed (0.7 s), then on every change of size.
-    const settle = setTimeout(() => {
-      place();
-      raf = requestAnimationFrame(place);
-    }, 750);
+    place();
     const ro = new ResizeObserver(place);
     if (rootRef.current) ro.observe(rootRef.current);
     if (frameRef.current) ro.observe(frameRef.current);
-    return () => {
-      clearTimeout(settle);
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [open, handShown, grown, frontHost, frameSide]);
+    return () => ro.disconnect();
+  }, [open, handShown, grown, frontHost, settled, frameSide]);
 
   // ── Making the share ───────────────────────────────────────────────────
   const busy = progress !== null && progress.stage !== 'done';
@@ -586,39 +603,41 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
         createPortal(
           <div
             className={clsx(styles.handClip, frontRect && handShown && styles.handClipOn)}
-            style={
-              frontRect
-                ? { left: frontRect.left, top: frontRect.top, width: frontRect.side, height: frontRect.side }
-                : undefined
-            }
+            style={(() => {
+              // The clip keeps its place while the hand leaves.
+              const rect = frontRect ?? lastRect.current;
+              return rect ? { left: rect.left, top: rect.top, width: rect.side, height: rect.side } : undefined;
+            })()}
             aria-hidden
           >
-            {frontRect &&
-              handShown &&
-              (() => {
-                const l = handLayerIn(frontRect.side, frontRect.side, handId);
-                const at = { left: l.x, top: l.y, width: l.size, height: l.size };
-                const url = handById(handId)?.url;
-                const wash = handWashFor(palette);
-                return (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" className={styles.handLayer} style={at} />
-                    {/* The surface's wash over the hand (see handWashFor),
-                        masked by the hand itself so it lands on skin alone. */}
-                    <span
-                      className={styles.handWash}
-                      style={{
-                        ...at,
-                        background: wash.color,
-                        opacity: wash.alpha,
-                        maskImage: `url(${url})`,
-                        WebkitMaskImage: `url(${url})`,
-                      }}
-                    />
-                  </>
-                );
-              })()}
+            {(() => {
+              // Mounted from the moment the hand is held (so it is decoded
+              // before it shows) until the hold ends after it has left.
+              const rect = frontRect ?? lastRect.current;
+              if (!rect || !heldHand || !handLoaded) return null;
+              const l = handLayerIn(rect.side, rect.side, handId);
+              const at = { left: l.x, top: l.y, width: l.size, height: l.size };
+              const url = handById(handId)?.url;
+              const wash = handWashFor(palette);
+              return (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className={styles.handLayer} style={at} />
+                  {/* The surface's wash over the hand (see handWashFor),
+                      masked by the hand itself so it lands on skin alone. */}
+                  <span
+                    className={styles.handWash}
+                    style={{
+                      ...at,
+                      background: wash.color,
+                      opacity: wash.alpha,
+                      maskImage: `url(${url})`,
+                      WebkitMaskImage: `url(${url})`,
+                    }}
+                  />
+                </>
+              );
+            })()}
           </div>,
           frontHost,
         )}
@@ -651,7 +670,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                   side={frameSide}
                   palette={palette}
                   orientation={design.orientation}
-                  hand={handShown ? handId : null}
+                  hand={heldHand && handLoaded ? handId : null}
                 />
 
                 <m.div className={picker.groups} {...rowMotion(0)}>
@@ -873,7 +892,17 @@ const ShareFrame = forwardRef<
       ? { width: (long * foot.w) / foot.h, height: long }
       : { width: long, height: (long * foot.h) / foot.w };
   const text = { fontSize: TEXT * k, lineHeight: 1 } as const;
-  const hole = hand ? handHoleIn(side, side, hand) : null;
+  // The hole, grown by the export's overlap about its center: the card's
+  // anti-aliased edge runs under the skin that touches it here too.
+  const h0 = hand ? handHoleIn(side, side, hand) : null;
+  const hole = h0
+    ? {
+        x: h0.x - (h0.w * (HAND_OVERLAP - 1)) / 2,
+        y: h0.y - (h0.h * (HAND_OVERLAP - 1)) / 2,
+        w: h0.w * HAND_OVERLAP,
+        h: h0.h * HAND_OVERLAP,
+      }
+    : null;
   return (
     <div
       ref={ref}

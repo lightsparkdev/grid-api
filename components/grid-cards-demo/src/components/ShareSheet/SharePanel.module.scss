@@ -108,14 +108,26 @@
   overflow: hidden;
   border-radius: var(--corner-radius-md);
   opacity: 0;
-  filter: blur(14px);
+  filter: blur(16px);
+  transform: scale(1.06);
   pointer-events: none;
-  transition: opacity 320ms cubic-bezier(0.19, 1, 0.22, 1), filter 420ms cubic-bezier(0.19, 1, 0.22, 1);
+  /* Leaving (the transition into this state): the mirror of arriving, so
+     it lingers, then goes into the blur. */
+  transition:
+    opacity 440ms cubic-bezier(0.7, 0, 0.84, 0),
+    filter 500ms cubic-bezier(0.7, 0, 0.84, 0),
+    transform 500ms cubic-bezier(0.7, 0, 0.84, 0);
 }
 
 .handClipOn {
   opacity: 1;
   filter: blur(0);
+  transform: scale(1);
+  /* Arriving: quick out of the blur, settling slowly. */
+  transition:
+    opacity 480ms cubic-bezier(0.19, 1, 0.22, 1),
+    filter 620ms cubic-bezier(0.19, 1, 0.22, 1),
+    transform 620ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .handLayer {

@@ -125,6 +125,9 @@ interface Live {
   shareFrom: ExportPose | null;
   shareLocked: boolean;
   onTurned: (() => void) | undefined;
+  onSettled: ((settled: boolean) => void) | undefined;
+  /** The card is parked in the frame's slot and still (last told). */
+  shareSettled: boolean;
   intro: Intro;
   /** Something the camera sees changed off the frame loop (a material, a
    *  map, the exposure): the next frame paints. See CardRig's render gate. */
@@ -233,6 +236,9 @@ export interface ShareStageState {
   locked?: boolean;
   /** The visitor turned the card by hand: the picked pose no longer holds. */
   onTurned?: () => void;
+  /** The card has landed in the frame's slot and come to rest (or has left
+   *  it): what must wait for the card to be in place (the hand) listens. */
+  onSettled?: (settled: boolean) => void;
 }
 
 /** The flight into the share frame and back (s). */
@@ -329,6 +335,8 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     shareFrom: null,
     shareLocked: false,
     onTurned: undefined,
+    onSettled: undefined,
+    shareSettled: false,
     dirty: true,
     intro: {
       t: -1,
@@ -393,6 +401,7 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   live.current.shareWanted = shareOpen;
   live.current.shareLocked = shareLocked;
   live.current.onTurned = share?.onTurned;
+  live.current.onSettled = share?.onSettled;
   useEffect(() => {
     // Free to turn in the frame, unless the pose is held (the hand).
     motion.free = shareOpen && !shareLocked;
@@ -1635,6 +1644,7 @@ const CardRig = memo(function CardRig({
     if (!shareLanded && shareWas !== lv.shareT && lv.shareFrom === null) lv.shareFrom = motion.pose;
     if (shareLanded) lv.shareFrom = null;
     const sharePath = lv.shareFrom ? { from: lv.shareFrom, u: lv.shareWanted ? st : 1 - st } : undefined;
+    let shareInPlace = false;
     if (st > 0) {
       const slot = root.ownerDocument.querySelector<HTMLElement>('[data-share-card-slot]');
       if (slot) {
@@ -1656,9 +1666,20 @@ const CardRig = memo(function CardRig({
         x += (tgt.x - x) * st;
         y += (tgt.y - y) * st;
         s += (tgt.s - s) * st;
+        // In place: landed, the glide done (within a pixel), and still.
+        shareInPlace =
+          lv.shareT === 1 &&
+          Math.abs(want.x - tgt.x) < 1 &&
+          Math.abs(want.y - tgt.y) < 1 &&
+          Math.abs(want.s - tgt.s) < want.s * 0.004 &&
+          motion.atRest;
       }
     } else {
       shareSlot.current = null;
+    }
+    if (shareInPlace !== lv.shareSettled) {
+      lv.shareSettled = shareInPlace;
+      lv.onSettled?.(shareInPlace);
     }
     const shareFlying = lv.shareT > 0 && lv.shareT < 1;
 
