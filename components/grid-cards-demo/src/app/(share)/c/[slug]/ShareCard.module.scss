@@ -173,6 +173,17 @@
   user-select: none;
 }
 
+.mouseLink {
+  text-decoration: none;
+  transition: color 150ms ease;
+
+  @media (hover: hover) {
+    &:hover {
+      color: var(--ink);
+    }
+  }
+}
+
 /* The tuple: 8.5px, with the slashed zero (as the template paints it). */
 .tuple {
   font-size: 8.5px;

@@ -286,9 +286,9 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
             {actions}
           </m.div>
         </div>
-        <p className={styles.mouse}>
+        <a className={clsx(styles.mouse, styles.mouseLink)} href="https://docs.lightspark.com">
           docs.lightspark.com
-        </p>
+        </a>
       </div>
     </div>
   );
