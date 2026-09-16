@@ -320,6 +320,19 @@ paths:
           schema:
             type: string
           example: PHP
+        - name: railType
+          in: query
+          description: Only return rails of this type.
+          required: false
+          schema:
+            type: string
+            enum:
+              - bank
+              - mobile_money
+              - upi
+              - pix
+              - iban
+          example: bank
       responses:
         '200':
           description: Successful operation
