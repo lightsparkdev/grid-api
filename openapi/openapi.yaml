@@ -103,37 +103,37 @@ tags:
       from the partner's own app. The platform calls with its ordinary Grid
       credential, but the person typing is the cardholder rather than the
       caller, so reaching that cardholder's account takes a second proof: an
-      SMS code they answer, which the partner afterwards carries in the
-      `X-Ls-Care-Session` header.
+      SMS code they send into the chat, after which the partner carries a
+      session token in the `X-Ls-Care-Session` header.
 
-      **The surface is four routes, and the happy path is two calls.**
+      **The surface is two routes, and verification happens inside the
+      conversation.**
 
       1. **Open the chat.** `POST /care/chats/{chatId}/messages` with an empty
          `message`, addressed to the cardholder as `Customer:<uuid>`. Returns
          the chat's id and the agent's `greeting`, which is what a chat window
          renders before anybody has typed. Sends no SMS, runs no turn, bills
-         nothing, and is safe to call again — a widget that reloaded gets the
+         nothing, and is safe to call again: a widget that reloaded gets the
          same chat back, this time without a greeting.
       2. **Send the cardholder's first message.** The same route with their
          text and an `Idempotency-Key` header. One turn runs synchronously and
          the agent's answer comes back in `reply`. On a chat that cannot yet
          reach the account this call also texts the verification code and says
          so in the same body: `verificationRequired: true`, with
-         `destinationMasked`, `alreadySent` and `codeLength` for the input you
-         put on screen.
-      3. **Confirm the code.**
-         `POST /care/chats/{chatId}/verifications/confirm` returns a
-         `sessionToken` and its `expiresAt`. Send that token as the
-         `X-Ls-Care-Session` header on every message from then on. A
-         cardholder who reads the code back to the agent as an ordinary
-         message instead is confirmed the same way, and that turn's own
-         response carries the same two fields.
+         `destinationMasked`, `alreadySent` and `codeLength`, and the agent's
+         `reply` asks the cardholder for the code.
+      3. **The cardholder sends the code as an ordinary message.** The agent
+         checks it with the SMS provider, and the response to that turn
+         carries `sessionToken` and `expiresAt`. Send that token as the
+         `X-Ls-Care-Session` header on every message from then on. A code that
+         does not match is answered in `reply`, and the cardholder can simply
+         send it again.
       4. **Close the chat** with `DELETE /care/chats/{chatId}` when the
          cardholder is done.
 
-      `POST /care/chats/{chatId}/verifications` is the *Send another code*
-      button rather than a step in the flow: step 2 already sent the first
-      code.
+      **A cardholder whose code never arrived asks the agent for another
+      one.** The agent sends a new code to the number on file and says so in
+      its `reply`. There is no separate route for it.
 
       Step 1 is optional. A message addressed to a `Customer:` id opens that
       cardholder's chat if they have none, so a partner whose cardholder has
@@ -151,13 +151,16 @@ tags:
       than the session lifetime, fifteen minutes in the default deployment,
       which is also how long a session token lives. Past that window the chat
       stops requiring the header: a message sent without one gets a fresh
-      code, and the agent asks the cardholder to read it back inside the
+      code, and the agent asks the cardholder to send it back inside the
       conversation, which hands the partner the next session token. Sending
       the dead token anyway is still a `401 CARE_SESSION_EXPIRED`, so the
       handling is to discard the token on that error and resend the message
       with no `X-Ls-Care-Session` header rather than to tear the chat down.
       If that resend is refused too, the chat's verification is still current
-      and the way back is a new code.
+      and its token has been lost. Close the chat with
+      `DELETE /care/chats/{chatId}`, which needs no token, and send the
+      message to the cardholder as `Customer:<uuid>`: that opens a fresh chat
+      and sends a new code.
 
       Two things an integration has to get right:
 
@@ -168,10 +171,9 @@ tags:
         and into every log the transcript reaches.
       - **The session token is returned once and is never re-readable.** No
         endpoint hands it back, there is no revocation, and it is short-lived
-        by design. Hold it for the life of the cardholder's session; a partner
-        that drops it has to send a new code and confirm it again. It arrives
-        from whichever door took the code, so read `sessionToken` on the
-        message response as well as on the confirm response.
+        by design. Hold it for the life of the cardholder's session. It
+        arrives on the message response to the turn in which the cardholder
+        sent their code, and on no other.
 
       Some things are absent by construction, so no integration can come to
       depend on them: nothing returns a transcript or an earlier turn's reply
@@ -477,10 +479,6 @@ paths:
     $ref: paths/stablecoins/stablecoin-provider-accounts_{stablecoinProviderAccountId}.yaml
   /care/chats/{chatId}/messages:
     $ref: paths/care/care_chats_{chatId}_messages.yaml
-  /care/chats/{chatId}/verifications:
-    $ref: paths/care/care_chats_{chatId}_verifications.yaml
-  /care/chats/{chatId}/verifications/confirm:
-    $ref: paths/care/care_chats_{chatId}_verifications_confirm.yaml
   /care/chats/{chatId}:
     $ref: paths/care/care_chats_{chatId}.yaml
 webhooks:

@@ -67,37 +67,37 @@ tags:
       from the partner's own app. The platform calls with its ordinary Grid
       credential, but the person typing is the cardholder rather than the
       caller, so reaching that cardholder's account takes a second proof: an
-      SMS code they answer, which the partner afterwards carries in the
-      `X-Ls-Care-Session` header.
+      SMS code they send into the chat, after which the partner carries a
+      session token in the `X-Ls-Care-Session` header.
 
-      **The surface is four routes, and the happy path is two calls.**
+      **The surface is two routes, and verification happens inside the
+      conversation.**
 
       1. **Open the chat.** `POST /care/chats/{chatId}/messages` with an empty
          `message`, addressed to the cardholder as `Customer:<uuid>`. Returns
          the chat's id and the agent's `greeting`, which is what a chat window
          renders before anybody has typed. Sends no SMS, runs no turn, bills
-         nothing, and is safe to call again — a widget that reloaded gets the
+         nothing, and is safe to call again: a widget that reloaded gets the
          same chat back, this time without a greeting.
       2. **Send the cardholder's first message.** The same route with their
          text and an `Idempotency-Key` header. One turn runs synchronously and
          the agent's answer comes back in `reply`. On a chat that cannot yet
          reach the account this call also texts the verification code and says
          so in the same body: `verificationRequired: true`, with
-         `destinationMasked`, `alreadySent` and `codeLength` for the input you
-         put on screen.
-      3. **Confirm the code.**
-         `POST /care/chats/{chatId}/verifications/confirm` returns a
-         `sessionToken` and its `expiresAt`. Send that token as the
-         `X-Ls-Care-Session` header on every message from then on. A
-         cardholder who reads the code back to the agent as an ordinary
-         message instead is confirmed the same way, and that turn's own
-         response carries the same two fields.
+         `destinationMasked`, `alreadySent` and `codeLength`, and the agent's
+         `reply` asks the cardholder for the code.
+      3. **The cardholder sends the code as an ordinary message.** The agent
+         checks it with the SMS provider, and the response to that turn
+         carries `sessionToken` and `expiresAt`. Send that token as the
+         `X-Ls-Care-Session` header on every message from then on. A code that
+         does not match is answered in `reply`, and the cardholder can simply
+         send it again.
       4. **Close the chat** with `DELETE /care/chats/{chatId}` when the
          cardholder is done.
 
-      `POST /care/chats/{chatId}/verifications` is the *Send another code*
-      button rather than a step in the flow: step 2 already sent the first
-      code.
+      **A cardholder whose code never arrived asks the agent for another
+      one.** The agent sends a new code to the number on file and says so in
+      its `reply`. There is no separate route for it.
 
       Step 1 is optional. A message addressed to a `Customer:` id opens that
       cardholder's chat if they have none, so a partner whose cardholder has
@@ -115,13 +115,16 @@ tags:
       than the session lifetime, fifteen minutes in the default deployment,
       which is also how long a session token lives. Past that window the chat
       stops requiring the header: a message sent without one gets a fresh
-      code, and the agent asks the cardholder to read it back inside the
+      code, and the agent asks the cardholder to send it back inside the
       conversation, which hands the partner the next session token. Sending
       the dead token anyway is still a `401 CARE_SESSION_EXPIRED`, so the
       handling is to discard the token on that error and resend the message
       with no `X-Ls-Care-Session` header rather than to tear the chat down.
       If that resend is refused too, the chat's verification is still current
-      and the way back is a new code.
+      and its token has been lost. Close the chat with
+      `DELETE /care/chats/{chatId}`, which needs no token, and send the
+      message to the cardholder as `Customer:<uuid>`: that opens a fresh chat
+      and sends a new code.
 
       Two things an integration has to get right:
 
@@ -132,10 +135,9 @@ tags:
         and into every log the transcript reaches.
       - **The session token is returned once and is never re-readable.** No
         endpoint hands it back, there is no revocation, and it is short-lived
-        by design. Hold it for the life of the cardholder's session; a partner
-        that drops it has to send a new code and confirm it again. It arrives
-        from whichever door took the code, so read `sessionToken` on the
-        message response as well as on the confirm response.
+        by design. Hold it for the life of the cardholder's session. It
+        arrives on the message response to the turn in which the cardholder
+        sent their code, and on no other.
 
       Some things are absent by construction, so no integration can come to
       depend on them: nothing returns a transcript or an earlier turn's reply
@@ -10693,8 +10695,6 @@ paths:
         `codeLength` come back with it, and the agent's own sentence in `reply`
         asks the cardholder for the code. Later messages on the same chat find the
         code already outstanding and send nothing, reporting `alreadySent: true`.
-        Collect the code and post it to
-        `POST /care/chats/{chatId}/verifications/confirm`.
 
         **Render `displayMessage`, not your own copy of the input.** Grid redacts
         the cardholder's text on the way in — a card number they pasted comes back
@@ -10702,26 +10702,23 @@ paths:
         own input box instead has put an unmasked PAN in the transcript, on the
         screen and in whatever logs the transcript reaches.
 
-        **The code can also be read back to the agent, and then this route issues
-        the session.** When the cardholder types their code as a message rather
-        than into your code input, the agent puts it to the same provider, through
-        the same check `POST /care/chats/{chatId}/verifications/confirm` performs,
-        and the chat comes out of that turn able to reach the account. That turn's
-        body carries `sessionToken` and `expiresAt`, under the same names and with
-        the same meaning as the confirm route's, so one handler in your app serves
-        both doors. No other turn carries them: a session is issued per
-        verification, not per message. Store the token and send it from the next
-        call onwards, or you will hold a chat that is privileged and unusable at
-        once.
+        **The cardholder completes verification by sending the code as an
+        ordinary message, and that turn's response carries the session.** The
+        agent checks the code with the SMS provider, and the chat comes out of
+        that turn able to reach the account. The body of that turn carries
+        `sessionToken` and `expiresAt`. No other turn carries them: a session is
+        issued per verification, not per message. Store the token and send it from
+        the next call onwards, or you will hold a chat that is privileged and
+        unusable at once. A code that does not match is answered in `reply`, not
+        as an error, and the cardholder can send it again.
 
-        The structured route is not deprecated by this, and it is still the one to
-        call when your own UI collects the code: only it can tell you where the
-        code went, whether one was already in flight, and how many digits it has.
+        **A cardholder whose code never arrived asks the agent for another one**,
+        in the conversation, and the agent sends a new code to the number on file.
+        There is no separate route for sending a code.
 
         While the chat's verification is current, every message must carry the
-        session token in the `X-Ls-Care-Session` header, whichever of the two
-        doors issued it. Without it the call is refused with
-        `CARE_SESSION_EXPIRED`.
+        session token in the `X-Ls-Care-Session` header. Without it the call is
+        refused with `CARE_SESSION_EXPIRED`.
 
         **A verification goes stale, and the agent then asks for a code again
         rather than the call failing.** A chat reaches the cardholder's account
@@ -10732,18 +10729,20 @@ paths:
         being required, and the next message **sent without it** is treated as an
         unverified one: a fresh code goes out, the body carries
         `verificationRequired: true` with `destinationMasked`, `alreadySent` and
-        `codeLength`, and the agent's own `reply` asks the cardholder to read the
-        code back. The turn still runs and still answers.
+        `codeLength`, and the agent's own `reply` asks the cardholder to send the
+        code. The turn still runs and still answers.
 
         Sending the expired token anyway is still a `401 CARE_SESSION_EXPIRED`.
         One recovery covers a token that was lost, one that was never valid and
         one that has expired: retry the message with no `X-Ls-Care-Session`
         header. On a chat whose verification has gone stale that call succeeds,
         sends a fresh code and has the agent ask for it, and the turn in which the
-        cardholder reads it back returns the next `sessionToken`. On a chat whose
+        cardholder sends it returns the next `sessionToken`. On a chat whose
         verification is still current it is refused with `CARE_SESSION_EXPIRED`
-        again, which is the signal to send a code with
-        `POST /care/chats/{chatId}/verifications` and confirm it. An empty message
+        again, which means the token for a live verification has been lost: close
+        the chat with `DELETE /care/chats/{chatId}`, which needs no token, and
+        send the message to the cardholder as `Customer:<uuid>`, which opens a
+        fresh chat and sends a new code. An empty message
         never reads the header at all, so a widget still holding a dead token can
         resume with one and be told where verification stands without texting
         anybody.
@@ -10772,7 +10771,7 @@ paths:
         - name: X-Ls-Care-Session
           in: header
           required: false
-          description: The `sessionToken` from `POST /care/chats/{chatId}/verifications/confirm`, or the one this route returned on the turn that verified the cardholder in the conversation. Required on every message while the chat's verification is current, and refused with `CARE_SESSION_EXPIRED` when it is missing there. Not required before the cardholder has verified, nor once the chat's verification has aged past the session lifetime; but a token that is sent is always checked, so a malformed or expired one is refused with `CARE_SESSION_EXPIRED` whatever state the chat is in, and one minted for another chat or another cardholder is `NOT_FOUND`. An opening never reads the header at all, because a widget that reloaded has lost its token and that is the case the opening exists for.
+          description: The `sessionToken` this route returned on the turn in which the cardholder sent their verification code. Required on every message while the chat's verification is current, and refused with `CARE_SESSION_EXPIRED` when it is missing there. Not required before the cardholder has verified, nor once the chat's verification has aged past the session lifetime; but a token that is sent is always checked, so a malformed or expired one is refused with `CARE_SESSION_EXPIRED` whatever state the chat is in, and one minted for another chat or another cardholder is `NOT_FOUND`. An opening never reads the header at all, because a widget that reloaded has lost its token and that is the case the opening exists for.
           schema:
             type: string
           example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
@@ -10791,6 +10790,10 @@ paths:
                 summary: The cardholder's first message, which also sends the code
                 value:
                   message: My card was declined at the grocery store
+              verificationCode:
+                summary: The cardholder sends their code, and this turn returns the session
+                value:
+                  message: The code is 482913
               afterVerification:
                 summary: A later message, sent with the X-Ls-Care-Session header
                 value:
@@ -10864,251 +10867,6 @@ paths:
                 $ref: '#/components/schemas/CareError'
         '504':
           description: '`CARE_TURN_TIMEOUT` when the turn is still running. The answer is not lost — retry with the same `Idempotency-Key` to collect it.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-  /care/chats/{chatId}/verifications:
-    parameters:
-      - name: chatId
-        in: path
-        description: The chat to send another code on, as returned in `chatId` by `POST /care/chats/{chatId}/messages`.
-        required: true
-        schema:
-          type: string
-        example: CareChat:019542f5-b3e7-1d02-0000-000000000030
-    post:
-      summary: Resend a care chat verification code
-      description: |
-        Send the cardholder another verification code.
-
-        **This is the resend, not the first send.** The cardholder's first message
-        already sent a code and said so in its own body; this is what the *Send
-        another code* button calls when they say it never arrived. A partner never
-        has to call it to start verification, and does not have to call it to
-        recover a chat whose verification has gone stale either, because the next
-        message sends a code by itself.
-
-        With `resend` false — the default, and the same as sending no body — the
-        call asks for a code and is content to be told one is already outstanding:
-        the answer carries `alreadySent: true` and no new SMS goes out. That is a
-        success. With `resend` true a second code is sent. Ask the cardholder
-        before doing that: codes are sent from a pool of numbers, so the second
-        arrives from a different sender than the first, leaving them holding two
-        codes from two strangers and deciding which to read back.
-
-        The destination is always the number already on file for the cardholder.
-        There is no way to nominate one, because a code sent to a number the
-        caller chose would prove nothing about the person holding the card.
-
-        `202`, not `200`: the SMS is in flight, not delivered.
-
-        A chat that is already verified is refused with `INVALID_INPUT` while its
-        verification is recent — there is nothing left to prove. Once that
-        verification has aged past the session lifetime the chat no longer reaches
-        the cardholder's account, so there is something to prove again: the
-        refusal lifts on its own and this route sends a fresh code, whatever
-        `verificationStatus` still says.
-      operationId: resendCareChatVerification
-      tags:
-        - Embedded Care
-      security:
-        - BasicAuth: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CareChatVerificationRequest'
-            examples:
-              askForACode:
-                summary: Ask for a code, accepting the one already outstanding
-                value:
-                  resend: false
-              deliberateResend:
-                summary: The cardholder says the first code never arrived
-                value:
-                  resend: true
-      responses:
-        '202':
-          description: The code is on its way, or one was already outstanding and none was sent — `alreadySent` says which.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareChatVerificationResponse'
-        '400':
-          description: '`INVALID_INPUT` when the chat is already verified, when the body carries an unknown field, or when verification is not available for this chat at all — the platform''s care programme does not offer SMS verification, or the cardholder record behind the chat could not be read.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '401':
-          description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '403':
-          description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '404':
-          description: '`NOT_FOUND` — no such chat for this platform. A chat that belongs to another platform, one that never existed, and a malformed chat id are one answer.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '409':
-          description: '`CARE_CHAT_ENDED` when the chat has been closed, or `CONFLICT` when it has no cardholder bound to it.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '429':
-          description: '`CARE_BUDGET_EXCEEDED` when this chat has reached its limit, or `RATE_LIMITED` when the platform is calling this endpoint too often; back off for the interval in the `Retry-After` header.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '500':
-          description: Internal service error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '502':
-          description: '`CARE_VERIFICATION_UNAVAILABLE` — the SMS provider could not be reached. The factor is down, so retry rather than asking the cardholder for anything.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '503':
-          description: '`SERVICE_UNAVAILABLE` when embedded care is not available in this deployment, or the support agent is temporarily turned off.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-  /care/chats/{chatId}/verifications/confirm:
-    parameters:
-      - name: chatId
-        in: path
-        description: The chat the code was sent on, as returned in `chatId` by `POST /care/chats/{chatId}/messages`.
-        required: true
-        schema:
-          type: string
-        example: CareChat:019542f5-b3e7-1d02-0000-000000000030
-    post:
-      summary: Confirm a care chat verification code
-      description: |
-        Check the code the cardholder read back, and hand over the session that
-        every later message on this chat rides on.
-
-        **The session token is returned here and never again.** No endpoint reads
-        it back, and there is no revocation — the short expiry is what makes that
-        acceptable. Keep it in the cardholder's own session on your side, send it
-        as the `X-Ls-Care-Session` header on every later message, and treat losing
-        it as re-verification: send a new code with
-        `POST /care/chats/{chatId}/verifications` and confirm it again. Read
-        `expiresAt` rather than assuming a lifetime.
-
-        **This is not the only door.** A cardholder can read the code back to the
-        agent as an ordinary message, and `POST /care/chats/{chatId}/messages`
-        then returns the same `sessionToken` and `expiresAt` on that turn. Call
-        this route when your own UI collects the code, because only it can tell
-        you where the code went, whether one was already in flight, and how many
-        digits it has.
-
-        The token is bound to this platform, this chat and this cardholder. It
-        cannot drive another chat, and presenting it to another platform's chat is
-        refused with `CARE_SESSION_PLATFORM_MISMATCH`.
-
-        A code that does not match is `CARE_VERIFICATION_FAILED` — ask the
-        cardholder again. A provider that could not be reached is
-        `CARE_VERIFICATION_UNAVAILABLE` — retry; nothing the cardholder does will
-        help. The two are kept apart deliberately, because they call for opposite
-        reactions.
-
-        A chat whose verification is older than the session lifetime will not mint
-        a fresh session off it: that would be the platform issuing itself a
-        session for a cardholder who has not shown themselves in longer than a
-        session lasts. It is refused with `CARE_VERIFICATION_FAILED` before the
-        provider is reached, and the way forward is a new code. That is the same
-        window that decides whether the chat reaches the cardholder's account at
-        all, so a stale chat is not a locked one: sending a code with
-        `POST /care/chats/{chatId}/verifications`, or simply sending the next
-        message and letting the agent ask, both open it again.
-      operationId: confirmCareChatVerification
-      tags:
-        - Embedded Care
-      security:
-        - BasicAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CareChatVerificationConfirmRequest'
-            example:
-              code: '482913'
-      responses:
-        '200':
-          description: The cardholder is verified on this chat, and the session token is in this body — it is not retrievable afterwards.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareChatSession'
-        '400':
-          description: '`CARE_VERIFICATION_FAILED` when the code did not match, or when the chat''s existing verification is too old to mint another session. `INVALID_INPUT` when the code is not of the shape the SMS carries, when the body is missing or carries an unknown field, or when verification is not available for this chat.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '401':
-          description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '403':
-          description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '404':
-          description: '`NOT_FOUND` — no such chat for this platform. A chat that belongs to another platform, one that never existed, and a malformed chat id are one answer.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '409':
-          description: '`CARE_CHAT_ENDED` when the chat has been closed, or `CONFLICT` when it has no cardholder bound to it.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '429':
-          description: '`CARE_BUDGET_EXCEEDED` when this chat has reached its limit, or `RATE_LIMITED` when the platform is calling this endpoint too often; back off for the interval in the `Retry-After` header.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '500':
-          description: Internal service error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '502':
-          description: '`CARE_VERIFICATION_UNAVAILABLE` — the SMS provider could not be reached, so the code could not be checked. Retry; the cardholder has done nothing wrong.'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareError'
-        '503':
-          description: '`SERVICE_UNAVAILABLE` when embedded care is not available in this deployment, or the support agent is temporarily turned off.'
           content:
             application/json:
               schema:
@@ -27981,9 +27739,9 @@ components:
         |--------|-------------|
         | `PENDING` | No code has been sent on this chat yet. This is where every new chat starts. |
         | `SENT` | A code has been sent to the cardholder and is outstanding. |
-        | `VERIFIED` | The cardholder answered the code, either at `POST /care/chats/{chatId}/verifications/confirm` or by reading it back to the agent. Account-reaching tools are available for as long as that answer is newer than the session lifetime, and a session token was issued by whichever of the two doors took the code. |
+        | `VERIFIED` | The cardholder sent the code as a message and the agent confirmed it. Account-reaching tools are available for as long as that answer is newer than the session lifetime, and the session token was issued on the message response to that turn. |
         | `TRUSTED` | The cardholder is treated as present without an SMS code on this chat. Reserved for channels Grid can already attribute; a partner chat does not start here. Bounded by the same freshness window as `VERIFIED`. |
-        | `FAILED` | The last code was answered incorrectly or expired. Send another code with `POST /care/chats/{chatId}/verifications`. |
+        | `FAILED` | The last code was answered incorrectly or expired. The cardholder can send the code again, or ask the agent for a new one. |
     CareChatGreeting:
       type: object
       description: 'The agent''s opening line, recorded as the chat''s first message. Returned only by the call that opened the chat, never on a resume: a greeting arriving mid-conversation reads as the agent introducing itself a second time. Absent when the agent produced no opening line.'
@@ -28007,7 +27765,7 @@ components:
           example: '2026-09-12T14:10:00.123456Z'
     CareChatMessageResponse:
       type: object
-      description: 'The result of one call to the message route. Which fields are present depends on what the call did: a turn adds `id`, `displayMessage`, `reply` and `replayed`; the call that opened the chat adds `greeting`; an outstanding verification adds `destinationMasked`, `alreadySent` and, where the service could be read, `codeLength`; and a turn in which the cardholder read their code back to the agent adds `sessionToken` and `expiresAt`.'
+      description: 'The result of one call to the message route. Which fields are present depends on what the call did: a turn adds `id`, `displayMessage`, `reply` and `replayed`; the call that opened the chat adds `greeting`; an outstanding verification adds `destinationMasked`, `alreadySent` and, where the service could be read, `codeLength`; and the turn in which the cardholder sent their verification code adds `sessionToken` and `expiresAt`.'
       required:
         - chatId
         - verificationStatus
@@ -28015,18 +27773,18 @@ components:
       properties:
         chatId:
           type: string
-          description: 'The chat this call ran on. When the request addressed a cardholder (`Customer:<uuid>` in the path) this is the chat that was found or opened for them. Use it for every later call on this conversation: confirming the code, resending it, and closing the chat.'
+          description: 'The chat this call ran on. When the request addressed a cardholder (`Customer:<uuid>` in the path) this is the chat that was found or opened for them. Use it for every later call on this conversation: later messages and closing the chat.'
           example: CareChat:019542f5-b3e7-1d02-0000-000000000030
         verificationStatus:
           $ref: '#/components/schemas/CareChatVerificationStatus'
         verificationRequired:
           type: boolean
           description: |-
-            Whether the cardholder still has to prove they are present before the agent can reach their account. Present on every response, true or false, so a client reads a field rather than an absence. When true, `destinationMasked` and `alreadySent` are present and your UI should collect the code and post it to `POST /care/chats/{chatId}/verifications/confirm`. A verification that is outstanding is never reported as a `401`: on this surface a `401` means the platform credential is wrong, or a chat whose verification is still current was driven without its session token.
+            Whether the cardholder still has to prove they are present before the agent can reach their account. Present on every response, true or false, so a client reads a field rather than an absence. When true, `destinationMasked` and `alreadySent` are present, and the cardholder completes verification by sending the code as an ordinary message. A verification that is outstanding is never reported as a `401`: on this surface a `401` means the platform credential is wrong, or a chat whose verification is still current was driven without its session token.
 
             Read this field rather than `verificationStatus`. A chat whose verification has aged past the session lifetime reports `verificationStatus: VERIFIED` and `verificationRequired: true` at the same time, and that combination is the truthful one: the column records that a code was once answered, and this field records whether the agent can act on the account now.
 
-            It describes the chat as of the moment the turn started, so the one turn in which the cardholder read their code back to the agent reports `verificationRequired: true` and carries `sessionToken` as well. Decide that you hold a session by the presence of `sessionToken`, never by this field going false.
+            It describes the chat as of the moment the turn started, so the one turn in which the cardholder sent their code reports `verificationRequired: true` and carries `sessionToken` as well. Decide that you hold a session by the presence of `sessionToken`, never by this field going false.
           example: true
         id:
           type: string
@@ -28038,7 +27796,7 @@ components:
           example: My card [redacted card number ending 1111] was declined
         reply:
           type: string
-          description: The agent's answer to this message, to render as the assistant's turn. Present only when a turn ran. When verification is outstanding the agent's own sentence asks for the code, so render it beside your code input rather than instead of it.
+          description: The agent's answer to this message, to render as the assistant's turn. Present only when a turn ran. When verification is outstanding the agent's own sentence asks for the code, and when a code the cardholder sent did not match, this is where they are told so.
           example: I can help with that. To look at your account I've texted you a code — what does it say?
         replayed:
           type: boolean
@@ -28061,11 +27819,11 @@ components:
         sessionToken:
           type: string
           description: |-
-            The session token for this chat, present only on the turn in which the cardholder verified themselves inside the conversation, and absent on every other turn.
+            The session token for this chat, present only on the turn in which the cardholder verified themselves, and absent on every other turn.
 
-            A cardholder can read their code back as a message rather than into your code input. The agent puts it to the same provider, through the same check `POST /care/chats/{chatId}/verifications/confirm` performs, and the chat comes out of that turn able to reach the account. This field is how the partner is handed the credential that turn earned. Without it you would hold a chat that is privileged and unusable at once, because every later message on it is refused with `CARE_SESSION_EXPIRED`.
+            The cardholder completes verification by sending the SMS code as an ordinary message. The agent checks it with the SMS provider, and the chat comes out of that turn able to reach the account. This field is how the partner is handed the credential that turn earned, and it is the only place a session token is ever issued. Without it you would hold a chat that is privileged and unusable at once, because every later message on it is refused with `CARE_SESSION_EXPIRED`.
 
-            It is the same credential, under the same field name and with the same meaning, as the one `POST /care/chats/{chatId}/verifications/confirm` returns, so one handler in your app can serve both doors. Send it as the `X-Ls-Care-Session` header from the next call onwards, and treat it the way you treat the confirm route's: returned once, never re-readable, never logged.
+            Send it as the `X-Ls-Care-Session` header from the next call onwards. It is returned once and never re-readable, there is no revocation, and it is bound to this platform, this chat and this cardholder. Never log it, never put it in a URL, and never store it past `expiresAt`.
 
             One session is issued per verification rather than per message, so an ordinary turn on a chat that is already verified carries no `sessionToken`. The one you are already holding is still the right one.
           example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
@@ -28099,11 +27857,10 @@ components:
 
             | Error Code | HTTP | Description |
             |------------|------|-------------|
-            | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `customerId` that is not a `Customer` id, a code of the wrong shape, or a chat that cannot be verified at all. |
+            | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `customerId` that is not a `Customer` id, or a chat that cannot be verified at all. |
             | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused at the content boundary and no turn ran. `reason` carries the sentence to show them. |
-            | `CARE_VERIFICATION_FAILED` | 400 | The code did not match, or the chat's existing verification is older than the session lifetime and so cannot mint another session. Send a new code and confirm it, or send the next message and let the agent ask for one. |
             | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified — that is signalled in a `200` body. |
-            | `CARE_SESSION_EXPIRED` | 401 | The chat's verification is still current, so it requires `X-Ls-Care-Session`, and the header was missing; or the token presented was malformed or past its expiry. Send the cardholder a new code and confirm it. Once the chat's own verification has aged past the session lifetime this error stops: the header is no longer required, and the next message sends a fresh code instead of being refused. |
+            | `CARE_SESSION_EXPIRED` | 401 | The chat's verification is still current, so it requires `X-Ls-Care-Session`, and the header was missing; or the token presented was malformed or past its expiry. Retry the message with no `X-Ls-Care-Session` header. If that is refused too, the token for a live verification has been lost: close the chat and send the message to the cardholder as `Customer:<uuid>`, which opens a fresh chat and sends a new code. Once the chat's own verification has aged past the session lifetime this error stops: the header is no longer required, and the next message sends a fresh code instead of being refused. |
             | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
             | `CARE_SESSION_PLATFORM_MISMATCH` | 403 | The session token was minted for a different platform. Stop; retrying will not help. |
             | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
@@ -28121,7 +27878,6 @@ components:
           enum:
             - INVALID_INPUT
             - CARE_MESSAGE_REJECTED
-            - CARE_VERIFICATION_FAILED
             - UNAUTHORIZED
             - CARE_SESSION_EXPIRED
             - FORBIDDEN
@@ -28143,85 +27899,6 @@ components:
           type: string
           description: Human-readable explanation, for a log or a support ticket. Not for branching, and not always safe to show a cardholder verbatim — the exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be shown.
           example: The care session has expired. Verify the cardholder again.
-    CareChatVerificationRequest:
-      type: object
-      description: 'Options for re-sending the cardholder''s verification code. The body may be omitted entirely, which is the same as `{"resend": false}`.'
-      properties:
-        resend:
-          type: boolean
-          default: false
-          description: |-
-            `false` asks for a code and is content to be told one is already outstanding: the response then carries `alreadySent: true` and no new SMS is sent. That is a success, not an error — the cardholder should read back the code they already have.
-
-            `true` is the deliberate second code, for a cardholder who says the first never arrived. Ask before you send one: codes are sent from a pool of numbers, so a second code arrives from a different sender than the first and leaves the cardholder holding two codes from two strangers, deciding which to read back.
-          example: false
-    CareChatVerificationResponse:
-      type: object
-      description: 'Acknowledgement that a verification code is on its way to the cardholder. `202`, not `200`: the SMS is in flight, not delivered.'
-      required:
-        - status
-        - destinationMasked
-        - alreadySent
-      properties:
-        status:
-          type: string
-          enum:
-            - SENT
-          description: Always `SENT`. The chat's own state is reported as `verificationStatus` on the message route.
-          example: SENT
-        destinationMasked:
-          type: string
-          description: The masked phone number the code is going to, for a UI to show as "we texted ...". Always the number already on file for the cardholder; the caller cannot nominate a destination.
-          example: '***0001'
-        alreadySent:
-          type: boolean
-          description: 'True when a code was already outstanding and this call sent no new SMS. Show "we already texted you" rather than implying a fresh send. A request with `resend: true` sends a new code and returns false.'
-          example: true
-    CareChatVerificationConfirmRequest:
-      type: object
-      description: The code the cardholder read back from their SMS.
-      required:
-        - code
-      properties:
-        code:
-          type: string
-          minLength: 1
-          maxLength: 32
-          description: The numeric code from the SMS, exactly as the cardholder entered it. A code of the wrong shape is rejected with `INVALID_INPUT`; a well-formed code that the provider says is not the one it sent is rejected with `CARE_VERIFICATION_FAILED`, which is the error to retry by asking the cardholder again.
-          example: '482913'
-    CareChatSession:
-      type: object
-      description: Proof that the cardholder answered their code, as a signed token the partner sends back on every later message. The message route returns the same two fields, under the same names, on the turn in which the cardholder read their code back to the agent instead of into a code input.
-      required:
-        - status
-        - sessionToken
-        - expiresAt
-      properties:
-        status:
-          type: string
-          enum:
-            - VERIFIED
-          description: Always `VERIFIED`; a code that did not match is an error, not a status.
-          example: VERIFIED
-        sessionToken:
-          type: string
-          description: |-
-            The value to send as the `X-Ls-Care-Session` header on every later message on this chat.
-
-            **It is returned here and never again.** There is no route that reads it back, and there is no revocation: the short expiry is what makes that acceptable. Hold it in the cardholder's session on your side for as long as they are chatting, and treat losing it as re-verification — send a new code with `POST /care/chats/{chatId}/verifications` and confirm it again. Never log it, never put it in a URL, and never store it past `expiresAt`.
-
-            One session is issued per verification rather than per message. A later message on a chat that is already verified returns no new token, and the one you hold stays the right one until `expiresAt`.
-
-            The token is bound to this platform, this chat and this cardholder, so it cannot drive another chat and does not survive being handed to another platform.
-          example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
-        expiresAt:
-          type: string
-          format: date-time
-          description: |-
-            ISO 8601 timestamp, in UTC, after which the token is refused with `CARE_SESSION_EXPIRED`. Sessions are short-lived by design — fifteen minutes in the default deployment. Read this field rather than assuming a duration.
-
-            The same window governs the chat itself: a verification older than the session lifetime no longer reaches the cardholder's account, so a chat whose token has expired is not a chat waiting for a token. It is a chat that needs a new code, and the next message on it will send one and have the agent ask for it.
-          example: '2026-09-12T14:25:00Z'
     WebhookType:
       type: string
       enum:

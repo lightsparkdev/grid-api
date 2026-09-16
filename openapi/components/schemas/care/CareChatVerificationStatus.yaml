@@ -29,6 +29,6 @@ description: |
   |--------|-------------|
   | `PENDING` | No code has been sent on this chat yet. This is where every new chat starts. |
   | `SENT` | A code has been sent to the cardholder and is outstanding. |
-  | `VERIFIED` | The cardholder answered the code, either at `POST /care/chats/{chatId}/verifications/confirm` or by reading it back to the agent. Account-reaching tools are available for as long as that answer is newer than the session lifetime, and a session token was issued by whichever of the two doors took the code. |
+  | `VERIFIED` | The cardholder sent the code as a message and the agent confirmed it. Account-reaching tools are available for as long as that answer is newer than the session lifetime, and the session token was issued on the message response to that turn. |
   | `TRUSTED` | The cardholder is treated as present without an SMS code on this chat. Reserved for channels Grid can already attribute; a partner chat does not start here. Bounded by the same freshness window as `VERIFIED`. |
-  | `FAILED` | The last code was answered incorrectly or expired. Send another code with `POST /care/chats/{chatId}/verifications`. |
+  | `FAILED` | The last code was answered incorrectly or expired. The cardholder can send the code again, or ask the agent for a new one. |

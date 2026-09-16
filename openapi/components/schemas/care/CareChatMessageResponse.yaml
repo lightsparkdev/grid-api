@@ -4,8 +4,8 @@ description: >-
   depends on what the call did: a turn adds `id`, `displayMessage`, `reply`
   and `replayed`; the call that opened the chat adds `greeting`; an
   outstanding verification adds `destinationMasked`, `alreadySent` and,
-  where the service could be read, `codeLength`; and a turn in which the
-  cardholder read their code back to the agent adds `sessionToken` and
+  where the service could be read, `codeLength`; and the turn in which the
+  cardholder sent their verification code adds `sessionToken` and
   `expiresAt`.
 required:
   - chatId
@@ -18,7 +18,7 @@ properties:
       The chat this call ran on. When the request addressed a cardholder
       (`Customer:<uuid>` in the path) this is the chat that was found or
       opened for them. Use it for every later call on this conversation:
-      confirming the code, resending it, and closing the chat.
+      later messages and closing the chat.
     example: CareChat:019542f5-b3e7-1d02-0000-000000000030
   verificationStatus:
     $ref: ./CareChatVerificationStatus.yaml
@@ -28,9 +28,9 @@ properties:
       Whether the cardholder still has to prove they are present before the
       agent can reach their account. Present on every response, true or
       false, so a client reads a field rather than an absence. When true,
-      `destinationMasked` and `alreadySent` are present and your UI should
-      collect the code and post it to
-      `POST /care/chats/{chatId}/verifications/confirm`. A verification that
+      `destinationMasked` and `alreadySent` are present, and the cardholder
+      completes verification by sending the code as an ordinary message. A
+      verification that
       is outstanding is never reported as a `401`: on this surface a `401`
       means the platform credential is wrong, or a chat whose verification is
       still current was driven without its session token.
@@ -45,7 +45,7 @@ properties:
 
 
       It describes the chat as of the moment the turn started, so the one turn
-      in which the cardholder read their code back to the agent reports
+      in which the cardholder sent their code reports
       `verificationRequired: true` and carries `sessionToken` as well. Decide
       that you hold a session by the presence of `sessionToken`, never by this
       field going false.
@@ -70,8 +70,8 @@ properties:
     description: >-
       The agent's answer to this message, to render as the assistant's turn.
       Present only when a turn ran. When verification is outstanding the
-      agent's own sentence asks for the code, so render it beside your code
-      input rather than instead of it.
+      agent's own sentence asks for the code, and when a code the cardholder
+      sent did not match, this is where they are told so.
     example: I can help with that. To look at your account I've texted you a code — what does it say?
   replayed:
     type: boolean
@@ -113,26 +113,22 @@ properties:
     type: string
     description: >-
       The session token for this chat, present only on the turn in which the
-      cardholder verified themselves inside the conversation, and absent on
-      every other turn.
+      cardholder verified themselves, and absent on every other turn.
 
 
-      A cardholder can read their code back as a message rather than into
-      your code input. The agent puts it to the same provider, through the
-      same check `POST /care/chats/{chatId}/verifications/confirm` performs,
-      and the chat comes out of that turn able to reach the account.
-      This field is how the partner is handed the credential that turn earned.
-      Without it you would hold a chat that is privileged and unusable at
-      once, because every later message on it is refused with
-      `CARE_SESSION_EXPIRED`.
+      The cardholder completes verification by sending the SMS code as an
+      ordinary message. The agent checks it with the SMS provider, and the
+      chat comes out of that turn able to reach the account. This field is
+      how the partner is handed the credential that turn earned, and it is the
+      only place a session token is ever issued. Without it you would hold a
+      chat that is privileged and unusable at once, because every later
+      message on it is refused with `CARE_SESSION_EXPIRED`.
 
 
-      It is the same credential, under the same field name and with the same
-      meaning, as the one `POST /care/chats/{chatId}/verifications/confirm`
-      returns, so one handler in your app can serve both doors. Send it as the
-      `X-Ls-Care-Session` header from the next call onwards, and treat it the
-      way you treat the confirm route's: returned once, never re-readable,
-      never logged.
+      Send it as the `X-Ls-Care-Session` header from the next call onwards.
+      It is returned once and never re-readable, there is no revocation, and
+      it is bound to this platform, this chat and this cardholder. Never log
+      it, never put it in a URL, and never store it past `expiresAt`.
 
 
       One session is issued per verification rather than per message, so an
