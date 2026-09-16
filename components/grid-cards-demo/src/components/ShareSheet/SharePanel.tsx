@@ -264,7 +264,12 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
 
   // The share made from this panel (or the one the page opened from).
   const [handle, setHandle] = useState<ShareHandle | null>(null);
-  const [handleDesign, setHandleDesign] = useState<CardDesign | null>(null);
+  // What the share's pictures were made from: the design, and the picture's
+  // own choices (surface, style, hand, pose). Either changing makes the link
+  // stale, and Copy link becomes Update link. A share opened from its link
+  // knows only its design.
+  const [handleFrom, setHandleFrom] = useState<{ design: CardDesign; picture: string | null } | null>(null);
+  const picture = `${palette.bg}|${treatment}|${hand ? handId : ''}|${hand ? 'hand' : (poseId ?? 'turned')}`;
   const [progress, setProgress] = useState<ShareProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -281,9 +286,12 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
   useEffect(() => {
     if (!shared?.editToken) return;
     setHandle({ record: shared.record, editToken: shared.editToken, url: shareUrl(shared.record.slug) });
-    setHandleDesign(shared.record.design);
+    setHandleFrom({ design: shared.record.design, picture: null });
   }, [shared]);
-  const stale = !!handle && !!handleDesign && !sameDesign(handleDesign, design);
+  const stale =
+    !!handle &&
+    !!handleFrom &&
+    (!sameDesign(handleFrom.design, design) || (handleFrom.picture !== null && handleFrom.picture !== picture));
 
   // Ready before a picture is asked for: the template's assets, and the
   // exporter's first-render costs at the share's sizes, paid once the panel
@@ -467,7 +475,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
         existing: handle ? { id: handle.record.id, editToken: handle.editToken, url: handle.url } : undefined,
       });
       setHandle(made);
-      setHandleDesign(design);
+      setHandleFrom({ design, picture });
       return made;
     } catch (e) {
       const code = e instanceof ShareError ? e.code : 'failed';
@@ -479,7 +487,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
       setProgress(null);
       return null;
     }
-  }, [design, exporterRef, handle, palette, stale, hand, handId, treatment]);
+  }, [design, exporterRef, handle, palette, stale, hand, handId, treatment, picture]);
 
   const copy = async (text: string) => {
     try {
@@ -775,7 +783,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                         over the other on its way out (lifted out of the flow, so
                         the row holds its place and height). */}
                     <AnimatePresence mode="popLayout" initial={false}>
-                      {hand && hands ? (
+                      {hand ? (
                       <m.div
                         key="skin"
                         className={picker.row}
@@ -783,7 +791,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                       >
                         <span className={picker.rowLabel}>Skin</span>
                         <SwatchRow label="Skin" active={handId}>
-                          {hands.map((h, i) => (
+                          {(hands ?? []).map((h, i) => (
                             <Tooltip key={h.id} text={`Hand ${i + 1}`}>
                               {(tip) => (
                                 <button

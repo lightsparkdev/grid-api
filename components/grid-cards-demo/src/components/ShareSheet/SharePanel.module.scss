@@ -128,6 +128,15 @@
     transform 560ms cubic-bezier(0.45, 0, 0.55, 1);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .handMotion,
+  .handMotionOn {
+    transition: none;
+    filter: none;
+    transform: none;
+  }
+}
+
 /* Arriving: quick out of the blur, settling slowly. */
 .handMotionOn {
   opacity: 1;

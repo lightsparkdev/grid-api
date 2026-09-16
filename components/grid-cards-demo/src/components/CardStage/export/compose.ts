@@ -95,7 +95,7 @@ function luminance([r, g, b]: RGB): number {
 // darkness. See the 2026-09-15 Decisions entry.
 
 const HAND_DIR = '/assets/share/hand';
-export const HANDS_URL = `${HAND_DIR}/hands.json`;
+const HANDS_URL = `${HAND_DIR}/hands.json`;
 /** Face on: the card was held parallel to the camera. */
 export const HAND_POSE = { rotX: 0, rotY: 0 };
 
@@ -177,10 +177,6 @@ export function prepareHand(id: string): Promise<void> {
   return p;
 }
 
-export function handReady(id: string): boolean {
-  return layers.has(id);
-}
-
 /** Decode a loaded hand's layers, so `<img>`s of the same URLs paint on
  *  their first frame (loaded is not decoded; an undecoded swap flashes). */
 export function decodeHand(id: string): Promise<void> {
@@ -195,7 +191,7 @@ export function decodeHand(id: string): Promise<void> {
  *  photograph's bottom edge, where the wrist is cropped, is past the
  *  frame's. */
 export const HAND_CARD_IN_LAYOUT = 0.46;
-export const HAND_CARD_CENTER = { x: 0.5, y: 0.5 };
+const HAND_CARD_CENTER = { x: 0.5, y: 0.5 };
 
 /** Where a hand's layer (the square photograph) is drawn in a frame `w` × `h`:
  *  scaled so the card is `HAND_CARD_IN_LAYOUT` of the layout, placed so the

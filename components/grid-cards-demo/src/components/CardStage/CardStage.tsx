@@ -1657,7 +1657,7 @@ const CardRig = memo(function CardRig({
         // As the flight begins the slot is where it is; landed, the card
         // glides after a slot that moves (the same approach as toward rest).
         const g = shareSlot.current;
-        const sk = g && shareWas > 0 ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
+        const sk = g && shareWas > 0 && !lv.reduceMotion ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
         const tgt = g ?? { ...want };
         tgt.x += (want.x - tgt.x) * sk;
         tgt.y += (want.y - tgt.y) * sk;
