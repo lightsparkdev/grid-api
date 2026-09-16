@@ -37,6 +37,13 @@ class ShareError extends Error {
   }
 }
 
+/** An angle the card was turned to, as the stage counts it (whole turns
+ *  accumulate), brought into (-180, 180] and to a hundredth of a degree. */
+function wrapDeg(deg: number): number {
+  const w = ((((deg + 180) % 360) + 360) % 360) - 180;
+  return Math.round((w === -180 ? 180 : w) * 100) / 100;
+}
+
 /** Resolves after the next paint. */
 const paintFirst = () => new Promise<void>((r) => requestAnimationFrame(() => setTimeout(r, 0)));
 
@@ -153,7 +160,7 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   // How the stills are staged, so the share page can stage the live card alike.
   const look: ShareLook = {
     surface: rgbToHex(hexToRgb(opts.palette.bg)),
-    pose: { rotX: opts.pose.rotX, rotY: opts.pose.rotY },
+    pose: { rotX: wrapDeg(opts.pose.rotX), rotY: wrapDeg(opts.pose.rotY) },
   };
   if (opts.existing) {
     ({ id, editToken, url } = opts.existing);
