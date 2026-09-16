@@ -1,8 +1,9 @@
 type: object
 description: >-
-  One turn of the cardholder's conversation, or — with `message` empty or
-  absent — the call that opens or resumes the chat without saying anything.
+  One turn of the cardholder's conversation, or, with `message` empty or
+  absent, the call that opens or resumes the chat without saying anything.
   Unknown fields are rejected with `INVALID_INPUT`.
+additionalProperties: false
 properties:
   message:
     type: string

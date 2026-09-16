@@ -22,7 +22,7 @@ properties:
 
       | Error Code | HTTP | Description |
       |------------|------|-------------|
-      | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `customerId` that is not a `Customer` id, or a chat that cannot be verified at all. |
+      | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `chatId` path id beginning `Customer:` that is not well formed, or a chat that cannot be verified at all. |
       | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused at the content boundary and no turn ran. `reason` carries the sentence to show them. |
       | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified — that is signalled in a `200` body. |
       | `CARE_SESSION_EXPIRED` | 401 | The `X-Ls-Care-Session` token presented is malformed, or not a care session token at all. A missing or expired token is never this error: the message verifies the cardholder again inside a `200` instead. Rarely, also returned when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again. |
