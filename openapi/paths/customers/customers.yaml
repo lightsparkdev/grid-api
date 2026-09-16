@@ -105,6 +105,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: The payment provider refused to create this customer for the caller.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '405':
       description: >-
         Method not allowed. Returned (as JSON, not HTML) when the request
@@ -254,6 +260,12 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error405.yaml
+    '429':
+      description: Rate limit exceeded (`RATE_LIMITED`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error429.yaml
     '500':
       description: Internal service error
       content:

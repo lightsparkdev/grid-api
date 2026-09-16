@@ -63,3 +63,10 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: >-
+        Asynchronous transaction rejection is not available in this environment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

@@ -63,6 +63,12 @@ get:
         application/json:
           schema:
             $ref: ../../../components/schemas/errors/Error401.yaml
+    '403':
+      description: The customer is not able to send payments yet (`USER_NOT_READY`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../../components/schemas/errors/Error403.yaml
     '404':
       description: External account not found
       content:

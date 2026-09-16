@@ -105,6 +105,13 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: >-
+        The API token does not have permission for this action, for example a view-only token.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '409':
       description: >-
         Conflict. Returned with `CARD_LIMIT_REACHED` when the platform has

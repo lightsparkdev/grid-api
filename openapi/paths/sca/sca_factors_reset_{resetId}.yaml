@@ -56,6 +56,13 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error409.yaml
+    '423':
+      description: >-
+        The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error423.yaml
     '500':
       description: Internal service error
       content:

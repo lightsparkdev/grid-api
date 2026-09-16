@@ -162,6 +162,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: The API token does not have permission for this action, for example a view-only token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -464,6 +470,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: The payment provider refused to create this customer for the caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '405':
           description: Method not allowed. Returned (as JSON, not HTML) when the request uses an HTTP method that is not supported on this path.
           content:
@@ -603,6 +615,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error405'
+        '429':
+          description: Rate limit exceeded (`RATE_LIMITED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error429'
         '500':
           description: Internal service error
           content:
@@ -964,6 +982,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not supported by the customer's payment provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /customers/{customerId}/verify-email:
     parameters:
       - name: customerId
@@ -1255,6 +1279,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -1323,6 +1353,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -1396,6 +1432,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -1456,6 +1498,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -1525,6 +1573,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -1737,6 +1791,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '429':
           description: Too many reset attempts. Reset initiation is rate-limited to 5 per 24 hours per customer; retry after the window indicated by `Retry-After`.
           content:
@@ -1806,6 +1866,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -1876,6 +1942,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -1935,6 +2007,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -2002,6 +2080,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -2062,6 +2146,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error409'
+        '423':
+          description: The customer's login is locked after too many failed attempts (`ACCOUNT_LOCKED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error423'
         '500':
           description: Internal service error
           content:
@@ -2330,6 +2420,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '500':
           description: Internal service error
           content:
@@ -2518,6 +2614,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: This external account type is not enabled for the platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '409':
           description: Conflict - External account already exists
           content:
@@ -3155,6 +3257,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not supported by the customer's payment provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
     get:
       summary: List beneficial owners
       description: |
@@ -3304,6 +3412,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not supported by the customer's payment provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /documents:
     post:
       summary: Upload a document
@@ -3361,6 +3475,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: A document of this type already exists for the customer (`DOCUMENT_ALREADY_EXISTS`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '422':
           description: The verification provider rejected the file. `precheckErrors` names each problem it found. No document is created, so re-upload a corrected file with `POST /documents`.
           content:
@@ -3373,6 +3493,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not supported by the customer's payment provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
     get:
       summary: List documents
       description: |
@@ -3556,6 +3682,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not supported by the customer's payment provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
     delete:
       summary: Delete a document
       description: |
@@ -3599,6 +3731,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not supported by the customer's payment provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /verifications:
     post:
       summary: Submit customer for verification
@@ -3721,6 +3859,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not supported by the customer's payment provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
     get:
       summary: List verifications
       description: |
@@ -3899,6 +4043,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: The customer's identity is not verified (`CUSTOMER_NOT_VERIFIED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Customer or account not found
           content:
@@ -3911,6 +4061,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Pull funding is not enabled in this environment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /transfer-out:
     post:
       summary: Create a transfer-out request
@@ -3988,6 +4144,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: The customer's identity is not verified (`CUSTOMER_NOT_VERIFIED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Customer or account not found
           content:
@@ -4149,6 +4311,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: The customer is not able to send payments yet (`USER_NOT_READY`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: External account not found
           content:
@@ -4381,6 +4549,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
+        '404':
+          description: Source account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
         '408':
           description: Request Timeout - the request body could not be read in time; retry
           content:
@@ -4423,6 +4597,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+        '503':
+          description: A dependency is temporarily unavailable; retry later (`SERVICE_UNAVAILABLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
   /quotes/{quoteId}/execute:
     post:
       summary: Execute a quote
@@ -4536,6 +4716,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Executing a quote from this source is not supported by the customer's payment provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
+        '503':
+          description: A dependency is temporarily unavailable; retry later (`SERVICE_UNAVAILABLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
   /quotes/{quoteId}/authorize:
     parameters:
       - name: quoteId
@@ -4977,6 +5169,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Asynchronous transaction approval is not available in this environment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /transactions/{transactionId}/reject:
     post:
       summary: Reject a pending incoming payment
@@ -5038,6 +5236,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Asynchronous transaction rejection is not available in this environment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /transactions/{transactionId}/cancel:
     post:
       summary: Cancel a bank transfer
@@ -5099,6 +5303,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Cancelling an incoming collection is not implemented.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /crypto/estimate-withdrawal-fee:
     post:
       summary: Estimate crypto withdrawal fee
@@ -5287,6 +5497,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /customers/bulk/jobs/{jobId}:
     get:
       summary: Get bulk import job status
@@ -5336,6 +5552,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /invitations:
     post:
       summary: Create an UMA invitation
@@ -6302,6 +6524,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
+        '409':
+          description: The customer's wallet is not provisioned yet (`WALLET_NOT_PROVISIONED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
         '500':
           description: Internal service error
           content:
@@ -6590,6 +6818,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          description: A dependency is temporarily unavailable; retry later (`SERVICE_UNAVAILABLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
   /auth/credentials/{id}/challenge:
     post:
       summary: Re-issue an authentication credential challenge
@@ -8621,6 +8855,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: The API token does not have permission for this action, for example a view-only token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '409':
           description: Conflict. Returned with `CARD_LIMIT_REACHED` when the platform has reached the maximum number of live cards it may hold, and with `CONFLICT` when the `Idempotency-Key` was already used for a different card request. Closing a card frees its slot; contact Lightspark to raise the limit.
           content:
@@ -8860,6 +9100,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: The API token does not have permission for this action, for example a view-only token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Card not found
           content:
@@ -10388,6 +10634,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Stablecoin operations are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Referenced stablecoin provider account not found
           content:
@@ -10406,6 +10658,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          description: A dependency is temporarily unavailable; retry later (`SERVICE_UNAVAILABLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
     get:
       summary: List stablecoins
       description: Retrieve stablecoins registered to the authenticated platform.
@@ -10464,6 +10722,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Stablecoin operations are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -10499,6 +10763,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Stablecoin operations are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Stablecoin not found
           content:
@@ -10862,6 +11132,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Stablecoin operations are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '409':
           description: Conflict
           content:
@@ -10874,6 +11150,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+        '503':
+          description: A dependency is temporarily unavailable; retry later (`SERVICE_UNAVAILABLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error503'
     get:
       summary: List stablecoin provider account links
       description: Retrieve stablecoin provider account links for the authenticated platform.
@@ -10927,6 +11209,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Stablecoin operations are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '500':
           description: Internal service error
           content:
@@ -10962,6 +11250,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error401'
+        '403':
+          description: Stablecoin operations are not enabled for this platform.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
         '404':
           description: Stablecoin provider account link not found
           content:
@@ -13454,6 +13748,39 @@ components:
               items:
                 $ref: '#/components/schemas/FieldError'
           additionalProperties: true
+    Error403:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | FORBIDDEN | Insufficient permissions |
+            | USER_NOT_READY | Customer exists but is not ready for operation |
+            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
+            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
+            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+            | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
+            | SANCTION_BLOCKED | Blocked by sanction screening |
+          enum:
+            - FORBIDDEN
+            - USER_NOT_READY
+            - COUNTERPARTY_NOT_ALLOWED
+            - VELOCITY_LIMIT_EXCEEDED
+            - END_USER_TERMS_NOT_ACCEPTED
+            - CUSTOMER_NOT_VERIFIED
+            - SANCTION_BLOCKED
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     Error501:
       type: object
       required:
@@ -14524,6 +14851,29 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
+    Error429:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
+            | DAILY_VOLUME_LIMIT_EXCEEDED | The requested amount would exceed the configured daily volume limit for this trade corridor or withdrawal currency |
+          enum:
+            - RATE_LIMITED
+            - DAILY_VOLUME_LIMIT_EXCEEDED
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     CustomerCreateRequest:
       type: object
       required:
@@ -15122,6 +15472,37 @@ components:
           description: The customer's enrolled SCA factors.
           items:
             $ref: '#/components/schemas/ScaFactorView'
+    Error423:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | ACCOUNT_LOCKED | The customer's login is temporarily locked (or suspended) after too many failed attempts. Inspect `details.lockedUntil` for when the customer may retry, and `details.failedAttempts` for the current count. |
+          enum:
+            - ACCOUNT_LOCKED
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Lockout detail. `lockedUntil` is the UTC timestamp the customer may retry after (absent when suspended indefinitely); `failedAttempts` is the current cumulative failed-login count; `suspended` is true when the account is locked with no automatic expiry.
+          properties:
+            suspended:
+              type: boolean
+            lockedUntil:
+              type:
+                - string
+                - 'null'
+              format: date-time
+            failedAttempts:
+              type: integer
+          additionalProperties: true
     TotpFactorEnrollRequest:
       type: object
       title: TOTP Factor Enroll Request
@@ -15425,37 +15806,6 @@ components:
           format: date-time
           description: Absolute UTC timestamp after which the customer's SCA session is no longer valid and they must complete another SCA login. Money movement in SCA-regulated currencies is refused once it passes, so prompt a re-login ahead of it rather than waiting for a `SCA_SESSION_REQUIRED` failure. Present when the login established a session.
           example: '2026-01-29T12:00:00Z'
-    Error423:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | ACCOUNT_LOCKED | The customer's login is temporarily locked (or suspended) after too many failed attempts. Inspect `details.lockedUntil` for when the customer may retry, and `details.failedAttempts` for the current count. |
-          enum:
-            - ACCOUNT_LOCKED
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Lockout detail. `lockedUntil` is the UTC timestamp the customer may retry after (absent when suspended indefinitely); `failedAttempts` is the current cumulative failed-login count; `suspended` is true when the account is locked with no automatic expiry.
-          properties:
-            suspended:
-              type: boolean
-            lockedUntil:
-              type:
-                - string
-                - 'null'
-              format: date-time
-            failedAttempts:
-              type: integer
-          additionalProperties: true
     RecordSecurityEventRequest:
       type: object
       description: Records a client-side security event for the customer so Grid can maintain the customer's login-security state (SCA session revocation and failed-login lockout).
@@ -15549,29 +15899,6 @@ components:
           format: date-time
           description: Absolute UTC timestamp at the end of the reset window. Omitted when one is not returned.
           example: '2025-10-03T12:30:00Z'
-    Error429:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | RATE_LIMITED | Too many requests in a short window; retry after the interval indicated by the `Retry-After` response header |
-            | DAILY_VOLUME_LIMIT_EXCEEDED | The requested amount would exceed the configured daily volume limit for this trade corridor or withdrawal currency |
-          enum:
-            - RATE_LIMITED
-            - DAILY_VOLUME_LIMIT_EXCEEDED
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     TwoFactorResetStatus:
       type: object
       description: The status of an in-progress 2FA reset, polled until it reaches a terminal value.
@@ -18866,39 +19193,6 @@ components:
           format: date-time
           description: Timestamp when the internal account was last updated
           example: '2025-10-03T12:30:00Z'
-    Error403:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | FORBIDDEN | Insufficient permissions |
-            | USER_NOT_READY | Customer exists but is not ready for operation |
-            | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
-            | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
-            | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
-            | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
-            | SANCTION_BLOCKED | Blocked by sanction screening |
-          enum:
-            - FORBIDDEN
-            - USER_NOT_READY
-            - COUNTERPARTY_NOT_ALLOWED
-            - VELOCITY_LIMIT_EXCEEDED
-            - END_USER_TERMS_NOT_ACCEPTED
-            - CUSTOMER_NOT_VERIFIED
-            - SANCTION_BLOCKED
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     InternalAccountListResponse:
       type: object
       required:
@@ -25640,6 +25934,27 @@ components:
         details:
           type: object
           description: Additional error details
+    Error503:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
+          enum:
+            - SERVICE_UNAVAILABLE
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.
@@ -28466,27 +28781,6 @@ components:
           format: date-time
           description: Last update timestamp.
           example: '2026-05-20T17:10:00Z'
-    Error503:
-      type: object
-      required:
-        - reason
-        - code
-      properties:
-        code:
-          type: string
-          description: |
-            | Error Code | Description |
-            |------------|-------------|
-            | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
-          enum:
-            - SERVICE_UNAVAILABLE
-        reason:
-          type: string
-          description: Error message
-        details:
-          type: object
-          description: Additional error details
-          additionalProperties: true
     StablecoinBurnSourceBase:
       type: object
       required:

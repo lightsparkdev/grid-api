@@ -53,3 +53,9 @@ get:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Not implemented
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml

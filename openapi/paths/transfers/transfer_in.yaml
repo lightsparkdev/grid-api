@@ -73,6 +73,12 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error401.yaml
+    '403':
+      description: The customer's identity is not verified (`CUSTOMER_NOT_VERIFIED`).
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error403.yaml
     '404':
       description: Customer or account not found
       content:
@@ -85,3 +91,9 @@ post:
         application/json:
           schema:
             $ref: ../../components/schemas/errors/Error500.yaml
+    '501':
+      description: Pull funding is not enabled in this environment.
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/errors/Error501.yaml
