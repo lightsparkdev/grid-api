@@ -194,13 +194,17 @@ export function handLayerIn(w: number, h: number, id: string): { x: number; y: n
 }
 
 // ── Toning the hand to the surface ────────────────────────────────────────
-// The photographs were lit for white: the backdrop wrapped light around the
-// hand, and its silhouette has a bright rim (the edges of the fingers, the
-// side of the palm). On a dark surface there is nothing to wrap, and the
-// rim is what gives the hand away as pasted on. So the rim alone is shaded:
-// a band a few pixels inside the cutout's edge, falling off inward, darker
-// the brighter the pixel; the face of the hand is left as photographed.
-// Hue and saturation are kept (each pixel is scaled, not shifted).
+// The hands were photographed on light grey and cut out by hand, and the
+// outermost pixels of a cutout carry some of the backdrop they were blended
+// with: a pale fringe, invisible on a light surface, a halo on a dark one
+// (the darker the skin, the more so). So the edge is decontaminated: the
+// color of the outer few pixels is replaced by the skin's just inside,
+// alpha untouched so the edge stays as cut. Then, for a dark surface, the
+// rim's real highlights go too: the white backdrop wrapped light around the
+// hand, and within a few pixels of the edge a pixel brighter than the skin
+// beside it is taken down by its excess. The face of the hand is left as
+// photographed. Hue and saturation are kept (pixels are scaled or replaced,
+// not shifted).
 
 /** How much to shade the rim for a surface: 0 on white, most of the way on
  *  black. */
@@ -211,11 +215,16 @@ export function handToneFor(palette: Palette): number {
   return Math.round(((1 - L) ** 1.5) * 20) / 20;
 }
 
-/** The rim's depth into the hand, as a fraction of the layer's width
- *  (about 14 px at 2048), and how dark it goes at full strength on the
- *  brightest pixel. */
-const RIM_DEPTH = 0.007;
-const RIM_SHADE = 0.6;
+/** How deep the fringe runs (about 3 px at 2048) and from how far inside
+ *  the skin's color is drawn to replace it (about 10 px). */
+const FRINGE = 0.0015;
+const FRINGE_FROM = 0.005;
+/** The rim's reach into the hand (about 8 px at 2048); over how wide a
+ *  neighborhood a pixel's brightness is judged (about 24 px); and how far a
+ *  highlight is taken down at full strength. */
+const RIM_DEPTH = 0.004;
+const RIM_LOCAL = 0.012;
+const RIM_SHADE = 0.85;
 
 type Toned = { canvas: HTMLCanvasElement; url: string };
 const toned = new Map<string, Toned>();
@@ -236,7 +245,7 @@ export function prepareTonedHand(id: string, strength: number): Promise<Toned> {
         c.height = layer.naturalHeight;
         const ctx = c.getContext('2d', { willReadFrequently: true })!;
         ctx.drawImage(layer, 0, 0);
-        if (strength > 0) shadeRim(ctx, strength);
+        toneHand(ctx, strength);
         return new Promise<Toned>((resolve, reject) => {
           c.toBlob((blob) => {
             if (!blob) return reject(new Error('tone encode failed'));
@@ -262,26 +271,62 @@ export function tonedHand(id: string, strength: number): Toned | null {
   return toned.get(toneKey(id, strength)) ?? null;
 }
 
-function shadeRim(ctx: CanvasRenderingContext2D, strength: number) {
+function toneHand(ctx: CanvasRenderingContext2D, strength: number) {
   const { width, height } = ctx.canvas;
   const img = ctx.getImageData(0, 0, width, height);
   const d = img.data;
   const n = width * height;
-  // How far inside the silhouette each pixel is, as its alpha blurred: at
-  // the edge the blur sees transparency and falls; well inside it stays 1.
-  // Two box passes for a smooth falloff.
-  const r = Math.max(2, Math.round(width * RIM_DEPTH));
   const alpha = new Float32Array(n);
   for (let i = 0; i < n; i++) alpha[i] = d[i * 4 + 3] / 255;
-  const a = boxBlur(boxBlur(alpha, width, height, r), width, height, r);
+
+  // ── Decontaminate the edge ──
+  // Inside: 1 past the fringe's depth, 0 within it (the alpha, blurred by
+  // that depth, is still whole only where no transparency is in reach).
+  const fr = Math.max(1, Math.round(width * FRINGE));
+  const nearA = boxBlur(alpha, width, height, fr);
+  const inside = new Float32Array(n);
+  for (let i = 0; i < n; i++) inside[i] = Math.min(1, Math.max(0, (nearA[i] - 0.94) / 0.06));
+  // The skin's color from inside, drawn outward over the fringe: each
+  // channel weighted by `inside`, blurred, and normalized.
+  const rf = Math.max(2, Math.round(width * FRINGE_FROM));
+  const ch = [0, 1, 2].map((c) => {
+    const f = new Float32Array(n);
+    for (let i = 0; i < n; i++) f[i] = d[i * 4 + c] * inside[i];
+    return boxBlur(f, width, height, rf);
+  });
+  const wsum = boxBlur(inside, width, height, rf);
   for (let i = 0; i < n; i++) {
     const p = i * 4;
     if (d[p + 3] === 0) continue;
-    // 0 well inside, 1 at the edge; the band is the blur's reach.
-    const rim = Math.min(1, Math.max(0, (1 - a[i]) * 2));
+    const w = 1 - inside[i];
+    if (w <= 0 || wsum[i] < 0.02) continue;
+    for (let c = 0; c < 3; c++) d[p + c] += (ch[c][i] / wsum[i] - d[p + c]) * w;
+  }
+
+  // ── Shade the rim's highlights, for a dark surface ──
+  if (strength <= 0) {
+    ctx.putImageData(img, 0, 0);
+    return;
+  }
+  const lum = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const p = i * 4;
+    lum[i] = ((0.2126 * d[p] + 0.7152 * d[p + 1] + 0.0722 * d[p + 2]) / 255) * alpha[i];
+  }
+  const near = boxBlur(alpha, width, height, Math.max(2, Math.round(width * RIM_DEPTH)));
+  const rl = Math.max(3, Math.round(width * RIM_LOCAL));
+  const localL = boxBlur(lum, width, height, rl);
+  const localA = boxBlur(alpha, width, height, rl);
+  for (let i = 0; i < n; i++) {
+    const p = i * 4;
+    if (d[p + 3] === 0) continue;
+    const rim = Math.min(1, Math.max(0, (1 - near[i]) * 1.6));
     if (rim <= 0) continue;
-    const L = (0.2126 * d[p] + 0.7152 * d[p + 1] + 0.0722 * d[p + 2]) / 255;
-    const g = 1 - RIM_SHADE * strength * rim * (0.35 + 0.65 * L);
+    const L = lum[i] / alpha[i];
+    const around = localA[i] > 0.02 ? localL[i] / localA[i] : L;
+    const excess = Math.max(0, L - around);
+    if (excess <= 0) continue;
+    const g = 1 - RIM_SHADE * strength * rim * Math.min(1, excess * 5);
     d[p] *= g;
     d[p + 1] *= g;
     d[p + 2] *= g;
