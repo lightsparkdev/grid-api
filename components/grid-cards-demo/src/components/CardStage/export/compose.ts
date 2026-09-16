@@ -138,33 +138,69 @@ export async function warmTemplate(): Promise<void> {
 
 // ── Brand ─────────────────────────────────────────────────────────────────
 
-/** The dominant color of an image: the mean of its pixels at thumbnail
- *  size, saturation lifted a touch (a mean tends gray). */
+/**
+ * The dominant color of an image: the color most present in it, not the
+ * mean of it (the mean of a photograph is mud: green leaves, grey rock and
+ * a pink shirt average to brown). Pixels vote by hue, each vote weighted by
+ * its chroma, so a vivid color a quarter of the picture beats a dull one
+ * over half; the winning hue's chroma-weighted mean is the answer. A
+ * picture with next to no color (a grey rock, a black and white photo)
+ * takes its mean grey.
+ */
 export function dominantColor(img: HTMLImageElement): string {
-  const N = 24;
+  const N = 48;
+  const BINS = 12;
   const c = document.createElement('canvas');
   c.width = N;
   c.height = N;
   const ctx = c.getContext('2d', { willReadFrequently: true })!;
   ctx.drawImage(img, 0, 0, N, N);
   const d = ctx.getImageData(0, 0, N, N).data;
-  let r = 0;
-  let g = 0;
-  let b = 0;
+  const bins = Array.from({ length: BINS }, () => ({ weight: 0, r: 0, g: 0, b: 0 }));
+  const grey: RGB = [0, 0, 0];
   let n = 0;
+  let colorful = 0;
   for (let i = 0; i < d.length; i += 4) {
-    const a = d[i + 3] / 255;
-    if (a < 0.5) continue;
-    r += d[i];
-    g += d[i + 1];
-    b += d[i + 2];
+    if (d[i + 3] < 128) continue;
+    const r = d[i];
+    const g = d[i + 1];
+    const b = d[i + 2];
     n++;
+    grey[0] += r;
+    grey[1] += g;
+    grey[2] += b;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const chroma = (max - min) / 255;
+    // Below this a pixel has no hue to speak of; it counts for grey only.
+    if (chroma < 0.1) continue;
+    colorful++;
+    let hue: number;
+    if (max === r) hue = ((g - b) / (max - min) + 6) % 6;
+    else if (max === g) hue = (b - r) / (max - min) + 2;
+    else hue = (r - g) / (max - min) + 4;
+    const bin = bins[Math.min(BINS - 1, Math.floor((hue / 6) * BINS))];
+    bin.weight += chroma;
+    bin.r += r * chroma;
+    bin.g += g * chroma;
+    bin.b += b * chroma;
   }
   if (!n) return '#808080';
-  const mean: RGB = [r / n, g / n, b / n];
-  const gray = (mean[0] + mean[1] + mean[2]) / 3;
-  const lifted = mix([gray, gray, gray], mean, 1.35);
-  return rgbToHex(lifted);
+  // A picture that is mostly grey is grey, whatever a few colored pixels say.
+  if (colorful < n * 0.08) return rgbToHex([grey[0] / n, grey[1] / n, grey[2] / n]);
+  // Neighboring bins share a color split across their boundary: score each
+  // with half of each neighbor, so a hue on a boundary still wins.
+  let best = 0;
+  let bestScore = -1;
+  for (let i = 0; i < BINS; i++) {
+    const score = bins[i].weight + 0.5 * (bins[(i + 1) % BINS].weight + bins[(i + BINS - 1) % BINS].weight);
+    if (score > bestScore) {
+      bestScore = score;
+      best = i;
+    }
+  }
+  const win = bins[best];
+  return rgbToHex([win.r / win.weight, win.g / win.weight, win.b / win.weight]);
 }
 
 /** The Brand backdrop's surface for a card: the card's color (or its art's)

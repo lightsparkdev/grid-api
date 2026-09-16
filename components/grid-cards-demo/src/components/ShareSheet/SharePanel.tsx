@@ -252,6 +252,8 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
 
   // ── Making the share ───────────────────────────────────────────────────
   const busy = progress !== null && progress.stage !== 'done';
+  // The tile that asked for the link is the one that says it's being made.
+  const [linkFor, setLinkFor] = useState<'link' | 'x' | null>(null);
   const videoRun = useRef<AbortController | null>(null);
   // Save video before the video exists: it is asked for, and saved the moment
   // it is done (making the share starts it; otherwise it is started there).
@@ -352,17 +354,27 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
     }
   };
   const onCopyLink = async () => {
-    const h = await ensureShare();
-    if (h) await copy(h.url);
+    setLinkFor('link');
+    try {
+      const h = await ensureShare();
+      if (h) await copy(h.url);
+    } finally {
+      setLinkFor(null);
+    }
   };
   const onPostToX = async () => {
-    const h = await ensureShare();
-    if (!h) return;
-    window.open(
-      xIntentUrl(`I designed the ${programNameOf(design)} card on @lightspark Grid`, h.url),
-      '_blank',
-      'noopener',
-    );
+    setLinkFor('x');
+    try {
+      const h = await ensureShare();
+      if (!h) return;
+      window.open(
+        xIntentUrl(`I designed the ${programNameOf(design)} card on @lightspark Grid`, h.url),
+        '_blank',
+        'noopener',
+      );
+    } finally {
+      setLinkFor(null);
+    }
   };
   const onDownloadImage = async () => {
     const ex = exporterRef.current;
@@ -405,13 +417,20 @@ export function SharePanel({ open, exporterRef, design, shared, onStage }: Share
   }> = [
     {
       id: 'link',
-      label: busy ? 'Making link…' : copied ? 'Copied' : stale ? 'Update link' : 'Copy link',
+      label: linkFor === 'link' && busy ? 'Making link…' : copied ? 'Copied' : stale ? 'Update link' : 'Copy link',
       icon: copied ? <IconCheckmark1 size={24} /> : <IconChainLink1 size={24} />,
       onClick: onCopyLink,
       disabled: busy,
-      loading: busy,
+      loading: linkFor === 'link' && busy,
     },
-    { id: 'x', label: 'Share on X', icon: <IconX size={22} />, onClick: onPostToX, disabled: busy },
+    {
+      id: 'x',
+      label: linkFor === 'x' && busy ? 'Sharing…' : 'Share on X',
+      icon: <IconX size={22} />,
+      onClick: onPostToX,
+      disabled: busy,
+      loading: linkFor === 'x' && busy,
+    },
     {
       id: 'image',
       label: savingWhat === 'image' ? 'Saving…' : savedWhat === 'image' ? 'Saved' : 'Save image',

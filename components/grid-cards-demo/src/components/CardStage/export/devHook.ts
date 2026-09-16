@@ -4,7 +4,8 @@
 
 import type { CardDesign } from '@/data/design';
 import { brandColorOf } from '@/data/design';
-import { brandSurfaceFor, paletteFor, prepareTemplate, warmTemplate, type BackdropId } from './compose';
+import { loadImage } from '../card3d/facePaint';
+import { brandSurfaceFor, dominantColor, paletteFor, prepareTemplate, warmTemplate, type BackdropId } from './compose';
 import type { CardExporter } from './exportRenderer';
 import { renderSpinVideo } from './exportVideo';
 import { renderStill, type StillFormat } from './stills';
@@ -25,6 +26,11 @@ export function installExportDevHook(exporter: CardExporter, design: () => CardD
   w.__cardExport = {
     exporter,
     render,
+    /** The Brand surface's source color for a picture, by URL. */
+    dominant: async (url: string) => {
+      const img = await loadImage(url);
+      return img ? dominantColor(img) : null;
+    },
     still: async (format: StillFormat = 'square', backdrop: BackdropId = 'light') => {
       const blob = await render(format, backdrop);
       window.open(URL.createObjectURL(blob), '_blank');
