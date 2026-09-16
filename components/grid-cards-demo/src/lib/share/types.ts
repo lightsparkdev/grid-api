@@ -21,6 +21,15 @@ export interface ShareAssets {
   video: string | null;
 }
 
+/** How the stills were staged: the surface the card sat on and how it was
+ *  held. The share page puts the live card on the same surface, at the same
+ *  angle, so the picture and the card are one thing. */
+export interface ShareLook {
+  /** The surface's color, `#rrggbb`. */
+  surface: string;
+  pose: { rotX: number; rotY: number };
+}
+
 export interface ShareRecord {
   id: string;
   /** The path segment the share lives under. Equals `id` for a public share. */
@@ -30,6 +39,8 @@ export interface ShareRecord {
   forName: string | null;
   /** The design, with any uploaded logo or art pointing at stored files. */
   design: CardDesign;
+  /** Absent on shares made before it was recorded. */
+  look?: ShareLook | null;
   assets: ShareAssets;
   /** ISO timestamps. */
   createdAt: string;
@@ -45,6 +56,7 @@ export interface ShareCreateInput {
   /** Wanted slug (pitch only). */
   slug?: string;
   forName?: string | null;
+  look?: ShareLook | null;
 }
 
 /** What the client may change afterwards, with the edit token. */
@@ -52,6 +64,7 @@ export interface SharePatch {
   design?: CardDesign;
   assets?: Partial<ShareAssets>;
   forName?: string | null;
+  look?: ShareLook | null;
 }
 
 /** The public shape of a record, minus nothing: the record holds no secrets

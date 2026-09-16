@@ -139,6 +139,7 @@ class LocalFsStore implements ShareStore {
       kind: input.kind,
       forName: input.forName ?? null,
       design: input.design,
+      look: input.look ?? null,
       assets: { og: null, card: null, square: null, video: null },
       createdAt: now,
       updatedAt: now,
@@ -171,6 +172,7 @@ class LocalFsStore implements ShareStore {
     if (!record) return null;
     if (patch.design) record.design = { ...record.design, ...patch.design };
     if (patch.forName !== undefined) record.forName = patch.forName;
+    if (patch.look !== undefined) record.look = patch.look;
     if (patch.assets) {
       for (const [role, url] of Object.entries(patch.assets)) {
         if (url !== undefined) record.assets[role as keyof ShareRecord['assets']] = url;
@@ -217,6 +219,20 @@ class LocalFsStore implements ShareStore {
     record.views += 1;
     await writeJson(recordPath(id), record);
     return record.views;
+  }
+
+  private readonly buckets = new Map<string, { count: number; resetAt: number }>();
+
+  /** In memory: one process locally, and the folder store never ships. */
+  async allow(bucket: string, limit: number, windowSeconds: number): Promise<boolean> {
+    const now = Date.now();
+    const cur = this.buckets.get(bucket);
+    if (!cur || cur.resetAt <= now) {
+      this.buckets.set(bucket, { count: 1, resetAt: now + windowSeconds * 1000 });
+      return true;
+    }
+    cur.count += 1;
+    return cur.count <= limit;
   }
 }
 

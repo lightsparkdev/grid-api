@@ -47,27 +47,6 @@
   gap: 10px;
 }
 
-.hero {
-  display: block;
-  width: min(100%, 640px);
-  margin: 0 auto;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 24px;
-  background: var(--share-border);
-  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.25);
-}
-
-.placeholder {
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: 1px dashed var(--share-border);
-  color: var(--share-text-secondary);
-  font-size: 14px;
-  box-shadow: none;
-}
-
 .caption {
   align-self: flex-end;
   font-size: 12px;

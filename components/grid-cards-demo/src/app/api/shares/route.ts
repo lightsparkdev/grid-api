@@ -3,7 +3,7 @@
 
 import { NextResponse } from 'next/server';
 
-import { cleanDesign, fail, failFrom, readJsonBody } from '@/lib/share/http';
+import { cleanDesign, cleanLook, fail, failFrom, rateLimited, readJsonBody } from '@/lib/share/http';
 import { shareStore } from '@/lib/share/store';
 import { isTeamRequest } from '@/lib/share/team';
 import type { ShareCreateInput, ShareKind } from '@/lib/share/types';
@@ -28,6 +28,11 @@ export async function POST(req: Request) {
 
   const design = cleanDesign(body.design);
   if (!design) return fail('bad-design');
+  const look = cleanLook(body.look);
+  if (look === false) return fail('bad-body');
+
+  const limited = await rateLimited(req, 'create');
+  if (limited) return limited;
 
   try {
     const { record, editToken } = await shareStore().create({
@@ -35,6 +40,7 @@ export async function POST(req: Request) {
       kind,
       slug: body.slug,
       forName: body.forName ?? null,
+      look: look ?? null,
     });
     return NextResponse.json({ record, editToken, url: shareUrl(record.slug) });
   } catch (err) {

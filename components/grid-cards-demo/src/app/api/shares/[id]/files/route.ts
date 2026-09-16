@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 
-import { authorized, fail, failFrom } from '@/lib/share/http';
+import { authorized, fail, failFrom, rateLimited } from '@/lib/share/http';
 import { shareStore } from '@/lib/share/store';
 import { SHARE_FILE_TYPES } from '@/lib/share/types';
 import type { ShareFileRole, SharePatch } from '@/lib/share/types';
@@ -27,6 +27,9 @@ export async function POST(req: Request, { params }: Ctx) {
   if (!isRole(role)) return fail('bad-role');
   const contentType = (req.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
   if (!SHARE_FILE_TYPES[role].includes(contentType)) return fail('bad-type');
+
+  const limited = await rateLimited(req, 'upload');
+  if (limited) return limited;
 
   const store = shareStore();
   const id = auth.record.id;

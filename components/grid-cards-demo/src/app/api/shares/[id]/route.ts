@@ -3,7 +3,7 @@
 
 import { NextResponse } from 'next/server';
 
-import { authorized, cleanDesign, fail, failFrom, readJsonBody } from '@/lib/share/http';
+import { authorized, cleanDesign, cleanLook, fail, failFrom, readJsonBody } from '@/lib/share/http';
 import { shareStore } from '@/lib/share/store';
 import type { SharePatch } from '@/lib/share/types';
 
@@ -37,6 +37,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
     if (body.forName !== null && typeof body.forName !== 'string') return fail('bad-body');
     patch.forName = body.forName;
   }
+  const look = cleanLook(body.look);
+  if (look === false) return fail('bad-body');
+  if (look !== undefined) patch.look = look;
   if (body.assets !== undefined) {
     if (typeof body.assets !== 'object' || body.assets === null) return fail('bad-body');
     patch.assets = {};

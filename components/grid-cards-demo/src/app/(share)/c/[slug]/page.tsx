@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { shareStore } from '@/lib/share/store';
 import { absoluteAssetUrl, playgroundUrl, shareUrl, xIntentUrl } from '@/lib/share/urls';
 import type { ShareRecord } from '@/lib/share/types';
+import { ShareCard } from './ShareCard';
 import { UnfurlPreview } from './UnfurlPreview';
 import styles from './page.module.scss';
 
@@ -97,12 +98,7 @@ export default async function SharePage({ params, searchParams }: Props) {
       <h1 className={styles.headline}>{pitch ? 'Here\u2019s what your card could look like.' : brand}</h1>
 
       <figure className={styles.figure}>
-        {assets.card ?? assets.og ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.hero} src={assets.card ?? assets.og ?? undefined} alt={`${brand} card`} />
-        ) : (
-          <div className={`${styles.hero} ${styles.placeholder}`}>Rendering…</div>
-        )}
+        <ShareCard design={design} look={record.look} still={assets.card} alt={`${brand} card`} />
         <figcaption className={styles.caption}>
           {capitalize(design.material)} · {capitalize(design.finish)}
         </figcaption>
@@ -110,7 +106,7 @@ export default async function SharePage({ params, searchParams }: Props) {
 
       <div className={styles.actions}>
         <a className={styles.primary} href={openHref}>
-          Open in the playground
+          {pitch ? 'Open in the playground' : 'Design yours'}
         </a>
         {pitch ? (
           <a className={styles.secondary} href="https://www.lightspark.com/contact">

@@ -1,0 +1,86 @@
+/* The live card's frame: a square, the still's layout, the card over it. */
+
+.frame {
+  position: relative;
+  width: min(100%, 640px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.25);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+
+  &.dragging {
+    cursor: grabbing;
+  }
+}
+
+.template,
+.still,
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.template {
+  pointer-events: none;
+}
+
+/* The still holds the frame until the card is live, then gives way; the
+   canvas comes into focus over it. Both on one clock, so the picture
+   never doubles. */
+.still {
+  object-fit: cover;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.5s cubic-bezier(0.45, 0, 0.55, 1);
+
+  .live & {
+    opacity: 0;
+  }
+}
+
+.canvas {
+  opacity: 0;
+  filter: blur(6px);
+  transition:
+    opacity 0.6s cubic-bezier(0.45, 0, 0.55, 1),
+    filter 0.6s cubic-bezier(0.45, 0, 0.55, 1);
+
+  .live & {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  transition: opacity 0.4s ease 0.8s;
+  pointer-events: none;
+}
+
+.hintShown {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .still,
+  .canvas,
+  .hint {
+    transition: none;
+  }
+}

@@ -3,10 +3,17 @@
    tokens so a card they come back to is still theirs. */
 
 import type { CardExporter, ExportPose } from '@/components/CardStage/export/exportRenderer';
-import { prepareHand, prepareTemplate, type Palette, type Treatment } from '@/components/CardStage/export/compose';
+import {
+  hexToRgb,
+  prepareHand,
+  prepareTemplate,
+  rgbToHex,
+  type Palette,
+  type Treatment,
+} from '@/components/CardStage/export/compose';
 import { renderStill, type StillFormat } from '@/components/CardStage/export/stills';
 import type { CardDesign } from '@/data/design';
-import type { ShareAssets, ShareCreateInput, ShareFileRole, SharePatch, ShareRecord } from './types';
+import type { ShareAssets, ShareCreateInput, ShareFileRole, ShareLook, SharePatch, ShareRecord } from './types';
 
 export interface ShareHandle {
   record: ShareRecord;
@@ -143,13 +150,24 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   let editToken: string;
   let url: string;
   let record: ShareRecord;
+  // How the stills are staged, so the share page can stage the live card alike.
+  const look: ShareLook = {
+    surface: rgbToHex(hexToRgb(opts.palette.bg)),
+    pose: { rotX: opts.pose.rotX, rotY: opts.pose.rotY },
+  };
   if (opts.existing) {
     ({ id, editToken, url } = opts.existing);
-    record = await patchShare(id, editToken, { design, forName: opts.forName ?? undefined });
+    record = await patchShare(id, editToken, { design, forName: opts.forName ?? undefined, look });
   } else {
     const made = await api<{ record: ShareRecord; editToken: string; url: string }>(
       '/api/shares',
-      json({ design, kind: opts.kind, slug: opts.slug, forName: opts.forName ?? null } satisfies ShareCreateInput),
+      json({
+        design,
+        kind: opts.kind,
+        slug: opts.slug,
+        forName: opts.forName ?? null,
+        look,
+      } satisfies ShareCreateInput),
     );
     ({ record, editToken, url } = made);
     id = record.id;

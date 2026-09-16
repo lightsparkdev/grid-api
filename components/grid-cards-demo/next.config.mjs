@@ -19,6 +19,19 @@ const nextConfig = {
       path.resolve(__dirname, 'node_modules'),
     ],
   },
+  async redirects() {
+    return [
+      {
+        // Someone typing the share domain itself lands in the docs, where the
+        // playground lives; the docs' iframe loads `/` with `?embed=true`.
+        source: '/',
+        has: [{ type: 'host', value: 'cards.lightspark.com' }],
+        missing: [{ type: 'query', key: 'embed' }],
+        destination: 'https://docs.lightspark.com/cards/demo',
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
