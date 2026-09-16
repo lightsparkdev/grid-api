@@ -194,16 +194,16 @@ export function handLayerIn(w: number, h: number, id: string): { x: number; y: n
 }
 
 // ── Toning the hand to the surface ────────────────────────────────────────
-// The photographs were lit for white. On a dark surface their highlights
-// (the rims of the fingers, the sheen on the knuckles) are the studio's,
-// not the scene's, and the hand reads as pasted on. Rather than wash the
-// whole hand darker, the highlights alone are rolled off: a soft knee
-// compresses the brightest tones toward a ceiling set by the surface's
-// darkness, and the shadows and midtones stay as photographed. Hue and
-// saturation are kept (each pixel is scaled, not shifted).
+// The photographs were lit for white: the backdrop wrapped light around the
+// hand, and its silhouette has a bright rim (the edges of the fingers, the
+// side of the palm). On a dark surface there is nothing to wrap, and the
+// rim is what gives the hand away as pasted on. So the rim alone is shaded:
+// a band a few pixels inside the cutout's edge, falling off inward, darker
+// the brighter the pixel; the face of the hand is left as photographed.
+// Hue and saturation are kept (each pixel is scaled, not shifted).
 
-/** How much to roll the highlights off for a surface: 0 on white, most of
- *  the way on black. */
+/** How much to shade the rim for a surface: 0 on white, most of the way on
+ *  black. */
 export function handToneFor(palette: Palette): number {
   const L = luminance(hexToRgb(palette.bg));
   // Bucketed, so a custom color sliding through its range doesn't make a
@@ -211,19 +211,19 @@ export function handToneFor(palette: Palette): number {
   return Math.round(((1 - L) ** 1.5) * 20) / 20;
 }
 
-/** The ceiling and knee of the roll-off, in luminance, for a strength. */
-function toneCurve(strength: number): { ceiling: number; knee: number } {
-  const ceiling = 1 - 0.38 * strength;
-  return { ceiling, knee: ceiling - 0.32 };
-}
+/** The rim's depth into the hand, as a fraction of the layer's width
+ *  (about 14 px at 2048), and how dark it goes at full strength on the
+ *  brightest pixel. */
+const RIM_DEPTH = 0.007;
+const RIM_SHADE = 0.6;
 
 type Toned = { canvas: HTMLCanvasElement; url: string };
 const toned = new Map<string, Toned>();
 const tonedPromises = new Map<string, Promise<Toned>>();
 const toneKey = (id: string, strength: number) => `${id}@${strength.toFixed(2)}`;
 
-/** A hand's layer with its highlights rolled off for `strength`, as a
- *  canvas (the export draws it) and a URL (the stage shows it), made once. */
+/** A hand's layer with its rim shaded for `strength`, as a canvas (the
+ *  export draws it) and a URL (the stage shows it), made once. */
 export function prepareTonedHand(id: string, strength: number): Promise<Toned> {
   const key = toneKey(id, strength);
   let p = tonedPromises.get(key);
@@ -236,7 +236,7 @@ export function prepareTonedHand(id: string, strength: number): Promise<Toned> {
         c.height = layer.naturalHeight;
         const ctx = c.getContext('2d', { willReadFrequently: true })!;
         ctx.drawImage(layer, 0, 0);
-        if (strength > 0) rollOffHighlights(ctx, strength);
+        if (strength > 0) shadeRim(ctx, strength);
         return new Promise<Toned>((resolve, reject) => {
           c.toBlob((blob) => {
             if (!blob) return reject(new Error('tone encode failed'));
@@ -262,33 +262,56 @@ export function tonedHand(id: string, strength: number): Toned | null {
   return toned.get(toneKey(id, strength)) ?? null;
 }
 
-function rollOffHighlights(ctx: CanvasRenderingContext2D, strength: number) {
-  const { ceiling, knee } = toneCurve(strength);
-  const range = ceiling - knee;
+function shadeRim(ctx: CanvasRenderingContext2D, strength: number) {
   const { width, height } = ctx.canvas;
   const img = ctx.getImageData(0, 0, width, height);
   const d = img.data;
-  // Luminance in, luminance out, by 8-bit luminance: the curve once.
-  const gain = new Float32Array(256);
-  for (let i = 0; i < 256; i++) {
-    const L = i / 255;
-    if (L <= knee) {
-      gain[i] = 1;
-      continue;
-    }
-    const out = knee + range * Math.tanh((L - knee) / range);
-    gain[i] = out / L;
-  }
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i + 3] === 0) continue;
-    const L = Math.round(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
-    const g = gain[L];
-    if (g === 1) continue;
-    d[i] = Math.min(255, d[i] * g);
-    d[i + 1] = Math.min(255, d[i + 1] * g);
-    d[i + 2] = Math.min(255, d[i + 2] * g);
+  const n = width * height;
+  // How far inside the silhouette each pixel is, as its alpha blurred: at
+  // the edge the blur sees transparency and falls; well inside it stays 1.
+  // Two box passes for a smooth falloff.
+  const r = Math.max(2, Math.round(width * RIM_DEPTH));
+  const alpha = new Float32Array(n);
+  for (let i = 0; i < n; i++) alpha[i] = d[i * 4 + 3] / 255;
+  const a = boxBlur(boxBlur(alpha, width, height, r), width, height, r);
+  for (let i = 0; i < n; i++) {
+    const p = i * 4;
+    if (d[p + 3] === 0) continue;
+    // 0 well inside, 1 at the edge; the band is the blur's reach.
+    const rim = Math.min(1, Math.max(0, (1 - a[i]) * 2));
+    if (rim <= 0) continue;
+    const L = (0.2126 * d[p] + 0.7152 * d[p + 1] + 0.0722 * d[p + 2]) / 255;
+    const g = 1 - RIM_SHADE * strength * rim * (0.35 + 0.65 * L);
+    d[p] *= g;
+    d[p + 1] *= g;
+    d[p + 2] *= g;
   }
   ctx.putImageData(img, 0, 0);
+}
+
+/** A separable box blur of radius `r` over a width × height field. */
+function boxBlur(src: Float32Array, width: number, height: number, r: number): Float32Array {
+  const tmp = new Float32Array(src.length);
+  const out = new Float32Array(src.length);
+  const k = 1 / (2 * r + 1);
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    let sum = 0;
+    for (let x = -r; x <= r; x++) sum += src[row + Math.min(width - 1, Math.max(0, x))];
+    for (let x = 0; x < width; x++) {
+      tmp[row + x] = sum * k;
+      sum += src[row + Math.min(width - 1, x + r + 1)] - src[row + Math.max(0, x - r)];
+    }
+  }
+  for (let x = 0; x < width; x++) {
+    let sum = 0;
+    for (let y = -r; y <= r; y++) sum += tmp[Math.min(height - 1, Math.max(0, y)) * width + x];
+    for (let y = 0; y < height; y++) {
+      out[y * width + x] = sum * k;
+      sum += tmp[Math.min(height - 1, y + r + 1) * width + x] - tmp[Math.max(0, y - r) * width + x];
+    }
+  }
+  return out;
 }
 
 /** The card's rectangle in the hand, in frame px, for a frame `w` × `h`. */
