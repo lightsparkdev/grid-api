@@ -48,5 +48,6 @@ enum:
 - TRON_WALLET
 - CNY_ACCOUNT
 - ILS_ACCOUNT
+- TRY_ACCOUNT
 description: Type of external account or wallet
 example: AED_ACCOUNT
