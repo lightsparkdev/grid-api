@@ -69,9 +69,6 @@ export function AppPanel({
 }: AppPanelProps) {
   // What the share panel asks of the stage (the frame's exposure and pose).
   const [shareStage, setShareStage] = useState<ShareStageState>({ open: false, exposure: 1, pose: null });
-  // Above the stage's canvas, for the share's layers that pass in front of
-  // the card (the hand's fingers). Takes no pointer.
-  const [frontHost, setFrontHost] = useState<HTMLDivElement | null>(null);
   const home = useCardHome({
     entry: walletEntry,
     onCardIssued,
@@ -133,7 +130,6 @@ export function AppPanel({
                 design={design}
                 shared={shared}
                 onStage={setShareStage}
-                frontHost={frontHost}
               />
             )}
             <CardStage
@@ -144,7 +140,6 @@ export function AppPanel({
               share={shareStage}
               onIntroDone={onIntroDone}
             />
-            <div ref={setFrontHost} className={styles.shareFront} aria-hidden />
             {stageActions}
           </DotGridCanvas>
         </div>

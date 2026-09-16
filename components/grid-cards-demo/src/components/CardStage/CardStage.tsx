@@ -123,7 +123,6 @@ interface Live {
   /** The angles the card had when the flight began: it turns to the pose
    *  along the flight, arriving as it lands. Null between flights. */
   shareFrom: ExportPose | null;
-  shareLocked: boolean;
   onTurned: (() => void) | undefined;
   intro: Intro;
   /** Something the camera sees changed off the frame loop (a material, a
@@ -229,8 +228,6 @@ export interface ShareStageState {
   exposure: number;
   /** A pose picked from the row; the card springs to it. Null: as turned. */
   pose: ExportPose | null;
-  /** The pose is fixed (the hand holds the card): no turning it by hand. */
-  locked?: boolean;
   /** The visitor turned the card by hand: the picked pose no longer holds. */
   onTurned?: () => void;
 }
@@ -327,7 +324,6 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     shareWanted: false,
     shareT: 0,
     shareFrom: null,
-    shareLocked: false,
     onTurned: undefined,
     dirty: true,
     intro: {
@@ -389,18 +385,15 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   // from the row springs it to those angles; a drag turns it and it stays
   // where it is let go. Closed, it flies back and settles on a face again.
   const shareOpen = !!share?.open && !phoneUp;
-  const shareLocked = !!share?.locked;
   live.current.shareWanted = shareOpen;
-  live.current.shareLocked = shareLocked;
   live.current.onTurned = share?.onTurned;
   useEffect(() => {
-    // Free to turn in the frame, unless the pose is held (the hand).
-    motion.free = shareOpen && !shareLocked;
+    motion.free = shareOpen;
     if (!shareOpen) {
       const p = motion.pose;
       motion.setPose({ rotX: Math.round(p.rotX / 180) * 180, rotY: Math.round(p.rotY / 180) * 180 });
     }
-  }, [shareOpen, shareLocked, motion]);
+  }, [shareOpen, motion]);
   const sharePose = share?.pose ?? null;
   useEffect(() => {
     if (shareOpen && sharePose) motion.setPose(sharePose);
@@ -877,10 +870,9 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     }
     // On Card numbers the card is turned over for the reveal and stays so:
     // no spinning it (it still tilts). At the reader it is held; locked or
-    // closed it is inert; in the hand it is held as the hand holds it. No
-    // drag starts, so no pointerup would settle a press on the name: drop it,
-    // or the next drag's end would open the editor.
-    if (live.current.wantBack || live.current.tap || live.current.inert || (inShare() && live.current.shareLocked)) {
+    // closed it is inert. No drag starts, so no pointerup would settle a
+    // press on the name: drop it, or the next drag's end would open the editor.
+    if (live.current.wantBack || live.current.tap || live.current.inert) {
       pendingSelect.current = null;
       return;
     }
