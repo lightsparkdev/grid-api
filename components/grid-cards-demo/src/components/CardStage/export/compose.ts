@@ -41,6 +41,8 @@ const DARK: Palette = { bg: '#1a1a1a', ink: '#f0f0ee' };
 const LAYOUT = 800;
 const PAD = 24;
 const COL_PAD = 8;
+/** The rules' width, in layout units. */
+const RULE = 0.5;
 const TEXT = 8;
 const LOGO_W = 25.446;
 const LOGO_H = 16;
@@ -462,8 +464,9 @@ export function paintTemplate(ctx: CanvasRenderingContext2D, w: number, h: numbe
   const top = oy + pad;
   const bottom = oy + side - pad;
 
-  // The rules: the left column's left edge and the right column's right edge.
-  const rule = Math.max(1, Math.round(k));
+  // The rules: the left column's left edge and the right column's right
+  // edge, half a layout unit wide (a hairline on the stage; a pixel at 1600).
+  const rule = Math.max(1, Math.round(RULE * k));
   ctx.fillStyle = palette.ink;
   ctx.fillRect(Math.round(left - rule / 2), Math.round(top), rule, Math.round(inner));
   ctx.fillRect(Math.round(right - rule / 2), Math.round(top), rule, Math.round(inner));

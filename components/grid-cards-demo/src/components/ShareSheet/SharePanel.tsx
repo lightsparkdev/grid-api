@@ -84,7 +84,7 @@ const DEFAULT_HAND = 'h1';
  *  the card starts moving off to the template's slot: the two overlap, as
  *  they do arriving. And when the hand has gone, and can be unmounted. */
 const HAND_OUT_MS = 260;
-const HAND_GONE_MS = 560;
+const HAND_GONE_MS = 720;
 
 /** The panel's width on the stage, the room kept around it, and the strip
  *  at the bottom the Share/Close button stands in. */
