@@ -198,14 +198,19 @@ export function handLayerIn(w: number, h: number, id: string): { x: number; y: n
   return { x: cx - (hole.x + hole.w / 2) * size, y: cy - (hole.y + hole.h / 2) * size, size };
 }
 
-/** A wash of the surface over the hand, as the surface's light would fall
- *  on it. The photographs were lit for white: on a dark surface their
- *  highlights are the studio's, not the scene's, and the hand reads as
- *  pasted on. Darkening it toward the surface (and tinting it, on a colored
- *  one) settles it: nothing on white, about a quarter on black. */
+/** A wash over the hand, as the surface's light would fall on it. The
+ *  photographs were lit for white: on a dark surface their highlights are
+ *  the studio's, not the scene's, and the hand reads as pasted on.
+ *  Darkening it toward the surface's own darkness settles it: nothing on
+ *  white, about a quarter on black. The wash is the surface's grey, not its
+ *  color: a colored surface bounces some hue onto skin in life, but here it
+ *  read as a tint (a blue backdrop, a blue hand), so only a trace of the
+ *  hue is kept. */
 export function handWashFor(palette: Palette): { color: string; alpha: number } {
-  const L = luminance(hexToRgb(palette.bg));
-  return { color: palette.bg, alpha: 0.3 * (1 - L) ** 1.5 };
+  const rgb = hexToRgb(palette.bg);
+  const L = luminance(rgb);
+  const grey = L * 255;
+  return { color: rgbToHex(mix([grey, grey, grey], rgb, 0.15)), alpha: 0.3 * (1 - L) ** 1.5 };
 }
 
 let washScratch: HTMLCanvasElement | null = null;

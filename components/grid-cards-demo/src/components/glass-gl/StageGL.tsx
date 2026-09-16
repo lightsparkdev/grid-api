@@ -89,7 +89,8 @@ const RIPPLE_ON_PRESS = false;
 // start on the backdrop do. The phone is its shell, its content layer above
 // the card's canvas (the screen's buttons, lists, sheets, and the stage chrome
 // beside it), and, while the phone is up, the card itself in its slot.
-const FOREGROUND_SELECTOR = '[class*="AppShell_scaled"], [class*="AppShell_overStage"], [data-phone-up]';
+const FOREGROUND_SELECTOR =
+  '[class*="AppShell_scaled"], [class*="AppShell_overStage"], [data-phone-up], [data-stage-foreground]';
 
 /**
  * Even grid with a clean, symmetric edge gutter that's a hair SMALLER than the gap

@@ -18,6 +18,8 @@
 .panel {
   position: absolute;
   left: 50%;
+  /* Centered by `translate`, apart from the transform Motion animates. */
+  translate: -50% 0;
   transform-origin: 50% 0;
   corner-shape: var(--corner-shape);
   /* As wide as the frame plus its padding and border, whatever those are. */

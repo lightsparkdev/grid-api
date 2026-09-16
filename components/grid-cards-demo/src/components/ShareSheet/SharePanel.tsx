@@ -662,16 +662,20 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
           <m.div
             className={styles.panel}
             style={{ top: panelTop }}
+            // Foreground to the stage: a press here is not a press on the backdrop.
+            data-stage-foreground
             // As the phone comes in (AppShell's boot): up from below, out of
-            // a blur, growing to size. Centered by Motion's own x (a CSS
-            // transform would be overwritten by the ones it animates).
-            initial={reduceMotion ? { opacity: 0, x: '-50%' } : { ...PANEL_AWAY, x: '-50%' }}
+            // a blur, growing to size. Centered by CSS `translate` (the
+            // stylesheet), which composes with the transform Motion animates
+            // and, unlike an x here, is not a transform Motion would undo when
+            // it measures layout children (the color picker's field, portaled
+            // out of the panel but still under it in React, slid by half the
+            // panel's width on every change while it was).
+            initial={reduceMotion ? { opacity: 0 } : PANEL_AWAY}
             animate={
-              reduceMotion
-                ? { opacity: 1, x: '-50%' }
-                : { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', x: '-50%', transition: PANEL_IN }
+              reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', transition: PANEL_IN }
             }
-            exit={reduceMotion ? { opacity: 0, x: '-50%' } : { ...PANEL_AWAY, x: '-50%', transition: PANEL_OUT }}
+            exit={reduceMotion ? { opacity: 0 } : { ...PANEL_AWAY, transition: PANEL_OUT }}
           >
             {/* Grows from the frame alone to the frame with its controls. */}
             <m.div
