@@ -22,18 +22,6 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── The dot grid ──────────────────────────────────────────────────────── */
-
-/* The playground's WebGL dot grid, under everything, within the chrome's
-   pad (the rules are its edges). It paints its own surface (the page's,
-   passed in), so the pad shows the page's. */
-.dots {
-  position: absolute;
-  inset: var(--pad);
-  z-index: 0;
-  pointer-events: none;
-}
-
 /* ── The card ──────────────────────────────────────────────────────────── */
 
 /* Under the columns, the whole page: the card sits at its center. */
