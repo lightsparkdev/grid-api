@@ -102,6 +102,8 @@ export interface Hand {
   hole: Hole;
   /** The skin's median color, for the picker. */
   swatch: string;
+  /** The photograph's backdrop: the cutout's edge pixels are blends with it. */
+  backdrop?: string;
   url: string;
 }
 
@@ -215,10 +217,13 @@ export function handToneFor(palette: Palette): number {
   return Math.round(((1 - L) ** 1.5) * 20) / 20;
 }
 
-/** How deep the fringe runs (about 3 px at 2048) and from how far inside
- *  the skin's color is drawn to replace it (about 10 px). */
-const FRINGE = 0.0015;
-const FRINGE_FROM = 0.005;
+/** How deep the fringe runs (about 5 px at 2048) and from how far inside
+ *  the skin's color is drawn to replace it (about 12 px). */
+const FRINGE = 0.0025;
+const FRINGE_FROM = 0.006;
+/** Below this alpha an unmixed color is too noisy to trust, and the skin
+ *  from inside stands in for it entirely. */
+const UNMIX_FLOOR = 0.35;
 /** The rim's reach into the hand (about 8 px at 2048); over how wide a
  *  neighborhood a pixel's brightness is judged (about 24 px); and how far a
  *  highlight is taken down at full strength. */
@@ -245,7 +250,7 @@ export function prepareTonedHand(id: string, strength: number): Promise<Toned> {
         c.height = layer.naturalHeight;
         const ctx = c.getContext('2d', { willReadFrequently: true })!;
         ctx.drawImage(layer, 0, 0);
-        toneHand(ctx, strength);
+        toneHand(ctx, strength, hexToRgb(handById(id)?.backdrop ?? '#c2c2c2'));
         return new Promise<Toned>((resolve, reject) => {
           c.toBlob((blob) => {
             if (!blob) return reject(new Error('tone encode failed'));
@@ -271,7 +276,7 @@ export function tonedHand(id: string, strength: number): Toned | null {
   return toned.get(toneKey(id, strength)) ?? null;
 }
 
-function toneHand(ctx: CanvasRenderingContext2D, strength: number) {
+function toneHand(ctx: CanvasRenderingContext2D, strength: number, backdrop: RGB) {
   const { width, height } = ctx.canvas;
   const img = ctx.getImageData(0, 0, width, height);
   const d = img.data;
@@ -279,7 +284,20 @@ function toneHand(ctx: CanvasRenderingContext2D, strength: number) {
   const alpha = new Float32Array(n);
   for (let i = 0; i < n; i++) alpha[i] = d[i * 4 + 3] / 255;
 
-  // ── Decontaminate the edge ──
+  // ── Unmix the backdrop from the edge ──
+  // A pixel of alpha a at the cutout's edge is the skin blended with the
+  // backdrop by 1 - a (the photograph's own anti-aliasing, the mask's
+  // feather): the backdrop's share is taken back out. Where a is small the
+  // result is noise, and the fill below stands in for it.
+  for (let i = 0; i < n; i++) {
+    const a = alpha[i];
+    if (a === 0 || a >= 1) continue;
+    const p = i * 4;
+    const k = Math.max(a, UNMIX_FLOOR);
+    for (let c = 0; c < 3; c++) d[p + c] = Math.min(255, Math.max(0, (d[p + c] - (1 - k) * backdrop[c]) / k));
+  }
+
+  // ── Fill the edge from inside ──
   // Inside: 1 past the fringe's depth, 0 within it (the alpha, blurred by
   // that depth, is still whole only where no transparency is in reach).
   const fr = Math.max(1, Math.round(width * FRINGE));

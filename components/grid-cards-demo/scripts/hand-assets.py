@@ -14,7 +14,8 @@ everything in the cutout is either beside the card or in front of it.
 Writes ID.webp (the cutout, square) and hands.json: for each hand the hole
 (the card's rectangle, as fractions of the square; found in the original as
 the largest block of dark neutral pixels, then squared up to the card's
-proportions) and a swatch color (the skin's median) for the picker.
+proportions), a swatch color (the skin's median) for the picker, and the
+backdrop's color (the cutout's edge pixels are blends with it).
 """
 
 import argparse
@@ -59,6 +60,14 @@ def card_rect(original: Image.Image) -> tuple[float, float, float, float]:
     return ((cx - w / 2) / W, (cy - h / 2) / H, w / W, h / H)
 
 
+def backdrop_color(original: Image.Image) -> str:
+    """The backdrop's color: the median of the original's outer ring."""
+    o = np.asarray(original.convert("RGB"))
+    ring = np.concatenate([o[:12].reshape(-1, 3), o[-12:].reshape(-1, 3), o[:, :12].reshape(-1, 3), o[:, -12:].reshape(-1, 3)])
+    med = np.median(ring, axis=0)
+    return "#%02x%02x%02x" % tuple(int(v) for v in med)
+
+
 def skin_swatch(cutout: Image.Image) -> str:
     """The skin's median color, for the picker's swatch."""
     m = np.asarray(cutout.convert("RGBA"))
@@ -85,8 +94,16 @@ def main() -> int:
             return 1
         x, y, w, h = card_rect(original)
         cutout.save(os.path.join(args.out, f"{hand_id}.webp"), "WEBP", quality=WEBP_QUALITY, method=6)
-        manifest.append({"id": hand_id, "hole": {"x": x, "y": y, "w": w, "h": h}, "swatch": skin_swatch(cutout)})
-        print(f"{hand_id}: hole x={x:.4f} y={y:.4f} w={w:.4f} h={h:.4f} swatch {manifest[-1]['swatch']}")
+        manifest.append(
+            {
+                "id": hand_id,
+                "hole": {"x": x, "y": y, "w": w, "h": h},
+                "swatch": skin_swatch(cutout),
+                # The cutout's edge pixels are blends with this; the app unmixes them.
+                "backdrop": backdrop_color(original),
+            }
+        )
+        print(f"{hand_id}: hole x={x:.4f} y={y:.4f} w={w:.4f} h={h:.4f} swatch {manifest[-1]['swatch']} backdrop {manifest[-1]['backdrop']}")
     with open(os.path.join(args.out, "hands.json"), "w") as f:
         json.dump({"size": cutout.width, "hands": manifest}, f, indent=2)
     return 0
