@@ -596,13 +596,11 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
             : 'Save video',
       icon: savedWhat === 'video' ? <IconCheckmark1 size={24} /> : <IconVideoClip size={24} />,
       onClick: onDownloadVideo,
-      disabled: busy || videoBusy || savingWhat === 'video' || video.status === 'unavailable' || hand,
+      disabled: busy || videoBusy || savingWhat === 'video' || video.status === 'unavailable',
       loading: videoBusy || savingWhat === 'video',
-      title: hand
-        ? 'The spin video is the card alone; switch the style to Template'
-        : video.status === 'unavailable'
-          ? 'This browser has no video encoder'
-          : undefined,
+      // The spin turns the card all the way round, which no hand could hold:
+      // with the hand up it is still the card alone on the backdrop.
+      title: video.status === 'unavailable' ? 'This browser has no video encoder' : hand ? 'The spin is the card alone' : undefined,
     },
   ];
 
