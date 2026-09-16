@@ -11,7 +11,7 @@
 import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import clsx from 'clsx';
-import { useReducedMotion } from 'motion/react';
+import { motion as m, useReducedMotion } from 'motion/react';
 import {
   useCallback,
   useEffect,
@@ -55,6 +55,19 @@ const CARD_MIN_LONG = 320;
 /** The page's surfaces by theme (the docs'), and the ink on each. */
 const LIGHT_SURFACE = '#f8f8f7';
 const DARK_SURFACE = '#111111';
+
+/** The website's blur-resolve entrance (lightspark.com's heroes): opacity,
+ *  a short rise, and a blur clearing, on its intro ease, staggered by
+ *  `delay`. Nothing to animate under reduced motion. */
+const INTRO_EASE: [number, number, number, number] = [0.27, 0.09, 0.24, 1];
+const blurIn = (delay: number, reduceMotion: boolean) =>
+  reduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 10, filter: 'blur(14px)' },
+        animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
+        transition: { duration: 0.7, ease: INTRO_EASE, delay },
+      };
 
 /** The intro's clock, stepped by the frame loop once the front has painted. */
 interface Intro {
@@ -263,11 +276,11 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
         <a className={styles.wordmark} href="https://www.lightspark.com" aria-label="Lightspark" data-stage-foreground>
           <LightsparkWordmark />
         </a>
-        <h1 className={styles.title} data-stage-foreground>
+        <m.h1 className={styles.title} data-stage-foreground {...blurIn(0.1, reduceMotion)}>
           {brand}
           <br />
           <span className={styles.titleMuted}>Card</span>
-        </h1>
+        </m.h1>
         <p className={clsx(styles.mouse, styles.tuple)} data-stage-foreground>
           {TEMPLATE_TUPLE}
         </p>
@@ -278,8 +291,12 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
           Cards playground
         </p>
         <div className={styles.pitch} data-stage-foreground>
-          <p className={styles.pitchText}>{pitch}</p>
-          <div className={styles.actions}>{actions}</div>
+          <m.p className={styles.pitchText} {...blurIn(0.25, reduceMotion)}>
+            {pitch}
+          </m.p>
+          <m.div className={styles.actions} {...blurIn(0.35, reduceMotion)}>
+            {actions}
+          </m.div>
         </div>
         <p className={styles.mouse} data-stage-foreground>
           docs.lightspark.com
