@@ -25,7 +25,7 @@ import {
   handLayerIn,
   handsLoaded,
   handToneFor,
-  prepareTonedHand,
+  decodeHand,
   paletteFor,
   prepareHand,
   prepareHands,
@@ -79,13 +79,6 @@ interface SharePanelProps {
 
 /** The hand shown first. */
 const DEFAULT_HAND = 'h1';
-
-/** Load and decode an image URL, so an `<img>` of it paints on its first frame. */
-function decodeUrl(url: string): Promise<void> {
-  const img = new Image();
-  img.src = url;
-  return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
-}
 /** How long into the hand's leaving (SharePanel.module.scss, .handMotion)
  *  the card starts moving off to the template's slot: the two overlap, as
  *  they do arriving. And when the hand has gone, and can be unmounted. */
@@ -213,26 +206,17 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
       alive = false;
     };
   }, [hand, hands]);
-  // The shown layer is the picked hand toned for the surface: made (once
-  // per hand and strength) and decoded before it replaces what is shown,
-  // so the swap is one frame to the next.
-  const tone = handToneFor(palette);
-  const [shownLayer, setShownLayer] = useState<{ id: string; tone: number; url: string } | null>(null);
   useEffect(() => {
-    if (!hand || (shownLayer && shownLayer.id === handId && shownLayer.tone === tone)) return;
+    if (!hand || shownHand === handId) return;
     let alive = true;
-    prepareTonedHand(handId, tone)
-      .then((t) => decodeUrl(t.url).then(() => t))
-      .then((t) => {
-        if (!alive) return;
-        setShownLayer({ id: handId, tone, url: t.url });
-        setShownHand(handId);
-      })
+    prepareHand(handId)
+      .then(() => decodeHand(handId))
+      .then(() => alive && setShownHand(handId))
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [hand, handId, tone, shownLayer]);
+  }, [hand, handId, shownHand]);
   const handLoaded = shownHand !== null;
   const handShown = hand && handLoaded;
   // What the frame and the stage hold. Going to the hand, the card moves
@@ -536,7 +520,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
     setSavingWhat('image');
     try {
       await warmTemplate();
-      if (hand) await prepareTonedHand(handId, handToneFor(palette));
+      if (hand) await prepareHand(handId);
       const blob = await renderStill(ex, {
         format: 'square',
         palette,
@@ -655,9 +639,20 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
                 if (!rect || !handMounted || !shownHand) return null;
                 const l = handLayerIn(rect.side, rect.side, shownHand);
                 const at = { left: l.x, top: l.y, width: l.size, height: l.size };
+                const h = handById(shownHand);
                 return (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={shownLayer?.url ?? handById(shownHand)?.url} alt="" className={styles.handLayer} style={at} />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={h?.url} alt="" className={styles.handLayer} style={at} />
+                    {/* The rim's shading, at the surface's darkness (see handToneFor). */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={h?.rimUrl}
+                      alt=""
+                      className={clsx(styles.handLayer, styles.handRim)}
+                      style={{ ...at, opacity: handToneFor(palette) }}
+                    />
+                  </>
                 );
               })()}
             </div>

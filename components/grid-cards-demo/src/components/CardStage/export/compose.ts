@@ -88,8 +88,11 @@ function luminance([r, g, b]: RGB): number {
 // composite paints the template, the real card at the hole, then the
 // layer: everything in the cutout is beside the card or in front of it.
 // hands.json says, for each hand, where the card was (`hole`, as fractions
-// of the square) and a swatch color for the picker. See the 2026-09-15
-// Decisions entry.
+// of the square) and a swatch color for the picker. Each hand is two
+// layers, made by scripts/hand-assets.py: the cutout, its edge already
+// cleaned of the backdrop it was photographed on, and its rim's shading for
+// a dark surface (black, with alpha), drawn over it at the surface's
+// darkness. See the 2026-09-15 Decisions entry.
 
 const HAND_DIR = '/assets/share/hand';
 export const HANDS_URL = `${HAND_DIR}/hands.json`;
@@ -102,14 +105,18 @@ export interface Hand {
   hole: Hole;
   /** The skin's median color, for the picker. */
   swatch: string;
-  /** The photograph's backdrop: the cutout's edge pixels are blends with it. */
+  /** The photograph's backdrop (recorded by the script; the layer's edge is
+   *  already cleaned of it). */
   backdrop?: string;
   url: string;
+  /** The rim's shading for a dark surface, to draw over the layer. */
+  rimUrl: string;
 }
 
 let hands: Hand[] | null = null;
 let handsPromise: Promise<Hand[]> | null = null;
-const layers = new Map<string, HTMLImageElement>();
+type Layers = { hand: HTMLImageElement; rim: HTMLImageElement };
+const layers = new Map<string, Layers>();
 const layerPromises = new Map<string, Promise<void>>();
 
 /** The set of hands (the manifest), once. */
@@ -119,7 +126,7 @@ export function prepareHands(): Promise<Hand[]> {
       .then(async (res) => {
         if (!res.ok) throw new Error(`hands manifest failed: ${HANDS_URL}`);
         const { hands: list } = (await res.json()) as { hands: Omit<Hand, 'url'>[] };
-        hands = list.map((h) => ({ ...h, url: `${HAND_DIR}/${h.id}.webp` }));
+        hands = list.map((h) => ({ ...h, url: `${HAND_DIR}/${h.id}.webp`, rimUrl: `${HAND_DIR}/${h.id}-rim.webp` }));
         return hands;
       })
       .catch((e) => {
@@ -148,7 +155,7 @@ function loadLayer(url: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Load one hand's layer (and the manifest, if not yet), once. */
+/** Load one hand's layers (and the manifest, if not yet), once. */
 export function prepareHand(id: string): Promise<void> {
   let p = layerPromises.get(id);
   if (!p) {
@@ -156,10 +163,10 @@ export function prepareHand(id: string): Promise<void> {
       .then((list) => {
         const h = list.find((x) => x.id === id);
         if (!h) throw new Error(`no hand ${id}`);
-        return loadLayer(h.url);
+        return Promise.all([loadLayer(h.url), loadLayer(h.rimUrl)]);
       })
-      .then((img) => {
-        layers.set(id, img);
+      .then(([hand, rim]) => {
+        layers.set(id, { hand, rim });
       })
       .catch((e) => {
         layerPromises.delete(id);
@@ -172,6 +179,15 @@ export function prepareHand(id: string): Promise<void> {
 
 export function handReady(id: string): boolean {
   return layers.has(id);
+}
+
+/** Decode a loaded hand's layers, so `<img>`s of the same URLs paint on
+ *  their first frame (loaded is not decoded; an undecoded swap flashes). */
+export function decodeHand(id: string): Promise<void> {
+  const l = layers.get(id);
+  if (!l) return Promise.resolve();
+  const dec = (img: HTMLImageElement) => (img.decode ? img.decode().catch(() => {}) : Promise.resolve());
+  return Promise.all([dec(l.hand), dec(l.rim)]).then(() => {});
 }
 
 /** The card's long edge in the hand, as a fraction of the layout square,
@@ -196,185 +212,17 @@ export function handLayerIn(w: number, h: number, id: string): { x: number; y: n
 }
 
 // ── Toning the hand to the surface ────────────────────────────────────────
-// The hands were photographed on light grey and cut out by hand, and the
-// outermost pixels of a cutout carry some of the backdrop they were blended
-// with: a pale fringe, invisible on a light surface, a halo on a dark one
-// (the darker the skin, the more so). So the edge is decontaminated: the
-// color of the outer few pixels is replaced by the skin's just inside,
-// alpha untouched so the edge stays as cut. Then, for a dark surface, the
-// rim's real highlights go too: the white backdrop wrapped light around the
-// hand, and within a few pixels of the edge a pixel brighter than the skin
-// beside it is taken down by its excess. The face of the hand is left as
-// photographed. Hue and saturation are kept (pixels are scaled or replaced,
-// not shifted).
+// The photographs were lit for white: the backdrop wrapped light around the
+// hand, and its silhouette has a bright rim that a dark surface would not.
+// The rim layer (scripts/hand-assets.py) is that rim's shading at full
+// strength; drawn at an opacity of the surface's darkness it takes down
+// that fraction, since the shading is linear in strength. Nothing on white,
+// most of the way on black.
 
-/** How much to shade the rim for a surface: 0 on white, most of the way on
- *  black. */
+/** The rim layer's opacity for a surface. */
 export function handToneFor(palette: Palette): number {
   const L = luminance(hexToRgb(palette.bg));
-  // Bucketed, so a custom color sliding through its range doesn't make a
-  // toned layer for every step.
-  return Math.round(((1 - L) ** 1.5) * 20) / 20;
-}
-
-/** How deep the fringe runs (about 5 px at 2048) and from how far inside
- *  the skin's color is drawn to replace it (about 12 px). */
-const FRINGE = 0.0025;
-const FRINGE_FROM = 0.006;
-/** Below this alpha an unmixed color is too noisy to trust, and the skin
- *  from inside stands in for it entirely. */
-const UNMIX_FLOOR = 0.35;
-/** The rim's reach into the hand (about 8 px at 2048); over how wide a
- *  neighborhood a pixel's brightness is judged (about 24 px); and how far a
- *  highlight is taken down at full strength. */
-const RIM_DEPTH = 0.004;
-const RIM_LOCAL = 0.012;
-const RIM_SHADE = 0.85;
-
-type Toned = { canvas: HTMLCanvasElement; url: string };
-const toned = new Map<string, Toned>();
-const tonedPromises = new Map<string, Promise<Toned>>();
-const toneKey = (id: string, strength: number) => `${id}@${strength.toFixed(2)}`;
-
-/** A hand's layer with its rim shaded for `strength`, as a canvas (the
- *  export draws it) and a URL (the stage shows it), made once. */
-export function prepareTonedHand(id: string, strength: number): Promise<Toned> {
-  const key = toneKey(id, strength);
-  let p = tonedPromises.get(key);
-  if (!p) {
-    p = prepareHand(id)
-      .then(() => {
-        const layer = layers.get(id)!;
-        const c = document.createElement('canvas');
-        c.width = layer.naturalWidth;
-        c.height = layer.naturalHeight;
-        const ctx = c.getContext('2d', { willReadFrequently: true })!;
-        ctx.drawImage(layer, 0, 0);
-        toneHand(ctx, strength, hexToRgb(handById(id)?.backdrop ?? '#c2c2c2'));
-        return new Promise<Toned>((resolve, reject) => {
-          c.toBlob((blob) => {
-            if (!blob) return reject(new Error('tone encode failed'));
-            resolve({ canvas: c, url: URL.createObjectURL(blob) });
-          }, 'image/webp', 0.95);
-        });
-      })
-      .then((t) => {
-        toned.set(key, t);
-        return t;
-      })
-      .catch((e) => {
-        tonedPromises.delete(key);
-        throw e;
-      });
-    tonedPromises.set(key, p);
-  }
-  return p;
-}
-
-/** The toned layer, if made. */
-export function tonedHand(id: string, strength: number): Toned | null {
-  return toned.get(toneKey(id, strength)) ?? null;
-}
-
-function toneHand(ctx: CanvasRenderingContext2D, strength: number, backdrop: RGB) {
-  const { width, height } = ctx.canvas;
-  const img = ctx.getImageData(0, 0, width, height);
-  const d = img.data;
-  const n = width * height;
-  const alpha = new Float32Array(n);
-  for (let i = 0; i < n; i++) alpha[i] = d[i * 4 + 3] / 255;
-
-  // ── Unmix the backdrop from the edge ──
-  // A pixel of alpha a at the cutout's edge is the skin blended with the
-  // backdrop by 1 - a (the photograph's own anti-aliasing, the mask's
-  // feather): the backdrop's share is taken back out. Where a is small the
-  // result is noise, and the fill below stands in for it.
-  for (let i = 0; i < n; i++) {
-    const a = alpha[i];
-    if (a === 0 || a >= 1) continue;
-    const p = i * 4;
-    const k = Math.max(a, UNMIX_FLOOR);
-    for (let c = 0; c < 3; c++) d[p + c] = Math.min(255, Math.max(0, (d[p + c] - (1 - k) * backdrop[c]) / k));
-  }
-
-  // ── Fill the edge from inside ──
-  // Inside: 1 past the fringe's depth, 0 within it (the alpha, blurred by
-  // that depth, is still whole only where no transparency is in reach).
-  const fr = Math.max(1, Math.round(width * FRINGE));
-  const nearA = boxBlur(alpha, width, height, fr);
-  const inside = new Float32Array(n);
-  for (let i = 0; i < n; i++) inside[i] = Math.min(1, Math.max(0, (nearA[i] - 0.94) / 0.06));
-  // The skin's color from inside, drawn outward over the fringe: each
-  // channel weighted by `inside`, blurred, and normalized.
-  const rf = Math.max(2, Math.round(width * FRINGE_FROM));
-  const ch = [0, 1, 2].map((c) => {
-    const f = new Float32Array(n);
-    for (let i = 0; i < n; i++) f[i] = d[i * 4 + c] * inside[i];
-    return boxBlur(f, width, height, rf);
-  });
-  const wsum = boxBlur(inside, width, height, rf);
-  for (let i = 0; i < n; i++) {
-    const p = i * 4;
-    if (d[p + 3] === 0) continue;
-    const w = 1 - inside[i];
-    if (w <= 0 || wsum[i] < 0.02) continue;
-    for (let c = 0; c < 3; c++) d[p + c] += (ch[c][i] / wsum[i] - d[p + c]) * w;
-  }
-
-  // ── Shade the rim's highlights, for a dark surface ──
-  if (strength <= 0) {
-    ctx.putImageData(img, 0, 0);
-    return;
-  }
-  const lum = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const p = i * 4;
-    lum[i] = ((0.2126 * d[p] + 0.7152 * d[p + 1] + 0.0722 * d[p + 2]) / 255) * alpha[i];
-  }
-  const near = boxBlur(alpha, width, height, Math.max(2, Math.round(width * RIM_DEPTH)));
-  const rl = Math.max(3, Math.round(width * RIM_LOCAL));
-  const localL = boxBlur(lum, width, height, rl);
-  const localA = boxBlur(alpha, width, height, rl);
-  for (let i = 0; i < n; i++) {
-    const p = i * 4;
-    if (d[p + 3] === 0) continue;
-    const rim = Math.min(1, Math.max(0, (1 - near[i]) * 1.6));
-    if (rim <= 0) continue;
-    const L = lum[i] / alpha[i];
-    const around = localA[i] > 0.02 ? localL[i] / localA[i] : L;
-    const excess = Math.max(0, L - around);
-    if (excess <= 0) continue;
-    const g = 1 - RIM_SHADE * strength * rim * Math.min(1, excess * 5);
-    d[p] *= g;
-    d[p + 1] *= g;
-    d[p + 2] *= g;
-  }
-  ctx.putImageData(img, 0, 0);
-}
-
-/** A separable box blur of radius `r` over a width × height field. */
-function boxBlur(src: Float32Array, width: number, height: number, r: number): Float32Array {
-  const tmp = new Float32Array(src.length);
-  const out = new Float32Array(src.length);
-  const k = 1 / (2 * r + 1);
-  for (let y = 0; y < height; y++) {
-    const row = y * width;
-    let sum = 0;
-    for (let x = -r; x <= r; x++) sum += src[row + Math.min(width - 1, Math.max(0, x))];
-    for (let x = 0; x < width; x++) {
-      tmp[row + x] = sum * k;
-      sum += src[row + Math.min(width - 1, x + r + 1)] - src[row + Math.max(0, x - r)];
-    }
-  }
-  for (let x = 0; x < width; x++) {
-    let sum = 0;
-    for (let y = -r; y <= r; y++) sum += tmp[Math.min(height - 1, Math.max(0, y)) * width + x];
-    for (let y = 0; y < height; y++) {
-      out[y * width + x] = sum * k;
-      sum += tmp[Math.min(height - 1, y + r + 1) * width + x] - tmp[Math.max(0, y - r) * width + x];
-    }
-  }
-  return out;
+  return (1 - L) ** 1.5;
 }
 
 /** The card's rectangle in the hand, in frame px, for a frame `w` × `h`. */
@@ -667,11 +515,16 @@ export function compose(
   paintTemplate(ctx, frame.width, frame.height, opts.palette);
   ctx.drawImage(card, dx, dy);
   if (opts.treatment === 'hand' && opts.hand) {
-    // Toned for the surface where that has been made, else as photographed.
-    const layer = tonedHand(opts.hand, handToneFor(opts.palette))?.canvas ?? layers.get(opts.hand);
-    if (layer) {
+    const l = layers.get(opts.hand);
+    if (l) {
       const { x, y, size } = handLayerIn(frame.width, frame.height, opts.hand);
-      ctx.drawImage(layer, x, y, size, size);
+      ctx.drawImage(l.hand, x, y, size, size);
+      const tone = handToneFor(opts.palette);
+      if (tone > 0.005) {
+        ctx.globalAlpha = tone;
+        ctx.drawImage(l.rim, x, y, size, size);
+        ctx.globalAlpha = 1;
+      }
     }
   }
   return target;

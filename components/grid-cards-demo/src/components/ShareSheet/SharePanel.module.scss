@@ -144,6 +144,11 @@
   display: block;
 }
 
+/* The rim's shading follows the backdrop as it changes. */
+.handRim {
+  transition: opacity 240ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
 
 /* The rows group, whose third row swaps (Skin for Pose): the row leaving
    is lifted out of the flow (Motion's popLayout, so it must have something

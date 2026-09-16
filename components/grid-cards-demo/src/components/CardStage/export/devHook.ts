@@ -10,9 +10,8 @@ import {
   brandSurfaceFor,
   dominantColor,
   paletteFor,
-  handToneFor,
+  prepareHand,
   prepareTemplate,
-  prepareTonedHand,
   warmTemplate,
   type BackdropId,
   type Treatment,
@@ -38,7 +37,7 @@ export function installExportDevHook(exporter: CardExporter, design: () => CardD
   ) => {
     await prepareTemplate();
     const { palette } = await paletteOf(backdrop);
-    if (treatment === 'hand') await prepareTonedHand(hand, handToneFor(palette));
+    if (treatment === 'hand') await prepareHand(hand);
     return renderStill(exporter, { format, treatment, hand, palette });
   };
   w.__cardExport = {
