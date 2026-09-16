@@ -79,9 +79,6 @@ export default async function SharePage({ params, searchParams }: Props) {
 
   const pitch = record.kind === 'pitch';
   const { design } = record;
-  // The still whose card the page shows first; older shares carried the card alone.
-  const stillUrl = record.assets.square ?? record.assets.card;
-  const still = stillUrl ? absoluteAssetUrl(stillUrl) : null;
   const brand = programNameOf(record) || 'Your brand';
   // Their own card in the playground (the maker's edit token rides along),
   // and a blank one.
@@ -91,7 +88,7 @@ export default async function SharePage({ params, searchParams }: Props) {
   return (
     <main className={styles.page}>
       <h1 className={styles.srOnly}>{pitch && record.forName ? `A card for ${record.forName}` : `${brand} card`}</h1>
-      <ShareCard design={design} look={record.look} still={still} alt={`${brand} card`}>
+      <ShareCard design={design} look={record.look} alt={`${brand} card`}>
         <div className={styles.actions}>
           {pitch ? (
             <a className={styles.primary} href="https://www.lightspark.com/contact">
