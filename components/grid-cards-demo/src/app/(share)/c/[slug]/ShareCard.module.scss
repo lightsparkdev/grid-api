@@ -22,6 +22,17 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── The dot grid ──────────────────────────────────────────────────────── */
+
+/* The playground's WebGL dot grid, under everything. It paints its own
+   surface (the page's, passed in). */
+.dots {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 /* ── The card ──────────────────────────────────────────────────────────── */
 
 /* Under the columns, the whole page: the card sits at its center. */
@@ -34,13 +45,13 @@
   -webkit-user-select: none;
 }
 
-/* Live (the intro over), the card is there to be turned. */
-.stageLive {
+/* Over the card (the intro over), it is there to be turned. */
+.stageOverCard {
   cursor: grab;
+}
 
-  &.dragging {
-    cursor: grabbing;
-  }
+.dragging {
+  cursor: grabbing;
 }
 
 /* The three.js canvas: transparent, the whole stage. R3F sets position and
@@ -63,6 +74,40 @@
   pointer-events: none;
   /* Blueprint ink: the surface's ink, stepped back. */
   --card-blueprint: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+/* The playground's hint, under the card: laid on the hit box (card px), so
+   it undoes the card's scale to stay a constant screen size. The rig sets
+   `--card-scale` alongside the transform. */
+.hint {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(calc(1 / var(--card-scale, 1)));
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: var(--font-weight-regular, 400);
+  line-height: var(--font-leading-18, 18px);
+  color: var(--ink-2);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.hintGone {
+  opacity: 0;
 }
 
 /* ── The columns ───────────────────────────────────────────────────────── */

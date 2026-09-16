@@ -8,6 +8,7 @@
    as the pitch comes in. From then on the card tilts under the pointer and
    turns by hand. Nothing here can edit the design. */
 
+import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import clsx from 'clsx';
 import { useReducedMotion } from 'motion/react';
@@ -32,6 +33,7 @@ import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/componen
 import type { ExportPose } from '@/components/CardStage/export/exportRenderer';
 import { FLAT_POSE } from '@/components/CardStage/export/stills';
 import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from '@/components/CardStage/introTimeline';
+import { StageGL } from '@/components/glass-gl/StageGL';
 import { LightsparkWordmark } from '@/components/LightsparkWordmark';
 import type { CardDesign } from '@/data/design';
 import { play } from '@/lib/sounds';
@@ -83,6 +85,10 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
   const motion = useMemo(() => new CardMotion(), []);
   const [introDone, setIntroDone] = useState(false);
   const [dragging, setDragging] = useState(false);
+  /** The pointer is over the card's footprint (the cursor, the tilt). */
+  const [overCardNow, setOverCardNow] = useState(false);
+  /** The card has been turned by hand once: the hint has done its job. */
+  const [dragged, setDragged] = useState(false);
 
   // The theme is on <html> (the root layout's boot script), read once mounted.
   const [themeDark, setThemeDark] = useState(false);
@@ -100,7 +106,8 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
   // ── Pointer: tilt under the pointer, drag to turn ─────────────────────
   const drag = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
 
-  /** Pointer position relative to the card's footprint, -0.5..0.5 each way. */
+  /** Pointer position relative to the card's footprint (as held flat),
+   *  -0.5..0.5 each way over the card; null off it. */
   const overCard = useCallback(
     (clientX: number, clientY: number) => {
       const stage = stageRef.current;
@@ -110,7 +117,7 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
       const s = cardScale(r.width, r.height, foot);
       const px = (clientX - (r.left + r.width / 2)) / (foot.w * s);
       const py = (clientY - (r.top + r.height / 2)) / (foot.h * s);
-      return { x: Math.max(-0.5, Math.min(0.5, px)), y: Math.max(-0.5, Math.min(0.5, py)) };
+      return Math.abs(px) <= 0.5 && Math.abs(py) <= 0.5 ? { x: px, y: py } : null;
     },
     [design.orientation],
   );
@@ -126,23 +133,29 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
         d.moved = true;
         motion.beginDrag(e.timeStamp);
         setDragging(true);
+        setDragged(true);
       }
       motion.drag(dx, dy, e.timeStamp);
       d.x = e.clientX;
       d.y = e.clientY;
       return;
     }
-    if (e.pointerType !== 'mouse' || reduceMotion) return;
     const p = overCard(e.clientX, e.clientY);
+    setOverCardNow(p !== null);
+    if (e.pointerType !== 'mouse' || reduceMotion) return;
     if (p) motion.setTilt(p.x, p.y);
+    else motion.clearTilt();
   };
 
   const onPointerLeave = () => {
+    setOverCardNow(false);
     if (!drag.current) motion.clearTilt();
   };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!introDone || drag.current || e.button !== 0) return;
+    // Only the card itself turns.
+    if (!overCard(e.clientX, e.clientY)) return;
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -189,10 +202,18 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
 
   return (
     <div className={clsx(styles.root, introDone && styles.introDone)} style={vars}>
+      {/* The playground's dot grid, the whole page, under everything. It
+          ripples on a click anywhere but the type and the buttons. */}
+      <StageGL className={styles.dots} bg={palette.bg} bootMix={0} />
+
       {/* The card's stage: the whole page; the card sits at its center. */}
       <div
         ref={stageRef}
-        className={clsx(styles.stage, introDone && styles.stageLive, dragging && styles.dragging)}
+        className={clsx(
+          styles.stage,
+          introDone && overCardNow && styles.stageOverCard,
+          dragging && styles.dragging,
+        )}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
         onPointerDown={onPointerDown}
@@ -228,30 +249,41 @@ export function ShareCard({ design, look, brand, pitch, actions, alt }: ShareCar
             laid out on it. */}
         <div ref={hitRef} className={styles.hit} style={{ width: foot.w, height: foot.h }} aria-hidden>
           {!introDone && <CardIntro ref={overlayRef} brand={brand} orientation={design.orientation} />}
+          {/* The playground's hint, under the card, until it has been turned. */}
+          <span className={clsx(styles.hint, (dragged || !introDone) && styles.hintGone)}>
+            <IconRotate360Right size={14} />
+            Drag to turn it over
+          </span>
         </div>
       </div>
 
       {/* The three columns over the stage: their type takes the pointer, the
           space between lets it through to the card. */}
       <div className={clsx(styles.col, styles.colLeft)}>
-        <a className={styles.wordmark} href="https://www.lightspark.com" aria-label="Lightspark">
+        <a className={styles.wordmark} href="https://www.lightspark.com" aria-label="Lightspark" data-stage-foreground>
           <LightsparkWordmark />
         </a>
-        <h1 className={styles.title}>
+        <h1 className={styles.title} data-stage-foreground>
           {brand}
           <br />
           <span className={styles.titleMuted}>Card</span>
         </h1>
-        <p className={clsx(styles.mouse, styles.tuple)}>{TEMPLATE_TUPLE}</p>
+        <p className={clsx(styles.mouse, styles.tuple)} data-stage-foreground>
+          {TEMPLATE_TUPLE}
+        </p>
       </div>
       <div className={clsx(styles.col, styles.colMid)} aria-hidden />
       <div className={clsx(styles.col, styles.colRight)}>
-        <p className={styles.mouse}>Cards playground</p>
-        <div className={styles.pitch}>
+        <p className={styles.mouse} data-stage-foreground>
+          Cards playground
+        </p>
+        <div className={styles.pitch} data-stage-foreground>
           <p className={styles.pitchText}>{pitch}</p>
           <div className={styles.actions}>{actions}</div>
         </div>
-        <p className={styles.mouse}>docs.lightspark.com</p>
+        <p className={styles.mouse} data-stage-foreground>
+          docs.lightspark.com
+        </p>
       </div>
     </div>
   );
@@ -385,6 +417,8 @@ function Rig({ motion, state, pose, reduceMotion, hitRef, overlayRef, onIntroDon
       const x = size.width / 2 + p.dx * s - foot.w / 2;
       const y = size.height / 2 + bob - foot.h / 2;
       hit.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+      // The hint riding on it undoes that scale.
+      hit.style.setProperty('--card-scale', s.toFixed(4));
     }
   });
 
