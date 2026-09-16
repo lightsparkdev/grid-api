@@ -1,13 +1,92 @@
-/* The live card's frame: a square, the still's layout, the card over it. */
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
-.frame {
+/* The share page's stage: the viewport on the still's surface, the
+   template's rules and type, the card in the middle, the buttons under it. */
+
+.root {
+  /* The template's pad, scaled to the viewport as the still's is to its side. */
+  --pad: clamp(16px, 3vw, 40px);
+  --col-pad: 8px;
+  --rule: 1px;
+  /* `--under-gap`, `--lift`, and the card's proportions are set inline by
+     the component, which shares them with the card's rig. */
   position: relative;
-  width: min(100%, 640px);
-  aspect-ratio: 1;
-  margin: 0 auto;
-  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  /* A set height, not a minimum: the stage's container-query height (the
+     card's size, the buttons' place) needs a definite block size above it. */
+  height: 100dvh;
+  background: var(--surface);
+  color: var(--ink);
   overflow: hidden;
-  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.25);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── The template's chrome ─────────────────────────────────────────────── */
+
+.ruleLeft,
+.ruleRight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--rule);
+  background: var(--ink);
+  pointer-events: none;
+}
+
+.ruleLeft {
+  left: var(--pad);
+}
+
+.ruleRight {
+  right: var(--pad);
+}
+
+.logo {
+  position: absolute;
+  top: var(--pad);
+  left: calc(var(--pad) + var(--col-pad));
+  width: 32px;
+  height: 20px;
+  background: var(--ink);
+  mask: url('/assets/share/lightspark-logomark.svg') center / contain no-repeat;
+  -webkit-mask: url('/assets/share/lightspark-logomark.svg') center / contain no-repeat;
+}
+
+.type {
+  @include body-sm;
+  position: absolute;
+  margin: 0;
+  color: var(--ink);
+  font-feature-settings: 'salt' 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.typeTopRight {
+  top: var(--pad);
+  right: calc(var(--pad) + var(--col-pad));
+  text-align: right;
+}
+
+.typeBottomLeft {
+  bottom: var(--pad);
+  left: calc(var(--pad) + var(--col-pad));
+}
+
+.typeBottomRight {
+  bottom: var(--pad);
+  right: calc(var(--pad) + var(--col-pad));
+  text-align: right;
+}
+
+/* ── The card ──────────────────────────────────────────────────────────── */
+
+.stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  container-type: size;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -18,25 +97,25 @@
   }
 }
 
-.template,
+/* The still, sized so its card is the live card's size, centered on it;
+   its rules and type are clipped away (they sit within 6% of its edges)
+   and its surface is the page's, so only its card shows. Gives way as the
+   live card comes into focus, both on one clock. */
+/* The card's long edge on screen, from the stage's size (cq units resolve
+   against the stage, so this lives on its children, not on it). */
 .still,
-.canvas {
-  position: absolute;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
+.under {
+  --card-long: min(calc(var(--card-of-width) * 100cqw), calc(var(--card-of-height) * 100cqh));
 }
 
-.template {
-  pointer-events: none;
-}
-
-/* The still holds the frame until the card is live, then gives way; the
-   canvas comes into focus over it. Both on one clock, so the picture
-   never doubles. */
 .still {
-  object-fit: cover;
+  position: absolute;
+  left: 50%;
+  top: calc(50% - var(--lift));
+  width: calc(var(--card-long) / var(--card-in-still));
+  height: calc(var(--card-long) / var(--card-in-still));
+  transform: translate(-50%, -50%);
+  clip-path: inset(6%);
   pointer-events: none;
   opacity: 1;
   transition: opacity 0.5s cubic-bezier(0.45, 0, 0.55, 1);
@@ -47,6 +126,8 @@
 }
 
 .canvas {
+  position: absolute !important;
+  inset: 0;
   opacity: 0;
   filter: blur(6px);
   transition:
@@ -59,28 +140,25 @@
   }
 }
 
-.hint {
+/* ── Under the card ────────────────────────────────────────────────────── */
+
+/* Centered under the card: from the stage's middle, down half the card's
+   height (as held flat; a turned card's edge sweeps a little past this),
+   then a gap. */
+.under {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 18px;
-  margin: 0;
-  text-align: center;
-  font-size: 12px;
-  letter-spacing: 0.01em;
-  opacity: 0;
-  transition: opacity 0.4s ease 0.8s;
-  pointer-events: none;
-}
-
-.hintShown {
-  opacity: 0.55;
+  top: calc(50% - var(--lift) + var(--card-long) * var(--card-h-of-long) / 2 + var(--under-gap));
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--pad);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .still,
-  .canvas,
-  .hint {
+  .canvas {
     transition: none;
   }
 }

@@ -1,29 +1,33 @@
 'use client';
 
-/* The shared card, live: the same mesh and studio as the playground, in a
-   square frame laid out like the still (the surface, the rules, the type),
-   with the card at the still's size and angle. The still paints first, from
-   the record; the card comes into focus over it once WebGL has the front
-   painted, and from then on it tilts under the pointer and turns by hand.
-   Nothing here can edit the design. */
+/* The share page's stage: the whole viewport on the still's surface, two
+   rules running its full height, the template's type in the corners, and
+   the card, big, in the middle, live. The same mesh and studio as the
+   playground; it tilts under the pointer and turns by hand. The still's
+   card paints first (the page's surface is the still's, so only its card
+   shows), and the live card comes into focus over it. Nothing here can edit
+   the design. */
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import clsx from 'clsx';
 import { useReducedMotion } from 'motion/react';
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import * as THREE from 'three';
 
 import { footprint } from '@/apps/card/cardMetrics';
 import { CardEnv } from '@/components/CardStage/card3d/CardEnv';
 import { CardMesh, type CardMeshState } from '@/components/CardStage/card3d/CardMesh';
 import { CardMotion, ORIENT_ROLL } from '@/components/CardStage/cardMotion';
-import {
-  exposureFor,
-  paintTemplate,
-  paletteOn,
-  prepareTemplate,
-  type Palette,
-} from '@/components/CardStage/export/compose';
+import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/components/CardStage/export/compose';
 import type { ExportPose } from '@/components/CardStage/export/exportRenderer';
 import { CARD_IN_LAYOUT, FLAT_POSE } from '@/components/CardStage/export/stills';
 import type { CardDesign } from '@/data/design';
@@ -37,6 +41,16 @@ const CAMERA_Z = 2000;
 const NEUTRAL_TONE_MAPPING = THREE.NeutralToneMapping ?? THREE.ACESFilmicToneMapping;
 /** A press that travels less than this (screen px) is a click, not a turn. */
 const DRAG_SLOP = 3;
+/** The card's long edge, as a share of the stage's width and of its height
+ *  (whichever binds). Mirrored in the stylesheet for the still. */
+const CARD_OF_WIDTH = 0.64;
+const CARD_OF_HEIGHT = 0.78;
+/** The buttons hang this far under the card (px), and are this tall; the
+ *  card sits half their run above the stage's middle so the two center as
+ *  one. Mirrored into the stylesheet as `--under-gap` and `--lift`. */
+const UNDER_GAP = 40;
+const BUTTON_H = 44;
+const CARD_LIFT = (UNDER_GAP + BUTTON_H) / 2;
 /** The template's own surfaces, when the share was made before the look was
  *  recorded: the page's theme picks one. */
 const LIGHT_SURFACE = '#f8f8f7';
@@ -45,15 +59,16 @@ const DARK_SURFACE = '#1a1a1a';
 interface ShareCardProps {
   design: CardDesign;
   look: ShareLook | null | undefined;
-  /** The square still, shown until the live card is ready. */
+  /** The square still, whose card is shown until the live one is ready. */
   still: string | null;
   alt: string;
+  /** What sits under the card (the buttons). */
+  children?: ReactNode;
 }
 
-export function ShareCard({ design, look, still, alt }: ShareCardProps) {
+export function ShareCard({ design, look, still, alt, children }: ShareCardProps) {
   const reduceMotion = useReducedMotion() ?? false;
-  const frameRef = useRef<HTMLDivElement>(null);
-  const templateRef = useRef<HTMLCanvasElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const motion = useMemo(() => new CardMotion(), []);
   const [live, setLive] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -70,36 +85,6 @@ export function ShareCard({ design, look, still, alt }: ShareCardProps) {
   );
   const pose = useMemo<ExportPose>(() => look?.pose ?? FLAT_POSE, [look?.pose]);
 
-  // The template behind the card: painted at device resolution whenever the
-  // frame's size or the surface changes, once its font and logo are in.
-  useEffect(() => {
-    const frame = frameRef.current;
-    const canvas = templateRef.current;
-    if (!frame || !canvas) return;
-    let cancelled = false;
-    const paint = () => {
-      const side = frame.clientWidth;
-      if (!side) return;
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const px = Math.round(side * dpr);
-      if (canvas.width !== px || canvas.height !== px) {
-        canvas.width = px;
-        canvas.height = px;
-      }
-      const ctx = canvas.getContext('2d');
-      if (ctx) paintTemplate(ctx, px, px, palette);
-    };
-    prepareTemplate().then(() => {
-      if (!cancelled) paint();
-    });
-    const ro = new ResizeObserver(paint);
-    ro.observe(frame);
-    return () => {
-      cancelled = true;
-      ro.disconnect();
-    };
-  }, [palette]);
-
   const meshState = useMemo<CardMeshState>(
     () => ({ design, issued: false, frozen: false, closed: false }),
     [design],
@@ -111,11 +96,11 @@ export function ShareCard({ design, look, still, alt }: ShareCardProps) {
   /** Pointer position relative to the card's footprint, -0.5..0.5 each way. */
   const overCard = useCallback(
     (clientX: number, clientY: number) => {
-      const frame = frameRef.current;
-      if (!frame) return null;
-      const r = frame.getBoundingClientRect();
+      const stage = stageRef.current;
+      if (!stage) return null;
+      const r = stage.getBoundingClientRect();
       const foot = footprint(design.orientation);
-      const s = (CARD_IN_LAYOUT * r.width) / Math.max(foot.w, foot.h);
+      const s = cardScale(r.width, r.height, foot);
       const px = (clientX - (r.left + r.width / 2)) / (foot.w * s);
       const py = (clientY - (r.top + r.height / 2)) / (foot.h * s);
       return { x: Math.max(-0.5, Math.min(0.5, px)), y: Math.max(-0.5, Math.min(0.5, py)) };
@@ -150,6 +135,8 @@ export function ShareCard({ design, look, still, alt }: ShareCardProps) {
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (drag.current || e.button !== 0) return;
+    // The buttons under the card are theirs to handle.
+    if ((e.target as HTMLElement).closest('a, button')) return;
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -187,48 +174,82 @@ export function ShareCard({ design, look, still, alt }: ShareCardProps) {
 
   const onReady = useCallback(() => setLive(true), []);
 
+  const foot = footprint(design.orientation);
+  const vars = {
+    '--surface': palette.bg,
+    '--ink': palette.ink,
+    '--card-of-width': CARD_OF_WIDTH,
+    '--card-of-height': CARD_OF_HEIGHT,
+    '--card-in-still': CARD_IN_LAYOUT,
+    // The card's height as a share of its long edge (1 held upright).
+    '--card-h-of-long': foot.h / Math.max(foot.w, foot.h),
+    '--under-gap': `${UNDER_GAP}px`,
+    '--lift': `${CARD_LIFT}px`,
+  } as CSSProperties;
+
   return (
-    <div
-      ref={frameRef}
-      className={clsx(styles.frame, live && styles.live, dragging && styles.dragging)}
-      style={{ background: palette.bg }}
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      role="img"
-      aria-label={alt}
-    >
-      <canvas ref={templateRef} className={styles.template} aria-hidden />
-      {still && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className={styles.still} src={still} alt="" draggable={false} />
-      )}
-      <Canvas
-        className={styles.canvas}
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        camera={{ position: [0, 0, CAMERA_Z], near: 200, far: 6000 }}
-        onCreated={({ gl }) => {
-          gl.toneMapping = NEUTRAL_TONE_MAPPING;
-        }}
+    <div className={clsx(styles.root, live && styles.live)} style={vars}>
+      {/* The template's chrome: the rules and the type, the page's height. */}
+      <span className={styles.ruleLeft} aria-hidden />
+      <span className={styles.ruleRight} aria-hidden />
+      <span className={styles.logo} role="img" aria-label="Lightspark" />
+      <p className={clsx(styles.type, styles.typeTopRight)} aria-hidden>
+        Lightspark
+        <br />
+        Cards Playground
+      </p>
+      <p className={clsx(styles.type, styles.typeBottomLeft)} aria-hidden>
+        {TEMPLATE_TUPLE}
+      </p>
+      <p className={clsx(styles.type, styles.typeBottomRight)} aria-hidden>
+        docs.lightspark.com
+      </p>
+
+      <div
+        ref={stageRef}
+        className={clsx(styles.stage, dragging && styles.dragging)}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        role="img"
+        aria-label={alt}
       >
-        <FrameCamera exposure={exposureFor(palette)} />
-        <CardEnv />
-        <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
-        <Rig motion={motion} state={meshState} pose={pose} reduceMotion={reduceMotion} onReady={onReady} />
-      </Canvas>
-      {!reduceMotion && (
-        <p className={clsx(styles.hint, live && styles.hintShown)} style={{ color: palette.ink }}>
-          Drag to turn it over
-        </p>
-      )}
+        {still && (
+          // The still's card, at the live card's size and place; its rules
+          // and type are clipped away, and its surface is the page's.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className={styles.still} src={still} alt="" draggable={false} />
+        )}
+        <Canvas
+          className={styles.canvas}
+          dpr={[1, 2]}
+          gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+          camera={{ position: [0, 0, CAMERA_Z], near: 200, far: 6000 }}
+          onCreated={({ gl }) => {
+            gl.toneMapping = NEUTRAL_TONE_MAPPING;
+          }}
+        >
+          <StageCamera exposure={exposureFor(palette)} />
+          <CardEnv />
+          <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
+          <Rig motion={motion} state={meshState} pose={pose} reduceMotion={reduceMotion} onReady={onReady} />
+        </Canvas>
+        {children && <div className={styles.under}>{children}</div>}
+      </div>
     </div>
   );
 }
 
-/** A perspective camera whose view at z = 0 is exactly the frame in px. */
-function FrameCamera({ exposure }: { exposure: number }) {
+/** The card's scale for a stage of `w` × `h`: its long edge at
+ *  `CARD_OF_WIDTH` of the width or `CARD_OF_HEIGHT` of the height. */
+function cardScale(w: number, h: number, foot: { w: number; h: number }): number {
+  const long = Math.min(CARD_OF_WIDTH * w, CARD_OF_HEIGHT * h);
+  return long / Math.max(foot.w, foot.h);
+}
+
+/** A perspective camera whose view at z = 0 is exactly the stage in px. */
+function StageCamera({ exposure }: { exposure: number }) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
   const gl = useThree((s) => s.gl);
@@ -251,19 +272,19 @@ interface RigProps {
 }
 
 /** Drives the mesh every frame: the still's pose to begin with, then the
- *  motion's (tilt, drag, bob). The card sits at the frame's center with its
- *  long edge at `CARD_IN_LAYOUT` of the side, as in the still. */
+ *  motion's (tilt, drag, bob). The card sits at the stage's center, lifted
+ *  by the stylesheet's `--lift` so it and the buttons center as one. */
 function Rig({ motion, state, pose, reduceMotion, onReady }: RigProps) {
   const carrier = useRef<THREE.Group>(null);
   const group = useRef<THREE.Group>(null);
   const size = useThree((s) => s.size);
   const posed = useRef(false);
 
-  // Start at the still's angles, not spring to them from flat.
+  // Start at the still's angles, not spring to them from flat. Set on the
+  // frame itself: R3F's first frame can run before an effect would.
   useEffect(() => {
-    motion.setPose(pose);
     posed.current = false;
-  }, [motion, pose]);
+  }, [pose]);
 
   useFrame((_, delta) => {
     const g = group.current;
@@ -271,8 +292,8 @@ function Rig({ motion, state, pose, reduceMotion, onReady }: RigProps) {
     if (!g || !c) return;
     const dt = Math.min(0.05, delta);
     const { orientation } = state.design;
-    const foot = footprint(orientation);
-    const s = (CARD_IN_LAYOUT * Math.min(size.width, size.height)) / Math.max(foot.w, foot.h);
+    const s = cardScale(size.width, size.height, footprint(orientation));
+    if (!posed.current) motion.setPose(pose);
     const p = motion.step(dt, {
       wantBack: false,
       hold: false,
@@ -281,7 +302,7 @@ function Rig({ motion, state, pose, reduceMotion, onReady }: RigProps) {
       path: posed.current ? undefined : { from: pose, u: 1 },
     });
     posed.current = true;
-    c.position.set(p.dx * s, -p.dy, 0);
+    c.position.set(p.dx * s, CARD_LIFT - p.dy, 0);
     c.scale.setScalar(s);
     g.rotation.set(
       THREE.MathUtils.degToRad(p.rotX),

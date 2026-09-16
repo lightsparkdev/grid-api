@@ -1,132 +1,85 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+/* The share page is its stage (ShareCard); this is the shell and the two
+   buttons under the card. Colors come from the stage's surface and ink, so
+   they read on whatever backdrop the maker picked. */
+
 .page {
-  box-sizing: border-box;
-  min-height: 100vh;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 64px 24px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  /* The body's surface (globals.scss) is the page's; these are the type. */
-  color: var(--share-text-primary);
-  font-family: var(--share-font);
-  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  font-family: var(--font-family-sans);
 
   * {
     box-sizing: border-box;
   }
-
-  @media (min-width: 720px) {
-    padding: 96px 40px 48px;
-  }
 }
 
-.eyebrow {
-  margin: 0;
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  color: var(--share-text-secondary);
-}
-
-.headline {
-  margin: 0 0 12px;
-  font-size: 32px;
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-
-  @media (min-width: 720px) {
-    font-size: 40px;
-  }
-}
-
-.figure {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.caption {
-  align-self: flex-end;
-  font-size: 12px;
-  color: var(--share-text-secondary);
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
+  justify-content: center;
+  gap: var(--spacing-sm, 8px);
 }
 
+/* The flow builder's buttons: the label style, 44 tall, the small radius.
+   Filled is ink on the surface; the outline is a hairline of ink. */
 .primary,
 .secondary {
+  all: unset;
+  box-sizing: border-box;
+  @include label;
+  corner-shape: var(--corner-shape);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  font-size: 15px;
-  font-weight: 500;
-  text-decoration: none;
+  padding: 0 var(--spacing-lg, 16px);
+  border-radius: var(--corner-radius-md);
+  font-feature-settings: 'salt' 1;
   white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 200ms ease,
+    background-color 150ms ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
 }
 
 .primary {
-  background: var(--share-text-primary);
-  color: var(--share-bg);
+  background: var(--ink);
+  color: var(--surface);
+
+  @media (hover: hover) {
+    &:hover {
+      background: color-mix(in srgb, var(--ink) 88%, var(--surface));
+    }
+  }
 }
 
 .secondary {
-  border: 1px solid var(--share-border);
-  color: var(--share-text-primary);
-}
+  border: var(--stroke-xs, 1px) solid color-mix(in srgb, var(--ink) 24%, transparent);
+  color: var(--ink);
 
-.tertiary {
-  font-size: 14px;
-  color: var(--share-text-secondary);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-color: var(--share-border);
-
-  &:hover {
-    color: var(--share-text-primary);
-  }
-}
-
-.editPanel {
-  margin-top: 8px;
-  padding: 16px;
-  border: 1px solid var(--share-border);
-  border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--share-text-secondary);
-
-  p {
-    margin: 0 0 6px;
-  }
-}
-
-.views {
-  color: var(--share-text-primary);
-  font-weight: 500;
-}
-
-.footer {
-  margin-top: auto;
-  padding-top: 40px;
-  font-size: 12px;
-  color: var(--share-text-secondary);
-
-  a {
-    text-decoration: none;
-    opacity: 0.8;
-
+  @media (hover: hover) {
     &:hover {
-      opacity: 1;
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
     }
   }
 }

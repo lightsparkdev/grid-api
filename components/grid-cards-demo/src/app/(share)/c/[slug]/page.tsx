@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { shareStore } from '@/lib/share/store';
-import { absoluteAssetUrl, playgroundUrl, shareUrl, xIntentUrl } from '@/lib/share/urls';
+import { absoluteAssetUrl, playgroundOrigin, playgroundUrl, shareUrl } from '@/lib/share/urls';
 import type { ShareRecord } from '@/lib/share/types';
 import { ShareCard } from './ShareCard';
 import { UnfurlPreview } from './UnfurlPreview';
@@ -28,10 +28,6 @@ function first(v: string | string[] | undefined): string | undefined {
 
 function programNameOf(record: ShareRecord): string {
   return record.design.programName.trim();
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
@@ -81,67 +77,36 @@ export default async function SharePage({ params, searchParams }: Props) {
     if (!CRAWLER_RE.test(ua)) store.recordView(record.id).catch(() => {});
   }
 
-  const programName = programNameOf(record);
   const pitch = record.kind === 'pitch';
   const { design } = record;
-  const assets = {
-    og: record.assets.og && absoluteAssetUrl(record.assets.og),
-    // The download is the square; older shares carried the card alone.
-    card: (record.assets.square ?? record.assets.card) && absoluteAssetUrl((record.assets.square ?? record.assets.card)!),
-  };
-  const brand = programName || 'Your brand';
-  const openHref = playgroundUrl(record.id, editing ? edit : null);
+  // The still whose card the page shows first; older shares carried the card alone.
+  const stillUrl = record.assets.square ?? record.assets.card;
+  const still = stillUrl ? absoluteAssetUrl(stillUrl) : null;
+  const brand = programNameOf(record) || 'Your brand';
+  // Their own card in the playground (the maker's edit token rides along),
+  // and a blank one.
+  const viewHref = playgroundUrl(record.id, editing ? edit : null);
+  const designHref = playgroundOrigin();
 
   return (
     <main className={styles.page}>
-      <p className={styles.eyebrow}>{pitch && record.forName ? `A card for ${record.forName}` : 'Designed on Grid'}</p>
-      <h1 className={styles.headline}>{pitch ? 'Here\u2019s what your card could look like.' : brand}</h1>
-
-      <figure className={styles.figure}>
-        <ShareCard design={design} look={record.look} still={assets.card} alt={`${brand} card`} />
-        <figcaption className={styles.caption}>
-          {capitalize(design.material)} · {capitalize(design.finish)}
-        </figcaption>
-      </figure>
-
-      <div className={styles.actions}>
-        <a className={styles.primary} href={openHref}>
-          {pitch ? 'Open in the playground' : 'Design yours'}
-        </a>
-        {pitch ? (
-          <a className={styles.secondary} href="https://www.lightspark.com/contact">
-            Talk to us
+      <h1 className={styles.srOnly}>{pitch && record.forName ? `A card for ${record.forName}` : `${brand} card`}</h1>
+      <ShareCard design={design} look={record.look} still={still} alt={`${brand} card`}>
+        <div className={styles.actions}>
+          {pitch ? (
+            <a className={styles.primary} href="https://www.lightspark.com/contact">
+              Talk to us
+            </a>
+          ) : (
+            <a className={styles.primary} href={designHref}>
+              Design your card
+            </a>
+          )}
+          <a className={styles.secondary} href={viewHref}>
+            View in Playground
           </a>
-        ) : (
-          <a
-            className={styles.secondary}
-            href={xIntentUrl(`I designed the ${brand} card on @lightspark Grid`, shareUrl(record.slug))}
-            target="_blank"
-            rel="noopener"
-          >
-            Post to X
-          </a>
-        )}
-        {assets.card && (
-          <a className={styles.tertiary} href={assets.card} download>
-            Download image
-          </a>
-        )}
-      </div>
-
-      {editing && (
-        <aside className={styles.editPanel}>
-          <p className={styles.views}>Views: {record.views}</p>
-          <p>This is your edit link. Keep it: anyone with it can change this card.</p>
-          <a className={styles.tertiary} href={playgroundUrl(record.id, edit)}>
-            Edit in the playground
-          </a>
-        </aside>
-      )}
-
-      <footer className={styles.footer}>
-        <a href="https://docs.lightspark.com/cards">Lightspark Grid · Cards</a>
-      </footer>
+        </div>
+      </ShareCard>
     </main>
   );
 }
