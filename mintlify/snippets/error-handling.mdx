@@ -15,6 +15,7 @@ Grid uses standard HTTP status codes to indicate the success or failure of reque
 | `401 Unauthorized`          | Authentication failed   | Invalid or missing API credentials                      |
 | `403 Forbidden`             | Permission denied       | Insufficient permissions or customer not ready          |
 | `404 Not Found`             | Resource not found      | Customer, transaction, or quote doesn't exist           |
+| `408 Request Timeout`       | Request timed out       | The request body could not be read in time; retry       |
 | `409 Conflict`              | Resource conflict       | Quote already executed, external account already exists, bank account still being validated |
 | `412 Precondition Failed`   | UMA version mismatch    | Counterparty doesn't support required UMA version       |
 | `429 Too Many Requests`     | Rate/volume limited     | Rate limit hit or daily volume limit exceeded           |
@@ -29,9 +30,8 @@ All error responses include a structured format:
 
 ```json
 {
-  "status": 400,
   "code": "INVALID_AMOUNT",
-  "message": "Amount must be greater than 0",
+  "reason": "Amount must be greater than 0",
   "details": {
     "field": "amount",
     "value": -100
@@ -50,9 +50,8 @@ All error responses include a structured format:
 ```javascript
 // Error
 {
-  "status": 400,
   "code": "INVALID_INPUT",
-  "message": "Invalid account ID format"
+  "reason": "Invalid account ID format"
 }
 
 // Fix: Ensure proper ID format

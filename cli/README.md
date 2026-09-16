@@ -409,9 +409,6 @@ grid crypto estimate-fee \
 
 # Discover receiving institutions
 grid discoveries --country PH --currency PHP
-
-# List counterparty (UMA) providers
-grid uma-providers [--country-code US] [--currency-code USD]
 ```
 
 ### API Tokens

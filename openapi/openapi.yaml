@@ -238,6 +238,8 @@ paths:
     $ref: paths/customers/customers.yaml
   /customers/{customerId}:
     $ref: paths/customers/customers_{customerId}.yaml
+  /customers/agreements:
+    $ref: paths/customers/customers_agreements.yaml
   /customers/end-user-terms:
     $ref: paths/customers/customers_end-user-terms.yaml
   /customers/{customerId}/kyc-link:
@@ -362,8 +364,6 @@ paths:
     $ref: paths/sandbox/sandbox_uma_receive.yaml
   /sandbox/internal-accounts/{accountId}/fund:
     $ref: paths/sandbox/sandbox_internal_accounts_{accountId}_fund.yaml
-  /uma-providers:
-    $ref: paths/uma_providers/uma_providers.yaml
   /tokens:
     $ref: paths/tokens/tokens.yaml
   /tokens/{tokenId}:
@@ -437,6 +437,8 @@ paths:
     $ref: paths/cards/cards_{id}.yaml
   /cards/{id}/reveal:
     $ref: paths/cards/cards_{id}_reveal.yaml
+  /cards/{id}/tokenize:
+    $ref: paths/cards/cards_{id}_tokenize.yaml
   /sandbox/cards/{id}/simulate/authorization:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization.yaml
   /sandbox/cards/{id}/simulate/clearing:
@@ -461,6 +463,14 @@ paths:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization_reversal.yaml
   /sandbox/cards/{id}/simulate/authorization_expiry:
     $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_authorization_expiry.yaml
+  /sandbox/cards/{id}/simulate/dispute_open:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_dispute_open.yaml
+  /sandbox/cards/{id}/simulate/dispute_provisional_credit:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_dispute_provisional_credit.yaml
+  /sandbox/cards/{id}/simulate/dispute_provisional_credit_reversal:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_dispute_provisional_credit_reversal.yaml
+  /sandbox/cards/{id}/simulate/dispute_close:
+    $ref: paths/sandbox/cards/sandbox_cards_{id}_simulate_dispute_close.yaml
   /stablecoins:
     $ref: paths/stablecoins/stablecoins.yaml
   /stablecoins/{stablecoinId}:

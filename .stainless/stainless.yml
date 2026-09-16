@@ -113,9 +113,13 @@ resources:
       business_customer_create_request: '#/components/schemas/BusinessCustomerCreateRequest'
       individual_customer_update_request: '#/components/schemas/IndividualCustomerUpdateRequest'
       business_customer_update_request: '#/components/schemas/BusinessCustomerUpdateRequest'
+      agreement_type: '#/components/schemas/AgreementType'
+      agreement_acceptance_method: '#/components/schemas/AgreementAcceptanceMethod'
       end_user_terms: '#/components/schemas/EndUserTerms'
-      end_user_terms_consent: '#/components/schemas/EndUserTermsConsent'
-      end_user_terms_consent_request: '#/components/schemas/EndUserTermsConsentRequest'
+      agreement_document: '#/components/schemas/AgreementDocument'
+      agreement_document_list_response: '#/components/schemas/AgreementDocumentListResponse'
+      agreement_consent: '#/components/schemas/AgreementConsent'
+      agreement_consent_request: '#/components/schemas/AgreementConsentRequest'
       # Internal-account management (list/update/export under this resource)
       internal_account_list_response: '#/components/schemas/InternalAccountListResponse'
       internal_account_update_request: '#/components/schemas/InternalAccountUpdateRequest'
@@ -142,6 +146,7 @@ resources:
       create_kyc_link:
         endpoint: post /customers/{customerId}/kyc-link
         body_param_name: KycLinkCreateRequest
+      list_agreements: get /customers/agreements
       retrieve_end_user_terms: get /customers/end-user-terms
     # Subresources define resources that are nested within another for more powerful
     # logical groupings, e.g. `cards.payments`.
@@ -403,13 +408,6 @@ resources:
               clearing_request: "#/components/schemas/SandboxCardClearingRequest"
               refund_request: "#/components/schemas/SandboxCardReturnRequest"
               refund: "#/components/schemas/Refund"
-
-  uma_providers:
-    models:
-      uma_provider: '#/components/schemas/UmaProvider'
-      uma_provider_list_response: '#/components/schemas/UmaProviderListResponse'
-    methods:
-      list: get /uma-providers
 
   tokens:
     models:

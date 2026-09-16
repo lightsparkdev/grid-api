@@ -306,7 +306,7 @@ paths:
           schema:
             type: integer
             format: int64
-            minimum: 0
+            exclusiveMinimum: 0
             default: 10000
           example: 10000
       responses:
@@ -930,11 +930,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+  /customers/agreements:
+    get:
+      summary: List the current Grid agreement documents
+      description: Retrieve the current version and Grid-hosted URL of every agreement Grid supports. Supply an entry's `version` as `termsVersion` when recording a customer's acceptance of that agreement. The list is a catalog of available agreements, not a list of the agreements a given customer is required to accept.
+      operationId: listAgreementDocuments
+      tags:
+        - Customers
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Current agreement documents retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgreementDocumentListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
   /customers/end-user-terms:
     get:
       summary: Get the current Grid End User Terms
-      description: Retrieve the current version and Grid-hosted URL of the End User Terms.
+      description: Deprecated; use `GET /customers/agreements`, which lists every agreement Grid supports rather than the End User Terms alone. This operation keeps its original single-document response, so existing integrations continue to work unchanged.
       operationId: getEndUserTerms
+      deprecated: true
       tags:
         - Customers
       security:
@@ -985,6 +1008,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
       requestBody:
         required: false
@@ -1296,6 +1320,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScaFactorList'
+        '400':
+          description: The authentication provider rejected the request as caller input, for example a malformed factor or reset reference.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
@@ -1491,6 +1521,12 @@ paths:
       responses:
         '204':
           description: Factor deleted; no content is returned.
+        '400':
+          description: The authentication provider rejected the request as caller input, for example a malformed factor or reset reference.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
@@ -1835,6 +1871,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TwoFactorResetStatus'
+        '400':
+          description: The authentication provider rejected the request as caller input, for example a malformed factor or reset reference.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
         '401':
           description: Unauthorized
           content:
@@ -2210,11 +2252,11 @@ paths:
         in for a settled deposit — funding the account triggers its sweep just as a
         real deposit would.
 
-        Creating an account mints a new account number that cannot be reversed, so
-        an `Idempotency-Key` header is required. A retry carrying the same key
-        returns the account created by the first request with a `200` instead of a
-        `201`; reusing a key for a materially different account is rejected with
-        `409`.
+        Send an `Idempotency-Key` header to make retries safe: a request carrying a
+        key already used returns the account created by the first request with a
+        `200` instead of a `201`. Reusing a key for a materially different account
+        is rejected with `409`. Without a key a retry cannot be recognised, so each
+        request creates its own account and mints its own account number.
       operationId: createInternalAccount
       tags:
         - Internal Accounts
@@ -2224,10 +2266,11 @@ paths:
         - name: Idempotency-Key
           in: header
           description: |
-            A unique identifier for the request. Required, because creating the account mints an account number that cannot be reversed. Retries must carry the same key.
-          required: true
+            A unique identifier for the request. Strongly recommended: creating the account mints an account number that cannot be reversed, and the key is what lets a retry return the first account rather than minting a second.
+          required: false
           schema:
             type: string
+            maxLength: 255
             example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
@@ -2298,7 +2341,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error404'
         '409':
-          description: Conflict - the `Idempotency-Key` was already used to create a different account, or the account for this key is still being provisioned. Retry with the same key.
+          description: Conflict - the `Idempotency-Key` was already used to create a materially different account. Use a new key for a new account.
           content:
             application/json:
               schema:
@@ -3909,6 +3952,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
@@ -3994,6 +4038,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: 550e8400-e29b-41d4-a716-446655440000
       requestBody:
         required: true
@@ -4299,6 +4344,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
       requestBody:
         required: true
@@ -4424,6 +4470,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error403'
+        '408':
+          description: Request Timeout - the request body could not be read in time; retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error408'
         '409':
           description: Conflict. Returned with `BANK_ACCOUNT_VALIDATION_PENDING` when the US bank account on the request is still being validated. Grid verifies a newly added ACH account by sending a micro-entry and waiting out the return window, which takes a few banking days. The account is not rejected, so retry once validation completes. An account that failed validation outright returns `400` with `INVALID_BANK_ACCOUNT`.
           content:
@@ -4504,6 +4556,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
         - name: Grid-Wallet-Signature
           in: header
@@ -5751,81 +5804,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error404'
-        '500':
-          description: Internal service error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error500'
-  /uma-providers:
-    get:
-      summary: List available Counterparty Providers
-      description: |
-        Retrieve a list of available Counterparty Providers. The response includes basic information about each provider, such as its UMA address, name, and supported currencies.
-      operationId: getAvailableUmaProviders
-      tags:
-        - Available UMA Providers
-      parameters:
-        - in: query
-          name: countryCode
-          description: The alpha-2 representation of a country, as defined by the ISO 3166-1 standard.
-          required: false
-          schema:
-            type: string
-            example: US
-        - in: query
-          name: currencyCode
-          description: The ISO 4217 currency code to filter providers by supported currency.
-          required: false
-          schema:
-            type: string
-            example: USD
-        - in: query
-          name: hasBlockedProviders
-          description: Whether to include providers which are not on your allowlist in the response. By default the response will include blocked providers.
-          required: false
-          schema:
-            type: boolean
-        - name: limit
-          in: query
-          description: Maximum number of results to return (default 20, max 100)
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: cursor
-          in: query
-          description: Cursor for pagination (returned from previous request)
-          required: false
-          schema:
-            type: string
-        - name: sortOrder
-          in: query
-          description: Order to sort results in
-          required: false
-          schema:
-            type: string
-            enum:
-              - asc
-              - desc
-            default: desc
-      security:
-        - BasicAuth: []
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UmaProviderListResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
         '500':
           description: Internal service error
           content:
@@ -8139,6 +8117,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
       requestBody:
         required: true
@@ -8259,6 +8238,7 @@ paths:
             A unique identifier for the request. If the same key is sent multiple times, the server will return the same response as the first request.
           schema:
             type: string
+            maxLength: 255
             example: <uuid>
         - name: Grid-Wallet-Signature
           in: header
@@ -8672,13 +8652,13 @@ paths:
 
         Card issuance is fee-bearing and cannot be reversed, so an `Idempotency-Key` header is required. Retries must carry the same key.
 
-        Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and `maxTransactionsPerDay` values set the card-specific caps on one transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Check the funding-source internal account's `cardCapabilities.supportsSpendLimits` before supplying either spend limit, and `cardCapabilities.supportsTransactionCountLimit` before supplying the transaction count limit. If the platform config sets the corresponding `cardConfigs` value, Grid enforces the lower of the card and platform caps. Amounts use the smallest unit of the card's currency.
+        Optional `maxSpendPerTransaction`, `maxSpendPerDay`, and `maxTransactionsPerDay` values set the card-specific caps on one transaction, on spend during one UTC calendar day, and on the number of transactions during one UTC calendar day. Check the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` before supplying either spend limit, and `cardCapabilities.supportsTransactionCountLimit` before supplying the transaction count limit. If the platform config sets the corresponding `cardConfigs` value, Grid enforces the lower of the card and platform caps. Amounts use the smallest unit of the card's currency.
 
         If the funding source is an Embedded Wallet internal account, the cardholder must authorize Grid to sign Spark token transactions for that card funding source by completing the delegated-key creation flow with `POST /auth/delegated-keys`. Until an active delegated key exists for that funding source, Authorization Decisioning cannot use it to fund card transactions.
 
         A platform may be limited to a maximum number of live cards. Once that limit is reached, further issuance is rejected with `CARD_LIMIT_REACHED` until a card is closed or Lightspark raises the limit. Cards in `CLOSED` status do not count toward the limit.
 
-        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.state_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails).
+        New cards start in `status: "PROCESSING"` while the card issuer provisions the card. The `card.status_change` webhook fires on each status transition, including the transition to `ACTIVE` (or to `CLOSED` with `statusReason: "ISSUER_REJECTED"` if provisioning fails).
       operationId: createCard
       tags:
         - Cards
@@ -8892,19 +8872,19 @@ paths:
 
         - `status` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible. Any other transition returns `409 INVALID_STATE_TRANSITION`.
         - `fundingSource`, when supplied, replaces the card's bound internal account. It must belong to the customer and be denominated in the card's currency. `fundingSource` cannot be supplied alongside `status: CLOSED`. On card programs where the card issuer makes authorization decisions, `fundingSource` cannot be combined with any `status` change, so send the changes as separate requests. On card programs where Grid makes the authorization decision, the combination remains valid for `status` changes other than `CLOSED`.
-        - `maxSpendPerTransaction`, when supplied, replaces the card-specific per-transaction cap. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card and platform values. The card's `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerTransaction` cannot be supplied alongside `status: CLOSED`.
+        - `maxSpendPerTransaction` sets the largest amount the card can authorize on a single transaction. An authorization for exactly the limit is allowed, and a later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Send a positive integer in the smallest unit of the card's currency (cents for USD) to set the limit, or null to remove it. If your platform config sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the card's `cardCapabilities.supportsSpendLimits` is true, and not together with `status: CLOSED`.
         - `maxSpendPerDay`, when supplied, replaces the card-specific cap on cumulative new spend during one UTC calendar day. Supply a positive integer in the smallest unit of the card's currency to set it or null to clear it. If the platform config sets `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. The card's `cardCapabilities.supportsSpendLimits` must be true. `maxSpendPerDay` cannot be supplied alongside `status: CLOSED`.
         - `maxTransactionsPerDay`, when supplied, replaces the card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Supply a positive integer to set it or null to clear it. If the platform config sets `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the card and platform values. Refunds, reversals, and authorization expiries do not restore capacity during the day. `maxTransactionsPerDay` requires the card's `cardCapabilities.supportsTransactionCountLimit` to be true and cannot be supplied alongside `status: CLOSED`.
 
         This endpoint is authenticated by the platform credential alone and returns `200` directly. It deliberately does not use Grid's 202 → signed-retry pattern: that pattern signs with the session key of a credential on the owning internal account, so it models actions taken *by* the end user on their own credentials or funds. Freezing or closing a card is routinely an action taken *about* a user and without them present - fraud response, offboarding, an ops-driven freeze - and requiring the cardholder's signature would make exactly those cases impossible. Operations that expose sensitive card data (`POST /cards/{id}/reveal`, 3DS password retrieval) are SCA-railed instead, because there the cardholder is the party being served.
 
         Effects:
-        - `status: FROZEN`: Authorization Decisioning declines new auths with `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
+        - `status: FROZEN`: Authorization Decisioning declines new auths with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing pulls and in-flight reconciliation continue — freezing does not pause the lifecycle of authorizations that already passed.
         - `status: ACTIVE`: normal authorization behavior resumes.
         - `status: CLOSED`: terminal close. The card transitions to `status: "CLOSED"` with `statusReason: "CLOSED_BY_PLATFORM"` and stays in the system for audit and reconciliation. All pending auths reconcile to a terminal state via the existing reconcile primitive. Inbound clearings received after close follow the standard force-post / late-presentment path — Lightspark absorbs the loss if a post-hoc pull on the now-unbound source fails. The funding source is detached. Refunds already in flight still complete because Lightspark holds the card-reserve keys.
         - `fundingSource` change: returns the updated card with the new binding and fires no webhook.
 
-        The `card.state_change` webhook fires on every successful `status` transition.
+        The `card.status_change` webhook fires on every successful `status` transition.
       operationId: updateCardById
       tags:
         - Cards
@@ -9059,6 +9039,119 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error501'
+  /cards/{id}/tokenize:
+    parameters:
+      - name: id
+        in: path
+        description: System-generated unique card identifier
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Add a card to a digital wallet
+      description: |-
+        Exchange the values your app received from Apple Pay, Google Pay, or Samsung Pay for the encrypted provisioning payload that completes adding the card to that wallet (in-app push provisioning). Call it from your backend inside the wallet SDK's credentials callback and hand the response straight back to the SDK.
+
+        The payload is encrypted to the wallet provider's keys, so neither your app nor your servers ever see card data. Do not store or log it; it is valid for one provisioning attempt.
+
+        Cardholders can always add a card to a wallet by typing its details in manually — that path needs nothing from you. This endpoint is for the in-app "Add to Wallet" button, which additionally requires approval from each wallet provider. See [Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
+        Only `ACTIVE` cards can be added. Every call is audit-logged with the requesting actor and the target wallet.
+      operationId: tokenizeCard
+      tags:
+        - Cards
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardTokenizationRequestOneOf'
+            examples:
+              applePay:
+                summary: Apple Pay
+                value:
+                  wallet: APPLE_PAY
+                  certificate: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM=
+                  nonce: MTIzNDU2Nzg=
+                  nonceSignature: c2lnbmF0dXJl
+              googlePay:
+                summary: Google Pay (Unified Push Provisioning)
+                value:
+                  wallet: GOOGLE_PAY
+                  walletAccountId: wallet-account-8f14e45f
+                  serverSessionId: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+                  opaquePaymentCardRequested: false
+              samsungPay:
+                summary: Samsung Pay
+                value:
+                  wallet: SAMSUNG_PAY
+                  walletAccountId: wallet-account-8f14e45f
+                  deviceId: device-3c59dc04
+      responses:
+        '200':
+          description: Provisioning payload minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardTokenizationResponseOneOf'
+              examples:
+                applePay:
+                  summary: Apple Pay
+                  value:
+                    wallet: APPLE_PAY
+                    applePay:
+                      activationData: YWN0aXZhdGlvbi1kYXRh
+                      encryptedPassData: ZW5jcnlwdGVkLXBhc3MtZGF0YQ==
+                      ephemeralPublicKey: ZXBoZW1lcmFsLXB1YmxpYy1rZXk=
+                googlePay:
+                  summary: Google Pay
+                  value:
+                    wallet: GOOGLE_PAY
+                    provisioningPayload: eyJjYXJkIjoiLi4uIn0=
+        '400':
+          description: Invalid input. The body does not match the request shape for its `wallet` (a required field is missing, or a field from another wallet's shape was supplied), or the wallet provider rejected the values (for example, an expired Apple nonce). Restart the add-to-wallet flow in the app to obtain fresh values.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden. The session has no attributable actor to audit the request against (for example, an impersonated dashboard session).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. `CARD_NOT_MUTABLE` when the card is `CLOSED`; `CONFLICT` when the card's `cardCapabilities.supportsDigitalWalletTokenization` is false or the card is not `ACTIVE`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+        '501':
+          description: Not implemented in this environment. Cards are not enabled for every Grid deployment; environments without a configured card issuer return `501 NOT_IMPLEMENTED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error501'
   /sandbox/cards/{id}/simulate/authorization:
     post:
       summary: Simulate a card authorization
@@ -9067,7 +9160,9 @@ paths:
 
         The decisioning outcome is controlled by the last three characters of `merchant.descriptor`:
 
-        | Suffix | Outcome | | ------ | ------- | | `002`  | Decline — `INSUFFICIENT_FUNDS` (the pull on the funding source fails) | | `003`  | Decline — `CARD_PAUSED` (intended to verify a frozen card refuses auths) | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
+        | Suffix | Outcome | | ------ | ------- | | `002`  | Declined, `cardDeclinedReason: INSUFFICIENT_FUNDS`. Sandbox only: production approves an underfunded authorization and resolves it as `EXCEPTION` when the pull fails | | `003`  | Declined, `cardDeclinedReason: CARD_NOT_ACTIVE`. Use against a `FROZEN` card to verify it refuses authorizations | | `005`  | Delayed pull (~30s) — exercises the `PENDING → CONFIRMED` path | | `006`  | Pull succeeds but the confirmation event reports `FAILED` — exercises the high-urgency `EXCEPTION` alert | | any other | Approved |
+
+        `merchant.descriptor` must be 1–25 characters — the width of the card network's acceptor-name field. A longer one is rejected with `400` `INVALID_INPUT`.
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardAuthorization
@@ -9872,7 +9967,7 @@ paths:
       description: |
         Simulate a merchant cancelling a card authorization before it settles — a hotel releasing a hold, or a store voiding a purchase that never went through. Use it to see how your integration handles an authorization that disappears without ever clearing.
         Send `amount` to reverse only part of the authorization, or leave it out to reverse all of it. The transaction must still be fully open: once any part of it has settled, it can no longer be reversed.
-        Grid processes the reversal in the background and sends a card transaction webhook once it lands, the same as the other simulators.
+        Grid processes the reversal in the background. A full reversal sets `status: VOIDED` and sends a `CARD_TRANSACTION.VOIDED` webhook. A partial reversal leaves the transaction `AUTHORIZED` with a smaller hold.
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardAuthorizationReversal
@@ -9953,7 +10048,7 @@ paths:
       description: |
         Simulate an authorization the merchant never followed through on, so the card network lets it lapse and releases the held funds. Use it to see how your integration handles a hold that quietly goes away instead of settling.
         The transaction must still be fully open: once any part of it has settled, it can no longer expire.
-        Grid processes the expiry in the background and sends a card transaction webhook once it lands, the same as the other simulators.
+        Grid processes the expiry in the background. Once it lands, the transaction has `status: VOIDED` and Grid sends a `CARD_TRANSACTION.VOIDED` webhook.
 
         Production returns `404` on this path.
       operationId: sandboxSimulateCardAuthorizationExpiry
@@ -9989,6 +10084,322 @@ paths:
                 $ref: '#/components/schemas/SandboxCardSimulationResponse'
         '400':
           description: Bad request - Invalid parameters, or the transaction is not an open authorization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/dispute_open:
+    post:
+      summary: Simulate opening a card dispute
+      description: |
+        Open a dispute against an existing settled card transaction in the sandbox environment, as the card issuer would when a cardholder files a claim. Creates the dispute with an `OPENED` event on its timeline. The card issuer offers no dispute simulator, so the sandbox delivers the same dispute record the issuer's webhook would.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardDisputeOpen
+      x-hidden: true
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the dispute is filed against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardDisputeOpenRequest'
+            examples:
+              fullDispute:
+                summary: Dispute the whole $15.00 settled transaction
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  reason: Merchandise not received
+              partialDispute:
+                summary: Dispute $4.00 of a larger settled transaction
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 400
+                  reason: Overcharged for one item
+      responses:
+        '202':
+          description: The dispute was opened.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+        '400':
+          description: Bad request - Invalid parameters, or the transaction has no settled clearings to dispute
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. Either the transaction already has an open dispute, or the simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/dispute_provisional_credit:
+    post:
+      summary: Simulate a provisional credit on a card dispute
+      description: |
+        Instruct a provisional credit to the cardholder on the transaction's open dispute, as the card issuer does while a dispute runs. The credit is paid from the card's funding source when the platform is enabled for dispute funding.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardDisputeProvisionalCredit
+      x-hidden: true
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the dispute is filed against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardDisputeCreditRequest'
+            examples:
+              fullProvisionalCredit:
+                summary: Credit the cardholder the whole $15.00 disputed amount
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 1500
+      responses:
+        '202':
+          description: The credit was instructed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+        '400':
+          description: Bad request - Invalid parameters, the transaction has no open dispute, or the amount exceeds the disputed amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/dispute_provisional_credit_reversal:
+    post:
+      summary: Simulate reversing a provisional credit on a card dispute
+      description: |
+        Instruct a previously granted provisional credit back from the cardholder on the transaction's open dispute, as the card issuer does when the cardholder is found liable.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardDisputeProvisionalCreditReversal
+      x-hidden: true
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the dispute is filed against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardDisputeCreditRequest'
+            examples:
+              fullReversal:
+                summary: Take back the whole $15.00 provisional credit
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  amount: 1500
+      responses:
+        '202':
+          description: The reversal was instructed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+        '400':
+          description: Bad request - Invalid parameters, the transaction has no open dispute, or the amount exceeds the disputed amount
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden - request was made with a production platform token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Card or card transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. The simulation targets a card in a program where the card issuer makes authorization decisions. These sandbox simulators support only card programs where Grid makes authorization decisions. This is a property of the card's program, so retrying will not help.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+  /sandbox/cards/{id}/simulate/dispute_close:
+    post:
+      summary: Simulate closing a card dispute
+      description: |
+        Close the transaction's open dispute with a disposition, as the card issuer does when the network process ends. A `PARTIALLY_WON` close is the one outcome whose split the caller names, with `recoveredAmount`; every other disposition recovers all of the disputed amount or none of it.
+
+        Production returns `404` on this path.
+      operationId: sandboxSimulateCardDisputeClose
+      x-hidden: true
+      tags:
+        - Sandbox
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the card the dispute is filed against.
+          schema:
+            type: string
+          example: Card:019542f5-b3e7-1d02-0000-000000000010
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxCardDisputeCloseRequest'
+            examples:
+              wonDispute:
+                summary: The cardholder wins the whole disputed amount
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  disposition: WON
+              partiallyWonDispute:
+                summary: The network gives back $4.00 of a $15.00 dispute
+                value:
+                  cardTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                  disposition: PARTIALLY_WON
+                  recoveredAmount: 400
+      responses:
+        '202':
+          description: The dispute was closed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxCardDisputeResponse'
+        '400':
+          description: Bad request - Invalid parameters, the transaction has no open dispute, or a `PARTIALLY_WON` close named a `recoveredAmount` that is not strictly between 0 and the disputed amount
           content:
             application/json:
               schema:
@@ -11696,6 +12107,12 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000001
                     platformCustomerId: 9f84e0c2a72c4fa
                     customerType: INDIVIDUAL
+                    agreementConsents:
+                      - type: LIGHTSPARK_END_USER_TERMS
+                        acceptedAt: '2025-07-21T17:30:00Z'
+                        ipAddress: 203.0.113.42
+                        termsVersion: '2025-10-13'
+                        acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -11725,11 +12142,12 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000002
                     platformCustomerId: 4b7c1e9d3f5a8e2
                     customerType: INDIVIDUAL
-                    endUserTermsConsent:
-                      acceptedAt: '2025-07-21T17:30:00Z'
-                      ipAddress: 203.0.113.42
-                      termsVersion: '2025-10-13'
-                      acceptanceMethod: CHECKBOX
+                    agreementConsents:
+                      - type: LIGHTSPARK_END_USER_TERMS
+                        acceptedAt: '2025-07-21T17:30:00Z'
+                        ipAddress: 203.0.113.42
+                        termsVersion: '2025-10-13'
+                        acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -11752,11 +12170,12 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000003
                     platformCustomerId: 7a2f9d4e1b8c3f5
                     customerType: BUSINESS
-                    endUserTermsConsent:
-                      acceptedAt: '2025-07-21T17:30:00Z'
-                      ipAddress: 203.0.113.42
-                      termsVersion: '2025-10-13'
-                      acceptanceMethod: CHECKBOX
+                    agreementConsents:
+                      - type: LIGHTSPARK_END_USER_TERMS
+                        acceptedAt: '2025-07-21T17:30:00Z'
+                        ipAddress: 203.0.113.42
+                        termsVersion: '2025-10-13'
+                        acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -11787,6 +12206,12 @@ webhooks:
                     id: Customer:019542f5-b3e7-1d02-0000-000000000004
                     platformCustomerId: 3c8e5f2a9d1b7e4
                     customerType: BUSINESS
+                    agreementConsents:
+                      - type: LIGHTSPARK_END_USER_TERMS
+                        acceptedAt: '2025-07-21T17:30:00Z'
+                        ipAddress: 203.0.113.42
+                        termsVersion: '2025-10-13'
+                        acceptanceMethod: CHECKBOX
                     region: US
                     currencies:
                       - USD
@@ -12275,7 +12700,7 @@ webhooks:
     post:
       summary: Card transaction
       description: |
-        Webhook that is called on every lifecycle update of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when the authorization is declined (`CARD_TRANSACTION.DECLINED`), and when a pull or confirmation fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
+        Webhook that is called on every lifecycle update of a card `CardTransaction`. Fires when an authorization is approved (`CARD_TRANSACTION.AUTHORIZED`), as clearings settle against it (`CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`), when the authorization is declined (`CARD_TRANSACTION.DECLINED`), when an authorization is fully reversed or expires (`CARD_TRANSACTION.VOIDED`), and when a transaction settles to the card network but the funding-source pull fails (`CARD_TRANSACTION.EXCEPTION`). The payload carries the full `CardTransaction` resource.
 
         A merchant return is its own `CardTransaction` row (`direction: CREDIT`) linked to the purchase via `originalTransactionId`, and fires its own `CARD_TRANSACTION.*` deliveries on that row — the purchase row is not re-fired for the return.
 
@@ -12318,6 +12743,7 @@ webhooks:
                     issuerTransactionToken: lithic_txn_b81c2a4f
                     status: AUTHORIZED
                     direction: DEBIT
+                    description: BLUE BOTTLE COFFEE SF
                     merchant:
                       descriptor: BLUE BOTTLE COFFEE SF
                       mcc: '5814'
@@ -12348,6 +12774,7 @@ webhooks:
                     issuerTransactionToken: lithic_txn_b81c2a4f
                     status: SETTLED
                     direction: DEBIT
+                    description: BLUE BOTTLE COFFEE SF
                     merchant:
                       descriptor: BLUE BOTTLE COFFEE SF
                       mcc: '5814'
@@ -12386,6 +12813,7 @@ webhooks:
                     status: SETTLED
                     direction: CREDIT
                     originalTransactionId: Transaction:019542f5-b3e7-1d02-0000-000000000100
+                    description: BLUE BOTTLE COFFEE SF
                     merchant:
                       descriptor: BLUE BOTTLE COFFEE SF
                       mcc: '5814'
@@ -12409,7 +12837,7 @@ webhooks:
                     createdAt: '2026-05-10T09:15:00Z'
                     updatedAt: '2026-05-10T09:15:00Z'
               declined:
-                summary: Authorization declined
+                summary: Authorization declined for insufficient funds
                 value:
                   id: Webhook:019542f5-b3e7-1d02-0000-000000000044
                   type: CARD_TRANSACTION.DECLINED
@@ -12422,7 +12850,9 @@ webhooks:
                     platformCustomerId: 18d3e5f7b4a9c2
                     issuerTransactionToken: lithic_txn_d41a7f02
                     status: DECLINED
+                    cardDeclinedReason: INSUFFICIENT_FUNDS
                     direction: DEBIT
+                    description: UBER EATS
                     merchant:
                       descriptor: UBER EATS
                       mcc: '5812'
@@ -12438,6 +12868,37 @@ webhooks:
                     authorizedAt: '2026-05-09T16:10:00Z'
                     createdAt: '2026-05-09T16:10:00Z'
                     updatedAt: '2026-05-09T16:10:00Z'
+              voided:
+                summary: Authorization fully reversed before clearing
+                value:
+                  id: Webhook:019542f5-b3e7-1d02-0000-000000000045
+                  type: CARD_TRANSACTION.VOIDED
+                  timestamp: '2026-05-09T16:20:00Z'
+                  data:
+                    type: CARD
+                    id: Transaction:019542f5-b3e7-1d02-0000-000000000103
+                    cardId: Card:019542f5-b3e7-1d02-0000-000000000010
+                    customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+                    platformCustomerId: 18d3e5f7b4a9c2
+                    issuerTransactionToken: lithic_txn_e52b8c13
+                    status: VOIDED
+                    direction: DEBIT
+                    description: HOTEL AUTHORIZATION
+                    merchant:
+                      descriptor: HOTEL AUTHORIZATION
+                      mcc: '7011'
+                      country: US
+                    authorizedAmount:
+                      amount: 0
+                      currency:
+                        code: USD
+                        name: United States Dollar
+                        symbol: $
+                        decimals: 2
+                    accountId: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
+                    authorizedAt: '2026-05-09T15:50:00Z'
+                    createdAt: '2026-05-09T15:50:00Z'
+                    updatedAt: '2026-05-09T16:20:00Z'
               exception:
                 summary: Settled to the network but the funding-source pull failed
                 value:
@@ -12453,6 +12914,7 @@ webhooks:
                     issuerTransactionToken: lithic_txn_c92d3b5a
                     status: EXCEPTION
                     direction: DEBIT
+                    description: UBER EATS
                     merchant:
                       descriptor: UBER EATS
                       mcc: '5812'
@@ -12871,7 +13333,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: Platform-level cap on a single transaction for every card whose authorization decisions are made by Grid. The value is interpreted in the smallest unit of each card's currency. Grid enforces the lower of this cap and the card's configured `maxSpendPerTransaction`; null means no platform-level cap. The cap applies to existing cards and to cards issued later. Provider-decided card programs are unaffected.
+          description: The largest amount any of your cards can authorize on a single transaction, in the smallest unit of each card's currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. It covers every card Grid makes authorization decisions for, both those you have already issued and any you issue later, and does not apply to cards whose issuer makes the decisions. Where a card sets its own `maxSpendPerTransaction`, the lower of the two applies. `null` means no platform-wide limit.
           example: 10000
         maxSpendPerDay:
           anyOf:
@@ -13029,10 +13491,14 @@ components:
           example: PlatformConfig:019542f5-b3e7-1d02-0000-000000000003
         umaDomain:
           type: string
+          pattern: ^[^\u0000-\u001f\u007f]*$
+          maxLength: 200
           description: UMA domain for this platform
           example: platform.uma.domain
         proxyUmaSubdomain:
           type: string
+          pattern: ^[^\u0000-\u001f\u007f]*$
+          maxLength: 200
           description: The subdomain that incoming requests will be proxied to
           example: platform
         webhookEndpoint:
@@ -13089,15 +13555,9 @@ components:
     Error401:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 401
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -13118,7 +13578,7 @@ components:
             - WALLET_SIGNATURE_BODY_MISMATCH
             - WALLET_SIGNATURE_INVALID
             - REQUEST_ID_MISSING
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -13128,15 +13588,9 @@ components:
     Error500:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 500
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -13147,7 +13601,7 @@ components:
           enum:
             - GRID_SWITCH_ERROR
             - INTERNAL_ERROR
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -13159,6 +13613,8 @@ components:
       properties:
         umaDomain:
           type: string
+          pattern: ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$
+          maxLength: 200
           example: mycompany.com
         webhookEndpoint:
           type: string
@@ -13241,22 +13697,16 @@ components:
     Error400:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 400
-          description: HTTP status code
         code:
           type: string
           description: |
             | Error Code | Description |
             |------------|-------------|
             | INVALID_INPUT | Invalid input provided |
-            | END_USER_TERMS_VERSION_NOT_FOUND | The submitted End User Terms version is not supported |
+            | END_USER_TERMS_VERSION_NOT_FOUND | The submitted version is not supported for the agreement it was sent for |
             | MISSING_MANDATORY_USER_INFO | Required customer information is missing |
             | INVITATION_ALREADY_CLAIMED | Invitation has already been claimed |
             | INVITATIONS_NOT_CONFIGURED | Invitations are not configured |
@@ -13298,6 +13748,23 @@ components:
             | CARDHOLDER_KYC_NOT_APPROVED | The cardholder's KYC status is not `APPROVED`, so a card cannot be issued |
             | TRANSACTION_SIZE_LIMIT_EXCEEDED | The requested amount exceeds the configured maximum single-transaction amount for this trade corridor or withdrawal currency |
             | EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED | The destination account's ownership must be verified before this transfer can proceed |
+            | INSUFFICIENT_FUNDS | Insufficient funds for this operation |
+            | QUOTE_EXPIRED | The quote has expired; request a new quote |
+            | QUOTE_RATE_UNAVAILABLE | No exchange rate is available for this corridor right now |
+            | STABLECOIN_AMOUNT_NOT_REPRESENTABLE | The amount cannot be represented at the token's precision |
+            | STABLECOIN_BURN_SOURCE_NOT_SUPPORTED | The burn source account cannot be used for this operation |
+            | STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED | Linking the external account for stablecoin operations failed |
+            | STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED | The external account needs a link method before it can be used |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED | The external account is not linked for stablecoin operations |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED | This external account type is not supported for stablecoin operations |
+            | STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_FAILED | The provider could not link the external account |
+            | STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_REQUIRED | The external account must be linked with the provider first |
+            | STABLECOIN_GRID_OPERATIONS_NOT_ENABLED | The stablecoin is not enabled for Grid operations |
+            | STABLECOIN_NOT_PROVISIONED | The stablecoin is not provisioned for issuer operations |
+            | STABLECOIN_OPERATION_NOT_SUPPORTED | The stablecoin does not support this operation |
+            | STABLECOIN_PROVIDER_ERROR | The stablecoin provider rejected the operation |
+            | STABLECOIN_PROVIDER_SOURCE_NOT_LINKED | The provider source account is not linked |
+            | STABLECOIN_VERIFICATION_FAILED | The stablecoin could not be verified with the provider |
           enum:
             - INVALID_INPUT
             - END_USER_TERMS_VERSION_NOT_FOUND
@@ -13342,7 +13809,24 @@ components:
             - CARDHOLDER_KYC_NOT_APPROVED
             - TRANSACTION_SIZE_LIMIT_EXCEEDED
             - EXTERNAL_ACCOUNT_VERIFICATION_REQUIRED
-        message:
+            - INSUFFICIENT_FUNDS
+            - QUOTE_EXPIRED
+            - QUOTE_RATE_UNAVAILABLE
+            - STABLECOIN_AMOUNT_NOT_REPRESENTABLE
+            - STABLECOIN_BURN_SOURCE_NOT_SUPPORTED
+            - STABLECOIN_EXTERNAL_ACCOUNT_LINK_FAILED
+            - STABLECOIN_EXTERNAL_ACCOUNT_LINK_METHOD_REQUIRED
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_LINKED
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_SUPPORTED
+            - STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_FAILED
+            - STABLECOIN_EXTERNAL_ACCOUNT_PROVIDER_LINK_REQUIRED
+            - STABLECOIN_GRID_OPERATIONS_NOT_ENABLED
+            - STABLECOIN_NOT_PROVISIONED
+            - STABLECOIN_OPERATION_NOT_SUPPORTED
+            - STABLECOIN_PROVIDER_ERROR
+            - STABLECOIN_PROVIDER_SOURCE_NOT_LINKED
+            - STABLECOIN_VERIFICATION_FAILED
+        reason:
           type: string
           description: Error message
         details:
@@ -13358,15 +13842,9 @@ components:
     Error501:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 501
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -13374,10 +13852,12 @@ components:
             |------------|-------------|
             | UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY | Unrecognized mandatory payee data key |
             | NOT_IMPLEMENTED | Feature not implemented |
+            | UNRECOGNIZED_MANDATORY_COUNTERPARTY_DATA_KEY | The counterparty requires a data key Grid does not recognise |
           enum:
             - UNRECOGNIZED_MANDATORY_PAYEE_DATA_KEY
             - NOT_IMPLEMENTED
-        message:
+            - UNRECOGNIZED_MANDATORY_COUNTERPARTY_DATA_KEY
+        reason:
           type: string
           description: Error message
         details:
@@ -13524,20 +14004,22 @@ components:
         - BUSINESS
       description: Whether the customer is an individual or a business entity
       example: INDIVIDUAL
-    EndUserTermsAcceptanceMethod:
+    AgreementAcceptanceMethod:
       type: string
-      description: Method the customer used to affirmatively accept the End User Terms.
+      description: Method the customer used to affirmatively accept an agreement.
       enum:
         - CHECKBOX
         - CLICK_TO_ACCEPT
       example: CHECKBOX
-    EndUserTermsConsentRequest:
+    EndUserTermsConsent:
       type: object
+      deprecated: true
       required:
         - acceptedAt
         - ipAddress
         - termsVersion
         - acceptanceMethod
+      description: Deprecated; use `agreementConsents` instead, which records acceptance of each agreement separately. Reported only for a customer whose acceptance predates that field, and always as the `LIGHTSPARK_END_USER_TERMS` agreement.
       properties:
         acceptedAt:
           type: string
@@ -13553,10 +14035,49 @@ components:
           description: Version identifier of the accepted Grid End User Terms.
           example: V1
         acceptanceMethod:
-          $ref: '#/components/schemas/EndUserTermsAcceptanceMethod'
-    EndUserTermsConsent:
+          $ref: '#/components/schemas/AgreementAcceptanceMethod'
+    AgreementType:
+      type: string
+      description: 'Identifies which Grid agreement a consent record or document refers to. Values are stable identifiers: a document''s hosted URL or version may change, but its type does not. Accepting one agreement never implies acceptance of another, even when two agreements share a hosted page.'
+      enum:
+        - LIGHTSPARK_END_USER_TERMS
+        - LIGHTSPARK_E_SIGN_CONSENT
+        - LIGHTSPARK_PRIVACY_POLICY
+        - LEAD_E_SIGN_CONSENT
+        - LEAD_ACCOUNTHOLDER_AGREEMENT
+        - LEAD_PRIVACY_POLICY
+        - LEAD_CARDHOLDER_AGREEMENT
+      example: LIGHTSPARK_END_USER_TERMS
+    AgreementConsentRequest:
+      type: object
+      required:
+        - type
+        - acceptedAt
+        - ipAddress
+        - termsVersion
+        - acceptanceMethod
+      properties:
+        type:
+          $ref: '#/components/schemas/AgreementType'
+        acceptedAt:
+          type: string
+          format: date-time
+          description: Date and time when the customer accepted this agreement. Must include a timezone offset and must not be in the future.
+        ipAddress:
+          type: string
+          maxLength: 45
+          description: IP address of the device the customer used when accepting this agreement.
+          example: 198.51.100.24
+        termsVersion:
+          type: string
+          maxLength: 64
+          description: Version identifier of the accepted agreement, as returned for this type by the agreement documents endpoint. A version is scoped to its type; a version valid for one agreement is not valid for another.
+          example: '2025-10-13'
+        acceptanceMethod:
+          $ref: '#/components/schemas/AgreementAcceptanceMethod'
+    AgreementConsent:
       allOf:
-        - $ref: '#/components/schemas/EndUserTermsConsentRequest'
+        - $ref: '#/components/schemas/AgreementConsentRequest'
     ContactVerificationStatus:
       type: string
       description: Status of an individual contact-verification channel (email or phone). `PENDING` means verification is required but not yet completed; `VERIFIED` means the channel has been confirmed.
@@ -13595,8 +14116,17 @@ components:
         customerType:
           $ref: '#/components/schemas/CustomerType'
         endUserTermsConsent:
-          $ref: '#/components/schemas/EndUserTermsConsent'
-          description: The customer's recorded acceptance of the End User Terms. Omitted until acceptance has been recorded.
+          deprecated: true
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/EndUserTermsConsent'
+          description: Deprecated; read `agreementConsents` instead. Mirrors the customer's `LIGHTSPARK_END_USER_TERMS` acceptance when one is on file, and is omitted otherwise.
+        agreementConsents:
+          type: array
+          readOnly: true
+          description: The customer's recorded agreement acceptances, one entry per accepted type holding that type's most recent acceptance. Omitted when the customer has not accepted any agreement yet.
+          items:
+            $ref: '#/components/schemas/AgreementConsent'
         region:
           type: string
           description: Country code (ISO 3166-1 alpha-2) representing the customer's regional identity and regulatory jurisdiction.
@@ -13796,6 +14326,7 @@ components:
       properties:
         sourceOfFundsCategories:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/IndividualSourceOfFundsCategory'
           description: Structured source-of-funds categories (FLOW of funds for this account).
@@ -13803,10 +14334,12 @@ components:
             - SALARY
         sourceOfFundsOtherDescription:
           type: string
+          maxLength: 500
           description: Free-form description of the customer's source of funds. Required when `sourceOfFundsCategories` includes `OTHER`; otherwise omitted.
           example: Contest winnings
         sourceOfWealthCategories:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/SourceOfWealthCategory'
           description: Structured source-of-wealth categories (STOCK — origin of accumulated wealth).
@@ -13815,12 +14348,14 @@ components:
             - INVESTMENTS
         sourceOfWealthOtherDescription:
           type: string
+          maxLength: 500
           description: Free-form description of the customer's source of wealth. Required when `sourceOfWealthCategories` includes `OTHER`; otherwise omitted.
           example: Royalty income from published works
         purposeOfAccount:
           $ref: '#/components/schemas/PurposeOfAccount'
         purposeOfAccountOtherDescription:
           type: string
+          maxLength: 500
           description: Free-form description of the customer's intended purpose for the Grid account. Required when `purposeOfAccount` is `OTHER`; otherwise omitted.
           example: Household budgeting between spouses
         expectedMonthlyTransactionCount:
@@ -13847,6 +14382,7 @@ components:
               $ref: '#/components/schemas/KycStatus'
             fullName:
               type: string
+              maxLength: 250
               description: Individual's full name
               example: John Michael Doe
             birthDate:
@@ -13864,6 +14400,7 @@ components:
               $ref: '#/components/schemas/IdentificationType'
             identifier:
               type: string
+              maxLength: 100
               writeOnly: true
               description: The individual's identification number, required to onboard them as a US account holder. Only SSN (format `###-##-####`) and ITIN are currently accepted; other identification types are rejected. Write-only — never returned in customer responses.
               example: 123-45-6789
@@ -13945,10 +14482,12 @@ components:
       properties:
         legalName:
           type: string
+          maxLength: 250
           description: Legal name of the business
           example: Acme Corporation, Inc.
         doingBusinessAs:
           type: string
+          maxLength: 250
           description: Trade name or DBA name of the business, if different from the legal name
           example: Acme
         country:
@@ -13957,6 +14496,7 @@ components:
           example: US
         registrationNumber:
           type: string
+          maxLength: 100
           description: Business registration number
           example: '5523041'
         incorporatedOn:
@@ -13968,6 +14508,7 @@ components:
           $ref: '#/components/schemas/EntityType'
         taxId:
           type: string
+          maxLength: 100
           description: Tax identification number
           example: 47-1234567
         countriesOfOperation:
@@ -13983,6 +14524,7 @@ components:
           $ref: '#/components/schemas/PurposeOfAccount'
         sourceOfFunds:
           type: string
+          maxLength: 500
           description: The primary source of funds for the business
           example: Funds derived from customer payments for software services
         expectedMonthlyTransactionCount:
@@ -14211,14 +14753,17 @@ components:
       properties:
         firstName:
           type: string
+          maxLength: 250
           description: First name of the individual
           example: Jane
         middleName:
           type: string
+          maxLength: 250
           description: Middle name of the individual
           example: Marie
         lastName:
           type: string
+          maxLength: 250
           description: Last name of the individual
           example: Smith
         birthDate:
@@ -14233,6 +14778,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           description: Email address of the individual
           example: jane.smith@acmecorp.com
         phoneNumber:
@@ -14246,6 +14792,7 @@ components:
           $ref: '#/components/schemas/IdentificationType'
         identifier:
           type: string
+          maxLength: 100
           description: The identification number or value
           example: 123-45-6789
         countryOfIssuance:
@@ -14344,15 +14891,9 @@ components:
     Error405:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 405
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14361,7 +14902,7 @@ components:
             | METHOD_NOT_ALLOWED | The HTTP method is not supported for this endpoint |
           enum:
             - METHOD_NOT_ALLOWED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -14394,6 +14935,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           description: Email address for the customer. **Required in regions that verify the email address before identity verification** (e.g. the EU); optional otherwise.
           example: john.doe@example.com
         phoneNumber:
@@ -14406,8 +14948,16 @@ components:
           description: Optional UMA address identifier. If not provided during customer creation, one will be generated by the system. If provided during customer update, the UMA address will be updated to the provided value. This is an optional identifier to route payments to the customer. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
         endUserTermsConsent:
-          $ref: '#/components/schemas/EndUserTermsConsentRequest'
-          description: Evidence that the customer accepted the Grid End User Terms. Unregulated platforms must provide this before initiating customer-scoped transactions; those transactions fail until consent is recorded. This can be supplied during customer creation or in a later customer update.
+          deprecated: true
+          allOf:
+            - $ref: '#/components/schemas/EndUserTermsConsent'
+          description: Deprecated; send `agreementConsents` instead. Supplying this records acceptance of the Lightspark End User Terms, equivalent to a single `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying both fields in one request is rejected.
+        agreementConsents:
+          type: array
+          maxItems: 7
+          description: Evidence that the customer accepted Grid agreements, at most one entry per type. Unregulated platforms must record acceptance of the Lightspark End User Terms before initiating customer-scoped transactions; those transactions fail until that consent is recorded. Consents can be supplied during customer creation or in a later customer update.
+          items:
+            $ref: '#/components/schemas/AgreementConsentRequest'
     IndividualCustomerCreateRequest:
       title: Individual Customer Create Request
       allOf:
@@ -14424,10 +14974,12 @@ components:
       properties:
         legalName:
           type: string
+          maxLength: 250
           description: Legal name of the business
           example: Acme Corporation, Inc.
         doingBusinessAs:
           type: string
+          maxLength: 250
           description: Trade name or DBA name of the business, if different from the legal name
           example: Acme
         country:
@@ -14436,6 +14988,7 @@ components:
           example: US
         registrationNumber:
           type: string
+          maxLength: 100
           description: Business registration number
           example: '5523041'
         incorporatedOn:
@@ -14447,6 +15000,7 @@ components:
           $ref: '#/components/schemas/EntityType'
         taxId:
           type: string
+          maxLength: 100
           description: Tax identification number
           example: 47-1234567
         countriesOfOperation:
@@ -14462,6 +15016,7 @@ components:
           $ref: '#/components/schemas/PurposeOfAccount'
         sourceOfFunds:
           type: string
+          maxLength: 500
           description: The primary source of funds for the business
           example: Funds derived from customer payments for software services
         expectedMonthlyTransactionCount:
@@ -14555,15 +15110,9 @@ components:
     Error409:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 409
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14584,6 +15133,14 @@ components:
             | CARD_LIMIT_REACHED | The platform has reached the maximum number of live cards it may hold, or the cardholder already holds a card and the platform is limited to one per cardholder. Closing a card frees its slot; contact Lightspark to raise the limit |
             | STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE | Grid enablement can only be requested while the stablecoin is `NOT_ENABLED` (a repeat request while already `PENDING_APPROVAL` succeeds). `ENABLING`, `ENABLED` and `DISABLED` are driven by Lightspark and cannot be requested |
             | CONFLICT | Generic resource-state conflict. Returned, for example, when `platformCustomerId` on a customer create call collides with an existing active customer on the same platform |
+            | DOCUMENT_ALREADY_EXISTS | A document of this type already exists for the holder; replace it with PUT |
+            | DUPLICATE_EXTERNAL_ACCOUNT | An equivalent external account already exists |
+            | DUPLICATE_PAY_REQUEST | A pay request with this idempotency key already exists |
+            | SMS_OTP_CREDENTIAL_SET_CHANGED | The SMS_OTP credential set changed while the request was in flight |
+            | SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS | The phone number is already associated with an SMS_OTP credential |
+            | STABLECOIN_SYMBOL_ALREADY_EXISTS | A stablecoin with this symbol is already registered |
+            | STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS | A stablecoin with this token identifier is already registered |
+            | WALLET_NOT_PROVISIONED | The embedded wallet has not been provisioned |
           enum:
             - TRANSACTION_NOT_PENDING_PLATFORM_APPROVAL
             - TRANSACTION_NOT_CANCELLABLE
@@ -14600,7 +15157,15 @@ components:
             - CARD_LIMIT_REACHED
             - STABLECOIN_GRID_ENABLEMENT_NOT_REQUESTABLE
             - CONFLICT
-        message:
+            - DOCUMENT_ALREADY_EXISTS
+            - DUPLICATE_EXTERNAL_ACCOUNT
+            - DUPLICATE_PAY_REQUEST
+            - SMS_OTP_CREDENTIAL_SET_CHANGED
+            - SMS_OTP_PHONE_NUMBER_ALREADY_EXISTS
+            - STABLECOIN_SYMBOL_ALREADY_EXISTS
+            - STABLECOIN_TOKEN_IDENTIFIER_ALREADY_EXISTS
+            - WALLET_NOT_PROVISIONED
+        reason:
           type: string
           description: Error message
         details:
@@ -14610,15 +15175,9 @@ components:
     Error404:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 404
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14634,6 +15193,19 @@ components:
             | REFERENCE_NOT_FOUND | Reference not found |
             | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
             | STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND | Stablecoin provider account link not found |
+            | ACCOUNT_NOT_FOUND | Account not found |
+            | AUTH_METHOD_NOT_FOUND | Authentication credential not found |
+            | CUSTOMER_NOT_FOUND | Customer not found |
+            | DOCUMENT_HOLDER_NOT_FOUND | Document holder not found |
+            | NOT_FOUND | The requested resource was not found |
+            | PAYMENT_URL_NOT_FOUND | Payment URL not found |
+            | PLATFORM_NOT_FOUND | Platform not found |
+            | REQUEST_NOT_FOUND | Pending request not found |
+            | SESSION_NOT_FOUND | Session not found |
+            | STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND | Stablecoin external account not found |
+            | STABLECOIN_NOT_FOUND | Stablecoin not found |
+            | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
+            | VERIFICATION_NOT_FOUND | Verification not found |
           enum:
             - TRANSACTION_NOT_FOUND
             - INVITATION_NOT_FOUND
@@ -14645,7 +15217,20 @@ components:
             - REFERENCE_NOT_FOUND
             - UMA_NOT_FOUND
             - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
-        message:
+            - ACCOUNT_NOT_FOUND
+            - AUTH_METHOD_NOT_FOUND
+            - CUSTOMER_NOT_FOUND
+            - DOCUMENT_HOLDER_NOT_FOUND
+            - NOT_FOUND
+            - PAYMENT_URL_NOT_FOUND
+            - PLATFORM_NOT_FOUND
+            - REQUEST_NOT_FOUND
+            - SESSION_NOT_FOUND
+            - STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND
+            - STABLECOIN_NOT_FOUND
+            - STABLECOIN_OPERATION_NOT_FOUND
+            - VERIFICATION_NOT_FOUND
+        reason:
           type: string
           description: Error message
         details:
@@ -14655,15 +15240,9 @@ components:
     Error410:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 410
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14672,7 +15251,7 @@ components:
             | CUSTOMER_DELETED | Customer has been permanently deleted |
           enum:
             - CUSTOMER_DELETED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -14700,6 +15279,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           description: Email address for the customer. For customers with tied Embedded Wallet internal accounts, changing this value also updates every tied `EMAIL_OTP` credential across all tied Embedded Wallets.
           example: john.doe@example.com
         phoneNumber:
@@ -14712,8 +15292,16 @@ components:
           description: Optional UMA address identifier. If provided, the customer's UMA address will be updated. This is an optional identifier to route payments to the customer.
           example: $john.doe@uma.domain.com
         endUserTermsConsent:
-          $ref: '#/components/schemas/EndUserTermsConsentRequest'
-          description: Evidence that the customer accepted the Grid End User Terms. Unregulated platforms must provide this before initiating customer-scoped transactions; those transactions fail until consent is recorded.
+          deprecated: true
+          allOf:
+            - $ref: '#/components/schemas/EndUserTermsConsent'
+          description: Deprecated; send `agreementConsents` instead. Supplying this records acceptance of the Lightspark End User Terms, equivalent to a single `agreementConsents` entry of type `LIGHTSPARK_END_USER_TERMS`. Supplying both fields in one request is rejected.
+        agreementConsents:
+          type: array
+          maxItems: 7
+          description: Evidence that the customer accepted Grid agreements, at most one entry per type. Supplying this records additional acceptances; it never withdraws or replaces evidence already recorded for other types. Omitting the field leaves recorded consents unchanged.
+          items:
+            $ref: '#/components/schemas/AgreementConsentRequest'
     IndividualCustomerUpdateRequest:
       title: Individual Customer Update Request
       allOf:
@@ -14758,15 +15346,9 @@ components:
     Error424:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 424
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -14777,24 +15359,56 @@ components:
             | NO_COMPATIBLE_UMA_VERSION | No compatible UMA version |
             | LNURLP_REQUEST_FAILED | LNURLP request failed |
             | EMAIL_OTP_CREDENTIAL_SYNC_FAILED | Failed to update one or more tied EMAIL_OTP credentials |
+            | SMS_OTP_CREDENTIAL_SYNC_FAILED | One or more tied SMS_OTP credentials could not be updated |
           enum:
             - PAYREQ_REQUEST_FAILED
             - COUNTERPARTY_PUBKEY_FETCH_ERROR
             - NO_COMPATIBLE_UMA_VERSION
             - LNURLP_REQUEST_FAILED
             - EMAIL_OTP_CREDENTIAL_SYNC_FAILED
-        message:
+            - SMS_OTP_CREDENTIAL_SYNC_FAILED
+        reason:
           type: string
           description: Error message
         details:
           type: object
           description: Additional error details
           additionalProperties: true
+    AgreementDocument:
+      type: object
+      required:
+        - type
+        - version
+        - url
+      properties:
+        type:
+          $ref: '#/components/schemas/AgreementType'
+        version:
+          type: string
+          description: Current version identifier of this agreement. Supply it as `termsVersion` when recording the customer's acceptance. Versions are independent per type.
+          example: '2025-10-13'
+        url:
+          type: string
+          format: uri
+          description: URL where Grid hosts this version of the agreement. Platform-specific agreements resolve to a URL for the authenticated platform.
+          example: https://www.lightspark.com/legal/grid/enduserterms
+    AgreementDocumentListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          description: Every agreement Grid supports, one entry per type. The list is a catalog of available agreements, not a list of the agreements a given customer is required to accept.
+          items:
+            $ref: '#/components/schemas/AgreementDocument'
     EndUserTerms:
       type: object
+      deprecated: true
       required:
         - version
         - url
+      description: Deprecated; read the agreement documents list instead, which reports every agreement Grid supports rather than the End User Terms alone.
       properties:
         version:
           type: string
@@ -15199,15 +15813,9 @@ components:
     Error423:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 423
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -15216,7 +15824,7 @@ components:
             | ACCOUNT_LOCKED | The customer's login is temporarily locked (or suspended) after too many failed attempts. Inspect `details.lockedUntil` for when the customer may retry, and `details.failedAttempts` for the current count. |
           enum:
             - ACCOUNT_LOCKED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -15329,15 +15937,9 @@ components:
     Error429:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 429
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -15348,7 +15950,7 @@ components:
           enum:
             - RATE_LIMITED
             - DAILY_VOLUME_LIMIT_EXCEEDED
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -18304,6 +18906,60 @@ components:
               type: string
               description: Unique reference code that must be included with the payment to properly credit it
               example: UMA-Q12345-REF
+    TryAccountInfoBase:
+      type: object
+      required:
+        - accountType
+        - iban
+        - bankName
+      properties:
+        accountType:
+          type: string
+          enum:
+            - TRY_ACCOUNT
+        iban:
+          type: string
+          description: Turkish IBAN (26 characters, starting with TR)
+          example: TR330006100519786457841326
+          minLength: 26
+          maxLength: 26
+          pattern: ^TR[0-9]{2}[0-9A-Z]{22}$
+        bankName:
+          type: string
+          description: The name of the bank. Must be one of the `bankName` values `GET /discoveries` returns for this country and currency. Send it exactly as returned; any other name is rejected.
+          minLength: 1
+          maxLength: 255
+          example: <bankName from GET /discoveries>
+      example:
+        accountType: TRY_ACCOUNT
+        iban: TR330006100519786457841326
+        bankName: <bankName from GET /discoveries>
+    TryAccountInfo:
+      allOf:
+        - $ref: '#/components/schemas/TryAccountInfoBase'
+        - type: object
+          required:
+            - paymentRails
+          properties:
+            paymentRails:
+              type: array
+              items:
+                type: string
+                enum:
+                  - BANK_TRANSFER
+    PaymentTryAccountInfo:
+      title: TRY Account
+      allOf:
+        - $ref: '#/components/schemas/BasePaymentAccountInfo'
+        - $ref: '#/components/schemas/TryAccountInfo'
+        - type: object
+          required:
+            - reference
+          properties:
+            reference:
+              type: string
+              description: Unique reference code that must be included with the payment to properly credit it
+              example: UMA-Q12345-REF
     PaymentInstructions:
       type: object
       required:
@@ -18359,6 +19015,7 @@ components:
             - $ref: '#/components/schemas/PaymentSwiftAccountInfo'
             - $ref: '#/components/schemas/PaymentCnyAccountInfo'
             - $ref: '#/components/schemas/PaymentIlsAccountInfo'
+            - $ref: '#/components/schemas/PaymentTryAccountInfo'
             - $ref: '#/components/schemas/PaymentSparkWalletInfo'
             - $ref: '#/components/schemas/PaymentLightningInvoiceInfo'
             - $ref: '#/components/schemas/PaymentSolanaWalletInfo'
@@ -18424,6 +19081,7 @@ components:
               SWIFT_ACCOUNT: '#/components/schemas/PaymentSwiftAccountInfo'
               CNY_ACCOUNT: '#/components/schemas/PaymentCnyAccountInfo'
               ILS_ACCOUNT: '#/components/schemas/PaymentIlsAccountInfo'
+              TRY_ACCOUNT: '#/components/schemas/PaymentTryAccountInfo'
     SweepRuleDestination:
       title: Sweep Rule Destination
       type: object
@@ -18502,13 +19160,19 @@ components:
       description: Actions supported by the card program associated with this resource.
       required:
         - supportsSpendLimits
+        - supportsSpendLimitsAtIssuance
         - supportsTransactionCountLimit
         - supports3dSecurePassword
         - supportsPanReveal
+        - supportsDigitalWalletTokenization
       properties:
         supportsSpendLimits:
           type: boolean
-          description: Whether cards in this program accept `maxSpendPerTransaction` and `maxSpendPerDay`.
+          description: Whether a card in this program can have `maxSpendPerTransaction` and `maxSpendPerDay` at all. On card programs where the card issuer makes authorization decisions, these limits can only be set after issuance through `PATCH /cards/{id}`. Check `supportsSpendLimitsAtIssuance` to determine whether you can supply them when issuing a card.
+          example: true
+        supportsSpendLimitsAtIssuance:
+          type: boolean
+          description: Whether `maxSpendPerTransaction` and `maxSpendPerDay` may be supplied on `POST /cards`. This is true for card programs where Grid makes the authorization decision and false for card programs where the card issuer makes authorization decisions.
           example: true
         supportsTransactionCountLimit:
           type: boolean
@@ -18521,6 +19185,10 @@ components:
         supportsPanReveal:
           type: boolean
           description: Whether cards in this program can be revealed through `POST /cards/{id}/reveal`.
+          example: true
+        supportsDigitalWalletTokenization:
+          type: boolean
+          description: Whether cards in this program can be added to Apple Pay, Google Pay, or Samsung Pay from your app through `POST /cards/{id}/tokenize`. Manual entry into a wallet works regardless of this flag.
           example: true
     InternalAccount:
       type: object
@@ -18586,15 +19254,9 @@ components:
     Error403:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 403
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -18605,13 +19267,17 @@ components:
             | COUNTERPARTY_NOT_ALLOWED | Counterparty has not been enabled for your account |
             | VELOCITY_LIMIT_EXCEEDED | Counterparty has exceeded velocity limits |
             | END_USER_TERMS_NOT_ACCEPTED | Customer has not accepted the End User Terms |
+            | CUSTOMER_NOT_VERIFIED | The customer is not verified and cannot perform this action |
+            | SANCTION_BLOCKED | Blocked by sanction screening |
           enum:
             - FORBIDDEN
             - USER_NOT_READY
             - COUNTERPARTY_NOT_ALLOWED
             - VELOCITY_LIMIT_EXCEEDED
             - END_USER_TERMS_NOT_ACCEPTED
-        message:
+            - CUSTOMER_NOT_VERIFIED
+            - SANCTION_BLOCKED
+        reason:
           type: string
           description: Error message
         details:
@@ -18750,6 +19416,7 @@ components:
         - TRON_WALLET
         - CNY_ACCOUNT
         - ILS_ACCOUNT
+        - TRY_ACCOUNT
       description: Type of external account or wallet
       example: AED_ACCOUNT
     BaseExternalAccountInfo:
@@ -18773,6 +19440,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18782,9 +19450,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18805,18 +19475,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -18856,6 +19531,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18865,9 +19541,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18887,18 +19565,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         registrationNumber:
           type: string
+          maxLength: 100
           description: The registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -18988,6 +19671,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -18997,9 +19681,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19019,18 +19705,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19070,6 +19761,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19079,9 +19771,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19103,18 +19797,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19154,6 +19853,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19163,12 +19863,15 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The registration number of the beneficiary
         countryOfResidence:
           type: string
@@ -19266,6 +19969,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19275,9 +19979,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19286,6 +19992,7 @@ components:
           $ref: '#/components/schemas/Address'
         documentType:
           type: string
+          maxLength: 32
           description: Identity document type (Colombia)
           enum:
             - CC
@@ -19295,9 +20002,9 @@ components:
             - PP
         documentNumber:
           type: string
+          maxLength: 50
           description: The identity document number
           minLength: 1
-          maxLength: 50
     CopExternalAccountInfo:
       title: COP Account
       allOf:
@@ -19331,6 +20038,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19340,9 +20048,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19362,18 +20072,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19413,6 +20128,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19422,10 +20138,49 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    EgpBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - address
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
         countryOfResidence:
           type: string
           description: The country of residence of the beneficiary
@@ -19445,12 +20200,12 @@ components:
                 - title: Individual Beneficiary
                   $ref: '#/components/schemas/EgpBeneficiary'
                 - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                  $ref: '#/components/schemas/EgpBusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+                  BUSINESS: '#/components/schemas/EgpBusinessBeneficiary'
     EurBeneficiary:
       title: Individual Beneficiary
       type: object
@@ -19465,6 +20220,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19474,9 +20230,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19499,18 +20257,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19550,6 +20313,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19559,9 +20323,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19581,18 +20347,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19632,6 +20403,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19641,9 +20413,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19685,6 +20459,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19694,9 +20469,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19736,6 +20513,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19745,9 +20523,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19767,18 +20547,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19818,6 +20603,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19827,9 +20613,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19869,6 +20657,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19878,9 +20667,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19900,18 +20691,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -19951,6 +20747,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -19960,9 +20757,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -19982,18 +20781,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20035,6 +20839,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20044,9 +20849,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20086,6 +20893,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20095,9 +20903,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20119,18 +20929,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20170,6 +20985,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20179,9 +20995,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20203,18 +21021,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20254,6 +21077,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20263,9 +21087,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20285,18 +21111,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20336,6 +21167,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20345,9 +21177,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20367,18 +21201,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20418,6 +21257,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20427,9 +21267,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20451,18 +21293,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20502,6 +21349,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20511,9 +21359,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20533,18 +21383,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20584,6 +21439,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20593,9 +21449,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20635,6 +21493,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20644,9 +21503,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20668,18 +21529,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20719,6 +21585,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20728,9 +21595,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20750,18 +21619,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20801,6 +21675,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20810,9 +21685,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20852,6 +21729,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20861,9 +21739,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20883,18 +21763,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -20934,6 +21819,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -20943,9 +21829,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -20967,18 +21855,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21018,6 +21911,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21027,9 +21921,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21051,18 +21947,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21102,6 +22003,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21111,9 +22013,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21133,18 +22037,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21184,6 +22093,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21193,9 +22103,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21215,18 +22127,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21266,6 +22183,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21275,9 +22193,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21299,18 +22219,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21350,6 +22275,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21359,9 +22285,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21383,18 +22311,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21434,6 +22367,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21443,9 +22377,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21467,18 +22403,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21518,6 +22459,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21527,9 +22469,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21551,18 +22495,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21602,6 +22551,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21611,9 +22561,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21654,6 +22606,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
           example: John Michael Doe
         countryOfResidence:
@@ -21782,6 +22735,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21791,9 +22745,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21814,18 +22770,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21865,6 +22826,7 @@ components:
             - INDIVIDUAL
         fullName:
           type: string
+          maxLength: 250
           description: The full name of the beneficiary
         birthDate:
           type: string
@@ -21874,9 +22836,11 @@ components:
           description: The nationality of the beneficiary
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         countryOfResidence:
           type: string
@@ -21897,18 +22861,23 @@ components:
             - BUSINESS
         legalName:
           type: string
+          maxLength: 250
           description: The legal name of the business
         email:
           type: string
+          maxLength: 320
           description: The email of the beneficiary
         phoneNumber:
           type: string
+          maxLength: 50
           description: The phone number of the beneficiary
         registrationNumber:
           type: string
+          maxLength: 100
           description: The company registration number of the business
         taxId:
           type: string
+          maxLength: 100
           description: The tax identification number of the business
         countryOfResidence:
           type: string
@@ -21935,6 +22904,98 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/IlsBeneficiary'
                   BUSINESS: '#/components/schemas/IlsBusinessBeneficiary'
+    TryBeneficiary:
+      title: Individual Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - fullName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - INDIVIDUAL
+        fullName:
+          type: string
+          maxLength: 250
+          description: The full name of the beneficiary
+        birthDate:
+          type: string
+          description: The birth date of the beneficiary
+        nationality:
+          type: string
+          description: The nationality of the beneficiary
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    TryBusinessBeneficiary:
+      title: Business Beneficiary
+      type: object
+      required:
+        - beneficiaryType
+        - countryOfResidence
+        - legalName
+      properties:
+        beneficiaryType:
+          type: string
+          enum:
+            - BUSINESS
+        legalName:
+          type: string
+          maxLength: 250
+          description: The legal name of the business
+        email:
+          type: string
+          maxLength: 320
+          description: The email of the beneficiary
+        phoneNumber:
+          type: string
+          maxLength: 50
+          description: The phone number of the beneficiary
+        registrationNumber:
+          type: string
+          maxLength: 100
+          description: The company registration number of the business
+        taxId:
+          type: string
+          maxLength: 100
+          description: The tax identification number of the business
+        countryOfResidence:
+          type: string
+          description: The country of residence of the beneficiary
+        address:
+          $ref: '#/components/schemas/Address'
+    TryExternalAccountInfo:
+      title: TRY Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TryAccountInfo'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/TryBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/TryBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/TryBeneficiary'
+                  BUSINESS: '#/components/schemas/TryBusinessBeneficiary'
     ExternalAccountInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountInfo'
@@ -21985,6 +23046,7 @@ components:
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/CnyExternalAccountInfo'
         - $ref: '#/components/schemas/IlsExternalAccountInfo'
+        - $ref: '#/components/schemas/TryExternalAccountInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -22037,6 +23099,7 @@ components:
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           CNY_ACCOUNT: '#/components/schemas/CnyExternalAccountInfo'
           ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountInfo'
+          TRY_ACCOUNT: '#/components/schemas/TryExternalAccountInfo'
     ExternalAccount:
       allOf:
         - type: object
@@ -22274,12 +23337,12 @@ components:
                 - title: Individual Beneficiary
                   $ref: '#/components/schemas/EgpBeneficiary'
                 - title: Business Beneficiary
-                  $ref: '#/components/schemas/BusinessBeneficiary'
+                  $ref: '#/components/schemas/EgpBusinessBeneficiary'
               discriminator:
                 propertyName: beneficiaryType
                 mapping:
                   INDIVIDUAL: '#/components/schemas/EgpBeneficiary'
-                  BUSINESS: '#/components/schemas/BusinessBeneficiary'
+                  BUSINESS: '#/components/schemas/EgpBusinessBeneficiary'
     EurExternalAccountCreateInfo:
       title: EUR Account
       allOf:
@@ -22880,6 +23943,26 @@ components:
                 mapping:
                   INDIVIDUAL: '#/components/schemas/IlsBeneficiary'
                   BUSINESS: '#/components/schemas/IlsBusinessBeneficiary'
+    TryExternalAccountCreateInfo:
+      title: TRY Account
+      allOf:
+        - $ref: '#/components/schemas/BaseExternalAccountInfo'
+        - $ref: '#/components/schemas/TryAccountInfoBase'
+        - type: object
+          required:
+            - beneficiary
+          properties:
+            beneficiary:
+              oneOf:
+                - title: Individual Beneficiary
+                  $ref: '#/components/schemas/TryBeneficiary'
+                - title: Business Beneficiary
+                  $ref: '#/components/schemas/TryBusinessBeneficiary'
+              discriminator:
+                propertyName: beneficiaryType
+                mapping:
+                  INDIVIDUAL: '#/components/schemas/TryBeneficiary'
+                  BUSINESS: '#/components/schemas/TryBusinessBeneficiary'
     ExternalAccountCreateInfoOneOf:
       oneOf:
         - $ref: '#/components/schemas/AedExternalAccountCreateInfo'
@@ -22930,6 +24013,7 @@ components:
         - $ref: '#/components/schemas/SparkWalletExternalAccountInfo'
         - $ref: '#/components/schemas/TronWalletExternalAccountInfo'
         - $ref: '#/components/schemas/IlsExternalAccountCreateInfo'
+        - $ref: '#/components/schemas/TryExternalAccountCreateInfo'
       discriminator:
         propertyName: accountType
         mapping:
@@ -22981,6 +24065,7 @@ components:
           SPARK_WALLET: '#/components/schemas/SparkWalletExternalAccountInfo'
           TRON_WALLET: '#/components/schemas/TronWalletExternalAccountInfo'
           ILS_ACCOUNT: '#/components/schemas/IlsExternalAccountCreateInfo'
+          TRY_ACCOUNT: '#/components/schemas/TryExternalAccountCreateInfo'
     ExternalAccountCreateRequest:
       allOf:
         - type: object
@@ -22998,6 +24083,7 @@ components:
               example: USD
             platformAccountId:
               type: string
+              maxLength: 255
               description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
               example: ext_acc_123456
             ownershipType:
@@ -23122,6 +24208,7 @@ components:
           example: USD
         platformAccountId:
           type: string
+          maxLength: 255
           description: Your platform's identifier for the account in your system. This can be used to reference the account by your own identifier.
           example: ext_acc_123456
         ownershipType:
@@ -23162,6 +24249,7 @@ components:
           example: Customer:019542f5-b3e7-1d02-0000-000000000001
         roles:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/BeneficialOwnerRole'
           description: Roles of this person within the business
@@ -23182,14 +24270,17 @@ components:
       properties:
         firstName:
           type: string
+          maxLength: 250
           description: First name of the individual
           example: Jane
         middleName:
           type: string
+          maxLength: 250
           description: Middle name of the individual
           example: Marie
         lastName:
           type: string
+          maxLength: 250
           description: Last name of the individual
           example: Smith
         birthDate:
@@ -23204,6 +24295,7 @@ components:
         email:
           type: string
           format: email
+          maxLength: 255
           description: Email address of the individual
           example: jane.smith@acmecorp.com
         phoneNumber:
@@ -23217,6 +24309,7 @@ components:
           $ref: '#/components/schemas/IdentificationType'
         identifier:
           type: string
+          maxLength: 100
           description: The identification number or value
           example: 123-45-6789
         countryOfIssuance:
@@ -23228,6 +24321,7 @@ components:
       properties:
         roles:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/BeneficialOwnerRole'
           description: Roles of this person within the business
@@ -23383,10 +24477,12 @@ components:
           example: US
         documentNumber:
           type: string
+          maxLength: 100
           description: Document identification number (e.g., passport number)
           example: A12345678
         issuingAuthority:
           type: string
+          maxLength: 255
           description: Name of the government agency or organization that issued the document
           example: U.S. Department of State
     DocumentUploadRequest:
@@ -23404,15 +24500,9 @@ components:
     Error422:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 422
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -23421,7 +24511,7 @@ components:
             | DOCUMENT_REJECTED | The verification provider screened the uploaded file and marked it unusable. `precheckErrors` names each problem it found |
           enum:
             - DOCUMENT_REJECTED
-        message:
+        reason:
           type: string
           description: Error message
         precheckErrors:
@@ -24289,11 +25379,13 @@ components:
         - PARTIALLY_SETTLED
         - SETTLED
         - DECLINED
+        - VOIDED
         - EXCEPTION
       description: |
-        Lifecycle status of a card transaction. The status tracks settlement only —
-        a return against a purchase is its own dated `CREDIT` row linked to the
-        purchase via `originalTransactionId`, not a status of its own.
+        Lifecycle status of a card transaction. The status tracks the authorization
+        outcome and settlement — a return against a purchase is its own dated
+        `CREDIT` row linked to the purchase via `originalTransactionId`, not a
+        status of its own.
 
         | Status | Description |
         |--------|-------------|
@@ -24301,7 +25393,31 @@ components:
         | `PARTIALLY_SETTLED` | At least one clearing has arrived and posted, but more clearings are still expected (split shipments, tips, multi-leg trips). |
         | `SETTLED` | All clearings for the auth have posted and the transaction is closed against the funding source. A `RETURN` received afterwards keeps the purchase `SETTLED`; the return appears as its own `CREDIT` transaction. |
         | `DECLINED` | The authorization was declined before any money moved. Declines carry no settlement and must be excluded from cardholder statements. |
+        | `VOIDED` | The authorization was fully reversed or expired before any clearing posted, so the hold closed without moving money. `authorizedAmount` reports what is still held, normally 0, and `settledAmount` is absent. |
         | `EXCEPTION` | The transaction settled to the card network but the corresponding pull from the funding source failed (e.g. balance no longer covers the post-hoc clearing). Surfaces high-urgency alerts and is the dashboard query for stuck reconciliations. |
+    CardDeclinedReason:
+      type: string
+      enum:
+        - CARD_NOT_ACTIVE
+        - SPEND_LIMIT_EXCEEDED
+        - INSUFFICIENT_FUNDS
+        - NO_ELIGIBLE_FUNDING_SOURCE
+        - BLOCKED
+        - UNSUPPORTED_NETWORK
+        - OTHER
+      description: |
+        Why Grid declined a card authorization. Present only when a card
+        transaction's `status` is `DECLINED`.
+
+        | Reason | Returned when |
+        |--------|---------------|
+        | `CARD_NOT_ACTIVE` | The card is not `ACTIVE`. A `FROZEN`, `PROCESSING`, `PENDING_KYC`, or `CLOSED` card declines every authorization. |
+        | `SPEND_LIMIT_EXCEEDED` | The authorization exceeds `maxSpendPerTransaction`, `maxSpendPerDay`, `maxTransactionsPerDay`, or the matching platform cap. |
+        | `INSUFFICIENT_FUNDS` | Sandbox only. Production does not check the funding source balance when it decides an authorization, so an underfunded card approves and then resolves as `EXCEPTION` when the pull fails. |
+        | `NO_ELIGIBLE_FUNDING_SOURCE` | The card has no usable funding source, for example an Embedded Wallet source with no active delegated key. |
+        | `BLOCKED` | Program rules block the merchant category or the transaction. |
+        | `UNSUPPORTED_NETWORK` | Grid does not support the network or the transaction type. |
+        | `OTHER` | Any other reason, including a decline the card processor made on its own. |
     CardMerchant:
       type: object
       required:
@@ -24309,7 +25425,7 @@ components:
       properties:
         descriptor:
           type: string
-          description: Merchant descriptor string captured from the card network at authorization time.
+          description: Merchant descriptor string captured from the card network at authorization time. On the sandbox simulate endpoints, where this is supplied rather than reported, it must be 1–25 characters — the width of the card network's acceptor-name field.
           example: BLUE BOTTLE COFFEE SF
         mcc:
           type: string
@@ -24372,6 +25488,10 @@ components:
           example: lithic_txn_b81c2a4f
         status:
           $ref: '#/components/schemas/CardTransactionStatus'
+        cardDeclinedReason:
+          $ref: '#/components/schemas/CardDeclinedReason'
+          description: Present only when `status` is `DECLINED`.
+          example: INSUFFICIENT_FUNDS
         direction:
           $ref: '#/components/schemas/TransactionDirection'
           description: A purchase is a `DEBIT`. A merchant refund is a `CREDIT` with the credited value in `settledAmount`; when the refund returns against a known purchase, `originalTransactionId` identifies it.
@@ -24380,6 +25500,10 @@ components:
           type: string
           description: 'On a refund row (`direction: CREDIT`), the id of the purchase this return credits back against. Absent on purchases and on standalone credits with no matching purchase.'
           example: Transaction:019542f5-b3e7-1d02-0000-000000000099
+        description:
+          type: string
+          description: The merchant descriptor, repeated from `merchant.descriptor` so a transaction list reads without expanding each card row. Unlike `description` on other transaction types, this is set by Grid from the card network's descriptor, not supplied by the platform.
+          example: BLUE BOTTLE COFFEE SF
         merchant:
           $ref: '#/components/schemas/CardMerchant'
         authorizedAmount:
@@ -24395,7 +25519,7 @@ components:
         authorizedAt:
           type: string
           format: date-time
-          description: When the auth was approved.
+          description: When the authorization was approved or declined.
           example: '2026-05-08T14:30:00Z'
         createdAt:
           type: string
@@ -24533,15 +25657,9 @@ components:
     Error412:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 412
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -24550,7 +25668,7 @@ components:
             | UNSUPPORTED_UMA_VERSION | Counterparty doesn't support the Grid UMA version |
           enum:
             - UNSUPPORTED_UMA_VERSION
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -24690,6 +25808,7 @@ components:
                 - UMA_ADDRESS
             umaAddress:
               type: string
+              maxLength: 200
               description: UMA address of the recipient
               example: $receiver@uma.domain.com
             currency:
@@ -24862,6 +25981,7 @@ components:
           example: false
         description:
           type: string
+          maxLength: 1024
           description: Optional description/memo for the transfer
           example: 'Invoice #1234 payment'
         remittanceInformation:
@@ -24885,6 +26005,26 @@ components:
           example:
             FULL_NAME: Jane Receiver
             NATIONALITY: FR
+    Error408:
+      type: object
+      required:
+        - reason
+        - code
+      properties:
+        code:
+          type: string
+          description: |
+            | Error Code | Description |
+            |------------|-------------|
+            | REQUEST_TIMEOUT | Timed out reading the request; retry |
+          enum:
+            - REQUEST_TIMEOUT
+        reason:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
     ExecuteQuoteRequest:
       type: object
       description: Optional body for executing a quote. Only needed to request a specific Strong Customer Authentication factor (`scaFactor`) for the challenge this call issues; omit the body entirely otherwise.
@@ -25295,64 +26435,6 @@ components:
           exclusiveMinimum: 0
           maximum: 100000000000
           example: 100000
-    UmaProvider:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Name of the UMA Provider
-          example: Lightspark Group
-        supportedRegions:
-          type: array
-          items:
-            type: string
-          description: Region(s) this UMA Provider operates in
-          example:
-            - US
-        domain:
-          type: string
-          description: Domain this VASP uses for UMA addresses
-          example: uma.me
-        logoUrl:
-          type: string
-          description: Logo URL for the VASP
-          format: uri
-          example: https://uma.me/logo.png
-        supportedCurrencies:
-          type: array
-          items:
-            $ref: '#/components/schemas/Currency'
-          description: List of currencies supported by this UMA Provider
-          example:
-            - code: USD
-              name: United States Dollar
-              symbol: $
-              decimals: 2
-        lei:
-          type: string
-          description: Legal Entity Identifier for the UMA Provider
-          example: 5493001KJTIIGC8Y1R12
-        allowListStatus:
-          type: boolean
-          description: Whether this UMA Provider is on your allow list
-          example: true
-    UmaProviderListResponse:
-      type: object
-      properties:
-        data:
-          description: List of available UMA Providers using Grid
-          type: array
-          items:
-            $ref: '#/components/schemas/UmaProvider'
-        hasMore:
-          type: boolean
-          description: Indicates if more results are available beyond this page
-        nextCursor:
-          type: string
-          description: Cursor to retrieve the next page of results (only present if hasMore is true)
-        totalCount:
-          type: integer
-          description: Total number of transactions matching the criteria (excluding pagination)
     Permission:
       type: string
       enum:
@@ -25710,7 +26792,7 @@ components:
           properties:
             otpEncryptionTargetBundle:
               type: string
-              description: HPKE encryption target bundle for a freshly initiated OTP challenge. Returned only on `EMAIL_OTP` and `SMS_OTP` responses that initiate or reissue an OTP challenge, such as `POST /auth/credentials/{id}/challenge` and signed-retry add responses. It is omitted from first-time EMAIL_OTP wallet bootstrap registration; call `POST /auth/credentials/{id}/challenge` for the new credential if it is absent. The client generates an ephemeral P-256 keypair (the Target Encryption Key, or TEK) and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching TEK private key must remain on the client and is used to sign the `verificationToken` returned on the subsequent signed-retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
+              description: HPKE encryption target bundle for a freshly initiated OTP challenge. Returned only on `EMAIL_OTP` and `SMS_OTP` responses that initiate or reissue an OTP challenge, such as `POST /auth/credentials/{id}/challenge` and signed-retry add responses. It is omitted from first-time EMAIL_OTP wallet bootstrap registration; call `POST /auth/credentials/{id}/challenge` for the new credential if it is absent. The client generates an ephemeral P-256 keypair (the Target Encryption Key, or TEK) and uses this bundle as the recipient when HPKE-encrypting `{otp_code, public_key}`, where `public_key` is the compressed TEK public key; the encrypted payload is submitted as `encryptedOtpBundle` on `POST /auth/credentials/{id}/verify`. The bundle is one-time-use per OTP issuance — re-issue via `POST /auth/credentials/{id}/challenge` to obtain a fresh bundle. The matching TEK private key must remain on the client and is used to sign the `verificationToken` returned on the subsequent signed-retry. Treat the bundle as opaque and pass it to your HPKE library; the Global Accounts client-keys guide shows how.
               example: '{"version":"v1.0.0","data":"7b227461726765745075626c6963...","dataSignature":"30450221...","enclaveQuorumPublic":"04a1b2c3..."}'
       unevaluatedProperties: false
     AuthSignedRequestChallenge:
@@ -25750,7 +26832,7 @@ components:
         encryptedOtpBundle:
           type: string
           description: |-
-            HPKE-sealed OTP attempt — the OTP code never reaches Grid in plaintext. The client generates a fresh ephemeral P-256 key pair (the session signing key pair it keeps once login completes), HPKE-encrypts `{otp_code, public_key}` (the code the user entered plus that key pair's public key) to the key in `otpEncryptionTargetBundle`, and submits the encrypted result here. The value is the `{encappedPublic, ciphertext}` JSON an HPKE library produces; the Global Accounts client-keys guide has a worked example.
+            HPKE-sealed OTP attempt — the OTP code never reaches Grid in plaintext. The client generates a fresh ephemeral P-256 key pair (the session signing key pair it keeps once login completes), HPKE-encrypts `{otp_code, public_key}` (the code the user entered plus that key pair's public key) to the key in `otpEncryptionTargetBundle`, and submits the encrypted result here. `public_key` must be the compressed public key: 66 hex characters starting with `02` or `03`. In production, a bundle with an uncompressed key fails with `400 INVALID_INPUT`, even when the OTP code is correct. A wrong OTP code returns the same error. The `verificationToken` is bound to this key, so the signed retry's `Grid-Wallet-Signature` stamp must carry the same compressed `publicKey`. The value is the `{encappedPublic, ciphertext}` JSON an HPKE library produces; the Global Accounts client-keys guide has a worked example.
 
             On success the response is `202` with a `payloadToSign` carrying a `verificationToken` bound to the public key sealed in this bundle. Sign that token with the matching private key, then retry this request with the full stamp in `Grid-Wallet-Signature` and the `requestId` in `Request-Id` to complete the flow and receive the session. The client keeps that private key as the session signing key, and its public key becomes the session API key.
           example: '{"encappedPublic":"044f631a2d890bc6668d997ee184e190650d06adf970987568ec641214a00403b73effe1ef406c60a5cde8508a4484567ddb8056fbd493bee614cd727aef02a838","ciphertext":"1fa1023390a56539aa48cbb380aa28f544ed5cc04861566bb806e25ba026f14660eaf4140a05b388dd012eaa899759a6a92576cdca8c1b7d12e147bd96cc26ed9f74886794155d8ac5cf0fdc"}'
@@ -26564,7 +27646,7 @@ components:
         | `PENDING_KYC` | The cardholder has not yet completed KYC. Cards in this status cannot transact. |
         | `PROCESSING` | The card has been requested and is being provisioned with the issuer. |
         | `ACTIVE` | The card is live and can authorize transactions. |
-        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `CARD_PAUSED`. Existing settlements and refunds continue to reconcile. |
+        | `FROZEN` | The card is temporarily disabled by the platform. New authorizations are declined with `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing settlements and refunds continue to reconcile. |
         | `CLOSED` | The card is permanently closed. Terminal, irreversible status. |
     CardStatusReason:
       type: string
@@ -26660,7 +27742,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: Card-specific cap on a single transaction, in the smallest unit of the card's `currency`. Null means the card has no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values without replacing this configured value. A transaction for exactly the effective limit is allowed.
+          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its `currency` (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. `null` means the card sets no limit of its own. If your platform config also sets `cardConfigs.maxSpendPerTransaction` (the platform-level limit), the lower of the two applies and this value stays as you set it.
           example: 5000
         maxSpendPerDay:
           anyOf:
@@ -26752,14 +27834,14 @@ components:
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on a single transaction, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific cap. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. A transaction for exactly the effective limit is allowed.
+          description: The largest amount this card can authorize on a single transaction, in the smallest unit of its currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Omit the field to set no limit. If your platform config also sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true.
           example: 5000
         maxSpendPerDay:
           type: integer
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimits` is true. Spend exactly equal to the effective limit is allowed.
+          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true. Spend exactly equal to the effective limit is allowed.
           example: 25000
         maxTransactionsPerDay:
           type: integer
@@ -26791,7 +27873,7 @@ components:
               minimum: 1
               maximum: 9007199254740991
             - type: 'null'
-          description: 'Replacement card-specific per-transaction cap, in the smallest unit of the card''s currency. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the two values. Accepted only when the card''s `cardCapabilities.supportsSpendLimits` is true. Cannot be supplied alongside `status: CLOSED`.'
+          description: 'A new limit on the largest amount this card can authorize on a single transaction, in the smallest unit of its currency (cents for USD). An authorization for exactly the limit is allowed. A later clearing can still settle above it — a restaurant tip, for example — so this caps the authorization, not the final settled amount. Send a positive integer to set the limit, `null` to remove it, or omit the field to leave it unchanged. If your platform config also sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies. You can only send this when the card''s `cardCapabilities.supportsSpendLimits` is true, and not together with `status: CLOSED`.'
           example: 10000
         maxSpendPerDay:
           anyOf:
@@ -26827,13 +27909,237 @@ components:
           format: date-time
           description: When the signed URL stops loading. Request a new reveal rather than re-rendering an expired URL.
           example: '2026-05-08T14:16:00Z'
+    DigitalWallet:
+      type: string
+      enum:
+        - APPLE_PAY
+        - GOOGLE_PAY
+        - SAMSUNG_PAY
+      description: The digital wallet a card is being added to.
+      example: APPLE_PAY
+    CardTokenizationRequest:
+      type: object
+      description: Fields shared by every add-to-wallet request. The wallet SDK hands your app a set of values when the cardholder taps "Add to Wallet"; pass them here unchanged in the request shape for that `wallet`.
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/DigitalWallet'
+    ApplePayTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+        - certificate
+        - nonce
+        - nonceSignature
+      properties:
+        wallet:
+          type: string
+          enum:
+            - APPLE_PAY
+          description: Discriminator value identifying an Apple Pay request.
+          example: APPLE_PAY
+        certificate:
+          type: string
+          description: The leaf certificate from the `certificates` array Apple passes to your `PKAddPaymentPassViewControllerDelegate`, base64-encoded in PEM form.
+          example: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM=
+        nonce:
+          type: string
+          description: The `nonce` Apple passes to your delegate, base64-encoded.
+          example: MTIzNDU2Nzg=
+        nonceSignature:
+          type: string
+          description: The `nonceSignature` Apple passes to your delegate, base64-encoded.
+          example: c2lnbmF0dXJl
+    ApplePayTokenizationRequest:
+      title: Apple Pay Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationRequest'
+        - $ref: '#/components/schemas/ApplePayTokenizationRequestFields'
+    GooglePayTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+        - walletAccountId
+        - serverSessionId
+      properties:
+        wallet:
+          type: string
+          enum:
+            - GOOGLE_PAY
+          description: Discriminator value identifying a Google Pay request.
+          example: GOOGLE_PAY
+        walletAccountId:
+          type: string
+          description: The stable identifier of the Google Wallet account the card is being added to, as reported by the TapAndPay client.
+          example: wallet-account-8f14e45f
+        serverSessionId:
+          type: string
+          format: uuid
+          description: The `serverSessionId` Google supplies in the TapAndPay payment-credentials callback under Unified Push Provisioning.
+          example: 8c3b8a7e-2a5d-4b7f-9c1e-6d2f0a1b3c4d
+        deviceId:
+          type: string
+          description: The stable device identifier from `getStableHardwareId`, when the SDK supplies one. Unified Push Provisioning does not always.
+          example: device-3c59dc04
+        opaquePaymentCardRequested:
+          type: boolean
+          default: false
+          description: Set to the value Google supplies in the payment-credentials callback. When `true`, the response also carries `googleAccountPayload`, which saves the card to the cardholder's Google Account for online payments in addition to the device token.
+          example: false
+    GooglePayTokenizationRequest:
+      title: Google Pay Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationRequest'
+        - $ref: '#/components/schemas/GooglePayTokenizationRequestFields'
+    SamsungPayTokenizationRequestFields:
+      type: object
+      required:
+        - wallet
+        - walletAccountId
+        - deviceId
+      properties:
+        wallet:
+          type: string
+          enum:
+            - SAMSUNG_PAY
+          description: Discriminator value identifying a Samsung Pay request.
+          example: SAMSUNG_PAY
+        walletAccountId:
+          type: string
+          description: The cardholder's Samsung Wallet identifier (`walletUserId`) reported by the Samsung Pay SDK.
+          example: wallet-account-8f14e45f
+        deviceId:
+          type: string
+          description: The stable device identifier reported by the Samsung Pay SDK.
+          example: device-3c59dc04
+    SamsungPayTokenizationRequest:
+      title: Samsung Pay Tokenization Request
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationRequest'
+        - $ref: '#/components/schemas/SamsungPayTokenizationRequestFields'
+    CardTokenizationRequestOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/ApplePayTokenizationRequest'
+        - $ref: '#/components/schemas/GooglePayTokenizationRequest'
+        - $ref: '#/components/schemas/SamsungPayTokenizationRequest'
+      discriminator:
+        propertyName: wallet
+        mapping:
+          APPLE_PAY: '#/components/schemas/ApplePayTokenizationRequest'
+          GOOGLE_PAY: '#/components/schemas/GooglePayTokenizationRequest'
+          SAMSUNG_PAY: '#/components/schemas/SamsungPayTokenizationRequest'
+    CardTokenizationResponse:
+      type: object
+      description: 'Fields shared by every add-to-wallet response. The payload is encrypted to the wallet provider''s keys: neither your app nor your servers can read the card data inside it. Hand it to the wallet SDK; it is valid for a single provisioning attempt.'
+      required:
+        - wallet
+      properties:
+        wallet:
+          $ref: '#/components/schemas/DigitalWallet'
+    CardTokenizationApplePayPayload:
+      type: object
+      description: The encrypted pass data for Apple Wallet. Pass the three fields straight into the `PKAddPaymentPassRequest` your delegate's completion handler expects.
+      required:
+        - activationData
+        - encryptedPassData
+        - ephemeralPublicKey
+      properties:
+        activationData:
+          type: string
+          description: Base64 `activationData` for `PKAddPaymentPassRequest`.
+          example: YWN0aXZhdGlvbi1kYXRh
+        encryptedPassData:
+          type: string
+          description: Base64 `encryptedPassData` for `PKAddPaymentPassRequest`.
+          example: ZW5jcnlwdGVkLXBhc3MtZGF0YQ==
+        ephemeralPublicKey:
+          type: string
+          description: Base64 `ephemeralPublicKey` for `PKAddPaymentPassRequest`.
+          example: ZXBoZW1lcmFsLXB1YmxpYy1rZXk=
+    ApplePayTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - applePay
+      properties:
+        wallet:
+          type: string
+          enum:
+            - APPLE_PAY
+          description: Discriminator value identifying an Apple Pay response.
+          example: APPLE_PAY
+        applePay:
+          $ref: '#/components/schemas/CardTokenizationApplePayPayload'
+    ApplePayTokenizationResponse:
+      title: Apple Pay Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationResponse'
+        - $ref: '#/components/schemas/ApplePayTokenizationResponseFields'
+    GooglePayTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - provisioningPayload
+      properties:
+        wallet:
+          type: string
+          enum:
+            - GOOGLE_PAY
+          description: Discriminator value identifying a Google Pay response.
+          example: GOOGLE_PAY
+        provisioningPayload:
+          type: string
+          description: Base64-encoded opaque payload for the device token. Return it from the TapAndPay payment-credentials callback.
+          example: eyJjYXJkIjoiLi4uIn0=
+        googleAccountPayload:
+          type: string
+          description: Present when `opaquePaymentCardRequested` was `true`. Return it alongside `provisioningPayload` so Google also saves the card to the cardholder's Google Account.
+          example: eyJmcGFuIjoiLi4uIn0=
+    GooglePayTokenizationResponse:
+      title: Google Pay Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationResponse'
+        - $ref: '#/components/schemas/GooglePayTokenizationResponseFields'
+    SamsungPayTokenizationResponseFields:
+      type: object
+      required:
+        - wallet
+        - provisioningPayload
+      properties:
+        wallet:
+          type: string
+          enum:
+            - SAMSUNG_PAY
+          description: Discriminator value identifying a Samsung Pay response.
+          example: SAMSUNG_PAY
+        provisioningPayload:
+          type: string
+          description: Base64-encoded opaque payload. Pass it to the Samsung Pay SDK's `addCard` call.
+          example: eyJjYXJkIjoiLi4uIn0=
+    SamsungPayTokenizationResponse:
+      title: Samsung Pay Tokenization Response
+      allOf:
+        - $ref: '#/components/schemas/CardTokenizationResponse'
+        - $ref: '#/components/schemas/SamsungPayTokenizationResponseFields'
+    CardTokenizationResponseOneOf:
+      oneOf:
+        - $ref: '#/components/schemas/ApplePayTokenizationResponse'
+        - $ref: '#/components/schemas/GooglePayTokenizationResponse'
+        - $ref: '#/components/schemas/SamsungPayTokenizationResponse'
+      discriminator:
+        propertyName: wallet
+        mapping:
+          APPLE_PAY: '#/components/schemas/ApplePayTokenizationResponse'
+          GOOGLE_PAY: '#/components/schemas/GooglePayTokenizationResponse'
+          SAMSUNG_PAY: '#/components/schemas/SamsungPayTokenizationResponse'
     SandboxCardAuthorizationRequest:
       type: object
       required:
         - amount
         - currency
         - merchant
-      description: 'Sandbox-only request body shared by the card authorization-family simulate endpoints: `simulate/authorization`, `simulate/credit_authorization`, `simulate/financial_authorization`, `simulate/financial_credit_authorization`, and `simulate/credit_authorization_advice`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` documentation for the suffix table.'
+      description: 'Sandbox-only request body shared by the card authorization-family simulate endpoints: `simulate/authorization`, `simulate/credit_authorization`, `simulate/financial_authorization`, `simulate/financial_credit_authorization`, and `simulate/credit_authorization_advice`. Drives the same internal authorization + reconcile paths that the issuer would call in production. The decisioning outcome is controlled by the last three characters of `merchant.descriptor` — see the `simulate/authorization` documentation for the suffix table. `merchant.descriptor` must be 1–25 characters.'
       properties:
         amount:
           type: integer
@@ -26940,6 +28246,106 @@ components:
           description: How much to reverse, in the smallest unit of the transaction's currency (cents for USD). Leave it out to reverse the whole authorization. Send an amount to reverse only that much and leave the rest on hold.
           exclusiveMinimum: 0
           example: 1250
+    SandboxCardDisputeOpenRequest:
+      type: object
+      required:
+        - cardTransactionId
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/dispute_open`. Opens a dispute against a settled `CardTransaction`, as the card issuer does when a cardholder files a claim.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the settled `CardTransaction` to dispute. Must have at least one settled clearing and no dispute already open.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: The disputed amount in the smallest unit of the transaction's currency. Defaults to the settled amount; must not exceed it.
+          exclusiveMinimum: 0
+          example: 1500
+        reason:
+          type: string
+          description: Free-text reason recorded on the opening event.
+          example: Merchandise not received
+    SandboxCardDisputeResponse:
+      type: object
+      required:
+        - disputeId
+        - disputeToken
+        - status
+      description: The simulated dispute after the request was applied. The dispute simulators report the resulting dispute in this response; the cardholder money a dispute event moves settles asynchronously.
+      properties:
+        disputeId:
+          type: string
+          description: The id of the dispute record.
+          example: 019542f5-b3e7-1d02-0000-000000000200
+        disputeToken:
+          type: string
+          description: The card issuer's token for the dispute.
+          example: dispute_transaction_sandbox_5f8d2c1a
+        status:
+          type: string
+          enum:
+            - OPEN
+            - CLOSED
+          description: Whether the dispute is still active.
+          example: OPEN
+        disposition:
+          type:
+            - string
+            - 'null'
+          enum:
+            - WON
+            - PARTIALLY_WON
+            - LOST
+            - WITHDRAWN
+            - DENIED
+            - null
+          description: The outcome once the dispute closes. Null while it is open.
+          example: WON
+    SandboxCardDisputeCreditRequest:
+      type: object
+      required:
+        - cardTransactionId
+        - amount
+      description: 'Sandbox-only request body for the provisional-credit simulators: `POST /sandbox/cards/{id}/simulate/dispute_provisional_credit` and `POST /sandbox/cards/{id}/simulate/dispute_provisional_credit_reversal`.'
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the disputed `CardTransaction`; it must have an open dispute.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        amount:
+          type: integer
+          format: int64
+          description: The amount to credit, or to take back, in the smallest unit of the transaction's currency. Must not exceed the disputed amount.
+          exclusiveMinimum: 0
+          example: 1500
+    SandboxCardDisputeCloseRequest:
+      type: object
+      required:
+        - cardTransactionId
+        - disposition
+      description: Sandbox-only request body for `POST /sandbox/cards/{id}/simulate/dispute_close`. Closes the transaction's open dispute with a disposition, as the card issuer does when the network process ends.
+      properties:
+        cardTransactionId:
+          type: string
+          description: The id of the disputed `CardTransaction`; it must have an open dispute.
+          example: Transaction:019542f5-b3e7-1d02-0000-000000000100
+        disposition:
+          type: string
+          enum:
+            - WON
+            - PARTIALLY_WON
+            - LOST
+            - WITHDRAWN
+            - DENIED
+          description: The outcome the dispute closes with.
+          example: WON
+        recoveredAmount:
+          type: integer
+          format: int64
+          description: For `PARTIALLY_WON` only, how much of the disputed amount the network gave back, in the smallest unit of the transaction's currency. Must be strictly between 0 and the disputed amount; defaults to half.
+          exclusiveMinimum: 0
+          example: 400
     StablecoinIssuanceStatus:
       type: string
       enum:
@@ -27081,6 +28487,7 @@ components:
           example: ACME
         networkTokenIdentifier:
           type: string
+          maxLength: 255
           description: Token identifier in the namespace selected by `network`.
           example: btkn1qw508d6qejxtdg4y5r3zarvary0c5xw7k
         network:
@@ -27447,15 +28854,9 @@ components:
     Error503:
       type: object
       required:
-        - message
-        - status
+        - reason
         - code
       properties:
-        status:
-          type: integer
-          enum:
-            - 503
-          description: HTTP status code
         code:
           type: string
           description: |
@@ -27464,7 +28865,7 @@ components:
             | SERVICE_UNAVAILABLE | Downstream service is temporarily unavailable |
           enum:
             - SERVICE_UNAVAILABLE
-        message:
+        reason:
           type: string
           description: Error message
         details:
@@ -27545,30 +28946,75 @@ components:
           EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnSource'
           GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnSource'
           PROVIDER_INTERNAL_BALANCE: '#/components/schemas/StablecoinProviderBalanceBurnSource'
-    StablecoinBurnDestination:
+    StablecoinBurnDestinationRail:
+      type: string
+      enum:
+        - WIRE
+        - ACH_CREDIT
+        - SAME_DAY_ACH_CREDIT
+        - RTP_CREDIT
+      description: Fiat payout rail for the burn destination.
+    StablecoinBurnDestinationBase:
       type: object
       required:
         - type
-        - externalAccountId
         - rail
       properties:
         type:
           type: string
           enum:
             - EXTERNAL_ACCOUNT
-          description: Burn destination variant. V1 supports fiat Grid `ExternalAccount` destinations.
-        externalAccountId:
-          type: string
-          description: Grid bank `ExternalAccount` receiving fiat redemption proceeds.
-          example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
+            - GRID_INTERNAL_ACCOUNT
+          description: Burn destination variant.
         rail:
-          type: string
-          enum:
-            - WIRE
-            - ACH_CREDIT
-            - SAME_DAY_ACH_CREDIT
-            - RTP_CREDIT
-          description: Fiat payout rail for the burn destination.
+          $ref: '#/components/schemas/StablecoinBurnDestinationRail'
+    StablecoinExternalAccountBurnDestination:
+      title: External Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnDestinationBase'
+        - type: object
+          required:
+            - type
+            - externalAccountId
+          properties:
+            type:
+              type: string
+              enum:
+                - EXTERNAL_ACCOUNT
+              description: External account burn destination.
+              example: EXTERNAL_ACCOUNT
+            externalAccountId:
+              type: string
+              description: Grid bank `ExternalAccount` receiving fiat redemption proceeds.
+              example: ExternalAccount:019542f5-b3e7-1d02-0000-000000000205
+    StablecoinGridInternalBurnDestination:
+      title: Grid Internal Account
+      allOf:
+        - $ref: '#/components/schemas/StablecoinBurnDestinationBase'
+        - type: object
+          required:
+            - type
+            - accountId
+          properties:
+            type:
+              type: string
+              enum:
+                - GRID_INTERNAL_ACCOUNT
+              description: Grid internal account burn destination.
+              example: GRID_INTERNAL_ACCOUNT
+            accountId:
+              type: string
+              description: Grid `InternalAccount` receiving fiat redemption proceeds through its bank funding instructions.
+              example: InternalAccount:019542f5-b3e7-1d02-0000-000000000206
+    StablecoinBurnDestination:
+      oneOf:
+        - $ref: '#/components/schemas/StablecoinExternalAccountBurnDestination'
+        - $ref: '#/components/schemas/StablecoinGridInternalBurnDestination'
+      discriminator:
+        propertyName: type
+        mapping:
+          EXTERNAL_ACCOUNT: '#/components/schemas/StablecoinExternalAccountBurnDestination'
+          GRID_INTERNAL_ACCOUNT: '#/components/schemas/StablecoinGridInternalBurnDestination'
     StablecoinBurnRequest:
       type: object
       required:
@@ -27927,6 +29373,7 @@ components:
         - CARD_TRANSACTION.PARTIALLY_SETTLED
         - CARD_TRANSACTION.SETTLED
         - CARD_TRANSACTION.DECLINED
+        - CARD_TRANSACTION.VOIDED
         - CARD_TRANSACTION.EXCEPTION
         - WALLET_OPERATION.COMPLETED
         - WALLET_OPERATION.FAILED
@@ -28172,6 +29619,7 @@ components:
                 - CARD_TRANSACTION.PARTIALLY_SETTLED
                 - CARD_TRANSACTION.SETTLED
                 - CARD_TRANSACTION.DECLINED
+                - CARD_TRANSACTION.VOIDED
                 - CARD_TRANSACTION.EXCEPTION
     WalletOperationCompletedData:
       title: Wallet Operation Completed Data

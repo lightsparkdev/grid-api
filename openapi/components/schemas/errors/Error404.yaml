@@ -1,14 +1,8 @@
 type: object
 required:
-  - message
-  - status
+  - reason
   - code
 properties:
-  status:
-    type: integer
-    enum: 
-      - 404
-    description: HTTP status code
   code:
     type: string
     description: |
@@ -24,6 +18,19 @@ properties:
       | REFERENCE_NOT_FOUND | Reference not found |
       | UMA_NOT_FOUND | The UMA address is well-formed but no receiver exists at the counterparty VASP |
       | STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND | Stablecoin provider account link not found |
+      | ACCOUNT_NOT_FOUND | Account not found |
+      | AUTH_METHOD_NOT_FOUND | Authentication credential not found |
+      | CUSTOMER_NOT_FOUND | Customer not found |
+      | DOCUMENT_HOLDER_NOT_FOUND | Document holder not found |
+      | NOT_FOUND | The requested resource was not found |
+      | PAYMENT_URL_NOT_FOUND | Payment URL not found |
+      | PLATFORM_NOT_FOUND | Platform not found |
+      | REQUEST_NOT_FOUND | Pending request not found |
+      | SESSION_NOT_FOUND | Session not found |
+      | STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND | Stablecoin external account not found |
+      | STABLECOIN_NOT_FOUND | Stablecoin not found |
+      | STABLECOIN_OPERATION_NOT_FOUND | Stablecoin operation not found |
+      | VERIFICATION_NOT_FOUND | Verification not found |
     enum:
       - TRANSACTION_NOT_FOUND
       - INVITATION_NOT_FOUND
@@ -35,7 +42,20 @@ properties:
       - REFERENCE_NOT_FOUND
       - UMA_NOT_FOUND
       - STABLECOIN_PROVIDER_ACCOUNT_NOT_FOUND
-  message:
+      - ACCOUNT_NOT_FOUND
+      - AUTH_METHOD_NOT_FOUND
+      - CUSTOMER_NOT_FOUND
+      - DOCUMENT_HOLDER_NOT_FOUND
+      - NOT_FOUND
+      - PAYMENT_URL_NOT_FOUND
+      - PLATFORM_NOT_FOUND
+      - REQUEST_NOT_FOUND
+      - SESSION_NOT_FOUND
+      - STABLECOIN_EXTERNAL_ACCOUNT_NOT_FOUND
+      - STABLECOIN_NOT_FOUND
+      - STABLECOIN_OPERATION_NOT_FOUND
+      - VERIFICATION_NOT_FOUND
+  reason:
     type: string
     description: Error message
   details:

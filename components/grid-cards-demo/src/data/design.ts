@@ -1,0 +1,333 @@
+/* The "Design your card" state, structured the way a card is made: a body
+   (plastic or metal), a coat (finish), a print (color or art, logo), and
+   decoration on the print (spot gloss, foil). */
+
+import { faceSize, FIGMA_CARD_W } from '@/apps/card/cardMetrics';
+
+/** What the card is made of: a laminated PVC card, or a metal sheet with thin
+ *  laminated skins. Sets the thickness and the edge layers. */
+export type CardMaterial = 'plastic' | 'metal';
+/** The surface coat: matte (soft-touch print, brushed metal) or gloss
+ *  (laminated print, polished metal). */
+export type CardFinish = 'matte' | 'gloss';
+/** How the brand mark is applied. Ink is printed; spot gloss is a clear
+ *  high-gloss varnish (reads on a matte card); foil is hot-stamped silver;
+ *  etch is cut into the card: through to the steel on metal, a blind deboss
+ *  on plastic. */
+export type LogoTreatment = 'print' | 'spotGloss' | 'foil' | 'etch';
+export type ArtTreatment = 'print' | 'spotGloss';
+/** Which face carries the Visa mark (Visa Physical Card Brand Standards,
+ *  January 2026). Back: the Premium Visa Brand Mark in foil, which carries its
+ *  own anti-counterfeit features, so no hologram. Front: the Visa Brand Mark
+ *  printed flat, bottom right; the back then carries the dove hologram the
+ *  standards require without the PVBM. */
+export type VisaMarkFace = 'front' | 'back';
+/** How the blank is held. Portrait is the same ISO ID-1 blank turned a
+ *  quarter turn clockwise and held upright: the chip lands at the top, right
+ *  of center, and the back's mag stripe runs down the left edge. The artwork
+ *  is composed for the tall face. */
+export type Orientation = 'landscape' | 'portrait';
+
+/** The card body under the print: PVC core in white or black, or stainless
+ *  steel. Shows at the edge and on the face wherever nothing is printed. Not
+ *  a choice: plastic takes the core that matches the print (a dark print on a
+ *  black core, so the edge reads as one piece); metal is steel. */
+export interface CardStock {
+  id: string;
+  label: string;
+  material: CardMaterial;
+  /** Face reflectance of the bare stock. */
+  face: string;
+  /** Edge (core) color. */
+  core: string;
+  /** Ink that reads on the bare stock. */
+  ink: 'light' | 'dark';
+}
+
+export const STOCKS: CardStock[] = [
+  { id: 'white', label: 'White plastic', material: 'plastic', face: '#f1f1ef', core: '#ececef', ink: 'dark' },
+  { id: 'black', label: 'Black plastic', material: 'plastic', face: '#17171a', core: '#1c1c20', ink: 'light' },
+  { id: 'steel', label: 'Stainless steel', material: 'metal', face: '#d8d7d6', core: '#dededf', ink: 'dark' },
+];
+
+/** Relative luminance of a #rrggbb, 0..1. */
+export function luminance(hex: string): number {
+  const c = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+  return 0.2126 * c(0) + 0.7152 * c(1) + 0.0722 * c(2);
+}
+
+export function stockOf(design: Pick<CardDesign, 'material' | 'color'>): CardStock {
+  if (design.material === 'metal') return STOCKS[2];
+  return design.color && luminance(design.color) < 0.3 ? STOCKS[1] : STOCKS[0];
+}
+
+/** What the card is made of. */
+export function materialOf(design: Pick<CardDesign, 'material'>): CardMaterial {
+  return design.material;
+}
+
+/** Which point of the brand's box `BrandLayout.x` fixes. */
+export type BrandAnchor = 'left' | 'center' | 'right';
+
+/**
+ * Where the brand (the logo, or the wordmark) sits on the front, in the card
+ * spec's px (the 1536 × 969 artboard). `x` is the anchor's x and `y` the
+ * box's center; `h` is the box's height, and a wordmark is set at 0.8 h so
+ * its caps sit inside it. `rotation` turns the box about its center,
+ * degrees clockwise. The box may run off the card: a watermark bleeds.
+ */
+export interface BrandLayout {
+  x: number;
+  y: number;
+  h: number;
+  anchor: BrandAnchor;
+  rotation: number;
+  /** 0..1. A watermark is the brand printed faint. */
+  opacity: number;
+}
+
+/** The print's margin on every side (spec px): the chip's own inset, which
+ *  the brand is right-aligned to in the print sample. The stage snaps to it. */
+export const BRAND_MARGIN = 152;
+
+/** The Visa lockup's box on either face: 339 × 211.067, 54 from the near
+ *  edges (`LOCKUP` in facePaint). */
+const LOCKUP_INSET = 54;
+const LOCKUP_H = 211.067;
+
+/** The print sample's placement: on the chip's row, right-aligned to the
+ *  chip's own inset (152), 90 tall (Thales sample, Figma 1:97). */
+export const BRAND_DEFAULT_LAYOUT: BrandLayout = {
+  x: FIGMA_CARD_W - BRAND_MARGIN,
+  y: 334 + 149 / 2,
+  h: 90,
+  anchor: 'right',
+  rotation: 0,
+  opacity: 1,
+};
+
+/** The vertical card's placement: bottom left on the print margin, centered
+ *  on the Visa lockup's row (the brand and the mark share the bottom, as
+ *  vertical cards have it), clear of the chip at the top. */
+export const BRAND_DEFAULT_LAYOUT_PORTRAIT: BrandLayout = {
+  x: BRAND_MARGIN,
+  y: FIGMA_CARD_W - LOCKUP_INSET - LOCKUP_H / 2,
+  h: 90,
+  anchor: 'left',
+  rotation: 0,
+  opacity: 1,
+};
+
+/** The layout the brand takes with none of its own, per orientation. */
+export function brandDefaultLayout(orientation: Orientation): BrandLayout {
+  return orientation === 'portrait' ? BRAND_DEFAULT_LAYOUT_PORTRAIT : BRAND_DEFAULT_LAYOUT;
+}
+
+export const BRAND_MIN_H = 24;
+export const BRAND_MAX_H = 1400;
+
+export function sameBrandLayout(a: BrandLayout | null, b: BrandLayout | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.x === b.x &&
+    a.y === b.y &&
+    a.h === b.h &&
+    a.anchor === b.anchor &&
+    a.rotation === b.rotation &&
+    a.opacity === b.opacity
+  );
+}
+
+/** A color stop of a gradient print. */
+export interface GradientStop {
+  /** Position along the gradient, 0..1. */
+  at: number;
+  color: string;
+}
+
+/**
+ * A gradient print, as Figma's fill: stops along a line from `from` to `to`
+ * on the front face (spec px, as the brand's layout). Linear runs along the
+ * line; radial is centered at `from` and reaches `to`. The back is printed
+ * with the same gradient. `color` stays the first stop, for everything that
+ * wants one color of the card (the stock, the ink, the app's chrome).
+ */
+export interface CardGradient {
+  type: 'linear' | 'radial';
+  stops: GradientStop[];
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
+export function sameGradient(a: CardGradient | null, b: CardGradient | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.type === b.type &&
+    a.from.x === b.from.x &&
+    a.from.y === b.from.y &&
+    a.to.x === b.to.x &&
+    a.to.y === b.to.y &&
+    a.stops.length === b.stops.length &&
+    a.stops.every((s, i) => s.at === b.stops[i].at && s.color === b.stops[i].color)
+  );
+}
+
+/**
+ * The gradient's line carried to the other orientation: each end scaled
+ * from one face's proportions to the other's, so a gradient that runs top to
+ * bottom still does, and a diagonal is still a diagonal. (A rotation would
+ * turn a vertical gradient sideways.) The stops and type are kept.
+ */
+export function reorientGradient(g: CardGradient, from: Orientation, to: Orientation): CardGradient {
+  if (from === to) return g;
+  const a = faceSize(from);
+  const b = faceSize(to);
+  const map = (p: { x: number; y: number }) => ({
+    x: Math.round((p.x * b.w) / a.w),
+    y: Math.round((p.y * b.h) / a.h),
+  });
+  return { ...g, from: map(g.from), to: map(g.to) };
+}
+
+/** The CSS for a gradient's stops, left to right (for a swatch or a bar). */
+export function gradientCss(g: CardGradient, angle = '90deg'): string {
+  const stops = [...g.stops].sort((a, b) => a.at - b.at).map((s) => `${s.color} ${s.at * 100}%`);
+  return `linear-gradient(${angle}, ${stops.join(', ')})`;
+}
+
+export interface CardDesign {
+  /** Program name printed on the card and used as the app's brand. */
+  programName: string;
+  /** The cardholder, printed on the back. */
+  cardholderName: string;
+  material: CardMaterial;
+  finish: CardFinish;
+  /** Printed color, solid. Null = no print: the bare stock shows. With a
+   *  gradient, its first stop. */
+  color: string | null;
+  /** A gradient print over the color, or null for solid. */
+  gradient: CardGradient | null;
+  /** Object URL (or data URL) of an uploaded logo. Null = wordmark only. */
+  logoUrl: string | null;
+  logoTreatment: LogoTreatment;
+  /** Where the brand sits. Null = the print sample's placement, with a wide
+   *  logo held to 410 wide. */
+  brandLayout: BrandLayout | null;
+  /** Object URL (or data URL) of uploaded card art, drawn across the front
+   *  behind everything else. Null = the color (or the bare stock). */
+  backgroundUrl: string | null;
+  artTreatment: ArtTreatment;
+  /** Where the Visa mark sits, and with it whether the back has a hologram. */
+  visaMark: VisaMarkFace;
+  /** How the blank is held; the artwork is composed for that face. */
+  orientation: Orientation;
+}
+
+export interface DesignSwatch {
+  id: string;
+  label: string;
+  color: string;
+}
+
+export const DESIGN_SWATCHES: DesignSwatch[] = [
+  { id: 'black', label: 'Black', color: '#151517' },
+  { id: 'white', label: 'White', color: '#ffffff' },
+  { id: 'blue', label: 'Blue', color: '#0b3d91' },
+  { id: 'green', label: 'Green', color: '#0c3b2e' },
+  { id: 'red', label: 'Red', color: '#b3472a' },
+  { id: 'purple', label: 'Purple', color: '#5b3fb8' },
+];
+
+/** No print: the bare stock shows on the face. */
+export function isBare(design: Pick<CardDesign, 'color'>): boolean {
+  return design.color === null;
+}
+
+/** The color the app's chrome takes from the card: the print, or the stock. */
+export function brandColorOf(design: Pick<CardDesign, 'color' | 'material'>): string {
+  return design.color ?? stockOf(design).face;
+}
+
+export const MATERIALS: Array<{ id: CardMaterial; label: string }> = [
+  { id: 'plastic', label: 'Plastic' },
+  { id: 'metal', label: 'Metal' },
+];
+
+export const FINISHES: Array<{ id: CardFinish; label: string }> = [
+  { id: 'matte', label: 'Matte' },
+  { id: 'gloss', label: 'Gloss' },
+];
+
+export const LOGO_TREATMENTS: Array<{ id: LogoTreatment; label: string }> = [
+  { id: 'print', label: 'Print' },
+  { id: 'spotGloss', label: 'Gloss' },
+  { id: 'foil', label: 'Foil' },
+  { id: 'etch', label: 'Etch' },
+];
+
+export const ART_TREATMENTS: Array<{ id: ArtTreatment; label: string }> = [
+  { id: 'print', label: 'Print' },
+  { id: 'spotGloss', label: 'Gloss' },
+];
+
+export const VISA_MARK_FACES: Array<{ id: VisaMarkFace; label: string }> = [
+  { id: 'front', label: 'Front' },
+  { id: 'back', label: 'Back' },
+];
+
+export const ORIENTATIONS: Array<{ id: Orientation; label: string }> = [
+  { id: 'landscape', label: 'Landscape' },
+  { id: 'portrait', label: 'Portrait' },
+];
+
+/**
+ * The design held the other way: the same card (material, finish, color,
+ * brand assets, effects), with the brand back at that orientation's default
+ * (its layout was in the other face's coordinates, around a chip that has
+ * moved) and the gradient's line carried across.
+ */
+export function reorientDesign(design: CardDesign, orientation: Orientation): CardDesign {
+  if (design.orientation === orientation) return design;
+  return {
+    ...design,
+    orientation,
+    brandLayout: null,
+    gradient: design.gradient && reorientGradient(design.gradient, design.orientation, orientation),
+  };
+}
+
+export const initialDesign: CardDesign = {
+  // Empty: the field invites a name; the card and the app fall back to 'Your brand'.
+  programName: '',
+  cardholderName: '',
+  material: 'plastic',
+  finish: 'matte',
+  color: DESIGN_SWATCHES[0].color,
+  gradient: null,
+  logoUrl: null,
+  logoTreatment: 'print',
+  brandLayout: null,
+  backgroundUrl: null,
+  artTreatment: 'print',
+  visaMark: 'back',
+  orientation: 'landscape',
+};
+
+/** The starting design for a theme: the card is ink on dark, white on light,
+ *  so it reads against the stage it first appears on. */
+export function initialDesignFor(theme: 'light' | 'dark'): CardDesign {
+  return { ...initialDesign, color: theme === 'dark' ? DESIGN_SWATCHES[0].color : DESIGN_SWATCHES[1].color };
+}
+
+/** Field-by-field equality of two designs (layouts and gradients by value). */
+export function sameDesign(a: CardDesign, b: CardDesign): boolean {
+  return (Object.keys(a) as Array<keyof CardDesign>).every((k) =>
+    k === 'brandLayout'
+      ? sameBrandLayout(a.brandLayout, b.brandLayout)
+      : k === 'gradient'
+        ? sameGradient(a.gradient, b.gradient)
+        : a[k] === b[k],
+  );
+}

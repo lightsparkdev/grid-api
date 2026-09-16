@@ -9,8 +9,8 @@ post:
     The transaction must still be fully open: once any part of it has
     settled, it can no longer expire.
 
-    Grid processes the expiry in the background and sends a card transaction
-    webhook once it lands, the same as the other simulators.
+    Grid processes the expiry in the background. Once it lands, the transaction
+    has `status: VOIDED` and Grid sends a `CARD_TRANSACTION.VOIDED` webhook.
 
 
     Production returns `404` on this path.

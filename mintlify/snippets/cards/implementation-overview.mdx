@@ -18,7 +18,7 @@ Grid. You'll only need to:
 - Subscribe to the card webhook types: `CARD.STATUS_CHANGE` for card
   state, and `CARD_TRANSACTION.AUTHORIZED`,
   `CARD_TRANSACTION.PARTIALLY_SETTLED`, `CARD_TRANSACTION.SETTLED`,
-  `CARD_TRANSACTION.DECLINED`, and
+  `CARD_TRANSACTION.DECLINED`, `CARD_TRANSACTION.VOIDED`, and
   `CARD_TRANSACTION.EXCEPTION` for the transaction lifecycle.
 - Confirm with your Lightspark contact that cards are enabled for your
   platform — issuance requires an issuer-side onboarding.
@@ -46,6 +46,10 @@ balance before approving each auth, so:
   same way you would for any other internal account.
 - See [Funding sources](/cards/card-management/funding-sources) for
   rules around binding and replacing the source.
+- A card funded from a customer's Embedded Wallet also needs a delegated
+  signing key, created once by the cardholder, before authorizations can
+  pull from it. See
+  [Embedded Wallet funding](/cards/card-management/embedded-wallet-funding).
 
 ## Issuing and lifecycle
 
@@ -61,14 +65,21 @@ Both freeze and close use Grid's `202 → signed-retry` pattern (the same
 pattern as Embedded Wallet credential revocation). See
 [Freezing and closing cards](/cards/card-management/freezing-and-closing).
 
+Cardholders can add a card to Apple Pay, Google Pay, or Samsung Pay by
+typing its details into the wallet with no work on your side. An
+in-app "Add to Wallet" button needs wallet-provider approval plus one
+`POST /cards/{id}/tokenize` call from your backend. See
+[Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
 ## Transactions and reconciliation
 
 Each authorization on a card produces a `CardTransaction` row, with
 clearings reconciled against it and rolled up into `settledAmount`.
 The lifecycle status moves
 `AUTHORIZED → PARTIALLY_SETTLED → SETTLED`, with `DECLINED` for auths
-refused before any money moved and `EXCEPTION` as the failure path for
-stuck post-hoc pulls. A merchant return is its own dated `CREDIT`
+refused before approval, `VOIDED` for approved auths fully reversed or
+expired before clearing, and `EXCEPTION` as the failure path for stuck
+post-hoc pulls. A merchant return is its own dated `CREDIT`
 `CardTransaction` row linked to the purchase via
 `originalTransactionId`; the purchase keeps its `SETTLED` status.
 

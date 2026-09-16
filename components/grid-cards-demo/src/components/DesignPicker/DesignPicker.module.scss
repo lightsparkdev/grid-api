@@ -1,0 +1,465 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+/* Same tile surface as the other pickers (UseCasePicker / FlowPicker). Every
+   piece of text in the tile is the `label` style the flow tiles use: row
+   labels in secondary, values in primary. */
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+  /* Button fills (the + swatch, Remove) sit a step off the tile: darker in
+     light, lighter in dark; the same step the color picker's tools take. */
+  --picker-fill: var(--surface-secondary);
+  --picker-border: var(--border-primary);
+
+  :global([data-theme='dark']) & {
+    --picker-fill: var(--color-gray-850);
+    --picker-border: rgba(244, 244, 245, 0.16);
+  }
+}
+
+.group {
+  corner-shape: var(--corner-shape);
+  /* Tile surface — press states mix from it. The token (globals.scss) steps
+     it down whenever the panel wears the chrome gray. */
+  --tile-bg: var(--panel-tile-bg);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--tile-bg);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  overflow: clip;
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1), opacity 200ms ease;
+}
+
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  /* Same height as a flow tile (24px icon + md padding). */
+  min-height: 56px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.rowPick {
+    cursor: pointer;
+  }
+
+  /* The flow tiles' hover wash, with a real pointer only. */
+  @media (hover: hover) {
+    &:hover {
+      background: color-mix(in srgb, var(--tile-bg) 98%, black);
+
+      :global([data-theme='dark']) & {
+        background: var(--color-alpha-white-04);
+      }
+    }
+  }
+}
+
+/* Wraps a row that unfolds in: clips its height while it grows; the row
+   inside keeps its own padding, so the wrapper is the one to size. */
+.rowUnfold {
+  overflow: hidden;
+
+  /* The row above it loses its last-child status the instant this mounts;
+     its own bottom rule belongs to this wrapper so it can fade in with it. */
+  > .row {
+    border-bottom: none;
+  }
+}
+
+.rowLabel {
+  @include label;
+  flex: 0 0 56px;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.nameInput {
+  all: unset;
+  box-sizing: border-box;
+  @include label;
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-feature-settings: 'salt' 1;
+  text-align: right;
+
+  /* The ghost span carries the placeholder; the native one is kept for
+     assistive tech and hidden. */
+  &::placeholder {
+    color: transparent;
+  }
+}
+
+.shimmerField {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+/* Project tracker's placeholder shimmer: rests at the placeholder tone, and
+   every cycle a single soft glint glides across once (the first 42%), then
+   holds. Both ends of the gradient are the rest color, so the loop restarts
+   invisibly and the words are legible at every instant. */
+.shimmerGhost {
+  @include label;
+  position: absolute;
+  inset: 0;
+  text-align: right;
+  white-space: nowrap;
+  pointer-events: none;
+  font-feature-settings: 'salt' 1;
+  --shimmer-base: var(--text-tertiary);
+  --shimmer-glint: var(--text-primary);
+  color: var(--shimmer-base);
+
+  @supports ((background-clip: text) or (-webkit-background-clip: text)) {
+    background-image: linear-gradient(
+      100deg,
+      var(--shimmer-base) 0%,
+      var(--shimmer-base) 42%,
+      var(--shimmer-glint) 50%,
+      var(--shimmer-base) 58%,
+      var(--shimmer-base) 100%
+    );
+    background-size: 250% 100%;
+    background-repeat: no-repeat;
+    background-position: 0% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: shimmerSweep var(--shimmer-duration, 2400ms) cubic-bezier(0.4, 0, 0.2, 1) var(--shimmer-delay, 0ms) infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      background-image: none;
+      color: var(--shimmer-base);
+      -webkit-text-fill-color: var(--shimmer-base);
+    }
+  }
+}
+
+/* The gradient is wider than the text, so the glint moves opposite to
+   background-position: 100% -> 0% glides it left to right. */
+@keyframes shimmerSweep {
+  0% {
+    background-position: 100% 50%;
+  }
+  42% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.swatches {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  /* The ring sits 3px out with a 2px stroke; 6px between swatches leaves it
+     1px clear of the next. */
+  gap: 6px;
+}
+
+/* The one selection ring, slid between swatches by SwatchRow. */
+.ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Its box is the swatch plus 3px a side, stroke included. */
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape);
+  border-radius: calc(var(--swatch-radius) + 3px);
+  border: 2px solid var(--text-primary);
+  pointer-events: none;
+}
+
+.swatches,
+.ring,
+.logoRow {
+  --swatch-radius: calc(5px * var(--corner-superellipse-scale, 1));
+}
+
+.swatch {
+  all: unset;
+  /* `all: unset` drops the app-wide corner curve set on `*`; put it back. */
+  corner-shape: var(--corner-shape);
+  box-sizing: border-box;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--swatch-radius);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: transform 160ms cubic-bezier(0.19, 1, 0.22, 1);
+
+  @media (hover: hover) {
+    /* Not while its popover is open: the popover is anchored to this box,
+       and would ride the scale. */
+    &:hover:not(:disabled):not([data-popup-open]) {
+      transform: scale(1.08);
+    }
+  }
+}
+
+/* No print: an empty square with a diagonal through it, both in one ink. */
+.swatchNone {
+  background: var(--tile-bg);
+  box-shadow: inset 0 0 0 1px var(--text-tertiary);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    bottom: -4px;
+    width: 1px;
+    background: var(--text-tertiary);
+    transform: rotate(45deg);
+  }
+}
+
+/* Material samples: white card plastic, and steel. */
+.samplePlastic {
+  background: #f1f1ef;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+
+.sampleMetal {
+  background: linear-gradient(135deg, #e6e6e8 0%, #a9a9ae 50%, #d8d8db 100%);
+}
+
+/* Finish samples: a neutral mid tone under each treatment. Ink is flat;
+   gloss carries a soft specular; foil is silver with a bright diagonal run;
+   etch is pressed in (a shadow on its top-left walls, light on the lower). */
+.sampleInk {
+  background: #8e8e93;
+}
+
+.sampleGloss {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 28%, rgba(255, 255, 255, 0) 46%),
+    #8e8e93;
+}
+
+.sampleFoil {
+  background: linear-gradient(
+    135deg,
+    #f4f4f6 0%,
+    #b8b8bf 38%,
+    #ffffff 50%,
+    #a6a6ad 62%,
+    #dedee2 100%
+  );
+}
+
+.sampleEtch {
+  background: #8e8e93;
+  box-shadow:
+    inset 2px 2px 3px rgba(0, 0, 0, 0.55),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Visa mark samples: a card face in the neutral tone with the mark's spot
+   lit at the bottom right. Front carries a chip at the left; back carries
+   the stripe across the top. */
+.sampleFront {
+  background:
+    linear-gradient(#e8e8ec, #e8e8ec) 84% 84% / 32% 18% no-repeat,
+    linear-gradient(#d0d0d4, #d0d0d4) 22% 42% / 24% 22% no-repeat,
+    #8e8e93;
+}
+
+.sampleBack {
+  background:
+    linear-gradient(#e8e8ec, #e8e8ec) 84% 84% / 32% 18% no-repeat,
+    linear-gradient(#5f5f64, #5f5f64) 0 18% / 100% 22% no-repeat,
+    #8e8e93;
+}
+
+/* Orientation samples: a small card in the neutral tone on the tile's ground,
+   held flat or upright. */
+.sampleLandscape,
+.samplePortrait {
+  background: var(--tile-bg);
+  box-shadow: inset 0 0 0 1px var(--text-tertiary);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: #8e8e93;
+    corner-shape: var(--corner-shape);
+    border-radius: 2px;
+  }
+}
+
+.sampleLandscape::before {
+  width: 12px;
+  height: 8px;
+}
+
+.samplePortrait::before {
+  width: 8px;
+  height: 12px;
+}
+
+.swatch:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.swatchCustom {
+  display: grid;
+  place-items: center;
+  /* A hair larger than the color swatches, to balance a stroked outline
+     against their solid fills; the negative margin keeps the row's height. */
+  width: 22px;
+  height: 22px;
+  margin: -1px;
+  background: var(--picker-fill);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--picker-border);
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.logoRow {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.logoUpload {
+  all: unset;
+  box-sizing: border-box;
+  @include label;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3xs);
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+  cursor: pointer;
+  transition: color 120ms ease;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* The whole row is the target until a file is picked, so the row's hover
+     lights the button too. */
+  @media (hover: hover) {
+    &:hover:not(:disabled),
+    .rowPick:hover & {
+      color: var(--text-primary);
+    }
+  }
+}
+
+.logoPicked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The preview and Remove are swatch-sized tiles; Remove is the color row's
+   "+" tile with a cross. */
+.logoPreview,
+.logoClear {
+  all: unset;
+  corner-shape: var(--corner-shape);
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--swatch-radius);
+  overflow: hidden;
+}
+
+.logoPreview {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+
+  img {
+    max-width: 14px;
+    max-height: 14px;
+    object-fit: contain;
+  }
+}
+
+.logoClear {
+  background: var(--picker-fill);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--picker-border);
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.19, 1, 0.22, 1);
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: scale(1.08);
+    }
+  }
+}
+
+.fileInput {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* A preset: the platform's app icon as a swatch, the swatch's size. The icon
+   carries its own corner curve, so the swatch's shape and inset stroke come off. */
+.swatchIcon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}

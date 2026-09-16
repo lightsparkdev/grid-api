@@ -72,12 +72,15 @@ patch:
     requests. On card programs where Grid makes the authorization decision, the
     combination remains valid for `status` changes other than `CLOSED`.
 
-    - `maxSpendPerTransaction`, when supplied, replaces the card-specific
-    per-transaction cap. Supply a positive integer in the smallest unit of the
-    card's currency to set it or null to clear it. If the platform config sets
-    `cardConfigs.maxSpendPerTransaction`, Grid enforces the lower of the card
-    and platform values. The card's `cardCapabilities.supportsSpendLimits`
-    must be true. `maxSpendPerTransaction` cannot be supplied alongside
+    - `maxSpendPerTransaction` sets the largest amount the card can authorize
+    on a single transaction. An authorization for exactly the limit is allowed,
+    and a later clearing can still settle above it — a restaurant tip, for
+    example — so this caps the authorization, not the final settled amount.
+    Send a positive integer in the smallest unit of the card's currency (cents
+    for USD) to set the limit, or null to remove it. If your platform config
+    sets `cardConfigs.maxSpendPerTransaction`, the lower of the two applies.
+    You can only send this when the card's
+    `cardCapabilities.supportsSpendLimits` is true, and not together with
     `status: CLOSED`.
 
     - `maxSpendPerDay`, when supplied, replaces the card-specific cap on
@@ -115,7 +118,8 @@ patch:
     Effects:
 
     - `status: FROZEN`: Authorization Decisioning declines new auths with
-    `CARD_PAUSED`. Existing pulls and in-flight reconciliation continue —
+    `cardDeclinedReason: CARD_NOT_ACTIVE`. Existing pulls and in-flight
+    reconciliation continue —
     freezing does not pause the lifecycle of authorizations that already
     passed.
 
@@ -135,7 +139,7 @@ patch:
     and fires no webhook.
 
 
-    The `card.state_change` webhook fires on every successful `status`
+    The `card.status_change` webhook fires on every successful `status`
     transition.
   operationId: updateCardById
   tags:

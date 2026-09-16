@@ -12,6 +12,7 @@ properties:
     - INDIVIDUAL
   fullName:
     type: string
+    maxLength: 250
     description: The full name of the beneficiary
   birthDate:
     type: string
@@ -21,9 +22,11 @@ properties:
     description: The nationality of the beneficiary
   email:
     type: string
+    maxLength: 320
     description: The email of the beneficiary
   phoneNumber:
     type: string
+    maxLength: 50
     description: The phone number of the beneficiary
   countryOfResidence:
     type: string

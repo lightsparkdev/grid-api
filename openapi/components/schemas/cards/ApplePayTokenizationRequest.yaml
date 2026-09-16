@@ -1,0 +1,4 @@
+title: Apple Pay Tokenization Request
+allOf:
+  - $ref: ./CardTokenizationRequest.yaml
+  - $ref: ./ApplePayTokenizationRequestFields.yaml

@@ -103,22 +103,6 @@ describe("discoveries", () => {
   });
 });
 
-describe("uma-providers", () => {
-  it("passes filters and pagination", async () => {
-    const { request } = await runCli([
-      "uma-providers",
-      "--country-code",
-      "US",
-      "--has-blocked-providers",
-    ]);
-    expect(request?.path).toBe("/grid/v1/uma-providers");
-    expect(request?.query).toMatchObject({
-      countryCode: "US",
-      hasBlockedProviders: "true",
-    });
-  });
-});
-
 describe("internal-accounts update", () => {
   it("sends privateEnabled and forwards signed headers", async () => {
     const { request } = await runCli([

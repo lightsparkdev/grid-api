@@ -28,9 +28,11 @@ properties:
     example: US
   documentNumber:
     type: string
+    maxLength: 100
     description: Document identification number (e.g., passport number)
     example: A12345678
   issuingAuthority:
     type: string
+    maxLength: 255
     description: Name of the government agency or organization that issued the document
     example: U.S. Department of State

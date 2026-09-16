@@ -11,9 +11,19 @@ changes and roadmap, [book a live demo](https://www.lightspark.com/contact) or
 
 <Update label="September 2026">
 
-## Card refunds post as their own rows, declines report as `DECLINED`
+## Add cards to Apple Pay, Google Pay, and Samsung Pay from your app
 
-Two card-statement corrections to `CardTransaction`:
+New `POST /cards/{id}/tokenize` exchanges the values a wallet SDK produces
+for the encrypted provisioning payload that completes an in-app "Add to
+Wallet" tap. The payload is encrypted to the wallet provider's keys, so
+card data never crosses your servers. `Card.cardCapabilities` gains
+`supportsDigitalWalletTokenization`. Manual entry into a wallet continues
+to work for every card with no integration. See
+[Digital wallet tokenization](/cards/card-management/digital-wallet-tokenization).
+
+## Card refunds, declines, and voids report distinct outcomes
+
+Three card-statement corrections to `CardTransaction`:
 
 - **Refunds are their own dated rows.** A merchant `RETURN` against a purchase now opens
   its own `CardTransaction` (`direction: CREDIT`, credited value in `settledAmount`)
@@ -21,21 +31,55 @@ Two card-statement corrections to `CardTransaction`:
   folding into the purchase's `refundedAmount`. The purchase stays `SETTLED`; the refund
   fires its own `CARD_TRANSACTION.*` webhooks on the refund row. To reverse a sandbox
   return, pass the refund row's id to `POST /sandbox/cards/{id}/simulate/return_reversal`.
-- **`DECLINED` status.** An authorization declined before any money moved now reports
-  `DECLINED` (and fires `CARD_TRANSACTION.DECLINED`) instead of `EXCEPTION`, which is
-  reserved for settlement anomalies. Declines must be excluded from cardholder
+- **`DECLINED` status with `cardDeclinedReason`.** An authorization declined before any
+  money moved now reports `DECLINED` (and fires `CARD_TRANSACTION.DECLINED`) instead of
+  `EXCEPTION`, which is reserved for settlement anomalies. The new `cardDeclinedReason`
+  field explains why Grid declined the authorization: `CARD_NOT_ACTIVE` (frozen or closed
+  card), `SPEND_LIMIT_EXCEEDED`, `INSUFFICIENT_FUNDS` (sandbox only—production approves
+  underfunded auths and resolves them as `EXCEPTION`), `NO_ELIGIBLE_FUNDING_SOURCE` (e.g.,
+  Embedded Wallet with no delegated key), `BLOCKED` (merchant category or transaction
+  blocked), `UNSUPPORTED_NETWORK`, or `OTHER`. Declines must be excluded from cardholder
   statements.
+- **`VOIDED` status.** An approved authorization that is fully reversed or expires
+  before any clearing posts now reports `VOIDED` (and fires
+  `CARD_TRANSACTION.VOIDED`) instead of `SETTLED`.
 - Card rows now carry the same full currency metadata (`decimals`, `name`, `symbol`) as
   payment rows, and `merchant` gains `city` and `state` when the network reports them.
 - `GET /transactions` accepts a `cardId` filter (`Card:` LSID or UUID) for listing one
   card of a multi-card cardholder, and rejects `status` combined with `type=CARD` with a
   400—`status` applies to payment transactions only.
+## Record consent for each agreement by type
+
+`agreementConsents` supersedes `endUserTermsConsent`: a list with one entry per agreement,
+so a customer's acceptance of each document is recorded and auditable separately.
+
+- Each entry carries a `type` alongside the existing `acceptedAt`, `ipAddress`,
+  `termsVersion`, and `acceptanceMethod` fields. Send at most one entry per type.
+- `GET /customers/agreements` lists every supported agreement with its `type`, current
+  `version`, and hosted `url`. Send an entry's `version` as `termsVersion` when recording
+  that agreement's acceptance. `GET /customers/end-user-terms` is deprecated but unchanged
+  — it still returns the single `{ version, url }` object, so existing callers keep working.
+- Customer responses return `agreementConsents`, holding the most recent acceptance per
+  accepted type, and an empty list until the first acceptance.
+- On update, supplying consents records additional acceptances; acceptances already on
+  file for other types are left untouched.
+
+`endUserTermsConsent` is **deprecated, not removed** — it still works on both the request
+and response, and is equivalent to a single `LIGHTSPARK_END_USER_TERMS` entry. Acceptance
+you have already recorded is migrated for you and reported under that type; you don't need
+to re-collect it. Sending both fields in one request is rejected.
+
+Accepting one agreement never implies acceptance of another, so the remaining six types
+must be collected from each customer.
+
+See [Disclosures](/payouts-and-b2b/onboarding/disclosures).
 
 ## Card returns report as `SETTLED` with a `refundedAmount`
 
 `REFUNDED` is removed from `CardTransactionStatus`, and `CARD_TRANSACTION.REFUNDED` from
-the webhook types. A card transaction's status tracks settlement only—a return is
-reported through `direction` and `refundedAmount`, which together already carry it.
+the webhook types. A card transaction's status tracks authorization outcomes and
+settlement—a return is reported through `direction` and `refundedAmount`, which together
+already carry it.
 
 - A settled purchase that the merchant later returns stays `SETTLED`, with the returned
   value in `refundedAmount`. A standalone merchant refund arrives as `direction: CREDIT`

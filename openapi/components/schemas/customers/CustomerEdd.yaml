@@ -10,6 +10,7 @@ description: >-
 properties:
   sourceOfFundsCategories:
     type: array
+    minItems: 1
     items:
       $ref: ./IndividualSourceOfFundsCategory.yaml
     description: Structured source-of-funds categories (FLOW of funds for this account).
@@ -17,12 +18,14 @@ properties:
       - SALARY
   sourceOfFundsOtherDescription:
     type: string
+    maxLength: 500
     description: >-
       Free-form description of the customer's source of funds. Required when
       `sourceOfFundsCategories` includes `OTHER`; otherwise omitted.
     example: Contest winnings
   sourceOfWealthCategories:
     type: array
+    minItems: 1
     items:
       $ref: ./SourceOfWealthCategory.yaml
     description: Structured source-of-wealth categories (STOCK — origin of accumulated wealth).
@@ -31,6 +34,7 @@ properties:
       - INVESTMENTS
   sourceOfWealthOtherDescription:
     type: string
+    maxLength: 500
     description: >-
       Free-form description of the customer's source of wealth. Required when
       `sourceOfWealthCategories` includes `OTHER`; otherwise omitted.
@@ -39,6 +43,7 @@ properties:
     $ref: ./PurposeOfAccount.yaml
   purposeOfAccountOtherDescription:
     type: string
+    maxLength: 500
     description: >-
       Free-form description of the customer's intended purpose for the Grid
       account. Required when `purposeOfAccount` is `OTHER`; otherwise omitted.

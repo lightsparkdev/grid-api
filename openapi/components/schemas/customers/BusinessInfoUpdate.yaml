@@ -3,10 +3,12 @@ description: Additional information for business entities
 properties:
   legalName:
     type: string
+    maxLength: 250
     description: Legal name of the business
     example: Acme Corporation, Inc.
   doingBusinessAs:
     type: string
+    maxLength: 250
     description: Trade name or DBA name of the business, if different from the legal name
     example: Acme
   country:
@@ -15,6 +17,7 @@ properties:
     example: US
   registrationNumber:
     type: string
+    maxLength: 100
     description: Business registration number
     example: '5523041'
   incorporatedOn:
@@ -26,6 +29,7 @@ properties:
     $ref: ./EntityType.yaml
   taxId:
     type: string
+    maxLength: 100
     description: Tax identification number
     example: 47-1234567
   countriesOfOperation:
@@ -41,6 +45,7 @@ properties:
     $ref: ./PurposeOfAccount.yaml
   sourceOfFunds:
     type: string
+    maxLength: 500
     description: The primary source of funds for the business
     example: Funds derived from customer payments for software services
   expectedMonthlyTransactionCount:

@@ -11,7 +11,7 @@ HPKE-encrypt the code `000000` (together with your TEK public key) inside `encry
 See <a href="/global-accounts/integration-guides/client-keys#encrypt-the-otp-code-email_otp-only">Encrypt the OTP code</a> for how to build the bundle. The flow is the same for both `EMAIL_OTP` and `SMS_OTP`:
 
 1. Call `POST /auth/credentials/{id}/challenge` to get `otpEncryptionTargetBundle`
-2. Generate a TEK key pair and HPKE-encrypt `{otp_code: "000000", public_key: tekPublicKeyHex}`
+2. Generate a TEK key pair and HPKE-encrypt `{otp_code: "000000", public_key: tekPublicKeyHex}`. Use the compressed public key (`02` or `03` prefix) so the same code works in production.
 3. Submit `encryptedOtpBundle` to `POST /auth/credentials/{id}/verify`
 4. Receive `202` with `payloadToSign` and `requestId`
 5. Sign `payloadToSign` with the TEK private key and retry with `Grid-Wallet-Signature` + `Request-Id` headers

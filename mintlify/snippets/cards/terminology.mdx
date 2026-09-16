@@ -21,7 +21,8 @@ identifies this account.
 The real-time request from the card network ("can this card spend
 $12.50 at Blue Bottle Coffee?"). {` `}Grid runs Authorization Decisioning
 against the funding source and either approves the auth (placing a hold)
-or declines it (`INSUFFICIENT_FUNDS`, `CARD_PAUSED`, etc.).
+or declines it, creating a terminal card transaction with
+`status: "DECLINED"` and a `cardDeclinedReason`.
 
 ## Pull
 
@@ -36,6 +37,13 @@ The network's confirmation that funds have moved for an authorization.
 A transaction can have multiple clearings (e.g. split shipments) and
 goes through `AUTHORIZED → PARTIALLY_SETTLED → SETTLED` as clearings
 land.
+
+## Void
+
+A full authorization reversal or an authorization expiry before any
+clearing closes the hold without moving money. The card transaction is
+terminal with `status: "VOIDED"`. `authorizedAmount` reports what is
+still held, normally 0, and `settledAmount` is absent.
 
 ## Refund
 

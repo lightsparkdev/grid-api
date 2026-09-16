@@ -1,0 +1,455 @@
+@use '../../apps/shared/typography/ios-type-mixins' as ios;
+
+/* Overlays the whole dot-grid stage; sits above the phone so the card can fly
+   over it. Click-through except for the card's hit box. */
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  --ios-font-family: var(--font-family-sf-pro);
+}
+
+/* The three.js canvas: transparent, the whole stage. R3F sets position, size,
+   and pointer-events: auto inline on its wrapper; all three are overridden so
+   the canvas stays click-through and the phone under it takes the pointer. */
+.canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  /* Locked or closed, the card dims and blurs (the intro's own fade is
+     inline on the <canvas> inside, not here). */
+  transition:
+    opacity 0.45s ease,
+    filter 0.45s ease;
+
+  canvas {
+    pointer-events: none !important;
+  }
+}
+
+/* Rides with the mesh (transform set per frame): pointer input for tilt and
+   drag-to-spin, the state pill, the accessible name. Laid out at the card's
+   intrinsic size and scaled, like the mesh. */
+.hit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: center center;
+  will-change: transform;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  --card-scale: 1;
+  /* Blueprint ink: the tertiary text grey (gray-400 light, gray-600 dark), a
+     step above the dot grid in either theme. */
+  --card-blueprint: var(--text-tertiary);
+  /* The brand's selection box: the design-tool blue, with strokes and handles
+     counter-scaled so they stay a constant screen size on the scaled card. */
+  --sel: #0d99ff;
+  /* Snap guides are red, as Figma's are, so they never read as part of the
+     blue selection. The palette's red-500. */
+  --guide: var(--color-red-500);
+  /* A guide is one device pixel at any zoom. */
+  --guide-px: calc(1px / var(--card-scale));
+  --mark: calc(7px / var(--card-scale));
+  --sel-px: calc(1px / var(--card-scale));
+
+  @media (min-resolution: 1.5dppx) {
+    --guide-px: calc(0.5px / var(--card-scale));
+  }
+  --handle: calc(8px / var(--card-scale));
+  --zone: calc(18px / var(--card-scale));
+}
+
+/* The intro's blueprint: card px around the hit box, scaled with it. */
+.blueprint {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.blueprintLabel {
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-mono);
+  fill: var(--card-blueprint);
+  stroke: none;
+  letter-spacing: 0.02em;
+}
+
+.hitDragging {
+  cursor: grabbing;
+}
+
+/* Locked or closed: nothing to grab. */
+.hitInert {
+  cursor: default;
+}
+
+/* Over the brand, or moving it: the arrow, as a design tool has it. */
+.hitOverBrand,
+.hitMoving {
+  cursor: default;
+}
+
+.hitOverName {
+  cursor: text;
+}
+
+/* ── Typing on the card ─────────────────────────────────────────────────────
+   A transparent input laid over the painted text, in the card's face, size
+   and tracking (set inline), so only the caret and selection show; the paint
+   underneath is the text. */
+.textEdit {
+  all: unset;
+  position: absolute;
+  box-sizing: border-box;
+  color: transparent;
+  caret-color: var(--sel);
+  /* The hit box turns selection off; the editor needs it back for the
+     highlight to draw. */
+  user-select: text;
+  -webkit-user-select: text;
+  white-space: pre;
+  font-feature-settings: 'salt' 1, 'ss01' 1;
+  cursor: text;
+
+  &::selection {
+    background: rgba(13, 153, 255, 0.3);
+  }
+}
+
+/* ── The gradient's handles ─────────────────────────────────────────────────
+   Figma's: a line between the ends, a ring at each end to drag, a dot per
+   stop. Same blue and scale-compensated stroke as the selection box. */
+.gradient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gradientLine {
+  position: absolute;
+  height: var(--sel-px);
+  margin-top: calc(var(--sel-px) / -2);
+  background: var(--sel);
+  transform-origin: 0 50%;
+  box-shadow: 0 0 0 calc(var(--sel-px) / 2) rgba(255, 255, 255, 0.6);
+}
+
+.gradientRadius {
+  position: absolute;
+  box-sizing: border-box;
+  corner-shape: round;
+  border-radius: 50%;
+  border: var(--sel-px) solid var(--sel);
+  opacity: 0.5;
+}
+
+.gradientStop {
+  position: absolute;
+  width: calc(6px / var(--card-scale));
+  height: calc(6px / var(--card-scale));
+  margin: calc(3px / var(--card-scale) * -1);
+  corner-shape: round;
+  border-radius: 50%;
+  box-shadow: 0 0 0 var(--sel-px) #ffffff, 0 0 0 calc(var(--sel-px) * 2) var(--sel);
+}
+
+.gradientEnd {
+  position: absolute;
+  width: calc(12px / var(--card-scale));
+  height: calc(12px / var(--card-scale));
+  margin: calc(6px / var(--card-scale) * -1);
+  corner-shape: round;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 calc(var(--sel-px) * 2) var(--sel), 0 1px 3px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  cursor: move;
+}
+
+/* ── The brand's selection box ──────────────────────────────────────────────
+   Laid out in card px on the hit box, an outline on hover and, selected, the
+   handles. Click-through itself: the brand under it is picked by the ray. */
+.selection {
+  position: absolute;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 var(--sel-px) var(--sel);
+  pointer-events: none;
+  transform-origin: center center;
+}
+
+/* The edges: invisible strips along each side that resize, so any point on
+   the outline is a grip, as in Figma. Under the corner handles. */
+.edge {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.edge_n,
+.edge_s {
+  left: 0;
+  right: 0;
+  height: var(--handle);
+  margin-top: calc(var(--handle) / -2);
+}
+
+.edge_e,
+.edge_w {
+  top: 0;
+  bottom: 0;
+  width: var(--handle);
+  margin-left: calc(var(--handle) / -2);
+}
+
+.edge_n { top: 0; }
+.edge_s { top: 100%; }
+.edge_w { left: 0; }
+.edge_e { left: 100%; }
+
+/* Scale handles: white squares on the four corners. */
+.handle {
+  position: absolute;
+  width: var(--handle);
+  height: var(--handle);
+  margin: calc(var(--handle) / -2);
+  background: #ffffff;
+  box-shadow: 0 0 0 var(--sel-px) var(--sel);
+  pointer-events: auto;
+}
+
+/* Cursors are set inline: the design tool's resize and rotate glyphs, drawn
+   in `cursors.ts` at the angle of each handle plus the box's own rotation. */
+.handle_nw { left: 0; top: 0; }
+.handle_se { left: 100%; top: 100%; }
+.handle_ne { left: 100%; top: 0; }
+.handle_sw { left: 0; top: 100%; }
+
+/* Rotate zones: invisible squares just outside each corner, under the corner
+   handle. */
+.rotateZone {
+  position: absolute;
+  width: var(--zone);
+  height: var(--zone);
+  pointer-events: auto;
+}
+
+.zone_nw { right: 100%; bottom: 100%; margin: 0 calc(var(--zone) / -3) calc(var(--zone) / -3) 0; }
+.zone_ne { left: 100%; bottom: 100%; margin: 0 0 calc(var(--zone) / -3) calc(var(--zone) / -3); }
+.zone_se { left: 100%; top: 100%; margin: calc(var(--zone) / -3) 0 0 calc(var(--zone) / -3); }
+.zone_sw { right: 100%; top: 100%; margin: calc(var(--zone) / -3) calc(var(--zone) / -3) 0 0; }
+
+/* Snap guides across the whole face. */
+.guideV,
+.guideH {
+  position: absolute;
+  background: var(--guide);
+  pointer-events: none;
+}
+
+.guideV {
+  top: 0;
+  bottom: 0;
+  width: var(--guide-px);
+  margin-left: calc(var(--guide-px) / -2);
+}
+
+.guideH {
+  left: 0;
+  right: 0;
+  height: var(--guide-px);
+  margin-top: calc(var(--guide-px) / -2);
+}
+
+/* Equal-spacing bars: a hairline across each matched gap with a tick at
+   both ends, in the guide red. */
+.gapBar {
+  position: absolute;
+  pointer-events: none;
+  background: var(--guide);
+  --tick: calc(6px / var(--card-scale));
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    background: var(--guide);
+  }
+}
+
+.gapBarV {
+  width: var(--guide-px);
+  margin-left: calc(var(--guide-px) / -2);
+
+  &::before,
+  &::after {
+    left: calc(var(--tick) / -2 + var(--guide-px) / 2);
+    width: var(--tick);
+    height: var(--guide-px);
+  }
+
+  &::before {
+    top: 0;
+  }
+
+  &::after {
+    bottom: 0;
+  }
+}
+
+.gapBarH {
+  height: var(--guide-px);
+  margin-top: calc(var(--guide-px) / -2);
+
+  &::before,
+  &::after {
+    top: calc(var(--tick) / -2 + var(--guide-px) / 2);
+    height: var(--tick);
+    width: var(--guide-px);
+  }
+
+  &::before {
+    left: 0;
+  }
+
+  &::after {
+    right: 0;
+  }
+}
+
+/* An × at each point a guide aligns: two hairlines through one point. */
+.guideMark {
+  position: absolute;
+  width: var(--mark);
+  height: var(--mark);
+  margin: calc(var(--mark) / -2);
+  pointer-events: none;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: var(--guide-px);
+    margin-top: calc(var(--guide-px) / -2);
+    background: var(--guide);
+  }
+
+  &::before {
+    transform: rotate(45deg);
+  }
+
+  &::after {
+    transform: rotate(-45deg);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Locked: the lock in the middle of the dimmed card, in card px, so it
+   rides and scales with the card. The whole card is the tap (the hit box). */
+.lockMark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  margin: -28px 0 0 -28px;
+  /* The docs' text color: the phone's iOS tokens don't reach the stage. */
+  color: var(--text-primary);
+  pointer-events: none;
+
+  /* The lock answers the card's hover and press (the whole card is the tap):
+     it grows a little under the pointer and gives, at half strength, on the
+     press, the way the glass buttons' glyphs do. */
+  svg {
+    display: block;
+    transform-origin: center;
+    transition:
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* Locked, in the phone: a tap anywhere on the card opens its status. */
+.hitLocked {
+  cursor: pointer;
+
+  &:hover .lockMark svg {
+    transform: scale(1.08);
+  }
+
+  &:active .lockMark svg {
+    transform: scale(0.96);
+    opacity: 0.5;
+    transition-duration: 0.06s;
+  }
+}
+
+.canvasDimmed {
+  opacity: 0.3;
+  filter: blur(3px);
+}
+
+/* Closed: the line in the middle of the dimmed card, quiet: the Activity
+   rows' description type, the label ink at 30%. */
+.closedMark {
+  /* Centered by its box (Motion owns the transform for the entrance; a
+     translate here was overwritten and the line sat low). */
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  @include ios.ios-text-footnote;
+  text-align: center;
+  color: color-mix(in srgb, var(--text-primary) 30%, transparent);
+  pointer-events: none;
+}
+
+/* The one-time drag hint, below the card, in the section divider's type. The
+   hit box is scaled with the card on stage; the hint scales back so it is
+   the divider's size, not the card's. */
+.hint {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(calc(1 / var(--card-scale)));
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-leading-18);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.hintGone {
+  opacity: 0;
+}
+

@@ -1,0 +1,29 @@
+type: object
+required:
+- accountType
+- iban
+- bankName
+properties:
+  accountType:
+    type: string
+    enum:
+    - TRY_ACCOUNT
+  iban:
+    type: string
+    description: Turkish IBAN (26 characters, starting with TR)
+    example: TR330006100519786457841326
+    minLength: 26
+    maxLength: 26
+    pattern: ^TR[0-9]{2}[0-9A-Z]{22}$
+  bankName:
+    type: string
+    description: The name of the bank. Must be one of the `bankName` values `GET /discoveries`
+      returns for this country and currency. Send it exactly as returned; any other
+      name is rejected.
+    minLength: 1
+    maxLength: 255
+    example: <bankName from GET /discoveries>
+example:
+  accountType: TRY_ACCOUNT
+  iban: TR330006100519786457841326
+  bankName: <bankName from GET /discoveries>
