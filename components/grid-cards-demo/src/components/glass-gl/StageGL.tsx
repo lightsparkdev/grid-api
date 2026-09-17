@@ -101,37 +101,26 @@ const FOREGROUND_SELECTOR =
  * the bleed-padded buffer.
  */
 /** How the lattice meets the frame's edges: `gutter` (the stage: even
- *  breathing room inside, no dot on an edge) or `flush` (a dot on each
- *  edge, so the outer rows and columns ride the frame's rules). */
+ *  breathing room inside, no dot on an edge) or `flush` (for a column drawn
+ *  between two rules: the top and bottom rows sit whole against the top and
+ *  bottom edges; across, the gutter, so no dot sits on a rule). */
 export type DotEdge = 'gutter' | 'flush';
 
 function dotLayout(w: number, h: number, edge: DotEdge = 'gutter') {
-  if (edge === 'flush') {
-    // The outermost dots sit whole against each edge (their far side on the
-    // frame's line); the step divides what is between them exactly.
-    const cols = Math.max(1, Math.round((w - DOT_SIZE) / DOT_SPACING));
-    const rows = Math.max(1, Math.round((h - DOT_SIZE) / DOT_SPACING));
-    return {
-      cols,
-      rows,
-      startX: DOT_SIZE / 2,
-      startY: DOT_SIZE / 2,
-      stepX: (w - DOT_SIZE) / cols,
-      stepY: (h - DOT_SIZE) / rows,
-    };
-  }
+  // Across: the gutter, either way (its first off-frame dot is fully hidden,
+  // so nothing sits on a rule once the field is extended for the ripple).
   const cols = Math.max(1, Math.round((w + 2 * DOT_SIZE) / DOT_SPACING) - 1);
-  const rows = Math.max(1, Math.round((h + 2 * DOT_SIZE) / DOT_SPACING) - 1);
   const stepX = (w + 2 * DOT_SIZE) / (cols + 1); // the gap
+  const startX = stepX - DOT_SIZE; // gutter ≈ gap − one dot
+  if (edge === 'flush') {
+    // Down: the top and bottom rows whole against the edges; the step
+    // divides what is between them exactly.
+    const rows = Math.max(1, Math.round((h - DOT_SIZE) / DOT_SPACING));
+    return { cols, rows, startX, startY: DOT_SIZE / 2, stepX, stepY: (h - DOT_SIZE) / rows };
+  }
+  const rows = Math.max(1, Math.round((h + 2 * DOT_SIZE) / DOT_SPACING) - 1);
   const stepY = (h + 2 * DOT_SIZE) / (rows + 1);
-  return {
-    cols,
-    rows,
-    startX: stepX - DOT_SIZE, // gutter ≈ gap − one dot, so off-frame dots hide
-    startY: stepY - DOT_SIZE,
-    stepX,
-    stepY,
-  };
+  return { cols, rows, startX, startY: stepY - DOT_SIZE, stepX, stepY };
 }
 
 function drawDotField(
