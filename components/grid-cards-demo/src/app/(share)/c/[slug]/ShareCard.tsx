@@ -27,7 +27,7 @@ import * as THREE from 'three';
 import { footprint } from '@/apps/card/cardMetrics';
 import { CardEnv } from '@/components/CardStage/card3d/CardEnv';
 import { CardMesh, type CardMeshState } from '@/components/CardStage/card3d/CardMesh';
-import { flushDeferredPaints } from '@/components/CardStage/card3d/deferredPaint';
+import { flushDeferredPaints, holdDeferredPaints } from '@/components/CardStage/card3d/deferredPaint';
 import { CardIntro } from '@/components/CardStage/CardIntro';
 import { CardMotion, ORIENT_ROLL } from '@/components/CardStage/cardMotion';
 import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/components/CardStage/export/compose';
@@ -196,9 +196,11 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
     };
   }, [endDrag]);
 
+  // The back's slow maps wait for the intro (deferredPaint): held from
+  // mount, painted once it is done.
+  useEffect(() => holdDeferredPaints(), []);
   const onIntroDone = useCallback(() => {
     setIntroDone(true);
-    // The back's slow maps, held off the intro, paint now.
     flushDeferredPaints();
   }, []);
 

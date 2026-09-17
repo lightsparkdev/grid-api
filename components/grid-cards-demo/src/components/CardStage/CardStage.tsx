@@ -32,7 +32,7 @@ import { localToSpec } from './card3d/faceFrame';
 import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { CardMotion, ORIENT_ROLL } from './cardMotion';
-import { flushDeferredPaints } from './card3d/deferredPaint';
+import { flushDeferredPaints, holdDeferredPaints } from './card3d/deferredPaint';
 import { installExportDevHook } from './export/devHook';
 import { CardExporter, type ExportPose } from './export/exportRenderer';
 import { useCardMomentSounds } from './cardSounds';
@@ -315,10 +315,12 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   // then dissolves as the card comes into focus. Until it's done the card is
   // held flat and the pointer is off.
   const [introDone, setIntroDone] = useState(false);
+  // The back's slow maps wait for the intro (deferredPaint): held from
+  // mount, painted once it is done.
+  useEffect(() => holdDeferredPaints(), []);
   useEffect(() => {
     if (!introDone) return;
     onIntroDone?.();
-    // The back's slow maps, held off the intro, paint now.
     flushDeferredPaints();
   }, [introDone, onIntroDone]);
   const overlayRef = useRef<SVGSVGElement>(null);
