@@ -101,7 +101,7 @@ class VercelStore implements ShareStore {
         forName: input.forName ?? null,
         design: input.design,
         look: input.look ?? null,
-        assets: { og: null, card: null, square: null, video: null },
+        assets: { og: null, card: null, square: null },
         createdAt: now,
         updatedAt: now,
         views: 0,
@@ -216,7 +216,6 @@ function previousFileUrl(record: ShareRecord, role: ShareFileRole): string | nul
     case 'og':
     case 'card':
     case 'square':
-    case 'video':
       return record.assets[role];
     case 'logo':
       return typeof record.design.logoUrl === 'string' ? record.design.logoUrl : null;

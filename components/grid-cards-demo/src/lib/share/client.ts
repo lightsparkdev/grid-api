@@ -1,6 +1,6 @@
 /* The browser's side of a share: make the record, render and upload the
-   pictures, attach the video when it's done, and remember the maker's edit
-   tokens so a card they come back to is still theirs. */
+   pictures, and remember the maker's edit tokens so a card they come back
+   to is still theirs. */
 
 import type { CardExporter, ExportPose } from '@/components/CardStage/export/exportRenderer';
 import {
@@ -13,7 +13,7 @@ import {
 } from '@/components/CardStage/export/compose';
 import { renderStill, type StillFormat } from '@/components/CardStage/export/stills';
 import type { CardDesign } from '@/data/design';
-import type { ShareAssets, ShareCreateInput, ShareFileRole, ShareLook, SharePatch, ShareRecord } from './types';
+import type { ShareCreateInput, ShareFileRole, ShareLook, SharePatch, ShareRecord } from './types';
 
 export interface ShareHandle {
   record: ShareRecord;
@@ -175,10 +175,11 @@ const STILL_ROLES: Array<[StillFormat, ShareFileRole]> = [
 ];
 
 /**
- * Make (or update) a share: the record first, so the link exists within a
- * second; then the link preview still, the others, and any uploaded brand
- * files. The spin video is attached separately (`attachVideo`), since it
- * takes a while.
+ * Make (or update) a share. A new one: the record first, so the link exists
+ * within a second; then any uploaded brand files, the link preview still,
+ * and the square. An update: the files and stills first, and the record
+ * last, so a failure part way leaves the public link as it was rather than
+ * showing a new design over the old picture.
  */
 export async function createShare(opts: CreateShareOptions): Promise<ShareHandle> {
   const { exporter, design, onProgress } = opts;
@@ -194,7 +195,9 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   };
   if (opts.existing) {
     ({ id, editToken, url } = opts.existing);
-    record = await patchShare(id, editToken, { design, forName: opts.forName ?? undefined, look });
+    const current = await fetchShare(id);
+    if (!current) throw new ShareError('not-found', 404);
+    record = current;
   } else {
     const made = await api<{ record: ShareRecord; editToken: string; url: string }>(
       '/api/shares',
@@ -210,17 +213,20 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
     id = record.id;
   }
 
-  // The brand's files, so the design loads anywhere.
+  // The brand's files, so the design loads anywhere. The design to store
+  // points at the uploaded copies, not the browser's object URLs.
+  const stored: CardDesign = { ...design };
   for (const [key, role] of [
     ['logoUrl', 'logo'],
     ['backgroundUrl', 'art'],
-  ] as Array<[keyof CardDesign, ShareFileRole]>) {
+  ] as Array<['logoUrl' | 'backgroundUrl', ShareFileRole]>) {
     const v = design[key];
     if (typeof v !== 'string') continue;
     const blob = await blobOf(v);
     if (blob) {
       onProgress?.({ stage: 'upload', detail: role });
       record = await uploadFile(id, editToken, role, await shrinkRaster(blob));
+      stored[key] = record.design[key];
     }
   }
 
@@ -242,20 +248,13 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
     onProgress?.({ stage: 'upload', detail: format });
     record = await uploadFile(id, editToken, role, blob);
   }
+  if (opts.existing) {
+    record = await patchShare(id, editToken, { design: stored, forName: opts.forName ?? undefined, look });
+  }
   onProgress?.({ stage: 'done' });
   const handle = { record, editToken, url };
   rememberShare(handle);
   return handle;
-}
-
-export async function attachVideo(handle: ShareHandle, video: Blob): Promise<ShareRecord> {
-  const record = await uploadFile(handle.record.id, handle.editToken, 'video', video);
-  rememberShare({ ...handle, record });
-  return record;
-}
-
-export async function clearAsset(handle: ShareHandle, key: keyof ShareAssets): Promise<ShareRecord> {
-  return patchShare(handle.record.id, handle.editToken, { assets: { [key]: null } });
 }
 
 // ── The maker's own shares ────────────────────────────────────────────────

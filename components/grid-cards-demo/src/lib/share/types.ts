@@ -17,8 +17,6 @@ export interface ShareAssets {
   card: string | null;
   /** The square post, 1:1. */
   square: string | null;
-  /** The spin video, MP4 H.264, 1920 × 1080; null where the browser can't encode. */
-  video: string | null;
 }
 
 /** How the stills were staged: the surface the card sat on and how it was
@@ -59,7 +57,9 @@ export interface ShareCreateInput {
   look?: ShareLook | null;
 }
 
-/** What the client may change afterwards, with the edit token. */
+/** What changes after creation. The client may send the design, name, and
+ *  look, with the edit token; the assets are set only by the upload route,
+ *  from files it stored. */
 export interface SharePatch {
   design?: CardDesign;
   assets?: Partial<ShareAssets>;
@@ -90,20 +90,18 @@ export function validSlug(slug: string): boolean {
 }
 
 /** File names a share stores, by role. The extension follows the content type. */
-export type ShareFileRole = 'og' | 'card' | 'square' | 'video' | 'logo' | 'art';
+export type ShareFileRole = 'og' | 'card' | 'square' | 'logo' | 'art';
 
 /** Upload size caps by role, bytes. The stills are WebP at 2400 across (a
  *  few hundred KB); a logo or art is shrunk to 2048 across and WebP by the
  *  client before it is sent, so anything near these is not ours. Uploads go
- *  through a route handler, which Vercel caps at 4.5 MB a body; the video
- *  (not uploaded today: the share carries no video) would need a direct
- *  client upload to Blob. */
+ *  through a route handler, which Vercel caps at 4.5 MB a body. The spin
+ *  video is not uploaded: the visitor saves it, the share carries none. */
 const MB = 1024 * 1024;
 export const MAX_BYTES: Record<ShareFileRole, number> = {
   og: 4 * MB,
   card: 4 * MB,
   square: 4 * MB,
-  video: 40 * MB,
   logo: 4 * MB,
   art: 4 * MB,
 };
@@ -111,7 +109,6 @@ export const SHARE_FILE_TYPES: Record<ShareFileRole, string[]> = {
   og: ['image/png', 'image/webp', 'image/jpeg'],
   card: ['image/png'],
   square: ['image/png', 'image/webp', 'image/jpeg'],
-  video: ['video/mp4'],
   logo: ['image/svg+xml', 'image/png', 'image/webp'],
   art: ['image/svg+xml', 'image/png', 'image/webp', 'image/jpeg'],
 };
@@ -126,8 +123,6 @@ export function extensionFor(contentType: string): string {
       return 'jpg';
     case 'image/svg+xml':
       return 'svg';
-    case 'video/mp4':
-      return 'mp4';
     default:
       return 'bin';
   }

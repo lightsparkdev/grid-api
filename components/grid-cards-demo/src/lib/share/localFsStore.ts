@@ -110,8 +110,6 @@ export function contentTypeFor(ext: string): string {
       return 'image/jpeg';
     case 'svg':
       return 'image/svg+xml';
-    case 'mp4':
-      return 'video/mp4';
     default:
       return 'application/octet-stream';
   }
@@ -139,7 +137,7 @@ class LocalFsStore implements ShareStore {
       forName: input.forName ?? null,
       design: input.design,
       look: input.look ?? null,
-      assets: { og: null, card: null, square: null, video: null },
+      assets: { og: null, card: null, square: null },
       createdAt: now,
       updatedAt: now,
       views: 0,

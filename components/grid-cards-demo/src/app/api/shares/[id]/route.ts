@@ -1,5 +1,7 @@
 /* GET /api/shares/{id}: the record, by id or slug.
-   PATCH /api/shares/{id}: change it, with the edit token. */
+   PATCH /api/shares/{id}: change its design, name, or look, with the edit
+   token. The assets are not patchable here: only an upload sets them, so
+   every URL a share carries is a file of ours. */
 
 import { NextResponse } from 'next/server';
 
@@ -17,8 +19,6 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (!record) return fail('not-found');
   return NextResponse.json({ record });
 }
-
-const ASSET_ROLES = ['og', 'card', 'square', 'video'] as const;
 
 export async function PATCH(req: Request, { params }: Ctx) {
   const auth = await authorized(req, params.id);
@@ -40,16 +40,6 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const look = cleanLook(body.look);
   if (look === false) return fail('bad-body');
   if (look !== undefined) patch.look = look;
-  if (body.assets !== undefined) {
-    if (typeof body.assets !== 'object' || body.assets === null) return fail('bad-body');
-    patch.assets = {};
-    for (const role of ASSET_ROLES) {
-      const url = body.assets[role];
-      if (url === undefined) continue;
-      if (url !== null && typeof url !== 'string') return fail('bad-body');
-      patch.assets[role] = url;
-    }
-  }
 
   try {
     const record = await shareStore().update(auth.record.id, patch);

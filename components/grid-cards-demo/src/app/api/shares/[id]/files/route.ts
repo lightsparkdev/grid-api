@@ -5,9 +5,9 @@
 
 import { NextResponse } from 'next/server';
 
-import { authorized, fail, failFrom, rateLimited } from '@/lib/share/http';
+import { authorized, fail, failFrom, rateLimited, readBodyCapped } from '@/lib/share/http';
 import { shareStore } from '@/lib/share/store';
-import { SHARE_FILE_TYPES } from '@/lib/share/types';
+import { MAX_BYTES, SHARE_FILE_TYPES } from '@/lib/share/types';
 import type { ShareFileRole, SharePatch } from '@/lib/share/types';
 
 export const runtime = 'nodejs';
@@ -31,16 +31,20 @@ export async function POST(req: Request, { params }: Ctx) {
   const limited = await rateLimited(req, 'upload');
   if (limited) return limited;
 
+  // The cap is enforced while the body is read, not after it is all in
+  // memory; a declared length over it is refused before any of it is.
+  const body = await readBodyCapped(req, MAX_BYTES[role]);
+  if (!body) return fail('too-large', 413);
+
   const store = shareStore();
   const id = auth.record.id;
   try {
-    const url = await store.putFile(id, role, await req.arrayBuffer(), contentType);
+    const url = await store.putFile(id, role, body, contentType);
     const patch: SharePatch = {};
     switch (role) {
       case 'og':
       case 'card':
       case 'square':
-      case 'video':
         patch.assets = { [role]: url };
         break;
       case 'logo':
