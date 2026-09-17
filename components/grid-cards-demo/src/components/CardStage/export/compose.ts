@@ -196,7 +196,7 @@ const HAND_CARD_CENTER = { x: 0.5, y: 0.5 };
 /** In a frame wider than its square (the post), the square is the frame's
  *  height and the hand would sit small in the width: the whole composition
  *  is scaled up this much there, about the card's center. */
-const HAND_WIDE_SCALE = 1.35;
+const HAND_WIDE_SCALE = 1.5;
 
 /** The card's share of the layout square in a frame `w` × `h`: bigger in a
  *  wide frame. */
