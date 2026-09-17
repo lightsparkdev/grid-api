@@ -157,10 +157,14 @@ patch:
             summary: Freeze an active card
             value:
               status: FROZEN
+              substatus: SUSPICIOUS_ACTIVITY
+              reason: Unrecognised charges reported by the cardholder.
           unfreeze:
             summary: Unfreeze a frozen card
             value:
               status: ACTIVE
+              substatus: ISSUER_REQUEST
+              reason: Review closed with no action.
           updateFundingSource:
             summary: Replace the card's bound funding source
             value:
@@ -181,11 +185,15 @@ patch:
             summary: Freeze the card and replace its funding source in one call
             value:
               status: FROZEN
+              substatus: SUSPICIOUS_ACTIVITY
+              reason: Unrecognised charges reported by the cardholder.
               fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
           close:
             summary: Permanently close the card
             value:
               status: CLOSED
+              substatus: END_USER_REQUEST
+              reason: Cardholder asked us to close the card.
   responses:
     '200':
       description: Card updated. Returns the updated card.
@@ -199,8 +207,9 @@ patch:
         supplied funding source does not belong to the cardholder or is
         not denominated in the card's currency, with `INVALID_INPUT` when
         `fundingSource` is combined with any `status` change on a card program
-        where the card issuer makes authorization decisions, and for general
-        invalid parameters.
+        where the card issuer makes authorization decisions, with
+        `INVALID_INPUT` when `status` is supplied without `substatus` or
+        without a non-empty `reason`, and for general invalid parameters.
       content:
         application/json:
           schema:

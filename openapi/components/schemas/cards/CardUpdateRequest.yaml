@@ -2,7 +2,9 @@ type: object
 description: >-
   Update request for `PATCH /cards/{id}`. At least one of `status`,
   `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or
-  `maxTransactionsPerDay` must be supplied. `status`
+  `maxTransactionsPerDay` must be supplied. Supplying `status` also requires
+  `substatus` and `reason`, so every card state change carries why it
+  happened. `status`
   transitions are limited to `ACTIVE ⇄ FROZEN` and
   `ACTIVE | FROZEN → CLOSED`; any other transition returns
   `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and
@@ -21,6 +23,33 @@ properties:
       terminal and irreversible; once closed, the card stays in the
       system for audit and reconciliation but cannot transact again.
     example: FROZEN
+  substatus:
+    type: string
+    enum:
+      - LOST
+      - COMPROMISED
+      - DAMAGED
+      - END_USER_REQUEST
+      - ISSUER_REQUEST
+      - NOT_ACTIVE
+      - SUSPICIOUS_ACTIVITY
+      - INTERNAL_REVIEW
+      - EXPIRED
+      - UNDELIVERABLE
+      - OTHER
+    description: >-
+      Why the card is moving, in the card issuer's vocabulary. Required
+      whenever `status` is supplied, and forwarded to the issuer. Pick
+      `OTHER` when none of the named values fit and say why in `reason`.
+    example: SUSPICIOUS_ACTIVITY
+  reason:
+    type: string
+    minLength: 1
+    description: >-
+      A short sentence naming why the card is moving. Required whenever
+      `status` is supplied, and recorded against the card so a later reader
+      can tell why it changed.
+    example: Cardholder reported the card stolen.
   fundingSource:
     type: string
     description: >-
