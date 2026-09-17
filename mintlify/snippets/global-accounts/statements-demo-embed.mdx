@@ -1,0 +1,130 @@
+export const StatementsDemoEmbed = () => {
+  React.useEffect(() => {
+    const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const base = isLocal
+      ? ['http:', '', 'localhost:4003'].join('/')
+      : ['https:', '', 'grid-statements-playground.vercel.app'].join('/');
+    const targetOrigin = new URL(base).origin;
+    const isDark = () => document.documentElement.classList.contains('dark');
+
+    const navWidth = () => {
+      const root = document.documentElement;
+      const collapsed = root.classList.contains('ls-nav-collapsed');
+      const styles = getComputedStyle(root);
+      const value = parseFloat(
+        styles.getPropertyValue(collapsed ? '--ls-nav-rail-w' : '--ls-sidebar-width'),
+      );
+      return Number.isFinite(value) ? value : collapsed ? 48 : 280;
+    };
+
+    let host = document.getElementById('statements-demo-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'statements-demo-host';
+      host.className = 'ls-playground-host';
+      host.style.cssText = 'position:fixed;z-index:1;overflow:hidden;';
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'statements-demo-iframe';
+      iframe.className = 'ls-playground-iframe';
+      iframe.src =
+        base +
+        '/?embed=true&theme=' +
+        (isDark() ? 'dark' : 'light') +
+        '&nav=' +
+        navWidth();
+      iframe.title = 'Grid periodic statements playground';
+      iframe.setAttribute('allow', 'clipboard-write');
+      iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
+      host.appendChild(iframe);
+      document.body.appendChild(host);
+    }
+
+    if (window.__sdHideTimer) {
+      clearTimeout(window.__sdHideTimer);
+      window.__sdHideTimer = null;
+    }
+    host.style.display = 'block';
+
+    const sendNav = () => {
+      const iframe = document.getElementById('statements-demo-iframe');
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage(
+          { type: 'nav-sync', sidebarWidth: navWidth() },
+          targetOrigin,
+        );
+      }
+    };
+
+    const sendTheme = () => {
+      const iframe = document.getElementById('statements-demo-iframe');
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage(
+          { type: 'theme-sync', theme: isDark() ? 'dark' : 'light' },
+          targetOrigin,
+        );
+      }
+    };
+
+    let frame = 0;
+    let last = { left: -1, top: -1, width: -1, height: -1 };
+    const syncBounds = () => {
+      const container = document.getElementById('statements-demo-container');
+      if (container && host) {
+        const bounds = container.getBoundingClientRect();
+        if (
+          bounds.left !== last.left ||
+          bounds.top !== last.top ||
+          bounds.width !== last.width ||
+          bounds.height !== last.height
+        ) {
+          host.style.left = bounds.left + 'px';
+          host.style.top = bounds.top + 'px';
+          host.style.width = bounds.width + 'px';
+          host.style.height = bounds.height + 'px';
+          last = {
+            left: bounds.left,
+            top: bounds.top,
+            width: bounds.width,
+            height: bounds.height,
+          };
+          sendNav();
+        }
+      }
+      frame = requestAnimationFrame(syncBounds);
+    };
+    frame = requestAnimationFrame(syncBounds);
+
+    const handleMessage = (event) => {
+      const iframe = document.getElementById('statements-demo-iframe');
+      if (event.source !== iframe?.contentWindow || event.origin !== targetOrigin) return;
+      if (event.data?.type === 'theme-request') sendTheme();
+      if (event.data?.type === 'nav-request') sendNav();
+    };
+    window.addEventListener('message', handleMessage);
+
+    const observer = new MutationObserver(() => {
+      sendTheme();
+      sendNav();
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    sendTheme();
+    sendNav();
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('message', handleMessage);
+      observer.disconnect();
+      window.__sdHideTimer = setTimeout(() => {
+        const mountedHost = document.getElementById('statements-demo-host');
+        if (mountedHost) mountedHost.style.display = 'none';
+      }, 150);
+    };
+  }, []);
+
+  return null;
+};
