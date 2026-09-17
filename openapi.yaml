@@ -13113,7 +13113,7 @@ components:
       description: |-
         The payment rail used for the transfer. Payment rails represent the underlying payment network or system used to move funds between accounts.
 
-        `ACH_SAME_DAY` requests same-business-day settlement for a USD payout and is priced separately. It is subject to the NACHA per-entry same-day limit; a request above that limit settles on the standard schedule and is priced accordingly.
+        `ACH_SAME_DAY` requests same-business-day settlement for a USD payout and is priced separately. It is subject to the NACHA per-entry same-day limit, which the network applies to every originator. A payout above that limit is rejected rather than slowed: send it over `ACH` instead, which settles on the standard schedule.
 
         `ACH` will settle on the standard next-business-day schedule. Until a date we announce in advance, `ACH` continues to settle same-business-day on production platforms; it already settles next-business-day on sandbox platforms. To guarantee same-day settlement after that date, request `ACH_SAME_DAY`.
       example: ACH
