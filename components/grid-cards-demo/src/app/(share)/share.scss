@@ -15,6 +15,11 @@ html[data-theme='dark'] {
   --share-text-primary: #ffffff;
   --share-text-secondary: #9a9a9a;
   --share-border: rgba(255, 255, 255, 0.1);
+  /* The dot grid on this page's dark surface (the app's is a step lighter):
+     the dots a tenth of the way to the ink, as the share still draws them. */
+  --dot-grid-bg: #111111;
+  --dot-grid-dot: #272726;
+  --dot-grid-dot-peak: #474741;
 }
 
 /* The document itself takes the page's surface. Mobile Safari colors the

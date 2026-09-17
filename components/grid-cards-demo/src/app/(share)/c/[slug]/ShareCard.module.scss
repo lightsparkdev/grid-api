@@ -43,8 +43,11 @@
 /* ── The dot grid ──────────────────────────────────────────────────────── */
 
 /* The playground's WebGL dot grid, filling the card's column between its
-   two rules, under everything. It paints its own surface (the page's,
-   passed in). Not on a phone, where the columns stack. */
+   two rules, under everything. Its colors are the --dot-grid-* tokens
+   (share.scss sets the dark ones to this page's surface). It takes the
+   pointer, so a press in the column ripples the grid as on the stage; the
+   press still bubbles to the root for the card. Not on a phone, where the
+   columns stack. */
 .dots {
   position: absolute;
   top: var(--pad);
@@ -52,7 +55,6 @@
   left: calc(var(--pad) + (100% - 2 * var(--pad)) / 3);
   width: calc((100% - 2 * var(--pad)) / 3);
   z-index: 0;
-  pointer-events: none;
 
   @media (max-width: 899px) {
     display: none;
@@ -107,7 +109,10 @@
   left: 0;
   transform-origin: center center;
   will-change: transform;
-  pointer-events: none;
+  /* Takes the pointer over the card (marked data-stage-foreground), so a
+     press there turns the card and does not ripple the grid beneath; the
+     root's handlers still get it by bubbling. */
+  pointer-events: auto;
   /* Blueprint ink: the surface's ink, stepped back. */
   --card-blueprint: color-mix(in srgb, var(--ink) 55%, transparent);
 }
