@@ -111,6 +111,11 @@ private fun buildAccountInfo(accountType: String, accountInfo: JsonNode): Extern
                 .accountType(UsdExternalAccountCreateInfo.AccountType.USD_ACCOUNT)
                 .accountNumber(accountInfo.requireText("accountNumber"))
                 .routingNumber(accountInfo.requireText("routingNumber"))
+                .bankAccountType(
+                    UsdExternalAccountCreateInfo.BankAccountType.of(
+                        accountInfo.requireText("bankAccountType"),
+                    ),
+                )
                 .beneficiary(buildUsdBeneficiary(beneficiaryNode))
                 .build()
             ExternalAccountCreate.AccountInfo.ofUsdAccount(info)
