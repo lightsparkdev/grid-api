@@ -17,7 +17,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
+  useSyncExternalStore,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -98,11 +98,14 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
   /** The card has been turned by hand once: the hint has done its job. */
   const [dragged, setDragged] = useState(false);
 
-  // The theme is on <html> (the root layout's boot script), read once mounted.
-  const [themeDark, setThemeDark] = useState(false);
-  useEffect(() => {
-    setThemeDark(document.documentElement.dataset.theme === 'dark');
-  }, []);
+  // The theme is on <html>, set by the root layout's boot script before the
+  // first paint. The page's colors come from the stylesheet off that
+  // attribute, so the server's HTML paints right; this reading is for the
+  // GL (the dot grid's surface, the card's exposure). The server's snapshot
+  // is light; the client's is read during hydration, and React re-renders
+  // before paint where they differ, so a dark system never sees a light
+  // frame. Subscribed, so a theme switch follows too.
+  const themeDark = useSyncExternalStore(subscribeTheme, readThemeDark, () => false);
   const palette = useMemo<Palette>(() => paletteOn(themeDark ? DARK_SURFACE : LIGHT_SURFACE), [themeDark]);
 
   const meshState = useMemo<CardMeshState>(
@@ -201,11 +204,6 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
   const onIntroDone = useCallback(() => setIntroDone(true), []);
 
   const foot = footprint(design.orientation);
-  const vars = {
-    '--surface': palette.bg,
-    '--ink': palette.ink,
-    '--text-primary': palette.ink,
-  } as CSSProperties;
 
   return (
     // The pointer is handled here, on the page: the stage paints over the
@@ -217,7 +215,6 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
         introDone && overCardNow && styles.overCard,
         dragging && styles.dragging,
       )}
-      style={vars}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
       onPointerDown={onPointerDown}
@@ -311,6 +308,16 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
 function cardScale(w: number, h: number, foot: { w: number; h: number }): number {
   const long = Math.max(CARD_MIN_LONG, Math.min(CARD_OF_WIDTH * w, CARD_OF_HEIGHT * h));
   return long / Math.max(foot.w, foot.h);
+}
+
+function readThemeDark(): boolean {
+  return document.documentElement.dataset.theme === 'dark';
+}
+
+function subscribeTheme(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  return () => observer.disconnect();
 }
 
 /** A perspective camera whose view at z = 0 is exactly the stage in px. */
