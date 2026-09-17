@@ -30,6 +30,7 @@ import { CardIntro } from '@/components/CardStage/CardIntro';
 import { CardMotion, ORIENT_ROLL } from '@/components/CardStage/cardMotion';
 import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/components/CardStage/export/compose';
 import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from '@/components/CardStage/introTimeline';
+import { StageGL } from '@/components/glass-gl/StageGL';
 import { LightsparkWordmark } from '@/components/LightsparkWordmark';
 import type { CardDesign } from '@/data/design';
 import { play } from '@/lib/sounds';
@@ -222,6 +223,12 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
     >
+      {/* The playground's dot grid, in the card's column, under everything.
+          It ripples on a click anywhere but the chrome. */}
+      <div className={styles.dots} aria-hidden>
+        <StageGL bg={palette.bg} bootMix={0} />
+      </div>
+
       {/* The card's stage: the whole page; the card sits at its center. */}
       <div ref={stageRef} className={styles.stage} role="img" aria-label={alt}>
         <Canvas
@@ -266,16 +273,18 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
       <span className={clsx(styles.rule, styles.ruleB)} aria-hidden />
       <span className={clsx(styles.rule, styles.ruleC)} aria-hidden />
       <span className={clsx(styles.rule, styles.ruleD)} aria-hidden />
-      <a className={styles.wordmark} href="https://www.lightspark.com" aria-label="Lightspark">
+      <a className={styles.wordmark} href="https://www.lightspark.com" aria-label="Lightspark" data-stage-foreground>
         <LightsparkWordmark />
       </a>
-      <p className={clsx(styles.mouse, styles.label)}>Cards Playground</p>
-      <m.h1 className={styles.title} {...blurIn(0.1, reduceMotion)}>
+      <p className={clsx(styles.mouse, styles.label)} data-stage-foreground>
+        Cards Playground
+      </p>
+      <m.h1 className={styles.title} data-stage-foreground {...blurIn(0.1, reduceMotion)}>
         {brand}
         <br />
         <span className={styles.titleMuted}>Card</span>
       </m.h1>
-      <div className={styles.pitch}>
+      <div className={styles.pitch} data-stage-foreground>
         <m.p className={styles.pitchText} {...blurIn(0.25, reduceMotion)}>
           {pitch}
         </m.p>
@@ -283,8 +292,14 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
           {actions}
         </m.div>
       </div>
-      <p className={clsx(styles.mouse, styles.tuple)}>{TEMPLATE_TUPLE}</p>
-      <a className={clsx(styles.mouse, styles.mouseLink, styles.docs)} href="https://docs.lightspark.com">
+      <p className={clsx(styles.mouse, styles.tuple)} data-stage-foreground>
+        {TEMPLATE_TUPLE}
+      </p>
+      <a
+        className={clsx(styles.mouse, styles.mouseLink, styles.docs)}
+        href="https://docs.lightspark.com"
+        data-stage-foreground
+      >
         docs.lightspark.com
       </a>
     </div>

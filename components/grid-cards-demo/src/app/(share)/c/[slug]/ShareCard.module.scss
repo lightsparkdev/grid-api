@@ -29,6 +29,25 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── The dot grid ──────────────────────────────────────────────────────── */
+
+/* The playground's WebGL dot grid, filling the card's column between its
+   two rules, under everything. It paints its own surface (the page's,
+   passed in). Not on a phone, where the columns stack. */
+.dots {
+  position: absolute;
+  top: var(--pad);
+  bottom: var(--pad);
+  left: calc(var(--pad) + (100% - 2 * var(--pad)) / 3);
+  width: calc((100% - 2 * var(--pad)) / 3);
+  z-index: 0;
+  pointer-events: none;
+
+  @media (max-width: 899px) {
+    display: none;
+  }
+}
+
 /* ── The card ──────────────────────────────────────────────────────────── */
 
 /* Over the columns, the whole page: the card sits at its center and paints
