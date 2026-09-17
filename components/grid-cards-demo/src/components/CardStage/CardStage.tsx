@@ -38,7 +38,7 @@ import { CardExporter, type ExportPose } from './export/exportRenderer';
 import { useCardMomentSounds } from './cardSounds';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
-import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from './introTimeline';
+import { INTRO_END, introCard, stepIntro } from './introTimeline';
 import styles from './CardStage.module.scss';
 
 /** Largest the card gets on stage, relative to its size in the phone. */
@@ -151,8 +151,6 @@ interface Intro {
   /** Seconds since the blueprint started drawing; -1 until the card is ready. */
   t: number;
   done: boolean;
-  /** How many of `INTRO_SOUNDS` have played. */
-  cued: number;
   overlay: React.RefObject<SVGSVGElement>;
   /** The stage canvas, blurred and faded in behind the dissolving blueprint. */
   canvas: React.RefObject<HTMLCanvasElement>;
@@ -347,7 +345,6 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     intro: {
       t: -1,
       done: false,
-      cued: 0,
       overlay: overlayRef,
       canvas: canvasRef,
       onDone: () => setIntroDone(true),
@@ -356,7 +353,6 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
         const { intro } = live.current;
         intro.t = 0;
         intro.done = false;
-        intro.cued = 0;
         setIntroDone(false);
       },
     },
@@ -1743,17 +1739,7 @@ const CardRig = memo(function CardRig({
     // ready, t is -1). A flow starting mid-intro (or reduced motion) ends it now.
     if (!intro.done) {
       if (intro.t >= 0 && !intro.paused) intro.t += dt;
-      if (t > 0 || live.current.reduceMotion) {
-        intro.t = INTRO_END;
-        intro.cued = INTRO_SOUNDS.length;
-      }
-      // The ticks and the whoosh, on the same clock (silent when the browser
-      // has not yet allowed sound; the module drops them, nothing fires late).
-      while (intro.cued < INTRO_SOUNDS.length && intro.t >= INTRO_SOUNDS[intro.cued].at) {
-        const cue = INTRO_SOUNDS[intro.cued];
-        play(cue.name, { gain: cue.gain, gap: cue.gap });
-        intro.cued += 1;
-      }
+      if (t > 0 || live.current.reduceMotion) intro.t = INTRO_END;
       if (intro.overlay.current) stepIntro(intro.overlay.current, intro.t);
       const canvas = intro.canvas.current;
       const look = introCard(intro.t);

@@ -31,11 +31,10 @@ import { flushDeferredPaints, holdDeferredPaints } from '@/components/CardStage/
 import { CardIntro } from '@/components/CardStage/CardIntro';
 import { CardMotion, ORIENT_ROLL } from '@/components/CardStage/cardMotion';
 import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/components/CardStage/export/compose';
-import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from '@/components/CardStage/introTimeline';
+import { INTRO_END, introCard, stepIntro } from '@/components/CardStage/introTimeline';
 import { StageGL } from '@/components/glass-gl/StageGL';
 import { LightsparkWordmark } from '@/components/LightsparkWordmark';
 import type { CardDesign } from '@/data/design';
-import { play } from '@/lib/sounds';
 
 import styles from './ShareCard.module.scss';
 
@@ -67,8 +66,6 @@ interface Intro {
   /** Seconds since the blueprint started drawing; -1 until the card is ready. */
   t: number;
   done: boolean;
-  /** How many of `INTRO_SOUNDS` have played. */
-  cued: number;
 }
 
 interface ShareCardProps {
@@ -362,7 +359,7 @@ function Rig({ motion, state, reduceMotion, hitRef, overlayRef, onIntroDone }: R
   const group = useRef<THREE.Group>(null);
   const size = useThree((s) => s.size);
   const gl = useThree((s) => s.gl);
-  const intro = useRef<Intro>({ t: -1, done: false, cued: 0 });
+  const intro = useRef<Intro>({ t: -1, done: false });
 
 
   // The blueprint starts drawing once the front has painted.
@@ -396,15 +393,7 @@ function Rig({ motion, state, reduceMotion, hitRef, overlayRef, onIntroDone }: R
     // card is ready, t is -1). Reduced motion ends it now.
     if (!it.done) {
       if (it.t >= 0) it.t += dt;
-      if (reduceMotion && it.t >= 0) {
-        it.t = INTRO_END;
-        it.cued = INTRO_SOUNDS.length;
-      }
-      while (it.t >= 0 && it.cued < INTRO_SOUNDS.length && it.t >= INTRO_SOUNDS[it.cued].at) {
-        const cue = INTRO_SOUNDS[it.cued];
-        play(cue.name, { gain: cue.gain, gap: cue.gap });
-        it.cued += 1;
-      }
+      if (reduceMotion && it.t >= 0) it.t = INTRO_END;
       if (overlayRef.current && it.t >= 0) stepIntro(overlayRef.current, it.t);
       const look = introCard(Math.max(0, it.t));
       const canvas = gl.domElement;
