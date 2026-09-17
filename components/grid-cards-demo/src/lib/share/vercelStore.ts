@@ -156,10 +156,15 @@ class VercelStore implements ShareStore {
    *  cannot leave it pointing at a file the other deleted). The files a
    *  transition moved off are deleted after it, if they are this share's. */
   async update(id: string, patch: SharePatch): Promise<ShareRecord | null> {
+    if (!ID_RE.test(id)) return null;
     for (let attempt = 0; attempt < UPDATE_ATTEMPTS; attempt++) {
-      const record = await this.readRecord(id);
+      // One command, so the version read is the one this record was at.
+      const [record, stamp] = await this.redis.mget<[ShareRecord | null, number | null]>(
+        this.key('rec', id),
+        this.key('ver', id),
+      );
       if (!record) return null;
-      const version = (await this.redis.get<number>(this.key('ver', id))) ?? 0;
+      const version = stamp ?? 0;
       const before = fileUrlsOf(record);
       if (patch.design) record.design = { ...record.design, ...patch.design };
       if (patch.forName !== undefined) record.forName = patch.forName;
