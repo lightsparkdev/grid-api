@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { shareStore } from '@/lib/share/store';
@@ -25,6 +25,15 @@ const CRAWLER_RE =
 function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
+
+/** Mobile Safari's bars take the page's own surface (share.scss's), so the
+ *  page runs under them in one color. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8f8f7' },
+    { media: '(prefers-color-scheme: dark)', color: '#111111' },
+  ],
+};
 
 export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
   const record = await shareStore().get(params.slug);

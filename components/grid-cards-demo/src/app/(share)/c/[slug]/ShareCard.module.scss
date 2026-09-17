@@ -2,6 +2,12 @@
    rules, the card live in the middle, the brand left, the pitch right. */
 
 .root {
+  /* The surface and the ink, off the theme on <html> (set before the first
+     paint), so the server's HTML paints in the right colors. The same two
+     values as ShareCard.tsx's LIGHT_SURFACE / DARK_SURFACE palettes. */
+  --surface: #f8f8f7;
+  --ink: #1a1a1a;
+  --text-primary: var(--ink);
   --pad: 24px;
   --col-pad: 8px;
   /* Secondary type and the rules: the ink, stepped back (56% of #1a1a1a on
@@ -27,6 +33,11 @@
   font-family: var(--font-family-sans);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+:global(html[data-theme='dark']) .root {
+  --surface: #111111;
+  --ink: #f0f0ee;
 }
 
 /* ── The dot grid ──────────────────────────────────────────────────────── */

@@ -57,6 +57,23 @@ function base(y: number): [number, number, number] {
   return stops[stops.length - 1][1];
 }
 
+/** The radiance as an equirectangular texture, in half floats. Not single
+ *  floats: iOS Safari cannot filter those (no OES_texture_float_linear), so
+ *  the PMREM sampled black and the card was lit by the one lamp alone.
+ *  Half floats filter everywhere three runs, and hold the range here. */
+function equirect(data: Float32Array, w: number, h: number): THREE.DataTexture {
+  const half = new Uint16Array(data.length);
+  for (let i = 0; i < data.length; i++) half[i] = THREE.DataUtils.toHalfFloat(data[i]);
+  const t = new THREE.DataTexture(half, w, h, THREE.RGBAFormat, THREE.HalfFloatType);
+  t.mapping = THREE.EquirectangularReflectionMapping;
+  t.colorSpace = THREE.LinearSRGBColorSpace;
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearFilter;
+  t.generateMipmaps = false;
+  t.needsUpdate = true;
+  return t;
+}
+
 // The maps are painted in JavaScript, half a million texels each with a few
 // lights or panels apiece. The loops keep the trigonometry out of the texel:
 // what depends on the row or the column alone is taken once per row or
@@ -121,14 +138,7 @@ function studioTexture(): THREE.DataTexture {
       data[o + 3] = 1;
     }
   }
-  const t = new THREE.DataTexture(data, ENV_W, ENV_H, THREE.RGBAFormat, THREE.FloatType);
-  t.mapping = THREE.EquirectangularReflectionMapping;
-  t.colorSpace = THREE.LinearSRGBColorSpace;
-  t.magFilter = THREE.LinearFilter;
-  t.minFilter = THREE.LinearFilter;
-  t.generateMipmaps = false;
-  t.needsUpdate = true;
-  return t;
+  return equirect(data, ENV_W, ENV_H);
 }
 
 /**
@@ -240,14 +250,7 @@ function panelStudio(panels: Panel[], base: (y: number) => number, w: number, h:
       data[o + 3] = 1;
     }
   }
-  const t = new THREE.DataTexture(data, w, h, THREE.RGBAFormat, THREE.FloatType);
-  t.mapping = THREE.EquirectangularReflectionMapping;
-  t.colorSpace = THREE.LinearSRGBColorSpace;
-  t.magFilter = THREE.LinearFilter;
-  t.minFilter = THREE.LinearFilter;
-  t.generateMipmaps = false;
-  t.needsUpdate = true;
-  return t;
+  return equirect(data, w, h);
 }
 
 export function foilStudioTexture(): THREE.DataTexture {

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { easingVarsStylesheet } from '@/lib/easing';
 import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
@@ -7,6 +7,15 @@ import './globals.scss';
 const TITLE = 'Lightspark Cards — Playground';
 const DESCRIPTION =
   'Issue a branded Visa debit card and watch the API calls fire as you go.';
+
+/** The browser chrome's color (mobile Safari's bars): the app's surfaces.
+ *  A page whose surface differs (the share page) exports its own. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F0F0EE' },
+    { media: '(prefers-color-scheme: dark)', color: '#111111' },
+  ],
+};
 
 export const metadata: Metadata = {
   // Absolute base for social-card image URLs (scrapers need full URLs).
@@ -35,8 +44,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#F0F0EE" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
         {/* Preload the two variable fonts (every weight of Suisse Intl and of
             its Mono) so the first paint shows the real font sooner.
             crossOrigin is required even though the fonts are same-origin:
