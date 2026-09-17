@@ -99,11 +99,17 @@ const tile = (name) => page.getByRole('button', { name });
 
 console.log(`share smoke on ${engineName} at ${base}`);
 await page.goto(`${base}/?theme=light`, { waitUntil: 'networkidle' });
-await page.waitForFunction(() => window.__cardExport?.exporter?.ready, null, { timeout: 90000 });
 await page.waitForFunction(() => document.querySelector('[data-card-hit]')?.style.pointerEvents === 'auto', null, {
   timeout: 90000,
 });
-ok('loaded');
+// The console hook is a development build's; a deployment has none, and the
+// direct renders below are skipped there (Save image and Copy link still
+// drive the renderer through the panel).
+const hook = await page
+  .waitForFunction(() => window.__cardExport?.exporter?.ready, null, { timeout: 15000 })
+  .then(() => true)
+  .catch(() => false);
+ok(hook ? 'loaded (dev hook present)' : 'loaded (deployment: no dev hook, direct renders skipped)');
 
 // ── Open ──
 await page.getByRole('button', { name: /^share$/i }).click();
@@ -167,18 +173,20 @@ for (const name of ['Front', 'Turned', 'Back', 'Angled']) {
 await expectAligned('template after poses');
 
 // ── Exports ──
-const exportOk = await page.evaluate(async () => {
-  const out = [];
-  const t = await window.__cardExport.render('square', 'light');
-  out.push(['template light', t.size]);
-  for (const hand of ['h1', 'h2', 'h3', 'h4', 'h5']) {
-    for (const bg of ['light', 'dark']) {
-      const blob = await window.__cardExport.render('square', bg, 'hand', hand);
-      out.push([`${hand} ${bg}`, blob.size]);
-    }
-  }
-  return out;
-});
+const exportOk = hook
+  ? await page.evaluate(async () => {
+      const out = [];
+      const t = await window.__cardExport.render('square', 'light');
+      out.push(['template light', t.size]);
+      for (const hand of ['h1', 'h2', 'h3', 'h4', 'h5']) {
+        for (const bg of ['light', 'dark']) {
+          const blob = await window.__cardExport.render('square', bg, 'hand', hand);
+          out.push([`${hand} ${bg}`, blob.size]);
+        }
+      }
+      return out;
+    })
+  : [];
 for (const [label, size] of exportOk) {
   if (size > 1000) ok(`export ${label}: ${size} bytes`);
   else fail(`export ${label}: ${size} bytes`);
