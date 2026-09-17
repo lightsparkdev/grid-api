@@ -1,9 +1,11 @@
 post:
   summary: Send a test webhook
-  description: Send a test webhook to the configured endpoint
+  description: >-
+    Deliver a signed test event to the platform's configured webhook endpoint
+    and return the endpoint's response. Available in sandbox and production.
   operationId: sendTestWebhook
   tags:
-    - Sandbox
+    - Webhooks
   security:
     - BasicAuth: []
   responses:
