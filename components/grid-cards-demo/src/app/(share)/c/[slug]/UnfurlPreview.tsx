@@ -1,3 +1,4 @@
+import { shareBrand, shareDescription, sharePostText, shareTitle } from '@/lib/share/copy';
 import type { ShareRecord } from '@/lib/share/types';
 import { shareUrl } from '@/lib/share/urls';
 import styles from './UnfurlPreview.module.scss';
@@ -14,12 +15,9 @@ function Missing({ label }: { label: string }) {
 }
 
 export function UnfurlPreview({ record }: Props) {
-  const programName = record.design.programName.trim() || 'Your brand';
-  const title = `${programName} card, designed on Grid`;
-  const description =
-    record.kind === 'pitch' && record.forName
-      ? `A card for ${record.forName}, issued on Lightspark Grid.`
-      : 'Design a card and watch the Grid API calls fire as you go.';
+  const brand = shareBrand(record.design.programName);
+  const title = shareTitle(brand);
+  const description = shareDescription(record);
   const { og } = record.assets;
 
   return (
@@ -37,7 +35,7 @@ export function UnfurlPreview({ record }: Props) {
             <p className={styles.xMeta}>
               <strong>Lightspark</strong> <span>@lightspark · now</span>
             </p>
-            <p className={styles.xText}>I designed the {programName} card on @lightspark Grid</p>
+            <p className={styles.xText}>{sharePostText(brand)}</p>
             <div className={styles.xCard}>
               {og ? (
                 // eslint-disable-next-line @next/next/no-img-element

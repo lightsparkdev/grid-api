@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { shareStore } from '@/lib/share/store';
+import { shareBrand, shareDescription, shareTitle } from '@/lib/share/copy';
 import { absoluteAssetUrl, playgroundOrigin, playgroundUrl, shareUrl } from '@/lib/share/urls';
-import type { ShareRecord } from '@/lib/share/types';
 import { ShareCard } from './ShareCard';
 import { UnfurlPreview } from './UnfurlPreview';
 import styles from './page.module.scss';
@@ -26,19 +26,11 @@ function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-function programNameOf(record: ShareRecord): string {
-  return record.design.programName.trim();
-}
-
 export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
   const record = await shareStore().get(params.slug);
   if (!record) return {};
-  const programName = programNameOf(record);
-  const title = `${programName || 'Your brand'} card, designed on Grid`;
-  const description =
-    record.kind === 'pitch' && record.forName
-      ? `A card for ${record.forName}, issued on Lightspark Grid.`
-      : 'Design a card and watch the Grid API calls fire as you go.';
+  const title = shareTitle(shareBrand(record.design.programName));
+  const description = shareDescription(record);
   // A full URL: the page may be served through another host's proxy.
   const og = record.assets.og && absoluteAssetUrl(record.assets.og);
   return {
@@ -79,7 +71,7 @@ export default async function SharePage({ params, searchParams }: Props) {
 
   const pitch = record.kind === 'pitch';
   const { design } = record;
-  const brand = programNameOf(record) || 'Your brand';
+  const brand = shareBrand(record.design.programName);
   // Their own card in the playground (the maker's edit token rides along),
   // and a blank one.
   const viewHref = playgroundUrl(record.id, editing ? edit : null);
@@ -90,11 +82,7 @@ export default async function SharePage({ params, searchParams }: Props) {
       <ShareCard
         design={design}
         brand={brand}
-        pitch={
-          pitch && record.forName
-            ? `A card for ${record.forName}, issued on Lightspark Grid.`
-            : 'Issue a Visa debit card and watch the API calls fire as you go'
-        }
+        pitch={shareDescription(record).replace(/\.$/, '')}
         actions={
           <>
             <a className={styles.secondary} href={viewHref}>

@@ -60,6 +60,7 @@ import type { SharedCard } from '@/hooks/useCardsDemoLogic';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { cubicBezierCss, easeOutQuick, easeOutSnappy, easeOutSwift, motionTransition } from '@/lib/easing';
 import { createShare, ShareError, type ShareHandle, type ShareProgress } from '@/lib/share/client';
+import { shareBrand, sharePostText } from '@/lib/share/copy';
 import { shareUrl, xIntentUrl } from '@/lib/share/urls';
 import { play, pressable } from '@/lib/sounds';
 import styles from './SharePanel.module.scss';
@@ -543,7 +544,7 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
         w?.close();
         return;
       }
-      const url = xIntentUrl(`I designed the ${programNameOf(design)} card on @lightspark Grid`, h.url);
+      const url = xIntentUrl(sharePostText(shareBrand(programNameOf(design))), h.url);
       if (w) w.location.href = url;
       else window.open(url, '_blank', 'noopener');
     } finally {
