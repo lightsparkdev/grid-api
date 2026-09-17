@@ -17,6 +17,7 @@ import { currentCredentials, type CardCredentials } from '@/apps/shared/card/car
 import { grain as grainVoice, type Grain } from '@/lib/sounds';
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
+import { deferPaint, placeholderCanvas, repaint } from './deferredPaint';
 import { blankStudioTexture, foilStudioTexture } from './CardEnv';
 import { layerFrame, texelBounds } from './faceFrame';
 import { doveFrame, HoloDove } from './HoloDove';
@@ -192,7 +193,9 @@ function FoilMark({
     });
     m.map = canvasTexture(paintFoilAlbedo(black), true);
     m.alphaMap = canvasTexture(paintLockupMask(assets));
-    m.normalMap = canvasTexture(paintFoilNormal(assets));
+    // The relief is the slow one (a Sobel over the mark at texel size); it
+    // lands after the intro (deferredPaint), flat until then.
+    m.normalMap = canvasTexture(placeholderCanvas('#8080ff'));
     m.normalScale.set(FOIL.normalScale, FOIL.normalScale);
     m.envMap = foilStudioTexture();
     m.envMapIntensity = FOIL.envMapIntensity;
@@ -201,6 +204,7 @@ function FoilMark({
     // `black` is read once here; the effect below keeps the albedo current.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assets]);
+  useEffect(() => deferPaint(() => repaint(material.normalMap!, paintFoilNormal(assets))), [assets, material]);
   const paintedBlack = useRef(black);
   useEffect(() => {
     if (paintedBlack.current === black) return;

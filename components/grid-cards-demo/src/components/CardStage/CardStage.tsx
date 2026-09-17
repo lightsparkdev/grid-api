@@ -32,6 +32,7 @@ import { localToSpec } from './card3d/faceFrame';
 import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { CardMotion, ORIENT_ROLL } from './cardMotion';
+import { flushDeferredPaints } from './card3d/deferredPaint';
 import { installExportDevHook } from './export/devHook';
 import { CardExporter, type ExportPose } from './export/exportRenderer';
 import { useCardMomentSounds } from './cardSounds';
@@ -315,7 +316,10 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   // held flat and the pointer is off.
   const [introDone, setIntroDone] = useState(false);
   useEffect(() => {
-    if (introDone) onIntroDone?.();
+    if (!introDone) return;
+    onIntroDone?.();
+    // The back's slow maps, held off the intro, paint now.
+    flushDeferredPaints();
   }, [introDone, onIntroDone]);
   const overlayRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);

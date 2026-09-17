@@ -10,7 +10,7 @@
 import { IconRotate360Right } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconRotate360Right';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import clsx from 'clsx';
-import { motion as m, useReducedMotion } from 'motion/react';
+import { useReducedMotion } from 'motion/react';
 import {
   useCallback,
   useEffect,
@@ -18,6 +18,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -26,6 +27,7 @@ import * as THREE from 'three';
 import { footprint } from '@/apps/card/cardMetrics';
 import { CardEnv } from '@/components/CardStage/card3d/CardEnv';
 import { CardMesh, type CardMeshState } from '@/components/CardStage/card3d/CardMesh';
+import { flushDeferredPaints } from '@/components/CardStage/card3d/deferredPaint';
 import { CardIntro } from '@/components/CardStage/CardIntro';
 import { CardMotion, ORIENT_ROLL } from '@/components/CardStage/cardMotion';
 import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/components/CardStage/export/compose';
@@ -52,18 +54,13 @@ const CARD_MIN_LONG = 320;
 const LIGHT_SURFACE = '#f8f8f7';
 const DARK_SURFACE = '#111111';
 
-/** The website's blur-resolve entrance (lightspark.com's heroes): opacity,
- *  a short rise, and a blur clearing, on its intro ease, staggered by
- *  `delay`. Nothing to animate under reduced motion. */
-const INTRO_EASE: [number, number, number, number] = [0.27, 0.09, 0.24, 1];
-const blurIn = (delay: number, reduceMotion: boolean) =>
-  reduceMotion
-    ? {}
-    : {
-        initial: { opacity: 0, y: 10, filter: 'blur(14px)' },
-        animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
-        transition: { duration: 0.7, ease: INTRO_EASE, delay },
-      };
+/** The website's blur-resolve entrance (lightspark.com's heroes) is a CSS
+ *  animation (`.blurIn`), staggered by this delay. In CSS rather than a
+ *  JavaScript tween: the page's first seconds are the card's (shaders
+ *  compiling, its faces painting), and a tween driven from the main thread
+ *  stalled with them; the compositor runs a CSS animation of opacity,
+ *  transform, and filter on its own. */
+const blurInDelay = (seconds: number) => ({ '--blur-in-delay': `${seconds}s` }) as CSSProperties;
 
 /** The intro's clock, stepped by the frame loop once the front has painted. */
 interface Intro {
@@ -117,20 +114,18 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
   const drag = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
 
   /** Pointer position relative to the card's footprint (as held flat),
-   *  -0.5..0.5 each way over the card; null off it. */
-  const overCard = useCallback(
-    (clientX: number, clientY: number) => {
-      const stage = stageRef.current;
-      if (!stage) return null;
-      const r = stage.getBoundingClientRect();
-      const foot = footprint(design.orientation);
-      const s = cardScale(r.width, r.height, foot);
-      const px = (clientX - (r.left + r.width / 2)) / (foot.w * s);
-      const py = (clientY - (r.top + r.height / 2)) / (foot.h * s);
-      return Math.abs(px) <= 0.5 && Math.abs(py) <= 0.5 ? { x: px, y: py } : null;
-    },
-    [design.orientation],
-  );
+   *  -0.5..0.5 each way over the card; null off it. Read off the hit box,
+   *  which rides with the card (its bob included), so this and the pointer
+   *  target agree at the card's edges. */
+  const overCard = useCallback((clientX: number, clientY: number) => {
+    const hit = hitRef.current;
+    if (!hit) return null;
+    const r = hit.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return null;
+    const px = (clientX - (r.left + r.width / 2)) / r.width;
+    const py = (clientY - (r.top + r.height / 2)) / r.height;
+    return Math.abs(px) <= 0.5 && Math.abs(py) <= 0.5 ? { x: px, y: py } : null;
+  }, []);
 
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!introDone) return;
@@ -201,7 +196,11 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
     };
   }, [endDrag]);
 
-  const onIntroDone = useCallback(() => setIntroDone(true), []);
+  const onIntroDone = useCallback(() => {
+    setIntroDone(true);
+    // The back's slow maps, held off the intro, paint now.
+    flushDeferredPaints();
+  }, []);
 
   const foot = footprint(design.orientation);
 
@@ -285,18 +284,18 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
       <p className={clsx(styles.mouse, styles.label)} data-stage-foreground>
         Cards Playground
       </p>
-      <m.h1 className={styles.title} data-stage-foreground {...blurIn(0.1, reduceMotion)}>
+      <h1 className={clsx(styles.title, styles.blurIn)} style={blurInDelay(0.1)} data-stage-foreground>
         {brand}
         <br />
         <span className={styles.titleMuted}>Card</span>
-      </m.h1>
+      </h1>
       <div className={styles.pitch} data-stage-foreground>
-        <m.p className={styles.pitchText} {...blurIn(0.25, reduceMotion)}>
+        <p className={clsx(styles.pitchText, styles.blurIn)} style={blurInDelay(0.25)}>
           {pitch}
-        </m.p>
-        <m.div className={styles.actions} {...blurIn(0.35, reduceMotion)}>
+        </p>
+        <div className={clsx(styles.actions, styles.blurIn)} style={blurInDelay(0.35)}>
           {actions}
-        </m.div>
+        </div>
       </div>
       <p className={clsx(styles.mouse, styles.tuple)} data-stage-foreground>
         {TEMPLATE_TUPLE}

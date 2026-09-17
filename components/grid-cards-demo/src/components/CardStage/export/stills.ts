@@ -14,6 +14,7 @@ import {
   type Palette,
   type Treatment,
 } from './compose';
+import { flushDeferredPaintsNow } from '../card3d/deferredPaint';
 import type { CardExporter, ExportPose } from './exportRenderer';
 
 export type StillFormat = 'post' | 'square';
@@ -94,6 +95,8 @@ export interface StillOptions {
  *  encodes it). `prepareTemplate` (and `prepareHand(id)`, for the hand) must
  *  have resolved. */
 export function renderStillCanvas(exporter: CardExporter, opts: StillOptions): HTMLCanvasElement {
+  // A still before the intro has let the back's maps paint gets them now.
+  flushDeferredPaintsNow();
   const size = stillSize(opts.format);
   const scale = opts.scale ?? 1;
   const width = Math.round(size.width * scale);
