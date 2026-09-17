@@ -16,6 +16,8 @@
    A page that never holds it gets a timer, so nothing is left with
    placeholders. A still rendered earlier drains it first, in its task. */
 
+import type * as THREE from 'three';
+
 type Job = () => void;
 
 const queue: Job[] = [];
@@ -106,8 +108,14 @@ export function placeholderCanvas(fill: string): HTMLCanvasElement {
   return c;
 }
 
-/** Give a texture its painted image. */
-export function repaint(texture: { image: unknown; needsUpdate: boolean }, image: HTMLCanvasElement): void {
+/** Give a texture its painted image. The GL storage was allocated for the
+ *  placeholder's one texel (three uses immutable storage, sized to the
+ *  first image), so it is released first and reallocated at the painted
+ *  size on the next render; without that WebKit refuses the upload
+ *  ("offset overflows texture dimensions"). The Texture object stays, so
+ *  the material's program does. */
+export function repaint(texture: THREE.Texture, image: HTMLCanvasElement): void {
+  texture.dispose();
   texture.image = image;
   texture.needsUpdate = true;
 }
