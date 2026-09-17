@@ -98,7 +98,7 @@ export default async function SharePage({ params, searchParams }: Props) {
         actions={
           <>
             <a className={styles.secondary} href={viewHref}>
-              View in playground
+              View in Playground
             </a>
             {pitch ? (
               <a className={styles.primary} href="https://www.lightspark.com/contact">
