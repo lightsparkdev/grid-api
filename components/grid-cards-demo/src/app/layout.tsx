@@ -18,6 +18,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  // lightspark.com's favicons, the files themselves (the website repo's
+  // public/favicons), linked as its Meta component links them.
+  icons: {
+    icon: [
+      { url: '/favicons/favicon.ico', sizes: 'any' },
+      { url: '/favicons/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicons/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+    ],
+    apple: '/favicons/apple-touch-icon.png',
+  },
   // Absolute base for social-card image URLs (scrapers need full URLs).
   // VERCEL_PROJECT_PRODUCTION_URL covers previews; the default is prod.
   metadataBase: new URL(
