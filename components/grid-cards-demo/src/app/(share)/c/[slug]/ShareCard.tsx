@@ -213,7 +213,6 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
     <div
       className={clsx(
         styles.root,
-        introDone && styles.introDone,
         introDone && overCardNow && styles.overCard,
         dragging && styles.dragging,
       )}
@@ -260,38 +259,34 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
         </div>
       </div>
 
-      {/* The three columns over the stage: their type takes the pointer, the
-          space between lets it through to the card. */}
-      <div className={clsx(styles.col, styles.colLeft)}>
-        <a className={styles.wordmark} href="https://www.lightspark.com" aria-label="Lightspark">
-          <LightsparkWordmark />
-        </a>
-        <m.h1 className={styles.title} {...blurIn(0.1, reduceMotion)}>
-          {brand}
-          <br />
-          <span className={styles.titleMuted}>Card</span>
-        </m.h1>
-        <p className={clsx(styles.mouse, styles.tuple)}>
-          {TEMPLATE_TUPLE}
-        </p>
+      {/* The chrome, on a grid over the stage (three columns wide, the
+          card's middle one empty; stacked on a phone): each piece takes the
+          pointer, the space between lets it through to the card. */}
+      <span className={clsx(styles.rule, styles.ruleA)} aria-hidden />
+      <span className={clsx(styles.rule, styles.ruleB)} aria-hidden />
+      <span className={clsx(styles.rule, styles.ruleC)} aria-hidden />
+      <span className={clsx(styles.rule, styles.ruleD)} aria-hidden />
+      <a className={styles.wordmark} href="https://www.lightspark.com" aria-label="Lightspark">
+        <LightsparkWordmark />
+      </a>
+      <p className={clsx(styles.mouse, styles.label)}>Cards Playground</p>
+      <m.h1 className={styles.title} {...blurIn(0.1, reduceMotion)}>
+        {brand}
+        <br />
+        <span className={styles.titleMuted}>Card</span>
+      </m.h1>
+      <div className={styles.pitch}>
+        <m.p className={styles.pitchText} {...blurIn(0.25, reduceMotion)}>
+          {pitch}
+        </m.p>
+        <m.div className={styles.actions} {...blurIn(0.35, reduceMotion)}>
+          {actions}
+        </m.div>
       </div>
-      <div className={clsx(styles.col, styles.colMid)} aria-hidden />
-      <div className={clsx(styles.col, styles.colRight)}>
-        <p className={styles.mouse}>
-          Cards Playground
-        </p>
-        <div className={styles.pitch}>
-          <m.p className={styles.pitchText} {...blurIn(0.25, reduceMotion)}>
-            {pitch}
-          </m.p>
-          <m.div className={styles.actions} {...blurIn(0.35, reduceMotion)}>
-            {actions}
-          </m.div>
-        </div>
-        <a className={clsx(styles.mouse, styles.mouseLink)} href="https://docs.lightspark.com">
-          docs.lightspark.com
-        </a>
-      </div>
+      <p className={clsx(styles.mouse, styles.tuple)}>{TEMPLATE_TUPLE}</p>
+      <a className={clsx(styles.mouse, styles.mouseLink, styles.docs)} href="https://docs.lightspark.com">
+        docs.lightspark.com
+      </a>
     </div>
   );
 }
