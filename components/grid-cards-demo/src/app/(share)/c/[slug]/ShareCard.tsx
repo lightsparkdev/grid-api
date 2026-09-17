@@ -223,7 +223,10 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
       {/* The playground's dot grid, in the card's column, under everything.
           It ripples on a click anywhere but the chrome. */}
       <div className={styles.dots} aria-hidden>
-        <StageGL bg={palette.bg} bootMix={0} edge="flush" />
+        {/* Its surface comes from the --dot-grid-* tokens, read from the
+            stylesheet on its first paint: a React-side theme would paint
+            the server's light frame first. */}
+        <StageGL bootMix={0} edge="flush" />
       </div>
 
       {/* The card's stage: the whole page; the card sits at its center. */}
@@ -253,7 +256,13 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
         </Canvas>
         {/* Rides with the card, its footprint in card px: the blueprint is
             laid out on it. */}
-        <div ref={hitRef} className={styles.hit} style={{ width: foot.w, height: foot.h }} aria-hidden>
+        <div
+          ref={hitRef}
+          className={styles.hit}
+          style={{ width: foot.w, height: foot.h }}
+          data-stage-foreground
+          aria-hidden
+        >
           {!introDone && <CardIntro ref={overlayRef} brand={brand} orientation={design.orientation} />}
           {/* The playground's hint, under the card, until it has been turned. */}
           <span className={clsx(styles.hint, (dragged || !introDone) && styles.hintGone)}>
