@@ -432,23 +432,22 @@ export function paintTemplate(ctx: CanvasRenderingContext2D, w: number, h: numbe
   // The frame's own columns: the outer rules sit a pad in from its edges.
   const left = pad;
   const right = w - pad;
-  // The layout square's edges: in a wide frame they bound the middle column.
-  const midLeft = ox + pad;
-  const midRight = ox + side - pad;
   const top = oy + pad;
   const bottom = oy + side - pad;
 
   // The rules, half a layout unit wide (a hairline on the stage; a pixel at
   // 1600): the frame's left and right edges, and, where the frame is wider
-  // than its square, the middle column's two edges.
+  // than its square, two more dividing the width between them in thirds
+  // (the share page's columns).
   const rule = Math.max(1, Math.round(RULE * k));
   ctx.fillStyle = palette.ink;
   const ruleAt = (x: number) => ctx.fillRect(Math.round(x - rule / 2), Math.round(top), rule, Math.round(inner));
   ruleAt(left);
   ruleAt(right);
-  if (midLeft - left > rule * 2) {
-    ruleAt(midLeft);
-    ruleAt(midRight);
+  if (w - side > rule * 2) {
+    const third = (right - left) / 3;
+    ruleAt(left + third);
+    ruleAt(left + 2 * third);
   }
 
   // The logomark, top left inside the column's padding.
