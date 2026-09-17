@@ -27537,6 +27537,10 @@ components:
             - type: 'null'
           description: 'Replacement card-specific cap on the number of transactions the card may authorize during one UTC calendar day. Omit this field to leave the current cap unchanged, supply null to clear it, or supply a positive integer to set it. When the platform config also supplies `cardConfigs.maxTransactionsPerDay`, Grid enforces the lower of the two values. Refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the card''s `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be supplied alongside `status: CLOSED`.'
           example: 20
+      dependentRequired:
+        status:
+          - substatus
+          - reason
     CardRevealResponse:
       type: object
       required:

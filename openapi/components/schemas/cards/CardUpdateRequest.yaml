@@ -113,3 +113,7 @@ properties:
       `cardCapabilities.supportsTransactionCountLimit` is true. Cannot be
       supplied alongside `status: CLOSED`.
     example: 20
+dependentRequired:
+  status:
+    - substatus
+    - reason
