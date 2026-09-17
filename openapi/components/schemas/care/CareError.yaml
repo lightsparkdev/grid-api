@@ -31,7 +31,7 @@ properties:
       | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
       | `CUSTOMER_NOT_FOUND` | 404 | No such cardholder for this platform. |
       | `CONFLICT` | 409 | The `Idempotency-Key` was already used for a different message or a different chat — use a new key — or the chat has no cardholder bound to it. |
-      | `CARE_CHAT_ENDED` | 409 | The chat has been closed. Open a new one by sending an empty message to the cardholder. |
+      | `CARE_CHAT_ENDED` | 409 | The chat has ended, whether the agent ended it or it was closed, and it accepts no further messages or openings; a replay of a turn that already completed is still answered. Open a new one by sending an empty message to the cardholder as `Customer:<uuid>`. |
       | `CARE_NOT_CONFIGURED_FOR_PLATFORM` | 422 | The platform is entitled to embedded care but has no care programme configured. |
       | `CARE_BUDGET_EXCEEDED` | 429 | This chat has reached its limit. It is not replaced by a new one: a replacement would be the limit cleared by asking again. |
       | `RATE_LIMITED` | 429 | The platform is calling this endpoint too often. Back off for the interval in the `Retry-After` response header. |

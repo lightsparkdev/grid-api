@@ -94,7 +94,12 @@ tags:
          does not match is answered in `reply`, and the cardholder can simply
          send it again.
       4. **Close the chat** with `DELETE /care/chats/{chatId}` when the
-         cardholder is done.
+         cardholder is done. Every response also carries `chatEnded`, and the
+         agent can end the chat itself: when `chatEnded` is true, the closing
+         line is in `reply` and the chat takes no further messages, so stop
+         sending to it. An opening addressed to that `CareChat:<id>` answers
+         `409 CARE_CHAT_ENDED`; address the cardholder as `Customer:<uuid>`
+         to open a new chat.
 
       **A cardholder whose code never arrived asks the agent for another
       one.** The agent sends a new code to the number on file and says so in
@@ -144,7 +149,9 @@ tags:
       Some things are absent by construction, so no integration can come to
       depend on them: nothing returns a transcript or an earlier turn's reply
       (retrying under the original `Idempotency-Key` is how an answer that was
-      produced but not delivered is recovered), nothing sets a verification
+      produced but not delivered is recovered, and such a replay never carries
+      a `sessionToken`; a lost token is recovered by the cardholder's next
+      message verifying them again), nothing sets a verification
       state, and nothing changes the number a code is sent to.
 
       Errors from these endpoints carry `code` and `reason` only — see the
@@ -11086,8 +11093,13 @@ paths:
         to recover an answer: nothing on this surface reads a transcript, so a
         reply that was produced but not delivered is reachable only by retrying
         under the same key, which returns the recorded answer with
-        `replayed: true`. A turn that failed does not pin its key — the same key
-        may be sent again and will run a fresh turn.
+        `replayed: true`. A replay returns the recorded reply but never a
+        `sessionToken`, even if the original response carried one. If the
+        response carrying the token was lost, send the cardholder's next message
+        without a token: the verification is cancelled, a new code is sent, and
+        the agent asks for it. A replay is answered even after the chat has ended.
+        A turn that failed does not pin its key: the same key may be sent again
+        and will run a fresh turn.
 
         **An empty or absent `message` opens the chat and runs nothing.** On a
         cardholder with no open chat it opens one, and `reply` carries the agent's
@@ -11096,9 +11108,20 @@ paths:
         where verification stands come back, and `reply` does not, because an
         opening line arriving mid-conversation reads as the agent introducing
         itself a second time. `id`, `displayMessage` and `replayed` are absent on
-        both, because nothing was typed and no turn ran. Either way no code is sent, no `Idempotency-Key` is needed
-        or consumed, and nothing is billed — a widget in a reconnect loop may call
-        it as often as it likes.
+        both, because nothing was typed and no turn ran. Either way no code is
+        sent, no `Idempotency-Key` is needed or consumed, and nothing is billed,
+        so a widget in a reconnect loop may still call it as often as it likes.
+        The exception is an opening addressed to a `CareChat:<id>` that has ended:
+        it answers `409 CARE_CHAT_ENDED`, and the recovery is to address the
+        cardholder as `Customer:<uuid>`, which opens a new chat.
+
+        **`chatEnded` says when to stop.** It is on every `200` body, true or
+        false, and describes the chat once the call finished: true means the chat
+        has ended and no further message will be accepted. The agent can end the
+        chat itself when the cardholder is done; on that turn `chatEnded` is true
+        and the closing line is in `reply`. It is the chat's state rather than
+        what this call did, so a replay of that turn also says true. When it is
+        true, stop sending to that chat.
 
         **Verification is signalled in this `200` body, never as a `401`.** Every
         new cardholder's first message is unverified, so a `401` there would make
@@ -11248,7 +11271,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CareError'
         '409':
-          description: '`CONFLICT` when the `Idempotency-Key` was already used for a different message or a different chat — use a new key — or when the chat has no cardholder bound to it. `CARE_CHAT_ENDED` when a message carrying text is sent to a chat that has been closed; open a new one by sending a message addressed to the cardholder as `Customer:<uuid>`, which finds no open chat and opens a fresh one.'
+          description: '`CONFLICT` when the `Idempotency-Key` was already used for a different message or a different chat (use a new key), or when the chat has no cardholder bound to it. `CARE_CHAT_ENDED` when a message, or an opening, is sent to a chat that has ended, other than a replay of a turn that already completed; open a new one by sending a message addressed to the cardholder as `Customer:<uuid>`, which finds no open chat and opens a fresh one.'
           content:
             application/json:
               schema:
@@ -29203,6 +29226,7 @@ components:
         - chatId
         - verificationStatus
         - verificationRequired
+        - chatEnded
       properties:
         chatId:
           type: string
@@ -29210,6 +29234,10 @@ components:
           example: CareChat:019542f5-b3e7-1d02-0000-000000000030
         verificationStatus:
           $ref: '#/components/schemas/CareChatVerificationStatus'
+        chatEnded:
+          type: boolean
+          description: 'Whether the chat has ended as of this response, so no further message will be accepted. Present on every response, true or false, so a client reads a field rather than an absence. It is the chat''s state, not whether this call ended it: on the turn where the agent ends the chat it is true and the closing line is in `reply`, and a replay of that turn after the chat ended is also true. When it is true, stop sending to this chat; to talk to the cardholder again, address them as `Customer:<uuid>`, which opens a new chat.'
+          example: false
         verificationRequired:
           type: boolean
           description: |-
@@ -29233,7 +29261,7 @@ components:
           example: I can help with that. To look at your account I've texted you a code. What does it say?
         replayed:
           type: boolean
-          description: Whether this answer came from the record of an earlier call under the same `Idempotency-Key` rather than from a turn run now. Present only when a turn ran. There is no route that reads a transcript, so a retry under the original key is the only way to recover a reply that was produced but never delivered.
+          description: Whether this answer came from the record of an earlier call under the same `Idempotency-Key` rather than from a turn run now. Present only when a turn ran. There is no route that reads a transcript, so a retry under the original key is the only way to recover a reply that was produced but never delivered. A replay never carries a `sessionToken`, even if the original response did; if that response was lost, the cardholder's next message without a token verifies them again.
           example: false
         destinationMasked:
           type: string
@@ -29257,6 +29285,8 @@ components:
             Send it as the `X-Ls-Care-Session` header from the next call onwards. It is returned once and never re-readable, there is no revocation, and it is bound to this platform, this chat and this cardholder. Never log it, never put it in a URL, and never store it past `expiresAt`.
 
             One session is issued per verification rather than per message, so an ordinary turn on a chat that is already verified carries no `sessionToken`. The one you are already holding is still the right one.
+
+            A replay under the same `Idempotency-Key` returns the recorded reply but never a `sessionToken`, even if the original response carried one. If the response carrying the token was lost, send the cardholder's next message without a token: the verification is cancelled, a new code is sent, and the agent asks for it.
           example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
         expiresAt:
           type: string
@@ -29297,7 +29327,7 @@ components:
             | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
             | `CUSTOMER_NOT_FOUND` | 404 | No such cardholder for this platform. |
             | `CONFLICT` | 409 | The `Idempotency-Key` was already used for a different message or a different chat — use a new key — or the chat has no cardholder bound to it. |
-            | `CARE_CHAT_ENDED` | 409 | The chat has been closed. Open a new one by sending an empty message to the cardholder. |
+            | `CARE_CHAT_ENDED` | 409 | The chat has ended, whether the agent ended it or it was closed, and it accepts no further messages or openings; a replay of a turn that already completed is still answered. Open a new one by sending an empty message to the cardholder as `Customer:<uuid>`. |
             | `CARE_NOT_CONFIGURED_FOR_PLATFORM` | 422 | The platform is entitled to embedded care but has no care programme configured. |
             | `CARE_BUDGET_EXCEEDED` | 429 | This chat has reached its limit. It is not replaced by a new one: a replacement would be the limit cleared by asking again. |
             | `RATE_LIMITED` | 429 | The platform is calling this endpoint too often. Back off for the interval in the `Retry-After` response header. |

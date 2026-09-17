@@ -26,8 +26,13 @@ post:
     to recover an answer: nothing on this surface reads a transcript, so a
     reply that was produced but not delivered is reachable only by retrying
     under the same key, which returns the recorded answer with
-    `replayed: true`. A turn that failed does not pin its key — the same key
-    may be sent again and will run a fresh turn.
+    `replayed: true`. A replay returns the recorded reply but never a
+    `sessionToken`, even if the original response carried one. If the
+    response carrying the token was lost, send the cardholder's next message
+    without a token: the verification is cancelled, a new code is sent, and
+    the agent asks for it. A replay is answered even after the chat has ended.
+    A turn that failed does not pin its key: the same key may be sent again
+    and will run a fresh turn.
 
     **An empty or absent `message` opens the chat and runs nothing.** On a
     cardholder with no open chat it opens one, and `reply` carries the agent's
@@ -36,9 +41,20 @@ post:
     where verification stands come back, and `reply` does not, because an
     opening line arriving mid-conversation reads as the agent introducing
     itself a second time. `id`, `displayMessage` and `replayed` are absent on
-    both, because nothing was typed and no turn ran. Either way no code is sent, no `Idempotency-Key` is needed
-    or consumed, and nothing is billed — a widget in a reconnect loop may call
-    it as often as it likes.
+    both, because nothing was typed and no turn ran. Either way no code is
+    sent, no `Idempotency-Key` is needed or consumed, and nothing is billed,
+    so a widget in a reconnect loop may still call it as often as it likes.
+    The exception is an opening addressed to a `CareChat:<id>` that has ended:
+    it answers `409 CARE_CHAT_ENDED`, and the recovery is to address the
+    cardholder as `Customer:<uuid>`, which opens a new chat.
+
+    **`chatEnded` says when to stop.** It is on every `200` body, true or
+    false, and describes the chat once the call finished: true means the chat
+    has ended and no further message will be accepted. The agent can end the
+    chat itself when the cardholder is done; on that turn `chatEnded` is true
+    and the closing line is in `reply`. It is the chat's state rather than
+    what this call did, so a replay of that turn also says true. When it is
+    true, stop sending to that chat.
 
     **Verification is signalled in this `200` body, never as a `401`.** Every
     new cardholder's first message is unverified, so a `401` there would make
@@ -237,11 +253,12 @@ post:
     '409':
       description: >-
         `CONFLICT` when the `Idempotency-Key` was already used for a different
-        message or a different chat — use a new key — or when the chat has no
-        cardholder bound to it. `CARE_CHAT_ENDED` when a message carrying text
-        is sent to a chat that has been closed; open a new one by sending a
-        message addressed to the cardholder as `Customer:<uuid>`, which finds
-        no open chat and opens a fresh one.
+        message or a different chat (use a new key), or when the chat has no
+        cardholder bound to it. `CARE_CHAT_ENDED` when a message, or an
+        opening, is sent to a chat that has ended, other than a replay of a
+        turn that already completed; open a new one by sending a message
+        addressed to the cardholder as `Customer:<uuid>`, which finds no open
+        chat and opens a fresh one.
       content:
         application/json:
           schema:

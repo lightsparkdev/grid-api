@@ -130,7 +130,12 @@ tags:
          does not match is answered in `reply`, and the cardholder can simply
          send it again.
       4. **Close the chat** with `DELETE /care/chats/{chatId}` when the
-         cardholder is done.
+         cardholder is done. Every response also carries `chatEnded`, and the
+         agent can end the chat itself: when `chatEnded` is true, the closing
+         line is in `reply` and the chat takes no further messages, so stop
+         sending to it. An opening addressed to that `CareChat:<id>` answers
+         `409 CARE_CHAT_ENDED`; address the cardholder as `Customer:<uuid>`
+         to open a new chat.
 
       **A cardholder whose code never arrived asks the agent for another
       one.** The agent sends a new code to the number on file and says so in
@@ -180,7 +185,9 @@ tags:
       Some things are absent by construction, so no integration can come to
       depend on them: nothing returns a transcript or an earlier turn's reply
       (retrying under the original `Idempotency-Key` is how an answer that was
-      produced but not delivered is recovered), nothing sets a verification
+      produced but not delivered is recovered, and such a replay never carries
+      a `sessionToken`; a lost token is recovered by the cardholder's next
+      message verifying them again), nothing sets a verification
       state, and nothing changes the number a code is sent to.
 
       Errors from these endpoints carry `code` and `reason` only — see the

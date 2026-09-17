@@ -12,6 +12,7 @@ required:
   - chatId
   - verificationStatus
   - verificationRequired
+  - chatEnded
 properties:
   chatId:
     type: string
@@ -23,6 +24,18 @@ properties:
     example: CareChat:019542f5-b3e7-1d02-0000-000000000030
   verificationStatus:
     $ref: ./CareChatVerificationStatus.yaml
+  chatEnded:
+    type: boolean
+    description: >-
+      Whether the chat has ended as of this response, so no further message
+      will be accepted. Present on every response, true or false, so a client
+      reads a field rather than an absence. It is the chat's state, not
+      whether this call ended it: on the turn where the agent ends the chat it
+      is true and the closing line is in `reply`, and a replay of that turn
+      after the chat ended is also true. When it is true, stop sending to this
+      chat; to talk to the cardholder again, address them as
+      `Customer:<uuid>`, which opens a new chat.
+    example: false
   verificationRequired:
     type: boolean
     description: >-
@@ -84,7 +97,9 @@ properties:
       same `Idempotency-Key` rather than from a turn run now. Present only
       when a turn ran. There is no route that reads a transcript, so a retry
       under the original key is the only way to recover a reply that was
-      produced but never delivered.
+      produced but never delivered. A replay never carries a `sessionToken`,
+      even if the original response did; if that response was lost, the
+      cardholder's next message without a token verifies them again.
     example: false
   destinationMasked:
     type: string
@@ -136,6 +151,13 @@ properties:
       One session is issued per verification rather than per message, so an
       ordinary turn on a chat that is already verified carries no
       `sessionToken`. The one you are already holding is still the right one.
+
+
+      A replay under the same `Idempotency-Key` returns the recorded reply
+      but never a `sessionToken`, even if the original response carried one.
+      If the response carrying the token was lost, send the cardholder's next
+      message without a token: the verification is cancelled, a new code is
+      sent, and the agent asks for it.
     example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
   expiresAt:
     type: string
