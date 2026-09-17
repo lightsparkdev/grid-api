@@ -253,6 +253,7 @@
   align-items: flex-end;
   gap: 8px;
   max-width: 260px;
+  text-align: right;
 }
 
 .pitchText {
@@ -276,24 +277,35 @@
   .root {
     --pad: 16px;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    /* The card up top, then the title over the pitch, as the website's
+       heroes stack. */
     grid-template-areas:
       'wordmark label'
+      'stage stage'
       'title title'
-      '. .'
       'pitch pitch'
       'tuple docs';
     row-gap: 16px;
+  }
+
+  /* The card keeps to its own row, between the header and the title. */
+  .stage {
+    position: relative;
+    inset: auto;
+    grid-area: stage;
+    min-height: 0;
+  }
+
+  .title {
+    align-self: end;
+    font-size: 40px;
   }
 
   /* Only the outer rules. */
   .ruleB,
   .ruleC {
     display: none;
-  }
-
-  .title {
-    font-size: 40px;
   }
 
   /* The pitch reads left, in the secondary ink, two lines; the buttons
@@ -304,6 +316,7 @@
     align-items: flex-start;
     max-width: none;
     gap: 21px;
+    text-align: left;
   }
 
   .pitchText {
