@@ -348,11 +348,13 @@
 }
 
 /* ── Status ──────────────────────────────────────────────────────────────── */
+/* Last in the column: the gap above it and the panel's padding below are the
+   same spacing, so it carries no vertical padding of its own. */
 .status {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xs);
-  padding: 0 var(--spacing-3xs) var(--spacing-2xs);
+  padding: 0 var(--spacing-3xs);
 }
 
 .statusLine {

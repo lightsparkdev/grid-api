@@ -491,35 +491,61 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
     }
   }, [design, exporterRef, handle, palette, stale, hand, handId, treatment, picture]);
 
-  const copy = async (text: string) => {
+  const copiedNow = () => {
+    setCopied(true);
+    play('issued');
+    setTimeout(() => setCopied(false), 1800);
+  };
+  // The clipboard only takes a write while the click is fresh, and making the
+  // link takes a moment. So the write is handed over at once, as a promise of
+  // the text (Safari, Chrome, and Firefox 127+ take one); where the browser
+  // can't, the text is written after the fact and may be refused.
+  const copyLink = async (link: Promise<ShareHandle | null>) => {
+    const text = link.then((h) => {
+      if (!h) throw new Error('no-share');
+      return h.url;
+    });
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      play('issued');
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setError('Could not copy. Select the link and copy it.');
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+        const item = new ClipboardItem({
+          'text/plain': text.then((t) => new Blob([t], { type: 'text/plain' })),
+        });
+        await navigator.clipboard.write([item]);
+      } else {
+        await navigator.clipboard.writeText(await text);
+      }
+      copiedNow();
+    } catch (e) {
+      // The share failing has its own message; this is the clipboard's.
+      if ((e as Error).message !== 'no-share' && (await link)) {
+        setError('Could not copy. Select the link and copy it.');
+      }
     }
   };
   const onCopyLink = async () => {
     setLinkFor('link');
     try {
-      const h = await ensureShare();
-      if (h) await copy(h.url);
+      await copyLink(ensureShare());
     } finally {
       setLinkFor(null);
     }
   };
+  // The window opens on the click itself (a popup opened later is blocked),
+  // then goes to the composer once the link exists.
   const onPostToX = async () => {
     setLinkFor('x');
+    // (`noopener` would hand back null; the opener is cut by hand instead.)
+    const w = window.open('', '_blank');
+    if (w) w.opener = null;
     try {
       const h = await ensureShare();
-      if (!h) return;
-      window.open(
-        xIntentUrl(`I designed the ${programNameOf(design)} card on @lightspark Grid`, h.url),
-        '_blank',
-        'noopener',
-      );
+      if (!h) {
+        w?.close();
+        return;
+      }
+      const url = xIntentUrl(`I designed the ${programNameOf(design)} card on @lightspark Grid`, h.url);
+      if (w) w.location.href = url;
+      else window.open(url, '_blank', 'noopener');
     } finally {
       setLinkFor(null);
     }
