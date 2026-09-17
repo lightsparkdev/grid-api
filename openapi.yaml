@@ -8812,10 +8812,14 @@ paths:
                 summary: Freeze an active card
                 value:
                   status: FROZEN
+                  substatus: SUSPICIOUS_ACTIVITY
+                  reason: Unrecognised charges reported by the cardholder.
               unfreeze:
                 summary: Unfreeze a frozen card
                 value:
                   status: ACTIVE
+                  substatus: ISSUER_REQUEST
+                  reason: Review closed with no action.
               updateFundingSource:
                 summary: Replace the card's bound funding source
                 value:
@@ -8836,11 +8840,15 @@ paths:
                 summary: Freeze the card and replace its funding source in one call
                 value:
                   status: FROZEN
+                  substatus: SUSPICIOUS_ACTIVITY
+                  reason: Unrecognised charges reported by the cardholder.
                   fundingSource: InternalAccount:019542f5-b3e7-1d02-0000-000000000003
               close:
                 summary: Permanently close the card
                 value:
                   status: CLOSED
+                  substatus: END_USER_REQUEST
+                  reason: Cardholder asked us to close the card.
       responses:
         '200':
           description: Card updated. Returns the updated card.
@@ -8849,7 +8857,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, with `INVALID_INPUT` when `fundingSource` is combined with any `status` change on a card program where the card issuer makes authorization decisions, and for general invalid parameters.
+          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, with `INVALID_INPUT` when `fundingSource` is combined with any `status` change on a card program where the card issuer makes authorization decisions, with `INVALID_INPUT` when `status` is supplied without `substatus` or without a non-empty `reason`, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -27467,7 +27475,7 @@ components:
           example: 20
     CardUpdateRequest:
       type: object
-      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay` must be supplied. `status` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
+      description: Update request for `PATCH /cards/{id}`. At least one of `status`, `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay` must be supplied. Supplying `status` also requires `substatus` and `reason`, so every card state change carries why it happened. `status` transitions are limited to `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`; any other transition returns `409 INVALID_STATE_TRANSITION`. `CLOSED` is terminal and irreversible and cannot be combined with `fundingSource`, `maxSpendPerTransaction`, `maxSpendPerDay`, or `maxTransactionsPerDay`.
       properties:
         status:
           type: string
@@ -27477,6 +27485,27 @@ components:
             - CLOSED
           description: Target status for the card. Permitted transitions are `ACTIVE ⇄ FROZEN` and `ACTIVE | FROZEN → CLOSED`. `CLOSED` is terminal and irreversible; once closed, the card stays in the system for audit and reconciliation but cannot transact again.
           example: FROZEN
+        substatus:
+          type: string
+          enum:
+            - LOST
+            - COMPROMISED
+            - DAMAGED
+            - END_USER_REQUEST
+            - ISSUER_REQUEST
+            - NOT_ACTIVE
+            - SUSPICIOUS_ACTIVITY
+            - INTERNAL_REVIEW
+            - EXPIRED
+            - UNDELIVERABLE
+            - OTHER
+          description: Why the card is moving, in the card issuer's vocabulary. Required whenever `status` is supplied, and forwarded to the issuer. Pick `OTHER` when none of the named values fit and say why in `reason`.
+          example: SUSPICIOUS_ACTIVITY
+        reason:
+          type: string
+          minLength: 1
+          description: A short sentence naming why the card is moving. Required whenever `status` is supplied, and recorded against the card so a later reader can tell why it changed.
+          example: Cardholder reported the card stolen.
         fundingSource:
           type: string
           description: 'Replaces the card''s funding source. Must belong to the customer and be denominated in the card''s currency. Cannot be supplied alongside `status: CLOSED`. To stop a card from spending, set `status: FROZEN` instead.'
