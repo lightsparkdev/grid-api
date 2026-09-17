@@ -10,7 +10,7 @@ import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetri
 import { AnimatedLock } from '@/apps/shared/icons';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { canScrollBy } from '@/lib/scroll';
-import { airflow, play, playHover, type Airflow } from '@/lib/sounds';
+import { airflow, play, playHover, preheatSoon, type Airflow } from '@/lib/sounds';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import type { CardHome } from '@/apps/shared/card';
 import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
@@ -320,6 +320,8 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     if (!introDone) return;
     onIntroDone?.();
     flushDeferredPaints();
+    // The audio context, too: Chrome builds it on the main thread.
+    preheatSoon();
   }, [introDone, onIntroDone]);
   const overlayRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -971,10 +973,23 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     const onUp = () => {
       if (drag.current || brandDrag.current || gradDrag.current) releaseRef.current();
     };
+    // iOS Safari: the hit box's touch-action: none is not always honored (it
+    // sits under a pointer-events: none ancestor, and WebKit's touch-action
+    // regions miss it), so a finger turning the card could start the page
+    // scrolling instead, which cancels the pointer and stops the turn part
+    // way. Cancelling the touch's moves while a drag is live keeps the
+    // gesture the card's. Native, and not passive: React's touch handlers
+    // are passive and cannot cancel.
+    const hit = hitRef.current;
+    const onTouchMove = (e: TouchEvent) => {
+      if ((drag.current || brandDrag.current || gradDrag.current) && e.cancelable) e.preventDefault();
+    };
+    hit?.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     window.addEventListener('blur', onUp);
     return () => {
+      hit?.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
       window.removeEventListener('blur', onUp);

@@ -28,6 +28,7 @@ import { footprint } from '@/apps/card/cardMetrics';
 import { CardEnv } from '@/components/CardStage/card3d/CardEnv';
 import { CardMesh, type CardMeshState } from '@/components/CardStage/card3d/CardMesh';
 import { flushDeferredPaints, holdDeferredPaints } from '@/components/CardStage/card3d/deferredPaint';
+import { preheatSoon } from '@/lib/sounds';
 import { CardIntro } from '@/components/CardStage/CardIntro';
 import { CardMotion, ORIENT_ROLL } from '@/components/CardStage/cardMotion';
 import { exposureFor, paletteOn, TEMPLATE_TUPLE, type Palette } from '@/components/CardStage/export/compose';
@@ -193,12 +194,28 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
     };
   }, [endDrag]);
 
+  // iOS Safari: a finger turning the card must not become a page scroll
+  // (which cancels the pointer mid-turn). The touch's moves are cancelled
+  // while a drag is live; native and not passive, as React's touch handlers
+  // are passive and cannot cancel.
+  useEffect(() => {
+    const hit = hitRef.current;
+    if (!hit) return;
+    const onTouchMove = (e: TouchEvent) => {
+      if (drag.current && e.cancelable) e.preventDefault();
+    };
+    hit.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => hit.removeEventListener('touchmove', onTouchMove);
+  }, []);
+
   // The back's slow maps wait for the intro (deferredPaint): held from
   // mount, painted once it is done.
   useEffect(() => holdDeferredPaints(), []);
   const onIntroDone = useCallback(() => {
     setIntroDone(true);
     flushDeferredPaints();
+    // The audio context, too: Chrome builds it on the main thread.
+    preheatSoon();
   }, []);
 
   const foot = footprint(design.orientation);

@@ -1011,20 +1011,32 @@ export const playPress = () => play('press');
 
 // ── Install: preheat and gesture unlock ───────────────────────────────────────
 
-/** Builds the context and decodes the samples during idle time, so the
- *  first gesture only pays `resume()`. Runs once at import; harmless to
- *  call again. */
+/** Builds the context and decodes the samples, so the first gesture only
+ *  pays `resume()`. Chrome opens the audio device in the constructor, a
+ *  quarter second on the main thread, so this is for a quiet moment: the
+ *  pages call it once their intro is done, and a late timer covers a page
+ *  that never does. Harmless to call again. */
 export function preheat() {
   const context = getAudioContext();
   if (context) loadAllSamples(context);
 }
 
+/** `preheat` at the next quiet moment (an idle callback where there is one,
+ *  else shortly): for the end of an intro, off its last frame. */
+export function preheatSoon() {
+  if (typeof window === 'undefined') return;
+  if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(() => preheat(), { timeout: 2000 });
+  else setTimeout(preheat, 400);
+}
+
+/** The late fallback: well past any intro. */
+const PREHEAT_FALLBACK_MS = 8000;
+
 if (typeof window !== 'undefined') {
-  if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(() => preheat(), { timeout: 3000 });
-  } else {
-    setTimeout(preheat, 1500);
-  }
+  // A timer, not an idle callback: an idle callback runs in the first quiet
+  // gap, which on a loading page is while the card's assets are in flight,
+  // and the context's build then sits in front of their arrival.
+  setTimeout(preheat, PREHEAT_FALLBACK_MS);
 
   // Every gesture that finds the context stopped wakes it, so the cue it
   // carries (and every one after) plays without waiting on `resume()`, and
@@ -1034,7 +1046,10 @@ if (typeof window !== 'undefined') {
   const events = ['pointerdown', 'touchstart', 'touchend', 'keydown'] as const;
   const onGesture = () => {
     lastGestureAt = performance.now();
-    const context = getAudioContext();
+    // Wakes a context that exists; does not build one (that is the
+    // quarter-second above, and it would land on the first click). A cue
+    // played before the preheat builds it then.
+    const context = sharedContext;
     if (context && context.state !== 'running' && context.state !== 'closed') wake(context);
   };
   events.forEach((e) => window.addEventListener(e, onGesture, { capture: true, passive: true }));

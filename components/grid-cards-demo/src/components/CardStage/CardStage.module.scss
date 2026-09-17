@@ -40,6 +40,9 @@
   transform-origin: center center;
   will-change: transform;
   cursor: grab;
+  /* Not enough on iOS by itself (the root above is pointer-events: none and
+     WebKit's touch-action regions miss this box); CardStage also cancels
+     the touch's moves during a drag. */
   touch-action: none;
   user-select: none;
   --card-scale: 1;
