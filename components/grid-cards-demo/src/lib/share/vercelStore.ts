@@ -145,6 +145,7 @@ class VercelStore implements ShareStore {
   async update(id: string, patch: SharePatch): Promise<ShareRecord | null> {
     const record = await this.readRecord(id);
     if (!record) return null;
+    const before = fileUrlsOf(record);
     if (patch.design) record.design = { ...record.design, ...patch.design };
     if (patch.forName !== undefined) record.forName = patch.forName;
     if (patch.look !== undefined) record.look = patch.look;
@@ -155,6 +156,12 @@ class VercelStore implements ShareStore {
     }
     record.updatedAt = new Date().toISOString();
     await this.writeRecord(record);
+    // The files this publish replaced, if they were ours. Only now: until the
+    // record pointed elsewhere, the public page was still showing them.
+    const after = new Set(fileUrlsOf(record));
+    for (const url of before) {
+      if (!after.has(url) && isBlobUrl(url)) del(url).catch(() => {});
+    }
     return this.withViews(id);
   }
 
@@ -178,9 +185,10 @@ class VercelStore implements ShareStore {
     const types = SHARE_FILE_TYPES[role];
     if (!types || !types.includes(contentType)) throw new Error('bad-type');
     if (data.byteLength > MAX_BYTES[role]) throw new Error('too-large');
-    const record = await this.readRecord(id);
-    if (!record) throw new Error('not-found');
+    if (!(await this.readRecord(id))) throw new Error('not-found');
 
+    // Stamped, so a new file never overwrites the one the record still
+    // shows; `update` deletes the old one once the record moves on.
     const stamp = Date.now().toString(36);
     const pathname = `${this.blobPrefix}/${id}/${role}-${stamp}.${extensionFor(contentType)}`;
     const blob = await put(pathname, Buffer.from(data), {
@@ -189,12 +197,6 @@ class VercelStore implements ShareStore {
       addRandomSuffix: false,
       cacheControlMaxAge: 31536000,
     });
-
-    // The file this one replaces, if it was ours.
-    const previous = previousFileUrl(record, role);
-    if (previous && previous !== blob.url && isBlobUrl(previous)) {
-      del(previous).catch(() => {});
-    }
     return blob.url;
   }
 
@@ -211,21 +213,11 @@ class VercelStore implements ShareStore {
   }
 }
 
-function previousFileUrl(record: ShareRecord, role: ShareFileRole): string | null {
-  switch (role) {
-    case 'og':
-    case 'card':
-    case 'square':
-      return record.assets[role];
-    case 'logo':
-      return typeof record.design.logoUrl === 'string' ? record.design.logoUrl : null;
-    case 'art':
-      return typeof record.design.backgroundUrl === 'string' ? record.design.backgroundUrl : null;
-    default: {
-      const unhandled: never = role;
-      return unhandled;
-    }
-  }
+/** Every file URL a record points at: its stills and its brand images. */
+function fileUrlsOf(record: ShareRecord): string[] {
+  const urls = [record.assets.og, record.assets.card, record.assets.square];
+  urls.push(record.design.logoUrl, record.design.backgroundUrl);
+  return urls.filter((u): u is string => typeof u === 'string');
 }
 
 function isBlobUrl(url: string): boolean {

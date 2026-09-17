@@ -1,13 +1,13 @@
 /* GET /api/shares/{id}: the record, by id or slug.
-   PATCH /api/shares/{id}: change its design, name, or look, with the edit
-   token. The assets are not patchable here: only an upload sets them, so
-   every URL a share carries is a file of ours. */
+   PATCH /api/shares/{id}: change its design, name, look, or assets, with
+   the edit token. Every URL sent is checked to be a file of ours (the
+   upload route's), so a share never points a visitor at another server. */
 
 import { NextResponse } from 'next/server';
 
-import { authorized, cleanDesign, cleanLook, fail, failFrom, readJsonBody } from '@/lib/share/http';
+import { authorized, cleanDesign, cleanLook, fail, failFrom, ownedImageUrl, readJsonBody } from '@/lib/share/http';
 import { shareStore } from '@/lib/share/store';
-import type { SharePatch } from '@/lib/share/types';
+import type { ShareAssets, SharePatch } from '@/lib/share/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,8 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (!record) return fail('not-found');
   return NextResponse.json({ record });
 }
+
+const ASSET_ROLES: ReadonlyArray<keyof ShareAssets> = ['og', 'card', 'square'];
 
 export async function PATCH(req: Request, { params }: Ctx) {
   const auth = await authorized(req, params.id);
@@ -40,6 +42,16 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const look = cleanLook(body.look);
   if (look === false) return fail('bad-body');
   if (look !== undefined) patch.look = look;
+  if (body.assets !== undefined) {
+    if (typeof body.assets !== 'object' || body.assets === null) return fail('bad-body');
+    patch.assets = {};
+    for (const role of ASSET_ROLES) {
+      const url = body.assets[role];
+      if (url === undefined) continue;
+      if (url !== null && (typeof url !== 'string' || !ownedImageUrl(url))) return fail('bad-body');
+      patch.assets[role] = url;
+    }
+  }
 
   try {
     const record = await shareStore().update(auth.record.id, patch);

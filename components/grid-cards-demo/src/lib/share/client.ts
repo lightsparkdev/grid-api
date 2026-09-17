@@ -13,7 +13,7 @@ import {
 } from '@/components/CardStage/export/compose';
 import { renderStill, type StillFormat } from '@/components/CardStage/export/stills';
 import type { CardDesign } from '@/data/design';
-import type { ShareCreateInput, ShareFileRole, ShareLook, SharePatch, ShareRecord } from './types';
+import type { ShareAssets, ShareCreateInput, ShareFileRole, ShareLook, SharePatch, ShareRecord } from './types';
 
 export interface ShareHandle {
   record: ShareRecord;
@@ -87,16 +87,15 @@ export async function fetchViews(id: string, editToken: string): Promise<number>
   return r.views;
 }
 
-async function uploadFile(id: string, editToken: string, role: ShareFileRole, blob: Blob): Promise<ShareRecord> {
-  const r = await api<{ url: string; record: ShareRecord }>(
-    `/api/shares/${encodeURIComponent(id)}/files?role=${role}`,
-    {
-      method: 'POST',
-      headers: { 'content-type': blob.type, 'x-edit-token': editToken },
-      body: blob,
-    },
-  );
-  return r.record;
+/** Store a file for a share; the URL it is served from. The record is not
+ *  changed until `patchShare` publishes it. */
+async function uploadFile(id: string, editToken: string, role: ShareFileRole, blob: Blob): Promise<string> {
+  const r = await api<{ url: string }>(`/api/shares/${encodeURIComponent(id)}/files?role=${role}`, {
+    method: 'POST',
+    headers: { 'content-type': blob.type, 'x-edit-token': editToken },
+    body: blob,
+  });
+  return r.url;
 }
 
 async function patchShare(id: string, editToken: string, patch: SharePatch): Promise<ShareRecord> {
@@ -169,17 +168,19 @@ export interface CreateShareOptions {
 }
 
 /** The stills a share carries, and what they are for. */
-const STILL_ROLES: Array<[StillFormat, ShareFileRole]> = [
+const STILL_ROLES: Array<[StillFormat, keyof ShareAssets]> = [
   ['post', 'og'],
   ['square', 'square'],
 ];
 
 /**
- * Make (or update) a share. A new one: the record first, so the link exists
- * within a second; then any uploaded brand files, the link preview still,
- * and the square. An update: the files and stills first, and the record
- * last, so a failure part way leaves the public link as it was rather than
- * showing a new design over the old picture.
+ * Make (or update) a share. A new one gets its record first, so the link
+ * exists within a second. Then the files: any uploaded brand images, the
+ * link preview still, and the square, each stored without touching the
+ * record. One PATCH at the end publishes the design and every file
+ * together, so a failure part way leaves the public link as it was (a new
+ * one with no picture yet; an updated one showing its previous design and
+ * picture), never a new design over an old picture.
  */
 export async function createShare(opts: CreateShareOptions): Promise<ShareHandle> {
   const { exporter, design, onProgress } = opts;
@@ -187,7 +188,6 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   let id: string;
   let editToken: string;
   let url: string;
-  let record: ShareRecord;
   // How the stills are staged, so the share page can stage the live card alike.
   const look: ShareLook = {
     surface: rgbToHex(hexToRgb(opts.palette.bg)),
@@ -195,9 +195,6 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   };
   if (opts.existing) {
     ({ id, editToken, url } = opts.existing);
-    const current = await fetchShare(id);
-    if (!current) throw new ShareError('not-found', 404);
-    record = current;
   } else {
     const made = await api<{ record: ShareRecord; editToken: string; url: string }>(
       '/api/shares',
@@ -209,12 +206,12 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
         look,
       } satisfies ShareCreateInput),
     );
-    ({ record, editToken, url } = made);
-    id = record.id;
+    ({ editToken, url } = made);
+    id = made.record.id;
   }
 
-  // The brand's files, so the design loads anywhere. The design to store
-  // points at the uploaded copies, not the browser's object URLs.
+  // The brand's files, so the design loads anywhere. The design to publish
+  // points at the stored copies, not the browser's object URLs.
   const stored: CardDesign = { ...design };
   for (const [key, role] of [
     ['logoUrl', 'logo'],
@@ -225,8 +222,7 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
     const blob = await blobOf(v);
     if (blob) {
       onProgress?.({ stage: 'upload', detail: role });
-      record = await uploadFile(id, editToken, role, await shrinkRaster(blob));
-      stored[key] = record.design[key];
+      stored[key] = await uploadFile(id, editToken, role, await shrinkRaster(blob));
     }
   }
 
@@ -235,6 +231,7 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   // change (its spinner, its label) is on screen first.
   await prepareTemplate();
   if (opts.treatment === 'hand' && opts.hand) await prepareHand(opts.hand);
+  const assets: Partial<ShareAssets> = {};
   for (const [format, role] of STILL_ROLES) {
     onProgress?.({ stage: 'render', detail: format });
     await paintFirst();
@@ -246,11 +243,16 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
       hand: opts.hand,
     });
     onProgress?.({ stage: 'upload', detail: format });
-    record = await uploadFile(id, editToken, role, blob);
+    assets[role] = await uploadFile(id, editToken, role, blob);
   }
-  if (opts.existing) {
-    record = await patchShare(id, editToken, { design: stored, forName: opts.forName ?? undefined, look });
-  }
+
+  // Publish: the design and its files, in one write.
+  const record = await patchShare(id, editToken, {
+    design: stored,
+    assets,
+    forName: opts.forName ?? undefined,
+    look,
+  });
   onProgress?.({ stage: 'done' });
   const handle = { record, editToken, url };
   rememberShare(handle);

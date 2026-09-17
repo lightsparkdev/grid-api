@@ -57,9 +57,9 @@ export interface ShareCreateInput {
   look?: ShareLook | null;
 }
 
-/** What changes after creation. The client may send the design, name, and
- *  look, with the edit token; the assets are set only by the upload route,
- *  from files it stored. */
+/** What the client publishes after creation, with the edit token: the
+ *  design and the files' URLs together, in one write. Every URL must be a
+ *  file of ours (the upload route's). */
 export interface SharePatch {
   design?: CardDesign;
   assets?: Partial<ShareAssets>;
