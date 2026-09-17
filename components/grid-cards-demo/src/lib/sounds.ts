@@ -1025,9 +1025,17 @@ export function preheat() {
  *  else shortly): for the end of an intro, off its last frame. */
 export function preheatSoon() {
   if (typeof window === 'undefined') return;
+  preheatWanted = true;
   if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(() => preheat(), { timeout: 2000 });
   else setTimeout(preheat, 400);
 }
+
+/** A page has asked for the preheat (its intro is over). From here a
+ *  gesture that finds no context builds it, inside the gesture, so a turn
+ *  in the moments before the idle callback lands has its sound; before, a
+ *  gesture leaves the building to the preheat, so no click mid-intro pays
+ *  for it. */
+let preheatWanted = false;
 
 /** The late fallback: well past any intro. */
 const PREHEAT_FALLBACK_MS = 8000;
@@ -1046,10 +1054,11 @@ if (typeof window !== 'undefined') {
   const events = ['pointerdown', 'touchstart', 'touchend', 'keydown'] as const;
   const onGesture = () => {
     lastGestureAt = performance.now();
-    // Wakes a context that exists; does not build one (that is the
-    // quarter-second above, and it would land on the first click). A cue
-    // played before the preheat builds it then.
-    const context = sharedContext;
+    // Wakes a context that exists. Builds one only once a page has asked
+    // for the preheat (see preheatWanted): before that the build, a quarter
+    // second in Chrome, would land on a click mid-intro. A cue played before
+    // either builds it then.
+    const context = preheatWanted ? getAudioContext() : sharedContext;
     if (context && context.state !== 'running' && context.state !== 'closed') wake(context);
   };
   events.forEach((e) => window.addEventListener(e, onGesture, { capture: true, passive: true }));
