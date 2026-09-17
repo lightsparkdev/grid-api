@@ -1,0 +1,27 @@
+{
+  "name": "grid-statements-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive Grid periodic statements playground embedded in the Grid docs.",
+  "scripts": {
+    "dev": "next dev -p 4003",
+    "build": "next build",
+    "start": "next start -p 4003",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "jsdom": "^26.1.0",
+    "playwright": "^1.55.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
