@@ -315,7 +315,9 @@
     align-self: end;
     align-items: flex-start;
     max-width: none;
-    gap: 21px;
+    /* The website's subhead-to-CTAs run, and the row gap above, each 4 short. */
+    gap: 17px;
+    margin-top: -4px;
     text-align: left;
   }
 
