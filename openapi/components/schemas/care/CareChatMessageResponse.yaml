@@ -97,9 +97,12 @@ properties:
       same `Idempotency-Key` rather than from a turn run now. Present only
       when a turn ran. There is no route that reads a transcript, so a retry
       under the original key is the only way to recover a reply that was
-      produced but never delivered. A replay never carries a `sessionToken`,
-      even if the original response did; if that response was lost, the
-      cardholder's next message without a token verifies them again.
+      produced but never delivered. A replay requires the same session token
+      its original request required: replaying a turn sent while the chat
+      could reach the account needs a valid `X-Ls-Care-Session`, and without
+      one is refused with `401 CARE_SESSION_EXPIRED`; a turn that ran before
+      the cardholder verified replays without one. A replay never carries a
+      `sessionToken`, even if the original response did.
     example: false
   destinationMasked:
     type: string
@@ -153,11 +156,14 @@ properties:
       `sessionToken`. The one you are already holding is still the right one.
 
 
-      A replay under the same `Idempotency-Key` returns the recorded reply
-      but never a `sessionToken`, even if the original response carried one.
-      If the response carrying the token was lost, send the cardholder's next
-      message without a token: the verification is cancelled, a new code is
-      sent, and the agent asks for it.
+      A replay under the same `Idempotency-Key` never returns a
+      `sessionToken`, even if the original response carried one, and a replay
+      of a turn that required a session needs that session itself. So if the
+      response carrying the token was lost, you cannot recover it or replay an
+      account turn: send the cardholder's next message as a new message
+      without a token. The verification is cancelled, a new code is sent, and
+      the agent asks for it. A replay of the turn in which the cardholder sent
+      their code needs no token and returns the recorded reply without one.
     example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
   expiresAt:
     type: string

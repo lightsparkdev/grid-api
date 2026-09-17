@@ -185,9 +185,11 @@ tags:
       Some things are absent by construction, so no integration can come to
       depend on them: nothing returns a transcript or an earlier turn's reply
       (retrying under the original `Idempotency-Key` is how an answer that was
-      produced but not delivered is recovered, and such a replay never carries
-      a `sessionToken`; a lost token is recovered by the cardholder's next
-      message verifying them again), nothing sets a verification
+      produced but not delivered is recovered; a replay requires the same
+      session token its original request required and never carries a
+      `sessionToken`, so a lost token is recovered by sending the cardholder's
+      next message as a new message, which verifies them again), nothing sets
+      a verification
       state, and nothing changes the number a code is sent to.
 
       Errors from these endpoints carry `code` and `reason` only — see the

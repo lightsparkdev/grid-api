@@ -149,9 +149,11 @@ tags:
       Some things are absent by construction, so no integration can come to
       depend on them: nothing returns a transcript or an earlier turn's reply
       (retrying under the original `Idempotency-Key` is how an answer that was
-      produced but not delivered is recovered, and such a replay never carries
-      a `sessionToken`; a lost token is recovered by the cardholder's next
-      message verifying them again), nothing sets a verification
+      produced but not delivered is recovered; a replay requires the same
+      session token its original request required and never carries a
+      `sessionToken`, so a lost token is recovered by sending the cardholder's
+      next message as a new message, which verifies them again), nothing sets
+      a verification
       state, and nothing changes the number a code is sent to.
 
       Errors from these endpoints carry `code` and `reason` only — see the
@@ -11093,11 +11095,18 @@ paths:
         to recover an answer: nothing on this surface reads a transcript, so a
         reply that was produced but not delivered is reachable only by retrying
         under the same key, which returns the recorded answer with
-        `replayed: true`. A replay returns the recorded reply but never a
-        `sessionToken`, even if the original response carried one. If the
-        response carrying the token was lost, send the cardholder's next message
-        without a token: the verification is cancelled, a new code is sent, and
-        the agent asks for it. A replay is answered even after the chat has ended.
+        `replayed: true`. **A replay requires the same session token its original
+        request required.** Replaying a turn that was sent while the chat could
+        reach the account needs a valid `X-Ls-Care-Session` for this chat; without
+        one it is refused with `401 CARE_SESSION_EXPIRED` and returns nothing from
+        the record. A replay of a turn that ran before the cardholder verified,
+        such as the turn in which they sent their code, needs no token. A replay
+        never returns a `sessionToken`, even if the original response carried one,
+        and it never cancels a verification or sends a code. So a partner who lost
+        the token cannot replay an account turn: send the cardholder's next message
+        as a new message without a token, which verifies them again (the
+        verification is cancelled, a new code is sent, and the agent asks for it).
+        A replay is answered, under the same rule, even after the chat has ended.
         A turn that failed does not pin its key: the same key may be sent again
         and will run a fresh turn.
 
@@ -11212,7 +11221,7 @@ paths:
         - name: X-Ls-Care-Session
           in: header
           required: false
-          description: 'The `sessionToken` this route returned on the turn in which the cardholder sent their verification code. Send it on every message while the chat''s verification is current. A message without it, or with one past its expiry, is not refused: the chat''s verification is taken away before the turn runs and a new code is sent, so the cardholder verifies again in the conversation. A token that is sent is always checked for what it names: a malformed one is refused with `CARE_SESSION_EXPIRED`, one minted for another chat or another cardholder is `NOT_FOUND`, and one minted for another platform is `CARE_SESSION_PLATFORM_MISMATCH`, whether or not it has expired. An opening never reads the header at all, because a widget that reloaded has lost its token and that is the case the opening exists for.'
+          description: 'The `sessionToken` this route returned on the turn in which the cardholder sent their verification code. Send it on every message while the chat''s verification is current. A message without it, or with one past its expiry, is not refused: the chat''s verification is taken away before the turn runs and a new code is sent, so the cardholder verifies again in the conversation. The exception is a replay under an `Idempotency-Key` whose original request required a session: it must carry a valid token, or it is refused with `CARE_SESSION_EXPIRED` and returns nothing from the record. A token that is sent is always checked for what it names: a malformed one is refused with `CARE_SESSION_EXPIRED`, one minted for another chat or another cardholder is `NOT_FOUND`, and one minted for another platform is `CARE_SESSION_PLATFORM_MISMATCH`, whether or not it has expired. An opening never reads the header at all, because a widget that reloaded has lost its token and that is the case the opening exists for.'
           schema:
             type: string
           example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
@@ -11253,7 +11262,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CareError'
         '401':
-          description: '`UNAUTHORIZED` when the platform''s Grid credential is missing or wrong. `CARE_SESSION_EXPIRED` when the `X-Ls-Care-Session` token presented is malformed. A missing or expired session token is never a `401`: it verifies the cardholder again inside a `200` carrying `verificationRequired: true`, as does an unverified or stale chat. `CARE_SESSION_EXPIRED` is also returned, rarely, when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again.'
+          description: '`UNAUTHORIZED` when the platform''s Grid credential is missing or wrong. `CARE_SESSION_EXPIRED` when the `X-Ls-Care-Session` token presented is malformed, or when a replay under an `Idempotency-Key` lacks the valid session token its original request required; nothing from the record is returned. Otherwise a missing or expired session token is never a `401`: a new message verifies the cardholder again inside a `200` carrying `verificationRequired: true`, as does an unverified or stale chat. `CARE_SESSION_EXPIRED` is also returned, rarely, when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again.'
           content:
             application/json:
               schema:
@@ -29261,7 +29270,7 @@ components:
           example: I can help with that. To look at your account I've texted you a code. What does it say?
         replayed:
           type: boolean
-          description: Whether this answer came from the record of an earlier call under the same `Idempotency-Key` rather than from a turn run now. Present only when a turn ran. There is no route that reads a transcript, so a retry under the original key is the only way to recover a reply that was produced but never delivered. A replay never carries a `sessionToken`, even if the original response did; if that response was lost, the cardholder's next message without a token verifies them again.
+          description: 'Whether this answer came from the record of an earlier call under the same `Idempotency-Key` rather than from a turn run now. Present only when a turn ran. There is no route that reads a transcript, so a retry under the original key is the only way to recover a reply that was produced but never delivered. A replay requires the same session token its original request required: replaying a turn sent while the chat could reach the account needs a valid `X-Ls-Care-Session`, and without one is refused with `401 CARE_SESSION_EXPIRED`; a turn that ran before the cardholder verified replays without one. A replay never carries a `sessionToken`, even if the original response did.'
           example: false
         destinationMasked:
           type: string
@@ -29286,7 +29295,7 @@ components:
 
             One session is issued per verification rather than per message, so an ordinary turn on a chat that is already verified carries no `sessionToken`. The one you are already holding is still the right one.
 
-            A replay under the same `Idempotency-Key` returns the recorded reply but never a `sessionToken`, even if the original response carried one. If the response carrying the token was lost, send the cardholder's next message without a token: the verification is cancelled, a new code is sent, and the agent asks for it.
+            A replay under the same `Idempotency-Key` never returns a `sessionToken`, even if the original response carried one, and a replay of a turn that required a session needs that session itself. So if the response carrying the token was lost, you cannot recover it or replay an account turn: send the cardholder's next message as a new message without a token. The verification is cancelled, a new code is sent, and the agent asks for it. A replay of the turn in which the cardholder sent their code needs no token and returns the recorded reply without one.
           example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
         expiresAt:
           type: string
@@ -29321,7 +29330,7 @@ components:
             | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `chatId` path id beginning `Customer:` that is not well formed, or a chat that cannot be verified at all. |
             | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused at the content boundary and no turn ran. `reason` carries the sentence to show them. |
             | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified — that is signalled in a `200` body. |
-            | `CARE_SESSION_EXPIRED` | 401 | The `X-Ls-Care-Session` token presented is malformed, or not a care session token at all. A missing or expired token is never this error: the message verifies the cardholder again inside a `200` instead. Rarely, also returned when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again. |
+            | `CARE_SESSION_EXPIRED` | 401 | The `X-Ls-Care-Session` token presented is malformed, or not a care session token at all; or a replay under an `Idempotency-Key` lacks the valid session token its original request required, in which case nothing from the record is returned. For a new message, a missing or expired token is never this error: the message verifies the cardholder again inside a `200` instead. Rarely, also returned when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again. |
             | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
             | `CARE_SESSION_PLATFORM_MISMATCH` | 403 | The session token was minted for a different platform. Stop; retrying will not help. |
             | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
