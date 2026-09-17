@@ -106,7 +106,7 @@ export default async function SharePage({ params, searchParams }: Props) {
               </a>
             ) : (
               <a className={styles.primary} href={designHref}>
-                Build yours
+                Design yours
               </a>
             )}
           </>
