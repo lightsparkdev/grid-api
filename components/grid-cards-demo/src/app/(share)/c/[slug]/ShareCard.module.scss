@@ -24,18 +24,23 @@
 
 /* ── The card ──────────────────────────────────────────────────────────── */
 
-/* Under the columns, the whole page: the card sits at its center. */
+/* Over the columns, the whole page: the card sits at its center and paints
+   over the rules. Lets the pointer through; the page handles it. */
 .stage {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.root {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
 
 /* Over the card (the intro over), it is there to be turned. */
-.stageOverCard {
+.overCard {
   cursor: grab;
 }
 
@@ -49,6 +54,11 @@
 .canvas {
   position: absolute !important;
   inset: 0;
+  pointer-events: none !important;
+
+  canvas {
+    pointer-events: none !important;
+  }
 }
 
 /* Rides with the card (the rig writes its transform every frame): the

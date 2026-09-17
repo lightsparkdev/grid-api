@@ -207,22 +207,24 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
   } as CSSProperties;
 
   return (
-    <div className={clsx(styles.root, introDone && styles.introDone)} style={vars}>
+    // The pointer is handled here, on the page: the stage paints over the
+    // columns (the card is always on top) but lets the pointer through, so
+    // the type and the buttons take theirs and the rest reaches the card.
+    <div
+      className={clsx(
+        styles.root,
+        introDone && styles.introDone,
+        introDone && overCardNow && styles.overCard,
+        dragging && styles.dragging,
+      )}
+      style={vars}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+    >
       {/* The card's stage: the whole page; the card sits at its center. */}
-      <div
-        ref={stageRef}
-        className={clsx(
-          styles.stage,
-          introDone && overCardNow && styles.stageOverCard,
-          dragging && styles.dragging,
-        )}
-        onPointerMove={onPointerMove}
-        onPointerLeave={onPointerLeave}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        role="img"
-        aria-label={alt}
-      >
+      <div ref={stageRef} className={styles.stage} role="img" aria-label={alt}>
         <Canvas
           className={styles.canvas}
           dpr={[1, 2]}
