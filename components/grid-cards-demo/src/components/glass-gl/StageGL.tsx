@@ -100,7 +100,26 @@ const FOREGROUND_SELECTOR =
  * the VISIBLE lattice (startX = gutter, step = gap); drawDotField extends it across
  * the bleed-padded buffer.
  */
-function dotLayout(w: number, h: number) {
+/** How the lattice meets the frame's edges: `gutter` (the stage: even
+ *  breathing room inside, no dot on an edge) or `flush` (a dot on each
+ *  edge, so the outer rows and columns ride the frame's rules). */
+export type DotEdge = 'gutter' | 'flush';
+
+function dotLayout(w: number, h: number, edge: DotEdge = 'gutter') {
+  if (edge === 'flush') {
+    // The outermost dots sit whole against each edge (their far side on the
+    // frame's line); the step divides what is between them exactly.
+    const cols = Math.max(1, Math.round((w - DOT_SIZE) / DOT_SPACING));
+    const rows = Math.max(1, Math.round((h - DOT_SIZE) / DOT_SPACING));
+    return {
+      cols,
+      rows,
+      startX: DOT_SIZE / 2,
+      startY: DOT_SIZE / 2,
+      stepX: (w - DOT_SIZE) / cols,
+      stepY: (h - DOT_SIZE) / rows,
+    };
+  }
   const cols = Math.max(1, Math.round((w + 2 * DOT_SIZE) / DOT_SPACING) - 1);
   const rows = Math.max(1, Math.round((h + 2 * DOT_SIZE) / DOT_SPACING) - 1);
   const stepX = (w + 2 * DOT_SIZE) / (cols + 1); // the gap
@@ -123,13 +142,14 @@ function drawDotField(
   dpr: number,
   palette: DotGridPalette,
   bgColor: string,
+  edge: DotEdge,
 ) {
   const fullW = w + 2 * bleed;
   const fullH = h + 2 * bleed;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS px on the device-sized buffer
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, fullW, fullH);
-  const { startX, startY, stepX, stepY } = dotLayout(w, h);
+  const { startX, startY, stepX, stepY } = dotLayout(w, h, edge);
   if (stepX <= 0 || stepY <= 0) return;
   // The visible lattice (visible x = startX + n*stepX) extended across the whole
   // bleed-padded buffer (shifted by `bleed`), so the ripple can pull in dots from
@@ -384,6 +404,8 @@ export interface StageGLProps {
   bootMix?: number;
   targetSelector?: string;
   rippleOnClick?: boolean;
+  /** How the dots meet the edges; the stage's gutter by default. */
+  edge?: DotEdge;
 }
 
 export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
@@ -394,6 +416,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     targetSelector = '[class*="AppShell_shell"]',
     rippleOnClick = true,
     bootMix = 1,
+    edge = 'gutter',
   },
   ref,
 ) {
@@ -625,7 +648,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       // click ripple is no longer baked here; it's a shader displacement (below), so
       // it costs nothing on this 2D-redraw + upload path.
       if (textureDirty) {
-        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg);
+        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg, edge);
         gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
       }

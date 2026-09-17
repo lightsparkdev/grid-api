@@ -226,7 +226,7 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
       {/* The playground's dot grid, in the card's column, under everything.
           It ripples on a click anywhere but the chrome. */}
       <div className={styles.dots} aria-hidden>
-        <StageGL bg={palette.bg} bootMix={0} />
+        <StageGL bg={palette.bg} bootMix={0} edge="flush" />
       </div>
 
       {/* The card's stage: the whole page; the card sits at its center. */}
