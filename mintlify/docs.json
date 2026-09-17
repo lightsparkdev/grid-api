@@ -236,58 +236,6 @@
         ]
       },
       {
-        "tab": "Rewards",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "rewards/index",
-              "rewards/terminology",
-              "rewards/developer-guides/implementation-overview",
-              "rewards/quickstart"
-            ]
-          },
-          {
-            "group": "Onboarding",
-            "pages": [
-              "rewards/developer-guides/platform-configuration"
-            ]
-          },
-          {
-            "group": "Managing accounts",
-            "pages": [
-              "rewards/developer-guides/internal-accounts",
-              "rewards/developer-guides/external-accounts"
-            ]
-          },
-          {
-            "group": "Distributing rewards",
-            "pages": [
-              "rewards/developer-guides/distributing-rewards",
-              "rewards/developer-guides/listing-transactions"
-            ]
-          },
-          {
-            "group": "Global Accounts",
-            "pages": [
-              "rewards/global-accounts/overview",
-              "rewards/global-accounts/client-keys",
-              "rewards/global-accounts/authentication",
-              "rewards/global-accounts/managing-sessions",
-              "rewards/global-accounts/exporting-wallet"
-            ]
-          },
-          {
-            "group": "Platform tools",
-            "pages": [
-              "rewards/platform-tools/webhooks",
-              "rewards/platform-tools/sandbox-testing",
-              "rewards/platform-tools/postman-collection"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "Global P2P",
         "groups": [
           {
