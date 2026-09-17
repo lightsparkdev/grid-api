@@ -9,6 +9,7 @@
    card still separates from it. */
 
 import { loadImage } from '../card3d/facePaint';
+import { DOT_SIZE, dotLayout } from '@/lib/dotLattice';
 import { EXPOSURE_DARK, EXPOSURE_LIGHT, type ExportFrame } from './exportRenderer';
 
 /** What holds the card on the template: nothing, or a hand. */
@@ -195,7 +196,7 @@ const HAND_CARD_CENTER = { x: 0.5, y: 0.5 };
 /** In a frame wider than its square (the post), the square is the frame's
  *  height and the hand would sit small in the width: the whole composition
  *  is scaled up this much there, about the card's center. */
-const HAND_WIDE_SCALE = 1.2;
+const HAND_WIDE_SCALE = 1.35;
 
 /** The card's share of the layout square in a frame `w` × `h`: bigger in a
  *  wide frame. */
@@ -458,6 +459,7 @@ export function paintTemplate(ctx: CanvasRenderingContext2D, w: number, h: numbe
     const third = (right - left) / 3;
     ruleAt(left + third);
     ruleAt(left + 2 * third);
+    paintDots(ctx, left + third, top, third, inner, k, palette);
   }
 
   // The logomark, top left inside the column's padding.
@@ -483,6 +485,23 @@ export function paintTemplate(ctx: CanvasRenderingContext2D, w: number, h: numbe
   ctx.fillText('Lightspark', textRight, top + capRise);
   ctx.fillText('Cards Playground', textRight, top + capRise + size);
   ctx.fillText('docs.lightspark.com', textRight, bottom);
+}
+
+/** The stage's dot grid across a column `x, y, w, h` (frame px), laid as the
+ *  share page's middle column: the top and bottom rows against the rules'
+ *  ends, none on the rules themselves. The dots are the surface stepped a
+ *  tenth toward the ink, which is what the app's two themes do. */
+function paintDots(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, k: number, palette: Palette) {
+  const { cols, rows, startX, startY, stepX, stepY } = dotLayout(w, h, 'flush', k);
+  const size = DOT_SIZE * k;
+  ctx.fillStyle = rgbToHex(mix(hexToRgb(palette.bg), hexToRgb(palette.ink), 0.1));
+  for (let n = 0; n < cols; n++) {
+    const cx = x + startX + n * stepX;
+    for (let m = 0; m <= rows; m++) {
+      const cy = y + startY + m * stepY;
+      ctx.fillRect(cx - size / 2, cy - size / 2, size, size);
+    }
+  }
 }
 
 /** Put a rendered frame onto a canvas of its size (a scratch for drawImage). */

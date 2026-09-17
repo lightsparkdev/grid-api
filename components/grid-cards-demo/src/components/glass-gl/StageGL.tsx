@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import { computeDomeConstants } from '@/components/liquid-glass/displacement';
 import { observeTheme, readDotGridPalette, type DotGridPalette } from '@/lib/dotGridColors';
+import { DOT_SIZE, dotLayout, type DotEdge } from '@/lib/dotLattice';
 import {
   createPointerTracker,
   createPressTracker,
@@ -69,10 +70,7 @@ const DEFAULT_LENS: StageGLLens = {
   designWidth: 434,
 };
 
-// --- dot field (same constants/wave as components/DotGrid) ---
-// Match grid-visualizer's SVG tile: 20×20 repeat, 2.5px dot at (8.75, 8.75), bg offset 8px.
-const DOT_SPACING = 20;
-const DOT_SIZE = 2.5;
+// --- dot field (the lattice is lib/dotLattice, shared with the share template) ---
 // Draw the dot field this far past each visible edge (CSS px) so the click ripple
 // has real dots to pull in from beyond the frame — no "dots only exist inside"
 // boundary mid-wave. At rest these extra dots sit just off-screen (the gutter is a
@@ -92,36 +90,7 @@ const RIPPLE_ON_PRESS = false;
 const FOREGROUND_SELECTOR =
   '[class*="AppShell_scaled"], [class*="AppShell_overStage"], [data-phone-up], [data-stage-foreground]';
 
-/**
- * Even grid with a clean, symmetric edge gutter that's a hair SMALLER than the gap
- * (by one dot size). Two reasons: (1) it reads as even padding all around, and
- * (2) the first dot just past each edge lands fully off-screen, so when the field
- * is extended into the bleed margin those extra dots stay hidden at rest. Returns
- * the VISIBLE lattice (startX = gutter, step = gap); drawDotField extends it across
- * the bleed-padded buffer.
- */
-/** How the lattice meets the frame's edges: `gutter` (the stage: even
- *  breathing room inside, no dot on an edge) or `flush` (for a column drawn
- *  between two rules: the top and bottom rows sit whole against the top and
- *  bottom edges; across, the gutter, so no dot sits on a rule). */
-export type DotEdge = 'gutter' | 'flush';
-
-function dotLayout(w: number, h: number, edge: DotEdge = 'gutter') {
-  // Across: the gutter, either way (its first off-frame dot is fully hidden,
-  // so nothing sits on a rule once the field is extended for the ripple).
-  const cols = Math.max(1, Math.round((w + 2 * DOT_SIZE) / DOT_SPACING) - 1);
-  const stepX = (w + 2 * DOT_SIZE) / (cols + 1); // the gap
-  const startX = stepX - DOT_SIZE; // gutter ≈ gap − one dot
-  if (edge === 'flush') {
-    // Down: the top and bottom rows whole against the edges; the step
-    // divides what is between them exactly.
-    const rows = Math.max(1, Math.round((h - DOT_SIZE) / DOT_SPACING));
-    return { cols, rows, startX, startY: DOT_SIZE / 2, stepX, stepY: (h - DOT_SIZE) / rows };
-  }
-  const rows = Math.max(1, Math.round((h + 2 * DOT_SIZE) / DOT_SPACING) - 1);
-  const stepY = (h + 2 * DOT_SIZE) / (rows + 1);
-  return { cols, rows, startX, startY: stepY - DOT_SIZE, stepX, stepY };
-}
+export type { DotEdge };
 
 function drawDotField(
   ctx: CanvasRenderingContext2D,
