@@ -1,8 +1,12 @@
 'use client';
 
 import clsx from 'clsx';
+import { useState } from 'react';
 import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
-import { CardStage } from '@/components/CardStage/CardStage';
+import { CardStage, type ShareStageState } from '@/components/CardStage/CardStage';
+import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
+import { SharePanel } from '@/components/ShareSheet/SharePanel';
+import type { SharedCard } from '@/hooks/useCardsDemoLogic';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
@@ -32,6 +36,15 @@ export interface AppPanelProps {
   onTapDeclined?: UseCardHomeOptions['onTapDeclined'];
   cardOptions?: UseCardHomeOptions['card'];
   onSettled?: () => void;
+  /** The card's exporter, filled by the stage (see CardStage). */
+  exportRef?: React.MutableRefObject<CardExporter | null>;
+  /** Extra chrome on the stage under the floating card (the Share button). */
+  stageActions?: React.ReactNode;
+  /** Share, on the stage: the card parks in the panel's frame. */
+  shareOpen?: boolean;
+  shared?: SharedCard | null;
+  /** The card's intro has played (see CardStage). */
+  onIntroDone?: () => void;
 }
 
 /** The stage: the card, always; the cardholder's phone comes in with the first flow, the card goes into it, and it stays until sent away. */
@@ -48,7 +61,17 @@ export function AppPanel({
   cardOptions,
   onSettled,
   brainReset,
+  exportRef,
+  stageActions,
+  shareOpen = false,
+  shared = null,
+  onIntroDone,
 }: AppPanelProps) {
+  // What the share panel asks of the stage (the frame's exposure and pose).
+  const [shareStage, setShareStage] = useState<ShareStageState>({ open: false, exposure: 1, pose: null });
+  // Above the stage's canvas, for the share's layers that pass in front of
+  // the card (the hand's fingers). Takes no pointer.
+  const [frontHost, setFrontHost] = useState<HTMLDivElement | null>(null);
   const home = useCardHome({
     entry: walletEntry,
     onCardIssued,
@@ -103,7 +126,26 @@ export function AppPanel({
               externalGlass
               stageChrome={closePhone}
             />
-            <CardStage design={design} home={home} onDesignChange={onDesignChange} />
+            {exportRef && (
+              <SharePanel
+                open={shareOpen && !phoneUp}
+                exporterRef={exportRef}
+                design={design}
+                shared={shared}
+                onStage={setShareStage}
+                frontHost={frontHost}
+              />
+            )}
+            <CardStage
+              design={design}
+              home={home}
+              onDesignChange={onDesignChange}
+              exportRef={exportRef}
+              share={shareStage}
+              onIntroDone={onIntroDone}
+            />
+            <div ref={setFrontHost} className={styles.shareFront} aria-hidden />
+            {stageActions}
           </DotGridCanvas>
         </div>
       </div>

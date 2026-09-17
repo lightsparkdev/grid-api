@@ -31,7 +31,9 @@ import { CardMesh, type BrandPlacement, type CardMeshState } from './card3d/Card
 import { localToSpec } from './card3d/faceFrame';
 import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
-import { CardMotion } from './cardMotion';
+import { CardMotion, ORIENT_ROLL } from './cardMotion';
+import { installExportDevHook } from './export/devHook';
+import { CardExporter, type ExportPose } from './export/exportRenderer';
 import { useCardMomentSounds } from './cardSounds';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
@@ -63,10 +65,6 @@ const ROTATE_STEP = 15;
 const SNAP_DEG = 3;
 /** Spec px → card px, the hit box's unit (the same along either axis). */
 const CARD_PER_SPEC = CARD_W / FIGMA_CARD_W;
-/** Upright, the blank has been turned a quarter turn clockwise: the roll the
- *  mesh carries about its own normal, degrees (three's positive z is
- *  counterclockwise seen from the front). */
-const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 };
 /** The card's fade under the screen's scroll edge has run out this far down
  *  the strip (the header's bottom edge). */
 const EDGE_FADE_RAMP_END = 0.8;
@@ -118,6 +116,18 @@ interface Live {
   facing: number;
   /** How the card is held: the footprint, the roll, and the pick's frame. */
   orientation: Orientation;
+  /** The share frame wants the card, and how far along the flight is (0..1,
+   *  stepped by the frame loop). */
+  shareWanted: boolean;
+  shareT: number;
+  /** The angles the card had when the flight began: it turns to the pose
+   *  along the flight, arriving as it lands. Null between flights. */
+  shareFrom: ExportPose | null;
+  shareLocked: boolean;
+  onTurned: (() => void) | undefined;
+  onSettled: ((settled: boolean) => void) | undefined;
+  /** The card is parked in the frame's slot and still (last told). */
+  shareSettled: boolean;
   intro: Intro;
   /** Something the camera sees changed off the frame loop (a material, a
    *  map, the exposure): the next frame paints. See CardRig's render gate. */
@@ -214,11 +224,38 @@ interface Guides {
   gapY?: Gap;
 }
 
+/** The share frame on the stage: the card parks in its slot
+ *  (`[data-share-card-slot]`), posed, and can be turned by hand there. */
+export interface ShareStageState {
+  open: boolean;
+  /** The tone mapping exposure for the surface the card sits on. */
+  exposure: number;
+  /** A pose picked from the row; the card springs to it. Null: as turned. */
+  pose: ExportPose | null;
+  /** The pose is fixed (the hand holds the card): no turning it by hand. */
+  locked?: boolean;
+  /** The visitor turned the card by hand: the picked pose no longer holds. */
+  onTurned?: () => void;
+  /** The card has landed in the frame's slot and is all but still (or has
+   *  left it): what must wait for the card to be in place (the hand) listens. */
+  onSettled?: (settled: boolean) => void;
+}
+
+/** The flight into the share frame and back (s). */
+const SHARE_FLIGHT_S = 0.6;
+
 interface CardStageProps {
   design: CardDesign;
   home: CardHome;
   /** Lets the stage edit the design: the brand is placed on the card itself. */
   onDesignChange?: (patch: Partial<CardDesign>) => void;
+  /** Filled with the card's exporter once the mesh is mounted (the share flow
+   *  renders stills and video through it). */
+  exportRef?: React.MutableRefObject<CardExporter | null>;
+  share?: ShareStageState;
+  /** The blueprint has dissolved and the card stands alone (the stage's
+   *  chrome waits for this). */
+  onIntroDone?: () => void;
 }
 
 /** Capture the pointer for a drag. A pointer that is already gone (a touch
@@ -260,7 +297,7 @@ function layoutAt(layout: BrandLayout, c: Pt, w: number, h: number): BrandLayout
  * pointer input, the state pill, the accessible name, and the brand's
  * selection box.
  */
-export function CardStage({ design, home, onDesignChange }: CardStageProps) {
+export function CardStage({ design, home, onDesignChange, exportRef, share, onIntroDone }: CardStageProps) {
   const { bootProgress } = usePhoneBoot();
   const reduceMotion = useReducedMotion() ?? false;
   const dark = useThemeMode() === 'dark';
@@ -277,6 +314,9 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // then dissolves as the card comes into focus. Until it's done the card is
   // held flat and the pointer is off.
   const [introDone, setIntroDone] = useState(false);
+  useEffect(() => {
+    if (introDone) onIntroDone?.();
+  }, [introDone, onIntroDone]);
   const overlayRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -290,6 +330,13 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     inert: false,
     facing: 1,
     orientation: design.orientation,
+    shareWanted: false,
+    shareT: 0,
+    shareFrom: null,
+    shareLocked: false,
+    onTurned: undefined,
+    onSettled: undefined,
+    shareSettled: false,
     dirty: true,
     intro: {
       t: -1,
@@ -344,6 +391,29 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // The composed face and the card's footprint on screen, for the card as held.
   const face = faceSize(design.orientation);
   const foot = footprint(design.orientation);
+
+  // ── The share frame ────────────────────────────────────────────────────
+  // Open, the card flies into the frame's slot and is posed there: a pose
+  // from the row springs it to those angles; a drag turns it and it stays
+  // where it is let go. Closed, it flies back and settles on a face again.
+  const shareOpen = !!share?.open && !phoneUp;
+  const shareLocked = !!share?.locked;
+  live.current.shareWanted = shareOpen;
+  live.current.shareLocked = shareLocked;
+  live.current.onTurned = share?.onTurned;
+  live.current.onSettled = share?.onSettled;
+  useEffect(() => {
+    // Free to turn in the frame, unless the pose is held (the hand).
+    motion.free = shareOpen && !shareLocked;
+    if (!shareOpen) {
+      const p = motion.pose;
+      motion.setPose({ rotX: Math.round(p.rotX / 180) * 180, rotY: Math.round(p.rotY / 180) * 180 });
+    }
+  }, [shareOpen, shareLocked, motion]);
+  const sharePose = share?.pose ?? null;
+  useEffect(() => {
+    if (shareOpen && sharePose) motion.setPose(sharePose);
+  }, [shareOpen, sharePose, motion]);
 
   // Decline: shake once per bounce, with the low double.
   useEffect(() => {
@@ -558,7 +628,13 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     const guides: Guides = { marks };
     if (sx.at !== undefined) {
       if (sx.gap) {
-        guides.gapX = { a: sx.gap[0], b: sx.gap[1], lo: snapped.x - box.w / 2, hi: snapped.x + box.w / 2, at: snapped.y };
+        guides.gapX = {
+          a: sx.gap[0],
+          b: sx.gap[1],
+          lo: snapped.x - box.w / 2,
+          hi: snapped.x + box.w / 2,
+          at: snapped.y,
+        };
       } else {
         guides.x = sx.at;
         mark({ x: sx.at, y: snapped.y });
@@ -567,7 +643,13 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     }
     if (sy.at !== undefined) {
       if (sy.gap) {
-        guides.gapY = { a: sy.gap[0], b: sy.gap[1], lo: snapped.y - box.h / 2, hi: snapped.y + box.h / 2, at: snapped.x };
+        guides.gapY = {
+          a: sy.gap[0],
+          b: sy.gap[1],
+          lo: snapped.y - box.h / 2,
+          hi: snapped.y + box.h / 2,
+          at: snapped.x,
+        };
       } else {
         guides.y = sy.at;
         mark({ x: snapped.x, y: sy.at });
@@ -584,8 +666,20 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     const tol = snapTolerance();
     const { cardCenter, chipCenter } = landmarks();
     type Target = [number, Pt | null];
-    const xs: Target[] = [[cardCenter.x, cardCenter], [chipCenter.x, chipCenter], [0, null], [face.w, null], [other.x, other]];
-    const ys: Target[] = [[cardCenter.y, cardCenter], [chipCenter.y, chipCenter], [0, null], [face.h, null], [other.y, other]];
+    const xs: Target[] = [
+      [cardCenter.x, cardCenter],
+      [chipCenter.x, chipCenter],
+      [0, null],
+      [face.w, null],
+      [other.x, other],
+    ];
+    const ys: Target[] = [
+      [cardCenter.y, cardCenter],
+      [chipCenter.y, chipCenter],
+      [0, null],
+      [face.h, null],
+      [other.y, other],
+    ];
     const best = (v: number, targets: Target[]) => {
       let at: number | undefined;
       let feature: Pt | null = null;
@@ -621,8 +715,11 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   // ── Pointer: tilt on hover, spin on drag; the brand is placed on the card ──
   // Parked in the phone the card still tilts and turns; only the flight in
   // and out is off limits, and the brand is only placed on the stage.
-  const inFlight = () => live.current.t > 0 && live.current.t < CARD_PARKED_T;
+  const inFlight = () =>
+    (live.current.t > 0 && live.current.t < CARD_PARKED_T) || (live.current.shareT > 0 && live.current.shareT < 1);
   const inPhone = () => live.current.t >= CARD_PARKED_T;
+  /** In the share frame: the card is turned and posed there, not edited. */
+  const inShare = () => live.current.shareT > 0;
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   /** A press on the unselected brand, or on the name: a click if it ends
    *  within CLICK_SLOP (the brand selects, the name opens its editor). */
@@ -647,7 +744,12 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
       : bd.mode === 'scale'
         ? resizeCursor(handleAngle(bd.handle!) + rotation)
         : 'default';
-  const beginBrandDrag = (e: ReactPointerEvent<HTMLDivElement>, start: Pt, mode: BrandDrag['mode'], handle?: Handle) => {
+  const beginBrandDrag = (
+    e: ReactPointerEvent<HTMLDivElement>,
+    start: Pt,
+    mode: BrandDrag['mode'],
+    handle?: Handle,
+  ) => {
     const pl = placement.current;
     if (!pl) return;
     capture(e);
@@ -730,10 +832,12 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     if (inFlight()) return;
     // The outline is for a card at rest, on the stage (the brand is not
     // placed on the card in the phone): not while it turns or settles.
-    const canEdit = brandEditable && !inPhone();
+    const canEdit = brandEditable && !inPhone() && !inShare();
     hover(canEdit && e.pointerType === 'mouse' && motion.atRest && hitBrand(e.clientX, e.clientY) !== null);
     hoverName(canEdit && e.pointerType === 'mouse' && !textEdit && motion.atRest && hitName(e.clientX, e.clientY));
-    if (reduceMotion || selected || live.current.inert) return;
+    // Posed in the share frame the card holds its angles: no tilt under the
+    // pointer, so what is seen is what the picture will be.
+    if (reduceMotion || selected || live.current.inert || inShare()) return;
     const b = e.currentTarget.getBoundingClientRect();
     motion.setTilt((e.clientX - b.left) / b.width - 0.5, (e.clientY - b.top) / b.height - 0.5);
   };
@@ -741,7 +845,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
   const [dragged, setDragged] = useState(false);
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (inFlight() || e.button !== 0 || brandDrag.current || gradDrag.current) return;
-    if (gradEditing && !inPhone()) {
+    if (gradEditing && !inPhone() && !inShare()) {
       const gradEl = (e.target as HTMLElement).closest<HTMLElement>('[data-grad]');
       if (gradEl) {
         capture(e);
@@ -751,7 +855,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         return;
       }
     }
-    if (brandEditable && !inPhone()) {
+    if (brandEditable && !inPhone() && !inShare()) {
       // A handle of the selection box: scale, or rotate from just outside a corner.
       const handleEl = (e.target as HTMLElement).closest<HTMLElement>('[data-handle]');
       const p = pick.current?.(e.clientX, e.clientY);
@@ -782,9 +886,10 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     }
     // On Card numbers the card is turned over for the reveal and stays so:
     // no spinning it (it still tilts). At the reader it is held; locked or
-    // closed it is inert. No drag starts, so no pointerup would settle a
-    // press on the name: drop it, or the next drag's end would open the editor.
-    if (live.current.wantBack || live.current.tap || live.current.inert) {
+    // closed it is inert; in the hand it is held as the hand holds it. No
+    // drag starts, so no pointerup would settle a press on the name: drop it,
+    // or the next drag's end would open the editor.
+    if (live.current.wantBack || live.current.tap || live.current.inert || (inShare() && live.current.shareLocked)) {
       pendingSelect.current = null;
       return;
     }
@@ -821,6 +926,8 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     drag.current = null;
     motion.endDrag(e.timeStamp);
     e.currentTarget.classList.remove(styles.hitDragging);
+    // In the share frame the card stays as turned; the row's pose lets go.
+    if (inShare()) live.current.onTurned?.();
     // A press on the brand or the name that did not become a drag: select
     // the brand; open the name's editor.
     const ps = pendingSelect.current;
@@ -947,7 +1054,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     return p.x >= b.x - m && p.x <= b.x + b.w + m && p.y >= b.y - m && p.y <= b.y + b.h + m;
   };
   const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!brandEditable || live.current.t > 0) return;
+    if (!brandEditable || live.current.t > 0 || inShare()) return;
     if (hitBrand(e.clientX, e.clientY)) {
       play('press');
       if (design.logoUrl) setLayout(null);
@@ -1012,12 +1119,11 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
     };
   }
 
-
   // What the mesh paints from. One object per change, so the rig (memoized)
   // sits out the renders the phone's boot curve drives every frame.
   const meshState = useMemo<CardMeshState>(
-    () => ({ design, issued, frozen: card.frozen, closed: card.closed }),
-    [design, issued, card.frozen, card.closed],
+    () => ({ design, issued, credentials: card.credentials, frozen: card.frozen, closed: card.closed }),
+    [design, issued, card.credentials, card.frozen, card.closed],
   );
 
   // The selection box, in card px on the hit box.
@@ -1049,7 +1155,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         }}
       >
         <StageClock />
-        <StageCamera dark={dark} live={live} />
+        <StageCamera dark={dark} live={live} exposure={shareOpen ? share?.exposure : undefined} />
         <CardEnv />
         <directionalLight position={[2, 5, 6]} intensity={0.3} color="#eef2f8" />
         <CardRig
@@ -1062,6 +1168,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
           placement={placement}
           onBrandPlacement={onBrandPlacement}
           state={meshState}
+          exportRef={exportRef}
         />
       </Canvas>
 
@@ -1211,7 +1318,7 @@ export function CardStage({ design, home, onDesignChange }: CardStageProps) {
         <span
           className={clsx(
             styles.hint,
-            (dragged || overBrand || selected || !introDone || phoneUp) && styles.hintGone,
+            (dragged || overBrand || selected || !introDone || phoneUp || shareOpen) && styles.hintGone,
           )}
           aria-hidden
         >
@@ -1313,8 +1420,17 @@ function StageClock() {
   return null;
 }
 
-/** Perspective camera whose view at z = 0 is exactly the stage in px. */
-function StageCamera({ dark, live }: { dark: boolean; live: React.MutableRefObject<Live> }) {
+/** Perspective camera whose view at z = 0 is exactly the stage in px. The
+ *  exposure is the theme's, or the share surface's while the card sits on it. */
+function StageCamera({
+  dark,
+  live,
+  exposure,
+}: {
+  dark: boolean;
+  live: React.MutableRefObject<Live>;
+  exposure?: number;
+}) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
   const gl = useThree((s) => s.gl);
@@ -1324,9 +1440,9 @@ function StageCamera({ dark, live }: { dark: boolean; live: React.MutableRefObje
     live.current.dirty = true;
   }, [camera, size.height, live]);
   useEffect(() => {
-    gl.toneMappingExposure = dark ? EXPOSURE_DARK : EXPOSURE_LIGHT;
+    gl.toneMappingExposure = exposure ?? (dark ? EXPOSURE_DARK : EXPOSURE_LIGHT);
     live.current.dirty = true;
-  }, [gl, dark, live]);
+  }, [gl, dark, exposure, live]);
   return null;
 }
 
@@ -1342,6 +1458,7 @@ interface CardRigProps {
   placement: React.MutableRefObject<BrandPlacement | null>;
   onBrandPlacement: (p: BrandPlacement) => void;
   state: CardMeshState;
+  exportRef?: React.MutableRefObject<CardExporter | null>;
 }
 
 /** Drives the mesh and the DOM hit box every frame. Memoized: every prop
@@ -1357,6 +1474,7 @@ const CardRig = memo(function CardRig({
   placement,
   onBrandPlacement,
   state,
+  exportRef,
 }: CardRigProps) {
   // Carrier takes position and scale; the card inside it takes the spin.
   const carrier = useRef<THREE.Group>(null);
@@ -1364,7 +1482,35 @@ const CardRig = memo(function CardRig({
   const size = useThree((s) => s.size);
   const dpr = useThree((s) => s.viewport.dpr);
   const get = useThree((s) => s.get);
+  // The card's exporter, for the share flow: renders the same mesh through
+  // its own camera into offscreen targets, between the stage's frames.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  useEffect(() => {
+    if (!exportRef || !carrier.current || !group.current) return;
+    const exporter = new CardExporter({
+      get,
+      carrier: carrier.current,
+      group: group.current,
+      orientation: () => live.current.orientation,
+      livePose: () => motion.pose,
+      markDirty: () => {
+        live.current.dirty = true;
+      },
+    });
+    exportRef.current = exporter;
+    const uninstall = installExportDevHook(exporter, () => stateRef.current.design);
+    return () => {
+      uninstall();
+      if (exportRef.current === exporter) exportRef.current = null;
+      exporter.dispose();
+    };
+  }, [exportRef, get, live, motion]);
   const pos = useRef<{ x: number; y: number; s: number } | null>(null);
+  /** The share frame's slot as the card follows it: the slot moves and
+   *  resizes with what the panel shows (Template, a hand), and the card
+   *  glides after it rather than jumping. Null between flights. */
+  const shareSlot = useRef<{ x: number; y: number; s: number } | null>(null);
   // The turning card's air (see the frame loop), and how long it has been still.
   const airRef = useRef<Airflow | null>(null);
   const airStill = useRef(0);
@@ -1403,22 +1549,24 @@ const CardRig = memo(function CardRig({
     const normal = new THREE.Vector3();
     const q = new THREE.Quaternion();
     const hit = new THREE.Vector3();
-    const pickSide = (side: 'front' | 'back'): Pick => (clientX, clientY) => {
-      const g = group.current;
-      if (!g) return null;
-      const { camera, gl } = get();
-      const r = gl.domElement.getBoundingClientRect();
-      ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
-      ray.setFromCamera(ndc, camera);
-      g.getWorldPosition(origin);
-      normal.set(0, 0, 1).applyQuaternion(g.getWorldQuaternion(q));
-      const toward = ray.ray.direction.dot(normal);
-      if (side === 'front' ? toward >= 0 : toward <= 0) return null;
-      plane.setFromNormalAndCoplanarPoint(normal, origin);
-      if (!ray.ray.intersectPlane(plane, hit)) return null;
-      g.worldToLocal(hit);
-      return localToSpec(live.current.orientation, side, hit);
-    };
+    const pickSide =
+      (side: 'front' | 'back'): Pick =>
+      (clientX, clientY) => {
+        const g = group.current;
+        if (!g) return null;
+        const { camera, gl } = get();
+        const r = gl.domElement.getBoundingClientRect();
+        ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+        ray.setFromCamera(ndc, camera);
+        g.getWorldPosition(origin);
+        normal.set(0, 0, 1).applyQuaternion(g.getWorldQuaternion(q));
+        const toward = ray.ray.direction.dot(normal);
+        if (side === 'front' ? toward >= 0 : toward <= 0) return null;
+        plane.setFromNormalAndCoplanarPoint(normal, origin);
+        if (!ray.ray.intersectPlane(plane, hit)) return null;
+        g.worldToLocal(hit);
+        return localToSpec(live.current.orientation, side, hit);
+      };
     pick.current = pickSide('front');
     pickBack.current = pickSide('back');
     return () => {
@@ -1482,19 +1630,83 @@ const CardRig = memo(function CardRig({
         s += (Math.min(b.width / foot.w, b.height / foot.h) - s) * t;
       }
     }
+    // The share frame: the flight's clock steps toward wanted; the card
+    // interpolates to the frame's slot on the eased curve, as for the phone.
+    const lv = live.current;
+    const shareDir = lv.shareWanted ? 1 : -1;
+    const shareWas = lv.shareT;
+    lv.shareT = Math.max(0, Math.min(1, lv.shareT + (shareDir * dt) / (lv.reduceMotion ? 0.001 : SHARE_FLIGHT_S)));
+    const st = easeInOutCubic(lv.shareT);
+    // The turn rides the flight: where the card starts is read as the flight
+    // begins (either way), and the angles follow the flight's own curve so
+    // the pose lands with the card. Settled, the spring has it again.
+    const shareLanded = lv.shareT === 0 || lv.shareT === 1;
+    if (!shareLanded && shareWas !== lv.shareT && lv.shareFrom === null) lv.shareFrom = motion.pose;
+    if (shareLanded) lv.shareFrom = null;
+    const sharePath = lv.shareFrom ? { from: lv.shareFrom, u: lv.shareWanted ? st : 1 - st } : undefined;
+    let shareInPlace = false;
+    if (st > 0) {
+      const slot = root.ownerDocument.querySelector<HTMLElement>('[data-share-card-slot]');
+      if (slot) {
+        const b = slot.getBoundingClientRect();
+        const want = {
+          x: b.left + b.width / 2 - r.left,
+          y: b.top + b.height / 2 - r.top,
+          s: Math.min(b.width / foot.w, b.height / foot.h),
+        };
+        // As the flight begins the slot is where it is; landed, the card
+        // glides after a slot that moves (the same approach as toward rest).
+        const g = shareSlot.current;
+        const sk = g && shareWas > 0 && !lv.reduceMotion ? 1 - Math.exp(-dt / GLIDE_TAU) : 1;
+        const tgt = g ?? { ...want };
+        tgt.x += (want.x - tgt.x) * sk;
+        tgt.y += (want.y - tgt.y) * sk;
+        tgt.s += (want.s - tgt.s) * sk;
+        shareSlot.current = tgt;
+        x += (tgt.x - x) * st;
+        y += (tgt.y - y) * st;
+        s += (tgt.s - s) * st;
+        // Nearly in place: landed, the glide within a tenth of the card's
+        // width of the slot, the turn within twenty degrees. The glide and
+        // the spring take about half a second from here, and what waits on
+        // the card (the hand) arrives over that.
+        const near = want.s * foot.w * 0.1;
+        shareInPlace =
+          lv.shareT === 1 &&
+          Math.abs(want.x - tgt.x) < near &&
+          Math.abs(want.y - tgt.y) < near &&
+          Math.abs(want.s - tgt.s) < want.s * 0.1 &&
+          motion.nearRest(20);
+      }
+    } else {
+      shareSlot.current = null;
+    }
+    if (shareInPlace !== lv.shareSettled) {
+      lv.shareSettled = shareInPlace;
+      lv.onSettled?.(shareInPlace);
+    }
+    const shareFlying = lv.shareT > 0 && lv.shareT < 1;
 
     const { intro } = live.current;
     const pose = motion.step(dt, {
       wantBack: live.current.wantBack,
-      // Held flat: in flight to or from the phone, during the intro, under
-      // the brand's selection box (which is DOM, and must sit on the face),
-      // or at the reader for tap-to-pay (front up, whichever face it was
-      // showing). Parked otherwise, the card is free again: it tilts under
-      // the pointer and can be turned over in the slot.
+      // Held flat: in flight to or from the phone or the share frame, during
+      // the intro, under the brand's selection box (which is DOM, and must
+      // sit on the face), or at the reader for tap-to-pay (front up,
+      // whichever face it was showing). Parked otherwise, the card is free
+      // again: it tilts under the pointer and can be turned over in the slot.
       hold:
-        (t > 0 && t < CARD_PARKED_T) || !intro.done || live.current.editing || live.current.tap || live.current.inert,
+        (t > 0 && t < CARD_PARKED_T) ||
+        shareFlying ||
+        !intro.done ||
+        live.current.editing ||
+        live.current.tap ||
+        live.current.inert,
       freeze: live.current.freeze,
       reduceMotion: live.current.reduceMotion,
+      // Posed in the frame the card holds still (it still tilts).
+      bob: lv.shareT === 0,
+      path: sharePath,
     });
     const bob = pose.dy * (1 - t);
     live.current.facing = pose.facing;

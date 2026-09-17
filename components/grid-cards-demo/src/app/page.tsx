@@ -6,10 +6,13 @@ import { IconArrowRight } from '@central-icons-react/round-outlined-radius-3-str
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
 import { ConfigurePanel } from '@/components/ConfigurePanel/ConfigurePanel';
 import { AppPanel } from '@/components/AppPanel/AppPanel';
+import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
+import { StageShareButton } from '@/components/ShareSheet/StageShareButton';
 import { ApiPanel } from '@/components/ApiPanel/ApiPanel';
 import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResizeHandle';
 import { ThemeSync } from '@/components/ThemeSync';
 import { useColumnResize } from '@/hooks/useColumnResize';
+import { SHARE_LEAVES_MS } from '@/components/ShareSheet/SharePanel';
 import { useCardsDemoLogic } from '@/hooks/useCardsDemoLogic';
 import { LAYOUT_WIDE_PX } from '@/lib/layout';
 import type { ActionId } from '@/data/actions';
@@ -35,6 +38,18 @@ function withViewTransition(update: () => void) {
 export default function Page() {
   const logic = useCardsDemoLogic();
   const { layoutRef, apiColRef, apiWidth, resizing, onResizeStart } = useColumnResize();
+  // The card's exporter (filled by the stage) and the share sheet over it.
+  const exportRef = useRef<CardExporter | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const toggleShare = useCallback(() => setShareOpen((o) => !o), []);
+  // A flow brings the phone in and takes the card: the share is over, so
+  // sending the phone away returns the card to the designer, not the frame.
+  useEffect(() => {
+    if (logic.phoneUp) setShareOpen(false);
+  }, [logic.phoneUp]);
+  // The stage's chrome (the Share button) comes in once the card has.
+  const [introDone, setIntroDone] = useState(false);
+  const onIntroDone = useCallback(() => setIntroDone(true), []);
 
   // Stacked ⇄ 3-col as a data-layout attribute on <html> so the arrangement,
   // the panel chrome colors, and the API header all flip on one clock. The
@@ -66,13 +81,32 @@ export default function Page() {
   }, []);
 
   // Tapping a flow in Configure runs it and jumps to the Playground (mobile);
-  // on desktop goPlayground no-ops, so it behaves exactly as before.
+  // on desktop goPlayground no-ops, so it behaves exactly as before. With
+  // the share open, the share leaves first and the phone comes only once it
+  // has gone: the two at once (the panel sinking while the card flew from
+  // its frame to the phone) was too much moving at one time.
+  const pendingAction = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (pendingAction.current) clearTimeout(pendingAction.current);
+    },
+    [],
+  );
   const onConfigureAction = useCallback(
     (id: ActionId) => {
       goPlayground();
+      if (shareOpen) {
+        setShareOpen(false);
+        if (pendingAction.current) clearTimeout(pendingAction.current);
+        pendingAction.current = setTimeout(() => {
+          pendingAction.current = null;
+          logic.handleAction(id);
+        }, SHARE_LEAVES_MS);
+        return;
+      }
       logic.handleAction(id);
     },
-    [goPlayground, logic],
+    [goPlayground, logic, shareOpen],
   );
 
   // Floating back pill hides on scroll-down, shows on scroll-up (Playground only).
@@ -141,6 +175,13 @@ export default function Page() {
             onTapDeclined={logic.onTapDeclined}
             cardOptions={logic.cardOptions}
             onSettled={logic.onSettled}
+            exportRef={exportRef}
+            shareOpen={shareOpen}
+            shared={logic.shared}
+            onIntroDone={onIntroDone}
+            stageActions={
+              <StageShareButton visible={introDone && !logic.phoneUp} open={shareOpen} onClick={toggleShare} />
+            }
           />
         </div>
         <ColumnResizeHandle onMouseDown={onResizeStart} />

@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import { computeDomeConstants } from '@/components/liquid-glass/displacement';
 import { observeTheme, readDotGridPalette, type DotGridPalette } from '@/lib/dotGridColors';
+import { DOT_SIZE, dotLayout, type DotEdge } from '@/lib/dotLattice';
 import {
   createPointerTracker,
   createPressTracker,
@@ -69,10 +70,7 @@ const DEFAULT_LENS: StageGLLens = {
   designWidth: 434,
 };
 
-// --- dot field (same constants/wave as components/DotGrid) ---
-// Match grid-visualizer's SVG tile: 20×20 repeat, 2.5px dot at (8.75, 8.75), bg offset 8px.
-const DOT_SPACING = 20;
-const DOT_SIZE = 2.5;
+// --- dot field (the lattice is lib/dotLattice, shared with the share template) ---
 // Draw the dot field this far past each visible edge (CSS px) so the click ripple
 // has real dots to pull in from beyond the frame — no "dots only exist inside"
 // boundary mid-wave. At rest these extra dots sit just off-screen (the gutter is a
@@ -89,30 +87,10 @@ const RIPPLE_ON_PRESS = false;
 // start on the backdrop do. The phone is its shell, its content layer above
 // the card's canvas (the screen's buttons, lists, sheets, and the stage chrome
 // beside it), and, while the phone is up, the card itself in its slot.
-const FOREGROUND_SELECTOR = '[class*="AppShell_scaled"], [class*="AppShell_overStage"], [data-phone-up]';
+const FOREGROUND_SELECTOR =
+  '[class*="AppShell_scaled"], [class*="AppShell_overStage"], [data-phone-up], [data-stage-foreground]';
 
-/**
- * Even grid with a clean, symmetric edge gutter that's a hair SMALLER than the gap
- * (by one dot size). Two reasons: (1) it reads as even padding all around, and
- * (2) the first dot just past each edge lands fully off-screen, so when the field
- * is extended into the bleed margin those extra dots stay hidden at rest. Returns
- * the VISIBLE lattice (startX = gutter, step = gap); drawDotField extends it across
- * the bleed-padded buffer.
- */
-function dotLayout(w: number, h: number) {
-  const cols = Math.max(1, Math.round((w + 2 * DOT_SIZE) / DOT_SPACING) - 1);
-  const rows = Math.max(1, Math.round((h + 2 * DOT_SIZE) / DOT_SPACING) - 1);
-  const stepX = (w + 2 * DOT_SIZE) / (cols + 1); // the gap
-  const stepY = (h + 2 * DOT_SIZE) / (rows + 1);
-  return {
-    cols,
-    rows,
-    startX: stepX - DOT_SIZE, // gutter ≈ gap − one dot, so off-frame dots hide
-    startY: stepY - DOT_SIZE,
-    stepX,
-    stepY,
-  };
-}
+export type { DotEdge };
 
 function drawDotField(
   ctx: CanvasRenderingContext2D,
@@ -122,13 +100,14 @@ function drawDotField(
   dpr: number,
   palette: DotGridPalette,
   bgColor: string,
+  edge: DotEdge,
 ) {
   const fullW = w + 2 * bleed;
   const fullH = h + 2 * bleed;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS px on the device-sized buffer
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, fullW, fullH);
-  const { startX, startY, stepX, stepY } = dotLayout(w, h);
+  const { startX, startY, stepX, stepY } = dotLayout(w, h, edge);
   if (stepX <= 0 || stepY <= 0) return;
   // The visible lattice (visible x = startX + n*stepX) extended across the whole
   // bleed-padded buffer (shifted by `bleed`), so the ripple can pull in dots from
@@ -383,6 +362,8 @@ export interface StageGLProps {
   bootMix?: number;
   targetSelector?: string;
   rippleOnClick?: boolean;
+  /** How the dots meet the edges; the stage's gutter by default. */
+  edge?: DotEdge;
 }
 
 export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
@@ -393,6 +374,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
     targetSelector = '[class*="AppShell_shell"]',
     rippleOnClick = true,
     bootMix = 1,
+    edge = 'gutter',
   },
   ref,
 ) {
@@ -624,7 +606,7 @@ export const StageGL = forwardRef<StageGLHandle, StageGLProps>(function StageGL(
       // click ripple is no longer baked here; it's a shader displacement (below), so
       // it costs nothing on this 2D-redraw + upload path.
       if (textureDirty) {
-        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg);
+        drawDotField(offCtx, cssW, cssH, DOT_BLEED, dpr, palette, bg ?? palette.bg, edge);
         gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
       }

@@ -13,6 +13,7 @@ import {
   type CardStock,
   type Orientation,
 } from '@/data/design';
+import { currentCredentials, type CardCredentials } from '@/apps/shared/card/cardholder';
 import { grain as grainVoice, type Grain } from '@/lib/sounds';
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
@@ -70,6 +71,8 @@ import {
 export interface CardMeshState {
   design: CardDesign;
   issued: boolean;
+  /** What the personalization prints once issued. Absent, the current card's. */
+  credentials?: CardCredentials;
   frozen: boolean;
   closed: boolean;
 }
@@ -316,10 +319,30 @@ function uploadBackRegion(
  *  (`STOCKS[2]`), a shade cooler and brighter, as mill stainless is. */
 const BLANK_STEEL: CardStock = { ...STOCKS[2], face: '#e0e2e7' };
 
+/** What the export reads off the group's `userData` to know the card is a
+ *  finished picture: its assets are in, no image is loading, and no material
+ *  change is mid-wipe. */
+export interface CardMeshUserData {
+  painted?: boolean;
+  pending?: boolean;
+  swapInFlight?: boolean;
+}
+
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
   { state, onReady, onBrandPlacement, swapContext, onChange },
   ref,
 ) {
+  // The group, for this component too (the forwarded ref may be a callback).
+  const inner = useRef<THREE.Group | null>(null);
+  const setGroup = useCallback(
+    (g: THREE.Group | null) => {
+      inner.current = g;
+      if (typeof ref === 'function') ref(g);
+      else if (ref) ref.current = g;
+    },
+    [ref],
+  );
+  const flags = (): CardMeshUserData | null => (inner.current?.userData as CardMeshUserData | undefined) ?? null;
   const r3fInvalidate = useThree((s) => s.invalidate);
   // Every place the mesh changes what it shows asks for a frame here. R3F's
   // own invalidate is a no-op on a "never" frameloop (the stage steps it);
@@ -356,6 +379,10 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   const { img: art, pending: artPending } = useLoadedImage(state.design.backgroundUrl);
   // The front waits for its images; the last paint stays up meanwhile.
   const frontPending = logoPending || artPending;
+  useEffect(() => {
+    const f = flags();
+    if (f) f.pending = frontPending;
+  });
 
   // One canvas per face for the life of the mesh; repaints upload in place.
   const frontCanvas = useMemo(() => makeCanvas(TEX_W, TEX_H), []);
@@ -785,6 +812,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     frontMap.needsUpdate = true;
     invalidate();
     onBrandPlacement?.({ box: brandBox(bodyDesign, logo), layout: resolveBrandLayout(bodyDesign, logo) });
+    const f = flags();
+    if (f) f.painted = true;
     if (!ready.current) {
       ready.current = true;
       // Before the card is shown, its textures go up to the GPU one frame at
@@ -854,6 +883,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       {
         design: bodyDesign,
         personalized,
+        credentials: state.credentials ?? currentCredentials(),
         frozen: state.frozen,
         closed: state.closed,
       },
@@ -873,7 +903,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     }
     backMap.needsUpdate = true;
     invalidate();
-  }, [assets, bodyDesign, personalized, state.frozen, state.closed, backCanvas, backMap, backPatch, three, invalidate]);
+  }, [assets, bodyDesign, personalized, state.credentials, state.frozen, state.closed, backCanvas, backMap, backPatch, three, invalidate]);
 
   // ── Material change ────────────────────────────────────────────────────────
   // Three fronts wipe the face left to right, the way a card is made: the
@@ -971,6 +1001,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
 
   useFrame((frame, delta) => {
     const sw = swap.current;
+    const f = flags();
+    if (f) f.swapInFlight = sw !== null;
     if (!sw) return;
     if (!sw.paused) sw.t += Math.min(50, delta * 1000);
     const { shared } = swapU;
@@ -1052,7 +1084,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   );
 
   return (
-    <group ref={ref}>
+    <group ref={setGroup}>
       <mesh geometry={geometry} material={materials} visible={assets !== null} />
       {assets && (
         <>

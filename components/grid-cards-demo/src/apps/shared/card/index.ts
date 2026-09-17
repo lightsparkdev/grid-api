@@ -8,7 +8,7 @@ export type {
   WalletListItemData,
 } from './types';
 export { formatUsdCents } from './format';
-export { CARD_CVV, CARD_EXP, CARD_LAST4, PAN_GROUPS } from './cardholder';
+export { currentCredentials, type CardCredentials } from './cardholder';
 export { CATEGORY_LABEL, TAP_MERCHANTS, parseCents } from './merchants';
 export { useCardHome, type UseCardHomeOptions, type CardHome } from './useCardHome';
 export {

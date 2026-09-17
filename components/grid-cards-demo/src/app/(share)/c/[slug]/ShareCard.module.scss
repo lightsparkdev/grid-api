@@ -1,0 +1,341 @@
+/* The share page's stage: the viewport in three columns between hairline
+   rules, the card live in the middle, the brand left, the pitch right. */
+
+.root {
+  --pad: 24px;
+  --col-pad: 8px;
+  /* Secondary type and the rules: the ink, stepped back (56% of #1a1a1a on
+     the light surface is the Figma's #7c7c7c). */
+  --ink-2: color-mix(in srgb, var(--ink) 56%, transparent);
+  --rule: color-mix(in srgb, var(--ink) 10%, transparent);
+  position: relative;
+  /* Three columns, the card's middle one empty; something at the top and
+     the bottom of the outer two, the brand and the pitch at their middles. */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'wordmark . label'
+    'title . pitch'
+    'tuple . docs';
+  /* A set height, not a minimum: the card's size and the columns' middles
+     want a definite block size. */
+  height: 100dvh;
+  padding: var(--pad) calc(var(--pad) + var(--col-pad));
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-family-sans);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── The dot grid ──────────────────────────────────────────────────────── */
+
+/* The playground's WebGL dot grid, filling the card's column between its
+   two rules, under everything. It paints its own surface (the page's,
+   passed in). Not on a phone, where the columns stack. */
+.dots {
+  position: absolute;
+  top: var(--pad);
+  bottom: var(--pad);
+  left: calc(var(--pad) + (100% - 2 * var(--pad)) / 3);
+  width: calc((100% - 2 * var(--pad)) / 3);
+  z-index: 0;
+  pointer-events: none;
+
+  @media (max-width: 899px) {
+    display: none;
+  }
+}
+
+/* ── The card ──────────────────────────────────────────────────────────── */
+
+/* Over the columns, the whole page: the card sits at its center and paints
+   over the rules. Lets the pointer through; the page handles it. */
+.stage {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.root {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Over the card (the intro over), it is there to be turned. */
+.overCard {
+  cursor: grab;
+}
+
+.dragging {
+  cursor: grabbing;
+}
+
+/* The three.js canvas: transparent, the whole stage. R3F sets position and
+   size inline on its wrapper. The intro's fade is inline on the <canvas>
+   inside, per frame. */
+.canvas {
+  position: absolute !important;
+  inset: 0;
+  pointer-events: none !important;
+
+  canvas {
+    pointer-events: none !important;
+  }
+}
+
+/* Rides with the card (the rig writes its transform every frame): the
+   card's footprint in card px, scaled to the card on screen, so the
+   blueprint laid on it is in the card's own units. */
+.hit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none;
+  /* Blueprint ink: the surface's ink, stepped back. */
+  --card-blueprint: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+/* The playground's hint, under the card: laid on the hit box (card px), so
+   it undoes the card's scale to stay a constant screen size. The rig sets
+   `--card-scale` alongside the transform. */
+.hint {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform-origin: top center;
+  transform: translateX(-50%) scale(calc(1 / var(--card-scale, 1)));
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: var(--font-weight-regular, 400);
+  line-height: var(--font-leading-18, 18px);
+  color: var(--ink-2);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+
+  svg {
+    display: block;
+  }
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.hintGone {
+  opacity: 0;
+}
+
+/* ── The chrome ────────────────────────────────────────────────────────── */
+
+/* The rules: the columns' edges, a pad in from the page's. */
+.rule {
+  position: absolute;
+  top: var(--pad);
+  bottom: var(--pad);
+  width: 1px;
+  background: var(--rule);
+  pointer-events: none;
+  /* A third of the width between the outer rules. */
+  --third: calc((100% - 2 * var(--pad)) / 3);
+}
+
+.ruleA {
+  left: var(--pad);
+}
+
+.ruleB {
+  left: calc(var(--pad) + var(--third));
+}
+
+.ruleC {
+  left: calc(var(--pad) + 2 * var(--third));
+}
+
+.ruleD {
+  right: var(--pad);
+}
+
+.wordmark {
+  grid-area: wordmark;
+  justify-self: start;
+  align-self: start;
+  display: block;
+  color: var(--ink);
+  line-height: 0;
+
+  svg {
+    width: 87px;
+    height: 16px;
+    color: var(--ink) !important;
+  }
+}
+
+.label {
+  grid-area: label;
+  justify-self: end;
+  align-self: start;
+  text-align: right;
+}
+
+.title {
+  grid-area: title;
+  justify-self: start;
+  align-self: center;
+  margin: 0;
+  font-size: 48px;
+  font-weight: var(--font-weight-regular, 400);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-feature-settings: 'salt' 1;
+}
+
+.titleMuted {
+  color: var(--ink-2);
+}
+
+/* The mousetype: 10px on a solid line, ink stepped back. */
+.mouse {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: var(--font-weight-regular, 400);
+  color: var(--ink-2);
+  font-feature-settings: 'salt' 1;
+  user-select: none;
+}
+
+.mouseLink {
+  text-decoration: none;
+  transition: color 150ms ease;
+
+  @media (hover: hover) {
+    &:hover {
+      color: var(--ink);
+    }
+  }
+}
+
+/* The tuple: lightspark.com's numeric mousetype, 8.5px a touch heavier on
+   the variable axis, with the slashed zero. */
+.tuple {
+  grid-area: tuple;
+  justify-self: start;
+  align-self: end;
+  font-size: 8.5px;
+  font-variation-settings: 'wght' 420;
+  font-feature-settings: 'ss01' 1, 'salt' 1, 'zero' 1;
+}
+
+.docs {
+  grid-area: docs;
+  justify-self: end;
+  align-self: end;
+  text-align: right;
+}
+
+/* The pitch and the buttons, on screen from the first paint. */
+.pitch {
+  grid-area: pitch;
+  justify-self: end;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 260px;
+  text-align: right;
+}
+
+.pitchText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: var(--font-weight-regular, 400);
+  font-feature-settings: 'salt' 1;
+  text-wrap: balance;
+}
+
+/* The gap lightspark.com runs between paired CTAs. */
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Phones: stacked, as lightspark.com's heroes stack ─────────────────── */
+
+@media (max-width: 899px) {
+  .root {
+    --pad: 16px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    /* The card up top, then the title over the pitch, as the website's
+       heroes stack. */
+    grid-template-areas:
+      'wordmark label'
+      'stage stage'
+      'title title'
+      'pitch pitch'
+      'tuple docs';
+    row-gap: 16px;
+  }
+
+  /* The card keeps to its own row, between the header and the title. */
+  .stage {
+    position: relative;
+    inset: auto;
+    grid-area: stage;
+    min-height: 0;
+  }
+
+  .title {
+    align-self: end;
+    font-size: 40px;
+  }
+
+  /* Only the outer rules. */
+  .ruleB,
+  .ruleC {
+    display: none;
+  }
+
+  /* The pitch reads left, in the secondary ink, two lines; the buttons
+     follow with the primary first (the website's row-reverse). */
+  .pitch {
+    justify-self: stretch;
+    align-self: end;
+    align-items: flex-start;
+    max-width: none;
+    /* The website's subhead-to-CTAs run, and the row gap above, each 4 short. */
+    gap: 17px;
+    margin-top: -4px;
+    text-align: left;
+  }
+
+  .pitchText {
+    color: var(--ink-2);
+    text-wrap: pretty;
+    max-width: 32ch;
+  }
+
+  .actions {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint {
+    transition: none;
+  }
+}

@@ -1,0 +1,18 @@
+/* Tokens for the share page. The root layout's boot script sets `data-theme`
+   on <html> (from the URL, the stored preference, or the OS), the same way
+   the playground reads it, so the page follows the same switch. */
+
+:root {
+  --share-bg: #f8f8f7;
+  --share-text-primary: #111111;
+  --share-text-secondary: #6b6b6b;
+  --share-border: rgba(0, 0, 0, 0.08);
+  --share-font: var(--font-family-sans, var(--font-geist-sans, system-ui, sans-serif));
+}
+
+html[data-theme='dark'] {
+  --share-bg: #111111;
+  --share-text-primary: #ffffff;
+  --share-text-secondary: #9a9a9a;
+  --share-border: rgba(255, 255, 255, 0.1);
+}

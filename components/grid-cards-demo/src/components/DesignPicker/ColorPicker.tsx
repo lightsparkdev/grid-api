@@ -258,6 +258,8 @@ interface ColorPickerProps {
   triggerLabel: string;
   /** Tooltip over the trigger (hidden while the picker is open). */
   tooltip: string;
+  /** No gradient: the tabs are left out (a color for a surface, not a print). */
+  solidOnly?: boolean;
 }
 
 /**
@@ -280,6 +282,7 @@ export function ColorPicker({
   triggerActive,
   triggerLabel,
   tooltip,
+  solidOnly = false,
 }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
   // Which side of the swatch the popup opens on, chosen once per opening
@@ -591,7 +594,7 @@ export function ColorPicker({
         >
           <PopoverPopup className={styles.popup} aria-label="Custom color">
             <AnimatedHeight className={styles.body}>
-              <ModeTabs mode={mode} onChange={setMode} />
+              {!solidOnly && <ModeTabs mode={mode} onChange={setMode} />}
 
               <AnimatePresence mode="popLayout" initial={false}>
                 {gradient && (

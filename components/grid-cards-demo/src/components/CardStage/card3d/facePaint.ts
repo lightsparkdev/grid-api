@@ -14,7 +14,7 @@
  */
 
 import { faceSize } from '@/apps/card/cardMetrics';
-import { CARD_CVV, CARD_EXP, PAN_GROUPS } from '@/apps/shared/card/cardholder';
+import type { CardCredentials } from '@/apps/shared/card/cardholder';
 import {
   brandDefaultLayout,
   isBare,
@@ -197,6 +197,10 @@ export interface FaceAssets {
 export function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
+    // A shared card's logo or art comes from the share store, another
+    // origin once deployed: asked for with CORS so it can be drawn into the
+    // face canvases and read back (the store answers with an open policy).
+    img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
@@ -926,6 +930,8 @@ export interface BackState {
   design: CardDesign;
   /** How far the personalization has printed (0 before ACTIVE, 1 once it has). */
   personalized: number;
+  /** What it prints. */
+  credentials: CardCredentials;
   frozen: boolean;
   closed: boolean;
 }
@@ -980,15 +986,15 @@ export function paintBack(ctx: CanvasRenderingContext2D, s: BackState, assets: F
     const groupGap = em * 0.28;
     y += line + gap;
     let gx = x;
-    PAN_GROUPS.forEach((g) => {
+    s.credentials.groups.forEach((g) => {
       ctx.fillText(g, gx, y);
       gx += ctx.measureText(g).width + groupGap;
     });
 
     y += line + gap;
-    ctx.fillText(`EXP ${CARD_EXP}`, x, y);
+    ctx.fillText(`EXP ${s.credentials.exp}`, x, y);
     // The CVV follows the expiry with a gap (64 at the sample's 57).
-    ctx.fillText(`CVV ${CARD_CVV}`, x + ctx.measureText('EXP 11/27').width + em * (64 / 57), y);
+    ctx.fillText(`CVV ${s.credentials.cvv}`, x + ctx.measureText('EXP 11/27').width + em * (64 / 57), y);
     ctx.restore();
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Orientation } from '@/data/design';
@@ -217,16 +217,29 @@ export function HoloDove({
 
   // The camera and the lights in the layer's own frame, each frame: the
   // grating math runs in the plane's tangent space, which for a plane is its
-  // object space.
+  // object space. The same update hangs off the mesh (`userData.updateView`)
+  // for a render from another camera (the export), which runs it itself.
   const inv = useMemo(() => new THREE.Matrix4(), []);
-  useFrame(({ camera }) => {
+  const updateView = useCallback(
+    (camera: THREE.Camera) => {
+      const me = mesh.current;
+      if (!me || !me.visible) return;
+      inv.copy(me.matrixWorld).invert();
+      uniforms.uCamObj.value.copy(camera.position).applyMatrix4(inv);
+      uniforms.uLight0.value.copy(WORLD_LIGHTS[0]).transformDirection(inv);
+      uniforms.uLight1.value.copy(WORLD_LIGHTS[1]).transformDirection(inv);
+    },
+    [inv, uniforms],
+  );
+  useFrame(({ camera }) => updateView(camera));
+  useEffect(() => {
     const me = mesh.current;
-    if (!me || !visible) return;
-    inv.copy(me.matrixWorld).invert();
-    uniforms.uCamObj.value.copy(camera.position).applyMatrix4(inv);
-    uniforms.uLight0.value.copy(WORLD_LIGHTS[0]).transformDirection(inv);
-    uniforms.uLight1.value.copy(WORLD_LIGHTS[1]).transformDirection(inv);
-  });
+    if (!me) return;
+    me.userData.updateView = updateView;
+    return () => {
+      delete me.userData.updateView;
+    };
+  }, [updateView]);
 
   const frame = doveFrame(assets, orientation);
   return (

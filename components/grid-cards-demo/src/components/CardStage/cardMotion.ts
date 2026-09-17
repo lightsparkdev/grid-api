@@ -15,8 +15,14 @@
  * following the cursor.
  */
 
+import type { Orientation } from '@/data/design';
+
 /** Cursor tilt, degrees at the card's edge. */
 export const TILT_DEG = 9;
+/** Upright, the blank has been turned a quarter turn clockwise: the roll the
+ *  mesh carries about its own normal, degrees (three's positive z is
+ *  counterclockwise seen from the front). Added to the pose's roll, innermost. */
+export const ORIENT_ROLL: Record<Orientation, number> = { landscape: 0, portrait: -90 };
 /** Drag: degrees of spin per pixel of pointer travel. */
 const DRAG_DEG_PER_PX = 0.55;
 /** Spring that settles the spin onto a face (per second, per degree). */
@@ -40,6 +46,8 @@ const BOB_FALL_TAU = 0.3;
  *  the fastest release the spring is asked to catch (deg/s). */
 const FLING_LOOKAHEAD = 0.28;
 const MAX_FLING = 1600;
+/** Posed, a release carries this far (s of its velocity) before stopping. */
+const FREE_GLIDE = 0.06;
 const BOB_PERIOD = 5.2;
 const BOB_AMPLITUDE = 7;
 /** The bob eases in from rest over about this long (s) when the card is let
@@ -90,6 +98,22 @@ export class CardMotion {
   /** Bob envelope, 0..1: 0 while held, rising toward 1 once floating. */
   private bobEnv = 0;
   private shakeAt = -1;
+  /** Posed (the share frame): a release holds the card where the hand left
+   *  it instead of settling on a face, and `setPose` names the angles. */
+  free = false;
+
+  /** The card's own turn, without the cursor tilt or the bob: pitch and spin. */
+  get pose(): { rotX: number; rotY: number } {
+    return { rotX: this.pitch, rotY: this.spinY };
+  }
+
+  /** Spring to these angles (the nearest turn of the spin to where it is). */
+  setPose(p: { rotX: number; rotY: number }) {
+    this.restAny = false;
+    this.targetX = p.rotX;
+    const turns = Math.round((this.spinY - p.rotY) / 360);
+    this.targetY = p.rotY + turns * 360;
+  }
 
   /** Pointer over the card, -0.5..0.5 in each axis. */
   setTilt(px: number, py: number) {
@@ -137,6 +161,12 @@ export class CardMotion {
     const carry = since > FLING_STALE_MS ? 0 : 1 - since / FLING_STALE_MS;
     this.spinVY = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVY * carry));
     this.pitchV = Math.max(-MAX_FLING, Math.min(MAX_FLING, this.dragVX * carry));
+    if (this.free) {
+      // Posed: glide a little way on and stop there, whatever the angle.
+      this.targetY = this.spinY + this.spinVY * FREE_GLIDE;
+      this.targetX = this.pitch + this.pitchV * FREE_GLIDE;
+      return;
+    }
     this.restAny = true;
     // Settle on whichever face each fling is headed for.
     this.targetX = nearestWithParity(this.pitch + this.pitchV * FLING_LOOKAHEAD, 0, 180);
@@ -196,6 +226,14 @@ export class CardMotion {
     );
   }
 
+  /** Within `deg` of settling on its targets, and not being dragged: the
+   *  last of a turn, when what waits on the card can begin. */
+  nearRest(deg: number) {
+    return (
+      !this.dragging && Math.abs(this.spinY - this.targetY) < deg && Math.abs(this.pitch - this.targetX) < deg
+    );
+  }
+
   /** A purchase bounced: shake now. */
   shake() {
     this.shakeAt = this.time;
@@ -206,7 +244,20 @@ export class CardMotion {
    * `hold` (the phone is up) parks it front-up and still; `freeze` (text
    * being typed on a face) parks it still on whichever face is showing.
    */
-  step(dt: number, opts: { wantBack: boolean; hold: boolean; freeze?: boolean; reduceMotion: boolean }): Pose {
+  step(
+    dt: number,
+    opts: {
+      wantBack: boolean;
+      hold: boolean;
+      freeze?: boolean;
+      reduceMotion: boolean;
+      bob?: boolean;
+      /** On a path: the angles are `u` of the way from `from` to the targets
+       *  (a flight whose turn should take as long as the flight does); the
+       *  spring picks up where the path leaves off. */
+      path?: { from: { rotX: number; rotY: number }; u: number };
+    },
+  ): Pose {
     this.time += dt;
     const still = opts.hold || !!opts.freeze;
     if (still) this.clearTilt();
@@ -218,20 +269,27 @@ export class CardMotion {
       if (opts.hold || opts.wantBack) this.restAny = false;
       this.lastWantBack = opts.wantBack;
       this.lastHold = opts.hold;
-      if (!this.dragging) {
+      // Posed, the angles are the pose's: the faces are not re-picked.
+      if (!this.dragging && !this.free) {
         this.targetX = nearestWithParity(this.pitch, 0, 180);
         this.targetY = this.pickTargetY(this.spinY, opts.wantBack, opts.hold);
       }
     }
 
-    if (!this.dragging) {
+    if (opts.path && !this.dragging) {
+      const { from, u } = opts.path;
+      this.pitch = from.rotX + (this.targetX - from.rotX) * u;
+      this.spinY = from.rotY + (this.targetY - from.rotY) * u;
+      this.pitchV = 0;
+      this.spinVY = 0;
+    } else if (!this.dragging) {
       this.spinVY += (SPIN_K * (this.targetY - this.spinY) - SPIN_C * this.spinVY) * dt;
       this.spinY += this.spinVY * dt;
       this.pitchV += (SPIN_K * (this.targetX - this.pitch) - SPIN_C * this.pitchV) * dt;
       this.pitch += this.pitchV * dt;
     }
 
-    const floating = !still && !opts.reduceMotion;
+    const floating = !still && !opts.reduceMotion && opts.bob !== false;
     this.bobEnv += ((floating ? 1 : 0) - this.bobEnv) * (1 - Math.exp(-dt / (floating ? BOB_RISE_TAU : BOB_FALL_TAU)));
     const dy = this.bobEnv * BOB_AMPLITUDE * Math.sin((this.time / BOB_PERIOD) * Math.PI * 2);
     let dx = 0;
