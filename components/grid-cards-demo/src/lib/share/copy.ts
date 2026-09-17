@@ -11,7 +11,7 @@ export function shareBrand(programName: string): string {
 }
 
 export function shareTitle(brand: string): string {
-  return `${brand} Card · Lightspark`;
+  return `${brand} Card — Lightspark Cards Playground`;
 }
 
 export function shareDescription(record: Pick<ShareRecord, 'kind' | 'forName'>): string {
