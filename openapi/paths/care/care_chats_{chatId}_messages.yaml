@@ -44,7 +44,9 @@ post:
     cannot replay an account turn: send the cardholder's next message as a new
     message without a token, which verifies them again (the verification is
     cancelled, a new code is sent, and the agent asks for it). A replay is
-    answered, under the same rule, even after the chat has ended. A turn that
+    answered, under the same rule, even after the chat has ended. A retry sent
+    while the original turn is still running is a replay too: it waits for
+    that turn's answer rather than running a second turn. A turn that
     failed does not pin its key: the same key may be sent again and will run a
     fresh turn.
 
@@ -262,7 +264,7 @@ post:
         message or a different chat (use a new key), or when the chat has no
         cardholder bound to it. `CARE_CHAT_ENDED` when a message, or an
         opening, is sent to a chat that has ended, other than a replay of a
-        turn that already completed; open a new one by sending a message
+        turn that completed or is still running; open a new one by sending a message
         addressed to the cardholder as `Customer:<uuid>`, which finds no open
         chat and opens a fresh one.
       content:
@@ -316,7 +318,7 @@ post:
     '504':
       description: >-
         `CARE_TURN_TIMEOUT` when the turn is still running. The answer is not
-        lost — retry with the same `Idempotency-Key` to collect it.
+        lost: retry with the same `Idempotency-Key` to collect it.
       content:
         application/json:
           schema:

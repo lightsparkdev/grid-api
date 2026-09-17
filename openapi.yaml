@@ -11117,7 +11117,9 @@ paths:
         cannot replay an account turn: send the cardholder's next message as a new
         message without a token, which verifies them again (the verification is
         cancelled, a new code is sent, and the agent asks for it). A replay is
-        answered, under the same rule, even after the chat has ended. A turn that
+        answered, under the same rule, even after the chat has ended. A retry sent
+        while the original turn is still running is a replay too: it waits for
+        that turn's answer rather than running a second turn. A turn that
         failed does not pin its key: the same key may be sent again and will run a
         fresh turn.
 
@@ -11278,7 +11280,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CareError'
         '409':
-          description: '`CONFLICT` when the `Idempotency-Key` was already used for a different message or a different chat (use a new key), or when the chat has no cardholder bound to it. `CARE_CHAT_ENDED` when a message, or an opening, is sent to a chat that has ended, other than a replay of a turn that already completed; open a new one by sending a message addressed to the cardholder as `Customer:<uuid>`, which finds no open chat and opens a fresh one.'
+          description: '`CONFLICT` when the `Idempotency-Key` was already used for a different message or a different chat (use a new key), or when the chat has no cardholder bound to it. `CARE_CHAT_ENDED` when a message, or an opening, is sent to a chat that has ended, other than a replay of a turn that completed or is still running; open a new one by sending a message addressed to the cardholder as `Customer:<uuid>`, which finds no open chat and opens a fresh one.'
           content:
             application/json:
               schema:
@@ -11314,7 +11316,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CareError'
         '504':
-          description: '`CARE_TURN_TIMEOUT` when the turn is still running. The answer is not lost — retry with the same `Idempotency-Key` to collect it.'
+          description: '`CARE_TURN_TIMEOUT` when the turn is still running. The answer is not lost: retry with the same `Idempotency-Key` to collect it.'
           content:
             application/json:
               schema:
@@ -11352,25 +11354,25 @@ paths:
         '204':
           description: The chat is closed. No content.
         '401':
-          description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
+          description: '`UNAUTHORIZED`: the platform''s Grid credential is missing or wrong.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareError'
         '403':
-          description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
+          description: '`FORBIDDEN`: embedded care is not enabled for this platform.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareError'
         '404':
-          description: '`NOT_FOUND` — no such chat for this platform. A chat that belongs to another platform, one that never existed, and a malformed chat id are one answer.'
+          description: '`NOT_FOUND`: no such chat for this platform. A chat that belongs to another platform, one that never existed, and a malformed chat id are one answer.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareError'
         '429':
-          description: '`RATE_LIMITED` — the platform is calling this endpoint too often. Back off for the interval in the `Retry-After` header.'
+          description: '`RATE_LIMITED`: the platform is calling this endpoint too often. Back off for the interval in the `Retry-After` header.'
           content:
             application/json:
               schema:
@@ -29257,7 +29259,7 @@ components:
         fields. Read the HTTP status from the response line and the human-readable
         text from `reason`.
 
-        Branch on `code`, never on `reason` — the text is written for a human
+        Branch on `code`, never on `reason`: the text is written for a human
         reading a log and may be reworded at any time.
       required:
         - code
@@ -29273,14 +29275,14 @@ components:
             |------------|------|-------------|
             | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `chatId` path id beginning `Customer:` that is not well formed, or a chat that cannot be verified at all. |
             | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused, for example because it is too long, and no turn ran. `reason` carries the sentence to show them. |
-            | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified — that is signalled in a `200` body. |
+            | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified; that is signalled in a `200` body. |
             | `CARE_SESSION_EXPIRED` | 401 | The `X-Ls-Care-Session` token presented is malformed, or not a care session token at all; or a replay under an `Idempotency-Key` lacks the valid session token its original request required, in which case nothing from the record is returned. For a new message, a missing or expired token is never this error: the message verifies the cardholder again inside a `200` instead. Rarely, also returned when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again. |
             | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
             | `CARE_SESSION_PLATFORM_MISMATCH` | 403 | The session token was minted for a different platform. Stop; retrying will not help. |
             | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
             | `CUSTOMER_NOT_FOUND` | 404 | No such cardholder for this platform. |
-            | `CONFLICT` | 409 | The `Idempotency-Key` was already used for a different message or a different chat — use a new key — or the chat has no cardholder bound to it. |
-            | `CARE_CHAT_ENDED` | 409 | The chat has ended, whether the agent ended it or it was closed, and it accepts no further messages or openings; a replay of a turn that already completed is still answered. Open a new one by sending an empty message to the cardholder as `Customer:<uuid>`. |
+            | `CONFLICT` | 409 | The `Idempotency-Key` was already used for a different message or a different chat (use a new key), or the chat has no cardholder bound to it. |
+            | `CARE_CHAT_ENDED` | 409 | The chat has ended, whether the agent ended it or it was closed, and it accepts no further messages or openings; a replay of a turn that completed or is still running is still answered. Open a new one by sending an empty message to the cardholder as `Customer:<uuid>`. |
             | `CARE_NOT_CONFIGURED_FOR_PLATFORM` | 422 | The platform is entitled to embedded care but has no care programme configured. |
             | `CARE_BUDGET_EXCEEDED` | 429 | This chat has reached its limit. Opening a new chat for the cardholder does not clear it. |
             | `RATE_LIMITED` | 429 | The platform is calling this endpoint too often. Back off for the interval in the `Retry-After` response header. |
@@ -29311,7 +29313,7 @@ components:
           example: CARE_SESSION_EXPIRED
         reason:
           type: string
-          description: Human-readable explanation, for a log or a support ticket. Not for branching, and not always safe to show a cardholder verbatim — the exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be shown.
+          description: Human-readable explanation, for a log or a support ticket. Not for branching, and not always safe to show a cardholder verbatim. The exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be shown.
           example: The care session token is not valid.
     WebhookType:
       type: string

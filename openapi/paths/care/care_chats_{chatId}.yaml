@@ -32,20 +32,20 @@ delete:
     '204':
       description: The chat is closed. No content.
     '401':
-      description: '`UNAUTHORIZED` — the platform''s Grid credential is missing or wrong.'
+      description: '`UNAUTHORIZED`: the platform''s Grid credential is missing or wrong.'
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/care/CareError.yaml
     '403':
-      description: '`FORBIDDEN` — embedded care is not enabled for this platform.'
+      description: '`FORBIDDEN`: embedded care is not enabled for this platform.'
       content:
         application/json:
           schema:
             $ref: ../../components/schemas/care/CareError.yaml
     '404':
       description: >-
-        `NOT_FOUND` — no such chat for this platform. A chat that belongs to
+        `NOT_FOUND`: no such chat for this platform. A chat that belongs to
         another platform, one that never existed, and a malformed chat id are
         one answer.
       content:
@@ -54,7 +54,7 @@ delete:
             $ref: ../../components/schemas/care/CareError.yaml
     '429':
       description: >-
-        `RATE_LIMITED` — the platform is calling this endpoint too often. Back
+        `RATE_LIMITED`: the platform is calling this endpoint too often. Back
         off for the interval in the `Retry-After` header.
       content:
         application/json:
