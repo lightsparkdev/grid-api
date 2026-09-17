@@ -16,3 +16,11 @@ html[data-theme='dark'] {
   --share-text-secondary: #9a9a9a;
   --share-border: rgba(255, 255, 255, 0.1);
 }
+
+/* The document itself takes the page's surface. Mobile Safari colors the
+   status bar and the tab bar from it, and the app's body surface (a step
+   lighter in dark) showed as grey bands above and below the page. */
+html,
+body {
+  background: var(--share-bg);
+}
