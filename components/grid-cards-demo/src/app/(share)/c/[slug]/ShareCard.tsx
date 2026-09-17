@@ -278,7 +278,7 @@ export function ShareCard({ design, brand, pitch, actions, alt }: ShareCardProps
       <div className={clsx(styles.col, styles.colMid)} aria-hidden />
       <div className={clsx(styles.col, styles.colRight)}>
         <p className={styles.mouse}>
-          Cards playground
+          Cards Playground
         </p>
         <div className={styles.pitch}>
           <m.p className={styles.pitchText} {...blurIn(0.25, reduceMotion)}>
