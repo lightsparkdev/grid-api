@@ -23,7 +23,7 @@ properties:
       | Error Code | HTTP | Description |
       |------------|------|-------------|
       | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `chatId` path id beginning `Customer:` that is not well formed, or a chat that cannot be verified at all. |
-      | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused at the content boundary and no turn ran. `reason` carries the sentence to show them. |
+      | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused, for example because it is too long, and no turn ran. `reason` carries the sentence to show them. |
       | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified — that is signalled in a `200` body. |
       | `CARE_SESSION_EXPIRED` | 401 | The `X-Ls-Care-Session` token presented is malformed, or not a care session token at all; or a replay under an `Idempotency-Key` lacks the valid session token its original request required, in which case nothing from the record is returned. For a new message, a missing or expired token is never this error: the message verifies the cardholder again inside a `200` instead. Rarely, also returned when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again. |
       | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
@@ -33,11 +33,11 @@ properties:
       | `CONFLICT` | 409 | The `Idempotency-Key` was already used for a different message or a different chat — use a new key — or the chat has no cardholder bound to it. |
       | `CARE_CHAT_ENDED` | 409 | The chat has ended, whether the agent ended it or it was closed, and it accepts no further messages or openings; a replay of a turn that already completed is still answered. Open a new one by sending an empty message to the cardholder as `Customer:<uuid>`. |
       | `CARE_NOT_CONFIGURED_FOR_PLATFORM` | 422 | The platform is entitled to embedded care but has no care programme configured. |
-      | `CARE_BUDGET_EXCEEDED` | 429 | This chat has reached its limit. It is not replaced by a new one: a replacement would be the limit cleared by asking again. |
+      | `CARE_BUDGET_EXCEEDED` | 429 | This chat has reached its limit. Opening a new chat for the cardholder does not clear it. |
       | `RATE_LIMITED` | 429 | The platform is calling this endpoint too often. Back off for the interval in the `Retry-After` response header. |
       | `INTERNAL_ERROR` | 500 | Unexpected server error. |
       | `CARE_TURN_FAILED` | 502 | The agent could not answer. Transient; the same `Idempotency-Key` may be sent again. |
-      | `CARE_VERIFICATION_UNAVAILABLE` | 502 | The SMS provider could not be reached. Distinct from a wrong code: the factor is down, so retry rather than asking the cardholder again. |
+      | `CARE_VERIFICATION_UNAVAILABLE` | 502 | The verification code could not be sent or checked right now. Distinct from a wrong code: the problem is temporary and not the cardholder's, so retry rather than asking them again. |
       | `SERVICE_UNAVAILABLE` | 503 | Embedded care is not available in this deployment, or the support agent is temporarily turned off. |
       | `CARE_TURN_TIMEOUT` | 504 | The turn is still running. Retry with the same `Idempotency-Key` to collect the answer. |
     enum:

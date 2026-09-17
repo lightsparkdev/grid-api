@@ -15,45 +15,52 @@ parameters:
 post:
   summary: Send a care chat message
   description: |
-    Run one turn of the cardholder's conversation with the support agent, or —
-    with an empty `message` — open the chat without saying anything. This is
+    Run one turn of the cardholder's conversation with the support agent, or,
+    with an empty `message`, open the chat without saying anything. This is
     the entry point to the whole surface: a partner who has never called any
     other care endpoint starts here.
+
+    **Render `redactedCustomerMessage` if present, then `reply` if present.**
+    That one rule covers every call: an opening, a resume and a turn.
+    `redactedCustomerMessage` is what the cardholder typed with card numbers
+    and other sensitive digit strings masked. Render it, never your own copy of
+    what they typed, which would put those digits back on their screen and
+    into your logs.
 
     **One turn, synchronously.** With a non-empty `message` the call holds the
     connection until the agent has answered, and returns the answer in
     `reply`. An `Idempotency-Key` header is required, and it is the only way
-    to recover an answer: nothing on this surface reads a transcript, so a
+    to recover an answer: nothing on this surface returns a transcript, so a
     reply that was produced but not delivered is reachable only by retrying
-    under the same key, which returns the recorded answer with
-    `replayed: true`. **A replay requires the same session token its original
+    under the same key, which returns the original reply, with the same `id`,
+    and never a `sessionToken`. **A replay requires the same session token its original
     request required.** Replaying a turn that was sent while the chat could
     reach the account needs a valid `X-Ls-Care-Session` for this chat; without
-    one it is refused with `401 CARE_SESSION_EXPIRED` and returns nothing from
-    the record. A replay of a turn that ran before the cardholder verified,
-    such as the turn in which they sent their code, needs no token. A replay
-    never returns a `sessionToken`, even if the original response carried one,
-    and it never cancels a verification or sends a code. So a partner who lost
-    the token cannot replay an account turn: send the cardholder's next message
-    as a new message without a token, which verifies them again (the
-    verification is cancelled, a new code is sent, and the agent asks for it).
-    A replay is answered, under the same rule, even after the chat has ended.
-    A turn that failed does not pin its key: the same key may be sent again
-    and will run a fresh turn.
+    one it is refused with `401 CARE_SESSION_EXPIRED` and returns no reply. A
+    replay of a turn that ran before the cardholder verified, such as the turn
+    in which they sent their code, needs no token. A replay never returns a
+    `sessionToken`, even if the original response carried one, and it never
+    cancels a verification or sends a code. So a partner who lost the token
+    cannot replay an account turn: send the cardholder's next message as a new
+    message without a token, which verifies them again (the verification is
+    cancelled, a new code is sent, and the agent asks for it). A replay is
+    answered, under the same rule, even after the chat has ended. A turn that
+    failed does not pin its key: the same key may be sent again and will run a
+    fresh turn.
 
-    **An empty or absent `message` opens the chat and runs nothing.** On a
+    **An empty or absent `message` opens the chat and runs no turn.** On a
     cardholder with no open chat it opens one, and `reply` carries the agent's
     opening line, which is what a chat window renders before anybody has
     typed. On a cardholder who already has one it resumes: the chat's id and
     where verification stands come back, and `reply` does not, because an
     opening line arriving mid-conversation reads as the agent introducing
-    itself a second time. `id`, `displayMessage` and `replayed` are absent on
-    both, because nothing was typed and no turn ran. Either way no code is
-    sent, no `Idempotency-Key` is needed or consumed, and nothing is billed,
-    so a widget in a reconnect loop may still call it as often as it likes.
-    The exception is an opening addressed to a `CareChat:<id>` that has ended:
-    it answers `409 CARE_CHAT_ENDED`, and the recovery is to address the
-    cardholder as `Customer:<uuid>`, which opens a new chat.
+    itself a second time. `id` and `redactedCustomerMessage` are absent on
+    both, because nothing was typed. Either way no code is sent and
+    no `Idempotency-Key` is needed or consumed, so a widget in a reconnect
+    loop may still call it as often as it likes. The exception is an opening
+    addressed to a `CareChat:<id>` that has ended: it answers
+    `409 CARE_CHAT_ENDED`, and the recovery is to address the cardholder as
+    `Customer:<uuid>`, which opens a new chat.
 
     **`chatEnded` says when to stop.** It is on every `200` body, true or
     false, and describes the chat once the call finished: true means the chat
@@ -63,31 +70,24 @@ post:
     what this call did, so a replay of that turn also says true. When it is
     true, stop sending to that chat.
 
-    **Verification is signalled in this `200` body, never as a `401`.** Every
-    new cardholder's first message is unverified, so a `401` there would make
-    the normal case indistinguishable from a bad credential. A chat that
-    cannot yet reach the account answers `200` with
-    `verificationRequired: true`, and the first message with text is what
-    sends the code — `destinationMasked`, `alreadySent` and, where readable,
-    `codeLength` come back with it, and the agent's own sentence in `reply`
-    asks the cardholder for the code. Later messages on the same chat find the
-    code already outstanding and send nothing, reporting `alreadySent: true`.
-
-    **Render `displayMessage` if present, then `reply` if present.** That one
-    rule covers every call: an opening, a resume and a turn. Grid redacts the
-    cardholder's text on the way in, so a card number they pasted comes back
-    masked, and `displayMessage` is that redacted echo. A UI that echoes its
-    own input box instead has put an unmasked PAN in the transcript, on the
-    screen and in whatever logs the transcript reaches.
+    **Verification happens in the conversation, and is never a `401`.** A
+    chat that cannot yet reach the account answers `200`, and the first
+    message with text texts the cardholder a code; later messages on the same
+    chat send no second one. The agent's own sentence in `reply` asks for the
+    code, so a partner that only renders the conversation needs nothing else.
+    `verificationRequired` and `codeLength` are optional hints for an app that
+    wants a dedicated one-time-code input of the right length, marked as a
+    one-time code so iOS and Android offer to fill it from the SMS. The app
+    still sends the code as an ordinary message.
 
     **The cardholder completes verification by sending the code as an
-    ordinary message, and that turn's response carries the session.** The
-    agent checks the code with the SMS provider, and the chat comes out of
-    that turn able to reach the account. The body of that turn carries
-    `sessionToken` and `expiresAt`. No other turn carries them: a session is
-    issued per verification, not per message. Store the token and send it from
-    the next call onwards. A code that does not match is answered in `reply`, not
-    as an error, and the cardholder can send it again.
+    ordinary message, and that turn's response carries the session.** When the
+    code is correct, the chat comes out of that turn able to reach the
+    account, and the body of that turn carries `sessionToken` and `expiresAt`.
+    No other turn carries them: a session is issued per verification, not per
+    message. Store the token and send it from the next call onwards. A code
+    that does not match is answered in `reply`, not as an error, and the
+    cardholder can send it again.
 
     **A cardholder whose code never arrived asks the agent for another one**,
     in the conversation, and the agent sends a new code to the number on file.
@@ -101,24 +101,20 @@ post:
     only while its verification is newer than the session lifetime, fifteen
     minutes in the default deployment, which is the same window a session
     token lives for, so in practice the chat and the token go stale together.
-    Past that window the chat no longer reaches the account, the header stops
-    being required, and the next message **sent without it** is treated as an
-    unverified one: a fresh code goes out, the body carries
-    `verificationRequired: true` with `destinationMasked`, `alreadySent` and
-    `codeLength`, and the agent's own `reply` asks the cardholder to send the
-    code. The turn still runs and still answers.
+    Past that window the next message **sent without the header** is treated
+    as an unverified one: a fresh code goes out, the body carries
+    `verificationRequired: true`, and the agent's own `reply` asks the
+    cardholder to send the code. The turn still runs and still answers.
 
     **A lost or expired session token verifies again rather than being
-    refused.** A message sent with no `X-Ls-Care-Session` header, or with a
+    refused.** A new message sent with no `X-Ls-Care-Session` header, or with a
     token past its expiry, on a chat whose verification is still current is
-    treated the same way: the chat's verification is taken away before the
-    turn runs, so the turn cannot reach the account, and the call then
-    proceeds exactly as on a stale chat. A fresh code goes out, the body
-    carries `verificationRequired: true` with `destinationMasked`,
-    `alreadySent` and `codeLength`, the agent asks the cardholder for the
-    code, and the turn in which they send it returns the next `sessionToken`.
-    No special handling is needed: a client that lost its token simply keeps
-    sending messages.
+    treated the same way: the verification is cancelled before the turn runs,
+    so the turn cannot reach the account, and the call then proceeds exactly
+    as on a stale chat. A fresh code goes out, the agent asks the cardholder
+    for it, and the turn in which they send it returns the next
+    `sessionToken`. No special handling is needed: a client that lost its
+    token simply keeps sending messages.
 
     Only a token that is malformed is refused with `CARE_SESSION_EXPIRED`, and
     a genuine token minted for another chat or another cardholder with
@@ -128,13 +124,11 @@ post:
     widget still holding a dead token can resume with one and be told where
     verification stands without texting anybody.
 
-    Everything in the response describes the chat as of the moment the turn
-    started, `verificationStatus` included. The agent can verify a cardholder
-    during a turn, so a chat that this very call verified still reads
-    unverified here and verified on the next call. For the same reason a chat
-    whose verification has gone stale reports `verificationStatus: VERIFIED`
-    beside `verificationRequired: true`. Branch on `verificationRequired`,
-    never on `verificationStatus`.
+    Everything in the response except `chatEnded` describes the chat as of
+    the moment the turn started. The agent can verify a cardholder during a
+    turn, so a chat that this very call verified still reads
+    `verificationRequired: true` here; decide that you hold a session by the
+    presence of `sessionToken`.
   operationId: sendCareChatMessage
   tags:
     - Embedded Care
@@ -148,11 +142,11 @@ post:
         A unique identifier for this turn, up to 255 characters. **Required
         whenever `message` is non-empty**; omitting it there is rejected with
         `INVALID_INPUT`. A retry carrying the same key returns the first
-        call's answer with `replayed: true`; aiming the same key at a
-        different message, a different chat or a different cardholder is
-        rejected with `409 CONFLICT`. An opening (empty `message`) neither
-        needs nor consumes a key — one sent anyway is ignored, so that the
-        partner's first real message can still use it.
+        call's answer with the same `id` (subject to the session rule for
+        replays); aiming the same key at a different message, a different chat
+        or a different cardholder is rejected with `409 CONFLICT`. An opening
+        (empty `message`) neither needs nor consumes a key: one sent anyway is
+        ignored, so that the partner's first real message can still use it.
       schema:
         type: string
         maxLength: 255
@@ -165,11 +159,11 @@ post:
         cardholder sent their verification code. Send it on every message
         while the chat's verification is current. A message without it, or
         with one past its expiry, is not refused: the chat's verification is
-        taken away before the turn runs and a new code is sent, so the
+        cancelled before the turn runs and a new code is sent, so the
         cardholder verifies again in the conversation. The exception is a
         replay under an `Idempotency-Key` whose original request required a
         session: it must carry a valid token, or it is refused with
-        `CARE_SESSION_EXPIRED` and returns nothing from the record. A token that is sent is
+        `CARE_SESSION_EXPIRED` and returns no reply. A token that is sent is
         always checked for what it names: a malformed one is refused with
         `CARE_SESSION_EXPIRED`, one minted for another chat or another
         cardholder is `NOT_FOUND`, and one minted for another platform is
@@ -217,9 +211,8 @@ post:
         missing on a message that carries text or exceeds 255 characters, when
         the body is not a JSON object or carries an unknown field, or when the
         path id is a `Customer:` id that is not well formed.
-        `CARE_MESSAGE_REJECTED` when the cardholder's message was refused at
-        the content boundary — no turn ran, and `reason` is written to be
-        shown to them.
+        `CARE_MESSAGE_REJECTED` when the cardholder's message was refused
+        before any turn ran; `reason` is written to be shown to them.
       content:
         application/json:
           schema:
@@ -229,8 +222,8 @@ post:
         `UNAUTHORIZED` when the platform's Grid credential is missing or
         wrong. `CARE_SESSION_EXPIRED` when the `X-Ls-Care-Session` token
         presented is malformed, or when a replay under an `Idempotency-Key`
-        lacks the valid session token its original request required; nothing
-        from the record is returned. Otherwise a missing or expired session
+        lacks the valid session token its original request required; no reply
+        is returned. Otherwise a missing or expired session
         token is never a `401`: a new message verifies the cardholder again
         inside a `200` carrying `verificationRequired: true`, as does an
         unverified or stale chat.
@@ -287,9 +280,9 @@ post:
             $ref: ../../components/schemas/care/CareError.yaml
     '429':
       description: >-
-        `CARE_BUDGET_EXCEEDED` when this chat has reached its limit. The chat
-        is refused rather than replaced: opening a fresh one would be the
-        limit cleared by asking again. `RATE_LIMITED` when the platform is
+        `CARE_BUDGET_EXCEEDED` when this chat has reached its limit; opening a
+        new chat for the cardholder does not clear it. `RATE_LIMITED` when the
+        platform is
         calling this endpoint too often; back off for the interval in the
         `Retry-After` header.
       content:

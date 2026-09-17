@@ -9,14 +9,15 @@ properties:
     type: string
     description: >-
       What the cardholder typed, verbatim and unredacted. Send it exactly as
-      they entered it: Grid redacts it on the way in and returns the redacted
-      form as `displayMessage`, which is what your UI must render.
+      they entered it: Grid masks card numbers and other sensitive digit
+      strings and returns the result as `redactedCustomerMessage`, which is
+      what your UI must render.
 
 
       Empty, absent, or whitespace-only opens the chat (or resumes an open
-      one) and runs no turn: no model call, no SMS, no `Idempotency-Key`
-      consumed, nothing billed. A non-empty value runs exactly one turn
-      synchronously and requires an `Idempotency-Key` header.
+      one) and runs no turn: no agent reply to a message, no SMS, and no
+      `Idempotency-Key` needed or consumed. A non-empty value runs exactly one
+      turn synchronously and requires an `Idempotency-Key` header.
     example: My card was declined at the grocery store
   locale:
     type: string

@@ -16,14 +16,12 @@ delete:
     with `CARE_CHAT_ENDED`, and the cardholder starts a new chat by sending
     another message.
 
-    No session token is required, even on a verified chat. Ending a chat is
-    the one thing the second factor is exempt from: it reaches nothing but the
-    chat's own closing timestamp, and requiring a live session would mean a
-    partner whose cardholder walked away could not close the chat without
-    texting them another code first. Ownership of the chat by the calling
-    platform is the whole bound.
+    No session token is required, even on a verified chat. Ending a chat
+    touches no account data, and requiring a live session would mean a partner
+    whose cardholder walked away could not close the chat without texting them
+    another code first. The chat only has to belong to the calling platform.
 
-    Closing a chat that is already closed is not an error — that is the state
+    Closing a chat that is already closed is not an error: that is the state
     the caller asked for.
   operationId: endCareChat
   tags:
