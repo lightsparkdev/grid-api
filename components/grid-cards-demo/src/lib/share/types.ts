@@ -89,12 +89,24 @@ export function validSlug(slug: string): boolean {
   return SLUG_RE.test(slug) && !SLUG_RESERVED.has(slug);
 }
 
-/** Upload size caps, bytes. */
-export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
-export const MAX_VIDEO_BYTES = 40 * 1024 * 1024;
-
 /** File names a share stores, by role. The extension follows the content type. */
 export type ShareFileRole = 'og' | 'card' | 'square' | 'video' | 'logo' | 'art';
+
+/** Upload size caps by role, bytes. The stills are WebP at 2400 across (a
+ *  few hundred KB); a logo or art is shrunk to 2048 across and WebP by the
+ *  client before it is sent, so anything near these is not ours. Uploads go
+ *  through a route handler, which Vercel caps at 4.5 MB a body; the video
+ *  (not uploaded today: the share carries no video) would need a direct
+ *  client upload to Blob. */
+const MB = 1024 * 1024;
+export const MAX_BYTES: Record<ShareFileRole, number> = {
+  og: 4 * MB,
+  card: 4 * MB,
+  square: 4 * MB,
+  video: 40 * MB,
+  logo: 4 * MB,
+  art: 4 * MB,
+};
 export const SHARE_FILE_TYPES: Record<ShareFileRole, string[]> = {
   og: ['image/png', 'image/webp', 'image/jpeg'],
   card: ['image/png'],

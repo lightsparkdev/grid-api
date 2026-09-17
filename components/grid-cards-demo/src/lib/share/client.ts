@@ -119,6 +119,36 @@ async function blobOf(url: string): Promise<Blob | null> {
   }
 }
 
+/** The longest edge a stored raster keeps (the card's face is painted at
+ *  2048 across, so nothing finer would show). */
+const RASTER_MAX_EDGE = 2048;
+const RASTER_QUALITY = 0.9;
+
+/** A raster upload re-encoded for storage: no larger than the face needs,
+ *  as WebP (alpha kept). A vector, or anything the browser can't decode, or
+ *  a re-encoding that comes out bigger, is stored as it came. */
+async function shrinkRaster(blob: Blob): Promise<Blob> {
+  if (!/^image\/(png|jpeg|webp)$/.test(blob.type)) return blob;
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const k = Math.min(1, RASTER_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * k));
+    const h = Math.max(1, Math.round(bitmap.height * k));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return blob;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close();
+    const webp = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/webp', RASTER_QUALITY));
+    if (!webp || webp.type !== 'image/webp') return blob;
+    return webp.size < blob.size || k < 1 ? webp : blob;
+  } catch {
+    return blob;
+  }
+}
+
 export interface CreateShareOptions {
   exporter: CardExporter;
   design: CardDesign;
@@ -190,7 +220,7 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
     const blob = await blobOf(v);
     if (blob) {
       onProgress?.({ stage: 'upload', detail: role });
-      record = await uploadFile(id, editToken, role, blob);
+      record = await uploadFile(id, editToken, role, await shrinkRaster(blob));
     }
   }
 

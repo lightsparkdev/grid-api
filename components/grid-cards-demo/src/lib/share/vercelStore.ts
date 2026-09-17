@@ -24,8 +24,7 @@ import { customAlphabet, nanoid } from 'nanoid';
 import { hashToken } from './localFsStore';
 import type { ShareStore } from './store';
 import {
-  MAX_IMAGE_BYTES,
-  MAX_VIDEO_BYTES,
+  MAX_BYTES,
   SHARE_FILE_TYPES,
   extensionFor,
   normalizeSlug,
@@ -178,8 +177,7 @@ class VercelStore implements ShareStore {
   async putFile(id: string, role: ShareFileRole, data: ArrayBuffer, contentType: string): Promise<string> {
     const types = SHARE_FILE_TYPES[role];
     if (!types || !types.includes(contentType)) throw new Error('bad-type');
-    const max = role === 'video' ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
-    if (data.byteLength > max) throw new Error('too-large');
+    if (data.byteLength > MAX_BYTES[role]) throw new Error('too-large');
     const record = await this.readRecord(id);
     if (!record) throw new Error('not-found');
 
