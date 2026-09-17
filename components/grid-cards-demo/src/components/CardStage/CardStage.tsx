@@ -1122,8 +1122,8 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   // What the mesh paints from. One object per change, so the rig (memoized)
   // sits out the renders the phone's boot curve drives every frame.
   const meshState = useMemo<CardMeshState>(
-    () => ({ design, issued, frozen: card.frozen, closed: card.closed }),
-    [design, issued, card.frozen, card.closed],
+    () => ({ design, issued, credentials: card.credentials, frozen: card.frozen, closed: card.closed }),
+    [design, issued, card.credentials, card.frozen, card.closed],
   );
 
   // The selection box, in card px on the hit box.

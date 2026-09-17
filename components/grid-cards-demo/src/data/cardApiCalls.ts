@@ -7,6 +7,7 @@
    ============================================================ */
 
 import type { ApiCall } from './flow';
+import { currentCredentials } from '@/apps/shared/card/cardholder';
 import { TAP_MERCHANTS } from '@/apps/shared/card/merchants';
 import type { MerchantCategory } from '@/apps/shared/card/types';
 
@@ -95,9 +96,9 @@ function cardResource({ state = 'ACTIVE', limits = {}, updatedAt }: CardResource
     ...(state === 'CLOSED' ? { statusReason: 'CLOSED_BY_PLATFORM' } : {}),
     brand: 'VISA',
     form: 'VIRTUAL',
-    last4: '8972',
-    expMonth: 6,
-    expYear: 2030,
+    last4: currentCredentials().last4,
+    expMonth: Number(currentCredentials().exp.slice(0, 2)),
+    expYear: 2000 + Number(currentCredentials().exp.slice(3)),
     fundingSource: FUNDING_SOURCE,
     cardCapabilities: CARD_CAPABILITIES,
     maxSpendPerTransaction: limits.maxSpendPerTransaction ?? null,

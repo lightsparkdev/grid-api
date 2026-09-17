@@ -13,6 +13,7 @@ import {
   type CardStock,
   type Orientation,
 } from '@/data/design';
+import { currentCredentials, type CardCredentials } from '@/apps/shared/card/cardholder';
 import { grain as grainVoice, type Grain } from '@/lib/sounds';
 import { canvasTexture } from './canvasTexture';
 import { createCardGeometry, MAT_BACK, MAT_EDGE, MAT_FRONT } from './cardGeometry';
@@ -70,6 +71,8 @@ import {
 export interface CardMeshState {
   design: CardDesign;
   issued: boolean;
+  /** What the personalization prints once issued. Absent, the current card's. */
+  credentials?: CardCredentials;
   frozen: boolean;
   closed: boolean;
 }
@@ -880,6 +883,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
       {
         design: bodyDesign,
         personalized,
+        credentials: state.credentials ?? currentCredentials(),
         frozen: state.frozen,
         closed: state.closed,
       },
@@ -899,7 +903,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     }
     backMap.needsUpdate = true;
     invalidate();
-  }, [assets, bodyDesign, personalized, state.frozen, state.closed, backCanvas, backMap, backPatch, three, invalidate]);
+  }, [assets, bodyDesign, personalized, state.credentials, state.frozen, state.closed, backCanvas, backMap, backPatch, three, invalidate]);
 
   // ── Material change ────────────────────────────────────────────────────────
   // Three fronts wipe the face left to right, the way a card is made: the
