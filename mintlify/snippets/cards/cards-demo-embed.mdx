@@ -30,17 +30,14 @@ export const CardsDemoEmbed = () => {
       const iframe = document.createElement('iframe');
       iframe.id = 'cards-demo-iframe';
       iframe.className = 'ls-playground-iframe';
-      // A shared card's link opens the playground on that design: `c` (the
-      // share id) and `edit` (its maker's token) pass through to the app.
       const pageParams = new URLSearchParams(window.location.search);
-      const passthrough = ['c', 'edit']
-        .filter((k) => pageParams.get(k))
-        .map((k) => '&' + k + '=' + encodeURIComponent(pageParams.get(k)))
-        .join('');
+      const shareId = pageParams.get('c');
+      const editToken = pageParams.get('edit');
+      let passthrough = '';
+      if (shareId) passthrough += '&c=' + encodeURIComponent(shareId);
+      if (editToken) passthrough += '&edit=' + encodeURIComponent(editToken);
       iframe.src = base + '/?embed=true&theme=' + (isDark() ? 'dark' : 'light') + '&nav=' + navWidth() + passthrough;
       iframe.title = 'Lightspark Cards — playground';
-      // web-share: the share sheet's native Share (the system sheet, with the
-      // spin video attached) needs the permission delegated to the iframe.
       iframe.setAttribute('allow', 'publickey-credentials-create *; publickey-credentials-get *; clipboard-write; autoplay; web-share');
       iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
       host.appendChild(iframe);
