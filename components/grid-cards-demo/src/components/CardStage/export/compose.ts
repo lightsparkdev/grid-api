@@ -192,16 +192,26 @@ export function decodeHand(id: string): Promise<void> {
  *  frame's. */
 export const HAND_CARD_IN_LAYOUT = 0.46;
 const HAND_CARD_CENTER = { x: 0.5, y: 0.5 };
+/** In a frame wider than its square (the post), the square is the frame's
+ *  height and the hand would sit small in the width: the whole composition
+ *  is scaled up this much there, about the card's center. */
+const HAND_WIDE_SCALE = 1.2;
+
+/** The card's share of the layout square in a frame `w` × `h`: bigger in a
+ *  wide frame. */
+export function handCardInLayout(w: number, h: number): number {
+  return HAND_CARD_IN_LAYOUT * (w > h ? HAND_WIDE_SCALE : 1);
+}
 
 /** Where a hand's layer (the square photograph) is drawn in a frame `w` × `h`:
- *  scaled so the card is `HAND_CARD_IN_LAYOUT` of the layout, placed so the
+ *  scaled so the card is `handCardInLayout` of the layout, placed so the
  *  card's center is at `HAND_CARD_CENTER`. Needs the manifest. */
 export function handLayerIn(w: number, h: number, id: string): { x: number; y: number; size: number } {
   const hand = handById(id);
   if (!hand) throw new Error(`hand ${id} not loaded`);
   const { side, x: ox, y: oy } = layoutIn(w, h);
   const { hole } = hand;
-  const size = (side * HAND_CARD_IN_LAYOUT) / hole.w;
+  const size = (side * handCardInLayout(w, h)) / hole.w;
   const cx = ox + HAND_CARD_CENTER.x * side;
   const cy = oy + HAND_CARD_CENTER.y * side;
   return { x: cx - (hole.x + hole.w / 2) * size, y: cy - (hole.y + hole.h / 2) * size, size };
