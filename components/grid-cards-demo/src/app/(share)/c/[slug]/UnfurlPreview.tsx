@@ -35,7 +35,7 @@ export function UnfurlPreview({ record }: Props) {
             <p className={styles.xMeta}>
               <strong>Lightspark</strong> <span>@lightspark · now</span>
             </p>
-            <p className={styles.xText}>{sharePostText(brand)}</p>
+            <p className={styles.xText}>{sharePostText(record.design.programName)}</p>
             <div className={styles.xCard}>
               {og ? (
                 // eslint-disable-next-line @next/next/no-img-element
