@@ -137,11 +137,15 @@ export function SwatchRow({ label, active, children }: { label: string; active: 
       // the hover scale does not move it. The rects are in screen space; an
       // ancestor mid-transform (a dialog scaling in) shrinks them all alike,
       // so they are read back through the row's own scale into layout px.
+      // That scale is the rect against the row's used width, which the
+      // computed style gives to the sub-pixel (offsetWidth rounds it, and a
+      // half pixel over two hundred is a ring visibly off its swatch).
       const rr = row.getBoundingClientRect();
       const er = el.getBoundingClientRect();
       const bw = el.offsetWidth;
       const bh = el.offsetHeight;
-      const k = row.offsetWidth > 0 && rr.width > 0 ? rr.width / row.offsetWidth : 1;
+      const used = parseFloat(getComputedStyle(row).width);
+      const k = used > 0 && rr.width > 0 ? rr.width / used : 1;
       const nx = (er.left + er.width / 2 - rr.left) / k - bw / 2;
       const ny = (er.top + er.height / 2 - rr.top) / k - bh / 2;
       x.set(nx);
