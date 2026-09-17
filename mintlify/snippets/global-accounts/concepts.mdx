@@ -1,20 +1,21 @@
-A Grid Global Account is powered by a self-custody embedded [Spark](https://spark.money) wallet Grid provisions for your customer that holds a stablecoin or BTC balance and participates in the standard Grid payment flows. It behaves like any other internal account for *incoming* funds, but every outbound transfer must be authorized by the customer — a session signing key issued for their device signs each payment. In the API, a Global Account is an internal account with `type: "EMBEDDED_WALLET"` that participates in the standard Grid customer, quote, transaction, and webhook flows.
+A Global Account is what we consider a programmable, self-custodial account for holding and moving money. Under the hood, it is an embedded [Spark](https://spark.money) wallet that Lightspark provisions for your customer. It can hold different stablecoins, including those denominated in local currencies, as well as other digital assets such as Bitcoin.
 
-## Why a Grid Global Account?
+In the API, a Global Account is an internal account with `type: "EMBEDDED_WALLET"`. It uses the same customer, quote, transaction, and webhook primitives as other accounts. Receiving funds works the same way, too. To move money out, the customer must authorize the transfer on their device, which signs the payment with a session signing key.
 
-- **Self-custody.** Grid never has unilateral access to move user funds, and neither do you. The customer's device is the only party that can authorize a transaction.
-- **Stablecoin-denominated.** Balances are held as stablecoins like [Brale-issued USDB](https://brale.xyz/stablecoins/USDB). Use the standard `/quotes` API to convert in from fiat or out to any supported Grid bank-account rail (ACH, PIX, CLABE, UPI, IBAN, UMA, …).
-- **Grid-native.** You reuse the customer, internal-account, quote, transaction, and webhook primitives you already integrated for Payouts or P2P. The only thing that's new is an auth + signing layer at the account.
-- **Built on Bitcoin.** Global Accounts run on Spark, a Lightning-compatible Bitcoin L2 that supports instant, low-fee Bitcoin and Stablecoin transfers. You get the benefits of running on Bitcoin, the most neutral, decentralized, and secure network for money.
+## Why a Global Account?
+
+- **Self-custodial.** Neither Lightspark nor your platform can move funds unilaterally. Outbound transfers require authorization from the customer's device.
+- **Stablecoin-denominated.** Balances can be held in stablecoins like [Brale-issued USDB](https://brale.xyz/stablecoins/USDB). You can also issue your own stablecoin and [request enablement in Grid](/api-reference/stablecoins/request-grid-enablement-for-a-stablecoin). Use the `/quotes` API to convert from fiat or withdraw through supported payment rails.
+- **Native.** Reuse the customer, internal-account, quote, transaction, and webhook primitives you already use for payouts or P2P. Global Accounts add authentication and signing at the account level.
 
 ## Payment flow
 
-Grid Global Accounts ride on the same `/quotes` + `/quotes/{id}/execute` pattern as every other Grid payment. The only thing that's different is that outbound transfers need a client signature.
+Global Accounts use the same `/quotes` and `/quotes/{id}/execute` pattern as other payments. Outbound transfers also require a client signature.
 
-- **Incoming funds.** Funding an account works like any other internal account. Create a quote with the Global Account as the `destination`, execute it, and Grid converts the source currency into USDB and credits the account. No customer approval needed — incoming value is passive.
+- **Incoming funds.** Funding an account works like any other internal account. Create a quote with the Global Account as the `destination`, execute it, and Grid converts the source currency into USDB and credits the account. Incoming funds do not require customer approval.
 - **Outgoing funds.** Withdrawals and transfers out require the customer to authorize them on their device. Grid returns a `payloadToSign` in the quote's `paymentInstructions`; the client signs those bytes with its session signing key and passes the base64 signature as the `Grid-Wallet-Signature` header on `/quotes/{id}/execute`. Only then does Grid release the funds.
 
-Sessions are short-lived (15 minutes by default) and bound to a specific device via the client key pair, so a stolen signature can't be replayed from a different device or after the session expires. Standard transaction webhooks fire throughout the lifecycle — see [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle).
+Sessions are short-lived (15 minutes by default) and bound to a specific device via the client key pair, so a stolen signature can't be replayed from a different device or after the session expires. Standard transaction webhooks fire throughout the lifecycle. See [Transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle).
 
 ## Architecture
 
@@ -34,8 +35,8 @@ Three distinct pieces of crypto collaborate to authorize actions on the Global A
 
 | Piece | Where it lives | How long it lives | What it proves |
 |---|---|---|---|
-| **Auth credential** — passkey, OIDC token, or email OTP | Registered on the account; the passkey itself lives on the authenticator, OIDC on your IdP, OTP in the user's inbox | Until the customer revokes it | *"I am the human who owns this account."* Used to authenticate the user at the start of each session. |
-| **Client key pair** (P-256) | Generated on the client device for each session-issuing or export request; private key stays in device-local secure storage | One authentication, session refresh, or wallet export | Binds a given session signing key or wallet export delivery to the exact device that asked for it — Grid encrypts the response to this public key, so only this device can decrypt. |
+| **Auth credential**: passkey, OIDC token, or email OTP | Registered on the account; the passkey itself lives on the authenticator, OIDC on your IdP, OTP in the user's inbox | Until the customer revokes it | *"I am the human who owns this account."* Used to authenticate the user at the start of each session. |
+| **Client key pair** (P-256) | Generated on the client device for each session-issuing or export request; private key stays in device-local secure storage | One authentication, session refresh, or wallet export | Binds a given session signing key or wallet export delivery to the exact device that asked for it. Grid encrypts the response to this public key, so only this device can decrypt. |
 | **Session signing key** (P-256) | Issued by Grid, sealed to the client public key, decrypted and held on the device for the session's lifetime | 15 minutes (default) | *"This specific account action was approved on an authenticated device."* Builds Grid wallet signatures over the `payloadToSign` Grid returns on quotes, credential changes, session refresh/revocation, wallet exports, customer email updates, and wallet privacy updates. |
 
 The flow is always the same: verify an auth credential → receive a short-lived session signing key → build a Grid wallet signature over the `payloadToSign` bytes on the client → pass that signature as the `Grid-Wallet-Signature` header on the request that actually moves funds or changes account state. This applies to withdrawals, adding or removing credentials, refreshing or revoking sessions, exporting the wallet seed, updating customer email for tied email OTP credentials, and updating wallet privacy.

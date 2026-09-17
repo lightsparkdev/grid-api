@@ -39,3 +39,39 @@ mode: "wide"
   </Accordion>
 
 </AccordionGroup>
+
+## Building your integration
+
+<AccordionGroup>
+  <Accordion title="Can I test without moving real money?">
+    Yes. The sandbox lets you test your integration without making real payments. Use sandbox API credentials and the simulation tools to exercise payment outcomes before going live. See [sandbox testing](/api-reference/sandbox-testing).
+  </Accordion>
+
+  <Accordion title="Do sandbox and production use different APIs?">
+    They use the same base URL. Your API token determines which environment a request uses. Production access is arranged with your Lightspark contact after testing. See [environments](/api-reference/environments).
+  </Accordion>
+
+  <Accordion title="Which currencies and payment rails can I use?">
+    Check [currencies and payment rails](/platform-overview/core-concepts/currencies-and-rails) for coverage. Your platform's configuration determines which currencies are enabled for your integration. Use `GET /config` to check your supported currencies and their customer information requirements.
+  </Accordion>
+
+  <Accordion title="How do I know whether a payment has completed?">
+    Use webhooks to receive payment status changes, and retrieve the transaction when you need its current state. Verify webhook signatures and handle duplicate events using the event ID. See the [transaction lifecycle](/platform-overview/core-concepts/transaction-lifecycle) and [webhook guide](/api-reference/webhooks).
+  </Accordion>
+
+  <Accordion title="Can I start issuing cards as soon as I have API credentials?">
+    Cards must be enabled for your platform, and you need to complete card-issuer onboarding before launching. The [implementation overview](/cards/onboarding/implementation-overview) covers the setup and prerequisites.
+  </Accordion>
+</AccordionGroup>
+
+## Licensing and customer verification
+
+<AccordionGroup>
+  <Accordion title="Is Lightspark licensed?">
+    Yes. Lightspark's regulated entities hold licenses for financial services, including money transmission in the US and electronic money and crypto-asset services in Europe. See the [licenses page](https://www.lightspark.com/licenses) for the entities, jurisdictions, and licenses. Coverage depends on the service and where you operate; [contact our team](https://www.lightspark.com/contact) to discuss your setup.
+  </Accordion>
+
+  <Accordion title="Who handles customer verification?">
+    It depends on your platform's setup. Lightspark provides hosted and API-based KYC/KYB flows for platforms that rely on Lightspark for verification. Regulated platforms follow a separate onboarding path. Requirements vary by customer type, region, and currency. See [customer configuration](/payouts-and-b2b/onboarding/configuring-customers) for both paths and the information to collect.
+  </Accordion>
+</AccordionGroup>
