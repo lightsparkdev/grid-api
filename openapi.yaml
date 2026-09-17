@@ -3304,6 +3304,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Delete a beneficial owner
+      description: Remove a beneficial owner from a business customer. The owner's uploaded documents are deleted with them, and the customer's verification status is recomputed without this owner. The request is rejected while a verification review that includes this owner is in progress; wait for the review to finish and retry.
+      operationId: deleteBeneficialOwner
+      tags:
+        - KYC/KYB Verifications
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: beneficialOwnerId
+          in: path
+          description: Beneficial owner ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Beneficial owner deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Beneficial owner not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '409':
+          description: Conflict. A verification review that includes this beneficial owner is in progress. Retry after the review finishes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error409'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
   /documents:
     post:
       summary: Upload a document
