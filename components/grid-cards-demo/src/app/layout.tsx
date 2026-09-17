@@ -4,6 +4,15 @@ import { easingVarsStylesheet } from '@/lib/easing';
 import { CONFIGURE_COL_PX, LAYOUT_WIDE_PX, NAV_COLLAPSED_MAX_PX } from '@/lib/layout';
 import './globals.scss';
 
+/** The files facePaint.loadFaceAssets fetches, preloaded from the head. */
+const CARD_FACE_ASSETS = [
+  '/assets/card/visa-debit-lockup.svg',
+  '/assets/card/visa-dove.svg',
+  '/assets/card/contactless.svg',
+  '/assets/card/grain-normal.png',
+  '/assets/card/grain-rough.png',
+];
+
 const TITLE = 'Lightspark Cards — Playground';
 const DESCRIPTION =
   'Issue a branded Visa debit card and watch the API calls fire as you go.';
@@ -61,6 +70,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             wouldn't match and the font would download twice. */}
         <link rel="preload" href="/fonts/SuisseIntlVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/SuisseIntlMonoVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        {/* The card's face assets (facePaint.loadFaceAssets). Without these
+            the requests wait for the bundle, hydration, and the mesh's mount,
+            well over a second in; the intro cannot start until they are in.
+            crossOrigin matches the loader's, or the preload would not be
+            used. */}
+        {CARD_FACE_ASSETS.map((href) => (
+          <link key={href} rel="preload" href={href} as="image" crossOrigin="anonymous" />
+        ))}
         {/* Boot attributes, set before first paint to avoid flashes — an
             effect is too late (the SSR HTML paints long before hydration):
             - data-embed / data-theme from the URL (embed) or stored pref

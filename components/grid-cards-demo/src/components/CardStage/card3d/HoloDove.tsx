@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import type { Orientation } from '@/data/design';
 import { canvasTexture } from './canvasTexture';
 import { holoStudioTexture, STUDIO_LIGHTS } from './CardEnv';
+import { deferPaint, placeholderCanvas, repaint } from './deferredPaint';
 import { paintDoveMaps } from './dovePaint';
 import { layerFrame } from './faceFrame';
 import { doveBox, type FaceAssets } from './facePaint';
@@ -183,19 +184,33 @@ export function HoloDove({
       roughness: 1,
       transparent: true,
     });
-    const maps = paintDoveMaps(assets);
-    m.map = canvasTexture(maps.albedo, true);
-    m.alphaMap = canvasTexture(maps.mask);
-    m.roughnessMap = canvasTexture(maps.orm);
-    m.normalMap = canvasTexture(maps.normal);
+    // The five maps are the card's slowest paint; they land after the
+    // intro (deferredPaint). Until then a texel each: the mask black, so
+    // the dove is not there, the others neutral.
+    m.map = canvasTexture(placeholderCanvas('#ffffff'), true);
+    m.alphaMap = canvasTexture(placeholderCanvas('#000000'));
+    m.roughnessMap = canvasTexture(placeholderCanvas('#ffffff'));
+    m.normalMap = canvasTexture(placeholderCanvas('#8080ff'));
     m.normalScale.set(HOLO.normalScale, HOLO.normalScale);
     m.envMap = holoStudioTexture();
     m.envMapIntensity = HOLO.envMapIntensity;
     m.depthWrite = false;
-    uniforms.uGrating.value = canvasTexture(maps.grating);
+    uniforms.uGrating.value = canvasTexture(placeholderCanvas('#000000'));
     patchHoloMaterial(m, uniforms);
     return m;
   }, [assets, uniforms]);
+  useEffect(
+    () =>
+      deferPaint(() => {
+        const maps = paintDoveMaps(assets);
+        repaint(material.map!, maps.albedo);
+        repaint(material.alphaMap!, maps.mask);
+        repaint(material.roughnessMap!, maps.orm);
+        repaint(material.normalMap!, maps.normal);
+        repaint(uniforms.uGrating.value!, maps.grating);
+      }),
+    [assets, material, uniforms],
+  );
   useEffect(() => {
     materialRef.current = material;
     return () => {

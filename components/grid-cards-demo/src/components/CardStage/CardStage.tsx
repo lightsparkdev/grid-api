@@ -10,7 +10,7 @@ import { CARD_W, faceSize, FIGMA_CARD_W, footprint } from '@/apps/card/cardMetri
 import { AnimatedLock } from '@/apps/shared/icons';
 import { easeOutQuick, easeOutSnappy, motionTransition } from '@/lib/easing';
 import { canScrollBy } from '@/lib/scroll';
-import { airflow, play, playHover, type Airflow } from '@/lib/sounds';
+import { airflow, play, playHover, preheatSoon, type Airflow } from '@/lib/sounds';
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import type { CardHome } from '@/apps/shared/card';
 import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
@@ -32,12 +32,13 @@ import { localToSpec } from './card3d/faceFrame';
 import { BRAND_CAP, BRAND_TEXT_WEIGHT, BRAND_TRACKING, backNameBox, chipBox, type SpecRect } from './card3d/facePaint';
 import { CARD_FONT_FAMILY } from './card3d/cardFont';
 import { CardMotion, ORIENT_ROLL } from './cardMotion';
+import { flushDeferredPaints, holdDeferredPaints } from './card3d/deferredPaint';
 import { installExportDevHook } from './export/devHook';
 import { CardExporter, type ExportPose } from './export/exportRenderer';
 import { useCardMomentSounds } from './cardSounds';
 import { resizeCursor, rotateCursor } from './cursors';
 import { CardIntro } from './CardIntro';
-import { INTRO_END, INTRO_SOUNDS, introCard, stepIntro } from './introTimeline';
+import { INTRO_END, introCard, stepIntro } from './introTimeline';
 import styles from './CardStage.module.scss';
 
 /** Largest the card gets on stage, relative to its size in the phone. */
@@ -150,8 +151,6 @@ interface Intro {
   /** Seconds since the blueprint started drawing; -1 until the card is ready. */
   t: number;
   done: boolean;
-  /** How many of `INTRO_SOUNDS` have played. */
-  cued: number;
   overlay: React.RefObject<SVGSVGElement>;
   /** The stage canvas, blurred and faded in behind the dissolving blueprint. */
   canvas: React.RefObject<HTMLCanvasElement>;
@@ -314,8 +313,15 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   // then dissolves as the card comes into focus. Until it's done the card is
   // held flat and the pointer is off.
   const [introDone, setIntroDone] = useState(false);
+  // The back's slow maps wait for the intro (deferredPaint): held from
+  // mount, painted once it is done.
+  useEffect(() => holdDeferredPaints(), []);
   useEffect(() => {
-    if (introDone) onIntroDone?.();
+    if (!introDone) return;
+    onIntroDone?.();
+    flushDeferredPaints();
+    // The audio context, too: Chrome builds it on the main thread.
+    preheatSoon();
   }, [introDone, onIntroDone]);
   const overlayRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -341,7 +347,6 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     intro: {
       t: -1,
       done: false,
-      cued: 0,
       overlay: overlayRef,
       canvas: canvasRef,
       onDone: () => setIntroDone(true),
@@ -350,7 +355,6 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
         const { intro } = live.current;
         intro.t = 0;
         intro.done = false;
-        intro.cued = 0;
         setIntroDone(false);
       },
     },
@@ -969,10 +973,23 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     const onUp = () => {
       if (drag.current || brandDrag.current || gradDrag.current) releaseRef.current();
     };
+    // iOS Safari: the hit box's touch-action: none is not always honored (it
+    // sits under a pointer-events: none ancestor, and WebKit's touch-action
+    // regions miss it), so a finger turning the card could start the page
+    // scrolling instead, which cancels the pointer and stops the turn part
+    // way. Cancelling the touch's moves while a drag is live keeps the
+    // gesture the card's. Native, and not passive: React's touch handlers
+    // are passive and cannot cancel.
+    const hit = hitRef.current;
+    const onTouchMove = (e: TouchEvent) => {
+      if ((drag.current || brandDrag.current || gradDrag.current) && e.cancelable) e.preventDefault();
+    };
+    hit?.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     window.addEventListener('blur', onUp);
     return () => {
+      hit?.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
       window.removeEventListener('blur', onUp);
@@ -1737,17 +1754,7 @@ const CardRig = memo(function CardRig({
     // ready, t is -1). A flow starting mid-intro (or reduced motion) ends it now.
     if (!intro.done) {
       if (intro.t >= 0 && !intro.paused) intro.t += dt;
-      if (t > 0 || live.current.reduceMotion) {
-        intro.t = INTRO_END;
-        intro.cued = INTRO_SOUNDS.length;
-      }
-      // The ticks and the whoosh, on the same clock (silent when the browser
-      // has not yet allowed sound; the module drops them, nothing fires late).
-      while (intro.cued < INTRO_SOUNDS.length && intro.t >= INTRO_SOUNDS[intro.cued].at) {
-        const cue = INTRO_SOUNDS[intro.cued];
-        play(cue.name, { gain: cue.gain, gap: cue.gap });
-        intro.cued += 1;
-      }
+      if (t > 0 || live.current.reduceMotion) intro.t = INTRO_END;
       if (intro.overlay.current) stepIntro(intro.overlay.current, intro.t);
       const canvas = intro.canvas.current;
       const look = introCard(intro.t);

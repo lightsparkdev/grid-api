@@ -22,6 +22,13 @@ html[data-theme='dark'] {
   --dot-grid-dot-peak: #474741;
 }
 
+/* Light: the app's wide layout takes the grid's surface a step down
+   (#f4f4f3, globals.scss); this page's grid stays on the page's surface.
+   The selector carries one more attribute than that rule's, to win. */
+html:not([data-theme='dark']):not([data-layout='stacked']):not([data-embed]) {
+  --dot-grid-bg: #f8f8f7;
+}
+
 /* The document itself takes the page's surface. Mobile Safari colors the
    status bar and the tab bar from it, and the app's body surface (a step
    lighter in dark) showed as grey bands above and below the page. */

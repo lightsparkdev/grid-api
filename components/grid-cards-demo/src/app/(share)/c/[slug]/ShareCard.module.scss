@@ -203,6 +203,33 @@
   text-align: right;
 }
 
+/* The website's blur-resolve entrance: opacity, a short rise, and a blur
+   clearing, on its intro ease, staggered by --blur-in-delay. A CSS
+   animation, so the compositor carries it while the main thread is busy
+   with the card (a tween from JavaScript stalled with it). */
+@keyframes blurIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+.blurIn {
+  animation: blurIn 700ms cubic-bezier(0.27, 0.09, 0.24, 1) both;
+  animation-delay: var(--blur-in-delay, 0s);
+  will-change: opacity, transform, filter;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
 .title {
   grid-area: title;
   justify-self: start;
