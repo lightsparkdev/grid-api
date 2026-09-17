@@ -22,5 +22,5 @@ export function shareDescription(record: Pick<ShareRecord, 'kind' | 'forName'>):
 
 /** The X composer's prefill; the link follows it. */
 export function sharePostText(brand: string): string {
-  return `I designed the ${brand} card on @lightspark`;
+  return `I designed the ${brand} card on @lightspark. Design yours and watch the API calls fire as you go →`;
 }
