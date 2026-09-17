@@ -6,6 +6,7 @@
      cards:{env}:secret:{id}    { h: editTokenHash }
      cards:{env}:slug:{slug}    id
      cards:{env}:views:{id}     a counter, so two opens at once both count
+     cards:{env}:ver:{id}       the record's version, for conditional writes
      cards:{env}:rl:{bucket}    rate-limit counters, expiring
 
      cards/{env}/{id}/{role}-{stamp}.{ext}   blobs, public, immutable
@@ -13,8 +14,8 @@
    The view count lives outside the record so `INCR` can bump it without a
    read-modify-write; `get` folds it back in. A blob's name carries a stamp,
    so a re-render lands at a new URL and nothing (the CDN, X's cache) can hand
-   out the old picture; the previous blob is deleted on a best-effort basis.
-   Server only. */
+   out the old picture; the blob a publish moved off is deleted then, on a
+   best-effort basis. Server only. */
 
 import { Redis } from '@upstash/redis';
 import { del, put } from '@vercel/blob';
@@ -34,6 +35,17 @@ import type { ShareCreateInput, ShareFileRole, SharePatch, ShareRecord } from '.
 
 const ID_RE = /^[0-9a-z]{8}$/;
 const newId = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 8);
+
+/** Write the record (ARGV[2]) and bump its version, only if the version is
+ *  still ARGV[1] (a record from before versions counts as 0). 1 if written. */
+const WRITE_IF_VERSION = `
+local v = redis.call('GET', KEYS[2]) or '0'
+if v ~= ARGV[1] then return 0 end
+redis.call('SET', KEYS[1], ARGV[2])
+redis.call('INCR', KEYS[2])
+return 1
+`;
+const UPDATE_ATTEMPTS = 8;
 
 interface Secret {
   h: string;
@@ -63,17 +75,13 @@ class VercelStore implements ShareStore {
     this.blobPrefix = `cards/${env}`;
   }
 
-  private key(kind: 'rec' | 'secret' | 'slug' | 'views' | 'rl', name: string): string {
+  private key(kind: 'rec' | 'secret' | 'slug' | 'views' | 'ver' | 'rl', name: string): string {
     return `${this.keyPrefix}${kind}:${name}`;
   }
 
   private async readRecord(id: string): Promise<ShareRecord | null> {
     if (!ID_RE.test(id)) return null;
     return this.redis.get<ShareRecord>(this.key('rec', id));
-  }
-
-  private async writeRecord(record: ShareRecord): Promise<void> {
-    await this.redis.set(this.key('rec', record.id), { ...record, views: 0 });
   }
 
   async create(input: ShareCreateInput): Promise<{ record: ShareRecord; editToken: string }> {
@@ -142,27 +150,46 @@ class VercelStore implements ShareStore {
     return { ...record, views: views ?? 0 };
   }
 
+  /** Apply `patch` to the record, as one transition: the write is
+   *  conditional on the record's version being the one read, and a lost
+   *  race re-reads and re-applies (two tabs publishing the same share
+   *  cannot leave it pointing at a file the other deleted). The files a
+   *  transition moved off are deleted after it, if they are this share's. */
   async update(id: string, patch: SharePatch): Promise<ShareRecord | null> {
-    const record = await this.readRecord(id);
-    if (!record) return null;
-    const before = fileUrlsOf(record);
-    if (patch.design) record.design = { ...record.design, ...patch.design };
-    if (patch.forName !== undefined) record.forName = patch.forName;
-    if (patch.look !== undefined) record.look = patch.look;
-    if (patch.assets) {
-      for (const [role, url] of Object.entries(patch.assets)) {
-        if (url !== undefined) record.assets[role as keyof ShareRecord['assets']] = url;
+    for (let attempt = 0; attempt < UPDATE_ATTEMPTS; attempt++) {
+      const record = await this.readRecord(id);
+      if (!record) return null;
+      const version = (await this.redis.get<number>(this.key('ver', id))) ?? 0;
+      const before = fileUrlsOf(record);
+      if (patch.design) record.design = { ...record.design, ...patch.design };
+      if (patch.forName !== undefined) record.forName = patch.forName;
+      if (patch.look !== undefined) record.look = patch.look;
+      if (patch.assets) {
+        for (const [role, url] of Object.entries(patch.assets)) {
+          if (url !== undefined) record.assets[role as keyof ShareRecord['assets']] = url;
+        }
       }
+      record.updatedAt = new Date().toISOString();
+      const written = await this.redis.eval<[string, string], number>(
+        WRITE_IF_VERSION,
+        [this.key('rec', id), this.key('ver', id)],
+        [String(version), JSON.stringify({ ...record, views: 0 })],
+      );
+      if (written !== 1) {
+        // Lost the race; a short random wait spreads the contenders out.
+        await new Promise((r) => setTimeout(r, 20 + Math.random() * 100));
+        continue;
+      }
+      // Only now: until the record pointed elsewhere, the public page was
+      // still showing these.
+      const after = new Set(fileUrlsOf(record));
+      const own = `/${this.blobPrefix}/${id}/`;
+      for (const url of before) {
+        if (!after.has(url) && isBlobUrl(url) && new URL(url).pathname.startsWith(own)) del(url).catch(() => {});
+      }
+      return this.withViews(id);
     }
-    record.updatedAt = new Date().toISOString();
-    await this.writeRecord(record);
-    // The files this publish replaced, if they were ours. Only now: until the
-    // record pointed elsewhere, the public page was still showing them.
-    const after = new Set(fileUrlsOf(record));
-    for (const url of before) {
-      if (!after.has(url) && isBlobUrl(url)) del(url).catch(() => {});
-    }
-    return this.withViews(id);
+    throw new Error('busy');
   }
 
   async verifyEditToken(id: string, token: string): Promise<boolean> {

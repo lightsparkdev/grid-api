@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     return fail('bad-body');
   }
 
-  const design = cleanDesign(body.design);
+  const design = cleanDesign(body.design, null);
   if (!design) return fail('bad-design');
   const look = cleanLook(body.look);
   if (look === false) return fail('bad-body');

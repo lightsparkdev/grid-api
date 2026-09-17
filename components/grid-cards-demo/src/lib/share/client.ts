@@ -107,15 +107,25 @@ async function patchShare(id: string, editToken: string, patch: SharePatch): Pro
   return r.record;
 }
 
-/** An uploaded logo or art lives in this page as an object URL; the share
- *  needs the file. */
+/** The file behind a design's image, when the share needs its own copy: an
+ *  upload living in this page as an object or data URL, or a stored file
+ *  (another share's, when a design opened from a link is shared afresh;
+ *  the server keeps only a share's own files). A preset (a root-relative
+ *  path) is shared by reference and needs nothing. */
 async function blobOf(url: string): Promise<Blob | null> {
-  if (!url.startsWith('blob:') && !url.startsWith('data:')) return null;
+  if (url.startsWith('/')) return null;
   try {
-    return await (await fetch(url)).blob();
+    const res = await fetch(url);
+    return res.ok ? await res.blob() : null;
   } catch {
     return null;
   }
+}
+
+/** Whether a stored file's URL is share `id`'s own (its path carries the
+ *  id, in either store), so an update need not upload it again. */
+function ownFile(url: string, id: string): boolean {
+  return url.includes(`/${id}/`);
 }
 
 /** The longest edge a stored raster keeps (the card's face is painted at
@@ -211,14 +221,15 @@ export async function createShare(opts: CreateShareOptions): Promise<ShareHandle
   }
 
   // The brand's files, so the design loads anywhere. The design to publish
-  // points at the stored copies, not the browser's object URLs.
+  // points at this share's own stored copies, not the browser's object URLs
+  // or another share's files. A file this share already stored stays.
   const stored: CardDesign = { ...design };
   for (const [key, role] of [
     ['logoUrl', 'logo'],
     ['backgroundUrl', 'art'],
   ] as Array<['logoUrl' | 'backgroundUrl', ShareFileRole]>) {
     const v = design[key];
-    if (typeof v !== 'string') continue;
+    if (typeof v !== 'string' || ownFile(v, id)) continue;
     const blob = await blobOf(v);
     if (blob) {
       onProgress?.({ stage: 'upload', detail: role });

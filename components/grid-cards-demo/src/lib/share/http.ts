@@ -18,6 +18,7 @@ const STATUS: Record<string, number> = {
   'too-large': 413,
   'not-found': 404,
   'rate-limited': 429,
+  busy: 409,
 };
 
 export function fail(error: string, status?: number): NextResponse {
@@ -100,17 +101,25 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/** Whether a design's image source is one of ours: a root-relative path
- *  (the presets under `/assets`, the local store's `/api/shares/…/files`)
- *  or a file in this deployment's Blob store. Anything else, a stranger's
- *  server included, is not stored: the visitor's browser would fetch it. */
-export function ownedImageUrl(url: string): boolean {
-  if (url.startsWith('/') && !url.startsWith('//')) return true;
+/** Whether an image URL may be stored on share `id`: a preset (a
+ *  root-relative path outside the stores), or a file the upload route
+ *  stored for this very share (the local store's `/api/shares/{id}/files/…`,
+ *  or this deployment's Blob store under `cards/{env}/{id}/`). Another
+ *  share's file is refused too, not only a stranger's server: records and
+ *  their URLs are public, and a URL a share carries is one it may later
+ *  drop, at which point the store deletes the file. With no `id` (a share
+ *  being created, which has no files yet) only presets pass. */
+export function ownedFileUrl(url: string, id: string | null): boolean {
+  if (url.startsWith('/') && !url.startsWith('//')) {
+    if (!url.startsWith('/api/shares/')) return true;
+    return id !== null && url.startsWith(`/api/shares/${id}/files/`);
+  }
   const host = blobHost();
-  if (!host) return false;
+  if (!host || id === null) return false;
   try {
     const u = new URL(url);
-    return u.protocol === 'https:' && u.hostname === host;
+    if (u.protocol !== 'https:' || u.hostname !== host) return false;
+    return new RegExp(`^/cards/[a-z]+/${id}/(og|card|square|logo|art)-[0-9a-z]+\\.[a-z0-9]+$`).test(u.pathname);
   } catch {
     return false;
   }
@@ -125,17 +134,18 @@ function blobHost(): string | null {
 }
 
 /** Enough of a check to keep junk out of the store; the renderer handles the
- *  rest. An image source that is not ours (an object URL, which can't be
- *  stored; a data URL; another server) becomes null; the client uploads the
- *  file and the upload route points the design at it. */
-export function cleanDesign(input: unknown): CardDesign | null {
+ *  rest. An image source that is not this share's own (an object URL, which
+ *  can't be stored; a data URL; another server; another share's file)
+ *  becomes null; the client uploads the file and publishes its URL. `id` is
+ *  the share being patched; null for one being created. */
+export function cleanDesign(input: unknown, id: string | null): CardDesign | null {
   if (!isRecord(input)) return null;
   if (typeof input.programName !== 'string' || typeof input.cardholderName !== 'string') return null;
   if (input.material !== 'plastic' && input.material !== 'metal') return null;
   const design = { ...input } as unknown as CardDesign;
   for (const key of ['logoUrl', 'backgroundUrl'] as const) {
     const v = design[key];
-    if (v !== null && v !== undefined && (typeof v !== 'string' || !ownedImageUrl(v))) design[key] = null;
+    if (v !== null && v !== undefined && (typeof v !== 'string' || !ownedFileUrl(v, id))) design[key] = null;
   }
   return design;
 }

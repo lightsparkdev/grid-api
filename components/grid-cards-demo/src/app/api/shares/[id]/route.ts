@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 
-import { authorized, cleanDesign, cleanLook, fail, failFrom, ownedImageUrl, readJsonBody } from '@/lib/share/http';
+import { authorized, cleanDesign, cleanLook, fail, failFrom, ownedFileUrl, readJsonBody } from '@/lib/share/http';
 import { shareStore } from '@/lib/share/store';
 import type { ShareAssets, SharePatch } from '@/lib/share/types';
 
@@ -31,7 +31,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   const patch: SharePatch = {};
   if (body.design !== undefined) {
-    const design = cleanDesign(body.design);
+    const design = cleanDesign(body.design, auth.record.id);
     if (!design) return fail('bad-design');
     patch.design = design;
   }
@@ -48,7 +48,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     for (const role of ASSET_ROLES) {
       const url = body.assets[role];
       if (url === undefined) continue;
-      if (url !== null && (typeof url !== 'string' || !ownedImageUrl(url))) return fail('bad-body');
+      if (url !== null && (typeof url !== 'string' || !ownedFileUrl(url, auth.record.id))) return fail('bad-body');
       patch.assets[role] = url;
     }
   }
