@@ -64,6 +64,7 @@ Rates are cached ~5 minutes and include platform-specific fees.
 | GET | `/beneficial-owners` | List beneficial owners |
 | GET | `/beneficial-owners/{beneficialOwnerId}` | Get a beneficial owner |
 | PATCH | `/beneficial-owners/{beneficialOwnerId}` | Update a beneficial owner |
+| DELETE | `/beneficial-owners/{beneficialOwnerId}` | Delete a beneficial owner |
 
 ## Documents
 
