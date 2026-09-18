@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { LEGAL, calculateTotals, formatMoney, statementRows } from '@/statement/fixtures';
 import { statementColorProperties } from '@/statement/brand';
 import type { PreviewWidth, StatementModel } from '@/statement/types';
@@ -9,7 +9,8 @@ interface StatementDocumentProps {
   width: PreviewWidth;
 }
 
-export function StatementDocument({ statement, width }: StatementDocumentProps) {
+export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>(
+  function StatementDocument({ statement, width }, ref) {
   const totals = calculateTotals(statement);
   const rows = statementRows(statement);
   const details = [
@@ -22,6 +23,7 @@ export function StatementDocument({ statement, width }: StatementDocumentProps) 
 
   return (
     <article
+      ref={ref}
       className={styles.document}
       data-preview-width={width}
       style={statementColorProperties(statement.brand.colors)}
@@ -126,7 +128,8 @@ export function StatementDocument({ statement, width }: StatementDocumentProps) 
       </footer>
     </article>
   );
-}
+  },
+);
 
 function DefinitionRow({
   label,

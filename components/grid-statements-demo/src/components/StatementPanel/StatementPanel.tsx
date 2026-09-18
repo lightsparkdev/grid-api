@@ -1,9 +1,17 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import { AppShell } from '@/apps/shared/AppShell';
 import { SampleSwatches } from '@/components/DesignControls/DesignControls';
 import { MailScreen } from '@/components/MailScreen/MailScreen';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
+import { StatementDocument } from '@/components/StatementDocument';
+import { pressable } from '@/lib/sounds';
+import {
+  buildStatementHtml,
+  downloadHtml,
+  statementExportFilename,
+} from '@/statement/export';
 import type { StatementDevice, StatementModel } from '@/statement/types';
 import styles from './StatementPanel.module.scss';
 
@@ -20,6 +28,16 @@ export function StatementPanel({
   onDeviceChange,
   onPrint,
 }: StatementPanelProps) {
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportDocumentRef = useRef<HTMLElement>(null);
+  const exportHtml = async () => {
+    if (!exportDocumentRef.current) return;
+    const filename = statementExportFilename(statement, 'html');
+    const html = await buildStatementHtml(exportDocumentRef.current, filename);
+    downloadHtml(html, filename);
+    setExportOpen(false);
+  };
+
   return (
     <section className={styles.panel}>
       <PanelHeader
@@ -46,16 +64,60 @@ export function StatementPanel({
               ]}
               onChange={onDeviceChange}
             />
-            <button className={styles.download} type="button" onClick={onPrint}>
-              Download PDF
+            <button
+              className={styles.download}
+              type="button"
+              aria-expanded={exportOpen}
+              aria-controls="statement-export-preview"
+              {...pressable({ onClick: () => setExportOpen((current) => !current) })}
+            >
+              Export
             </button>
           </div>
         }
       />
+      {exportOpen ? (
+        <section
+          id="statement-export-preview"
+          className={styles.exportPreview}
+          aria-label="Export statement"
+        >
+          <span className={styles.exportIcon} aria-hidden>
+            ↓
+          </span>
+          <strong>Export statement</strong>
+          <span className={styles.exportDescription}>
+            Save the current statement.
+          </span>
+          <div className={styles.exportActions}>
+            <button
+              type="button"
+              {...pressable({
+                onClick: () => {
+                  setExportOpen(false);
+                  onPrint();
+                },
+              })}
+            >
+              PDF
+            </button>
+            <button type="button" {...pressable({ onClick: exportHtml })}>
+              HTML
+            </button>
+          </div>
+        </section>
+      ) : null}
       <div className={styles.stage}>
         <AppShell device={device}>
           <MailScreen statement={statement} />
         </AppShell>
+      </div>
+      <div className={styles.exportSource} aria-hidden>
+        <StatementDocument
+          ref={exportDocumentRef}
+          statement={statement}
+          width="full"
+        />
       </div>
     </section>
   );

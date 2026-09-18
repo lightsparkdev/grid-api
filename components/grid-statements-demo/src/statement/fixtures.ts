@@ -7,6 +7,7 @@ import type {
   StatementVariant,
 } from './types';
 import { DEFAULT_BRAND_COLORS } from './brand';
+import { statementExportFilename } from './export';
 
 export const LEGAL = {
   phone: '(855) 516-0103',
@@ -272,10 +273,5 @@ export function formatMoney(cents: number, signed = false): string {
 }
 
 export function statementFilename(statement: StatementModel): string {
-  const company = statement.brand.companyName
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'company';
-  return `${company}-statement-${statement.period.id}.pdf`;
+  return statementExportFilename(statement, 'pdf');
 }

@@ -44,6 +44,30 @@ const copiedPaths = [
 
 const exceptions = new Map([
   [
+    'src/app/page.module.scss',
+    (source) =>
+      `${source}
+@media print {
+  .layout,
+  .stackCol,
+  .appCol {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .configCol,
+  .apiCol,
+  .exploreBtn,
+  .backPill,
+  .exploreFade {
+    display: none !important;
+  }
+}
+`,
+  ],
+  [
     'src/components/PlaygroundIntro/PlaygroundIntro.tsx',
     (source) =>
       source
