@@ -912,7 +912,11 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     const reach = { x: dir.x * b0.w, y: dir.y * b0.h };
     const len = Math.hypot(reach.x, reach.y);
     const along = ((q.x - anchor.x) * reach.x + (q.y - anchor.y) * reach.y) / len;
-    const scale = Math.min(ART_MAX_SCALE, Math.max(ART_MIN_SCALE, l0.scale * (along / len)));
+    const wanted = Math.min(ART_MAX_SCALE, Math.max(ART_MIN_SCALE, l0.scale * (along / len)));
+    const snap = snapArtScale(b0, c0, anchor, dir, l0.scale, wanted);
+    setGuides(snap.guides);
+    snapTick(snap.key);
+    const scale = snap.scale;
     const s = scale / l0.scale;
     const w = b0.w * s;
     const h = b0.h * s;
@@ -920,6 +924,48 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
       keepArtOnFace({ x: c0.x + anchor.x + (dir.x * w) / 2, y: c0.y + anchor.y + (dir.y * h) / 2, scale }, { w, h }),
       ad.gesture,
     );
+  };
+  /**
+   * Snap a scaling art's size: to the cover fit (scale 1) when that is within
+   * the tolerance, else the edge being dragged (either edge, at a corner) to
+   * the nearest card edge. The cover fit comes first because an image whose
+   * aspect is not the card's has an edge a few px off the card's at the
+   * cover fit, and that edge would otherwise win by a hair. The scale is
+   * uniform, so one snap fixes it; the guide is the card edge caught, if any.
+   */
+  const snapArtScale = (
+    b0: SpecRect,
+    c0: Pt,
+    anchor: Pt,
+    dir: Pt,
+    scale0: number,
+    wanted: number,
+  ): { scale: number; guides: Guides; key: string } => {
+    const tol = snapTolerance();
+    // Spec px the dragged edge moves per unit of scale, on each axis.
+    const perX = b0.w / scale0;
+    const perY = b0.h / scale0;
+    if (Math.abs(1 - wanted) * perX < tol) return { scale: 1, guides: {}, key: 'cover' };
+    let best = { d: tol, scale: wanted, guides: {} as Guides, key: '' };
+    const consider = (scale: number, d: number, guides: Guides, key: string) => {
+      if (scale < ART_MIN_SCALE || scale > ART_MAX_SCALE || d >= best.d) return;
+      best = { d, scale, guides, key };
+    };
+    if (dir.x) {
+      const ax = c0.x + anchor.x;
+      for (const edge of [0, face.w]) {
+        const w = (edge - ax) * dir.x;
+        if (w > 0) consider((scale0 * w) / b0.w, Math.abs((scale0 * w) / b0.w - wanted) * perX, { x: edge }, `sx${edge}`);
+      }
+    }
+    if (dir.y) {
+      const ay = c0.y + anchor.y;
+      for (const edge of [0, face.h]) {
+        const h = (edge - ay) * dir.y;
+        if (h > 0) consider((scale0 * h) / b0.h, Math.abs((scale0 * h) / b0.h - wanted) * perY, { y: edge }, `sy${edge}`);
+      }
+    }
+    return { scale: best.scale, guides: best.guides, key: best.key };
   };
   const moveBrand = (bd: BrandDrag, p: Pt) => {
     const { layout0: l0, box0: b0 } = bd;
