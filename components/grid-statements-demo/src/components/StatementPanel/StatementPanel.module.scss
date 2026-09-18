@@ -20,29 +20,6 @@
   gap: var(--spacing-xs);
 }
 
-.segmented {
-  display: flex;
-  gap: 2px;
-  padding: 2px;
-  border: var(--stroke-xs) solid var(--border-primary);
-  border-radius: var(--corner-radius-sm);
-  background: var(--surface-secondary);
-
-  button {
-    all: unset;
-    @include label-sm;
-    padding: 5px 8px;
-    border-radius: var(--corner-radius-xs);
-    color: var(--text-tertiary);
-    cursor: pointer;
-  }
-
-  button[data-active] {
-    background: var(--surface-base);
-    color: var(--text-primary);
-  }
-}
-
 .download {
   @include label-sm;
   height: 30px;
@@ -58,7 +35,7 @@
   min-height: 0;
   flex: 1;
   justify-content: center;
-  overflow: auto;
+  overflow: hidden;
   padding: var(--spacing-2xl) var(--spacing-xl) 64px;
   background:
     radial-gradient(
@@ -76,10 +53,6 @@
   }
 
   .actions {
-    width: 100%;
-  }
-
-  .segmented {
     margin-left: auto;
   }
 

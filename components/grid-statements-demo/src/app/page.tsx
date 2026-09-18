@@ -20,8 +20,8 @@ import {
 } from '@/statement/fixtures';
 import { presetIconSrc, type PresetId, type StatementPreset } from '@/statement/presets';
 import type {
-  PreviewWidth,
   StatementBrand,
+  StatementDevice,
   StatementVariant,
 } from '@/statement/types';
 import styles from './page.module.scss';
@@ -46,7 +46,7 @@ export default function Page() {
   const [periodId, setPeriodId] = useState(PERIODS[0].id);
   const [brand, setBrand] = useState<StatementBrand>(DEFAULT_BRAND);
   const [presetId, setPresetId] = useState<PresetId | null>(null);
-  const [previewWidth, setPreviewWidth] = useState<PreviewWidth>('full');
+  const [device, setDevice] = useState<StatementDevice>('mail');
   const [entries, setEntries] = useState<StatementApiEntry[]>(() =>
     buildApiEntries(buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]), 0),
   );
@@ -142,7 +142,6 @@ export default function Page() {
   const goPlayground = useCallback(() => {
     if (!isMobileViewport()) return;
     withViewTransition(() => {
-      setPreviewWidth('narrow');
       setMobileView('playground');
     });
   }, []);
@@ -198,8 +197,8 @@ export default function Page() {
         <div className={styles.appCol}>
           <StatementPanel
             statement={statement}
-            width={previewWidth}
-            onWidthChange={setPreviewWidth}
+            device={device}
+            onDeviceChange={setDevice}
             onPrint={printStatement}
           />
         </div>

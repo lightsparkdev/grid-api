@@ -1,21 +1,23 @@
 'use client';
 
+import { AppShell } from '@/apps/shared/AppShell';
+import { SampleSwatches } from '@/components/DesignControls/DesignControls';
+import { MailScreen } from '@/components/MailScreen/MailScreen';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
-import { StatementDocument } from '@/components/StatementDocument';
-import type { PreviewWidth, StatementModel } from '@/statement/types';
+import type { StatementDevice, StatementModel } from '@/statement/types';
 import styles from './StatementPanel.module.scss';
 
 interface StatementPanelProps {
   statement: StatementModel;
-  width: PreviewWidth;
-  onWidthChange: (width: PreviewWidth) => void;
+  device: StatementDevice;
+  onDeviceChange: (device: StatementDevice) => void;
   onPrint: () => void;
 }
 
 export function StatementPanel({
   statement,
-  width,
-  onWidthChange,
+  device,
+  onDeviceChange,
   onPrint,
 }: StatementPanelProps) {
   return (
@@ -35,20 +37,15 @@ export function StatementPanel({
         title="Statement preview"
         actions={
           <div className={styles.actions}>
-            <div className={styles.segmented} role="radiogroup" aria-label="Preview width">
-              {(['full', 'narrow'] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  role="radio"
-                  aria-checked={width === option}
-                  data-active={width === option || undefined}
-                  onClick={() => onWidthChange(option)}
-                >
-                  {option === 'full' ? 'Full' : 'Narrow'}
-                </button>
-              ))}
-            </div>
+            <SampleSwatches
+              label="Device"
+              value={device}
+              options={[
+                { id: 'mail', label: 'iPhone' },
+                { id: 'duo', label: 'iPhone Duo' },
+              ]}
+              onChange={onDeviceChange}
+            />
             <button className={styles.download} type="button" onClick={onPrint}>
               Download PDF
             </button>
@@ -56,7 +53,9 @@ export function StatementPanel({
         }
       />
       <div className={styles.stage}>
-        <StatementDocument statement={statement} width={width} />
+        <AppShell device={device}>
+          <MailScreen statement={statement} />
+        </AppShell>
       </div>
     </section>
   );
