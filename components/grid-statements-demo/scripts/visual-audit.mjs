@@ -87,6 +87,10 @@ for (const auditCase of cases) {
     }
 
     if (auditCase.mobile) {
+      if (app.name === 'statements') {
+        await page.getByRole('radio', { name: 'Period closes' }).click();
+        await page.getByText('listTransactions').waitFor({ state: 'attached' });
+      }
       const explore = page.getByRole('button', { name: 'Explore playground' });
       if (await explore.count()) {
         await explore.click();
@@ -96,8 +100,6 @@ for (const auditCase of cases) {
           fullPage: true,
         });
         if (app.name === 'statements') {
-          await page.getByRole('radio', { name: 'Period closes' }).click();
-          await page.getByText('listTransactions').waitFor();
           await page.screenshot({
             path: new URL(`${baseName}-playground-statement.png`, output).pathname,
             fullPage: true,

@@ -112,8 +112,8 @@ export function buildApiEntries(
   const { startDate, endDate } = periodBounds(statement.period.id);
   const groupLabel =
     statement.variant === 'consumer'
-      ? 'Grid data. Platform stores period balances and adds Reg E and terminal details.'
-      : 'Grid data. Platform stores period balances and builds statement rows.';
+      ? 'The app derives Reg E and terminal details from transaction data.'
+      : 'The app derives statement rows from transaction data.';
   const customerPath = `/customers/${statement.account.customerId}`;
   const accountPath = `/customers/internal-accounts?customerId=${encodeURIComponent(statement.account.customerId)}&currency=USD`;
   const transactionPath =

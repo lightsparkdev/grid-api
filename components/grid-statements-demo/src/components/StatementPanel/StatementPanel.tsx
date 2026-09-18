@@ -110,14 +110,16 @@ export function StatementPanel({
           }}
           onSaveHtml={exportHtml}
         />
-        <StageShareButton
-          visible={lifecycle === 'statement' && exportAllowed}
-          open={shareOpen}
-          onClick={() => {
-            setExportError('');
-            setShareOpen((current) => !current);
-          }}
-        />
+        {mounted ? (
+          <StageShareButton
+            visible={lifecycle === 'statement' && exportAllowed}
+            open={shareOpen}
+            onClick={() => {
+              setExportError('');
+              setShareOpen((current) => !current);
+            }}
+          />
+        ) : null}
         {exportError ? (
           <span className={styles.exportError} role="alert">
             {exportError}
