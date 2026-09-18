@@ -350,6 +350,8 @@
 }
 
 .logoRow {
+  /* Containing block for .fileInput — see there. */
+  position: relative;
   flex: 1;
   display: flex;
   justify-content: flex-end;
@@ -436,8 +438,15 @@
   }
 }
 
+/* Hidden picker, opened from the row's click. Pinned to .logoRow's origin:
+   without a positioned ancestor its static position (deep in the panel's
+   scrolled content) was measured against the viewport and escaped main's
+   overflow clip, so the document grew to ~930px and Safari let the whole
+   embed scroll off the top, leaving blank body below. */
 .fileInput {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 0;
   height: 0;
   opacity: 0;

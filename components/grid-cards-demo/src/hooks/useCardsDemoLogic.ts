@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ApiCall } from '@/data/flow';
 import {
   ACTIONS,
@@ -97,10 +97,13 @@ export function useCardsDemoLogic() {
   const theme = useThemeMode();
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   // Until the visitor designs something, the card is the theme's default:
-  // ink on dark, white on light, following the theme if it changes. Reset
-  // (a design equal to a theme's default) hands it back to the theme.
+  // ink on light, white on dark, following the theme if it changes. Reset
+  // (a design equal to a theme's default) hands it back to the theme. A
+  // layout effect, so the swap lands before paint: the theme hydrates as
+  // light and flips to dark in the same commit, and the card must not show
+  // a frame of the other stage's color first.
   const designed = useRef(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!designed.current) setDesign(initialDesignFor(theme));
   }, [theme]);
   // The latest design, readable from callbacks without re-binding them.
