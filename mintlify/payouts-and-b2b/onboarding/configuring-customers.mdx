@@ -100,7 +100,7 @@ Example with platform account ID:
 
 ```json
 {
-  "accountType": "US_ACCOUNT",
+  "accountType": "USD_ACCOUNT",
   "accountNumber": "123456789",
   "routingNumber": "987654321",
   "bankName": "Chase Bank",
@@ -144,10 +144,10 @@ Common use cases for `platformAccountId`:
   <Accordion title="United States: ACH (Account and Routing Number)">
     ```json
     {
-      "accountType": "US_ACCOUNT",
+      "accountType": "USD_ACCOUNT",
       "accountNumber": "123456789",
       "routingNumber": "987654321",
-      "accountCategory": "CHECKING",
+      "bankAccountType": "CHECKING",
       "bankName": "Chase Bank",
       "platformAccountId": "chase_checking_1234"
     }
@@ -177,10 +177,10 @@ Common use cases for `platformAccountId`:
     ```
   </Accordion>
 
-  <Accordion title="International: IBAN">
+  <Accordion title="Europe: EUR (IBAN)">
     ```json
     {
-      "accountType": "IBAN",
+      "accountType": "EUR_ACCOUNT",
       "iban": "DE89370400440532013000",
       "bankName": "Deutsche Bank",
       "platformAccountId": "deutsche_primary_3456"
