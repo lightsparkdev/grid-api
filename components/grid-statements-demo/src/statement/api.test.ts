@@ -118,4 +118,29 @@ describe('statement API projection', () => {
       transactions(august).every(({ createdAt }) => createdAt.startsWith('2026-08-')),
     ).toBe(true);
   });
+
+  it('keeps API entries independent from statement branding', () => {
+    const branded = buildStatement(
+      'consumer',
+      {
+        ...DEFAULT_BRAND,
+        companyName: 'Changed name',
+        logo: { kind: 'image', src: 'data:image/png;base64,AAAA', alt: 'Logo' },
+        colors: {
+          primaryBackground: '#000000',
+          secondaryBackground: '#111111',
+          primaryText: '#ffffff',
+          secondaryText: '#eeeeee',
+        },
+      },
+      PERIODS[0],
+    );
+
+    expect(buildApiEntries(branded, 1_700_000_000_000)).toEqual(
+      buildApiEntries(
+        buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]),
+        1_700_000_000_000,
+      ),
+    );
+  });
 });

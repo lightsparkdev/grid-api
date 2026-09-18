@@ -46,6 +46,7 @@ export default function Page() {
   const [periodId, setPeriodId] = useState(PERIODS[0].id);
   const [brand, setBrand] = useState<StatementBrand>(DEFAULT_BRAND);
   const [presetId, setPresetId] = useState<PresetId | null>(null);
+  const [presetSequence, setPresetSequence] = useState(0);
   const [device, setDevice] = useState<StatementDevice>('mail');
   const [entries, setEntries] = useState<StatementApiEntry[]>(() =>
     buildApiEntries(buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]), 0),
@@ -56,6 +57,10 @@ export default function Page() {
   const stackColRef = useRef<HTMLDivElement>(null);
   const period = PERIODS.find((candidate) => candidate.id === periodId) ?? PERIODS[0];
   const statement = useMemo(() => buildStatement(variant, brand, period), [brand, period, variant]);
+  const apiStatement = useMemo(
+    () => buildStatement(variant, DEFAULT_BRAND, period),
+    [period, variant],
+  );
 
   useLayoutEffect(() => {
     const media = window.matchMedia(`(max-width: ${LAYOUT_WIDE_PX - 1}px)`);
@@ -68,9 +73,9 @@ export default function Page() {
 
   useEffect(() => {
     setEntries([]);
-    const timer = window.setTimeout(() => setEntries(buildApiEntries(statement)), 260);
+    const timer = window.setTimeout(() => setEntries(buildApiEntries(apiStatement)), 260);
     return () => window.clearTimeout(timer);
-  }, [statement]);
+  }, [apiStatement, presetSequence]);
 
   useEffect(
     () => () => {
@@ -89,6 +94,7 @@ export default function Page() {
     (preset: StatementPreset) => {
       clearUploadedUrl();
       setPresetId(preset.id);
+      setPresetSequence((current) => current + 1);
       setBrand((current) => ({
         ...current,
         companyName: preset.companyName,

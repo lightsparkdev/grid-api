@@ -120,6 +120,7 @@ export function buildApiEntries(
     `/transactions?accountIdentifier=${encodeURIComponent(statement.account.id)}` +
     `&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}` +
     '&sortOrder=asc&limit=100';
+  const groupId = `${statement.variant}-${statement.period.id}`;
 
   const customerResponse =
     statement.variant === 'consumer'
@@ -156,7 +157,7 @@ export function buildApiEntries(
 
   return [
     {
-      key: `${statement.variant}-${statement.brand.companyName}-${statement.period.id}-customer`,
+      key: `${groupId}-customer`,
       operationId: 'getCustomerById',
       title: 'getCustomerById',
       method: 'GET',
@@ -164,11 +165,11 @@ export function buildApiEntries(
       status: '200 OK',
       resBody: customerResponse,
       createdAt,
-      groupId: `${statement.variant}-${statement.brand.companyName}-${statement.period.id}`,
+      groupId,
       groupLabel,
     },
     {
-      key: `${statement.variant}-${statement.brand.companyName}-${statement.period.id}-account`,
+      key: `${groupId}-account`,
       operationId: 'listCustomerInternalAccounts',
       title: 'listCustomerInternalAccounts',
       method: 'GET',
@@ -176,11 +177,11 @@ export function buildApiEntries(
       status: '200 OK',
       resBody: { data: [account], hasMore: false, totalCount: 1 },
       createdAt: createdAt + 120,
-      groupId: `${statement.variant}-${statement.brand.companyName}-${statement.period.id}`,
+      groupId,
       groupLabel,
     },
     {
-      key: `${statement.variant}-${statement.brand.companyName}-${statement.period.id}-transactions`,
+      key: `${groupId}-transactions`,
       operationId: 'listTransactions',
       title: 'listTransactions',
       method: 'GET',
@@ -192,7 +193,7 @@ export function buildApiEntries(
         totalCount: statement.activities.length,
       },
       createdAt: createdAt + 240,
-      groupId: `${statement.variant}-${statement.brand.companyName}-${statement.period.id}`,
+      groupId,
       groupLabel,
     },
   ];
