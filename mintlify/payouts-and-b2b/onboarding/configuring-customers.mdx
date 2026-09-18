@@ -89,20 +89,28 @@ Note that not all customer information can be updated. Particularly for non-regu
 
 ## Bank Account Information
 
-The API supports various bank account formats based on country and funding type. There are two types of funding
-mechanisms supported by Grid: an omnibus FBO (for benefit of) account owned by the platform, or direct customer-owned accounts. You must provide the correct format based on the customer's region and bank account type.
+Register bank accounts and wallets with `POST /customers/external-accounts`. They are not part of the customer resource.
+
+Set `accountInfo.accountType` to the currency code followed by `_ACCOUNT`, such as `USD_ACCOUNT`, `EUR_ACCOUNT`, or `MXN_ACCOUNT`. Wallets use their network name, such as `SPARK_WALLET`. Values such as `IBAN`, `SEPA`, `CLABE`, or `PIX` are rejected with `400 INVALID_INPUT`.
+
+Most bank account types also require a `beneficiary` object. The required fields depend on the currency and the beneficiary type.
+
+- [External Accounts](/payouts-and-b2b/depositing-funds/external-accounts) shows a full request for each region.
+- [Required Fields by Corridor](/payouts-and-b2b/depositing-funds/required-fields) lists the fields each currency requires.
+- [Add a new external account](/api-reference/external-accounts/add-a-new-external-account) documents the full schema for each account type.
 
 ### Optional Platform Account ID
 
-All bank account types support an optional `platformAccountId` field that allows you to link bank accounts to your internal systems. This field can be any string that helps identify the account in your platform (e.g., database IDs, custom references, etc.).
+All account types support an optional `platformAccountId` field that links the account to your internal systems. This field can be any string that identifies the account in your platform (e.g., database IDs, custom references, etc.).
 
 Example with platform account ID:
 
 ```json
 {
-  "accountType": "US_ACCOUNT",
+  "accountType": "USD_ACCOUNT",
   "accountNumber": "123456789",
-  "routingNumber": "987654321",
+  "routingNumber": "021000021",
+  "bankAccountType": "CHECKING",
   "bankName": "Chase Bank",
   "platformAccountId": "chase_primary_1234"
 }
@@ -114,80 +122,6 @@ Common use cases for `platformAccountId`:
 - Linking accounts to internal accounting systems
 - Maintaining consistency between the Grid API and your platform's account records
 - Facilitating account reconciliation and reporting
-
-<AccordionGroup>
-  <Accordion title="FBO Accounts">
-    FBO accounts are used when the platform has a single omnibus account that is used to fund all customers. Account details
-    must be provided manually at the platform level. For each customer, during you should simply provide:
-
-    ```json
-    "bankAccountInfo": {
-      "accountType": "FBO",
-      "currencyCode": "USD" // or any other currency code supported by the Grid API
-    }
-    ```
-
-    <Tip>
-    Please contact us to set up FBO account for a specific currency.
-    </Tip>
-  </Accordion>
-  <Accordion title="Mexico: CLABE">
-    ```json
-    {
-      "accountType": "CLABE",
-      "clabeNumber": "123456789012345678",
-      "bankName": "Banco de México",
-      "platformAccountId": "banco_mx_primary_5678"
-    }
-    ```
-  </Accordion>
-  <Accordion title="United States: ACH (Account and Routing Number)">
-    ```json
-    {
-      "accountType": "US_ACCOUNT",
-      "accountNumber": "123456789",
-      "routingNumber": "987654321",
-      "accountCategory": "CHECKING",
-      "bankName": "Chase Bank",
-      "platformAccountId": "chase_checking_1234"
-    }
-    ```
-  </Accordion>
-   
-  <Accordion title="Brazil PIX">
-    ```json
-    {
-      "accountType": "PIX",
-      "pixKey": "12345678901",
-      "pixKeyType": "CPF",
-      "platformAccountId": "pix_main_9012"
-    }
-    ```
-
-    PIX key types can be one of: `CPF`, `CNPJ`, `PHONE`, `EMAIL`, or `RANDOM`.
-  </Accordion>
-
-  <Accordion title="India: UPI (Unified Payments Interface)">
-    ```json
-    {
-      "accountType": "UPI",
-      "vpa": "somecustomer@okbank",
-      "platformAccountId": "upi_primary_1234"
-    }
-    ```
-  </Accordion>
-
-  <Accordion title="International: IBAN">
-    ```json
-    {
-      "accountType": "IBAN",
-      "iban": "DE89370400440532013000",
-      "bankName": "Deutsche Bank",
-      "platformAccountId": "deutsche_primary_3456"
-    }
-    ```
-  </Accordion>
-</AccordionGroup>
 
 ## Data Validation
 
