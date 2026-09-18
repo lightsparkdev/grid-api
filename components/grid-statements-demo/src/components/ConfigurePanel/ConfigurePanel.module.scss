@@ -60,16 +60,7 @@
   font-feature-settings: 'salt' 1;
 }
 
-.swatches {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.swatch {
+.presetSwatch {
   all: unset;
   box-sizing: border-box;
   position: relative;
@@ -87,15 +78,6 @@
     object-fit: contain;
   }
 
-  &[data-active]::after {
-    position: absolute;
-    inset: -5px;
-    border: 2px solid var(--text-primary);
-    border-radius: 9px;
-    content: '';
-    pointer-events: none;
-  }
-
   @media (hover: hover) {
     &:hover {
       transform: scale(1.08);
@@ -103,7 +85,6 @@
   }
 }
 
-.input,
 .select {
   all: unset;
   box-sizing: border-box;
@@ -118,88 +99,18 @@
   cursor: pointer;
 }
 
-.upload {
-  all: unset;
-  box-sizing: border-box;
-  @include label;
-  display: inline-flex;
-  flex: 1;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--spacing-3xs);
-  color: var(--text-secondary);
-  cursor: pointer;
-
-  svg path {
-    vector-effect: non-scaling-stroke;
-  }
-}
-
-.logoPicked {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.logoPreview,
-.logoClear {
-  all: unset;
-  box-sizing: border-box;
+.contrastWarning {
   display: grid;
+  flex: 0 0 18px;
   place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.logoPreview {
-  box-shadow: inset 0 0 0 1px var(--border-primary);
-
-  img {
-    max-width: 14px;
-    max-height: 14px;
-    object-fit: contain;
-  }
-}
-
-.logoClear {
-  background: var(--surface-secondary);
-  color: var(--text-primary);
-  box-shadow: inset 0 0 0 1px var(--border-primary);
-  cursor: pointer;
-}
-
-.fileInput {
-  position: absolute;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.choices {
-  display: flex;
-  flex: 1;
-  justify-content: flex-end;
-  gap: var(--spacing-3xs);
-
-  button {
-    all: unset;
-    @include label-sm;
-    padding: 5px 8px;
-    border-radius: var(--corner-radius-sm);
-    color: var(--text-tertiary);
-    cursor: pointer;
-  }
-
-  button[data-active] {
-    background: var(--surface-base);
-    color: var(--text-primary);
-    box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-primary);
-  }
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-yellow-400, #f2b90b);
+  color: #1a1a1a;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: help;
 }
 
 .error {

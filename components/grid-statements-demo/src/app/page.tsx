@@ -89,14 +89,15 @@ export default function Page() {
     (preset: StatementPreset) => {
       clearUploadedUrl();
       setPresetId(preset.id);
-      setBrand({
+      setBrand((current) => ({
+        ...current,
         companyName: preset.companyName,
         logo: {
           kind: 'image',
           src: presetIconSrc(preset),
           alt: `${preset.companyName} logo`,
         },
-      });
+      }));
       setUploadError('');
     },
     [clearUploadedUrl],
@@ -174,6 +175,13 @@ export default function Page() {
           onBrandChange={(companyName) => {
             setPresetId(null);
             setBrand((current) => ({ ...current, companyName }));
+          }}
+          onBrandColorChange={(key, value) => {
+            setPresetId(null);
+            setBrand((current) => ({
+              ...current,
+              colors: { ...current.colors, [key]: value },
+            }));
           }}
           onClearLogo={() => {
             clearUploadedUrl();

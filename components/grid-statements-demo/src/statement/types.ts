@@ -1,5 +1,14 @@
 export type StatementVariant = 'consumer' | 'commercial';
+export type StatementDevice = 'mail' | 'duo';
 export type PreviewWidth = 'full' | 'narrow';
+export type HexColor = `#${string}`;
+
+export interface StatementBrandColors {
+  primaryBackground: HexColor;
+  secondaryBackground: HexColor;
+  primaryText: HexColor;
+  secondaryText: HexColor;
+}
 
 export type StatementLogo =
   | { kind: 'none' }
@@ -8,6 +17,7 @@ export type StatementLogo =
 export interface StatementBrand {
   companyName: string;
   logo: StatementLogo;
+  colors: StatementBrandColors;
 }
 
 export interface StatementPeriod {

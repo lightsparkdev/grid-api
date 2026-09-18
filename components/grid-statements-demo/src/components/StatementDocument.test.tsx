@@ -31,11 +31,33 @@ describe('StatementDocument', () => {
   it('uses company name when no logo is present', () => {
     const statement = buildStatement(
       'consumer',
-      { companyName: 'Northstar', logo: { kind: 'none' } },
+      { ...DEFAULT_BRAND, companyName: 'Northstar', logo: { kind: 'none' } },
       PERIODS[0],
     );
     render(<StatementDocument statement={statement} width="full" />);
 
     expect(screen.getByText('Northstar')).toBeTruthy();
+  });
+
+  it('applies all four brand tokens to the printable statement', () => {
+    const statement = buildStatement(
+      'consumer',
+      {
+        ...DEFAULT_BRAND,
+        colors: {
+          primaryBackground: '#102030',
+          secondaryBackground: '#203040',
+          primaryText: '#fefefe',
+          secondaryText: '#eeeeee',
+        },
+      },
+      PERIODS[0],
+    );
+    const { container } = render(<StatementDocument statement={statement} width="full" />);
+    const document = container.querySelector('article');
+
+    expect(document?.getAttribute('style')).toBe(
+      '--statement-primary-background: #102030; --statement-secondary-background: #203040; --statement-primary-text: #fefefe; --statement-secondary-text: #eeeeee;',
+    );
   });
 });

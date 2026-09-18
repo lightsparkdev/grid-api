@@ -1,11 +1,17 @@
 'use client';
 
-import { useRef, type ChangeEvent } from 'react';
-import { IconAddImage } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconAddImage';
-import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
+import {
+  ColorSwatches,
+  SampleSwatches,
+  ShimmerField,
+  SwatchRow,
+  UploadRow,
+} from '@/components/DesignControls/DesignControls';
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
+import { pressable } from '@/lib/sounds';
+import { BRAND_COLOR_SWATCHES, brandContrast } from '@/statement/brand';
 import { PERIODS } from '@/statement/fixtures';
 import {
   PRESETS,
@@ -13,7 +19,12 @@ import {
   type PresetId,
   type StatementPreset,
 } from '@/statement/presets';
-import type { StatementBrand, StatementVariant } from '@/statement/types';
+import type {
+  HexColor,
+  StatementBrand,
+  StatementBrandColors,
+  StatementVariant,
+} from '@/statement/types';
 import styles from './ConfigurePanel.module.scss';
 
 interface ConfigurePanelProps {
@@ -23,6 +34,7 @@ interface ConfigurePanelProps {
   uploadError: string;
   variant: StatementVariant;
   onBrandChange: (companyName: string) => void;
+  onBrandColorChange: (key: keyof StatementBrandColors, value: HexColor) => void;
   onClearLogo: () => void;
   onPeriodChange: (periodId: string) => void;
   onPresetSelect: (preset: StatementPreset) => void;
@@ -37,17 +49,40 @@ export function ConfigurePanel({
   uploadError,
   variant,
   onBrandChange,
+  onBrandColorChange,
   onClearLogo,
   onPeriodChange,
   onPresetSelect,
   onUpload,
   onVariantChange,
 }: ConfigurePanelProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onUpload(event.target.files?.[0]);
-    event.target.value = '';
-  };
+  const contrast = brandContrast(brand.colors);
+  const colorRows: ReadonlyArray<{
+    key: keyof StatementBrandColors;
+    label: string;
+    passes: boolean;
+  }> = [
+    {
+      key: 'primaryBackground',
+      label: 'Primary background',
+      passes: contrast.primaryPasses,
+    },
+    {
+      key: 'primaryText',
+      label: 'Primary text',
+      passes: contrast.primaryPasses,
+    },
+    {
+      key: 'secondaryBackground',
+      label: 'Secondary background',
+      passes: contrast.secondaryPasses,
+    },
+    {
+      key: 'secondaryText',
+      label: 'Secondary text',
+      passes: contrast.secondaryPasses,
+    },
+  ];
 
   return (
     <aside className={styles.panel}>
@@ -60,7 +95,7 @@ export function ConfigurePanel({
             <div className={styles.group}>
               <div className={styles.row}>
                 <span className={styles.rowLabel}>Preset</span>
-                <div className={styles.swatches} role="radiogroup" aria-label="Cards presets">
+                <SwatchRow label="Cards presets" active={presetId}>
                   {PRESETS.map((preset) => (
                     <Tooltip key={preset.id} text={preset.description}>
                       {(tip) => (
@@ -69,71 +104,57 @@ export function ConfigurePanel({
                           role="radio"
                           aria-checked={presetId === preset.id}
                           aria-label={`${preset.description} (${preset.companyName})`}
-                          className={styles.swatch}
-                          data-active={presetId === preset.id || undefined}
-                          onClick={() => onPresetSelect(preset)}
+                          tabIndex={presetId === preset.id ? 0 : -1}
+                          className={styles.presetSwatch}
                           {...tip}
+                          {...pressable(
+                            { onClick: () => onPresetSelect(preset) },
+                            true,
+                          )}
                         >
                           <img src={presetIconSrc(preset)} alt="" draggable={false} />
                         </button>
                       )}
                     </Tooltip>
                   ))}
-                </div>
+                </SwatchRow>
               </div>
-              <label className={styles.row}>
+              <div className={styles.row}>
                 <span className={styles.rowLabel}>Company name</span>
-                <input
-                  className={styles.input}
+                <ShimmerField
                   value={brand.companyName}
                   maxLength={40}
-                  onChange={(event) => onBrandChange(event.target.value)}
-                />
-              </label>
-              <div className={styles.row}>
-                <span className={styles.rowLabel}>Logo</span>
-                {brand.logo.kind === 'image' ? (
-                  <div className={styles.logoPicked}>
-                    <span className={styles.logoPreview}>
-                      <img src={brand.logo.src} alt="" />
-                    </span>
-                    <Tooltip text="Remove">
-                      {(tip) => (
-                        <button
-                          type="button"
-                          className={styles.logoClear}
-                          aria-label="Remove logo"
-                          onClick={onClearLogo}
-                          {...tip}
-                        >
-                          <IconCrossMedium size={16} aria-hidden />
-                        </button>
-                      )}
-                    </Tooltip>
-                  </div>
-                ) : (
-                  <Tooltip text="Transparent SVG, PNG, or WebP under 2 MB">
-                    {(tip) => (
-                      <button
-                        type="button"
-                        className={styles.upload}
-                        onClick={() => fileRef.current?.click()}
-                        {...tip}
-                      >
-                        <IconAddImage size={16} aria-hidden />
-                        Upload logo
-                      </button>
-                    )}
-                  </Tooltip>
-                )}
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/svg+xml,image/png,image/webp"
-                  className={styles.fileInput}
-                  onChange={onFileChange}
+                  placeholder="Your company"
+                  label="Company name"
+                  onChange={onBrandChange}
                 />
               </div>
+              <div className={styles.row}>
+                <span className={styles.rowLabel}>Logo</span>
+                <UploadRow
+                  url={brand.logo.kind === 'image' ? brand.logo.src : null}
+                  accept="image/svg+xml,image/png,image/webp"
+                  label="Upload logo"
+                  hint="Transparent SVG, PNG, or WebP under 2 MB"
+                  onPick={onUpload}
+                  onClear={onClearLogo}
+                />
+              </div>
+              {colorRows.map((color) => (
+                <div className={styles.row} key={color.key}>
+                  <span className={styles.rowLabel}>{color.label}</span>
+                  <ColorSwatches
+                    label={color.label}
+                    value={brand.colors[color.key]}
+                    colors={BRAND_COLOR_SWATCHES}
+                    onChange={(value) => onBrandColorChange(color.key, value)}
+                  />
+                  <ContrastWarning
+                    visible={!color.passes}
+                    pair={color.key.startsWith('primary') ? 'primary' : 'secondary'}
+                  />
+                </div>
+              ))}
             </div>
             {uploadError ? <p className={styles.error}>{uploadError}</p> : null}
           </section>
@@ -143,20 +164,15 @@ export function ConfigurePanel({
             <div className={styles.group}>
               <div className={styles.row}>
                 <span className={styles.rowLabel}>Account</span>
-                <div className={styles.choices} role="radiogroup" aria-label="Account type">
-                  {(['consumer', 'commercial'] as const).map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      role="radio"
-                      aria-checked={variant === option}
-                      data-active={variant === option || undefined}
-                      onClick={() => onVariantChange(option)}
-                    >
-                      {option === 'consumer' ? 'Consumer' : 'Commercial'}
-                    </button>
-                  ))}
-                </div>
+                <SampleSwatches
+                  label="Account type"
+                  value={variant}
+                  options={[
+                    { id: 'consumer', label: 'Consumer' },
+                    { id: 'commercial', label: 'Commercial' },
+                  ]}
+                  onChange={onVariantChange}
+                />
               </div>
               <label className={styles.row}>
                 <span className={styles.rowLabel}>Period</span>
@@ -177,5 +193,29 @@ export function ConfigurePanel({
         </div>
       </div>
     </aside>
+  );
+}
+
+function ContrastWarning({
+  visible,
+  pair,
+}: {
+  visible: boolean;
+  pair: 'primary' | 'secondary';
+}) {
+  if (!visible) return null;
+  return (
+    <Tooltip text={`${pair === 'primary' ? 'Primary' : 'Secondary'} text needs at least 4.5:1 contrast.`}>
+      {(tip) => (
+        <span
+          className={styles.contrastWarning}
+          role="img"
+          aria-label={`${pair} color contrast warning`}
+          {...tip}
+        >
+          !
+        </span>
+      )}
+    </Tooltip>
   );
 }

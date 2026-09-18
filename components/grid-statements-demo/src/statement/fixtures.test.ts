@@ -93,7 +93,7 @@ describe('statement fixtures', () => {
   it('creates the requested PDF filename', () => {
     const statement = buildStatement(
       'consumer',
-      { companyName: 'Northstar Money, Inc.', logo: { kind: 'none' } },
+      { ...DEFAULT_BRAND, companyName: 'Northstar Money, Inc.', logo: { kind: 'none' } },
       PERIODS[1],
     );
 

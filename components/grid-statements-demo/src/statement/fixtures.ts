@@ -6,6 +6,7 @@ import type {
   StatementTotals,
   StatementVariant,
 } from './types';
+import { DEFAULT_BRAND_COLORS } from './brand';
 
 export const LEGAL = {
   phone: '(855) 516-0103',
@@ -158,6 +159,7 @@ const commercialActivities = [
 export const DEFAULT_BRAND: StatementBrand = {
   companyName: 'Northstar',
   logo: { kind: 'none' },
+  colors: DEFAULT_BRAND_COLORS,
 };
 
 export function buildStatement(

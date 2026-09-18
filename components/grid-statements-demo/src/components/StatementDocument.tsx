@@ -1,5 +1,6 @@
 import React from 'react';
 import { LEGAL, calculateTotals, formatMoney, statementRows } from '@/statement/fixtures';
+import { statementColorProperties } from '@/statement/brand';
 import type { PreviewWidth, StatementModel } from '@/statement/types';
 import styles from './StatementDocument.module.css';
 
@@ -20,7 +21,11 @@ export function StatementDocument({ statement, width }: StatementDocumentProps) 
   ];
 
   return (
-    <article className={styles.document} data-preview-width={width}>
+    <article
+      className={styles.document}
+      data-preview-width={width}
+      style={statementColorProperties(statement.brand.colors)}
+    >
       <header className={styles.masthead}>
         <div className={styles.brand}>
           {statement.brand.logo.kind === 'image' ? (
