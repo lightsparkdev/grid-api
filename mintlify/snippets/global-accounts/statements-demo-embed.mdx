@@ -7,21 +7,18 @@ export const StatementsDemoEmbed = () => {
     const isPreview = hostname.endsWith(previewSuffix) && hostname.startsWith(previewPrefix);
     const branch = isPreview ? hostname.slice(previewPrefix.length, -previewSuffix.length) : '';
     const base = isLocal
-      ? ['http:', '', 'localhost:4003'].join('/')
+      ? 'http://localhost:4003'
       : branch
-        ? ['https:', '', 'grid-statements-playground-git-' + branch + '-lightspark-team.vercel.app'].join('/')
-        : ['https:', '', 'grid-statements-playground.vercel.app'].join('/');
-    const targetOrigin = new URL(base).origin;
+        ? 'https://grid-statements-demo-git-' + branch + '-lightspark-team.vercel.app'
+        : 'https://grid-statements-demo.vercel.app';
     const isDark = () => document.documentElement.classList.contains('dark');
 
     const navWidth = () => {
       const root = document.documentElement;
       const collapsed = root.classList.contains('ls-nav-collapsed');
-      const styles = getComputedStyle(root);
-      const value = parseFloat(
-        styles.getPropertyValue(collapsed ? '--ls-nav-rail-w' : '--ls-sidebar-width'),
-      );
-      return Number.isFinite(value) ? value : collapsed ? 48 : 280;
+      const cs = getComputedStyle(root);
+      const v = parseFloat(cs.getPropertyValue(collapsed ? '--ls-nav-rail-w' : '--ls-sidebar-width'));
+      return Number.isFinite(v) ? v : (collapsed ? 48 : 280);
     };
 
     let host = document.getElementById('statements-demo-host');
@@ -30,105 +27,90 @@ export const StatementsDemoEmbed = () => {
       host.id = 'statements-demo-host';
       host.className = 'ls-playground-host';
       host.style.cssText = 'position:fixed;z-index:1;overflow:hidden;';
-
       const iframe = document.createElement('iframe');
       iframe.id = 'statements-demo-iframe';
       iframe.className = 'ls-playground-iframe';
-      iframe.src =
-        base +
-        '/?embed=true&theme=' +
-        (isDark() ? 'dark' : 'light') +
-        '&nav=' +
-        navWidth();
-      iframe.title = 'Grid periodic statements playground';
+      iframe.src = base + '/?embed=true&theme=' + (isDark() ? 'dark' : 'light') + '&nav=' + navWidth();
+      iframe.title = 'Grid Statements — playground';
       iframe.setAttribute('allow', 'clipboard-write');
       iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
       host.appendChild(iframe);
       document.body.appendChild(host);
     }
-
-    if (window.__sdHideTimer) {
-      clearTimeout(window.__sdHideTimer);
-      window.__sdHideTimer = null;
-    }
+    if (window.__sdHideTimer) { clearTimeout(window.__sdHideTimer); window.__sdHideTimer = null; }
     host.style.display = 'block';
-
     const sendNav = () => {
       const iframe = document.getElementById('statements-demo-iframe');
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(
-          { type: 'nav-sync', sidebarWidth: navWidth() },
-          targetOrigin,
-        );
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'nav-sync', sidebarWidth: navWidth() }, '*');
       }
     };
 
-    const sendTheme = () => {
-      const iframe = document.getElementById('statements-demo-iframe');
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(
-          { type: 'theme-sync', theme: isDark() ? 'dark' : 'light' },
-          targetOrigin,
-        );
-      }
-    };
-
-    let frame = 0;
+    let raf = 0;
     let last = { left: -1, top: -1, width: -1, height: -1 };
-    const syncBounds = () => {
-      const container = document.getElementById('statements-demo-container');
-      if (container && host) {
-        const bounds = container.getBoundingClientRect();
-        if (
-          bounds.left !== last.left ||
-          bounds.top !== last.top ||
-          bounds.width !== last.width ||
-          bounds.height !== last.height
-        ) {
-          host.style.left = bounds.left + 'px';
-          host.style.top = bounds.top + 'px';
-          host.style.width = bounds.width + 'px';
-          host.style.height = bounds.height + 'px';
-          last = {
-            left: bounds.left,
-            top: bounds.top,
-            width: bounds.width,
-            height: bounds.height,
-          };
+    const sync = () => {
+      const el = document.getElementById('statements-demo-container');
+      if (el && host) {
+        const r = el.getBoundingClientRect();
+        if (r.left !== last.left || r.top !== last.top || r.width !== last.width || r.height !== last.height) {
+          host.style.left = r.left + 'px';
+          host.style.top = r.top + 'px';
+          host.style.width = r.width + 'px';
+          host.style.height = r.height + 'px';
+          last = { left: r.left, top: r.top, width: r.width, height: r.height };
           sendNav();
         }
       }
-      frame = requestAnimationFrame(syncBounds);
+      raf = requestAnimationFrame(sync);
     };
-    frame = requestAnimationFrame(syncBounds);
+    raf = requestAnimationFrame(sync);
 
-    const handleMessage = (event) => {
+    let ignoreNextMutation = false;
+    const sendTheme = () => {
+      const t = isDark() ? 'dark' : 'light';
       const iframe = document.getElementById('statements-demo-iframe');
-      if (event.source !== iframe?.contentWindow || event.origin !== targetOrigin) return;
-      if (event.data?.type === 'theme-request') sendTheme();
-      if (event.data?.type === 'nav-request') sendNav();
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'theme-sync', theme: t }, '*');
+      }
+    };
+
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'theme-request') {
+        sendTheme();
+        return;
+      }
+      if (e.data && e.data.type === 'nav-request') {
+        sendNav();
+        return;
+      }
+      if (e.data && e.data.type === 'theme-sync') {
+        const wantsDark = e.data.theme === 'dark';
+        if (isDark() !== wantsDark) {
+          ignoreNextMutation = true;
+          document.documentElement.classList.toggle('dark');
+        }
+      }
     };
     window.addEventListener('message', handleMessage);
 
-    const observer = new MutationObserver(() => {
-      sendTheme();
+    const obs = new MutationObserver(() => {
       sendNav();
+      if (ignoreNextMutation) { ignoreNextMutation = false; return; }
+      sendTheme();
     });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
     sendTheme();
     sendNav();
+    requestAnimationFrame(sendTheme);
 
     return () => {
-      cancelAnimationFrame(frame);
+      cancelAnimationFrame(raf);
       window.removeEventListener('message', handleMessage);
-      observer.disconnect();
+      obs.disconnect();
       window.__sdHideTimer = setTimeout(() => {
-        const mountedHost = document.getElementById('statements-demo-host');
-        if (mountedHost) mountedHost.style.display = 'none';
+        const h = document.getElementById('statements-demo-host');
+        if (h) h.style.display = 'none';
       }, 150);
     };
   }, []);

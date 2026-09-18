@@ -40,6 +40,17 @@ The script compares every copied file by bytes. It permits only these product ex
 Port shared fixes with `cp` from `components/grid-cards-demo` to the same path under
 `components/grid-statements-demo`. Do not rewrite or approximate shared chrome.
 
+## Deploy
+
+Deploy to Vercel as the `grid-statements-demo` project. `vercel.json` sets an `ignoreCommand` so a
+commit only triggers a build if it touches this directory. The docs page iframes the production
+URL (`https://grid-statements-demo.vercel.app`). Mintlify preview branches iframe
+`https://grid-statements-demo-git-<branch>-lightspark-team.vercel.app`. If a URL differs, update
+`mintlify/snippets/global-accounts/statements-demo-embed.mdx`.
+
+Vercel limits a host label to 63 characters, so branch names for this project must be 22
+characters or fewer (`grid-statements-demo-git-` and `-lightspark-team` use 41).
+
 ## Embed contract
 
 - `?embed=true` sets `data-embed`.

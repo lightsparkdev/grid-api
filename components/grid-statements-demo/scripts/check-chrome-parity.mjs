@@ -58,7 +58,7 @@ const exceptions = new Map([
           "'Issue a branded Visa debit card and watch the API calls fire as you go.';",
           "'Build a periodic statement and inspect the Grid API data behind it.';",
         )
-        .replace('https://grid-cards-demo.vercel.app', 'https://grid-statements-playground.vercel.app')
+        .replace('https://grid-cards-demo.vercel.app', 'https://grid-statements-demo.vercel.app')
         .replace("    images: [{ url: '/og-cards-playground.webp', width: 2400, height: 1260 }],\n", '')
         .replace("    images: ['/og-cards-playground.webp'],\n", ''),
   ],

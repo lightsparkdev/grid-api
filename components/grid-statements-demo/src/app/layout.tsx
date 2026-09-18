@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : 'https://grid-statements-playground.vercel.app',
+      : 'https://grid-statements-demo.vercel.app',
   ),
   title: TITLE,
   description: DESCRIPTION,
