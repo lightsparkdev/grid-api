@@ -3,13 +3,11 @@ import type { StatementVariant } from './types';
 
 export interface ApiRefreshSelection {
   variant: StatementVariant;
-  periodId: string;
   presetSequence: number;
 }
 
 export type StatementControlEvent =
   | { type: 'account'; value: StatementVariant }
-  | { type: 'period'; value: string }
   | { type: 'preset'; value: PresetId }
   | { type: 'companyName'; value: string }
   | { type: 'logo'; value: string | null }
@@ -22,8 +20,6 @@ export function apiRefreshSelectionAfter(
   switch (event.type) {
     case 'account':
       return { ...current, variant: event.value };
-    case 'period':
-      return { ...current, periodId: event.value };
     case 'preset':
       return { ...current, presetSequence: current.presetSequence + 1 };
     case 'companyName':
@@ -38,5 +34,5 @@ export function apiRefreshSelectionAfter(
 }
 
 export function apiRefreshKey(selection: ApiRefreshSelection): string {
-  return `${selection.variant}:${selection.periodId}:${selection.presetSequence}`;
+  return `${selection.variant}:${selection.presetSequence}`;
 }

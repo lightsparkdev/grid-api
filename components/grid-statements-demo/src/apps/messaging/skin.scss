@@ -1,0 +1,6 @@
+@mixin tokens {
+  &[data-app='messaging'] {
+    --ios-font-family: var(--font-family-sf-pro);
+    --app-tint: #1daa61;
+  }
+}

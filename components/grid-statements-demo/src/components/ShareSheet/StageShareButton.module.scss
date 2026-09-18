@@ -1,0 +1,75 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.root {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  z-index: 4;
+  transform: translateX(-50%);
+  transition:
+    opacity 600ms var(--ease-out-snappy),
+    transform 600ms var(--ease-out-snappy),
+    filter 600ms var(--ease-out-snappy);
+}
+
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(10px);
+  filter: blur(8px);
+}
+
+.button {
+  all: unset;
+  box-sizing: border-box;
+  @include label;
+  corner-shape: var(--corner-shape);
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: 0 var(--spacing-lg) 0 var(--spacing-md);
+  border-radius: var(--corner-radius-md);
+  background: var(--surface-inverse, var(--color-gray-950));
+  color: var(--text-inverse, var(--color-gray-050));
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: transform 200ms ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 4px;
+  }
+}
+
+.glyph {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.glyphLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.label {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .button {
+    transition-duration: 1ms;
+  }
+}

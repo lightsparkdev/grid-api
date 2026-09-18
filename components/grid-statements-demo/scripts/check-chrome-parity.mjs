@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const statementsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const cardsRoot = resolve(statementsRoot, '../grid-cards-demo');
+const walletRoot = resolve(statementsRoot, '../grid-wallet-demo');
 
 const copiedPaths = [
   'next.config.mjs',
@@ -14,9 +15,6 @@ const copiedPaths = [
   'src/app/globals.scss',
   'src/app/layout.tsx',
   'src/app/page.module.scss',
-  'src/apps/shared/AppShell/PhoneStatusBar.module.scss',
-  'src/apps/shared/AppShell/StatusBarIcons.tsx',
-  'src/apps/shared/AppShell/StatusBarTime.tsx',
   'src/apps/shared/typography',
   'src/components/ApiPanel',
   'src/components/ColumnResizeHandle',
@@ -78,6 +76,35 @@ const exceptions = new Map([
         ),
   ],
   [
+    'src/components/ApiPanel/ApiPanel.tsx',
+    (source) =>
+      source.replace(
+        'title="API calls"',
+        'title="Calls the app makes to render this screen."',
+      ),
+  ],
+  [
+    'src/components/ApiPanel/ApiPanelEmpty.tsx',
+    (source) =>
+      source
+        .replace(
+          'const [coverVisible, setCoverVisible] = useState(reduceMotion === true);\n  const [contentVisible, setContentVisible] = useState(reduceMotion === true);',
+          'const [coverVisible, setCoverVisible] = useState(false);\n  const [contentVisible, setContentVisible] = useState(false);',
+        )
+        .replace(
+          'if (reduceMotion) return;',
+          'if (reduceMotion) {\n      setCoverVisible(true);\n      setContentVisible(true);\n      return;\n    }',
+        )
+        .replace(
+          'initial={reduceMotion ? false : hiddenMessage}',
+          'initial={hiddenMessage}',
+        )
+        .replace(
+          '<p className={styles.title}>No API calls yet</p>\n            <p className={styles.description}>\n              Run a flow in the app and each request will appear here.\n            </p>',
+          '<p className={styles.title}>Calls appear when the period closes.</p>',
+        ),
+  ],
+  [
     'src/app/layout.tsx',
     (source) =>
       source
@@ -92,28 +119,18 @@ const exceptions = new Map([
   ],
 ]);
 
-const protectedExceptions = new Map([
-  [
-    'src/apps/shared/AppShell/AppShell.tsx',
-    ['APP_SHELL_PRESETS[device]', 'squirclePath(', 'data-device={device}'],
-  ],
-  [
-    'src/apps/shared/AppShell/usePhoneFitScale.ts',
-    ['preset.outerWidth', 'preset.outerHeight', '[preset]'],
-  ],
-]);
-
-async function filesAt(path) {
-  const absolute = resolve(cardsRoot, path);
+async function filesAt(root, path) {
+  const absolute = resolve(root, path);
   const entries = await readdir(absolute, { withFileTypes: true }).catch(() => null);
   if (!entries) return [path];
   const nested = await Promise.all(
-    entries.map((entry) => filesAt(`${path}/${entry.name}`)),
+    entries.map((entry) => filesAt(root, `${path}/${entry.name}`)),
   );
   return nested.flat();
 }
 
-const files = (await Promise.all(copiedPaths.map(filesAt))).flat().sort();
+const files = (await Promise.all(copiedPaths.map((path) => filesAt(cardsRoot, path)))).flat().sort();
+const walletFiles = await filesAt(walletRoot, 'src/apps/shared/AppShell');
 const failures = [];
 
 for (const path of files) {
@@ -125,10 +142,11 @@ for (const path of files) {
   console.log(`${transform ? 'EXCEPTION' : 'IDENTICAL'}\t${relative(cardsRoot, resolve(cardsRoot, path))}`);
 }
 
-for (const [path, markers] of protectedExceptions) {
-  const statements = await readFile(resolve(statementsRoot, path), 'utf8');
-  if (markers.some((marker) => !statements.includes(marker))) failures.push(path);
-  console.log(`PROTECTED_EXCEPTION\t${path}`);
+for (const path of walletFiles) {
+  const wallet = await readFile(resolve(walletRoot, path));
+  const statements = await readFile(resolve(statementsRoot, path));
+  if (!wallet.equals(statements)) failures.push(path);
+  console.log(`WALLET_IDENTICAL\t${path}`);
 }
 
 if (failures.length > 0) {

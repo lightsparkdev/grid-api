@@ -3,14 +3,12 @@ import { apiRefreshKey, apiRefreshSelectionAfter } from './refresh';
 
 const initial = {
   variant: 'consumer',
-  periodId: '2026-07',
   presetSequence: 0,
 } as const;
 
 describe('statement API refresh triggers', () => {
   it.each([
     { type: 'account', value: 'commercial' },
-    { type: 'period', value: '2026-08' },
     { type: 'preset', value: 'finance' },
   ] as const)('changes the refresh key for $type changes', (event) => {
     expect(apiRefreshKey(apiRefreshSelectionAfter(initial, event))).not.toBe(
@@ -24,7 +22,7 @@ describe('statement API refresh triggers', () => {
     { type: 'color', value: '#000000' },
   ] as const)('keeps the refresh key for $type changes', (event) => {
     expect(apiRefreshKey(apiRefreshSelectionAfter(initial, event))).toBe(
-      'consumer:2026-07:0',
+      'consumer:0',
     );
   });
 });

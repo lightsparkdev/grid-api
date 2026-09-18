@@ -30,8 +30,8 @@ const visibleMessage = { opacity: 1, y: 0, filter: 'blur(0px)' };
 
 export function ApiPanelEmpty() {
   const reduceMotion = useReducedMotion();
-  const [coverVisible, setCoverVisible] = useState(reduceMotion === true);
-  const [contentVisible, setContentVisible] = useState(reduceMotion === true);
+  const [coverVisible, setCoverVisible] = useState(false);
+  const [contentVisible, setContentVisible] = useState(false);
   const [coverTop, setCoverTop] = useState<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLSpanElement>(null);
@@ -54,7 +54,11 @@ export function ApiPanelEmpty() {
   }, []);
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion) {
+      setCoverVisible(true);
+      setContentVisible(true);
+      return;
+    }
 
     const coverTimer = window.setTimeout(
       () => setCoverVisible(true),
@@ -94,7 +98,7 @@ export function ApiPanelEmpty() {
       <div className={styles.messageLayer}>
         <motion.div
           className={styles.message}
-          initial={reduceMotion ? false : hiddenMessage}
+          initial={hiddenMessage}
           animate={contentVisible ? visibleMessage : hiddenMessage}
           transition={revealTransition}
         >
@@ -102,10 +106,7 @@ export function ApiPanelEmpty() {
             <IconPinch size={24} />
           </span>
           <div className={styles.copy}>
-            <p className={styles.title}>No API calls yet</p>
-            <p className={styles.description}>
-              Run a flow in the app and each request will appear here.
-            </p>
+            <p className={styles.title}>Calls appear when the period closes.</p>
           </div>
         </motion.div>
       </div>

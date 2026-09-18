@@ -1,14 +1,14 @@
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_BRAND, PERIODS, buildStatement } from '@/statement/fixtures';
+import { DEFAULT_BRAND, STATEMENT_PERIOD, buildStatement } from '@/statement/fixtures';
 import { StatementDocument } from './StatementDocument';
 
 afterEach(cleanup);
 
 describe('StatementDocument', () => {
   it('renders the consumer overlay and reconciled closing balance', () => {
-    const statement = buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]);
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
     const { container } = render(<StatementDocument statement={statement} width="full" />);
 
     expect(screen.getByText('$3,373.95')).toBeTruthy();
@@ -20,7 +20,7 @@ describe('StatementDocument', () => {
   });
 
   it('removes all consumer overlay content from commercial statements', () => {
-    const statement = buildStatement('commercial', DEFAULT_BRAND, PERIODS[0]);
+    const statement = buildStatement('commercial', DEFAULT_BRAND, STATEMENT_PERIOD);
     const { container } = render(<StatementDocument statement={statement} width="narrow" />);
 
     expect(screen.getByText('$14,459.75')).toBeTruthy();
@@ -32,7 +32,7 @@ describe('StatementDocument', () => {
     const statement = buildStatement(
       'consumer',
       { ...DEFAULT_BRAND, companyName: 'Waterbnb', logo: { kind: 'none' } },
-      PERIODS[0],
+      STATEMENT_PERIOD,
     );
     render(<StatementDocument statement={statement} width="full" />);
 
@@ -51,7 +51,7 @@ describe('StatementDocument', () => {
           secondaryText: '#eeeeee',
         },
       },
-      PERIODS[0],
+      STATEMENT_PERIOD,
     );
     const { container } = render(<StatementDocument statement={statement} width="full" />);
     const document = container.querySelector('article');

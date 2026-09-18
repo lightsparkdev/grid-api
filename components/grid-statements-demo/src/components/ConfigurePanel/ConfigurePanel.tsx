@@ -2,20 +2,23 @@
 
 import {
   ColorSwatches,
-  SampleSwatches,
   ShimmerField,
   SwatchRow,
-  TextSwatches,
   UploadRow,
 } from '@/components/DesignControls/DesignControls';
+import { ChoiceGrid } from '@/components/ChoiceGrid/ChoiceGrid';
+import { IconUserKey } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconUserKey';
+import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
+import { IconCalendar2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCalendar2';
+import { IconArrowRotateCounterClockwise } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateCounterClockwise';
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { pressable } from '@/lib/sounds';
-import { BRAND_COLOR_SWATCHES, brandContrast } from '@/statement/brand';
-import { PERIODS } from '@/statement/fixtures';
+import { brandContrast } from '@/statement/brand';
 import {
   PRESETS,
+  colorSwatchesForPreset,
   presetIconSrc,
   type PresetId,
   type StatementPreset,
@@ -30,14 +33,15 @@ import styles from './ConfigurePanel.module.scss';
 
 interface ConfigurePanelProps {
   brand: StatementBrand;
-  periodId: string;
-  presetId: PresetId | null;
+  lifecycle: 'in-progress' | 'statement';
+  presetId: PresetId;
   uploadError: string;
   variant: StatementVariant;
   onBrandChange: (companyName: string) => void;
   onBrandColorChange: (key: keyof StatementBrandColors, value: HexColor) => void;
   onClearLogo: () => void;
-  onPeriodChange: (periodId: string) => void;
+  onPeriodClose: () => void;
+  onReset: () => void;
   onPresetSelect: (preset: StatementPreset) => void;
   onUpload: (file: File | undefined) => void;
   onVariantChange: (variant: StatementVariant) => void;
@@ -45,19 +49,21 @@ interface ConfigurePanelProps {
 
 export function ConfigurePanel({
   brand,
-  periodId,
+  lifecycle,
   presetId,
   uploadError,
   variant,
   onBrandChange,
   onBrandColorChange,
   onClearLogo,
-  onPeriodChange,
+  onPeriodClose,
+  onReset,
   onPresetSelect,
   onUpload,
   onVariantChange,
 }: ConfigurePanelProps) {
   const contrast = brandContrast(brand.colors);
+  const preset = PRESETS.find((candidate) => candidate.id === presetId) ?? PRESETS[0];
   const colorRows: ReadonlyArray<{
     key: keyof StatementBrandColors;
     label: string;
@@ -147,7 +153,7 @@ export function ConfigurePanel({
                   <ColorSwatches
                     label={color.label}
                     value={brand.colors[color.key]}
-                    colors={BRAND_COLOR_SWATCHES}
+                    colors={colorSwatchesForPreset(preset, color.key)}
                     onChange={(value) => onBrandColorChange(color.key, value)}
                   />
                   <ContrastWarning
@@ -161,37 +167,37 @@ export function ConfigurePanel({
           </section>
 
           <section className={styles.section}>
-            <SectionDivider label="Set statement details" />
-            <div className={styles.group}>
-              <div className={styles.row}>
-                <span className={styles.rowLabel}>Account</span>
-                <SampleSwatches
-                  label="Account type"
-                  value={variant}
-                  options={[
-                    { id: 'consumer', label: 'Consumer' },
-                    { id: 'commercial', label: 'Commercial' },
-                  ]}
-                  onChange={onVariantChange}
-                />
-              </div>
-              <div className={styles.row}>
-                <span className={styles.rowLabel}>Period</span>
-                <TextSwatches
-                  label="Period"
-                  value={periodId}
-                  options={PERIODS.map((period) => ({
-                    id: period.id,
-                    label: new Intl.DateTimeFormat('en-US', {
-                      month: 'short',
-                      timeZone: 'UTC',
-                    }).format(new Date(`${period.id}-01T00:00:00Z`)),
-                    description: period.range,
-                  }))}
-                  onChange={onPeriodChange}
-                />
-              </div>
-            </div>
+            <SectionDivider
+              label="Explore flows"
+              action={
+                lifecycle === 'statement' ? (
+                  <button
+                    type="button"
+                    className={styles.resetBtn}
+                    {...pressable({ onClick: onReset })}
+                  >
+                    <IconArrowRotateCounterClockwise size={12} aria-hidden />
+                    Reset
+                  </button>
+                ) : null
+              }
+            />
+            <ChoiceGrid
+              label="Statement controls"
+              value={lifecycle === 'statement' ? 'period-closes' : variant}
+              options={[
+                { id: 'consumer', label: 'Consumer', Icon: IconUserKey },
+                { id: 'commercial', label: 'Commercial', Icon: IconBank },
+                { id: 'period-closes', label: 'Period closes', Icon: IconCalendar2 },
+              ]}
+              onChange={(value) => {
+                if (value === 'period-closes') {
+                  onPeriodClose();
+                  return;
+                }
+                onVariantChange(value);
+              }}
+            />
           </section>
         </div>
       </div>

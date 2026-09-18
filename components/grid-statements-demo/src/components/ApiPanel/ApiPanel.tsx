@@ -128,7 +128,7 @@ export function ApiPanel({ entries }: ApiPanelProps) {
       <PanelHeader
         className={styles.headerStacked}
         icon={<IconCode size={20} />}
-        title="API calls"
+        title="Calls the app makes to render this screen."
         badge={
           <AnimatePresence>
             {newCount > 0 ? (

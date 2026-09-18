@@ -1,12 +1,15 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { AppShell, type AppShellDevice } from '@/apps/shared/AppShell';
-import { SampleSwatches } from '@/components/DesignControls/DesignControls';
-import { MailScreen } from '@/components/MailScreen/MailScreen';
+import { useEffect, useRef, useState } from 'react';
+import { AppShell } from '@/apps/shared/AppShell';
+import { ChoiceGrid } from '@/components/ChoiceGrid/ChoiceGrid';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
+import { ShareSheet } from '@/components/ShareSheet/ShareSheet';
+import { StageShareButton } from '@/components/ShareSheet/StageShareButton';
 import { StatementDocument } from '@/components/StatementDocument';
-import { pressable } from '@/lib/sounds';
+import { StatementScreen } from '@/components/StatementScreen/StatementScreen';
+import { IconPhone } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhone';
+import { IconLayoutWindow } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLayoutWindow';
 import { brandContrast } from '@/statement/brand';
 import {
   buildStatementHtml,
@@ -18,18 +21,21 @@ import styles from './StatementPanel.module.scss';
 
 interface StatementPanelProps {
   statement: StatementModel;
-  device: AppShellDevice;
-  onDeviceChange: (device: AppShellDevice) => void;
+  lifecycle: 'in-progress' | 'statement';
+  previewMode: 'mobile' | 'desktop';
+  onPreviewModeChange: (mode: 'mobile' | 'desktop') => void;
   onPrint: () => void;
 }
 
 export function StatementPanel({
   statement,
-  device,
-  onDeviceChange,
+  lifecycle,
+  previewMode,
+  onPreviewModeChange,
   onPrint,
 }: StatementPanelProps) {
-  const [exportOpen, setExportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [exportError, setExportError] = useState('');
   const exportDocumentRef = useRef<HTMLElement>(null);
   const contrast = brandContrast(statement.brand.colors);
@@ -41,11 +47,13 @@ export function StatementPanel({
       const filename = statementExportFilename(statement, 'html');
       const html = await buildStatementHtml(exportDocumentRef.current, filename);
       downloadHtml(html, filename);
-      setExportOpen(false);
+      setShareOpen(false);
     } catch {
       setExportError('HTML export failed. Try again.');
     }
   };
+
+  useEffect(() => setMounted(true), []);
 
   return (
     <section className={styles.panel}>
@@ -64,78 +72,57 @@ export function StatementPanel({
         title="Statement preview"
         actions={
           <div className={styles.actions}>
-            <SampleSwatches
-              label="Device"
-              value={device}
+            <ChoiceGrid
+              label="Preview"
+              value={previewMode}
               options={[
-                { id: 'iphone', label: 'iPhone' },
-                { id: 'duo', label: 'iPhone Duo' },
+                { id: 'mobile', label: 'Mobile', Icon: IconPhone },
+                { id: 'desktop', label: 'Desktop', Icon: IconLayoutWindow },
               ]}
-              onChange={onDeviceChange}
+              onChange={onPreviewModeChange}
             />
-            <button
-              className={styles.download}
-              type="button"
-              disabled={!exportAllowed}
-              title={
-                exportAllowed
-                  ? undefined
-                  : 'Fix the statement color contrast before you export.'
-              }
-              aria-expanded={exportOpen}
-              aria-controls="statement-export-preview"
-              {...pressable({
-                onClick: () => {
-                  setExportError('');
-                  setExportOpen((current) => !current);
-                },
-              })}
-            >
-              Export
-            </button>
           </div>
         }
       />
-      {exportOpen ? (
-        <section
-          id="statement-export-preview"
-          className={styles.exportPreview}
-          aria-label="Export statement"
-        >
-          <span className={styles.exportIcon} aria-hidden>
-            ↓
-          </span>
-          <strong>Export statement</strong>
-          <span className={styles.exportDescription}>
-            Save the current statement.
-          </span>
-          <div className={styles.exportActions}>
-            <button
-              type="button"
-              {...pressable({
-                onClick: () => {
-                  setExportOpen(false);
-                  onPrint();
-                },
-              })}
-            >
-              PDF
-            </button>
-            <button type="button" {...pressable({ onClick: exportHtml })}>
-              HTML
-            </button>
-          </div>
-          {exportError ? (
-            <span className={styles.exportError} role="alert">
-              {exportError}
-            </span>
-          ) : null}
-        </section>
-      ) : null}
       <div className={styles.stage}>
-        <AppShell device={device}>
-          <MailScreen statement={statement} />
-        </AppShell>
+        {previewMode === 'mobile' && mounted ? (
+          <AppShell externalGlass>
+            <StatementScreen statement={statement} lifecycle={lifecycle} />
+          </AppShell>
+        ) : previewMode === 'desktop' && lifecycle === 'statement' ? (
+          <div className={styles.desktopDocument}>
+            <StatementDocument statement={statement} width="full" />
+          </div>
+        ) : previewMode === 'desktop' ? (
+          <div className={styles.emptyDocument}>
+            <span>Statement arrives Oct 1</span>
+          </div>
+        ) : null}
+        <ShareSheet
+          open={shareOpen}
+          statement={statement}
+          onCopyLink={() => {
+            void navigator.clipboard?.writeText(window.location.href);
+          }}
+          onSavePdf={() => {
+            setShareOpen(false);
+            onPrint();
+          }}
+          onSaveHtml={exportHtml}
+        />
+        <StageShareButton
+          visible={lifecycle === 'statement' && exportAllowed}
+          open={shareOpen}
+          onClick={() => {
+            setExportError('');
+            setShareOpen((current) => !current);
+          }}
+        />
+        {exportError ? (
+          <span className={styles.exportError} role="alert">
+            {exportError}
+          </span>
+        ) : null}
       </div>
       <div className={styles.exportSource} aria-hidden>
         <StatementDocument

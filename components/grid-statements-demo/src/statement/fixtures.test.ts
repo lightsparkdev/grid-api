@@ -4,7 +4,7 @@ import {
   calculateTotals,
   DEFAULT_BRAND,
   LEGAL,
-  PERIODS,
+  STATEMENT_PERIOD,
   statementRows,
   statementFilename,
 } from './fixtures';
@@ -12,7 +12,7 @@ import { buildApiEntries, reconcileApiEntries } from './api';
 
 describe('statement fixtures', () => {
   it('reconciles the consumer statement and fee total', () => {
-    const statement = buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]);
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
 
     expect(calculateTotals(statement)).toEqual({
       closingBalanceCents: 337395,
@@ -22,7 +22,7 @@ describe('statement fixtures', () => {
   });
 
   it('reconciles the commercial statement without a Reg E overlay', () => {
-    const statement = buildStatement('commercial', DEFAULT_BRAND, PERIODS[0]);
+    const statement = buildStatement('commercial', DEFAULT_BRAND, STATEMENT_PERIOD);
 
     expect(calculateTotals(statement)).toEqual({
       closingBalanceCents: 1445975,
@@ -49,7 +49,7 @@ describe('statement fixtures', () => {
   it.each(['consumer', 'commercial'] as const)(
     'reconciles the %s statement to the real API response chain',
     (variant) => {
-      const statement = buildStatement(variant, DEFAULT_BRAND, PERIODS[0]);
+      const statement = buildStatement(variant, DEFAULT_BRAND, STATEMENT_PERIOD);
       const entries = buildApiEntries(statement, 1_700_000_000_000);
 
       expect(entries.map((entry) => entry.operationId)).toEqual([
@@ -65,7 +65,7 @@ describe('statement fixtures', () => {
   );
 
   it('projects one wire transaction into principal and fee rows', () => {
-    const statement = buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]);
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
 
     expect(statementRows(statement).slice(3, 5)).toEqual([
       {
@@ -94,9 +94,9 @@ describe('statement fixtures', () => {
     const statement = buildStatement(
       'consumer',
       { ...DEFAULT_BRAND, companyName: 'Waterbnb', logo: { kind: 'none' } },
-      PERIODS[1],
+      STATEMENT_PERIOD,
     );
 
-    expect(statementFilename(statement)).toBe('waterbnb-statement-2026-08.pdf');
+    expect(statementFilename(statement)).toBe('waterbnb-statement-2026-09.pdf');
   });
 });

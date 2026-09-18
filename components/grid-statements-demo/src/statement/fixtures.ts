@@ -6,7 +6,6 @@ import type {
   StatementTotals,
   StatementVariant,
 } from './types';
-import { DEFAULT_BRAND_COLORS } from './brand';
 import { statementExportFilename } from './export';
 import { PRESETS, presetIconSrc } from './presets';
 
@@ -24,26 +23,12 @@ export const LEGAL = {
   ] as const,
 } as const;
 
-export const PERIODS: readonly StatementPeriod[] = [
-  {
-    id: '2026-07',
-    range: '07/01/2026 – 07/31/2026',
-    issued: '08/01/2026',
-    transactionMonth: '07',
-  },
-  {
-    id: '2026-08',
-    range: '08/01/2026 – 08/31/2026',
-    issued: '09/01/2026',
-    transactionMonth: '08',
-  },
-  {
-    id: '2026-09',
-    range: '09/01/2026 – 09/30/2026',
-    issued: '10/01/2026',
-    transactionMonth: '09',
-  },
-] as const;
+export const STATEMENT_PERIOD: StatementPeriod = {
+  id: '2026-09',
+  range: '09/01/2026 – 09/30/2026',
+  issued: '10/01/2026',
+  transactionMonth: '09',
+};
 
 const consumerActivities = [
   {
@@ -165,7 +150,7 @@ export const DEFAULT_BRAND: StatementBrand = {
     src: presetIconSrc(PRESETS[0]),
     alt: `${PRESETS[0].companyName} logo`,
   },
-  colors: DEFAULT_BRAND_COLORS,
+  colors: PRESETS[0].colors,
 };
 
 export function buildStatement(

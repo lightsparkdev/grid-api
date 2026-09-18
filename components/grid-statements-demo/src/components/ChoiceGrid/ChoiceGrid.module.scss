@@ -1,0 +1,64 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.group {
+  corner-shape: var(--corner-shape);
+  --tile-bg: var(--panel-tile-bg);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  overflow: clip;
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  background: var(--tile-bg);
+}
+
+.option {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-right: var(--stroke-xs) solid var(--border-primary);
+  background: var(--tile-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 100ms ease;
+
+  &:last-child {
+    border-right: 0;
+  }
+
+  &:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    border-top: var(--stroke-xs) solid var(--border-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: -3px;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      background: color-mix(in srgb, var(--tile-bg) 98%, black);
+    }
+  }
+}
+
+.optionSelected {
+  background: color-mix(in srgb, var(--tile-bg) 94%, var(--text-primary));
+}
+
+.optionIcon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--icon-primary);
+}
+
+.optionLabel {
+  @include label;
+  min-width: 0;
+  font-feature-settings: 'salt' 1;
+}

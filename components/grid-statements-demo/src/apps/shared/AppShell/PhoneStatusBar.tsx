@@ -4,10 +4,11 @@ import { forwardRef } from 'react';
 import clsx from 'clsx';
 import { BatteryIcon, SignalIcon, WifiIcon } from './StatusBarIcons';
 import { StatusBarTime } from './StatusBarTime';
+import type { StatusBarTone } from './useAdaptiveStatusBarTone';
 import styles from './PhoneStatusBar.module.scss';
 
 interface PhoneStatusBarProps {
-  tone?: 'default' | 'light';
+  tone?: StatusBarTone;
 }
 
 /** iOS status bar — Figma phone-gga (2143:19945). */

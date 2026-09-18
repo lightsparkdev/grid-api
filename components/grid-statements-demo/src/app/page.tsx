@@ -7,15 +7,18 @@ import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stro
 import { ConfigurePanel } from '@/components/ConfigurePanel/ConfigurePanel';
 import { StatementPanel } from '@/components/StatementPanel/StatementPanel';
 import { ApiPanel } from '@/components/ApiPanel/ApiPanel';
-import type { AppShellDevice } from '@/apps/shared/AppShell';
 import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResizeHandle';
 import { ThemeSync } from '@/components/ThemeSync';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { LAYOUT_WIDE_PX } from '@/lib/layout';
 import { buildApiEntries, type StatementApiEntry } from '@/statement/api';
 import {
+  nextStatementLifecycle,
+  type StatementLifecycle,
+} from '@/statement/lifecycle';
+import {
   DEFAULT_BRAND,
-  PERIODS,
+  STATEMENT_PERIOD,
   buildStatement,
   statementFilename,
 } from '@/statement/fixtures';
@@ -48,25 +51,35 @@ function withViewTransition(update: () => void) {
 export default function Page() {
   const { layoutRef, apiColRef, apiWidth, resizing, onResizeStart } = useColumnResize();
   const [variant, setVariant] = useState<StatementVariant>('consumer');
-  const [periodId, setPeriodId] = useState(PERIODS[0].id);
   const [brand, setBrand] = useState<StatementBrand>(DEFAULT_BRAND);
-  const [presetId, setPresetId] = useState<PresetId | null>(PRESETS[0].id);
-  const [presetSequence, setPresetSequence] = useState(0);
-  const [device, setDevice] = useState<AppShellDevice>('iphone');
+  const [presetId, setPresetId] = useState<PresetId>(PRESETS[0].id);
+  const [refreshSequence, setRefreshSequence] = useState(0);
+  const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
+  const [lifecycle, setLifecycle] = useState<StatementLifecycle>('in-progress');
   const [entries, setEntries] = useState<StatementApiEntry[]>([]);
   const [uploadError, setUploadError] = useState('');
   const [mobileView, setMobileView] = useState<MobileView>('configure');
   const uploadedUrl = useRef<string | null>(null);
   const stackColRef = useRef<HTMLDivElement>(null);
-  const period = PERIODS.find((candidate) => candidate.id === periodId) ?? PERIODS[0];
-  const statement = useMemo(() => buildStatement(variant, brand, period), [brand, period, variant]);
-  const apiStatement = useMemo(
-    () => buildStatement(variant, DEFAULT_BRAND, period),
-    [period, variant],
+  const apiTimers = useRef<number[]>([]);
+  const statement = useMemo(
+    () => buildStatement(variant, brand, STATEMENT_PERIOD),
+    [brand, variant],
   );
-  const refreshKey = `${variant}:${period.id}:${presetSequence}`;
-  const previousRefreshKey = useRef(refreshKey);
-  const entriesHydrated = useRef(false);
+  const apiStatement = useMemo(
+    () => buildStatement(variant, DEFAULT_BRAND, STATEMENT_PERIOD),
+    [variant],
+  );
+  const stageApiEntries = useCallback((nextStatement: typeof apiStatement) => {
+    apiTimers.current.forEach((timer) => window.clearTimeout(timer));
+    setEntries([]);
+    apiTimers.current = buildApiEntries(nextStatement).map((entry, index) =>
+      window.setTimeout(
+        () => setEntries((current) => [...current, entry]),
+        (index + 1) * 180,
+      ),
+    );
+  }, []);
 
   useLayoutEffect(() => {
     const media = window.matchMedia(`(max-width: ${LAYOUT_WIDE_PX - 1}px)`);
@@ -78,17 +91,15 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    if (!entriesHydrated.current) {
-      entriesHydrated.current = true;
-      setEntries(buildApiEntries(apiStatement));
-      return;
-    }
-    if (refreshKey === previousRefreshKey.current) return;
-    previousRefreshKey.current = refreshKey;
-    setEntries([]);
-    const timer = window.setTimeout(() => setEntries(buildApiEntries(apiStatement)), 260);
-    return () => window.clearTimeout(timer);
-  }, [apiStatement, refreshKey]);
+    if (lifecycle !== 'statement' || refreshSequence === 0) return;
+    stageApiEntries(apiStatement);
+  }, [apiStatement, lifecycle, refreshSequence, stageApiEntries]);
+
+  const closePeriod = useCallback(() => {
+    if (lifecycle === 'statement') return;
+    setLifecycle((current) => nextStatementLifecycle(current, 'period-closes'));
+    setRefreshSequence((current) => current + 1);
+  }, [lifecycle]);
 
   useEffect(
     () => () => {
@@ -107,7 +118,6 @@ export default function Page() {
     (preset: StatementPreset) => {
       clearUploadedUrl();
       setPresetId(preset.id);
-      setPresetSequence((current) => current + 1);
       setBrand((current) => ({
         ...current,
         companyName: preset.companyName,
@@ -116,7 +126,9 @@ export default function Page() {
           src: presetIconSrc(preset),
           alt: `${preset.companyName} logo`,
         },
+        colors: preset.colors,
       }));
+      setRefreshSequence((current) => current + 1);
       setUploadError('');
     },
     [clearUploadedUrl],
@@ -136,7 +148,6 @@ export default function Page() {
       clearUploadedUrl();
       const url = URL.createObjectURL(file);
       uploadedUrl.current = url;
-      setPresetId(null);
       setBrand((current) => ({
         ...current,
         logo: { kind: 'image', src: url, alt: `${current.companyName || 'Company'} logo` },
@@ -204,16 +215,14 @@ export default function Page() {
       <div className={styles.configCol}>
         <ConfigurePanel
           brand={brand}
-          periodId={periodId}
+          lifecycle={lifecycle}
           presetId={presetId}
           uploadError={uploadError}
           variant={variant}
           onBrandChange={(companyName) => {
-            setPresetId(null);
             setBrand((current) => ({ ...current, companyName }));
           }}
           onBrandColorChange={(key, value) => {
-            setPresetId(null);
             setBrand((current) => ({
               ...current,
               colors: { ...current.colors, [key]: value },
@@ -221,21 +230,29 @@ export default function Page() {
           }}
           onClearLogo={() => {
             clearUploadedUrl();
-            setPresetId(null);
             setBrand((current) => ({ ...current, logo: { kind: 'none' } }));
           }}
-          onPeriodChange={setPeriodId}
+          onPeriodClose={closePeriod}
+          onReset={() => {
+            setLifecycle((current) => nextStatementLifecycle(current, 'reset'));
+            apiTimers.current.forEach((timer) => window.clearTimeout(timer));
+            setEntries([]);
+          }}
           onPresetSelect={selectPreset}
           onUpload={uploadLogo}
-          onVariantChange={setVariant}
+          onVariantChange={(nextVariant) => {
+            setVariant(nextVariant);
+            setRefreshSequence((current) => current + 1);
+          }}
         />
       </div>
       <div ref={stackColRef} className={styles.stackCol}>
         <div className={styles.appCol}>
           <StatementPanel
             statement={statement}
-            device={device}
-            onDeviceChange={setDevice}
+            lifecycle={lifecycle}
+            previewMode={previewMode}
+            onPreviewModeChange={setPreviewMode}
             onPrint={printStatement}
           />
         </div>

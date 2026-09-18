@@ -1,0 +1,78 @@
+.screen {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--statement-secondary-background);
+}
+
+.hero {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 44px 1fr;
+  padding: 74px 24px 22px;
+  background: var(--statement-primary-background);
+  color: var(--statement-primary-text);
+
+  img {
+    grid-row: 1 / 4;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  span,
+  small {
+    color: var(--statement-secondary-text);
+  }
+
+  strong {
+    margin-top: 18px;
+    font-size: 27px;
+    line-height: 1.1;
+  }
+
+  small {
+    margin-top: 4px;
+    font-size: 14px;
+  }
+}
+
+.scroller {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  > article {
+    width: 100%;
+    min-width: 0;
+    box-shadow: none;
+  }
+}
+
+.activity {
+  padding: 32px 24px;
+  color: var(--statement-primary-text);
+
+  strong {
+    font-size: 22px;
+  }
+
+  p {
+    margin: 18px 0 0;
+    padding: 18px;
+    border-radius: 18px;
+    background: var(--statement-primary-background);
+    color: var(--statement-secondary-text);
+    font-size: 15px;
+  }
+}

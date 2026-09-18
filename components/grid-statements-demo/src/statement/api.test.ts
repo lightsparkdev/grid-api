@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildApiEntries, reconcileApiEntries } from './api';
 import {
   DEFAULT_BRAND,
-  PERIODS,
+  STATEMENT_PERIOD,
   buildStatement,
   calculateTotals,
   statementRows,
@@ -10,7 +10,7 @@ import {
 
 describe('statement API projection', () => {
   it('reconciles every consumer statement row to the API response', () => {
-    const statement = buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]);
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
     const entries = buildApiEntries(statement, 1_700_000_000_000);
     const response = entries.find((entry) => entry.operationId === 'listTransactions')?.resBody as {
       data: Array<Record<string, any>>;
@@ -35,7 +35,7 @@ describe('statement API projection', () => {
   it.each(['consumer', 'commercial'] as const)(
     'returns the required schema fields for the %s chain',
     (variant) => {
-      const statement = buildStatement(variant, DEFAULT_BRAND, PERIODS[1]);
+      const statement = buildStatement(variant, DEFAULT_BRAND, STATEMENT_PERIOD);
       const entries = buildApiEntries(statement, 1_700_000_000_000);
       const customer = entries[0].resBody;
       const accountList = entries[1].resBody as { data: Array<Record<string, any>> };
@@ -94,28 +94,19 @@ describe('statement API projection', () => {
     },
   );
 
-  it('rebuilds transaction identity and dates for each period', () => {
-    const july = buildApiEntries(
-      buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]),
+  it('uses the fixed closed-cycle dates', () => {
+    const entries = buildApiEntries(
+      buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD),
       1_700_000_000_000,
     );
-    const august = buildApiEntries(
-      buildStatement('consumer', DEFAULT_BRAND, PERIODS[1]),
-      1_700_000_000_000,
-    );
-    const transactions = (entries: ReturnType<typeof buildApiEntries>) =>
-      (entries.find((entry) => entry.operationId === 'listTransactions')?.resBody as {
-        data: Array<{ id: string; createdAt: string }>;
-      }).data;
+    const transactions = (
+      entries.find((entry) => entry.operationId === 'listTransactions')?.resBody as {
+        data: Array<{ createdAt: string }>;
+      }
+    ).data;
 
-    expect(transactions(july).map(({ id }) => id)).not.toEqual(
-      transactions(august).map(({ id }) => id),
-    );
     expect(
-      transactions(july).every(({ createdAt }) => createdAt.startsWith('2026-07-')),
-    ).toBe(true);
-    expect(
-      transactions(august).every(({ createdAt }) => createdAt.startsWith('2026-08-')),
+      transactions.every(({ createdAt }) => createdAt.startsWith('2026-09-')),
     ).toBe(true);
   });
 
@@ -133,12 +124,12 @@ describe('statement API projection', () => {
           secondaryText: '#eeeeee',
         },
       },
-      PERIODS[0],
+      STATEMENT_PERIOD,
     );
 
     expect(buildApiEntries(branded, 1_700_000_000_000)).toEqual(
       buildApiEntries(
-        buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]),
+        buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD),
         1_700_000_000_000,
       ),
     );

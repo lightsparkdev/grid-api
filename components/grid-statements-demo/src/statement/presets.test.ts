@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PRESETS, presetIconSrc } from './presets';
+import { PRESETS, colorSwatchesForPreset, presetIconSrc } from './presets';
 
 describe('statement presets', () => {
   it('uses the exact Cards preset IDs', () => {
@@ -31,5 +31,20 @@ describe('statement presets', () => {
       ['Super', 'app-icon-ondemand.png'],
       ['ChatsApp', 'app-icon-messaging.png'],
     ]);
+  });
+
+  it('returns exactly two distinct swatches for every preset token', () => {
+    for (const preset of PRESETS) {
+      for (const key of [
+        'primaryBackground',
+        'primaryText',
+        'secondaryBackground',
+        'secondaryText',
+      ] as const) {
+        const swatches = colorSwatchesForPreset(preset, key);
+        expect(swatches).toHaveLength(2);
+        expect(new Set(swatches).size).toBe(2);
+      }
+    }
   });
 });

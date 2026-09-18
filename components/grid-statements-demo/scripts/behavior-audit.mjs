@@ -5,193 +5,146 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
 const baseUrl = process.env.STATEMENTS_URL ?? 'http://127.0.0.1:4003';
-let browserKind = 'Google Chrome';
-const browser = await chromium.launch({ channel: 'chrome' }).catch(() => {
-  browserKind = 'Playwright Chromium';
-  return chromium.launch();
-});
-const browserVersion = browser.version();
+const browser = await chromium.launch({ channel: 'chrome' }).catch(() => chromium.launch());
+const page = await browser.newPage({ viewport: { width: 1800, height: 1100 } });
 
-const wide = await browser.newPage({ viewport: { width: 1800, height: 1100 } });
-await wide.addInitScript(() => {
+await page.addInitScript(() => {
   window.print = () => {
     window.__printedTitle = document.title;
   };
 });
-await wide.goto(`${baseUrl}/?theme=light`, { waitUntil: 'networkidle' });
-await wide.getByText('listTransactions').waitFor();
+await page.goto(`${baseUrl}/?theme=light`, { waitUntil: 'networkidle' });
 
-const refiresAfter = async (action) => {
-  await action();
-  await wide.waitForFunction(
-    () => !document.body.textContent?.includes('listTransactions'),
-  );
-  await wide.getByText('listTransactions').waitFor();
-};
+await page.getByText('Statement arrives Oct 1').waitFor();
+await page.getByText('Calls appear when the period closes.').waitFor();
+assert.equal(await page.getByText('listTransactions').count(), 0);
+assert.equal(await page.getByRole('button', { name: 'Share' }).count(), 0);
 
-await refiresAfter(async () => {
-  const consumer = wide.getByRole('radio', { name: 'Consumer' });
-  await consumer.focus();
-  await consumer.press('ArrowRight');
+const company = page.getByLabel('Company name');
+await company.fill('Aurora live');
+await page.getByText('Aurora live').waitFor();
+assert.equal(await page.getByText('listTransactions').count(), 0);
+
+for (const label of [
+  'Primary background',
+  'Primary text',
+  'Secondary background',
+  'Secondary text',
+]) {
+  assert.equal(await page.getByRole('radiogroup', { name: label }).getByRole('radio').count(), 2);
+}
+
+await page.getByRole('radio', { name: 'Creator platform (Glitch)' }).click();
+const statementSource = page.locator('[class*="exportSource"] article');
+await page.waitForFunction(() => {
+  const article = document.querySelector('[class*="exportSource"] article');
+  return article?.style.getPropertyValue('--statement-secondary-background') === '#f5f0ff';
 });
 assert.equal(
-  await wide.getByRole('radio', { name: 'Commercial' }).getAttribute('aria-checked'),
-  'true',
+  await statementSource.evaluate((element) =>
+    element.style.getPropertyValue('--statement-secondary-background'),
+  ),
+  '#f5f0ff',
 );
-await refiresAfter(async () => {
-  const commercial = wide.getByRole('radio', { name: 'Commercial' });
-  await commercial.focus();
-  await commercial.press('ArrowLeft');
+assert.equal(await page.getByText('listTransactions').count(), 0);
+
+const close = page.getByRole('radio', { name: 'Period closes' });
+await page.evaluate(() => {
+  window.__operationOrder = [];
+  const api = document.querySelector('[class*="apiCol"]');
+  const seen = new Set();
+  const observer = new MutationObserver(() => {
+    for (const operation of [
+      'getCustomerById',
+      'listCustomerInternalAccounts',
+      'listTransactions',
+    ]) {
+      if (!seen.has(operation) && api?.textContent?.includes(operation)) {
+        seen.add(operation);
+        window.__operationOrder.push(operation);
+      }
+    }
+  });
+  observer.observe(api, { childList: true, subtree: true });
+  window.__operationObserver = observer;
 });
+await close.click();
+await page.getByText('listTransactions').waitFor();
+assert.deepEqual(await page.evaluate(() => window.__operationOrder), [
+  'getCustomerById',
+  'listCustomerInternalAccounts',
+  'listTransactions',
+]);
+await page.evaluate(() => window.__operationObserver?.disconnect());
+await page.getByRole('button', { name: 'Share' }).waitFor();
 
-const originalApiWidth = await wide.locator('[class*="apiCol"]').evaluate(
-  (element) => element.getBoundingClientRect().width,
-);
-const handle = wide.getByRole('separator', { name: 'Resize columns' });
-const handleBox = await handle.boundingBox();
-assert(handleBox, 'The wide layout must show the column resize handle.');
-await wide.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 100);
-await wide.mouse.down();
-await wide.mouse.move(handleBox.x - 100, handleBox.y + 100, { steps: 8 });
-await wide.mouse.up();
-const resizedApiWidth = await wide.locator('[class*="apiCol"]').evaluate(
-  (element) => element.getBoundingClientRect().width,
-);
-assert(
-  resizedApiWidth > originalApiWidth + 70,
-  `Dragging left must widen the API column. Measured ${originalApiWidth}px → ${resizedApiWidth}px.`,
-);
-
-await refiresAfter(() =>
-  wide.getByRole('radio', { name: 'Financial app (Aurora)' }).click(),
-);
-assert.equal(await wide.getByLabel('Company name').inputValue(), 'Aurora');
-await wide.getByText('just now').first().waitFor();
-
-await wide.evaluate(() => {
+await page.evaluate(() => {
   window.__apiRemovalCount = 0;
   const api = document.querySelector('[class*="apiCol"]');
-  if (!api) return;
   const observer = new MutationObserver((records) => {
     for (const record of records) {
       for (const node of record.removedNodes) {
-        if (node.textContent?.includes('listTransactions')) {
-          window.__apiRemovalCount += 1;
-        }
+        if (node.textContent?.includes('listTransactions')) window.__apiRemovalCount += 1;
       }
     }
   });
   observer.observe(api, { childList: true, subtree: true });
   window.__apiRemovalObserver = observer;
 });
-await wide.getByLabel('Company name').fill('Aurora edited');
-await wide
-  .locator('input[type="color"][aria-label="Primary text"]')
-  .fill('#ffffff');
-await wide.waitForTimeout(400);
-assert.equal(await wide.evaluate(() => window.__apiRemovalCount), 0);
-assert.equal(await wide.getByText('listTransactions').count(), 1);
+await company.fill('Glitch edited');
+await page.locator('input[type="color"][aria-label="Primary text"]').fill('#202020');
+await page.waitForTimeout(250);
+assert.equal(await page.evaluate(() => window.__apiRemovalCount), 0);
+
+await page.getByRole('radio', { name: 'Commercial' }).click();
+await page.waitForFunction(() => !document.body.textContent?.includes('listTransactions'));
+await page.getByText('listTransactions').waitFor();
+
+await page.getByRole('button', { name: 'Share' }).click();
+await page.locator('[data-share-ripple]').waitFor();
+await page.getByRole('button', { name: 'Save PDF' }).click();
 assert.equal(
-  await wide.getByRole('img', { name: 'primary color contrast warning' }).count(),
-  2,
+  await page.evaluate(() => window.__printedTitle),
+  'glitch-edited-statement-2026-09',
 );
-assert.equal(await wide.getByRole('button', { name: 'Export' }).isDisabled(), true);
-await wide
-  .locator('input[type="color"][aria-label="Primary text"]')
-  .fill('#1a1a1a');
-await wide.waitForTimeout(300);
-assert.equal(await wide.evaluate(() => window.__apiRemovalCount), 0);
-assert.equal(await wide.getByRole('button', { name: 'Export' }).isEnabled(), true);
 
-await refiresAfter(() => wide.getByRole('radio', { name: 'Commercial' }).click());
-await wide
-  .getByText('Grid data. Platform stores period balances and builds statement rows.')
-  .waitFor();
-
-await refiresAfter(() =>
-  wide.getByRole('radio', { name: '08/01/2026 – 08/31/2026' }).click(),
-);
-const transactionEndpoint = wide.getByRole('group', {
-  name: /Copy endpoint \/transactions\?/,
-});
-assert.match(await transactionEndpoint.getAttribute('aria-label'), /2026-08-01T00%3A00%3A00Z/);
-
-await wide.getByRole('button', { name: 'Export' }).click();
-await wide.getByRole('button', { name: 'PDF', exact: true }).click();
-const printedTitle = await wide.evaluate(() => window.__printedTitle);
-assert.equal(printedTitle, 'aurora-edited-statement-2026-08');
-assert.equal(`${printedTitle}.pdf`, 'aurora-edited-statement-2026-08.pdf');
-
-await wide.getByRole('button', { name: 'Export' }).click();
-const downloadPromise = wide.waitForEvent('download');
-await wide.getByRole('button', { name: 'HTML', exact: true }).click();
+await page.getByRole('button', { name: 'Share' }).click();
+const downloadPromise = page.waitForEvent('download');
+await page.getByRole('button', { name: 'Save HTML' }).click();
 const download = await downloadPromise;
-assert.equal(download.suggestedFilename(), 'aurora-edited-statement-2026-08.html');
-const downloadPath = await download.path();
-assert(downloadPath);
-const exportedHtml = await readFile(downloadPath, 'utf8');
-assert.match(exportedHtml, /Monthly statement/);
-assert.match(exportedHtml, /data:image\//);
-assert.doesNotMatch(exportedHtml, /https?:|<link|@font-face|srcset=/i);
-const standalone = await browser.newPage({ viewport: { width: 760, height: 1100 } });
-const standaloneRequests = [];
-standalone.on('request', (request) => {
-  if (/^https?:/.test(request.url())) standaloneRequests.push(request.url());
-});
-await standalone.setContent(exportedHtml, { waitUntil: 'load' });
-assert.equal(standaloneRequests.length, 0);
-await standalone.getByText('Lightspark Payments, LLC').waitFor();
-await standalone.screenshot({
-  path: '.artifacts/visual-audit/exported-html.png',
-  fullPage: true,
-});
-await standalone.close();
+assert.equal(download.suggestedFilename(), 'glitch-edited-statement-2026-09.html');
+const path = await download.path();
+assert(path);
+const html = await readFile(path, 'utf8');
+assert.match(html, /Monthly statement/);
+assert.match(html, /data:image\//);
+assert.doesNotMatch(html, /https?:|<link|@font-face|srcset=/i);
 
-assert.equal(await wide.locator('[data-device="iphone"]').count(), 1);
-await wide.getByRole('radio', { name: 'iPhone Duo' }).click();
-assert.equal(await wide.locator('[data-device="duo"]').count(), 1);
-await wide.getByRole('button', { name: /Open August statement attachment/ }).click();
-await wide.getByRole('region', { name: 'Statement document viewer' }).waitFor();
-const scrollState = await wide.locator('[class*="documentScroller"]').evaluate((element) => ({
+await page.getByRole('radio', { name: 'Desktop' }).click();
+await page.getByText('Commercial account').first().waitFor();
+await page.getByRole('radio', { name: 'Mobile' }).click();
+const scroll = await page.locator('[class*="StatementScreen_scroller"]').evaluate((element) => ({
   overflowY: getComputedStyle(element).overflowY,
   scrollHeight: element.scrollHeight,
   clientHeight: element.clientHeight,
 }));
-assert.equal(scrollState.overflowY, 'auto');
-assert(scrollState.scrollHeight > scrollState.clientHeight);
+assert.equal(scroll.overflowY, 'auto');
+assert(scroll.scrollHeight > scroll.clientHeight);
+
+await page.getByRole('button', { name: 'Reset' }).click();
+await page.getByText('Statement arrives Oct 1').waitFor();
+assert.equal(await page.getByText('listTransactions').count(), 0);
+assert.equal(await page.getByRole('button', { name: 'Share' }).count(), 0);
 
 const stacked = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
 await stacked.goto(`${baseUrl}/?theme=dark`, { waitUntil: 'networkidle' });
 assert.equal(await stacked.locator('html').getAttribute('data-layout'), 'stacked');
-assert.equal(await stacked.getByRole('separator', { name: 'Resize columns' }).isVisible(), false);
-await stacked.getByText('API calls', { exact: true }).waitFor();
 
 const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
 await mobile.goto(`${baseUrl}/?theme=light`, { waitUntil: 'networkidle' });
 await mobile.getByRole('button', { name: 'Explore playground' }).click();
-await mobile.getByRole('button', { name: 'Configure' }).waitFor();
-assert.equal(
-  await mobile
-    .getByRole('radio', { name: 'iPhone', exact: true })
-    .getAttribute('aria-checked'),
-  'true',
-);
-await mobile.getByRole('button', { name: 'Configure' }).click();
-await mobile.getByLabel('Company name').waitFor();
+await mobile.getByText('Statement arrives Oct 1').waitFor();
 
+await page.evaluate(() => window.__apiRemovalObserver?.disconnect());
 await browser.close();
-console.log(
-  JSON.stringify(
-    {
-      browserKind,
-      browserVersion,
-      originalApiWidth,
-      resizedApiWidth,
-      printedTitle,
-      htmlFilename: download.suggestedFilename(),
-      scrollState,
-    },
-    null,
-    2,
-  ),
-);
+console.log(JSON.stringify({ htmlFilename: download.suggestedFilename(), scroll }, null, 2));

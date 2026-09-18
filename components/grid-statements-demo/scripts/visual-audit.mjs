@@ -73,16 +73,15 @@ for (const auditCase of cases) {
     evidence.push({ app: app.name, case: auditCase.name, metrics, errors });
 
     if (app.name === 'statements' && !auditCase.mobile) {
-      await page.getByRole('radio', { name: 'iPhone Duo' }).click();
+      await page.getByRole('radio', { name: 'Period closes' }).click();
+      await page.getByText('listTransactions').waitFor();
       await page.screenshot({
-        path: new URL(`${baseName}-duo.png`, output).pathname,
+        path: new URL(`${baseName}-statement.png`, output).pathname,
         fullPage: true,
       });
-      await page
-        .getByRole('button', { name: /Open .* statement attachment/ })
-        .click();
+      await page.getByRole('button', { name: 'Share' }).click();
       await page.screenshot({
-        path: new URL(`${baseName}-document.png`, output).pathname,
+        path: new URL(`${baseName}-share.png`, output).pathname,
         fullPage: true,
       });
     }
@@ -97,9 +96,10 @@ for (const auditCase of cases) {
           fullPage: true,
         });
         if (app.name === 'statements') {
-          await page.getByRole('radio', { name: 'iPhone Duo' }).click();
+          await page.getByRole('radio', { name: 'Period closes' }).click();
+          await page.getByText('listTransactions').waitFor();
           await page.screenshot({
-            path: new URL(`${baseName}-playground-duo.png`, output).pathname,
+            path: new URL(`${baseName}-playground-statement.png`, output).pathname,
             fullPage: true,
           });
         }

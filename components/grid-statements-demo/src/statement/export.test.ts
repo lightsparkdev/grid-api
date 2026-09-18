@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_BRAND, PERIODS, buildStatement } from './fixtures';
+import { DEFAULT_BRAND, STATEMENT_PERIOD, buildStatement } from './fixtures';
 import { buildStatementHtml, statementExportFilename } from './export';
 
 describe('statement export', () => {
   it('uses one extension for PDF and HTML filenames', () => {
-    const statement = buildStatement('consumer', DEFAULT_BRAND, PERIODS[1]);
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
     expect(statementExportFilename(statement, 'pdf')).toBe(
-      'aurora-statement-2026-08.pdf',
+      'aurora-statement-2026-09.pdf',
     );
     expect(statementExportFilename(statement, 'html')).toBe(
-      'aurora-statement-2026-08.html',
+      'aurora-statement-2026-09.html',
     );
   });
 
