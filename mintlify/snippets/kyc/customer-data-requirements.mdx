@@ -24,7 +24,7 @@ Documents, uploaded via `POST /documents` — identity documents also require `d
 - **Identity document** — a `PASSPORT` (single image), or a `DRIVERS_LICENSE` / `NATIONAL_ID` uploaded as separate `FRONT` and `BACK` images via the `side` field.
 - **Proof of address** — requested in some jurisdictions and for some currencies. Any of `UTILITY_BILL`, `ELECTRICITY_BILL`, `RENT_OR_LEASE_AGREEMENT`, `BANK_STATEMENT`, or `TAX_RETURN`, dated within the last 3 months.
 
-Some jurisdictions, flows, and volume tiers also require enhanced due diligence. These are optional top-level fields on the individual customer — `sourceOfFundsCategories`, `sourceOfWealthCategories`, `purposeOfAccount`, `expectedMonthlyTransactionCount`, `expectedMonthlyTransactionVolume`, `annualIncomeRange`, `netWorthRange`, and `pepStatus`. The provider decides which apply; you learn which ones through `MISSING_FIELD` errors on `POST /verifications` rather than up front. Each `*Categories` field that includes `OTHER` also requires its matching `*OtherDescription`.
+Some jurisdictions, flows, and volume tiers also require enhanced due diligence. These are optional top-level fields on the individual customer — `sourceOfFundsCategories`, `sourceOfWealthCategories`, `purposeOfAccount`, `expectedMonthlyTransactionCount`, `expectedMonthlyTransactionVolume`, `expectedRecipientJurisdictions`, `expectedTransactionJurisdictions`, `annualIncomeRange`, `netWorthRange`, and `pepStatus`. The provider decides which apply; you learn which ones through `MISSING_FIELD` errors on `POST /verifications` rather than up front. Each `*Categories` field that includes `OTHER` also requires its matching `*OtherDescription`.
 
 ### KYB — business customers
 
