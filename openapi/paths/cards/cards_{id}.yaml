@@ -203,13 +203,12 @@ patch:
             $ref: ../../components/schemas/cards/Card.yaml
     '400':
       description: >-
-        Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a
-        supplied funding source does not belong to the cardholder or is
-        not denominated in the card's currency, with `INVALID_INPUT` when
-        `fundingSource` is combined with any `status` change on a card program
-        where the card issuer makes authorization decisions, with
-        `INVALID_INPUT` when `status` is supplied without `substatus` or
-        without a non-empty `reason`, and for general invalid parameters.
+        Bad request. Returned with `INVALID_INPUT` when a supplied funding
+        source does not belong to the cardholder or is not denominated in the
+        card's currency, when `fundingSource` is combined with any `status`
+        change on a card program where the card issuer makes authorization
+        decisions, when `status` is supplied without `substatus` or without a
+        non-empty `reason`, and for general invalid parameters.
       content:
         application/json:
           schema:

@@ -8655,7 +8655,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, with `INVALID_INPUT` when the `Idempotency-Key` header is missing or exceeds 255 characters or when a required `threeDSecurePassword` is missing, empty, or whitespace-only, with `FUNDING_SOURCE_INELIGIBLE` when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
+          description: Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the cardholder's KYC status is not `APPROVED`, and with `INVALID_INPUT` when the `Idempotency-Key` header is missing or exceeds 255 characters, when a required `threeDSecurePassword` is missing, empty, or whitespace-only, when the supplied funding source does not belong to the cardholder or is not denominated in a card-eligible currency, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -8902,7 +8902,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `FUNDING_SOURCE_INELIGIBLE` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, with `INVALID_INPUT` when `fundingSource` is combined with any `status` change on a card program where the card issuer makes authorization decisions, with `INVALID_INPUT` when `status` is supplied without `substatus` or without a non-empty `reason`, and for general invalid parameters.
+          description: Bad request. Returned with `INVALID_INPUT` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, when `fundingSource` is combined with any `status` change on a card program where the card issuer makes authorization decisions, when `status` is supplied without `substatus` or without a non-empty `reason`, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -27495,7 +27495,7 @@ components:
           $ref: '#/components/schemas/CardForm'
         fundingSource:
           type: string
-          description: Internal account id that funds this card. The account must belong to the customer and be denominated in a card-eligible currency; otherwise the request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+          description: Internal account id that funds this card. The account must belong to the customer and be denominated in a card-eligible currency; otherwise the request is rejected with `INVALID_INPUT`.
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         maxSpendPerTransaction:
           type: integer

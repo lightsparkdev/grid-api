@@ -37,7 +37,7 @@ properties:
     description: >-
       Internal account id that funds this card. The account must belong to the
       customer and be denominated in a card-eligible currency; otherwise the
-      request is rejected with `FUNDING_SOURCE_INELIGIBLE`.
+      request is rejected with `INVALID_INPUT`.
     example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
   maxSpendPerTransaction:
     type: integer

@@ -94,8 +94,7 @@ URL. Every reveal is audit-logged.
 | Status | Code | What it means |
 |--------|------|---------------|
 | 400 | `CARDHOLDER_KYC_NOT_APPROVED` | Cardholder is not `kycStatus: APPROVED`. Drive KYC to completion before retrying. |
-| 400 | `FUNDING_SOURCE_INELIGIBLE` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency. |
-| 400 | `INVALID_INPUT` | Validation failure on the request body. |
+| 400 | `INVALID_INPUT` | The supplied internal account doesn't belong to the cardholder or isn't denominated in a card-eligible currency, or another field failed validation. |
 | 409 | `CONFLICT` | The card belongs to a program where the card issuer makes authorization decisions. Use the card issuer's challenge-based hosted reveal flow instead; retrying this endpoint will not help. |
 
 ## Changing the funding source later

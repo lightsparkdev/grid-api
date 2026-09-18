@@ -89,12 +89,12 @@ post:
     '400':
       description: >-
         Bad request. Returned with `CARDHOLDER_KYC_NOT_APPROVED` when the
-        cardholder's KYC status is not `APPROVED`, with `INVALID_INPUT` when
-        the `Idempotency-Key` header is missing or exceeds 255 characters or
+        cardholder's KYC status is not `APPROVED`, and with `INVALID_INPUT`
+        when the `Idempotency-Key` header is missing or exceeds 255 characters,
         when a required `threeDSecurePassword` is missing, empty, or
-        whitespace-only, with `FUNDING_SOURCE_INELIGIBLE` when the supplied
-        funding source does not belong to the cardholder or is not denominated
-        in a card-eligible currency, and for general invalid parameters.
+        whitespace-only, when the supplied funding source does not belong to
+        the cardholder or is not denominated in a card-eligible currency, and
+        for general invalid parameters.
       content:
         application/json:
           schema:
