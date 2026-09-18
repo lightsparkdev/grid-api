@@ -43,25 +43,6 @@ export function ConfigurePanel({
 
           <section className={styles.section}>
             <SectionDivider
-              label="Design your card"
-              action={
-                !sameDesign(design, initialDesignFor(theme)) ? (
-                  <button
-                    type="button"
-                    className={styles.resetBtn}
-                    {...pressable({ onClick: () => onDesignChange(initialDesignFor(theme)) })}
-                  >
-                    <IconArrowRotateCounterClockwise size={12} aria-hidden />
-                    Reset
-                  </button>
-                ) : null
-              }
-            />
-            <DesignPicker design={design} onChange={onDesignChange} preset={preset} onPresetSelect={onPresetSelect} />
-          </section>
-
-          <section className={styles.section}>
-            <SectionDivider
               label="Explore flows"
               action={
                 wallet.hasCard ? (
@@ -78,6 +59,25 @@ export function ConfigurePanel({
               }
             />
             <FlowPicker wallet={wallet} running={running} onAction={onAction} />
+          </section>
+
+          <section className={styles.section}>
+            <SectionDivider
+              label="Design your card"
+              action={
+                !sameDesign(design, initialDesignFor(theme)) ? (
+                  <button
+                    type="button"
+                    className={styles.resetBtn}
+                    {...pressable({ onClick: () => onDesignChange(initialDesignFor(theme)) })}
+                  >
+                    <IconArrowRotateCounterClockwise size={12} aria-hidden />
+                    Reset
+                  </button>
+                ) : null
+              }
+            />
+            <DesignPicker design={design} onChange={onDesignChange} preset={preset} onPresetSelect={onPresetSelect} />
           </section>
         </div>
       </div>
