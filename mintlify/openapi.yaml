@@ -13490,14 +13490,14 @@ components:
           description: Error message
         details:
           type: object
-          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.errors[]` enumerates every invalid field so platforms can render form-field-level UX for the entire request in a single round-trip. For `AMOUNT_OUT_OF_RANGE`, `details.minimumAmount` and `details.maximumAmount` give the band the amount must fall in, when the rejecting step knows it. Retry with an amount inside the band.
+          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.errors[]` enumerates every invalid field so platforms can render form-field-level UX for the entire request in a single round-trip. For `AMOUNT_OUT_OF_RANGE`, `details.minimumAmount` and `details.maximumAmount` tell you the smallest and largest amounts you can send. Retry with an amount between them.
           properties:
             minimumAmount:
-              description: The smallest amount the rejecting step accepts, in the currency the bound applies to. Present on `AMOUNT_OUT_OF_RANGE` when known.
+              description: The smallest amount you can send. Only on `AMOUNT_OUT_OF_RANGE`. Omitted when the minimum is not known.
               allOf:
                 - $ref: '#/components/schemas/CurrencyAmount'
             maximumAmount:
-              description: The largest amount the rejecting step accepts, in the currency the bound applies to. Present on `AMOUNT_OUT_OF_RANGE` when known.
+              description: The largest amount you can send. Only on `AMOUNT_OUT_OF_RANGE`. Omitted when the maximum is not known.
               allOf:
                 - $ref: '#/components/schemas/CurrencyAmount'
             errors:

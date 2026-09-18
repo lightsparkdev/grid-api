@@ -148,7 +148,7 @@ function validateUSAccount(account) {
 <Accordion title="AMOUNT_OUT_OF_RANGE">
 **Cause:** The amount is below the minimum or above the maximum for this payment. A common case is a sending amount too small to cover the payout provider's fee.
 
-**Solution:** Read `details.minimumAmount` and `details.maximumAmount` and retry inside the band. Each is a `CurrencyAmount` in the currency the bound applies to. A bound is omitted when the rejecting step does not know it.
+**Solution:** Retry with an amount between `details.minimumAmount` and `details.maximumAmount`. Each is a `CurrencyAmount`. Check its `currency`: the limit can be in the sending or the receiving currency. A limit is omitted when it is not known.
 
 ```json
 {
