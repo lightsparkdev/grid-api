@@ -145,6 +145,37 @@ function validateUSAccount(account) {
 
 </Accordion>
 
+<Accordion title="AMOUNT_OUT_OF_RANGE">
+**Cause:** The amount is below the minimum or above the maximum for this payment. A common case is a sending amount too small to cover the payout provider's fee.
+
+**Solution:** Read `details.minimumAmount` and `details.maximumAmount` and retry inside the band. Each is a `CurrencyAmount` in the currency the bound applies to. A bound is omitted when the rejecting step does not know it.
+
+```json
+{
+  "code": "AMOUNT_OUT_OF_RANGE",
+  "reason": "The sending amount is too small to cover the payout provider's fee.",
+  "details": {
+    "minimumAmount": { "amount": 27, "currency": { "code": "USD" } }
+  }
+}
+```
+
+```javascript
+async function createQuoteInsideBand(params) {
+  try {
+    return await createQuote(params);
+  } catch (error) {
+    const min = error.details?.minimumAmount;
+    if (error.code === "AMOUNT_OUT_OF_RANGE" && min?.currency.code === params.currency) {
+      return await createQuote({ ...params, amount: min.amount });
+    }
+    throw error;
+  }
+}
+```
+
+</Accordion>
+
 <Accordion title="TRANSACTION_SIZE_LIMIT_EXCEEDED">
 **Cause:** The requested amount exceeds the maximum single-transaction limit for the trade corridor or withdrawal currency
 

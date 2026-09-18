@@ -13275,6 +13275,39 @@ components:
             `(feeType, rail, direction, originator)`. Setting variable and fixed fees
             to 0 for an existing config deactivates it. Omit this field to leave fee
             configs unchanged.
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
+          example: USD
+        name:
+          type: string
+          description: Full name of the currency
+          example: United States Dollar
+        symbol:
+          type: string
+          description: Symbol of the currency
+          example: $
+        decimals:
+          type: integer
+          description: Number of decimal places for the currency
+          minimum: 0
+          example: 2
+    CurrencyAmount:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
+          example: 12550
+        currency:
+          $ref: '#/components/schemas/Currency'
     FieldConstraint:
       type: object
       description: Machine-readable validator hint accompanying a 400 `INVALID_INPUT` error. Consumers use it to drive form UI (input types, dropdowns, masking, length limits) and to pre-validate the field client-side before re-submitting. Fields are additive.
@@ -13457,8 +13490,16 @@ components:
           description: Error message
         details:
           type: object
-          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.errors[]` enumerates every invalid field so platforms can render form-field-level UX for the entire request in a single round-trip.
+          description: Additional error details. Shape varies by `code`. For field-validation errors on submit endpoints (e.g. `POST /customers`, `PATCH /customers/{id}`), `details.errors[]` enumerates every invalid field so platforms can render form-field-level UX for the entire request in a single round-trip. For `AMOUNT_OUT_OF_RANGE`, `details.minimumAmount` and `details.maximumAmount` give the band the amount must fall in, when the rejecting step knows it. Retry with an amount inside the band.
           properties:
+            minimumAmount:
+              description: The smallest amount the rejecting step accepts, in the currency the bound applies to. Present on `AMOUNT_OUT_OF_RANGE` when known.
+              allOf:
+                - $ref: '#/components/schemas/CurrencyAmount'
+            maximumAmount:
+              description: The largest amount the rejecting step accepts, in the currency the bound applies to. Present on `AMOUNT_OUT_OF_RANGE` when known.
+              allOf:
+                - $ref: '#/components/schemas/CurrencyAmount'
             errors:
               type: array
               description: One entry per invalid field. Present on field-validation errors from submit endpoints.
@@ -13490,26 +13531,6 @@ components:
           type: object
           description: Additional error details
           additionalProperties: true
-    Currency:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Three-letter currency code (ISO 4217) for fiat currencies. Some cryptocurrencies may use their own ticker symbols (e.g. "BTC" for Bitcoin, "USDC" for USDC, etc.)
-          example: USD
-        name:
-          type: string
-          description: Full name of the currency
-          example: United States Dollar
-        symbol:
-          type: string
-          description: Symbol of the currency
-          example: $
-        decimals:
-          type: integer
-          description: Number of decimal places for the currency
-          minimum: 0
-          example: 2
     ExchangeRateFees:
       type: object
       description: Fees associated with an exchange rate
@@ -15883,19 +15904,6 @@ components:
         - `FROZEN`: The account cannot send or receive payments. Grid may freeze an account in response to compliance or fraud signals; payments are blocked while the account remains frozen.
         - `FAILED`: The account could not be provisioned. Grid was unable to create the underlying account, so it cannot send or receive payments and requires remediation.
       example: ACTIVE
-    CurrencyAmount:
-      type: object
-      required:
-        - amount
-        - currency
-      properties:
-        amount:
-          type: integer
-          format: int64
-          description: Amount in the smallest unit of the currency (e.g., cents for USD/EUR, satoshis for BTC)
-          example: 12550
-        currency:
-          $ref: '#/components/schemas/Currency'
     PaymentAccountType:
       type: string
       enum:
