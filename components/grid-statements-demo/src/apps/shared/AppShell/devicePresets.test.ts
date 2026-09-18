@@ -23,7 +23,6 @@ describe('AppShell device presets', () => {
       screenInset: [17, 19, 17, 19],
       shellRadii: [28, 28, 28, 28],
       screenRadii: [18, 18, 18, 18],
-      cameraHole: null,
     });
     expect(APP_SHELL_PRESETS.duo.outerWidth / APP_SHELL_PRESETS.duo.outerHeight)
       .toBeCloseTo(164.6 / 117.8, 2);

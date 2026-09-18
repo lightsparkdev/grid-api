@@ -9,7 +9,6 @@ export interface AppShellPreset {
   screenInset: [number, number, number, number];
   shellRadii: [number, number, number, number];
   screenRadii: [number, number, number, number];
-  cameraHole: { diameter: number; top: number; outer: number } | null;
 }
 
 export const APP_SHELL_PRESETS: Record<AppShellDevice, AppShellPreset> = {
@@ -22,7 +21,6 @@ export const APP_SHELL_PRESETS: Record<AppShellDevice, AppShellPreset> = {
     screenInset: [16, 16, 16, 16],
     shellRadii: [89, 89, 89, 89],
     screenRadii: [73, 73, 73, 73],
-    cameraHole: null,
   },
   duo: {
     id: 'duo',
@@ -33,6 +31,5 @@ export const APP_SHELL_PRESETS: Record<AppShellDevice, AppShellPreset> = {
     screenInset: [17, 19, 17, 19],
     shellRadii: [28, 28, 28, 28],
     screenRadii: [18, 18, 18, 18],
-    cameraHole: null,
   },
 };

@@ -63,16 +63,6 @@
   overflow: hidden;
 }
 
-.cameraHole {
-  position: absolute;
-  z-index: 4;
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  border-radius: 50%;
-  background: #090909;
-  box-shadow: inset 0 0 0 5px #151515;
-  pointer-events: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .scaled {
     transition: none;

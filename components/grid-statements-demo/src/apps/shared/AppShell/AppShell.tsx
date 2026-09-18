@@ -57,18 +57,6 @@ export function AppShell({
               {children}
             </div>
           </div>
-          {preset.cameraHole ? (
-            <span
-              className={styles.cameraHole}
-              style={{
-                width: preset.cameraHole.diameter,
-                height: preset.cameraHole.diameter,
-                top: preset.cameraHole.top - preset.cameraHole.diameter / 2,
-                left: preset.cameraHole.outer - preset.cameraHole.diameter / 2,
-              }}
-              aria-hidden
-            />
-          ) : null}
         </div>
       </div>
     </div>
