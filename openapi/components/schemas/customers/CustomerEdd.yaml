@@ -52,6 +52,22 @@ properties:
     $ref: ./ExpectedMonthlyTransactionCount.yaml
   expectedMonthlyTransactionVolume:
     $ref: ./ExpectedMonthlyTransactionVolume.yaml
+  expectedRecipientJurisdictions:
+    type: array
+    items:
+      type: string
+    description: List of countries where the customer expects to send payments (ISO 3166-1 alpha-2)
+    example:
+      - US
+  expectedTransactionJurisdictions:
+    type: array
+    items:
+      type: string
+    description: >-
+      List of countries the customer's transactions are expected to involve, in
+      either direction (ISO 3166-1 alpha-2)
+    example:
+      - US
   annualIncomeRange:
     $ref: ./AnnualIncomeRange.yaml
   netWorthRange:
