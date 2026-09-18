@@ -5,7 +5,7 @@ post:
     and return the endpoint's response. Available in sandbox and production.
   operationId: sendTestWebhook
   tags:
-    - Webhooks
+    - Sandbox
   security:
     - BasicAuth: []
   responses:

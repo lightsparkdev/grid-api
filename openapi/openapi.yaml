@@ -256,7 +256,7 @@ paths:
   /crypto/estimate-withdrawal-fee:
     $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
   /webhooks/test:
-    $ref: paths/webhooks/webhooks_test.yaml
+    $ref: paths/sandbox/webhooks_test.yaml
   /customers/bulk/csv:
     $ref: paths/customers/customers_bulk_csv.yaml
   /customers/bulk/jobs/{jobId}:

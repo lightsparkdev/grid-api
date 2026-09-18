@@ -5169,7 +5169,7 @@ paths:
       description: Deliver a signed test event to the platform's configured webhook endpoint and return the endpoint's response. Available in sandbox and production.
       operationId: sendTestWebhook
       tags:
-        - Webhooks
+        - Sandbox
       security:
         - BasicAuth: []
       responses:
