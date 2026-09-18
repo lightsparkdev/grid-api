@@ -159,8 +159,8 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
     </Tip>
   </Accordion>
 
-  <Accordion title="SEPA EUR transfers">
-    For EUR accounts, instructions use SEPA IBAN numbers:
+  <Accordion title="EUR account funding (SEPA)">
+    A `EUR_ACCOUNT` returns an IBAN, and deposits reach it over SEPA:
 
     ```json
     {
@@ -171,7 +171,7 @@ Each internal account includes `fundingPaymentInstructions` that tell your custo
         "iban": "DE89370400440532013000",
         "swiftCode": "DEUTDEFF",
         "accountHolderName": "Lightspark Payments FBO Maria Garcia",
-        "bankName": "Banco de México"
+        "bankName": "Deutsche Bank"
       }
     }
     ```
