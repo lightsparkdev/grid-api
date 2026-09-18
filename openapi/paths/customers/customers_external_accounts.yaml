@@ -67,8 +67,21 @@ get:
 
 post:
   summary: Add a new external account
-  description: >-
-    Register a new external bank account for a customer.
+  description: |
+    Register a new external bank account or wallet for a customer.
+
+    Set `accountInfo.accountType` to the currency code followed by `_ACCOUNT`
+    (`EUR_ACCOUNT`, `USD_ACCOUNT`, `MXN_ACCOUNT`, ...) or to a wallet type
+    (`SPARK_WALLET`, `LIGHTNING`, ...). Values such as `IBAN`, `SEPA`, or
+    `CLABE` are rejected with `400 INVALID_INPUT`.
+
+    Most bank account types require a `beneficiary` object. Its required fields
+    depend on the currency and on `beneficiaryType`. For example, a EUR account
+    needs `beneficiaryType`, `fullName`, and `countryOfResidence`, and an
+    `address` (when given) needs `line1`, `postalCode`, and `country`.
+    See [Required Fields by Corridor](/payouts-and-b2b/depositing-funds/required-fields)
+    for every currency, and the [External Accounts](/payouts-and-b2b/depositing-funds/external-accounts)
+    guide for a full request per region.
   operationId: createCustomerExternalAccount
   tags:
     - External Accounts
@@ -86,13 +99,13 @@ post:
             value:
               customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
               currency: USD
+              platformAccountId: ext_acc_123456
               accountInfo:
                 accountType: USD_ACCOUNT
                 accountNumber: "12345678901"
                 routingNumber: "123456789"
                 bankAccountType: CHECKING
                 bankName: Chase Bank
-                platformAccountId: ext_acc_123456
                 beneficiary:
                   beneficiaryType: INDIVIDUAL
                   fullName: John Doe
@@ -104,6 +117,25 @@ post:
                     state: CA
                     postalCode: "94105"
                     country: US
+          eurBankAccount:
+            summary: Create external EUR bank account (SEPA)
+            value:
+              customerId: Customer:019542f5-b3e7-1d02-0000-000000000001
+              currency: EUR
+              platformAccountId: ext_acc_eur_123456
+              accountInfo:
+                accountType: EUR_ACCOUNT
+                iban: DE89370400440532013000
+                bankName: Deutsche Bank
+                beneficiary:
+                  beneficiaryType: INDIVIDUAL
+                  fullName: Hans Schmidt
+                  countryOfResidence: DE
+                  address:
+                    line1: Hauptstraße 789
+                    city: Berlin
+                    postalCode: "10115"
+                    country: DE
           sparkWallet:
             summary: Create external Spark wallet
             value:
