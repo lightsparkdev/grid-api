@@ -53,9 +53,7 @@ export default function Page() {
   const [presetId, setPresetId] = useState<PresetId | null>(PRESETS[0].id);
   const [presetSequence, setPresetSequence] = useState(0);
   const [device, setDevice] = useState<AppShellDevice>('iphone');
-  const [entries, setEntries] = useState<StatementApiEntry[]>(() =>
-    buildApiEntries(buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]), 0),
-  );
+  const [entries, setEntries] = useState<StatementApiEntry[]>([]);
   const [uploadError, setUploadError] = useState('');
   const [mobileView, setMobileView] = useState<MobileView>('configure');
   const uploadedUrl = useRef<string | null>(null);

@@ -27,6 +27,11 @@ for (const auditCase of cases) {
       viewport: { width: auditCase.width, height: auditCase.height },
       colorScheme: auditCase.theme,
       reducedMotion: 'reduce',
+      // The render server runs on UTC. A browser time zone behind UTC gives a
+      // different calendar date, so clock or locale text that matches only on
+      // one machine fails here instead of in production.
+      timezoneId: 'America/Los_Angeles',
+      locale: 'en-US',
     });
     const page = await context.newPage();
     const errors = [];
