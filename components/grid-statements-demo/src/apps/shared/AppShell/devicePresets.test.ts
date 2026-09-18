@@ -13,17 +13,21 @@ describe('AppShell device presets', () => {
     });
   });
 
-  it('uses the measured iPhone Duo outer display geometry', () => {
+  it('uses the official open iPhone Duo landscape proportions', () => {
     expect(APP_SHELL_PRESETS.duo).toEqual({
       id: 'duo',
-      outerWidth: 511,
-      outerHeight: 716,
-      screenWidth: 466,
-      screenHeight: 678,
-      screenInset: [19, 26, 19, 19],
-      shellRadii: [62, 7, 7, 62],
-      screenRadii: [43, 7, 7, 43],
-      cameraHole: { diameter: 36, top: 48, outer: 48 },
+      outerWidth: 716,
+      outerHeight: 511,
+      screenWidth: 678,
+      screenHeight: 477,
+      screenInset: [17, 19, 17, 19],
+      shellRadii: [28, 28, 28, 28],
+      screenRadii: [18, 18, 18, 18],
+      cameraHole: null,
     });
+    expect(APP_SHELL_PRESETS.duo.outerWidth / APP_SHELL_PRESETS.duo.outerHeight)
+      .toBeCloseTo(164.6 / 117.8, 2);
+    expect(APP_SHELL_PRESETS.duo.screenWidth / APP_SHELL_PRESETS.duo.screenHeight)
+      .toBeCloseTo(2670 / 1878, 2);
   });
 });
