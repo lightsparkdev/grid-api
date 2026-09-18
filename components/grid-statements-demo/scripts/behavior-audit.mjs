@@ -33,7 +33,10 @@ await wide.mouse.up();
 const resizedApiWidth = await wide.locator('[class*="apiCol"]').evaluate(
   (element) => element.getBoundingClientRect().width,
 );
-assert(resizedApiWidth > originalApiWidth + 70, 'Dragging left must widen the API column.');
+assert(
+  resizedApiWidth > originalApiWidth + 70,
+  `Dragging left must widen the API column. Measured ${originalApiWidth}px → ${resizedApiWidth}px.`,
+);
 
 await wide.getByRole('radio', { name: 'Financial app (Aurora)' }).click();
 assert.equal(await wide.getByLabel('Company name').inputValue(), 'Aurora');
@@ -41,7 +44,9 @@ await wide.getByText('listTransactions').waitFor();
 assert.match(await wide.locator('time').first().textContent(), /just now/i);
 
 await wide.getByRole('radio', { name: 'Commercial' }).click();
-await wide.getByText('Grid data. Platform builds the statement rows.').waitFor();
+await wide
+  .getByText('Grid data. Platform stores period balances and builds statement rows.')
+  .waitFor();
 
 await wide.getByLabel('Period').selectOption('2026-08');
 await wide.getByText('listTransactions').waitFor();

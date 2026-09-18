@@ -93,4 +93,29 @@ describe('statement API projection', () => {
       );
     },
   );
+
+  it('rebuilds transaction identity and dates for each period', () => {
+    const july = buildApiEntries(
+      buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]),
+      1_700_000_000_000,
+    );
+    const august = buildApiEntries(
+      buildStatement('consumer', DEFAULT_BRAND, PERIODS[1]),
+      1_700_000_000_000,
+    );
+    const transactions = (entries: ReturnType<typeof buildApiEntries>) =>
+      (entries.find((entry) => entry.operationId === 'listTransactions')?.resBody as {
+        data: Array<{ id: string; createdAt: string }>;
+      }).data;
+
+    expect(transactions(july).map(({ id }) => id)).not.toEqual(
+      transactions(august).map(({ id }) => id),
+    );
+    expect(
+      transactions(july).every(({ createdAt }) => createdAt.startsWith('2026-07-')),
+    ).toBe(true);
+    expect(
+      transactions(august).every(({ createdAt }) => createdAt.startsWith('2026-08-')),
+    ).toBe(true);
+  });
 });

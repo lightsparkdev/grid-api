@@ -37,8 +37,9 @@ function timestamp(statement: StatementModel, day: string) {
 }
 
 function apiTransaction(statement: StatementModel, activity: StatementModel['activities'][number]) {
+  const transactionId = `${statement.period.id.replace('-', '')}-${activity.id}`;
   const common = {
-    id: `Transaction:${activity.id.padStart(36, '0')}`,
+    id: `Transaction:${transactionId.padStart(36, '0')}`,
     status: 'COMPLETED',
     customerId: statement.account.customerId,
     platformCustomerId: statement.account.platformCustomerId,
@@ -88,7 +89,7 @@ function apiTransaction(statement: StatementModel, activity: StatementModel['act
     description: activity.party,
     destination: {
       destinationType: 'ACCOUNT',
-      accountId: `ExternalAccount:${activity.id.padStart(36, '0')}`,
+      accountId: `ExternalAccount:${transactionId.padStart(36, '0')}`,
     },
     source: {
       sourceType: 'ACCOUNT',
@@ -111,8 +112,8 @@ export function buildApiEntries(
   const { startDate, endDate } = periodBounds(statement.period.id);
   const groupLabel =
     statement.variant === 'consumer'
-      ? 'Grid data. Platform adds Reg E flags and terminal addresses.'
-      : 'Grid data. Platform builds the statement rows.';
+      ? 'Grid data. Platform stores period balances and adds Reg E and terminal details.'
+      : 'Grid data. Platform stores period balances and builds statement rows.';
   const customerPath = `/customers/${statement.account.customerId}`;
   const accountPath = `/customers/internal-accounts?customerId=${encodeURIComponent(statement.account.customerId)}&currency=USD`;
   const transactionPath =
