@@ -14,6 +14,7 @@ import { airflow, play, playHover, preheatSoon, type Airflow } from '@/lib/sound
 import { programNameOf } from '@/apps/shared/brand/BrandContext';
 import type { CardHome } from '@/apps/shared/card';
 import { CARD_PARKED_T, easeInOutCubic, usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
+import type { DesignEditOptions } from '@/hooks/useCardsDemoLogic';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useGradientEditing } from '@/components/DesignPicker/gradientEditing';
 import {
@@ -194,6 +195,8 @@ const CORNER_ANGLE: Record<Handle, number> = { nw: -45, ne: 45, se: 135, sw: -13
 interface BrandDrag {
   on: 'brand';
   id: number;
+  /** Names the gesture to the design's undo: one step from press to release. */
+  gesture: string;
   mode: 'move' | 'scale' | 'rotate';
   handle?: Handle;
   /** Where the pointer started on the face, and what the brand was. */
@@ -207,6 +210,7 @@ interface BrandDrag {
 interface ArtDrag {
   on: 'art';
   id: number;
+  gesture: string;
   mode: 'move' | 'scale';
   handle?: Handle;
   start: Pt;
@@ -215,6 +219,14 @@ interface ArtDrag {
 }
 
 type FaceDrag = BrandDrag | ArtDrag;
+
+let gestureSeq = 0;
+/** A fresh gesture name for a drag that is starting. */
+const newGesture = (what: string) => `${what}-${++gestureSeq}`;
+
+/** The art must stay on the card by at least this much (spec px) on each
+ *  axis, so it can always be found again to move it back or reset it. */
+const ART_MIN_ON_FACE = 200;
 
 /** What is selected on the front: the brand or the art, with its box and
  *  handles showing, or nothing. */
@@ -269,7 +281,7 @@ interface CardStageProps {
   design: CardDesign;
   home: CardHome;
   /** Lets the stage edit the design: the brand is placed on the card itself. */
-  onDesignChange?: (patch: Partial<CardDesign>) => void;
+  onDesignChange?: (patch: Partial<CardDesign>, opts?: DesignEditOptions) => void;
   /** Filled with the card's exporter once the mesh is mounted (the share flow
    *  renders stills and video through it). */
   exportRef?: React.MutableRefObject<CardExporter | null>;
@@ -462,8 +474,21 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   /** The same, for the back face (null while the front shows). */
   const pickBack = useRef<Pick | null>(null);
   const brandEditable = !!onDesignChange;
-  const setLayout = (layout: BrandLayout | null) => onDesignChange?.({ brandLayout: layout });
-  const setArtLayout = (layout: ArtLayout | null) => onDesignChange?.({ artLayout: layout });
+  const setLayout = (layout: BrandLayout | null, gesture?: string) =>
+    onDesignChange?.({ brandLayout: layout }, gesture ? { gesture } : undefined);
+  const setArtLayout = (layout: ArtLayout | null, gesture?: string) =>
+    onDesignChange?.({ artLayout: layout }, gesture ? { gesture } : undefined);
+  /** The art's center moved so its box keeps ART_MIN_ON_FACE of itself over
+   *  the face on each axis (or all of itself, if it is smaller than that). */
+  const keepArtOnFace = (l: ArtLayout, box: { w: number; h: number }): ArtLayout => {
+    const keepX = Math.min(ART_MIN_ON_FACE, box.w);
+    const keepY = Math.min(ART_MIN_ON_FACE, box.h);
+    return {
+      ...l,
+      x: Math.min(face.w + box.w / 2 - keepX, Math.max(keepX - box.w / 2, l.x)),
+      y: Math.min(face.h + box.h / 2 - keepY, Math.max(keepY - box.h / 2, l.y)),
+    };
+  };
 
   /** The face point under the pointer if it is on (or just outside) the brand,
    *  allowing for the brand's rotation. */
@@ -547,11 +572,15 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
       play('type');
       const perPx = face.w / hit.getBoundingClientRect().width;
       const step = (e.shiftKey ? 10 : 1) * perPx;
-      const pl = selected === 'brand' ? placement.current?.brand : placement.current?.art;
-      if (!pl) return;
-      const moved = { ...pl.layout, x: pl.layout.x + d.x * step, y: pl.layout.y + d.y * step };
-      if (selected === 'brand') setLayout(moved as BrandLayout);
-      else setArtLayout(moved as ArtLayout);
+      if (selected === 'brand') {
+        const pl = placement.current?.brand;
+        if (pl) setLayout({ ...pl.layout, x: pl.layout.x + d.x * step, y: pl.layout.y + d.y * step });
+      } else {
+        const pl = placement.current?.art;
+        if (pl) {
+          setArtLayout(keepArtOnFace({ ...pl.layout, x: pl.layout.x + d.x * step, y: pl.layout.y + d.y * step }, pl.box));
+        }
+      }
     };
     // A click on the stage off the card deselects; the panels beside it
     // don't, so a control can be used on the selection.
@@ -796,15 +825,15 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   const pendingSelect = useRef<{ id: number; x: number; y: number; on: 'brand' | 'art' | 'name' } | null>(null);
   const faceDrag = useRef<FaceDrag | null>(null);
   /** A gradient handle in flight: which end, from which pointer. */
-  const gradDrag = useRef<{ id: number; end: 'from' | 'to' } | null>(null);
-  const moveGradEnd = (end: 'from' | 'to', p: Pt) => {
+  const gradDrag = useRef<{ id: number; gesture: string; end: 'from' | 'to' } | null>(null);
+  const moveGradEnd = (gd: { gesture: string; end: 'from' | 'to' }, p: Pt) => {
     const g = design.gradient;
     if (!g) return;
-    const snap = snapPoint(p, end === 'from' ? g.to : g.from);
+    const snap = snapPoint(p, gd.end === 'from' ? g.to : g.from);
     setGuides(snap.guides);
     snapTick(snapKeyOf(snap.guides));
-    const next: CardGradient = { ...g, [end]: { x: Math.round(snap.p.x), y: Math.round(snap.p.y) } };
-    onDesignChange?.({ gradient: next });
+    const next: CardGradient = { ...g, [gd.end]: { x: Math.round(snap.p.x), y: Math.round(snap.p.y) } };
+    onDesignChange?.({ gradient: next }, { gesture: gd.gesture });
   };
   /** The cursor an edit shows while the pointer is captured: the handle's
    *  own, turning with the box as it rotates. */
@@ -823,7 +852,16 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     const pl = placement.current?.brand;
     if (!pl) return;
     capture(e);
-    const bd: BrandDrag = { on: 'brand', id: e.pointerId, mode, handle, start, layout0: pl.layout, box0: pl.box };
+    const bd: BrandDrag = {
+      on: 'brand',
+      id: e.pointerId,
+      gesture: newGesture('brand'),
+      mode,
+      handle,
+      start,
+      layout0: pl.layout,
+      box0: pl.box,
+    };
     faceDrag.current = bd;
     motion.clearTilt();
     setSelected('brand');
@@ -835,7 +873,16 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     const pl = placement.current?.art;
     if (!pl) return;
     capture(e);
-    const ad: ArtDrag = { on: 'art', id: e.pointerId, mode, handle, start, layout0: pl.layout, box0: pl.box };
+    const ad: ArtDrag = {
+      on: 'art',
+      id: e.pointerId,
+      gesture: newGesture('art'),
+      mode,
+      handle,
+      start,
+      layout0: pl.layout,
+      box0: pl.box,
+    };
     faceDrag.current = ad;
     motion.clearTilt();
     setSelected('art');
@@ -844,7 +891,7 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
   };
   /** The art moves with the pointer (snapping its center and edges to the
    *  card's), or scales about the side or corner opposite the handle,
-   *  keeping its aspect. */
+   *  keeping its aspect. Either way it stays on the face (`keepArtOnFace`). */
   const moveArt = (ad: ArtDrag, p: Pt) => {
     const { layout0: l0, box0: b0 } = ad;
     if (ad.mode === 'move') {
@@ -855,7 +902,7 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
       dy += snap.dy;
       setGuides(snap.guides);
       snapTick(snapKeyOf(snap.guides));
-      setArtLayout({ ...l0, x: l0.x + dx, y: l0.y + dy });
+      setArtLayout(keepArtOnFace({ ...l0, x: l0.x + dx, y: l0.y + dy }, b0), ad.gesture);
       return;
     }
     const c0 = center(b0);
@@ -869,7 +916,10 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     const s = scale / l0.scale;
     const w = b0.w * s;
     const h = b0.h * s;
-    setArtLayout({ x: c0.x + anchor.x + (dir.x * w) / 2, y: c0.y + anchor.y + (dir.y * h) / 2, scale });
+    setArtLayout(
+      keepArtOnFace({ x: c0.x + anchor.x + (dir.x * w) / 2, y: c0.y + anchor.y + (dir.y * h) / 2, scale }, { w, h }),
+      ad.gesture,
+    );
   };
   const moveBrand = (bd: BrandDrag, p: Pt) => {
     const { layout0: l0, box0: b0 } = bd;
@@ -882,7 +932,7 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
       dy += snap.dy;
       setGuides(snap.guides);
       snapTick(snapKeyOf(snap.guides));
-      setLayout({ ...l0, x: l0.x + dx, y: l0.y + dy });
+      setLayout({ ...l0, x: l0.x + dx, y: l0.y + dy }, bd.gesture);
       return;
     }
     const c0 = center(b0);
@@ -895,7 +945,7 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
       const caught = Math.abs(step - rotation) <= SNAP_DEG;
       if (caught) rotation = ((((step + 180) % 360) + 360) % 360) - 180;
       snapTick(caught ? `r${rotation}` : '');
-      setLayout({ ...l0, rotation });
+      setLayout({ ...l0, rotation }, bd.gesture);
       if (hitRef.current) hitRef.current.style.cursor = dragCursor(bd, rotation);
       return;
     }
@@ -914,14 +964,14 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     const bh = b0.h * scale;
     const local = { x: anchor.x + (dir.x * w) / 2, y: anchor.y + (dir.y * bh) / 2 };
     const world = rotate(local, l0.rotation);
-    setLayout(layoutAt(l0, { x: c0.x + world.x, y: c0.y + world.y }, w, h));
+    setLayout(layoutAt(l0, { x: c0.x + world.x, y: c0.y + world.y }, w, h), bd.gesture);
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const gd = gradDrag.current;
     if (gd) {
       if (e.pointerId !== gd.id) return;
       const p = pick.current?.(e.clientX, e.clientY);
-      if (p) moveGradEnd(gd.end, p);
+      if (p) moveGradEnd(gd, p);
       return;
     }
     const fd = faceDrag.current;
@@ -965,7 +1015,7 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
       const gradEl = (e.target as HTMLElement).closest<HTMLElement>('[data-grad]');
       if (gradEl) {
         capture(e);
-        gradDrag.current = { id: e.pointerId, end: gradEl.dataset.grad as 'from' | 'to' };
+        gradDrag.current = { id: e.pointerId, gesture: newGesture('gradient'), end: gradEl.dataset.grad as 'from' | 'to' };
         motion.clearTilt();
         e.currentTarget.classList.add(styles.hitMoving);
         return;

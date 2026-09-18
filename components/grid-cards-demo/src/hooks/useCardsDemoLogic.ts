@@ -49,12 +49,20 @@ const WEBHOOK_DELAY_MS = 650;
 /** The phone's flight out, with the card coming back to the stage: the brain
  *  resets once it has gone. */
 const PHONE_OUT_MS = 1000;
-/** Design edits that arrive as a stream (a drag on the card, typing a
- *  name, a gradient handle): a run of them within COALESCE_MS of each other
- *  is one step of undo. */
+/** Design edits that arrive as a stream without a gesture of their own
+ *  (typing a name, the color picker's field, arrow nudges): a run of them
+ *  within COALESCE_MS of each other is one step of undo. A drag on the card
+ *  names its gesture instead (`DesignEditOptions`), so two drags are two
+ *  steps however quickly one follows the other. */
 const CONTINUOUS_FIELDS = new Set<string>(['brandLayout', 'artLayout', 'gradient', 'color', 'programName', 'cardholderName']);
 const COALESCE_MS = 1000;
 const HISTORY_MAX = 100;
+
+export interface DesignEditOptions {
+  /** The gesture this edit is a frame of (a drag, from press to release):
+   *  every frame of one gesture is one step of undo. */
+  gesture?: string;
+}
 const GROUP_LABEL: Record<ActionId, string> = {
   card: 'Issue a card',
   tap: 'Spend',
@@ -101,17 +109,19 @@ export function useCardsDemoLogic() {
   // Undo: the designs before each edit, newest last, and the ones undone.
   // A drag or a run of typing is one edit: changes to the same continuous
   // fields in quick succession keep the state from before the first.
-  const history = useRef<{ past: CardDesign[]; future: CardDesign[]; at: number; keys: string }>({
-    past: [],
-    future: [],
-    at: 0,
-    keys: '',
-  });
-  const remember = useCallback((prev: CardDesign, keys: string[]) => {
+  const history = useRef<{ past: CardDesign[]; future: CardDesign[]; at: number; keys: string; gesture: string | null }>(
+    { past: [], future: [], at: 0, keys: '', gesture: null },
+  );
+  const remember = useCallback((prev: CardDesign, keys: string[], gesture: string | null) => {
     const h = history.current;
     const key = keys.slice().sort().join(',');
     const now = performance.now();
-    const coalesce = keys.every((k) => CONTINUOUS_FIELDS.has(k)) && key === h.keys && now - h.at < COALESCE_MS;
+    // A gesture's frames join the step its first frame began; anything else
+    // joins the last step only if it is the same kind of streaming edit,
+    // close behind, and not on the heels of a gesture.
+    const coalesce = gesture
+      ? gesture === h.gesture
+      : h.gesture === null && keys.every((k) => CONTINUOUS_FIELDS.has(k)) && key === h.keys && now - h.at < COALESCE_MS;
     if (!coalesce) {
       h.past.push(prev);
       if (h.past.length > HISTORY_MAX) h.past.shift();
@@ -119,6 +129,7 @@ export function useCardsDemoLogic() {
     h.future = [];
     h.at = now;
     h.keys = key;
+    h.gesture = gesture;
   }, []);
   const commitDesign = useCallback(
     (next: CardDesign) => {
@@ -128,7 +139,7 @@ export function useCardsDemoLogic() {
     [theme],
   );
   const updateDesign = useCallback(
-    (patch: Partial<CardDesign>) => {
+    (patch: Partial<CardDesign>, opts?: DesignEditOptions) => {
       const prev = designRef.current;
       const next = { ...prev, ...patch };
       // Spot gloss has nothing to contrast against on a gloss card.
@@ -137,7 +148,7 @@ export function useCardsDemoLogic() {
         if (next.artTreatment === 'spotGloss') next.artTreatment = 'print';
       }
       if (sameDesign(prev, next)) return;
-      remember(prev, Object.keys(patch));
+      remember(prev, Object.keys(patch), opts?.gesture ?? null);
       designRef.current = next;
       commitDesign(next);
     },
@@ -149,6 +160,7 @@ export function useCardsDemoLogic() {
     if (!prev) return false;
     h.future.push(designRef.current);
     h.keys = '';
+    h.gesture = null;
     designRef.current = prev;
     commitDesign(prev);
     return true;
@@ -159,6 +171,7 @@ export function useCardsDemoLogic() {
     if (!next) return false;
     h.past.push(designRef.current);
     h.keys = '';
+    h.gesture = null;
     designRef.current = next;
     commitDesign(next);
     return true;
@@ -194,7 +207,7 @@ export function useCardsDemoLogic() {
         // share is where this session's edits start: nothing to undo to
         // before it.
         const loaded = { ...initialDesign, ...record.design };
-        history.current = { past: [], future: [], at: 0, keys: '' };
+        history.current = { past: [], future: [], at: 0, keys: '', gesture: null };
         designRef.current = loaded;
         setDesign(loaded);
         setShared({ record, editToken: p.get('edit') ?? rememberedToken(record.id) });
@@ -215,7 +228,7 @@ export function useCardsDemoLogic() {
       const prev = designRef.current;
       const applied = applyPreset(next, prev);
       if (sameDesign(prev, applied)) return;
-      remember(prev, ['preset']);
+      remember(prev, ['preset'], null);
       designRef.current = applied;
       designed.current = true;
       setDesign(applied);
