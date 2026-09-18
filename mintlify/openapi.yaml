@@ -8902,7 +8902,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Card'
         '400':
-          description: Bad request. Returned with `INVALID_INPUT` when a supplied funding source does not belong to the cardholder or is not denominated in the card's currency, when `fundingSource` is combined with any `status` change on a card program where the card issuer makes authorization decisions, when `status` is supplied without `substatus` or without a non-empty `reason`, and for general invalid parameters.
+          description: Bad request. Returned with `INVALID_INPUT` when a supplied funding source does not belong to the cardholder or uses a currency unsupported by the card program, when `fundingSource` is combined with any `status` change on a card program where the card issuer makes authorization decisions, when `status` is supplied without `substatus` or without a non-empty `reason`, and for general invalid parameters.
           content:
             application/json:
               schema:
@@ -27432,7 +27432,7 @@ components:
           example: 20
         currency:
           type: string
-          description: Currency the card transacts in (ISO 4217 for fiat, tickers for crypto). Derived from the funding source at issue time.
+          description: Currency the card transacts in, fixed at issuance by its card program. USDB-funded cards transact in USD, with funding converted at 1 USDB = 1 USD. Spending limits use the smallest unit of the card's currency (USD cents for USDB-funded cards). Changing the funding source does not change the card's currency or spending-limit units.
           example: USD
         processorRef:
           type: string
@@ -27509,7 +27509,7 @@ components:
           format: int64
           minimum: 1
           maximum: 9007199254740991
-          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card currency derived from its funding source. Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true. Spend exactly equal to the effective limit is allowed.
+          description: Optional card-specific cap on cumulative new spend during one UTC calendar day, in the smallest unit of the card's currency (USD cents for USDB-funded cards). Omit this field for no card-specific daily cap. When the platform config also supplies `cardConfigs.maxSpendPerDay`, Grid enforces the lower of the two values. The window resets at 00:00 UTC, and refunds, reversals, and authorization expiries do not restore capacity during the day. Accepted only when the funding-source internal account's `cardCapabilities.supportsSpendLimitsAtIssuance` is true. Spend exactly equal to the effective limit is allowed.
           example: 25000
         maxTransactionsPerDay:
           type: integer
@@ -27553,7 +27553,7 @@ components:
           example: Cardholder reported the card stolen.
         fundingSource:
           type: string
-          description: 'Replaces the card''s funding source. Must belong to the customer and be denominated in the card''s currency. Cannot be supplied alongside `status: CLOSED`. To stop a card from spending, set `status: FROZEN` instead.'
+          description: 'Replaces the card''s funding source. Must belong to the customer and be denominated in a currency supported by the card''s program, including USDB for USD cards. Changing the funding source does not change the card''s currency or spending-limit units. Cannot be supplied alongside `status: CLOSED`. To stop a card from spending, set `status: FROZEN` instead.'
           example: InternalAccount:019542f5-b3e7-1d02-0000-000000000002
         maxSpendPerTransaction:
           anyOf:

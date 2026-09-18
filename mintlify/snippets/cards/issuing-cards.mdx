@@ -28,8 +28,12 @@ curl -X POST "$GRID_BASE_URL/cards" \
 | `maxSpendPerDay` | No | Cumulative new spend allowed per UTC calendar day, in the smallest unit of the card's currency. Refunds, reversals, and expiries do not restore capacity that day. |
 | `maxTransactionsPerDay` | No | Number of transactions the card may authorize per UTC calendar day. Each approved authorization counts once; reversals and expiries do not restore capacity that day. |
 
-The card's `currency` is derived from the funding source at issue time
-and surfaces on the returned `Card` resource.
+The card program fixes the card's `currency` at issuance and returns it on
+the `Card` resource. USDB-funded cards have `currency: "USD"`, with funding
+converted at 1 USDB = 1 USD. Spending limits use the smallest unit of the
+card's currency: for a USDB-funded card, `50000` means $500.00 in USD cents.
+Changing the funding source does not change the card's currency or
+spending-limit units.
 
 ## The lifecycle
 
