@@ -945,7 +945,10 @@ export function CardStage({ design, home, onDesignChange, exportRef, share, onIn
     // Spec px the dragged edge moves per unit of scale, on each axis.
     const perX = b0.w / scale0;
     const perY = b0.h / scale0;
-    if (Math.abs(1 - wanted) * perX < tol) return { scale: 1, guides: {}, key: 'cover' };
+    // How far the handle itself travels per unit of scale: along one axis
+    // for an edge handle, along the diagonal for a corner.
+    const perHandle = Math.hypot(dir.x * perX, dir.y * perY);
+    if (Math.abs(1 - wanted) * perHandle < tol) return { scale: 1, guides: {}, key: 'cover' };
     let best = { d: tol, scale: wanted, guides: {} as Guides, key: '' };
     const consider = (scale: number, d: number, guides: Guides, key: string) => {
       if (scale < ART_MIN_SCALE || scale > ART_MAX_SCALE || d >= best.d) return;
