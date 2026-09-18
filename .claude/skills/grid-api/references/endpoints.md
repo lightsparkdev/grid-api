@@ -322,7 +322,7 @@ Drive card lifecycle events in sandbox to test authorization, clearing, and retu
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/sandbox/webhooks/test` | Send a test webhook (sandbox only) |
+| POST | `/webhooks/test` | Send a test webhook to the configured endpoint |
 
 ### Webhook Events
 

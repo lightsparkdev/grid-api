@@ -255,8 +255,8 @@ paths:
     $ref: paths/transactions/transactions_{transactionId}_cancel.yaml
   /crypto/estimate-withdrawal-fee:
     $ref: paths/crypto/crypto_estimate-withdrawal-fee.yaml
-  /sandbox/webhooks/test:
-    $ref: paths/sandbox/sandbox_webhooks_test.yaml
+  /webhooks/test:
+    $ref: paths/sandbox/webhooks_test.yaml
   /customers/bulk/csv:
     $ref: paths/customers/customers_bulk_csv.yaml
   /customers/bulk/jobs/{jobId}:

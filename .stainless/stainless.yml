@@ -391,7 +391,7 @@ resources:
           test_webhook_request: '#/components/schemas/TestWebhookRequest'
           test_webhook_response: '#/components/schemas/TestWebhookResponse'
         methods:
-          send_test: post /sandbox/webhooks/test
+          send_test: post /webhooks/test
       cards:
         subresources:
           simulate:
