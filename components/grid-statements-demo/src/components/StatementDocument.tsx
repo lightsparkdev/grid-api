@@ -1,5 +1,5 @@
 import React from 'react';
-import { LEGAL, calculateTotals, formatMoney } from '@/statement/fixtures';
+import { LEGAL, calculateTotals, formatMoney, statementRows } from '@/statement/fixtures';
 import type { PreviewWidth, StatementModel } from '@/statement/types';
 import styles from './StatementDocument.module.css';
 
@@ -10,6 +10,7 @@ interface StatementDocumentProps {
 
 export function StatementDocument({ statement, width }: StatementDocumentProps) {
   const totals = calculateTotals(statement);
+  const rows = statementRows(statement);
   const details = [
     ['Statement period', statement.period.range],
     ['Issued', statement.period.issued],
@@ -53,7 +54,7 @@ export function StatementDocument({ statement, width }: StatementDocumentProps) 
           <span>Transactions</span>
           <span>Amount</span>
         </div>
-        {statement.transactions.map((transaction) => (
+        {rows.map((transaction) => (
           <div className={styles.transaction} key={transaction.id}>
             <span className={styles.date}>
               {statement.period.transactionMonth}/{transaction.day}

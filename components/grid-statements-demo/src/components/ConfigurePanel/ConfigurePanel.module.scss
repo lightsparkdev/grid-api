@@ -1,0 +1,223 @@
+@use '../../styles/breakpoints' as *;
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.panel {
+  width: $layout-laptop-config-width;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border-right: var(--stroke-xs) solid var(--border-primary);
+  overflow: hidden;
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: $layout-laptop-content-padding;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.content,
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.group {
+  --tile-bg: var(--panel-tile-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  width: 100%;
+  background: var(--tile-bg);
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-md);
+  transition: background-color 240ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: 56px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: var(--stroke-xs) solid var(--border-primary);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.rowLabel {
+  @include label;
+  flex: 0 0 92px;
+  color: var(--text-secondary);
+  font-feature-settings: 'salt' 1;
+}
+
+.swatches {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.swatch {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.19, 1, 0.22, 1);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: contain;
+  }
+
+  &[data-active]::after {
+    position: absolute;
+    inset: -5px;
+    border: 2px solid var(--text-primary);
+    border-radius: 9px;
+    content: '';
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: scale(1.08);
+    }
+  }
+}
+
+.input,
+.select {
+  all: unset;
+  box-sizing: border-box;
+  @include label;
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.upload {
+  all: unset;
+  box-sizing: border-box;
+  @include label;
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-3xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  svg path {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.logoPicked {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.logoPreview,
+.logoClear {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.logoPreview {
+  box-shadow: inset 0 0 0 1px var(--border-primary);
+
+  img {
+    max-width: 14px;
+    max-height: 14px;
+    object-fit: contain;
+  }
+}
+
+.logoClear {
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--border-primary);
+  cursor: pointer;
+}
+
+.fileInput {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choices {
+  display: flex;
+  flex: 1;
+  justify-content: flex-end;
+  gap: var(--spacing-3xs);
+
+  button {
+    all: unset;
+    @include label-sm;
+    padding: 5px 8px;
+    border-radius: var(--corner-radius-sm);
+    color: var(--text-tertiary);
+    cursor: pointer;
+  }
+
+  button[data-active] {
+    background: var(--surface-base);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 var(--stroke-xs) var(--border-primary);
+  }
+}
+
+.error {
+  margin: calc(-1 * var(--spacing-xs)) var(--spacing-xs) 0;
+  color: var(--color-red-600);
+  font-size: var(--font-size-xs);
+}
+
+@media (max-width: $breakpoint-layout-mobile) {
+  .panel {
+    width: 100%;
+    height: 100dvh;
+    border-right: 0;
+  }
+
+  .body {
+    padding: var(--spacing-xl);
+    padding-top: var(--spacing-2xl);
+    padding-bottom: 96px;
+  }
+}

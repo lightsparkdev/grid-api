@@ -1,0 +1,98 @@
+@use '@lightsparkdev/origin/src/tokens/text-styles' as *;
+
+.panel {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--dot-grid-bg);
+}
+
+:global(html[data-layout='stacked']) .panel {
+  height: calc(100vh - var(--panel-header-height, 52px) - 64px);
+  flex: none;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-sm);
+  background: var(--surface-secondary);
+
+  button {
+    all: unset;
+    @include label-sm;
+    padding: 5px 8px;
+    border-radius: var(--corner-radius-xs);
+    color: var(--text-tertiary);
+    cursor: pointer;
+  }
+
+  button[data-active] {
+    background: var(--surface-base);
+    color: var(--text-primary);
+  }
+}
+
+.download {
+  @include label-sm;
+  height: 30px;
+  padding: 0 var(--spacing-sm);
+  border: 0;
+  border-radius: var(--corner-radius-sm);
+  background: var(--text-primary);
+  color: var(--surface-primary);
+}
+
+.stage {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  justify-content: center;
+  overflow: auto;
+  padding: var(--spacing-2xl) var(--spacing-xl) 64px;
+  background:
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--text-primary) 10%, transparent) 0 1px,
+      transparent 1px
+    )
+    0 0 / 16px 16px,
+    var(--dot-grid-bg);
+}
+
+@media (max-width: 767px) {
+  :global(html[data-layout='stacked']) .panel {
+    height: calc(100dvh - var(--panel-header-height, 52px));
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .segmented {
+    margin-left: auto;
+  }
+
+  .stage {
+    padding: var(--spacing-xl) var(--spacing-sm) 56px;
+  }
+}
+
+@media print {
+  .stage {
+    display: block;
+    overflow: visible;
+    padding: 0;
+    background: #fff;
+  }
+}

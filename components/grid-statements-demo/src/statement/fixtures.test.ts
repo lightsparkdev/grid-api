@@ -5,9 +5,10 @@ import {
   DEFAULT_BRAND,
   LEGAL,
   PERIODS,
-  REQUIREMENTS,
+  statementRows,
   statementFilename,
 } from './fixtures';
+import { buildApiEntries, reconcileApiEntries } from './api';
 
 describe('statement fixtures', () => {
   it('reconciles the consumer statement and fee total', () => {
@@ -17,7 +18,7 @@ describe('statement fixtures', () => {
       closingBalanceCents: 337395,
       totalFeesCents: 1500,
     });
-    expect(statement.transactions.filter((transaction) => transaction.disputable)).toHaveLength(3);
+    expect(statementRows(statement).filter((transaction) => transaction.disputable)).toHaveLength(3);
   });
 
   it('reconciles the commercial statement without a Reg E overlay', () => {
@@ -27,7 +28,7 @@ describe('statement fixtures', () => {
       closingBalanceCents: 1445975,
       totalFeesCents: 1500,
     });
-    expect(statement.transactions.every((transaction) => !('disputable' in transaction))).toBe(true);
+    expect(statementRows(statement).every((transaction) => transaction.disputable === undefined)).toBe(true);
   });
 
   it('pins reviewed legal roles and notice language', () => {
@@ -45,14 +46,48 @@ describe('statement fixtures', () => {
     );
   });
 
-  it('uses unique coverage identifiers and real data provenance', () => {
-    expect(new Set(REQUIREMENTS.map((requirement) => requirement.id))).toHaveProperty(
-      'size',
-      REQUIREMENTS.length,
-    );
-    expect(REQUIREMENTS.map((requirement) => requirement.source).join(' ')).not.toMatch(
-      /\/statements|webhook/i,
-    );
+  it.each(['consumer', 'commercial'] as const)(
+    'reconciles the %s statement to the real API response chain',
+    (variant) => {
+      const statement = buildStatement(variant, DEFAULT_BRAND, PERIODS[0]);
+      const entries = buildApiEntries(statement, 1_700_000_000_000);
+
+      expect(entries.map((entry) => entry.operationId)).toEqual([
+        'getCustomerById',
+        'listCustomerInternalAccounts',
+        'listTransactions',
+      ]);
+      expect(reconcileApiEntries(statement, entries)).toEqual({
+        openingBalanceCents: statement.openingBalanceCents,
+        ...calculateTotals(statement),
+      });
+    },
+  );
+
+  it('projects one wire transaction into principal and fee rows', () => {
+    const statement = buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]);
+
+    expect(statementRows(statement).slice(3, 5)).toEqual([
+      {
+        id: 'c4',
+        day: '18',
+        type: 'Wire transfer out',
+        party: 'First National Escrow',
+        amountCents: -100000,
+        isFee: false,
+        disputable: false,
+        terminal: undefined,
+      },
+      {
+        id: 'c4-fee',
+        day: '18',
+        type: 'Wire transfer fee',
+        party: 'Lead Bank',
+        amountCents: -1500,
+        isFee: true,
+        disputable: false,
+      },
+    ]);
   });
 
   it('creates the requested PDF filename', () => {

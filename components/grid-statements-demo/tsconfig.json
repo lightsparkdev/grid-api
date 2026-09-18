@@ -13,10 +13,21 @@
     "jsx": "preserve",
     "incremental": true,
     "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./src/*"] },
+    "paths": {
+      "@/*": ["./src/*"],
+      "@lightsparkdev/origin/checkbox": [
+        "./node_modules/@lightsparkdev/origin/src/components/Checkbox/index.ts"
+      ],
+      "@lightsparkdev/origin/badge": [
+        "./node_modules/@lightsparkdev/origin/src/components/Badge/index.ts"
+      ],
+      "@lightsparkdev/origin/popover": [
+        "./node_modules/@lightsparkdev/origin/src/components/Popover/index.ts"
+      ]
+    },
     "allowJs": true,
     "skipLibCheck": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "../origin"]
 }

@@ -1,8 +1,8 @@
 import type {
-  RequirementCoverage,
   StatementBrand,
   StatementModel,
   StatementPeriod,
+  StatementRow,
   StatementTotals,
   StatementVariant,
 } from './types';
@@ -42,30 +42,117 @@ export const PERIODS: readonly StatementPeriod[] = [
   },
 ] as const;
 
-const consumerTransactions = [
-  { id: 'c1', day: '03', type: 'ACH deposit', party: 'Acme Corp Payroll', amountCents: 185000, disputable: true },
+const consumerActivities = [
+  {
+    id: 'c1',
+    kind: 'incoming',
+    rail: 'ACH',
+    day: '03',
+    label: 'ACH deposit',
+    party: 'Acme Corp Payroll',
+    receivedAmountCents: 185000,
+    disputable: true,
+  },
   {
     id: 'c2',
+    kind: 'card',
     day: '08',
-    type: 'Debit card purchase',
+    label: 'Debit card purchase',
     party: 'Blue Bottle Coffee',
-    amountCents: -1875,
+    settledAmountCents: 1875,
     disputable: true,
     terminal: '456 S Spring St, Los Angeles, CA 90013',
+    merchant: {
+      descriptor: 'BLUE BOTTLE COFFEE',
+      mcc: '5814',
+      city: 'Los Angeles',
+      state: 'CA',
+      country: 'US',
+    },
   },
-  { id: 'c3', day: '12', type: 'ACH debit', party: 'Pacific Gas & Electric', amountCents: -14230, disputable: true },
-  { id: 'c4', day: '18', type: 'Wire transfer out', party: 'First National Escrow', amountCents: -100000, disputable: false },
-  { id: 'c5', day: '18', type: 'Wire transfer fee', party: 'Lead Bank', amountCents: -1500, disputable: false, isFee: true },
-  { id: 'c6', day: '24', type: 'RTP received', party: 'Sofía Herrera', amountCents: 25000, disputable: false },
+  {
+    id: 'c3',
+    kind: 'outgoing',
+    rail: 'ACH',
+    day: '12',
+    label: 'ACH debit',
+    party: 'Pacific Gas & Electric',
+    sentAmountCents: 14230,
+    feeCents: 0,
+    disputable: true,
+  },
+  {
+    id: 'c4',
+    kind: 'outgoing',
+    rail: 'WIRE',
+    day: '18',
+    label: 'Wire transfer out',
+    party: 'First National Escrow',
+    sentAmountCents: 100000,
+    feeCents: 1500,
+    disputable: false,
+  },
+  {
+    id: 'c5',
+    kind: 'incoming',
+    rail: 'RTP',
+    day: '24',
+    label: 'RTP received',
+    party: 'Sofía Herrera',
+    receivedAmountCents: 25000,
+    disputable: false,
+  },
 ] as const;
 
-const commercialTransactions = [
-  { id: 'b1', day: '02', type: 'ACH deposit', party: 'Northwind Retail Group', amountCents: 1245000 },
-  { id: 'b2', day: '07', type: 'ACH debit', party: 'Cascade Bean Supply Co.', amountCents: -487550 },
-  { id: 'b3', day: '11', type: 'Wire transfer out', party: 'Meridian Equipment Leasing', amountCents: -620000 },
-  { id: 'b4', day: '11', type: 'Wire transfer fee', party: 'Lead Bank', amountCents: -1500, isFee: true },
-  { id: 'b5', day: '15', type: 'ACH debit', party: 'Gusto Payroll', amountCents: -832000 },
-  { id: 'b6', day: '22', type: 'RTP received', party: 'Harbor Café Wholesale', amountCents: 318025 },
+const commercialActivities = [
+  {
+    id: 'b1',
+    kind: 'incoming',
+    rail: 'ACH',
+    day: '02',
+    label: 'ACH deposit',
+    party: 'Northwind Retail Group',
+    receivedAmountCents: 1245000,
+  },
+  {
+    id: 'b2',
+    kind: 'outgoing',
+    rail: 'ACH',
+    day: '07',
+    label: 'ACH debit',
+    party: 'Cascade Bean Supply Co.',
+    sentAmountCents: 487550,
+    feeCents: 0,
+  },
+  {
+    id: 'b3',
+    kind: 'outgoing',
+    rail: 'WIRE',
+    day: '11',
+    label: 'Wire transfer out',
+    party: 'Meridian Equipment Leasing',
+    sentAmountCents: 620000,
+    feeCents: 1500,
+  },
+  {
+    id: 'b4',
+    kind: 'outgoing',
+    rail: 'ACH',
+    day: '15',
+    label: 'ACH debit',
+    party: 'Gusto Payroll',
+    sentAmountCents: 832000,
+    feeCents: 0,
+  },
+  {
+    id: 'b5',
+    kind: 'incoming',
+    rail: 'RTP',
+    day: '22',
+    label: 'RTP received',
+    party: 'Harbor Café Wholesale',
+    receivedAmountCents: 318025,
+  },
 ] as const;
 
 export const DEFAULT_BRAND: StatementBrand = {
@@ -84,12 +171,15 @@ export function buildStatement(
       brand,
       period,
       account: {
+        id: 'InternalAccount:019542f5-b3e7-1d02-0000-000000000482',
+        customerId: 'Customer:019542f5-b3e7-1d02-0000-000000000421',
+        platformCustomerId: 'marcus-chen-4821',
         holder: 'Marcus Chen',
         type: 'Consumer prepaid account',
         number: '****4821',
       },
       openingBalanceCents: 245000,
-      transactions: consumerTransactions,
+      activities: consumerActivities,
     };
   }
 
@@ -98,17 +188,67 @@ export function buildStatement(
     brand,
     period,
     account: {
+      id: 'InternalAccount:019542f5-b3e7-1d02-0000-000000007305',
+      customerId: 'Customer:019542f5-b3e7-1d02-0000-000000007301',
+      platformCustomerId: 'meridian-coffee-7305',
       holder: 'Meridian Coffee Roasters LLC',
       type: 'Commercial account',
       number: '****7305',
     },
     openingBalanceCents: 1824000,
-    transactions: commercialTransactions,
+    activities: commercialActivities,
   };
 }
 
+export function statementRows(statement: StatementModel): StatementRow[] {
+  return statement.activities.flatMap((activity) => {
+    const platformFields =
+      statement.variant === 'consumer'
+        ? { disputable: activity.disputable, terminal: activity.terminal }
+        : {};
+
+    if (activity.kind === 'incoming') {
+      return [{
+        id: activity.id,
+        day: activity.day,
+        type: activity.label,
+        party: activity.party,
+        amountCents: activity.receivedAmountCents,
+        isFee: false,
+        ...platformFields,
+      }];
+    }
+
+    const amountCents =
+      activity.kind === 'card' ? -activity.settledAmountCents : -activity.sentAmountCents;
+    const rows: StatementRow[] = [{
+      id: activity.id,
+      day: activity.day,
+      type: activity.label,
+      party: activity.party,
+      amountCents,
+      isFee: false,
+      ...platformFields,
+    }];
+
+    if (activity.kind === 'outgoing' && activity.feeCents > 0) {
+      rows.push({
+        id: `${activity.id}-fee`,
+        day: activity.day,
+        type: `${activity.rail === 'WIRE' ? 'Wire transfer' : activity.label} fee`,
+        party: 'Lead Bank',
+        amountCents: -activity.feeCents,
+        isFee: true,
+        ...(statement.variant === 'consumer' ? { disputable: false } : {}),
+      });
+    }
+
+    return rows;
+  });
+}
+
 export function calculateTotals(statement: StatementModel): StatementTotals {
-  return statement.transactions.reduce<StatementTotals>(
+  return statementRows(statement).reduce<StatementTotals>(
     (totals, transaction) => ({
       closingBalanceCents: totals.closingBalanceCents + transaction.amountCents,
       totalFeesCents:
@@ -120,24 +260,6 @@ export function calculateTotals(statement: StatementModel): StatementTotals {
     },
   );
 }
-
-export const REQUIREMENTS: readonly RequirementCoverage[] = [
-  { id: 'provider', requirement: 'Lead Bank and Lightspark roles', renderedAt: 'Legal footer', source: 'Reviewed legal copy', appliesTo: 'all' },
-  { id: 'holder', requirement: 'Account holder and masked number', renderedAt: 'Statement details', source: 'Platform account record', appliesTo: 'all' },
-  { id: 'account-type', requirement: 'Account type', renderedAt: 'Statement details', source: 'Platform account record', appliesTo: 'all' },
-  { id: 'period', requirement: 'Statement period and issue date', renderedAt: 'Statement details', source: 'Platform statement schedule', appliesTo: 'all' },
-  { id: 'balances', requirement: 'Opening and closing balances', renderedAt: 'Balance summary', source: 'Derived from platform ledger snapshots', appliesTo: 'all' },
-  { id: 'activity', requirement: 'Complete balance-moving activity', renderedAt: 'Transactions', source: 'Grid GET /transactions plus platform ledger', appliesTo: 'all' },
-  { id: 'line-amount', requirement: 'Transaction amount', renderedAt: 'Transaction row', source: 'Grid GET /transactions', appliesTo: 'all' },
-  { id: 'line-date', requirement: 'Date credited or debited', renderedAt: 'Transaction row', source: 'Grid GET /transactions', appliesTo: 'all' },
-  { id: 'line-type', requirement: 'Transaction type', renderedAt: 'Transaction row', source: 'Grid GET /transactions', appliesTo: 'all' },
-  { id: 'line-party', requirement: 'Third-party name', renderedAt: 'Transaction row', source: 'Grid GET /transactions', appliesTo: 'all' },
-  { id: 'fees', requirement: 'Total fees for period', renderedAt: 'Transaction total', source: 'Derived from fee transactions', appliesTo: 'all' },
-  { id: 'inquiries', requirement: 'Direct inquiries contact', renderedAt: 'Legal footer', source: 'Reviewed legal copy', appliesTo: 'all' },
-  { id: 'terminal', requirement: 'Terminal location for covered EFTs', renderedAt: 'Transaction detail', source: 'Platform enrichment; public API has no full street address', appliesTo: 'consumer' },
-  { id: 'flags', requirement: 'Covered EFT markers and key', renderedAt: 'Transactions', source: 'Platform Reg E classification', appliesTo: 'consumer' },
-  { id: 'notice', requirement: 'Error-resolution notice and 60-day window', renderedAt: 'Legal footer', source: 'CFPB model language', appliesTo: 'consumer' },
-] as const;
 
 export function formatMoney(cents: number, signed = false): string {
   const amount = Math.abs(cents / 100).toLocaleString('en-US', {
