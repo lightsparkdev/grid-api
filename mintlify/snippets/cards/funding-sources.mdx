@@ -22,8 +22,10 @@ The internal account must:
 - Belong to the customer.
 - Be denominated in a card-eligible currency.
 
-The card's `currency` is derived from the funding source at issue time. If the
-account does not qualify, Grid rejects the request with `400 INVALID_INPUT`.
+The card program fixes the card's `currency` at issuance. USDB-funded cards
+transact in USD, with funding converted at 1 USDB = 1 USD. Their spending
+limits are in USD cents. If the account does not qualify, Grid rejects the
+request with `400 INVALID_INPUT`.
 
 If the funding source is an `EMBEDDED_WALLET` account, the cardholder must
 also authorize a delegated signing key before the card can fund a
@@ -44,9 +46,10 @@ curl -X PATCH "$GRID_BASE_URL/cards/Card:019542f5-b3e7-1d02-0000-000000000010" \
   }'
 ```
 
-The replacement account must belong to the customer and be denominated in the
-card's currency. The response returns the updated `Card` resource. Changing
-`fundingSource` does not fire a webhook.
+The replacement account must belong to the customer and use a currency
+supported by the card's program, including USDB for USD cards. The response
+returns the updated `Card` resource. Changing `fundingSource` does not change
+the card's currency or spending-limit units, and does not fire a webhook.
 
 You cannot supply `fundingSource` alongside `status: CLOSED`. To stop a card
 from spending, set `status: FROZEN` instead.
@@ -55,7 +58,7 @@ from spending, set `status: FROZEN` instead.
 
 | Status | Code | What it means |
 |--------|------|---------------|
-| 400 | `INVALID_INPUT` | The account does not belong to the customer, or is not denominated in a card-eligible currency at creation or the card's currency when replaced. Also returned when `fundingSource` is supplied alongside `status: CLOSED`, or another request field is invalid. |
+| 400 | `INVALID_INPUT` | The account does not belong to the customer, or its currency is not supported by the card program. Also returned when `fundingSource` is supplied alongside `status: CLOSED`, or another request field is invalid. |
 | 409 | `CARD_NOT_MUTABLE` | The card is `CLOSED`. |
 
 ## Stop a card from spending
