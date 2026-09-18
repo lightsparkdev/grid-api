@@ -92,6 +92,17 @@ const exceptions = new Map([
   ],
 ]);
 
+const protectedExceptions = new Map([
+  [
+    'src/apps/shared/AppShell/AppShell.tsx',
+    ['APP_SHELL_PRESETS[device]', 'squirclePath(', 'data-device={device}'],
+  ],
+  [
+    'src/apps/shared/AppShell/usePhoneFitScale.ts',
+    ['preset.outerWidth', 'preset.outerHeight', '[preset]'],
+  ],
+]);
+
 async function filesAt(path) {
   const absolute = resolve(cardsRoot, path);
   const entries = await readdir(absolute, { withFileTypes: true }).catch(() => null);
@@ -112,6 +123,12 @@ for (const path of files) {
   const expected = transform ? Buffer.from(transform(cards.toString('utf8'))) : cards;
   if (!expected.equals(statements)) failures.push(path);
   console.log(`${transform ? 'EXCEPTION' : 'IDENTICAL'}\t${relative(cardsRoot, resolve(cardsRoot, path))}`);
+}
+
+for (const [path, markers] of protectedExceptions) {
+  const statements = await readFile(resolve(statementsRoot, path), 'utf8');
+  if (markers.some((marker) => !statements.includes(marker))) failures.push(path);
+  console.log(`PROTECTED_EXCEPTION\t${path}`);
 }
 
 if (failures.length > 0) {

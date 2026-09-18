@@ -182,6 +182,41 @@ export function SampleSwatches<Value extends string>({
   );
 }
 
+export function TextSwatches<Value extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: Value;
+  options: ReadonlyArray<{ id: Value; label: string; description: string }>;
+  onChange: (value: Value) => void;
+}) {
+  return (
+    <SwatchRow label={label} active={value}>
+      {options.map((option) => (
+        <Tooltip key={option.id} text={option.description}>
+          {(tip) => (
+            <button
+              type="button"
+              role="radio"
+              aria-checked={value === option.id}
+              aria-label={option.description}
+              tabIndex={value === option.id ? 0 : -1}
+              className={styles.textSwatch}
+              {...tip}
+              {...pressable({ onClick: () => onChange(option.id) }, true)}
+            >
+              {option.label}
+            </button>
+          )}
+        </Tooltip>
+      ))}
+    </SwatchRow>
+  );
+}
+
 export function ShimmerField({
   value,
   maxLength,

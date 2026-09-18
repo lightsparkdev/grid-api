@@ -36,6 +36,10 @@ The script compares every copied file by bytes. It permits only these product ex
 - `src/components/PlaygroundIntro/PlaygroundIntro.tsx` uses Statements product copy.
 - `src/app/layout.tsx` uses Statements metadata and the Statements production URL. The pre-paint
   embed, theme, layout, and navigation script stays equal.
+- `src/app/page.module.scss` adds print-only rules that remove the playground chrome.
+- `src/apps/shared/AppShell/AppShell.tsx` and `usePhoneFitScale.ts` accept a device preset.
+  The status bar styles, status icons, status clock, and squircle path stay equal to Cards.
+  The parity check protects the required device preset code from a direct copy.
 
 Port shared fixes with `cp` from `components/grid-cards-demo` to the same path under
 `components/grid-statements-demo`. Do not rewrite or approximate shared chrome.
@@ -46,7 +50,8 @@ Deploy to Vercel as the `grid-statements-demo` project. `vercel.json` sets an `i
 commit only triggers a build if it touches this directory. The docs page iframes the production
 URL (`https://grid-statements-demo.vercel.app`). Mintlify preview branches iframe
 `https://grid-statements-demo-git-<branch>-lightspark-team.vercel.app`. If a URL differs, update
-`mintlify/snippets/global-accounts/statements-demo-embed.mdx`.
+`mintlify/snippets/cards/statements-demo-embed.mdx`. The docs page is
+`mintlify/cards/statements.mdx` at `/cards/statements`.
 
 Vercel limits a host label to 63 characters, so branch names for this project must be 22
 characters or fewer (`grid-statements-demo-git-` and `-lightspark-team` use 41).

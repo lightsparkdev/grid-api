@@ -1,5 +1,4 @@
 export type StatementVariant = 'consumer' | 'commercial';
-export type StatementDevice = 'mail' | 'duo';
 export type PreviewWidth = 'full' | 'narrow';
 export type HexColor = `#${string}`;
 

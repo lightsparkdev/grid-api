@@ -67,6 +67,21 @@ for (const auditCase of cases) {
     });
     evidence.push({ app: app.name, case: auditCase.name, metrics, errors });
 
+    if (app.name === 'statements' && !auditCase.mobile) {
+      await page.getByRole('radio', { name: 'iPhone Duo' }).click();
+      await page.screenshot({
+        path: new URL(`${baseName}-duo.png`, output).pathname,
+        fullPage: true,
+      });
+      await page
+        .getByRole('button', { name: /Open .* statement attachment/ })
+        .click();
+      await page.screenshot({
+        path: new URL(`${baseName}-document.png`, output).pathname,
+        fullPage: true,
+      });
+    }
+
     if (auditCase.mobile) {
       const explore = page.getByRole('button', { name: 'Explore playground' });
       if (await explore.count()) {
@@ -76,6 +91,13 @@ for (const auditCase of cases) {
           path: new URL(`${baseName}-playground.png`, output).pathname,
           fullPage: true,
         });
+        if (app.name === 'statements') {
+          await page.getByRole('radio', { name: 'iPhone Duo' }).click();
+          await page.screenshot({
+            path: new URL(`${baseName}-playground-duo.png`, output).pathname,
+            fullPage: true,
+          });
+        }
       }
     }
     await context.close();
@@ -84,4 +106,10 @@ for (const auditCase of cases) {
 
 await browser.close();
 await writeFile(new URL('metrics.json', output), `${JSON.stringify(evidence, null, 2)}\n`);
+const statementErrors = evidence
+  .filter((entry) => entry.app === 'statements')
+  .flatMap((entry) => entry.errors);
+if (statementErrors.length > 0) {
+  throw new Error(`Statements console errors: ${statementErrors.join('\n')}`);
+}
 console.log(output.pathname);

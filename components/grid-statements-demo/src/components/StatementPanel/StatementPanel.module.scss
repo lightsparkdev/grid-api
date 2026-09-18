@@ -71,6 +71,13 @@
   }
 }
 
+.exportError {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  color: var(--color-red-600);
+  font-size: 12px;
+}
+
 .exportSource {
   position: fixed;
   left: -10000px;
@@ -98,6 +105,12 @@
   border-radius: var(--corner-radius-sm);
   background: var(--text-primary);
   color: var(--surface-primary);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 }
 
 .stage {

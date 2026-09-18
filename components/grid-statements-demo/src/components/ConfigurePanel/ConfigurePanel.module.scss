@@ -85,20 +85,6 @@
   }
 }
 
-.select {
-  all: unset;
-  box-sizing: border-box;
-  @include label;
-  flex: 1;
-  min-width: 0;
-  color: var(--text-primary);
-  text-align: right;
-}
-
-.select {
-  cursor: pointer;
-}
-
 .contrastWarning {
   display: grid;
   flex: 0 0 18px;

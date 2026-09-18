@@ -1,13 +1,22 @@
 type PointerEventLike = { pointerType?: string };
 type Handler<Event> = (event: Event) => void;
+let audioContext: AudioContext | null = null;
 
 function cue(frequency: number) {
   if (typeof window === 'undefined' || document.visibilityState !== 'visible') return;
+  if (
+    typeof window.localStorage?.getItem === 'function' &&
+    window.localStorage.getItem('ls-demo-sounds-muted') === '1'
+  ) {
+    return;
+  }
   const AudioContextConstructor =
     window.AudioContext ??
     (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioContextConstructor) return;
-  const context = new AudioContextConstructor();
+  const context = audioContext ?? new AudioContextConstructor();
+  audioContext = context;
+  if (context.state === 'suspended') void context.resume();
   const oscillator = context.createOscillator();
   const gain = context.createGain();
   oscillator.frequency.value = frequency;
@@ -16,7 +25,6 @@ function cue(frequency: number) {
   oscillator.connect(gain).connect(context.destination);
   oscillator.start();
   oscillator.stop(context.currentTime + 0.03);
-  oscillator.addEventListener('ended', () => void context.close());
 }
 
 export function pressable<

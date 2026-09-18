@@ -6,10 +6,10 @@ describe('statement export', () => {
   it('uses one extension for PDF and HTML filenames', () => {
     const statement = buildStatement('consumer', DEFAULT_BRAND, PERIODS[1]);
     expect(statementExportFilename(statement, 'pdf')).toBe(
-      'northstar-statement-2026-08.pdf',
+      'aurora-statement-2026-08.pdf',
     );
     expect(statementExportFilename(statement, 'html')).toBe(
-      'northstar-statement-2026-08.html',
+      'aurora-statement-2026-08.html',
     );
   });
 
@@ -19,7 +19,7 @@ describe('statement export', () => {
     source.innerHTML =
       '<header><img alt="Logo" src="data:image/png;base64,AAAA"><strong>Monthly statement</strong></header><p>Legal statement copy</p>';
 
-    const html = await buildStatementHtml(source, 'Northstar statement');
+    const html = await buildStatementHtml(source, 'Aurora statement');
     const parsed = new DOMParser().parseFromString(html, 'text/html');
 
     expect(parsed.querySelector('article')?.textContent).toContain(

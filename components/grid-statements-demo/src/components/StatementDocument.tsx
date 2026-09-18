@@ -33,7 +33,7 @@ export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>
           {statement.brand.logo.kind === 'image' ? (
             <img
               src={statement.brand.logo.src}
-              alt={`${statement.brand.companyName || 'Company'} logo`}
+              alt={statement.brand.logo.alt}
             />
           ) : (
             statement.brand.companyName

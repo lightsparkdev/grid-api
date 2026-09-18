@@ -7,6 +7,7 @@ import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stro
 import { ConfigurePanel } from '@/components/ConfigurePanel/ConfigurePanel';
 import { StatementPanel } from '@/components/StatementPanel/StatementPanel';
 import { ApiPanel } from '@/components/ApiPanel/ApiPanel';
+import type { AppShellDevice } from '@/apps/shared/AppShell';
 import { ColumnResizeHandle } from '@/components/ColumnResizeHandle/ColumnResizeHandle';
 import { ThemeSync } from '@/components/ThemeSync';
 import { useColumnResize } from '@/hooks/useColumnResize';
@@ -18,10 +19,14 @@ import {
   buildStatement,
   statementFilename,
 } from '@/statement/fixtures';
-import { presetIconSrc, type PresetId, type StatementPreset } from '@/statement/presets';
+import {
+  PRESETS,
+  presetIconSrc,
+  type PresetId,
+  type StatementPreset,
+} from '@/statement/presets';
 import type {
   StatementBrand,
-  StatementDevice,
   StatementVariant,
 } from '@/statement/types';
 import styles from './page.module.scss';
@@ -45,9 +50,9 @@ export default function Page() {
   const [variant, setVariant] = useState<StatementVariant>('consumer');
   const [periodId, setPeriodId] = useState(PERIODS[0].id);
   const [brand, setBrand] = useState<StatementBrand>(DEFAULT_BRAND);
-  const [presetId, setPresetId] = useState<PresetId | null>(null);
+  const [presetId, setPresetId] = useState<PresetId | null>(PRESETS[0].id);
   const [presetSequence, setPresetSequence] = useState(0);
-  const [device, setDevice] = useState<StatementDevice>('mail');
+  const [device, setDevice] = useState<AppShellDevice>('iphone');
   const [entries, setEntries] = useState<StatementApiEntry[]>(() =>
     buildApiEntries(buildStatement('consumer', DEFAULT_BRAND, PERIODS[0]), 0),
   );
@@ -61,6 +66,9 @@ export default function Page() {
     () => buildStatement(variant, DEFAULT_BRAND, period),
     [period, variant],
   );
+  const refreshKey = `${variant}:${period.id}:${presetSequence}`;
+  const previousRefreshKey = useRef(refreshKey);
+  const entriesHydrated = useRef(false);
 
   useLayoutEffect(() => {
     const media = window.matchMedia(`(max-width: ${LAYOUT_WIDE_PX - 1}px)`);
@@ -72,10 +80,17 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    if (!entriesHydrated.current) {
+      entriesHydrated.current = true;
+      setEntries(buildApiEntries(apiStatement));
+      return;
+    }
+    if (refreshKey === previousRefreshKey.current) return;
+    previousRefreshKey.current = refreshKey;
     setEntries([]);
     const timer = window.setTimeout(() => setEntries(buildApiEntries(apiStatement)), 260);
     return () => window.clearTimeout(timer);
-  }, [apiStatement, presetSequence]);
+  }, [apiStatement, refreshKey]);
 
   useEffect(
     () => () => {
@@ -139,7 +154,7 @@ export default function Page() {
       document.title = previousTitle;
       window.removeEventListener('afterprint', restoreTitle);
     };
-    document.title = statementFilename(statement);
+    document.title = statementFilename(statement).replace(/\.pdf$/i, '');
     window.addEventListener('afterprint', restoreTitle);
     window.print();
     window.setTimeout(restoreTitle, 1000);
@@ -155,6 +170,24 @@ export default function Page() {
   const goConfigure = useCallback(() => {
     withViewTransition(() => setMobileView('configure'));
   }, []);
+
+  const [showBackPill, setShowBackPill] = useState(true);
+  const lastScrollY = useRef(0);
+  useEffect(() => {
+    if (mobileView !== 'playground') return;
+    const element = stackColRef.current;
+    if (!element) return;
+    element.scrollTop = 0;
+    lastScrollY.current = 0;
+    setShowBackPill(true);
+    const onScroll = () => {
+      const y = element.scrollTop;
+      setShowBackPill(y < lastScrollY.current || y < 52);
+      lastScrollY.current = y;
+    };
+    element.addEventListener('scroll', onScroll, { passive: true });
+    return () => element.removeEventListener('scroll', onScroll);
+  }, [mobileView]);
 
   useEffect(() => {
     if (mobileView !== 'playground') return;
@@ -229,7 +262,12 @@ export default function Page() {
         Explore playground
         <IconArrowRight size={16} />
       </button>
-      <button type="button" className={styles.backPill} onClick={goConfigure}>
+      <button
+        type="button"
+        className={styles.backPill}
+        data-hidden={!showBackPill || undefined}
+        onClick={goConfigure}
+      >
         <IconArrowLeft size={16} />
         Configure
       </button>

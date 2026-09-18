@@ -3,7 +3,7 @@ import { APP_SHELL_PRESETS } from './devicePresets';
 
 describe('AppShell device presets', () => {
   it('keeps the Cards iPhone geometry', () => {
-    expect(APP_SHELL_PRESETS.mail).toMatchObject({
+    expect(APP_SHELL_PRESETS.iphone).toMatchObject({
       outerWidth: 434,
       outerHeight: 906,
       screenWidth: 402,

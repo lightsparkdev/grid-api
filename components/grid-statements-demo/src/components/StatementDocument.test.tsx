@@ -31,12 +31,12 @@ describe('StatementDocument', () => {
   it('uses company name when no logo is present', () => {
     const statement = buildStatement(
       'consumer',
-      { ...DEFAULT_BRAND, companyName: 'Northstar', logo: { kind: 'none' } },
+      { ...DEFAULT_BRAND, companyName: 'Waterbnb', logo: { kind: 'none' } },
       PERIODS[0],
     );
     render(<StatementDocument statement={statement} width="full" />);
 
-    expect(screen.getByText('Northstar')).toBeTruthy();
+    expect(screen.getByText('Waterbnb')).toBeTruthy();
   });
 
   it('applies all four brand tokens to the printable statement', () => {

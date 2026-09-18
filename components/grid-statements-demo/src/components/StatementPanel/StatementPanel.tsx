@@ -1,24 +1,25 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { AppShell } from '@/apps/shared/AppShell';
+import { AppShell, type AppShellDevice } from '@/apps/shared/AppShell';
 import { SampleSwatches } from '@/components/DesignControls/DesignControls';
 import { MailScreen } from '@/components/MailScreen/MailScreen';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { StatementDocument } from '@/components/StatementDocument';
 import { pressable } from '@/lib/sounds';
+import { brandContrast } from '@/statement/brand';
 import {
   buildStatementHtml,
   downloadHtml,
   statementExportFilename,
 } from '@/statement/export';
-import type { StatementDevice, StatementModel } from '@/statement/types';
+import type { StatementModel } from '@/statement/types';
 import styles from './StatementPanel.module.scss';
 
 interface StatementPanelProps {
   statement: StatementModel;
-  device: StatementDevice;
-  onDeviceChange: (device: StatementDevice) => void;
+  device: AppShellDevice;
+  onDeviceChange: (device: AppShellDevice) => void;
   onPrint: () => void;
 }
 
@@ -29,13 +30,21 @@ export function StatementPanel({
   onPrint,
 }: StatementPanelProps) {
   const [exportOpen, setExportOpen] = useState(false);
+  const [exportError, setExportError] = useState('');
   const exportDocumentRef = useRef<HTMLElement>(null);
+  const contrast = brandContrast(statement.brand.colors);
+  const exportAllowed = contrast.primaryPasses && contrast.secondaryPasses;
   const exportHtml = async () => {
     if (!exportDocumentRef.current) return;
-    const filename = statementExportFilename(statement, 'html');
-    const html = await buildStatementHtml(exportDocumentRef.current, filename);
-    downloadHtml(html, filename);
-    setExportOpen(false);
+    try {
+      setExportError('');
+      const filename = statementExportFilename(statement, 'html');
+      const html = await buildStatementHtml(exportDocumentRef.current, filename);
+      downloadHtml(html, filename);
+      setExportOpen(false);
+    } catch {
+      setExportError('HTML export failed. Try again.');
+    }
   };
 
   return (
@@ -59,7 +68,7 @@ export function StatementPanel({
               label="Device"
               value={device}
               options={[
-                { id: 'mail', label: 'iPhone' },
+                { id: 'iphone', label: 'iPhone' },
                 { id: 'duo', label: 'iPhone Duo' },
               ]}
               onChange={onDeviceChange}
@@ -67,9 +76,20 @@ export function StatementPanel({
             <button
               className={styles.download}
               type="button"
+              disabled={!exportAllowed}
+              title={
+                exportAllowed
+                  ? undefined
+                  : 'Fix the statement color contrast before you export.'
+              }
               aria-expanded={exportOpen}
               aria-controls="statement-export-preview"
-              {...pressable({ onClick: () => setExportOpen((current) => !current) })}
+              {...pressable({
+                onClick: () => {
+                  setExportError('');
+                  setExportOpen((current) => !current);
+                },
+              })}
             >
               Export
             </button>
@@ -105,6 +125,11 @@ export function StatementPanel({
               HTML
             </button>
           </div>
+          {exportError ? (
+            <span className={styles.exportError} role="alert">
+              {exportError}
+            </span>
+          ) : null}
         </section>
       ) : null}
       <div className={styles.stage}>

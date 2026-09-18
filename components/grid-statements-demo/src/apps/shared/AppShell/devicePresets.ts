@@ -1,7 +1,7 @@
-import type { StatementDevice } from '@/statement/types';
+export type AppShellDevice = 'iphone' | 'duo';
 
 export interface AppShellPreset {
-  id: StatementDevice;
+  id: AppShellDevice;
   outerWidth: number;
   outerHeight: number;
   screenWidth: number;
@@ -12,9 +12,9 @@ export interface AppShellPreset {
   cameraHole: { diameter: number; top: number; outer: number } | null;
 }
 
-export const APP_SHELL_PRESETS: Record<StatementDevice, AppShellPreset> = {
-  mail: {
-    id: 'mail',
+export const APP_SHELL_PRESETS: Record<AppShellDevice, AppShellPreset> = {
+  iphone: {
+    id: 'iphone',
     outerWidth: 434,
     outerHeight: 906,
     screenWidth: 402,

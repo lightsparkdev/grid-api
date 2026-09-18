@@ -93,10 +93,10 @@ describe('statement fixtures', () => {
   it('creates the requested PDF filename', () => {
     const statement = buildStatement(
       'consumer',
-      { ...DEFAULT_BRAND, companyName: 'Northstar Money, Inc.', logo: { kind: 'none' } },
+      { ...DEFAULT_BRAND, companyName: 'Waterbnb', logo: { kind: 'none' } },
       PERIODS[1],
     );
 
-    expect(statementFilename(statement)).toBe('northstar-money-inc-statement-2026-08.pdf');
+    expect(statementFilename(statement)).toBe('waterbnb-statement-2026-08.pdf');
   });
 });

@@ -2,14 +2,13 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import { PhoneStatusBar } from './PhoneStatusBar';
-import { APP_SHELL_PRESETS } from './devicePresets';
+import { APP_SHELL_PRESETS, type AppShellDevice } from './devicePresets';
 import { squirclePath } from '@/components/liquid-glass/squircle';
 import { usePhoneFitScale } from './usePhoneFitScale';
-import type { StatementDevice } from '@/statement/types';
 import styles from './AppShell.module.scss';
 
 interface AppShellProps {
-  device: StatementDevice;
+  device: AppShellDevice;
   children: ReactNode;
   screenTone?: 'default' | 'light';
 }

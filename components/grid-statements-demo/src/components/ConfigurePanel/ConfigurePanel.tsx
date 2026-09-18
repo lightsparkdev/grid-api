@@ -5,6 +5,7 @@ import {
   SampleSwatches,
   ShimmerField,
   SwatchRow,
+  TextSwatches,
   UploadRow,
 } from '@/components/DesignControls/DesignControls';
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
@@ -95,7 +96,7 @@ export function ConfigurePanel({
             <div className={styles.group}>
               <div className={styles.row}>
                 <span className={styles.rowLabel}>Preset</span>
-                <SwatchRow label="Cards presets" active={presetId}>
+                <SwatchRow label="Platform preset" active={presetId}>
                   {PRESETS.map((preset) => (
                     <Tooltip key={preset.id} text={preset.description}>
                       {(tip) => (
@@ -174,20 +175,22 @@ export function ConfigurePanel({
                   onChange={onVariantChange}
                 />
               </div>
-              <label className={styles.row}>
+              <div className={styles.row}>
                 <span className={styles.rowLabel}>Period</span>
-                <select
-                  className={styles.select}
+                <TextSwatches
+                  label="Period"
                   value={periodId}
-                  onChange={(event) => onPeriodChange(event.target.value)}
-                >
-                  {PERIODS.map((period) => (
-                    <option key={period.id} value={period.id}>
-                      {period.range}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  options={PERIODS.map((period) => ({
+                    id: period.id,
+                    label: new Intl.DateTimeFormat('en-US', {
+                      month: 'short',
+                      timeZone: 'UTC',
+                    }).format(new Date(`${period.id}-01T00:00:00Z`)),
+                    description: period.range,
+                  }))}
+                  onChange={onPeriodChange}
+                />
+              </div>
             </div>
           </section>
         </div>

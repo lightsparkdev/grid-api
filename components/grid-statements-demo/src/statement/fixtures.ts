@@ -8,6 +8,7 @@ import type {
 } from './types';
 import { DEFAULT_BRAND_COLORS } from './brand';
 import { statementExportFilename } from './export';
+import { PRESETS, presetIconSrc } from './presets';
 
 export const LEGAL = {
   phone: '(855) 516-0103',
@@ -158,8 +159,12 @@ const commercialActivities = [
 ] as const;
 
 export const DEFAULT_BRAND: StatementBrand = {
-  companyName: 'Northstar',
-  logo: { kind: 'none' },
+  companyName: PRESETS[0].companyName,
+  logo: {
+    kind: 'image',
+    src: presetIconSrc(PRESETS[0]),
+    alt: `${PRESETS[0].companyName} logo`,
+  },
   colors: DEFAULT_BRAND_COLORS,
 };
 

@@ -29,6 +29,21 @@ const refiresAfter = async (action) => {
   await wide.getByText('listTransactions').waitFor();
 };
 
+await refiresAfter(async () => {
+  const consumer = wide.getByRole('radio', { name: 'Consumer' });
+  await consumer.focus();
+  await consumer.press('ArrowRight');
+});
+assert.equal(
+  await wide.getByRole('radio', { name: 'Commercial' }).getAttribute('aria-checked'),
+  'true',
+);
+await refiresAfter(async () => {
+  const commercial = wide.getByRole('radio', { name: 'Commercial' });
+  await commercial.focus();
+  await commercial.press('ArrowLeft');
+});
+
 const originalApiWidth = await wide.locator('[class*="apiCol"]').evaluate(
   (element) => element.getBoundingClientRect().width,
 );
@@ -70,16 +85,32 @@ await wide.evaluate(() => {
   window.__apiRemovalObserver = observer;
 });
 await wide.getByLabel('Company name').fill('Aurora edited');
+await wide
+  .locator('input[type="color"][aria-label="Primary text"]')
+  .fill('#ffffff');
 await wide.waitForTimeout(400);
 assert.equal(await wide.evaluate(() => window.__apiRemovalCount), 0);
 assert.equal(await wide.getByText('listTransactions').count(), 1);
+assert.equal(
+  await wide.getByRole('img', { name: 'primary color contrast warning' }).count(),
+  2,
+);
+assert.equal(await wide.getByRole('button', { name: 'Export' }).isDisabled(), true);
+await wide
+  .locator('input[type="color"][aria-label="Primary text"]')
+  .fill('#1a1a1a');
+await wide.waitForTimeout(300);
+assert.equal(await wide.evaluate(() => window.__apiRemovalCount), 0);
+assert.equal(await wide.getByRole('button', { name: 'Export' }).isEnabled(), true);
 
 await refiresAfter(() => wide.getByRole('radio', { name: 'Commercial' }).click());
 await wide
   .getByText('Grid data. Platform stores period balances and builds statement rows.')
   .waitFor();
 
-await refiresAfter(() => wide.getByLabel('Period').selectOption('2026-08'));
+await refiresAfter(() =>
+  wide.getByRole('radio', { name: '08/01/2026 – 08/31/2026' }).click(),
+);
 const transactionEndpoint = wide.getByRole('group', {
   name: /Copy endpoint \/transactions\?/,
 });
@@ -88,8 +119,8 @@ assert.match(await transactionEndpoint.getAttribute('aria-label'), /2026-08-01T0
 await wide.getByRole('button', { name: 'Export' }).click();
 await wide.getByRole('button', { name: 'PDF', exact: true }).click();
 const printedTitle = await wide.evaluate(() => window.__printedTitle);
-assert.equal(printedTitle, 'aurora-edited-statement-2026-08.pdf');
-assert(!printedTitle.endsWith('.pdf.pdf'));
+assert.equal(printedTitle, 'aurora-edited-statement-2026-08');
+assert.equal(`${printedTitle}.pdf`, 'aurora-edited-statement-2026-08.pdf');
 
 await wide.getByRole('button', { name: 'Export' }).click();
 const downloadPromise = wide.waitForEvent('download');
@@ -102,8 +133,21 @@ const exportedHtml = await readFile(downloadPath, 'utf8');
 assert.match(exportedHtml, /Monthly statement/);
 assert.match(exportedHtml, /data:image\//);
 assert.doesNotMatch(exportedHtml, /https?:|<link|@font-face|srcset=/i);
+const standalone = await browser.newPage({ viewport: { width: 760, height: 1100 } });
+const standaloneRequests = [];
+standalone.on('request', (request) => {
+  if (/^https?:/.test(request.url())) standaloneRequests.push(request.url());
+});
+await standalone.setContent(exportedHtml, { waitUntil: 'load' });
+assert.equal(standaloneRequests.length, 0);
+await standalone.getByText('Lightspark Payments, LLC').waitFor();
+await standalone.screenshot({
+  path: '.artifacts/visual-audit/exported-html.png',
+  fullPage: true,
+});
+await standalone.close();
 
-assert.equal(await wide.locator('[data-device="mail"]').count(), 1);
+assert.equal(await wide.locator('[data-device="iphone"]').count(), 1);
 await wide.getByRole('radio', { name: 'iPhone Duo' }).click();
 assert.equal(await wide.locator('[data-device="duo"]').count(), 1);
 await wide.getByRole('button', { name: /Open August statement attachment/ }).click();
