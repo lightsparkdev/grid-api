@@ -325,6 +325,7 @@ function UploadRow({
   accept,
   label,
   hint,
+  pickedHint,
   previewStyle,
   onPick,
 }: {
@@ -334,6 +335,9 @@ function UploadRow({
   label: string;
   /** What to upload (formats, size), shown over the button while the row is hovered. */
   hint: string;
+  /** What can be done with the upload once it is on the card, shown over
+   *  the preview while the row is hovered. */
+  pickedHint?: string;
   previewStyle?: CSSProperties;
   onPick: (url: string | null) => void;
 }) {
@@ -392,10 +396,14 @@ function UploadRow({
                   exit={{ opacity: 0, x: -16 }}
                   transition={ROW_UNFOLD}
                 >
-                  <span className={styles.logoPreview} style={previewStyle}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" />
-                  </span>
+                  <Tooltip text={pickedHint ?? ''}>
+                    {(t) => (
+                      <span className={styles.logoPreview} style={previewStyle} {...(pickedHint ? t : {})}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt="" />
+                      </span>
+                    )}
+                  </Tooltip>
                   <Tooltip text="Remove">
                     {(t) => (
                       <button
@@ -579,7 +587,9 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           accept="image/svg+xml,image/png,image/jpeg,image/webp"
           label="Upload card art"
           hint={design.orientation === 'portrait' ? `${TEX_H} × ${TEX_W} fills the face` : `${TEX_W} × ${TEX_H} fills the face`}
-          onPick={(url) => onChange({ backgroundUrl: url })}
+          pickedHint="Click the art on the card to move or resize it"
+          // A new picture starts out covering the face.
+          onPick={(url) => onChange({ backgroundUrl: url, artLayout: null })}
         />
         {/* The art's effect row unfolds under the art once there is some. */}
         <AnimatePresence initial={false}>
@@ -620,6 +630,9 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
         )}
       </div>
 
+      {/* The brand: the name, the logo, and the effect. The brand is taken
+          off the card on the card itself (select it, Delete); giving it a
+          name or a logo here puts it back. */}
       <div className={styles.group}>
         <div className={styles.row}>
           <span className={styles.rowLabel}>Brand</span>
@@ -629,7 +642,9 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
             placeholder="Your brand"
             label="Brand name"
             phase={0}
-            onChange={(programName) => onChange({ programName })}
+            // A name typed while the brand is off the card puts it back
+            // (that first keystroke is its own undo step; the rest coalesce).
+            onChange={(programName) => onChange({ programName, ...(design.brandHidden ? { brandHidden: false } : {}) })}
           />
         </div>
         <UploadRow
@@ -638,11 +653,14 @@ export function DesignPicker({ design, onChange, preset, onPresetSelect }: Desig
           accept="image/svg+xml,image/png,image/webp"
           label="Upload logo"
           hint="Transparent, at least 512 px tall"
+          pickedHint="Click the logo on the card to move or resize it"
           previewStyle={swatchStyle(brand)}
           // The placement belongs to the artwork: a logo's layout (say, a
           // watermark at 838 tall and 20%) is wrong for the wordmark that
           // replaces it, and the other way round. Swapping resets it.
-          onPick={(url) => onChange({ logoUrl: url, brandLayout: null })}
+          onPick={(url) =>
+            onChange({ logoUrl: url, brandLayout: null, ...(url && design.brandHidden ? { brandHidden: false } : {}) })
+          }
         />
         <div className={styles.row}>
           <span className={styles.rowLabel}>Effect</span>

@@ -6,7 +6,7 @@ import { DotGridCanvas } from '@/components/DotGridCanvas/DotGridCanvas';
 import { CardStage, type ShareStageState } from '@/components/CardStage/CardStage';
 import type { CardExporter } from '@/components/CardStage/export/exportRenderer';
 import { SharePanel } from '@/components/ShareSheet/SharePanel';
-import type { SharedCard } from '@/hooks/useCardsDemoLogic';
+import type { DesignEditOptions, SharedCard } from '@/hooks/useCardsDemoLogic';
 import { DemoPhone } from '@/components/DemoPhone/DemoPhone';
 import { PHONE_SHELL_GLASS } from '@/components/liquid-glass';
 import { DEFAULT_OVERLAY_GLASS, GlassSymbolButton, headerGlassBrightness } from '@/apps/shared/glass';
@@ -19,7 +19,7 @@ import styles from './AppPanel.module.scss';
 export interface AppPanelProps {
   design: CardDesign;
   /** The stage edits the design too: the brand is moved and resized on the card. */
-  onDesignChange?: (patch: Partial<CardDesign>) => void;
+  onDesignChange?: (patch: Partial<CardDesign>, opts?: DesignEditOptions) => void;
   /** Bumped on reset; remounts the brain so everything starts clean. */
   /** The playground's Reset (see useCardHome). */
   brainReset: { nonce: number; afterMs: number };

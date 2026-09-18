@@ -7,6 +7,7 @@ import {
   materialOf,
   STOCKS,
   stockOf,
+  type ArtLayout,
   type BrandLayout,
   type CardDesign,
   type CardMaterial,
@@ -34,6 +35,7 @@ import {
 } from './materialSwap';
 import { MaterialSwarm } from './MaterialSwarm';
 import {
+  artBox,
   backAccountBox,
   brandBox,
   brandRegion,
@@ -53,6 +55,7 @@ import {
   paintFront,
   paintFrontLockupMask,
   paintLockupMask,
+  resolveArtLayout,
   resolveBrandLayout,
   TEX_H,
   TEX_W,
@@ -83,6 +86,19 @@ export interface CardMeshState {
 export interface BrandPlacement {
   box: SpecRect;
   layout: BrandLayout;
+}
+
+/** The art's box on the front and the layout it was drawn with. */
+export interface ArtPlacement {
+  box: SpecRect;
+  layout: ArtLayout;
+}
+
+/** Where the front's movable graphics landed on the last paint: the brand
+ *  (null when hidden) and the art (null without any). */
+export interface FacePlacement {
+  brand: BrandPlacement | null;
+  art: ArtPlacement | null;
 }
 
 /** Personalization prints on ACTIVE: this long, in this many repaints. */
@@ -252,8 +268,8 @@ interface CardMeshProps {
   state: CardMeshState;
   /** Fires once, when the front has first been painted. */
   onReady?: () => void;
-  /** Fires after each front paint with where the brand landed. */
-  onBrandPlacement?: (placement: BrandPlacement) => void;
+  /** Fires after each front paint with where the brand and the art landed. */
+  onPlacement?: (placement: FacePlacement) => void;
   /** Whether a material change may play out (the card is floating, the intro
    *  is over, motion is allowed), and whether the back is showing (the wipe
    *  runs along the card's long axis, left to right on screen for a flat card
@@ -333,7 +349,7 @@ export interface CardMeshUserData {
 }
 
 export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh(
-  { state, onReady, onBrandPlacement, swapContext, onChange },
+  { state, onReady, onPlacement, swapContext, onChange },
   ref,
 ) {
   // The group, for this component too (the forwarded ref may be a callback).
@@ -684,7 +700,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
   // Decoration: spot gloss, foil, or etch on the brand, spot gloss on the
   // art, and the front Visa lockup's ink on bare steel, laid over the
   // front's cached maps per design.
-  const { logoTreatment, artTreatment } = state.design;
+  const { logoTreatment, brandHidden, artTreatment } = state.design;
   const frontInk = !backMark && surface.startsWith('bare');
   const decoTex = useRef<{ orm: THREE.Texture | null; normal: THREE.Texture | null }>({ orm: null, normal: null });
   useEffect(() => {
@@ -696,7 +712,8 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     decoTex.current.orm?.dispose();
     decoTex.current.normal?.dispose();
     decoTex.current = { orm: null, normal: null };
-    const brandT = logoTreatment === 'print' ? null : logoTreatment;
+    // A hidden brand has no treatment to lay down.
+    const brandT = logoTreatment === 'print' || brandHidden ? null : logoTreatment;
     const artT = art && artTreatment === 'spotGloss';
     const brandMask = brandT ? paintBrandMask(bodyDesign, logo) : null;
     if (!brandT && !artT && !frontInk) {
@@ -708,7 +725,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
           base.orm.image as HTMLCanvasElement, // a canvas, or the worker's bitmap: both draw
           brandMask,
           brandT,
-          artT && art ? paintArtMask(art, orientation) : null,
+          artT && art ? paintArtMask(art, bodyDesign) : null,
           cardMaterial === 'metal',
           frontInk ? paintFrontLockupMask(assets, orientation) : null,
         ),
@@ -737,6 +754,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     orientation,
     cardMaterial,
     logoTreatment,
+    brandHidden,
     artTreatment,
     frontInk,
     logo,
@@ -815,7 +833,12 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     );
     frontMap.needsUpdate = true;
     invalidate();
-    onBrandPlacement?.({ box: brandBox(bodyDesign, logo), layout: resolveBrandLayout(bodyDesign, logo) });
+    onPlacement?.({
+      brand: bodyDesign.brandHidden
+        ? null
+        : { box: brandBox(bodyDesign, logo), layout: resolveBrandLayout(bodyDesign, logo) },
+      art: art ? { box: artBox(bodyDesign, art), layout: resolveArtLayout(bodyDesign) } : null,
+    });
     const f = flags();
     if (f) f.painted = true;
     if (!ready.current) {
@@ -863,7 +886,7 @@ export const CardMesh = forwardRef<THREE.Group, CardMeshProps>(function CardMesh
     frontMap,
     invalidate,
     onReady,
-    onBrandPlacement,
+    onPlacement,
     three,
     materials,
     swapU,

@@ -139,6 +139,29 @@ export function sameBrandLayout(a: BrandLayout | null, b: BrandLayout | null): b
   );
 }
 
+/**
+ * Where the art sits on the front, in the composed face's spec px: `x`, `y`
+ * is the image's center, and `scale` is its size against the cover fit (1
+ * fills the face exactly, as the art does with no layout of its own; 2 is
+ * twice that, cropped; 0.5 sits inside the face with the print showing
+ * around it). The image keeps its own aspect. Null on the design = the
+ * cover fit, centered.
+ */
+export interface ArtLayout {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+export const ART_MIN_SCALE = 0.1;
+export const ART_MAX_SCALE = 8;
+
+export function sameArtLayout(a: ArtLayout | null, b: ArtLayout | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y && a.scale === b.scale;
+}
+
 /** A color stop of a gradient print. */
 export interface GradientStop {
   /** Position along the gradient, 0..1. */
@@ -215,10 +238,15 @@ export interface CardDesign {
   /** Where the brand sits. Null = the print sample's placement, with a wide
    *  logo held to 410 wide. */
   brandLayout: BrandLayout | null;
+  /** The front carries no brand at all: no logo, no wordmark. For art that
+   *  already has the brand in it. The name still names the program. */
+  brandHidden: boolean;
   /** Object URL (or data URL) of uploaded card art, drawn across the front
    *  behind everything else. Null = the color (or the bare stock). */
   backgroundUrl: string | null;
   artTreatment: ArtTreatment;
+  /** Where the art sits and how large. Null = covering the face, centered. */
+  artLayout: ArtLayout | null;
   /** Where the Visa mark sits, and with it whether the back has a hologram. */
   visaMark: VisaMarkFace;
   /** How the blank is held; the artwork is composed for that face. */
@@ -286,7 +314,8 @@ export const ORIENTATIONS: Array<{ id: Orientation; label: string }> = [
  * The design held the other way: the same card (material, finish, color,
  * brand assets, effects), with the brand back at that orientation's default
  * (its layout was in the other face's coordinates, around a chip that has
- * moved) and the gradient's line carried across.
+ * moved), the art back to covering the face, and the gradient's line
+ * carried across.
  */
 export function reorientDesign(design: CardDesign, orientation: Orientation): CardDesign {
   if (design.orientation === orientation) return design;
@@ -294,6 +323,7 @@ export function reorientDesign(design: CardDesign, orientation: Orientation): Ca
     ...design,
     orientation,
     brandLayout: null,
+    artLayout: null,
     gradient: design.gradient && reorientGradient(design.gradient, design.orientation, orientation),
   };
 }
@@ -309,8 +339,10 @@ export const initialDesign: CardDesign = {
   logoUrl: null,
   logoTreatment: 'print',
   brandLayout: null,
+  brandHidden: false,
   backgroundUrl: null,
   artTreatment: 'print',
+  artLayout: null,
   visaMark: 'back',
   orientation: 'landscape',
 };
@@ -326,8 +358,10 @@ export function sameDesign(a: CardDesign, b: CardDesign): boolean {
   return (Object.keys(a) as Array<keyof CardDesign>).every((k) =>
     k === 'brandLayout'
       ? sameBrandLayout(a.brandLayout, b.brandLayout)
-      : k === 'gradient'
-        ? sameGradient(a.gradient, b.gradient)
-        : a[k] === b[k],
+      : k === 'artLayout'
+        ? sameArtLayout(a.artLayout, b.artLayout)
+        : k === 'gradient'
+          ? sameGradient(a.gradient, b.gradient)
+          : a[k] === b[k],
   );
 }

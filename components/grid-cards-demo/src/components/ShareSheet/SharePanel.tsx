@@ -91,9 +91,17 @@ const HAND_GONE_MS = 720;
 const PANEL_W = 440;
 const PANEL_GUTTER = 16;
 const BUTTON_STRIP = 68;
-/** Below the frame: the rows, the tiles, and a status line (px), for fitting
- *  the frame to a short stage. */
-const CONTROLS_H = 8 + 116 + 8 + 108 + 8 + 26;
+/** The panel's own chrome above and below its content: its padding and
+ *  border (px, measured). */
+const PANEL_CHROME = 25;
+/** Below the frame (px, measured): the gap, the three rows, the gap, the
+ *  tiles' border, and room for a status line with its gap. The tiles
+ *  themselves are four squares across the frame, a quarter of it tall. */
+const CONTROLS_FIXED = 12 + 169 + 12 + 1 + 12 + 26;
+const controlsH = (side: number) => CONTROLS_FIXED + side / 4;
+/** The narrowest the frame (and so the panel) goes: the tiles' labels
+ *  ("Update link", "Save video") still fit four across at this width. */
+const FRAME_MIN = 280;
 
 /** The frame's layout, in the Figma's units (see compose.ts). */
 const LAYOUT = 800;
@@ -312,7 +320,10 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
 
   // ── The panel's place on the stage ─────────────────────────────────────
   // Fit the frame to the stage: the panel's width, or what the height leaves
-  // once the rows and tiles are under it.
+  // once the rows and tiles are under it. The panel is as wide as the frame
+  // either way (the controls under it take its width), so a short stage
+  // gets a smaller panel, not a frame sitting narrow inside one. The floor
+  // is where the rows and the tiles stop fitting.
   const rootRef = useRef<HTMLDivElement>(null);
   const [frameSide, setFrameSide] = useState(PANEL_W - 16);
   const [panelTop, setPanelTop] = useState(PANEL_GUTTER);
@@ -322,11 +333,13 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
     const measure = () => {
       const w = Math.min(PANEL_W, el.clientWidth - PANEL_GUTTER * 2) - 16;
       const room = el.clientHeight - BUTTON_STRIP;
-      const h = room - PANEL_GUTTER * 2 - CONTROLS_H - 16;
-      const side = Math.max(160, Math.min(w, h));
+      // The frame plus its controls (a quarter of it again, for the tiles)
+      // in what the height leaves: side + side / 4 = the room left.
+      const h = ((room - PANEL_GUTTER * 2 - PANEL_CHROME - CONTROLS_FIXED) * 4) / 5;
+      const side = Math.max(FRAME_MIN, Math.min(w, h));
       setFrameSide(side);
       // Where the grown panel sits centered in the room; it grows down to it.
-      setPanelTop(Math.max(PANEL_GUTTER, (room - (side + 16 + CONTROLS_H)) / 2));
+      setPanelTop(Math.max(PANEL_GUTTER, (room - (side + PANEL_CHROME + controlsH(side))) / 2));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -718,10 +731,10 @@ export function SharePanel({ open, exporterRef, design, shared, onStage, frontHo
             <m.div
               className={styles.grow}
               initial={false}
-              animate={{ height: grown ? (contentH ?? frameSide + CONTROLS_H) : frameSide }}
+              animate={{ height: grown ? (contentH ?? frameSide + controlsH(frameSide)) : frameSide }}
               transition={reduceMotion ? { duration: 0 } : GROW}
             >
-              <div ref={contentRef} className={styles.growInner}>
+              <div ref={contentRef} className={styles.growInner} style={{ width: frameSide }}>
                 <ShareFrame
                   ref={frameRef}
                   side={frameSide}

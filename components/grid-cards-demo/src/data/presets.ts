@@ -5,7 +5,7 @@
    landscape card, as the Global Accounts cards are. */
 
 import { FIGMA_FACE_H } from '@/apps/card/cardMetrics';
-import { sameBrandLayout, sameGradient, type CardDesign } from './design';
+import { sameArtLayout, sameBrandLayout, sameGradient, type CardDesign } from './design';
 
 export type PresetId = 'finance' | 'creator' | 'social' | 'marketplace' | 'ondemand' | 'messaging';
 
@@ -46,8 +46,10 @@ export const PRESETS: CardPreset[] = [
       logoUrl: null,
       logoTreatment: 'print',
       brandLayout: null,
+      brandHidden: false,
       backgroundUrl: `${ASSETS}/art-finance.webp`,
       artTreatment: 'print',
+      artLayout: null,
       visaMark: 'back',
       orientation: 'landscape',
     },
@@ -68,8 +70,10 @@ export const PRESETS: CardPreset[] = [
       logoUrl: `${ASSETS}/logo-creator.svg`,
       logoTreatment: 'print',
       brandLayout: { x: 1536 - 152, y: MID_Y_CHIP, h: 180, anchor: 'right', rotation: 0, opacity: 1 },
+      brandHidden: false,
       backgroundUrl: null,
       artTreatment: 'print',
+      artLayout: null,
       visaMark: 'back',
       orientation: 'landscape',
     },
@@ -89,8 +93,10 @@ export const PRESETS: CardPreset[] = [
       logoUrl: `${ASSETS}/logo-social.svg`,
       logoTreatment: 'etch',
       brandLayout: { x: 768, y: MID_Y, h: 767, anchor: 'center', rotation: 0, opacity: 1 },
+      brandHidden: false,
       backgroundUrl: null,
       artTreatment: 'print',
+      artLayout: null,
       visaMark: 'back',
       orientation: 'landscape',
     },
@@ -112,8 +118,10 @@ export const PRESETS: CardPreset[] = [
       logoUrl: `${ASSETS}/logo-marketplace-badge.svg`,
       logoTreatment: 'print',
       brandLayout: { x: 768, y: MID_Y, h: 343, anchor: 'center', rotation: 0, opacity: 1 },
+      brandHidden: false,
       backgroundUrl: `${ASSETS}/art-marketplace.webp`,
       artTreatment: 'print',
+      artLayout: null,
       visaMark: 'back',
       orientation: 'landscape',
     },
@@ -135,8 +143,10 @@ export const PRESETS: CardPreset[] = [
       logoUrl: null,
       logoTreatment: 'spotGloss',
       brandLayout: { x: 95, y: 138, h: 125, anchor: 'left', rotation: 0, opacity: 1 },
+      brandHidden: false,
       backgroundUrl: `${ASSETS}/art-ondemand.png`,
       artTreatment: 'print',
+      artLayout: null,
       visaMark: 'back',
       orientation: 'landscape',
     },
@@ -158,8 +168,10 @@ export const PRESETS: CardPreset[] = [
       logoUrl: `${ASSETS}/logo-messaging.svg`,
       logoTreatment: 'print',
       brandLayout: { x: 1536 - 505, y: 475, h: 838, anchor: 'center', rotation: 0, opacity: 0.2 },
+      brandHidden: false,
       backgroundUrl: null,
       artTreatment: 'print',
+      artLayout: null,
       visaMark: 'back',
       orientation: 'landscape',
     },
@@ -172,9 +184,11 @@ function matches(design: CardDesign, preset: PresetDesign): boolean {
   return PRESET_KEYS.every((k) =>
     k === 'brandLayout'
       ? sameBrandLayout(design.brandLayout, preset.brandLayout)
-      : k === 'gradient'
-        ? sameGradient(design.gradient, preset.gradient)
-        : design[k] === preset[k],
+      : k === 'artLayout'
+        ? sameArtLayout(design.artLayout, preset.artLayout)
+        : k === 'gradient'
+          ? sameGradient(design.gradient, preset.gradient)
+          : design[k] === preset[k],
   );
 }
 
