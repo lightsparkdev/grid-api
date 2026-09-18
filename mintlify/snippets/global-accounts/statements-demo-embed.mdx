@@ -1,9 +1,16 @@
 export const StatementsDemoEmbed = () => {
   React.useEffect(() => {
-    const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const hostname = window.location.hostname;
+    const isLocal = ['localhost', '127.0.0.1'].includes(hostname);
+    const previewSuffix = '.mintlify.site';
+    const previewPrefix = 'ramps-';
+    const isPreview = hostname.endsWith(previewSuffix) && hostname.startsWith(previewPrefix);
+    const branch = isPreview ? hostname.slice(previewPrefix.length, -previewSuffix.length) : '';
     const base = isLocal
       ? ['http:', '', 'localhost:4003'].join('/')
-      : ['https:', '', 'grid-statements-playground.vercel.app'].join('/');
+      : branch
+        ? ['https:', '', 'grid-statements-playground-git-' + branch + '-lightspark-team.vercel.app'].join('/')
+        : ['https:', '', 'grid-statements-playground.vercel.app'].join('/');
     const targetOrigin = new URL(base).origin;
     const isDark = () => document.documentElement.classList.contains('dark');
 
