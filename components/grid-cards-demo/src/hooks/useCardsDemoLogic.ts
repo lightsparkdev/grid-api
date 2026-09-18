@@ -32,6 +32,7 @@ import type { Entry } from '@/components/ApiPanel/types';
 import type { UseCardHomeOptions, WalletEntry } from '@/apps/shared/card';
 import { fetchShare, rememberedToken } from '@/lib/share/client';
 import type { ShareRecord } from '@/lib/share/types';
+import { play } from '@/lib/sounds';
 
 /** A share the playground was opened from. */
 export interface SharedCard {
@@ -48,6 +49,12 @@ const WEBHOOK_DELAY_MS = 650;
 /** The phone's flight out, with the card coming back to the stage: the brain
  *  resets once it has gone. */
 const PHONE_OUT_MS = 1000;
+/** Design edits that arrive as a stream (a drag on the card, typing a
+ *  name, a gradient handle): a run of them within COALESCE_MS of each other
+ *  is one step of undo. */
+const CONTINUOUS_FIELDS = new Set<string>(['brandLayout', 'artLayout', 'gradient', 'color', 'programName', 'cardholderName']);
+const COALESCE_MS = 1000;
+const HISTORY_MAX = 100;
 const GROUP_LABEL: Record<ActionId, string> = {
   card: 'Issue a card',
   tap: 'Spend',
@@ -88,24 +95,87 @@ export function useCardsDemoLogic() {
   useEffect(() => {
     if (!designed.current) setDesign(initialDesignFor(theme));
   }, [theme]);
-  const updateDesign = useCallback(
-    (patch: Partial<CardDesign>) => {
-      setDesign((d) => {
-        const next = { ...d, ...patch };
-        // Spot gloss has nothing to contrast against on a gloss card.
-        if (next.finish === 'gloss') {
-          if (next.logoTreatment === 'spotGloss') next.logoTreatment = 'print';
-          if (next.artTreatment === 'spotGloss') next.artTreatment = 'print';
-        }
-        designed.current = !sameDesign(next, initialDesignFor(theme));
-        return next;
-      });
-    },
-    [theme],
-  );
   // The latest design, readable from callbacks without re-binding them.
   const designRef = useRef(design);
   designRef.current = design;
+  // Undo: the designs before each edit, newest last, and the ones undone.
+  // A drag or a run of typing is one edit: changes to the same continuous
+  // fields in quick succession keep the state from before the first.
+  const history = useRef<{ past: CardDesign[]; future: CardDesign[]; at: number; keys: string }>({
+    past: [],
+    future: [],
+    at: 0,
+    keys: '',
+  });
+  const remember = useCallback((prev: CardDesign, keys: string[]) => {
+    const h = history.current;
+    const key = keys.slice().sort().join(',');
+    const now = performance.now();
+    const coalesce = keys.every((k) => CONTINUOUS_FIELDS.has(k)) && key === h.keys && now - h.at < COALESCE_MS;
+    if (!coalesce) {
+      h.past.push(prev);
+      if (h.past.length > HISTORY_MAX) h.past.shift();
+    }
+    h.future = [];
+    h.at = now;
+    h.keys = key;
+  }, []);
+  const commitDesign = useCallback(
+    (next: CardDesign) => {
+      designed.current = !sameDesign(next, initialDesignFor(theme));
+      setDesign(next);
+    },
+    [theme],
+  );
+  const updateDesign = useCallback(
+    (patch: Partial<CardDesign>) => {
+      const prev = designRef.current;
+      const next = { ...prev, ...patch };
+      // Spot gloss has nothing to contrast against on a gloss card.
+      if (next.finish === 'gloss') {
+        if (next.logoTreatment === 'spotGloss') next.logoTreatment = 'print';
+        if (next.artTreatment === 'spotGloss') next.artTreatment = 'print';
+      }
+      if (sameDesign(prev, next)) return;
+      remember(prev, Object.keys(patch));
+      designRef.current = next;
+      commitDesign(next);
+    },
+    [remember, commitDesign],
+  );
+  const undoDesign = useCallback(() => {
+    const h = history.current;
+    const prev = h.past.pop();
+    if (!prev) return false;
+    h.future.push(designRef.current);
+    h.keys = '';
+    designRef.current = prev;
+    commitDesign(prev);
+    return true;
+  }, [commitDesign]);
+  const redoDesign = useCallback(() => {
+    const h = history.current;
+    const next = h.future.pop();
+    if (!next) return false;
+    h.past.push(designRef.current);
+    h.keys = '';
+    designRef.current = next;
+    commitDesign(next);
+    return true;
+  }, [commitDesign]);
+  // ⌘Z / Ctrl+Z undoes the last design edit, with Shift redoes it. Not
+  // while typing in a field: there the browser's own undo applies.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.key.toLowerCase() !== 'z') return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+      if (e.shiftKey ? redoDesign() : undoDesign()) play('tickBright');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undoDesign, redoDesign]);
 
   // A shared card opened by its link: `?c=<id>` loads that design (the intro
   // then plays it), and `?edit=<token>`, or a token this browser kept from
@@ -120,8 +190,13 @@ export function useCardsDemoLogic() {
       .then((record) => {
         if (!alive || !record) return;
         designed.current = true;
-        // Fields added since the share was made take their defaults.
-        setDesign({ ...initialDesign, ...record.design });
+        // Fields added since the share was made take their defaults. The
+        // share is where this session's edits start: nothing to undo to
+        // before it.
+        const loaded = { ...initialDesign, ...record.design };
+        history.current = { past: [], future: [], at: 0, keys: '' };
+        designRef.current = loaded;
+        setDesign(loaded);
         setShared({ record, editToken: p.get('edit') ?? rememberedToken(record.id) });
       })
       .catch(() => undefined);
@@ -133,12 +208,20 @@ export function useCardsDemoLogic() {
   // The selected preset is read off the design: one while the design equals
   // it, none as soon as any control is edited away.
   const preset = useMemo(() => presetOf(design), [design]);
-  const selectPreset = useCallback((id: PresetId) => {
-    const next = PRESETS.find((p) => p.id === id)?.design;
-    if (!next) return;
-    designed.current = true;
-    setDesign((d) => applyPreset(next, d));
-  }, []);
+  const selectPreset = useCallback(
+    (id: PresetId) => {
+      const next = PRESETS.find((p) => p.id === id)?.design;
+      if (!next) return;
+      const prev = designRef.current;
+      const applied = applyPreset(next, prev);
+      if (sameDesign(prev, applied)) return;
+      remember(prev, ['preset']);
+      designRef.current = applied;
+      designed.current = true;
+      setDesign(applied);
+    },
+    [remember],
+  );
 
   const [wallet, setWallet] = useState<WalletState>(initialWallet);
   const [completed, setCompleted] = useState<CompletedFlows>(initialCompleted);

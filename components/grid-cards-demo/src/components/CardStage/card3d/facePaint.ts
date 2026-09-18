@@ -21,6 +21,7 @@ import {
   luminance,
   materialOf,
   stockOf,
+  type ArtLayout,
   type BrandLayout,
   type CardDesign,
   type CardGradient,
@@ -374,17 +375,37 @@ export function chipContactsPath(ctx: CanvasRenderingContext2D) {
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
 
-/** Draw `img` covering the whole composed face (object-fit: cover, centered);
- *  the context is in the face's spec px. */
-function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, face: { w: number; h: number }) {
+/** The layout the art is drawn with: the design's own, or the cover fit,
+ *  centered. This is the layout a drag starts from. */
+export function resolveArtLayout(design: Pick<CardDesign, 'orientation' | 'artLayout'>): ArtLayout {
+  if (design.artLayout) return design.artLayout;
+  const face = faceSize(design.orientation);
+  return { x: face.w / 2, y: face.h / 2, scale: 1 };
+}
+
+/**
+ * The art's box in the composed face's spec px: the image covering the face
+ * (object-fit: cover, centered), then moved and scaled by the design's art
+ * layout, if it has one. The stage hit-tests this and drags it; the painters
+ * draw into it.
+ */
+export function artBox(design: Pick<CardDesign, 'orientation' | 'artLayout'>, img: HTMLImageElement): SpecRect {
+  const face = faceSize(design.orientation);
   // An SVG with no intrinsic size reports 0 (or a 300 x 150 default); it is
   // vector, so let it take the face's own proportions and fill it.
   const iw = img.naturalWidth || face.w;
   const ih = img.naturalHeight || face.h;
   const r = Math.max(face.w / iw, face.h / ih);
-  const w = iw * r;
-  const h = ih * r;
-  ctx.drawImage(img, (face.w - w) / 2, (face.h - h) / 2, w, h);
+  const l = resolveArtLayout(design);
+  const w = iw * r * l.scale;
+  const h = ih * r * l.scale;
+  return { x: l.x - w / 2, y: l.y - h / 2, w, h };
+}
+
+/** Draw the art into its box; the context is in the face's spec px. */
+function drawArt(ctx: CanvasRenderingContext2D, img: HTMLImageElement, design: CardDesign) {
+  const b = artBox(design, img);
+  ctx.drawImage(img, b.x, b.y, b.w, b.h);
 }
 
 /**
@@ -415,7 +436,7 @@ function paintBase(ctx: CanvasRenderingContext2D, design: CardDesign, side: Side
   }
   if (art && side === 'front') {
     specSpace(ctx, o, side);
-    drawCover(ctx, art, face);
+    drawArt(ctx, art, design);
     texelSpace(ctx);
   }
 }
@@ -790,10 +811,12 @@ function drawBrand(ctx: CanvasRenderingContext2D, design: CardDesign, logo: HTML
  * The brand's shape in white on a transparent canvas: the logo's alpha, or the
  * program name as a wordmark, at the layout's opacity, with the chip's
  * pocket taken out. Both the albedo (for foil and etch) and the surface maps
- * (for every treatment but ink) are cut from this.
+ * (for every treatment but ink) are cut from this. A hidden brand is an
+ * empty mask.
  */
 export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
+  if (design.brandHidden) return c;
   const ctx = c.getContext('2d')!;
   drawBrand(ctx, design, logo, '#fff');
   if (logo) {
@@ -806,13 +829,13 @@ export function paintBrandMask(design: CardDesign, logo: HTMLImageElement | null
   return c;
 }
 
-/** The art's alpha as a mask (cover-fit on the composed face), with the
+/** The art's alpha as a mask (in its box on the composed face), with the
  *  chip's pocket taken out, for spot gloss over art. */
-export function paintArtMask(art: HTMLImageElement, o: Orientation): HTMLCanvasElement {
+export function paintArtMask(art: HTMLImageElement, design: CardDesign): HTMLCanvasElement {
   const c = makeCanvas(TEX_W, TEX_H);
   const ctx = c.getContext('2d')!;
-  specSpace(ctx, o, 'front');
-  drawCover(ctx, art, faceSize(o));
+  specSpace(ctx, design.orientation, 'front');
+  drawArt(ctx, art, design);
   texelSpace(ctx);
   ctx.globalCompositeOperation = 'source-in';
   ctx.fillStyle = '#fff';
@@ -863,20 +886,16 @@ export function paintFront(ctx: CanvasRenderingContext2D, s: FrontState, assets:
   const ink = inkFor(s.design, s.art);
 
   // Brand: the logo as uploaded, or the wordmark in ink; a foil treatment
-  // replaces either with the foil's reflectance in the same shape.
+  // replaces either with the foil's reflectance in the same shape. Hidden
+  // (art that carries its own brand), the face goes without.
   const t = s.design.logoTreatment;
-  if (t === 'etch') {
+  if (s.design.brandHidden) {
+    // Nothing to print.
+  } else if (t === 'etch' || t === 'foil') {
     const mask = paintBrandMask(s.design, s.logo);
     const m = mask.getContext('2d')!;
     m.globalCompositeOperation = 'source-in';
-    m.fillStyle = etchFloor(s.design);
-    m.fillRect(0, 0, TEX_W, TEX_H);
-    ctx.drawImage(mask, 0, 0);
-  } else if (t === 'foil') {
-    const mask = paintBrandMask(s.design, s.logo);
-    const m = mask.getContext('2d')!;
-    m.globalCompositeOperation = 'source-in';
-    m.fillStyle = foilGradient(m);
+    m.fillStyle = t === 'etch' ? etchFloor(s.design) : foilGradient(m);
     m.fillRect(0, 0, TEX_W, TEX_H);
     ctx.drawImage(mask, 0, 0);
   } else {
