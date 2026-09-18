@@ -97,7 +97,7 @@ export function useCardsDemoLogic() {
   const theme = useThemeMode();
   const [design, setDesign] = useState<CardDesign>(initialDesign);
   // Until the visitor designs something, the card is the theme's default:
-  // ink on dark, white on light, following the theme if it changes. Reset
+  // ink on light, white on dark, following the theme if it changes. Reset
   // (a design equal to a theme's default) hands it back to the theme.
   const designed = useRef(false);
   useEffect(() => {

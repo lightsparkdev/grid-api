@@ -347,10 +347,10 @@ export const initialDesign: CardDesign = {
   orientation: 'landscape',
 };
 
-/** The starting design for a theme: the card is ink on dark, white on light,
- *  so it reads against the stage it first appears on. */
+/** The starting design for a theme: the card is ink on light, white on dark,
+ *  so it contrasts with the stage it first appears on. */
 export function initialDesignFor(theme: 'light' | 'dark'): CardDesign {
-  return { ...initialDesign, color: theme === 'dark' ? DESIGN_SWATCHES[0].color : DESIGN_SWATCHES[1].color };
+  return { ...initialDesign, color: theme === 'dark' ? DESIGN_SWATCHES[1].color : DESIGN_SWATCHES[0].color };
 }
 
 /** Field-by-field equality of two designs (layouts and gradients by value). */
