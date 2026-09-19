@@ -1,0 +1,142 @@
+type: object
+description: >-
+  The result of one call to the message route. Which fields are present
+  depends on what the call did: `chatId`, `chatEnded` and
+  `verificationRequired` are always present; `codeLength` is added when
+  verification is required and the length is known; a turn adds `id`,
+  `redactedCustomerMessage` and `reply`, and the call that opened the chat adds
+  `reply` alone, carrying the agent's opening line; and the turn in which the
+  cardholder sent their verification code adds `sessionToken` and `expiresAt`.
+  Render `redactedCustomerMessage` if present, then `reply` if present.
+required:
+  - chatId
+  - verificationRequired
+  - chatEnded
+properties:
+  chatId:
+    type: string
+    description: >-
+      The chat this call ran on. When the request addressed a cardholder
+      (`Customer:<uuid>` in the path) this is the chat that was found or
+      opened for them. Use it for every later call on this conversation:
+      later messages and closing the chat.
+    example: CareChat:019542f5-b3e7-1d02-0000-000000000030
+  chatEnded:
+    type: boolean
+    description: >-
+      Whether the chat has ended as of this response, so no further message
+      will be accepted. Present on every response, true or false, so a client
+      reads a field rather than an absence. It is the chat's state, not
+      whether this call ended it: on the turn where the agent ends the chat it
+      is true and the closing line is in `reply`, and a replay of that turn
+      after the chat ended is also true. When it is true, stop sending to this
+      chat; to talk to the cardholder again, address them as
+      `Customer:<uuid>`, which opens a new chat.
+    example: false
+  verificationRequired:
+    type: boolean
+    description: >-
+      An optional hint: whether the cardholder still has to verify before the
+      agent can reach their account. Present on every response, true or false.
+      A partner can ignore it, because when a code is needed the agent asks
+      for it in `reply`; it lets an app show a dedicated code input beside the
+      chat. Either way, the cardholder sends the code as an ordinary message.
+      An outstanding verification is never reported as a `401`.
+
+
+      It describes the chat as of the moment the turn started, so the one turn
+      in which the cardholder sent their code reports
+      `verificationRequired: true` and carries `sessionToken` as well. Decide
+      that you hold a session by the presence of `sessionToken`, never by this
+      field going false.
+    example: true
+  id:
+    type: string
+    description: >-
+      Id of the cardholder's message. Present only when a turn ran, so absent
+      on an opening or a resume. A retry under the same `Idempotency-Key`
+      returns the same `id`, so a client that has already rendered this id can
+      skip the exchange instead of showing it twice.
+    example: CareMessage:019542f5-b3e7-1d02-0000-000000000032
+  redactedCustomerMessage:
+    type: string
+    description: >-
+      What the cardholder typed, with card numbers and other sensitive digit
+      strings masked, and **the string your app must render in the
+      transcript**. Render this, never your own copy of what the cardholder
+      typed: your copy would put a card number they pasted back on their
+      screen and into your logs. Present only when a turn ran.
+    example: My card [redacted card number ending 1111] was declined
+  reply:
+    type: string
+    description: >-
+      What the agent said on this call, to render as the assistant's message.
+      Present whenever the agent said something: its answer when a turn ran,
+      or its opening line on the call that opened the chat. Absent on a
+      resume. An opening needs no `Idempotency-Key` and consumes none, even
+      though it carries a `reply`. A retry under the same `Idempotency-Key`
+      returns the same reply and the same `id`, provided it carries the session
+      token its original request required: retrying a turn sent while the chat
+      could reach the account needs a valid `X-Ls-Care-Session`, and without
+      one is refused with `401 CARE_SESSION_EXPIRED`; a turn that ran before
+      the cardholder verified can be retried without one. A retry never carries
+      a `sessionToken`, even if the original response did. When verification
+      is outstanding the
+      agent's own sentence asks for the code, and when a code the cardholder
+      sent did not match, this is where they are told so.
+    example: I can help with that. To look at your account I've texted you a code. What does it say?
+  codeLength:
+    type: integer
+    description: >-
+      An optional hint: the number of digits in the code, so an app can show a
+      one-time-code input of the right length, marked as a one-time code so
+      iOS and Android offer to fill it from the SMS. The app still sends the
+      code as an ordinary message. Absent when the length is not known; leave
+      the input unbounded rather than guessing, since a wrong length makes
+      every correct code look like a typo.
+    example: 6
+  sessionToken:
+    type: string
+    description: >-
+      The session token for this chat, present only on the turn in which the
+      cardholder verified themselves, and absent on every other turn.
+
+
+      The cardholder completes verification by sending the SMS code as an
+      ordinary message. When the code is correct, the chat comes out of that
+      turn able to reach the account, and this field is how the partner
+      receives the credential that turn earned. It is the only place a session
+      token is ever issued. A later message sent without it cancels the
+      verification and asks the cardholder for a new code.
+
+
+      Send it as the `X-Ls-Care-Session` header from the next call onwards.
+      It is returned once and never re-readable, it cannot be revoked, and it
+      is bound to this platform, this chat and this cardholder. Never log it,
+      never put it in a URL, and never store it past `expiresAt`.
+
+
+      One session is issued per verification rather than per message, so an
+      ordinary turn on a chat that is already verified carries no
+      `sessionToken`. The one you are already holding is still the right one.
+
+
+      A replay under the same `Idempotency-Key` never returns a
+      `sessionToken`, even if the original response carried one, and a replay
+      of a turn that required a session needs that session itself. So if the
+      response carrying the token was lost, you cannot recover it or replay an
+      account turn: send the cardholder's next message as a new message
+      without a token. The verification is cancelled, a new code is sent, and
+      the agent asks for it. A replay of the turn in which the cardholder sent
+      their code needs no token and returns the original reply without one.
+    example: eyJwbGF0Zm9ybV9pZCI6IjAxOTU0MmY1LWIzZTctMWQwMi0wMDAwLTAwMDAwMDAwMDAwMSJ9.aGVsbG8.c2lnbmF0dXJl
+  expiresAt:
+    type: string
+    format: date-time
+    description: >-
+      ISO 8601 timestamp, in UTC, after which the `sessionToken` beside it no
+      longer counts as a session: a message carrying it past this time is
+      treated as carrying none, and the cardholder is asked to verify again.
+      Present exactly when `sessionToken` is present. Read it rather than
+      assuming a duration.
+    example: '2026-09-12T14:25:00Z'

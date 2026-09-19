@@ -1,0 +1,70 @@
+type: object
+description: |
+  The error body returned by every endpoint under **Embedded Care**.
+
+  It carries `code` and `reason`, and nothing else. This differs from the
+  `Error4xx` / `Error5xx` schemas the rest of this specification uses, which
+  declare `status` and `message`: the care endpoints do not send those two
+  fields. Read the HTTP status from the response line and the human-readable
+  text from `reason`.
+
+  Branch on `code`, never on `reason`: the text is written for a human
+  reading a log and may be reworded at any time.
+required:
+  - code
+  - reason
+properties:
+  code:
+    type: string
+    description: |
+      Machine-readable error code. Each endpoint's response descriptions say
+      which of these it can send at which status.
+
+      | Error Code | HTTP | Description |
+      |------------|------|-------------|
+      | `INVALID_INPUT` | 400 | The request body or headers are malformed: an unknown field, a body that is not a JSON object, a missing or over-long `Idempotency-Key` on a message that carries text, a `chatId` path id beginning `Customer:` that is not well formed, or a chat that cannot be verified at all. |
+      | `CARE_MESSAGE_REJECTED` | 400 | The cardholder's message was refused, for example because it is too long, and no turn ran. `reason` carries the sentence to show them. |
+      | `UNAUTHORIZED` | 401 | The platform's Grid credential is missing or wrong. On this surface a `401` never means the cardholder is unverified; that is signalled in a `200` body. |
+      | `CARE_SESSION_EXPIRED` | 401 | The `X-Ls-Care-Session` token presented is malformed, or not a care session token at all; or a replay under an `Idempotency-Key` lacks the valid session token its original request required, in which case nothing from the record is returned. For a new message, a missing or expired token is never this error: the message verifies the cardholder again inside a `200` instead. Rarely, also returned when a verification lands on the chat at the same moment a message without a live token takes it away; send the message again. |
+      | `FORBIDDEN` | 403 | Embedded care is not enabled for this platform. |
+      | `CARE_SESSION_PLATFORM_MISMATCH` | 403 | The session token was minted for a different platform. Stop; retrying will not help. |
+      | `NOT_FOUND` | 404 | No such chat for this platform. A chat belonging to another platform, a chat that never existed, a malformed chat id, and an `X-Ls-Care-Session` token minted for a different chat or a different cardholder are one answer. |
+      | `CUSTOMER_NOT_FOUND` | 404 | No such cardholder for this platform. |
+      | `CONFLICT` | 409 | The `Idempotency-Key` was already used for a different message or a different chat (use a new key), or the chat has no cardholder bound to it. |
+      | `CARE_CHAT_ENDED` | 409 | The chat has ended, whether the agent ended it or it was closed, and it accepts no further messages or openings; a replay of a turn that completed or is still running is still answered. Open a new one by sending an empty message to the cardholder as `Customer:<uuid>`. |
+      | `CARE_NOT_CONFIGURED_FOR_PLATFORM` | 422 | The platform is entitled to embedded care but has no care programme configured. |
+      | `CARE_BUDGET_EXCEEDED` | 429 | This chat has reached its limit. Opening a new chat for the cardholder does not clear it. |
+      | `RATE_LIMITED` | 429 | The platform is calling this endpoint too often. Back off for the interval in the `Retry-After` response header. |
+      | `INTERNAL_ERROR` | 500 | Unexpected server error. |
+      | `CARE_TURN_FAILED` | 502 | The agent could not answer. Transient; the same `Idempotency-Key` may be sent again. |
+      | `CARE_VERIFICATION_UNAVAILABLE` | 502 | The verification code could not be sent or checked right now. Distinct from a wrong code: the problem is temporary and not the cardholder's, so retry rather than asking them again. |
+      | `SERVICE_UNAVAILABLE` | 503 | Embedded care is not available in this deployment, or the support agent is temporarily turned off. |
+      | `CARE_TURN_TIMEOUT` | 504 | The turn is still running. Retry with the same `Idempotency-Key` to collect the answer. |
+    enum:
+      - INVALID_INPUT
+      - CARE_MESSAGE_REJECTED
+      - UNAUTHORIZED
+      - CARE_SESSION_EXPIRED
+      - FORBIDDEN
+      - CARE_SESSION_PLATFORM_MISMATCH
+      - NOT_FOUND
+      - CUSTOMER_NOT_FOUND
+      - CONFLICT
+      - CARE_CHAT_ENDED
+      - CARE_NOT_CONFIGURED_FOR_PLATFORM
+      - CARE_BUDGET_EXCEEDED
+      - RATE_LIMITED
+      - INTERNAL_ERROR
+      - CARE_TURN_FAILED
+      - CARE_VERIFICATION_UNAVAILABLE
+      - SERVICE_UNAVAILABLE
+      - CARE_TURN_TIMEOUT
+    example: CARE_SESSION_EXPIRED
+  reason:
+    type: string
+    description: >-
+      Human-readable explanation, for a log or a support ticket. Not for
+      branching, and not always safe to show a cardholder verbatim. The
+      exception is `CARE_MESSAGE_REJECTED`, whose `reason` is written to be
+      shown.
+    example: The care session token is not valid.
