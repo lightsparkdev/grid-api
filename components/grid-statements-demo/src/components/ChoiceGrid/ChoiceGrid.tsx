@@ -16,6 +16,7 @@ interface Choice<Value extends string> {
 interface ChoiceGridProps<Value extends string> {
   label: string;
   value: Value;
+  selectedValues?: readonly Value[];
   options: readonly Choice<Value>[];
   onChange: (value: Value) => void;
 }
@@ -23,6 +24,7 @@ interface ChoiceGridProps<Value extends string> {
 export function ChoiceGrid<Value extends string>({
   label,
   value,
+  selectedValues,
   options,
   onChange,
 }: ChoiceGridProps<Value>) {
@@ -30,7 +32,8 @@ export function ChoiceGrid<Value extends string>({
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
     event.preventDefault();
     const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
-    const current = options.findIndex((option) => option.id === value);
+    const focused = (document.activeElement as HTMLElement | null)?.dataset.choice;
+    const current = options.findIndex((option) => option.id === (focused ?? value));
     const next = options[(current + direction + options.length) % options.length];
     onChange(next.id);
     event.currentTarget
@@ -41,7 +44,7 @@ export function ChoiceGrid<Value extends string>({
   return (
     <div
       className={styles.group}
-      role="radiogroup"
+      role={selectedValues ? 'group' : 'radiogroup'}
       aria-label={label}
       onKeyDown={onKeyDown}
     >
@@ -49,11 +52,16 @@ export function ChoiceGrid<Value extends string>({
         <button
           key={id}
           type="button"
-          role="radio"
-          aria-checked={value === id}
-          tabIndex={value === id ? 0 : -1}
+          role={selectedValues ? undefined : 'radio'}
+          aria-checked={selectedValues ? undefined : value === id}
+          aria-pressed={selectedValues ? selectedValues.includes(id) : undefined}
+          tabIndex={selectedValues ? 0 : value === id ? 0 : -1}
           data-choice={id}
-          className={clsx(styles.option, value === id && styles.optionSelected)}
+          className={clsx(
+            styles.option,
+            (selectedValues ? selectedValues.includes(id) : value === id) &&
+              styles.optionSelected,
+          )}
           {...pressable({ onClick: () => onChange(id) })}
         >
           <span className={styles.optionIcon}>

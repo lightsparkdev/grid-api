@@ -106,7 +106,7 @@ export function ApiPanelEmpty() {
             <IconPinch size={24} />
           </span>
           <div className={styles.copy}>
-            <p className={styles.title}>Calls appear when the period closes.</p>
+            <p className={styles.title}>Calls appear after the statement loads.</p>
           </div>
         </motion.div>
       </div>

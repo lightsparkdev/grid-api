@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import React, { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { usePhoneBoot } from '@/components/DotGridCanvas/PhoneBootContext';
 import { useAdaptiveStatusBarTone } from './useAdaptiveStatusBarTone';
 import type { GlassConfig } from '@/components/liquid-glass';
 import { Glass, PHONE_SHELL_GLASS, squirclePath } from '@/components/liquid-glass';
 import type { AppSkinId } from '@/apps/skins';
 import {
-  APP_SHELL_OUTER_HEIGHT,
-  APP_SHELL_OUTER_WIDTH,
+  APP_SHELL_GEOMETRY,
+  type AppShellDevice,
   usePhoneFitScale,
 } from './usePhoneFitScale';
 import { PhoneStatusBar } from './PhoneStatusBar';
@@ -16,6 +16,7 @@ import { ScreenOverlayContext } from './ScreenOverlayContext';
 import styles from './AppShell.module.scss';
 
 interface AppShellProps {
+  device?: AppShellDevice;
   glassConfig?: GlassConfig;
   showGlassOutline?: boolean;
   /** Mirrors DotGridCanvas — glass refracts its *children*, not the canvas behind. */
@@ -42,6 +43,7 @@ interface AppShellProps {
  * Glass shell over the dot grid; opaque screen stacked on top.
  */
 export function AppShell({
+  device = 'phone',
   glassConfig = PHONE_SHELL_GLASS,
   showGlassOutline = false,
   glassDemoBg = false,
@@ -52,7 +54,9 @@ export function AppShell({
   screenTone = 'default',
   appSkin = 'aurora',
 }: AppShellProps) {
-  const { wrapRef, scale, size } = usePhoneFitScale();
+  const geometry = APP_SHELL_GEOMETRY[device];
+  const { outerWidth, outerHeight, screenWidth, screenHeight, screenRadius, shellRadius: baseShellRadius } = geometry;
+  const { wrapRef, scale, size } = usePhoneFitScale(device);
   const { ready: stageBootReady, bootOpacity, realignLens } = usePhoneBoot();
   const showPhone = stageBootReady && size.w > 0 && size.h > 0;
   const phoneVisible = showPhone && bootOpacity > 0;
@@ -76,9 +80,9 @@ export function AppShell({
   const HOVER_GROW = 2; // lift back out on hover
   const growOut = externalGlass ? (hovered ? HOVER_GROW : 0) - REST_INSET : 0;
   const shellInset = -growOut;
-  const shellRadius = glassConfig.radius + growOut;
-  const shadowScaleX = (APP_SHELL_OUTER_WIDTH + 2 * growOut) / APP_SHELL_OUTER_WIDTH;
-  const shadowScaleY = (APP_SHELL_OUTER_HEIGHT + 2 * growOut) / APP_SHELL_OUTER_HEIGHT;
+  const shellRadius = baseShellRadius + growOut;
+  const shadowScaleX = (outerWidth + 2 * growOut) / outerWidth;
+  const shadowScaleY = (outerHeight + 2 * growOut) / outerHeight;
 
   // Match the DOM corner to the shader's superellipse so the shell shadow and the
   // inner screen trace the same curve as the refracted bezel. corner-shape
@@ -93,13 +97,12 @@ export function AppShell({
   // and `clip-path: path()` works in every browser — so the screen and the refracted
   // bezel stay squircle and lined up everywhere. (General Glass/GlassOver components
   // keep the circular fallback via useSquircleSupport; the phone opts out of it.)
-  const SCREEN_INSET = 16; // --app-shell-padding
-  const screenW = APP_SHELL_OUTER_WIDTH - SCREEN_INSET * 2;
-  const screenH = APP_SHELL_OUTER_HEIGHT - SCREEN_INSET * 2;
+  const screenW = screenWidth;
+  const screenH = screenHeight;
   const screenPathD = squirclePath(
     screenW,
     screenH,
-    glassConfig.radius - SCREEN_INSET,
+    screenRadius,
     glassConfig.cornerSmoothing,
   );
   const screenClip = `path('${screenPathD}')`;
@@ -135,9 +138,9 @@ export function AppShell({
     return () => obs.disconnect();
   }, [glassConfig.shadowOpacity]);
   const shellPath = squirclePath(
-    APP_SHELL_OUTER_WIDTH,
-    APP_SHELL_OUTER_HEIGHT,
-    glassConfig.radius,
+    outerWidth,
+    outerHeight,
+    baseShellRadius,
     glassConfig.cornerSmoothing,
   );
 
@@ -151,12 +154,12 @@ export function AppShell({
   let backdropStyle: CSSProperties = {
     left: 0,
     top: 0,
-    width: APP_SHELL_OUTER_WIDTH,
-    height: APP_SHELL_OUTER_HEIGHT,
+    width: outerWidth,
+    height: outerHeight,
   };
   if (size.w > 0 && size.h > 0) {
-    const glassLeft = size.w / 2 - (APP_SHELL_OUTER_WIDTH * s) / 2;
-    const glassTop = size.h / 2 - (APP_SHELL_OUTER_HEIGHT * s) / 2;
+    const glassLeft = size.w / 2 - (outerWidth * s) / 2;
+    const glassTop = size.h / 2 - (outerHeight * s) / 2;
     backdropStyle = {
       left: -glassLeft / s,
       top: -glassTop / s,
@@ -187,6 +190,11 @@ export function AppShell({
           ['--fit-scale' as string]: scale,
           ['--boot-scale' as string]: bootScale,
           ['--boot-y' as string]: `${bootY}px`,
+          ['--app-shell-width' as string]: `${outerWidth}px`,
+          ['--app-shell-height' as string]: `${outerHeight}px`,
+          ['--app-screen-width' as string]: `${screenWidth}px`,
+          ['--app-screen-height' as string]: `${screenHeight}px`,
+          ['--corner-radius-phone-screen' as string]: `${screenRadius}px`,
           opacity: showPhone ? bootOpacity : 0,
           filter: showPhone && bootOpacity < 1 ? `blur(${(1 - bootOpacity) * 48}px)` : undefined,
           pointerEvents: bootOpacity >= 1 ? 'auto' : 'none',
@@ -203,7 +211,7 @@ export function AppShell({
               {/* Squircle drop shadow (cross-browser) — see shellPath/shadowId above. */}
               <svg
                 className={styles.dropShadow}
-                viewBox={`0 0 ${APP_SHELL_OUTER_WIDTH} ${APP_SHELL_OUTER_HEIGHT}`}
+                viewBox={`0 0 ${outerWidth} ${outerHeight}`}
                 aria-hidden
                 style={{ transform: `scale(${shadowScaleX}, ${shadowScaleY})` }}
               >
@@ -290,12 +298,14 @@ export function AppShell({
                     WebkitClipPath: screenClip,
                     // Concentric corner radius for descendants (e.g. a bottom sheet
                     // hugging the screen edge). Inherits via the cascade.
-                    ['--screen-corner-radius' as string]: `${glassConfig.radius - SCREEN_INSET}px`,
+                    ['--screen-corner-radius' as string]: `${screenRadius}px`,
                   }
                 : undefined
             }
           >
-            <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
+            {device === 'phone' ? (
+              <PhoneStatusBar ref={statusBarRef} tone={statusBarTone} />
+            ) : null}
             {/* Always present so it can double as the portal target for overlays
                 that need to frost the status bar (it sits above it). */}
             <div ref={setOverlayEl} className={styles.screenOverlay}>
@@ -310,7 +320,7 @@ export function AppShell({
             ) : null}
           </div>
         </div>
-        {bezelOverlay && (
+        {bezelOverlay && device === 'phone' && (
           <img
             src={bezelOverlay.src}
             alt=""

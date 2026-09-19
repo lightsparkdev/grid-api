@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { IconArrowRight } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRight';
 import { IconArrowLeft } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowLeft';
@@ -13,8 +13,8 @@ import { useColumnResize } from '@/hooks/useColumnResize';
 import { LAYOUT_WIDE_PX } from '@/lib/layout';
 import { buildApiEntries, type StatementApiEntry } from '@/statement/api';
 import {
-  nextStatementLifecycle,
-  type StatementLifecycle,
+  INITIAL_STATEMENT_PREVIEW,
+  nextStatementPreview,
 } from '@/statement/lifecycle';
 import {
   DEFAULT_BRAND,
@@ -53,9 +53,10 @@ export default function Page() {
   const [variant, setVariant] = useState<StatementVariant>('consumer');
   const [brand, setBrand] = useState<StatementBrand>(DEFAULT_BRAND);
   const [presetId, setPresetId] = useState<PresetId>(PRESETS[0].id);
-  const [refreshSequence, setRefreshSequence] = useState(0);
-  const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
-  const [lifecycle, setLifecycle] = useState<StatementLifecycle>('in-progress');
+  const [preview, updatePreview] = useReducer(
+    nextStatementPreview,
+    INITIAL_STATEMENT_PREVIEW,
+  );
   const [entries, setEntries] = useState<StatementApiEntry[]>([]);
   const [uploadError, setUploadError] = useState('');
   const [mobileView, setMobileView] = useState<MobileView>('configure');
@@ -91,15 +92,16 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    if (lifecycle !== 'statement' || refreshSequence === 0) return;
-    stageApiEntries(apiStatement);
-  }, [apiStatement, lifecycle, refreshSequence, stageApiEntries]);
-
-  const closePeriod = useCallback(() => {
-    if (lifecycle === 'statement') return;
-    setLifecycle((current) => nextStatementLifecycle(current, 'period-closes'));
-    setRefreshSequence((current) => current + 1);
-  }, [lifecycle]);
+    apiTimers.current.forEach((timer) => window.clearTimeout(timer));
+    setEntries([]);
+    const loadId = preview.loadId;
+    const timer = window.setTimeout(() => {
+      updatePreview({ type: 'load-completed', loadId });
+      stageApiEntries(apiStatement);
+    }, 500);
+    apiTimers.current = [timer];
+    return () => window.clearTimeout(timer);
+  }, [apiStatement, preview.loadId, stageApiEntries]);
 
   useEffect(
     () => () => {
@@ -128,7 +130,6 @@ export default function Page() {
         },
         colors: preset.colors,
       }));
-      setRefreshSequence((current) => current + 1);
       setUploadError('');
     },
     [clearUploadedUrl],
@@ -215,8 +216,8 @@ export default function Page() {
       <div className={styles.configCol}>
         <ConfigurePanel
           brand={brand}
-          lifecycle={lifecycle}
           presetId={presetId}
+          previewMode={preview.mode}
           uploadError={uploadError}
           variant={variant}
           onBrandChange={(companyName) => {
@@ -232,17 +233,14 @@ export default function Page() {
             clearUploadedUrl();
             setBrand((current) => ({ ...current, logo: { kind: 'none' } }));
           }}
-          onPeriodClose={closePeriod}
-          onReset={() => {
-            setLifecycle((current) => nextStatementLifecycle(current, 'reset'));
-            apiTimers.current.forEach((timer) => window.clearTimeout(timer));
-            setEntries([]);
+          onPreviewModeChange={(mode) => {
+            updatePreview({ type: 'view-selected', mode });
           }}
           onPresetSelect={selectPreset}
           onUpload={uploadLogo}
           onVariantChange={(nextVariant) => {
             setVariant(nextVariant);
-            setRefreshSequence((current) => current + 1);
+            updatePreview({ type: 'account-selected' });
           }}
         />
       </div>
@@ -250,9 +248,7 @@ export default function Page() {
         <div className={styles.appCol}>
           <StatementPanel
             statement={statement}
-            lifecycle={lifecycle}
-            previewMode={previewMode}
-            onPreviewModeChange={setPreviewMode}
+            preview={preview}
             onPrint={printStatement}
           />
         </div>

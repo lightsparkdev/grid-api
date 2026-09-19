@@ -1,37 +1,30 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AppShell } from '@/apps/shared/AppShell';
-import { ChoiceGrid } from '@/components/ChoiceGrid/ChoiceGrid';
 import { PanelHeader } from '@/components/PanelHeader/PanelHeader';
 import { ShareSheet } from '@/components/ShareSheet/ShareSheet';
 import { StageShareButton } from '@/components/ShareSheet/StageShareButton';
 import { StatementDocument } from '@/components/StatementDocument';
-import { StatementScreen } from '@/components/StatementScreen/StatementScreen';
-import { IconPhone } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhone';
-import { IconLayoutWindow } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLayoutWindow';
+import { StatementPreview } from '@/components/StatementPreview/StatementPreview';
 import { brandContrast } from '@/statement/brand';
 import {
   buildStatementHtml,
   downloadHtml,
   statementExportFilename,
 } from '@/statement/export';
+import type { StatementPreview as StatementPreviewState } from '@/statement/lifecycle';
 import type { StatementModel } from '@/statement/types';
 import styles from './StatementPanel.module.scss';
 
 interface StatementPanelProps {
   statement: StatementModel;
-  lifecycle: 'in-progress' | 'statement';
-  previewMode: 'mobile' | 'desktop';
-  onPreviewModeChange: (mode: 'mobile' | 'desktop') => void;
+  preview: StatementPreviewState;
   onPrint: () => void;
 }
 
 export function StatementPanel({
   statement,
-  lifecycle,
-  previewMode,
-  onPreviewModeChange,
+  preview,
   onPrint,
 }: StatementPanelProps) {
   const [shareOpen, setShareOpen] = useState(false);
@@ -70,37 +63,19 @@ export function StatementPanel({
           </svg>
         }
         title="Statement preview"
-        actions={
-          <div className={styles.actions}>
-            <ChoiceGrid
-              label="Preview"
-              value={previewMode}
-              options={[
-                { id: 'mobile', label: 'Mobile', Icon: IconPhone },
-                { id: 'desktop', label: 'Desktop', Icon: IconLayoutWindow },
-              ]}
-              onChange={onPreviewModeChange}
-            />
-          </div>
-        }
       />
       <div className={styles.stage}>
-        {previewMode === 'mobile' && mounted ? (
-          <AppShell externalGlass>
-            <StatementScreen statement={statement} lifecycle={lifecycle} />
-          </AppShell>
-        ) : previewMode === 'desktop' && lifecycle === 'statement' ? (
-          <div className={styles.desktopDocument}>
-            <StatementDocument statement={statement} width="full" />
-          </div>
-        ) : previewMode === 'desktop' ? (
-          <div className={styles.emptyDocument}>
-            <span>Statement arrives Oct 1</span>
-          </div>
+        {mounted ? (
+          <StatementPreview
+            mode={preview.mode}
+            phase={preview.phase}
+            statement={statement}
+          />
         ) : null}
         <ShareSheet
           open={shareOpen}
           statement={statement}
+          previewMode={preview.mode}
           onCopyLink={() => {
             void navigator.clipboard?.writeText(window.location.href);
           }}
@@ -112,7 +87,7 @@ export function StatementPanel({
         />
         {mounted ? (
           <StageShareButton
-            visible={lifecycle === 'statement' && exportAllowed}
+            visible={preview.phase === 'ready' && exportAllowed}
             open={shareOpen}
             onClick={() => {
               setExportError('');
@@ -131,6 +106,7 @@ export function StatementPanel({
           ref={exportDocumentRef}
           statement={statement}
           width="full"
+          showMasthead
         />
       </div>
     </section>

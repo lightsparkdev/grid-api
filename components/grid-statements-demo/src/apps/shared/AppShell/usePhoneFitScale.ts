@@ -2,15 +2,45 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 
-/** Outer phone-gga bounds from Figma 2121:17475 (402×874 screen + 16px pad). */
-export const APP_SHELL_OUTER_WIDTH = 434;
-export const APP_SHELL_OUTER_HEIGHT = 906;
+export type AppShellDevice = 'phone' | 'duo-landscape';
+
+export interface AppShellGeometry {
+  outerWidth: number;
+  outerHeight: number;
+  screenWidth: number;
+  screenHeight: number;
+  screenRadius: number;
+  shellRadius: number;
+}
+
+/** Wallet phone-gga and the open iPhone Duo landscape display. */
+export const APP_SHELL_GEOMETRY: Record<AppShellDevice, AppShellGeometry> = {
+  phone: {
+    outerWidth: 434,
+    outerHeight: 906,
+    screenWidth: 402,
+    screenHeight: 874,
+    screenRadius: 60,
+    shellRadius: 76,
+  },
+  'duo-landscape': {
+    outerWidth: 922,
+    outerHeight: 658,
+    screenWidth: 890,
+    screenHeight: 626,
+    screenRadius: 54,
+    shellRadius: 70,
+  },
+};
+
+export const APP_SHELL_OUTER_WIDTH = APP_SHELL_GEOMETRY.phone.outerWidth;
+export const APP_SHELL_OUTER_HEIGHT = APP_SHELL_GEOMETRY.phone.outerHeight;
 
 /** Minimum inset around the phone when fitting inside the dot-grid stage. */
 export const PHONE_FIT_PAD_INLINE = 16;
 export const PHONE_FIT_PAD_BLOCK = 48;
 
-export function usePhoneFitScale() {
+export function usePhoneFitScale(device: AppShellDevice = 'phone') {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   // Live stage size — consumers use it to place a backdrop copy inside the glass.
@@ -19,6 +49,7 @@ export function usePhoneFitScale() {
   useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    const geometry = APP_SHELL_GEOMETRY[device];
 
     const compute = () => {
       const cw = el.clientWidth;
@@ -28,8 +59,8 @@ export function usePhoneFitScale() {
       const availH = ch - PHONE_FIT_PAD_BLOCK * 2;
       const s = Math.min(
         1,
-        availW / APP_SHELL_OUTER_WIDTH,
-        availH / APP_SHELL_OUTER_HEIGHT,
+        availW / geometry.outerWidth,
+        availH / geometry.outerHeight,
       );
       setScale(s > 0 ? s : 1);
     };
@@ -38,7 +69,7 @@ export function usePhoneFitScale() {
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [device]);
 
   return { wrapRef, scale, size };
 }

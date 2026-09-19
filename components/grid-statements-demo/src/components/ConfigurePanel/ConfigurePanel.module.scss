@@ -105,21 +105,6 @@
   font-size: var(--font-size-xs);
 }
 
-.resetBtn {
-  all: unset;
-  @include label-sm;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-tertiary);
-  cursor: pointer;
-
-  &:focus-visible {
-    outline: 2px solid var(--text-primary);
-    outline-offset: 3px;
-  }
-}
-
 @media (max-width: $breakpoint-layout-mobile) {
   .panel {
     width: 100%;

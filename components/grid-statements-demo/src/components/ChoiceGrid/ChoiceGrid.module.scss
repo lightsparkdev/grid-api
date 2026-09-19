@@ -26,12 +26,11 @@
   cursor: pointer;
   transition: background 100ms ease;
 
-  &:last-child {
+  &:nth-child(even) {
     border-right: 0;
   }
 
-  &:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
+  &:nth-child(n + 3) {
     border-top: var(--stroke-xs) solid var(--border-primary);
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -13,6 +14,13 @@ import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from
 import { IconAddImage } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconAddImage';
 import { IconCrossMedium } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCrossMedium';
 import { IconPlusSmall } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPlusSmall';
+import {
+  PopoverPopup,
+  PopoverPortal,
+  PopoverPositioner,
+  PopoverRoot,
+  PopoverTrigger,
+} from '@lightsparkdev/origin/popover';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
 import { pressable } from '@/lib/sounds';
 import type { HexColor } from '@/statement/types';
@@ -181,31 +189,78 @@ export function ShimmerField({
 
 export function ColorPicker({
   value,
+  active,
   label,
   onChange,
 }: {
   value: HexColor;
+  active: boolean;
   label: string;
   onChange: (value: HexColor) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const [hex, setHex] = useState(value);
+  useEffect(() => setHex(value), [value]);
+  const applyHex = () => {
+    if (/^#[0-9a-f]{6}$/i.test(hex)) {
+      onChange(hex.toLowerCase() as HexColor);
+      return;
+    }
+    setHex(value);
+  };
+
   return (
-    <Tooltip text={`Choose ${label.toLowerCase()}`}>
-      {(tip) => (
-        <label
-          className={clsx(styles.swatch, styles.colorPicker)}
-          style={{ background: value }}
-          {...tip}
-        >
-          <input
-            type="color"
-            value={value}
+    <PopoverRoot open={open} onOpenChange={(next) => setOpen(next)}>
+      <Tooltip text={`Choose ${label.toLowerCase()}`}>
+        {(tip) => (
+          <PopoverTrigger
+            className={clsx(styles.swatch, styles.colorPicker)}
+            style={active ? { background: value } : undefined}
+            data-active={active || undefined}
             aria-label={label}
-            onChange={(event) => onChange(event.target.value as HexColor)}
-          />
-          <IconPlusSmall size={14} aria-hidden />
-        </label>
-      )}
-    </Tooltip>
+            {...(open ? {} : tip)}
+            {...pressable({ onClick: tip.onMouseLeave })}
+          >
+            {!active ? <IconPlusSmall size={16} aria-hidden /> : null}
+          </PopoverTrigger>
+        )}
+      </Tooltip>
+      <PopoverPortal>
+        <PopoverPositioner
+          side="bottom"
+          align="end"
+          sideOffset={8}
+          collisionAvoidance={{ side: 'shift', align: 'shift' }}
+        >
+          <PopoverPopup className={styles.colorPopup} aria-label="Custom color">
+            <input
+              className={styles.colorField}
+              type="color"
+              value={value}
+              aria-label={`${label} picker`}
+              onChange={(event) => {
+                const next = event.target.value as HexColor;
+                setHex(next);
+                onChange(next);
+              }}
+            />
+            <label className={styles.colorValue}>
+              <span style={{ background: value }} aria-hidden />
+              <input
+                value={hex}
+                aria-label={`${label} hex color`}
+                spellCheck={false}
+                onChange={(event) => setHex(event.target.value as HexColor)}
+                onBlur={applyHex}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') applyHex();
+                }}
+              />
+            </label>
+          </PopoverPopup>
+        </PopoverPositioner>
+      </PopoverPortal>
+    </PopoverRoot>
   );
 }
 
@@ -240,7 +295,7 @@ export function ColorSwatches({
           )}
         </Tooltip>
       ))}
-      <ColorPicker value={value} label={label} onChange={onChange} />
+      <ColorPicker value={value} active={!stock} label={label} onChange={onChange} />
     </SwatchRow>
   );
 }

@@ -66,6 +66,8 @@
 
 .swatches {
   --swatch-radius: calc(5px * var(--corner-superellipse-scale, 1));
+  --picker-fill: var(--surface-secondary);
+  --picker-border: var(--border-primary);
   position: relative;
   display: flex;
   flex: 1;
@@ -73,6 +75,11 @@
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
+
+  :global([data-theme='dark']) & {
+    --picker-fill: var(--color-gray-850);
+    --picker-border: rgba(244, 244, 245, 0.16);
+  }
 }
 
 .ring {
@@ -150,28 +157,86 @@
     #f1f1ef;
 }
 
-.sample-duo {
-  background:
-    linear-gradient(90deg, #1a1a1a 47%, #8e8e93 47% 53%, #1a1a1a 53%);
-}
-
 .colorPicker {
   display: grid;
   place-items: center;
   width: 22px;
   height: 22px;
   margin: -1px;
-  color: color-mix(in srgb, currentColor 80%, transparent);
-
-  input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-  }
+  background: var(--picker-fill);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--picker-border);
 
   svg {
-    filter: drop-shadow(0 0 1px white);
+    display: block;
+  }
+
+  &[data-active] {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.colorPopup {
+  display: flex;
+  width: 208px;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  border-radius: var(--corner-radius-md);
+  --picker-input: var(--surface-base);
+
+  :global([data-theme='dark']) & {
+    --picker-input: var(--color-gray-900);
+  }
+}
+
+.colorField {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  height: 112px;
+  overflow: hidden;
+  border: var(--stroke-xs) solid var(--border-primary);
+  border-radius: var(--corner-radius-xs);
+  background: var(--picker-input);
+  cursor: pointer;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+
+  &::-webkit-color-swatch {
+    border: 0;
+  }
+}
+
+.colorValue {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+
+  > span {
+    width: 24px;
+    height: 24px;
+    flex: none;
+    border: var(--stroke-xs) solid var(--border-primary);
+    border-radius: var(--corner-radius-xs);
+  }
+
+  input {
+    all: unset;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 32px;
+    padding: 0 var(--spacing-xs);
+    border: var(--stroke-xs) solid var(--border-primary);
+    border-radius: var(--corner-radius-xs);
+    background: var(--picker-input);
+    color: var(--text-primary);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
   }
 }
 
@@ -226,7 +291,7 @@
 }
 
 .logoClear {
-  background: var(--surface-secondary);
+  background: var(--picker-fill, var(--surface-secondary));
   color: var(--text-primary);
   cursor: pointer;
   box-shadow: inset 0 0 0 1px var(--border-primary);

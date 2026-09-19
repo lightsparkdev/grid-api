@@ -9,8 +9,8 @@ import {
 import { ChoiceGrid } from '@/components/ChoiceGrid/ChoiceGrid';
 import { IconUserKey } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconUserKey';
 import { IconBank } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconBank';
-import { IconCalendar2 } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCalendar2';
-import { IconArrowRotateCounterClockwise } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconArrowRotateCounterClockwise';
+import { IconPhone } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhone';
+import { IconLayoutWindow } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLayoutWindow';
 import { PlaygroundIntro } from '@/components/PlaygroundIntro/PlaygroundIntro';
 import { SectionDivider } from '@/components/SectionDivider/SectionDivider';
 import { Tooltip } from '@/components/Tooltip/Tooltip';
@@ -31,17 +31,18 @@ import type {
 } from '@/statement/types';
 import styles from './ConfigurePanel.module.scss';
 
+type PreviewMode = 'mobile' | 'desktop';
+
 interface ConfigurePanelProps {
   brand: StatementBrand;
-  lifecycle: 'in-progress' | 'statement';
   presetId: PresetId;
+  previewMode: PreviewMode;
   uploadError: string;
   variant: StatementVariant;
   onBrandChange: (companyName: string) => void;
   onBrandColorChange: (key: keyof StatementBrandColors, value: HexColor) => void;
   onClearLogo: () => void;
-  onPeriodClose: () => void;
-  onReset: () => void;
+  onPreviewModeChange: (mode: PreviewMode) => void;
   onPresetSelect: (preset: StatementPreset) => void;
   onUpload: (file: File | undefined) => void;
   onVariantChange: (variant: StatementVariant) => void;
@@ -49,15 +50,14 @@ interface ConfigurePanelProps {
 
 export function ConfigurePanel({
   brand,
-  lifecycle,
   presetId,
+  previewMode,
   uploadError,
   variant,
   onBrandChange,
   onBrandColorChange,
   onClearLogo,
-  onPeriodClose,
-  onReset,
+  onPreviewModeChange,
   onPresetSelect,
   onUpload,
   onVariantChange,
@@ -96,6 +96,37 @@ export function ConfigurePanel({
       <div className={styles.body}>
         <div className={styles.content}>
           <PlaygroundIntro />
+
+          <section className={styles.section}>
+            <SectionDivider label="Configure statement" />
+            <ChoiceGrid<StatementVariant | PreviewMode>
+              label="Statement configuration"
+              value={variant}
+              selectedValues={[variant, previewMode]}
+              options={[
+                { id: 'consumer', label: 'Consumer', Icon: IconUserKey },
+                { id: 'commercial', label: 'Commercial', Icon: IconBank },
+                { id: 'mobile', label: 'Mobile', Icon: IconPhone },
+                { id: 'desktop', label: 'Desktop', Icon: IconLayoutWindow },
+              ]}
+              onChange={(value) => {
+                switch (value) {
+                  case 'consumer':
+                  case 'commercial':
+                    onVariantChange(value);
+                    return;
+                  case 'mobile':
+                  case 'desktop':
+                    onPreviewModeChange(value);
+                    return;
+                  default: {
+                    const exhaustive: never = value;
+                    return exhaustive;
+                  }
+                }
+              }}
+            />
+          </section>
 
           <section className={styles.section}>
             <SectionDivider label="Customize the statement" />
@@ -166,39 +197,6 @@ export function ConfigurePanel({
             {uploadError ? <p className={styles.error}>{uploadError}</p> : null}
           </section>
 
-          <section className={styles.section}>
-            <SectionDivider
-              label="Explore flows"
-              action={
-                lifecycle === 'statement' ? (
-                  <button
-                    type="button"
-                    className={styles.resetBtn}
-                    {...pressable({ onClick: onReset })}
-                  >
-                    <IconArrowRotateCounterClockwise size={12} aria-hidden />
-                    Reset
-                  </button>
-                ) : null
-              }
-            />
-            <ChoiceGrid
-              label="Statement controls"
-              value={lifecycle === 'statement' ? 'period-closes' : variant}
-              options={[
-                { id: 'consumer', label: 'Consumer', Icon: IconUserKey },
-                { id: 'commercial', label: 'Commercial', Icon: IconBank },
-                { id: 'period-closes', label: 'Period closes', Icon: IconCalendar2 },
-              ]}
-              onChange={(value) => {
-                if (value === 'period-closes') {
-                  onPeriodClose();
-                  return;
-                }
-                onVariantChange(value);
-              }}
-            />
-          </section>
         </div>
       </div>
     </aside>
