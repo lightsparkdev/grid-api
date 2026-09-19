@@ -6,8 +6,12 @@ const statementsUrl = process.env.STATEMENTS_URL ?? 'http://127.0.0.1:4003';
 const label = process.env.AUDIT_LABEL ?? 'current';
 const output = new URL(`../.artifacts/visual-audit/${label}/`, import.meta.url);
 const cases = [
-  { name: 'wide-light', width: 1800, height: 1100, theme: 'light' },
-  { name: 'wide-dark', width: 1800, height: 1100, theme: 'dark' },
+  { name: '1280-light', width: 1280, height: 1000, theme: 'light' },
+  { name: '1280-dark', width: 1280, height: 1000, theme: 'dark' },
+  { name: '1680-light', width: 1680, height: 1050, theme: 'light' },
+  { name: '1680-dark', width: 1680, height: 1050, theme: 'dark' },
+  { name: '2560-light', width: 2560, height: 1200, theme: 'light' },
+  { name: '2560-dark', width: 2560, height: 1200, theme: 'dark' },
   { name: 'stacked-light', width: 1440, height: 1100, theme: 'light' },
   { name: 'stacked-dark', width: 1440, height: 1100, theme: 'dark' },
   { name: 'mobile-light', width: 390, height: 844, theme: 'light', mobile: true },
@@ -68,15 +72,25 @@ for (const auditCase of cases) {
         center: rect('.statement-panel, [class*="appCol"]'),
         api: rect('.api-column, [class*="apiCol"]'),
         header: rect('.panel-header, [class*="PanelHeader_header"]'),
+        shell: rect('[class*="AppShell_frame"]'),
+        body: {
+          width: document.body.scrollWidth,
+          height: document.body.scrollHeight,
+        },
       };
     });
     evidence.push({ app: app.name, case: auditCase.name, metrics, errors });
 
     if (app.name === 'statements' && !auditCase.mobile) {
-      await page.getByRole('radio', { name: 'Period closes' }).click();
-      await page.getByText('listTransactions').waitFor();
+      await page.getByText('listTransactions').waitFor({ state: 'attached' });
       await page.screenshot({
         path: new URL(`${baseName}-statement.png`, output).pathname,
+        fullPage: true,
+      });
+      await page.getByRole('button', { name: 'Desktop' }).click();
+      await page.getByText('September statement').first().waitFor();
+      await page.screenshot({
+        path: new URL(`${baseName}-desktop.png`, output).pathname,
         fullPage: true,
       });
       await page.getByRole('button', { name: 'Share' }).click();
@@ -88,7 +102,6 @@ for (const auditCase of cases) {
 
     if (auditCase.mobile) {
       if (app.name === 'statements') {
-        await page.getByRole('radio', { name: 'Period closes' }).click();
         await page.getByText('listTransactions').waitFor({ state: 'attached' });
       }
       const explore = page.getByRole('button', { name: 'Explore playground' });
