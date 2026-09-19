@@ -11027,6 +11027,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
+    delete:
+      summary: Revoke a stablecoin provider account link
+      description: Revoke the provider credentials behind a stablecoin provider account link. The stored credential material is cleared and the link's `status` becomes `REVOKED`; the link itself remains readable. Stablecoins registered under a revoked link can no longer mint or burn, and registering a new stablecoin under it is rejected with `STABLECOIN_PROVIDER_ACCOUNT_REVOKED`. Linking the same provider account again reactivates the link with the new credentials. Revoking a link that is already revoked succeeds and changes nothing.
+      operationId: revokeStablecoinProviderAccount
+      tags:
+        - Stablecoins
+      security:
+        - BasicAuth: []
+      responses:
+        '204':
+          description: Stablecoin provider account link revoked
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Stablecoin provider account link not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 webhooks:
   agent-action:
     post:

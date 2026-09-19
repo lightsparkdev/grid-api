@@ -317,6 +317,7 @@ Drive card lifecycle events in sandbox to test authorization, clearing, and retu
 | POST | `/stablecoin-provider-accounts` | Link a stablecoin provider account |
 | GET | `/stablecoin-provider-accounts` | List stablecoin provider account links |
 | GET | `/stablecoin-provider-accounts/{stablecoinProviderAccountId}` | Get a stablecoin provider account link |
+| DELETE | `/stablecoin-provider-accounts/{stablecoinProviderAccountId}` | Revoke a stablecoin provider account link |
 
 ## Webhooks
 
