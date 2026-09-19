@@ -1,17 +1,19 @@
 'use client';
 
 import React from 'react';
+import { IconLoadingCircle } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLoadingCircle';
 import { StatementDocument } from '@/components/StatementDocument';
 import { statementColorProperties } from '@/statement/brand';
+import { statementTitle } from '@/statement/presentation';
 import type { StatementModel } from '@/statement/types';
 import styles from './StatementScreen.module.scss';
 
 export function StatementScreen({
   statement,
-  lifecycle,
+  loading,
 }: {
   statement: StatementModel;
-  lifecycle: 'in-progress' | 'statement';
+  loading: boolean;
 }) {
   return (
     <main
@@ -20,22 +22,16 @@ export function StatementScreen({
       aria-label="Statement app preview"
     >
       <header className={styles.hero}>
-        {statement.brand.logo.kind === 'image' ? (
-          <img src={statement.brand.logo.src} alt={statement.brand.logo.alt} />
-        ) : null}
-        <span>{statement.brand.companyName || 'Your company'}</span>
-        <strong>{lifecycle === 'statement' ? 'Monthly statement' : 'Current cycle'}</strong>
-        {lifecycle === 'statement' ? <small>{statement.period.range}</small> : null}
+        <h1>{statementTitle(statement.period)}</h1>
       </header>
-      {lifecycle === 'statement' ? (
-        <div className={styles.scroller}>
-          <StatementDocument statement={statement} width="narrow" />
+      {loading ? (
+        <div className={styles.loading} role="status" aria-label="Loading statement">
+          <IconLoadingCircle size={20} aria-hidden />
         </div>
       ) : (
-        <section className={styles.activity} aria-label="Current statement cycle">
-          <strong>Activity</strong>
-          <p>Statement arrives Oct 1</p>
-        </section>
+        <div className={styles.scroller}>
+          <StatementDocument statement={statement} width="narrow" showMasthead={false} />
+        </div>
       )}
     </main>
   );

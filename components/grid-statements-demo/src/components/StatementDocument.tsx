@@ -1,46 +1,50 @@
 import React, { forwardRef } from 'react';
 import { LEGAL, calculateTotals, formatMoney, statementRows } from '@/statement/fixtures';
 import { statementColorProperties } from '@/statement/brand';
+import { statementTitle } from '@/statement/presentation';
 import type { PreviewWidth, StatementModel } from '@/statement/types';
 import styles from './StatementDocument.module.css';
 
 interface StatementDocumentProps {
   statement: StatementModel;
   width: PreviewWidth;
+  showMasthead: boolean;
 }
 
 export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>(
-  function StatementDocument({ statement, width }, ref) {
-  const totals = calculateTotals(statement);
-  const rows = statementRows(statement);
-  const details = [
-    ['Statement period', statement.period.range],
-    ['Issued', statement.period.issued],
-    ['Account holder', statement.account.holder],
-    ['Account type', statement.account.type],
-    ['Account number', statement.account.number],
-  ];
+  function StatementDocument({ statement, width, showMasthead }, ref) {
+    const totals = calculateTotals(statement);
+    const rows = statementRows(statement);
+    const details = [
+      ['Statement period', statement.period.range],
+      ['Issued', statement.period.issued],
+      ['Account holder', statement.account.holder],
+      ['Account type', statement.account.type],
+      ['Account number', statement.account.number],
+    ];
 
-  return (
-    <article
-      ref={ref}
-      className={styles.document}
-      data-preview-width={width}
-      style={statementColorProperties(statement.brand.colors)}
-    >
-      <header className={styles.masthead}>
-        <div className={styles.brand}>
-          {statement.brand.logo.kind === 'image' ? (
-            <img
-              src={statement.brand.logo.src}
-              alt={statement.brand.logo.alt}
-            />
-          ) : (
-            statement.brand.companyName
-          )}
-        </div>
-        <strong>Monthly statement</strong>
-      </header>
+    return (
+      <article
+        ref={ref}
+        className={styles.document}
+        data-preview-width={width}
+        style={statementColorProperties(statement.brand.colors)}
+      >
+      {showMasthead ? (
+        <header className={styles.masthead}>
+          <div className={styles.brand}>
+            {statement.brand.logo.kind === 'image' ? (
+              <img
+                src={statement.brand.logo.src}
+                alt={statement.brand.logo.alt}
+              />
+            ) : (
+              statement.brand.companyName
+            )}
+          </div>
+          <strong>{statementTitle(statement.period)}</strong>
+        </header>
+      ) : null}
 
       <section className={styles.definitionSection}>
         {details.map(([label, value]) => (
@@ -93,10 +97,6 @@ export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>
       </section>
 
       <footer className={styles.footer}>
-        <p>
-          Direct inquiries to: <strong>{LEGAL.phone}</strong> or {LEGAL.address}.
-        </p>
-
         {statement.variant === 'consumer' ? (
           <section className={styles.notice}>
             <div className={styles.label}>
@@ -113,21 +113,9 @@ export const StatementDocument = forwardRef<HTMLElement, StatementDocumentProps>
         ) : null}
 
         <p>{LEGAL.provider}</p>
-
-        <div className={styles.colophon}>
-          <div>
-            <strong>Lightspark Payments, LLC</strong>
-            <span>NMLS ID 2429193</span>
-          </div>
-          <span>{LEGAL.address}</span>
-          <div className={styles.contact}>
-            <span>www.lightspark.com</span>
-            <span>{LEGAL.phone}</span>
-          </div>
-        </div>
       </footer>
-    </article>
-  );
+      </article>
+    );
   },
 );
 

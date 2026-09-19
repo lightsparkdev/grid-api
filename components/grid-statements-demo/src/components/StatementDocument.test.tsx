@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEFAULT_BRAND, STATEMENT_PERIOD, buildStatement } from '@/statement/fixtures';
 import { StatementDocument } from './StatementDocument';
@@ -7,9 +7,24 @@ import { StatementDocument } from './StatementDocument';
 afterEach(cleanup);
 
 describe('StatementDocument', () => {
+  it('renders the derived title only when the standalone masthead is enabled', () => {
+    const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
+    const view = render(
+      <StatementDocument statement={statement} width="full" showMasthead />,
+    );
+
+    expect(screen.getByText('September statement')).toBeTruthy();
+    view.rerender(
+      <StatementDocument statement={statement} width="narrow" showMasthead={false} />,
+    );
+    expect(screen.queryByText('September statement')).toBeNull();
+  });
+
   it('renders the consumer overlay and reconciled closing balance', () => {
     const statement = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
-    const { container } = render(<StatementDocument statement={statement} width="full" />);
+    const { container } = render(
+      <StatementDocument statement={statement} width="full" showMasthead />,
+    );
 
     expect(screen.getByText('$3,373.95')).toBeTruthy();
     expect(
@@ -17,11 +32,24 @@ describe('StatementDocument', () => {
     ).toBeTruthy();
     expect(container.querySelectorAll('[data-flag="disputable"]')).toHaveLength(3);
     expect(screen.getByText(/Lightspark is the program manager and is not a bank/)).toBeTruthy();
+    const notice = screen
+      .getByText(/In Case of Errors or Questions About Your Electronic Transfers/)
+      .closest('section');
+    expect(notice).toBeTruthy();
+    expect(within(notice as HTMLElement).getByText(/\(855\) 516-0103/)).toBeTruthy();
+    expect(
+      within(notice as HTMLElement).getByText(
+        /8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069/,
+      ),
+    ).toBeTruthy();
+    expect(container.textContent).not.toContain('www.lightspark.com');
   });
 
   it('removes all consumer overlay content from commercial statements', () => {
     const statement = buildStatement('commercial', DEFAULT_BRAND, STATEMENT_PERIOD);
-    const { container } = render(<StatementDocument statement={statement} width="narrow" />);
+    const { container } = render(
+      <StatementDocument statement={statement} width="narrow" showMasthead />,
+    );
 
     expect(screen.getByText('$14,459.75')).toBeTruthy();
     expect(container.textContent).not.toMatch(/In Case of Errors|60 days|disputable/i);
@@ -34,7 +62,7 @@ describe('StatementDocument', () => {
       { ...DEFAULT_BRAND, companyName: 'Waterbnb', logo: { kind: 'none' } },
       STATEMENT_PERIOD,
     );
-    render(<StatementDocument statement={statement} width="full" />);
+    render(<StatementDocument statement={statement} width="full" showMasthead />);
 
     expect(screen.getByText('Waterbnb')).toBeTruthy();
   });
@@ -53,7 +81,9 @@ describe('StatementDocument', () => {
       },
       STATEMENT_PERIOD,
     );
-    const { container } = render(<StatementDocument statement={statement} width="full" />);
+    const { container } = render(
+      <StatementDocument statement={statement} width="full" showMasthead />,
+    );
     const document = container.querySelector('article');
 
     expect(document?.getAttribute('style')).toBe(

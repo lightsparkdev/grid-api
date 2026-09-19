@@ -1,3 +1,5 @@
+@use '../../apps/shared/typography/ios-type-mixins' as ios;
+
 .screen {
   display: flex;
   width: 100%;
@@ -9,34 +11,23 @@
 }
 
 .hero {
-  display: grid;
+  display: flex;
+  align-items: center;
   flex: 0 0 auto;
-  grid-template-columns: 44px 1fr;
-  padding: 74px 24px 22px;
-  background: var(--statement-primary-background);
-  color: var(--statement-primary-text);
+  min-height: 118px;
+  padding: 70px 24px 8px;
+  box-sizing: border-box;
+  border: 0;
+  background: var(--statement-secondary-background);
+  color: var(--statement-secondary-text);
 
-  img {
-    grid-row: 1 / 4;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-  }
-
-  span,
-  small {
-    color: var(--statement-secondary-text);
-  }
-
-  strong {
-    margin-top: 18px;
-    font-size: 27px;
-    line-height: 1.1;
-  }
-
-  small {
-    margin-top: 4px;
-    font-size: 14px;
+  h1 {
+    min-width: 0;
+    margin: 0;
+    @include ios.ios-text-title-3;
+    font-weight: 590;
+    font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+    white-space: nowrap;
   }
 }
 
@@ -55,24 +46,31 @@
   > article {
     width: 100%;
     min-width: 0;
+    max-width: none;
     box-shadow: none;
   }
 }
 
-.activity {
-  padding: 32px 24px;
+.loading {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  place-items: center;
   color: var(--statement-primary-text);
 
-  strong {
-    font-size: 22px;
+  svg {
+    animation: statement-spin 900ms linear infinite;
   }
+}
 
-  p {
-    margin: 18px 0 0;
-    padding: 18px;
-    border-radius: 18px;
-    background: var(--statement-primary-background);
-    color: var(--statement-secondary-text);
-    font-size: 15px;
+@keyframes statement-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading svg {
+    animation: none;
   }
 }

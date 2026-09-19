@@ -1,4 +1,5 @@
 import type { StatementModel } from './types';
+import { statementFileStem } from './presentation';
 
 const EXPORTED_PROPERTIES = [
   'align-items',
@@ -45,21 +46,11 @@ const EXPORTED_PROPERTIES = [
   'width',
 ] as const;
 
-function fileStem(statement: StatementModel) {
-  const company =
-    statement.brand.companyName
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || 'company';
-  return `${company}-statement-${statement.period.id}`;
-}
-
 export function statementExportFilename(
   statement: StatementModel,
   format: 'pdf' | 'html',
 ) {
-  return `${fileStem(statement)}.${format}`;
+  return `${statementFileStem(statement)}.${format}`;
 }
 
 async function sourceAsDataUrl(source: string): Promise<string> {

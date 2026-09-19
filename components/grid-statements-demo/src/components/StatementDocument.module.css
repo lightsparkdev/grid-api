@@ -23,9 +23,9 @@
 }
 
 .document[data-preview-width='narrow'] {
-  --gutter: 20px;
+  --gutter: 24px;
   --ledger-columns: 40px minmax(0, 1fr) 84px;
-  max-width: 390px;
+  max-width: none;
 }
 
 .masthead {
@@ -40,8 +40,7 @@
 
 .masthead strong,
 .feeTotal strong,
-.footer strong,
-.colophon strong {
+.footer strong {
   font-weight: 450;
 }
 
@@ -67,6 +66,7 @@
 }
 
 .definitionSection {
+  border-top: 0;
   padding: 14px 0 22px;
 }
 
@@ -193,18 +193,13 @@
   margin: 0;
   padding: 16px var(--gutter) 28px;
   border-top: 0.5px solid var(--statement-hairline);
-  background: var(--statement-secondary-background);
-  color: var(--statement-secondary-text);
+  background: var(--statement-primary-background);
+  color: var(--statement-primary-text);
   line-height: 1.5;
 }
 
 .footer p {
   margin: 0;
-}
-
-.footer > p:first-child strong,
-.colophon strong {
-  color: inherit;
 }
 
 .notice {
@@ -227,25 +222,6 @@
   margin-top: 8px !important;
 }
 
-.colophon {
-  display: grid;
-  grid-template-columns: 1.1fr 1.3fr 0.9fr;
-  column-gap: 20px;
-  margin-top: 4px;
-  padding-top: 12px;
-  border-top: 0.5px solid var(--statement-hairline);
-  color: inherit;
-}
-
-.colophon div {
-  display: flex;
-  flex-direction: column;
-}
-
-.contact {
-  text-align: right;
-}
-
 .document[data-preview-width='narrow'] .description {
   white-space: normal;
 }
@@ -253,15 +229,6 @@
 .document[data-preview-width='narrow'] .party {
   display: block;
   margin: 2px 0 0;
-}
-
-.document[data-preview-width='narrow'] .colophon {
-  grid-template-columns: 1fr;
-  row-gap: 8px;
-}
-
-.document[data-preview-width='narrow'] .contact {
-  text-align: left;
 }
 
 @media print {
@@ -273,8 +240,7 @@
 
   .transaction,
   .feeTotal,
-  .notice p,
-  .colophon {
+  .notice p {
     break-inside: avoid;
   }
 
@@ -287,11 +253,4 @@
     margin-left: 10px !important;
   }
 
-  .colophon {
-    grid-template-columns: 1.1fr 1.3fr 0.9fr !important;
-  }
-
-  .contact {
-    text-align: right !important;
-  }
 }

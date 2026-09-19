@@ -97,6 +97,6 @@ describe('statement fixtures', () => {
       STATEMENT_PERIOD,
     );
 
-    expect(statementFilename(statement)).toBe('waterbnb-statement-2026-09.pdf');
+    expect(statementFilename(statement)).toBe('waterbnb-september-statement.pdf');
   });
 });
