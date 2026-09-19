@@ -1,0 +1,76 @@
+@use '../../apps/shared/typography/ios-type-mixins' as ios;
+
+.screen {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--statement-secondary-background);
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 118px;
+  padding: 70px 24px 8px;
+  box-sizing: border-box;
+  border: 0;
+  background: var(--statement-secondary-background);
+  color: var(--statement-secondary-text);
+
+  h1 {
+    min-width: 0;
+    margin: 0;
+    @include ios.ios-text-title-3;
+    font-weight: 590;
+    font-variation-settings: 'wght' 590, 'wdth' 100, 'opsz' var(--ios-type-title-3-opsz);
+    white-space: nowrap;
+  }
+}
+
+.scroller {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  > article {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    box-shadow: none;
+  }
+}
+
+.loading {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  place-items: center;
+  color: var(--statement-primary-text);
+
+  svg {
+    animation: statement-spin 900ms linear infinite;
+  }
+}
+
+@keyframes statement-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading svg {
+    animation: none;
+  }
+}

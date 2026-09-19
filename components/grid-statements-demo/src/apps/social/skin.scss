@@ -1,0 +1,6 @@
+@mixin tokens {
+  &[data-app='social'] {
+    --ios-font-family: var(--font-family-geist);
+    --app-tint: #1d9bf0;
+  }
+}
