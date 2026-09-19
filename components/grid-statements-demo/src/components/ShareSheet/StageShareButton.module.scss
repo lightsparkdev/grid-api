@@ -1,11 +1,14 @@
 @use '@lightsparkdev/origin/src/tokens/text-styles' as *;
 
+/* Under the floating card, centered on the stage. Above the card's layer so
+   it takes the pointer; fades with the phone's arrival. */
 .root {
   position: absolute;
   left: 50%;
   bottom: 28px;
   z-index: 4;
   transform: translateX(-50%);
+  /* Comes in as the card did: out of a blur, rising into place. */
   transition:
     opacity 600ms var(--ease-out-snappy),
     transform 600ms var(--ease-out-snappy),
@@ -19,34 +22,52 @@
   filter: blur(8px);
 }
 
+/* The filled button (Origin's, and the mobile "Explore playground"): ink on
+   light, paper on dark, the small corner radius. */
 .button {
   all: unset;
   box-sizing: border-box;
   @include label;
   corner-shape: var(--corner-shape);
   display: inline-flex;
-  height: 44px;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
+  /* The height of the stage's other control (Back to the card, 44). */
+  height: 44px;
   padding: 0 var(--spacing-lg) 0 var(--spacing-md);
-  border-radius: var(--corner-radius-md);
   background: var(--surface-inverse, var(--color-gray-950));
   color: var(--text-inverse, var(--color-gray-050));
+  border-radius: var(--corner-radius-md);
   box-shadow: var(--shadow-md);
+  font-feature-settings: 'salt' 1;
+  white-space: nowrap;
   cursor: pointer;
-  transition: transform 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 200ms ease, background-image 150ms ease;
+
+  @media (hover: hover) {
+    &:hover {
+      background-image: linear-gradient(var(--surface-inverse-hover, rgba(255, 255, 255, 0.08)), var(--surface-inverse-hover, rgba(255, 255, 255, 0.08)));
+
+      :global([data-theme='dark']) & {
+        background-image: linear-gradient(var(--surface-inverse-hover, rgba(0, 0, 0, 0.06)), var(--surface-inverse-hover, rgba(0, 0, 0, 0.06)));
+      }
+    }
+  }
 
   &:active {
     transform: scale(0.97);
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--text-primary);
-    outline-offset: 4px;
+  /* The glyph a shade heavier than the set's 1.5, to hold its own on ink. */
+  svg path {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1.55;
   }
 }
 
+/* The glyph's box holds still; the two glyphs turn through it. */
 .glyph {
   position: relative;
   display: inline-block;
@@ -67,9 +88,9 @@
   display: inline-block;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .root,
-  .button {
-    transition-duration: 1ms;
+@media (max-width: 767px) {
+  .root {
+    position: fixed;
+    bottom: 84px;
   }
 }

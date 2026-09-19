@@ -1,10 +1,27 @@
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BRAND, STATEMENT_PERIOD, buildStatement } from '@/statement/fixtures';
 import { ShareSheet } from './ShareSheet';
+
+vi.mock('@/components/StatementPreview/StatementPreview', () => ({
+  StatementPreview: ({
+    mode,
+    statement,
+  }: {
+    mode: string;
+    statement: { brand: { companyName: string } };
+  }) =>
+    React.createElement(
+      'div',
+      { 'data-preview-shell': mode },
+      statement.brand.companyName,
+    ),
+}));
+
+afterEach(cleanup);
 
 describe('ShareSheet', () => {
   it('shows the statement and the three approved actions', () => {
@@ -12,6 +29,7 @@ describe('ShareSheet', () => {
       <ShareSheet
         open
         statement={buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD)}
+        previewMode="mobile"
         onCopyLink={vi.fn()}
         onSavePdf={vi.fn()}
         onSaveHtml={vi.fn()}
@@ -22,6 +40,31 @@ describe('ShareSheet', () => {
     expect(screen.getByRole('button', { name: 'Save PDF' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save HTML' })).toBeTruthy();
     expect(document.querySelector('[data-share-ripple]')).toBeTruthy();
+  });
+
+  it('shares both live preview modes and brand edits through the shared tree', () => {
+    const initial = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
+    const props = {
+      open: true,
+      onCopyLink: vi.fn(),
+      onSavePdf: vi.fn(),
+      onSaveHtml: vi.fn(),
+    };
+    const view = render(
+      <ShareSheet {...props} statement={initial} previewMode="mobile" />,
+    );
+
+    expect(document.querySelector('[data-preview-shell="mobile"]')).toBeTruthy();
+    const edited = buildStatement(
+      'consumer',
+      { ...DEFAULT_BRAND, companyName: 'Edited brand' },
+      STATEMENT_PERIOD,
+    );
+    view.rerender(
+      <ShareSheet {...props} statement={edited} previewMode="desktop" />,
+    );
+    expect(document.querySelector('[data-preview-shell="desktop"]')).toBeTruthy();
+    expect(screen.getByText('Edited brand')).toBeTruthy();
   });
 
   it('shortens the ripple for reduced motion', () => {

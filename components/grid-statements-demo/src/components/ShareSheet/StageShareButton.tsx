@@ -10,15 +10,22 @@ import { pressable } from '@/lib/sounds';
 import styles from './StageShareButton.module.scss';
 
 interface StageShareButtonProps {
+  /** The card is floating alone (the button goes with the phone). */
   visible: boolean;
+  /** The share panel is up: the button cancels it. */
   open: boolean;
   onClick: () => void;
 }
 
 const LABEL_MORPH_MS = 280;
+/** The glyph turns as it goes and the next turns in the rest of the way:
+ *  the share arrow becomes the cross. */
 const GLYPH_IN = motionTransition(easeOutSnappy, 0.34);
 const GLYPH_OUT = motionTransition(easeOutQuick, 0.16);
 
+/** Share, on the stage under the floating card: the developer's control,
+ *  beside the card as an object, not on the cardholder's phone. With the
+ *  panel up it reads Cancel. */
 export function StageShareButton({ visible, open, onClick }: StageShareButtonProps) {
   const reduceMotion = useReducedMotion() ?? false;
   return (

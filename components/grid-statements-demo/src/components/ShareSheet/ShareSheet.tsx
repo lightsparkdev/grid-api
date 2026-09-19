@@ -7,12 +7,13 @@ import { IconImages1 } from '@central-icons-react/round-outlined-radius-3-stroke
 import { IconCode } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconCode';
 import { pressable } from '@/lib/sounds';
 import type { StatementModel } from '@/statement/types';
-import { StatementDocument } from '@/components/StatementDocument';
+import { StatementPreview } from '@/components/StatementPreview/StatementPreview';
 import styles from './ShareSheet.module.scss';
 
 interface ShareSheetProps {
   open: boolean;
   statement: StatementModel;
+  previewMode: 'mobile' | 'desktop';
   onCopyLink: () => void;
   onSavePdf: () => void;
   onSaveHtml: () => void;
@@ -21,6 +22,7 @@ interface ShareSheetProps {
 export function ShareSheet({
   open,
   statement,
+  previewMode,
   onCopyLink,
   onSavePdf,
   onSaveHtml,
@@ -45,7 +47,7 @@ export function ShareSheet({
         >
           <span className={styles.ripple} data-share-ripple aria-hidden />
           <div className={styles.preview}>
-            <StatementDocument statement={statement} width="narrow" />
+            <StatementPreview mode={previewMode} phase="ready" statement={statement} />
           </div>
           <div className={styles.actions}>
             {actions.map(({ label, Icon, onClick }) => (
