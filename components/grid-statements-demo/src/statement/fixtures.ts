@@ -10,8 +10,6 @@ import { statementExportFilename } from './export';
 import { PRESETS, presetIconSrc } from './presets';
 
 export const LEGAL = {
-  phone: '(855) 516-0103',
-  address: '8605 Santa Monica Blvd, PMB 64461, West Hollywood, CA 90069',
   provider:
     'This account is held at Lead Bank, the account-holding institution. Lightspark is the program manager and is not a bank.',
   notice: [

@@ -47,6 +47,9 @@ export function StatementPanel({
   };
 
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (preview.phase === 'loading') setShareOpen(false);
+  }, [preview.phase]);
 
   return (
     <section className={styles.panel}>

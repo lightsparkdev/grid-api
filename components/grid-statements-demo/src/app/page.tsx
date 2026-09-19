@@ -239,6 +239,7 @@ export default function Page() {
           onPresetSelect={selectPreset}
           onUpload={uploadLogo}
           onVariantChange={(nextVariant) => {
+            if (nextVariant === variant) return;
             setVariant(nextVariant);
             updatePreview({ type: 'account-selected' });
           }}
