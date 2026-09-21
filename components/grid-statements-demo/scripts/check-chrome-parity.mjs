@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -179,15 +178,16 @@ if (!adaptedShell.includes("device === 'phone' ? (")) {
   failures.push('Duo must not render the phone status bar');
 }
 
-const copiedShareHashes = new Map([
-  ['src/components/ShareSheet/StageShareButton.tsx', '664c9b04f808d2b5fd59ce2da6fdbf98d31b272cdd7a1a0729c8e99aa33a51ff'],
-]);
-for (const [path, expected] of copiedShareHashes) {
-  const bytes = await readFile(resolve(statementsRoot, path));
-  const actual = createHash('sha256').update(bytes).digest('hex');
-  if (actual !== expected) failures.push(path);
-  console.log(`CARDS_39BADDFD_IDENTICAL\t${path}`);
+const adaptedExportButton = await readFile(
+  resolve(statementsRoot, 'src/components/ShareSheet/StageShareButton.tsx'),
+  'utf8',
+);
+for (const exact of ['IconArrowDown', "'Export'", "'Cancel'"]) {
+  if (!adaptedExportButton.includes(exact)) {
+    failures.push(`missing export control ${exact}`);
+  }
 }
+console.log('CARDS_ADAPTED\tsrc/components/ShareSheet/StageShareButton.tsx');
 
 const adaptedShare = await readFile(
   resolve(statementsRoot, 'src/components/ShareSheet/StageShareButton.module.scss'),
@@ -196,7 +196,7 @@ const adaptedShare = await readFile(
 for (const exact of ['height: 44px', 'position: fixed', 'bottom: 84px']) {
   if (!adaptedShare.includes(exact)) failures.push(`missing share control ${exact}`);
 }
-console.log('CARDS_39BADDFD_ADAPTED\tsrc/components/ShareSheet/StageShareButton.module.scss');
+console.log('CARDS_ADAPTED\tsrc/components/ShareSheet/StageShareButton.module.scss');
 
 if (failures.length > 0) {
   throw new Error(`Chrome parity failed for: ${failures.join(', ')}`);

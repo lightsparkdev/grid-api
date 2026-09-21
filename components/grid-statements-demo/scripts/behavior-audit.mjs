@@ -89,7 +89,7 @@ const primary = await openPage(1800, 1100);
 const { page } = primary;
 await page.getByRole('status', { name: 'Loading statement' }).waitFor();
 await page.getByText('listTransactions').waitFor();
-await page.getByRole('button', { name: 'Share' }).waitFor();
+await page.getByRole('button', { name: 'Export' }).waitFor();
 const appPreview = page.locator(
   '[class*="StatementPanel_stage"] > [data-preview-shell="mobile"]',
 );
@@ -163,23 +163,41 @@ assert.equal(desktopScroll.overflowY, 'auto');
 assert(desktopScroll.scrollHeight > desktopScroll.clientHeight);
 assert(desktopScroll.scrollTop > 0);
 
-await page.getByRole('button', { name: 'Share' }).click();
-const share = page.getByRole('region', { name: 'Share statement' });
-await share.locator('[data-preview-shell="desktop"]').waitFor();
+await page.getByRole('button', { name: 'Export' }).click();
+const exportSheet = page.getByRole('dialog', { name: 'Export statement' });
+await exportSheet.locator('[data-preview-shell="desktop"]').waitFor();
 assert.equal(
-  await share.locator('article').evaluate((element) =>
+  await page.evaluate(() => document.activeElement?.textContent),
+  'Copy link',
+);
+await page.keyboard.press('Shift+Tab');
+assert.equal(
+  await page.evaluate(() => document.activeElement?.textContent),
+  'Save HTML',
+);
+await page.keyboard.press('Tab');
+assert.equal(
+  await page.evaluate(() => document.activeElement?.textContent),
+  'Copy link',
+);
+assert.equal(
+  await exportSheet.locator('article').evaluate((element) =>
     element.style.getPropertyValue('--statement-primary-background'),
   ),
   '#fafafa',
 );
 await page.getByRole('button', { name: 'Cancel' }).click();
+assert.equal(
+  await page.evaluate(() => document.activeElement?.getAttribute('aria-label')),
+  'Export',
+);
 
 await page.getByRole('radio', { name: 'Mobile' }).click();
 await company.fill('Live share brand');
 await assertCallsRemain();
-await page.getByRole('button', { name: 'Share' }).click();
-await share.locator('[data-preview-shell="mobile"]').waitFor();
-assert.equal(await share.getByText('September statement').count(), 1);
+await page.getByRole('button', { name: 'Export' }).click();
+await exportSheet.locator('[data-preview-shell="mobile"]').waitFor();
+assert.equal(await exportSheet.getByText('September statement').count(), 1);
 await page.getByRole('button', { name: 'Save PDF' }).click();
 await page.waitForFunction(() => window.__prints.length === 1);
 const printed = (await page.evaluate(() => window.__prints))[0];
@@ -189,7 +207,7 @@ assert.match(printed.text, /September statement/);
 assert.match(printed.text, /Total fees for period/);
 assert.doesNotMatch(printed.text, /Explore playground|listTransactions|Configure statement/);
 
-await page.getByRole('button', { name: 'Share' }).click();
+await page.getByRole('button', { name: 'Export' }).click();
 const downloadPromise = page.waitForEvent('download');
 await page.getByRole('button', { name: 'Save HTML' }).click();
 const download = await downloadPromise;
@@ -201,7 +219,7 @@ assert.match(html, /September statement/);
 assert.match(html, /data:image\//);
 assert.doesNotMatch(html, /https?:|<link|@font-face|srcset=/i);
 
-await page.getByRole('button', { name: 'Share' }).click();
+await page.getByRole('button', { name: 'Export' }).click();
 await page.getByRole('button', { name: 'Copy link' }).click();
 const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
 assert.match(sharedUrl, /variant=consumer/);
@@ -224,14 +242,21 @@ for (const dismiss of [
   () => page.keyboard.press('Escape'),
   () => page.locator('[class*="ShareSheet_backdrop"]').click({ position: { x: 4, y: 4 } }),
 ]) {
-  if ((await share.count()) === 0) await page.getByRole('button', { name: 'Share' }).click();
-  await share.waitFor();
+  if ((await exportSheet.count()) === 0) {
+    await page.getByRole('button', { name: 'Export' }).click();
+  }
+  await exportSheet.waitFor();
   await dismiss();
-  await share.waitFor({ state: 'detached' });
+  await exportSheet.waitFor({ state: 'detached' });
   assert.equal(
     await page.locator('[class*="ShareSheet_backdrop"]').count(),
     0,
     'a dismissed sheet leaves no blocking layer',
+  );
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.getAttribute('aria-label')),
+    'Export',
+    'closing the export sheet returns focus to its trigger',
   );
 }
 await page.getByRole('radio', { name: 'Desktop' }).click();
@@ -322,14 +347,14 @@ for (const [name, width, height] of [
   if (name === 'mobile') {
     await audit.page.getByRole('button', { name: 'Explore playground' }).click();
   }
-  await audit.page.getByRole('button', { name: 'Share' }).waitFor();
+  await audit.page.getByRole('button', { name: 'Export' }).waitFor();
   const before = await audit.page.evaluate(() => ({
     width: document.body.scrollWidth,
     height: document.body.scrollHeight,
   }));
-  await audit.page.getByRole('button', { name: 'Share' }).click();
+  await audit.page.getByRole('button', { name: 'Export' }).click();
   const panel = await audit.page
-    .getByRole('region', { name: 'Share statement' })
+    .getByRole('dialog', { name: 'Export statement' })
     .boundingBox();
   const pill = await audit.page.getByRole('button', { name: 'Cancel' }).boundingBox();
   const after = await audit.page.evaluate(() => ({
@@ -355,11 +380,11 @@ for (const [width, height] of [
   await short.page.getByText('listTransactions').waitFor();
   await short.page.getByRole('radio', { name: 'Desktop' }).click();
   await short.page.getByText('September statement').first().waitFor();
-  await short.page.getByRole('button', { name: 'Share' }).click();
-  await short.page.getByRole('region', { name: 'Share statement' }).waitFor();
+  await short.page.getByRole('button', { name: 'Export' }).click();
+  await short.page.getByRole('dialog', { name: 'Export statement' }).waitFor();
   const reach = await short.page.evaluate(() => {
     const panel = document
-      .querySelector('[aria-label="Share statement"]')
+      .querySelector('[aria-label="Export statement"]')
       .getBoundingClientRect();
     return Array.from(document.querySelectorAll('button'))
       .filter((button) =>
@@ -393,8 +418,8 @@ for (const [width, height] of [
 
 const reduced = await openPage(1280, 1000, 'reduce');
 await reduced.page.getByText('listTransactions').waitFor();
-await reduced.page.getByRole('button', { name: 'Share' }).click();
-await reduced.page.getByRole('region', { name: 'Share statement' }).waitFor();
+await reduced.page.getByRole('button', { name: 'Export' }).click();
+await reduced.page.getByRole('dialog', { name: 'Export statement' }).waitFor();
 assert.deepEqual(reduced.errors, []);
 
 assert.deepEqual(primary.errors, []);

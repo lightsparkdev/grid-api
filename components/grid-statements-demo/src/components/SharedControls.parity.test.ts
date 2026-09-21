@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -20,16 +19,7 @@ describe('copied Cards controls', () => {
     );
   });
 
-  it('keeps the Cards StageShareButton behavior at 39baddfd', () => {
-    const bytes = readFileSync(
-      resolve(process.cwd(), 'src/components/ShareSheet/StageShareButton.tsx'),
-    );
-    expect(createHash('sha256').update(bytes).digest('hex')).toBe(
-      '664c9b04f808d2b5fd59ce2da6fdbf98d31b272cdd7a1a0729c8e99aa33a51ff',
-    );
-  });
-
-  it('adapts the Cards share pill only to avoid the mobile back control', () => {
+  it('adapts the Cards export pill only to avoid the mobile back control', () => {
     const source = readFileSync(
       resolve(process.cwd(), 'src/components/ShareSheet/StageShareButton.module.scss'),
       'utf8',

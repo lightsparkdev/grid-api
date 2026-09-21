@@ -126,8 +126,8 @@ for (const auditCase of cases) {
         path: new URL(`${baseName}-desktop.png`, output).pathname,
         fullPage: true,
       });
-      await page.getByRole('button', { name: 'Share' }).click();
-      const sheet = page.getByRole('region', { name: 'Share statement' });
+      await page.getByRole('button', { name: 'Export' }).click();
+      const sheet = page.getByRole('dialog', { name: 'Export statement' });
       await sheet.waitFor();
       entry.metrics.shareSheet = await sheet.evaluate((element) => {
         const box = element.getBoundingClientRect();

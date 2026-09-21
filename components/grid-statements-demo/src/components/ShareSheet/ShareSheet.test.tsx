@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BRAND, STATEMENT_PERIOD, buildStatement } from '@/statement/fixtures';
 import { ShareSheet } from './ShareSheet';
@@ -23,6 +23,26 @@ vi.mock('@/components/StatementPreview/StatementPreview', () => ({
 
 afterEach(cleanup);
 
+function FocusHarness() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Export
+      </button>
+      <ShareSheet
+        open={open}
+        statement={buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD)}
+        previewMode="mobile"
+        onClose={() => setOpen(false)}
+        onCopyLink={vi.fn()}
+        onSavePdf={vi.fn()}
+        onSaveHtml={vi.fn()}
+      />
+    </>
+  );
+}
+
 describe('ShareSheet', () => {
   it('shows the statement and the three approved actions', () => {
     render(
@@ -37,6 +57,11 @@ describe('ShareSheet', () => {
       />,
     );
 
+    expect(
+      screen
+        .getByRole('dialog', { name: 'Export statement' })
+        .getAttribute('aria-modal'),
+    ).toBe('true');
     expect(screen.getByRole('button', { name: 'Copy link' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save PDF' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save HTML' })).toBeTruthy();
@@ -69,26 +94,27 @@ describe('ShareSheet', () => {
     expect(screen.getByText('Edited brand')).toBeTruthy();
   });
 
-  it('dismisses on Escape and on a click outside the panel', () => {
-    const onClose = vi.fn();
-    const { container } = render(
-      <ShareSheet
-        open
-        statement={buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD)}
-        previewMode="mobile"
-        onClose={onClose}
-        onCopyLink={vi.fn()}
-        onSavePdf={vi.fn()}
-        onSaveHtml={vi.fn()}
-      />,
-    );
+  it('traps focus and returns it after Escape or an outside click', async () => {
+    const { container } = render(<FocusHarness />);
+    const trigger = screen.getByRole('button', { name: 'Export' });
+
+    trigger.focus();
+    fireEvent.click(trigger);
+    const first = screen.getByRole('button', { name: 'Copy link' });
+    const last = screen.getByRole('button', { name: 'Save HTML' });
+    expect(document.activeElement).toBe(first);
+
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
 
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
 
-    const backdrop = container.querySelector('div[aria-hidden]');
-    fireEvent.click(backdrop as HTMLElement);
-    expect(onClose).toHaveBeenCalledTimes(2);
+    fireEvent.click(trigger);
+    fireEvent.click(container.querySelector('div[aria-hidden]') as HTMLElement);
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
   it('shortens the ripple for reduced motion', () => {
