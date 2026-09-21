@@ -62,7 +62,8 @@
 }
 
 .panel[data-preview-mode='desktop'] .preview {
-  flex: none;
+  flex: 0 1 auto;
+  min-height: 0;
   aspect-ratio: 922 / 658;
 }
 

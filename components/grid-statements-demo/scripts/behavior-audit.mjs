@@ -346,6 +346,51 @@ for (const [name, width, height] of [
   await audit.context.close();
 }
 
+for (const [width, height] of [
+  [1680, 700],
+  [1440, 700],
+  [1280, 700],
+]) {
+  const short = await openPage(width, height);
+  await short.page.getByText('listTransactions').waitFor();
+  await short.page.getByRole('radio', { name: 'Desktop' }).click();
+  await short.page.getByText('September statement').first().waitFor();
+  await short.page.getByRole('button', { name: 'Share' }).click();
+  await short.page.getByRole('region', { name: 'Share statement' }).waitFor();
+  const reach = await short.page.evaluate(() => {
+    const panel = document
+      .querySelector('[aria-label="Share statement"]')
+      .getBoundingClientRect();
+    return Array.from(document.querySelectorAll('button'))
+      .filter((button) =>
+        ['Copy link', 'Save PDF', 'Save HTML'].includes(button.textContent.trim()),
+      )
+      .map((button) => {
+        const box = button.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          Math.round(box.x + box.width / 2),
+          Math.round(box.y + box.height / 2),
+        );
+        return {
+          label: button.textContent.trim(),
+          insidePanel: box.bottom <= panel.bottom + 1 && box.top >= panel.top - 1,
+          clickable: hit?.closest('button') === button,
+        };
+      });
+  });
+  assert.deepEqual(
+    reach,
+    ['Copy link', 'Save PDF', 'Save HTML'].map((label) => ({
+      label,
+      insidePanel: true,
+      clickable: true,
+    })),
+    `desktop export actions must stay reachable at ${width} by ${height}`,
+  );
+  assert.deepEqual(short.errors, []);
+  await short.context.close();
+}
+
 const reduced = await openPage(1280, 1000, 'reduce');
 await reduced.page.getByText('listTransactions').waitFor();
 await reduced.page.getByRole('button', { name: 'Share' }).click();
