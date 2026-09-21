@@ -21,5 +21,10 @@ const { GlassOver: WalletGlassOver } = require(
 };
 
 export function GlassOver(props: GlassOverProps) {
-  return <WalletGlassOver {...props} />;
+  const { className, style, ...glassProps } = props;
+  return (
+    <div className={className} style={style}>
+      <WalletGlassOver {...glassProps} />
+    </div>
+  );
 }
