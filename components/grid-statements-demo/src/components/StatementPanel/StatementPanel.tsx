@@ -98,6 +98,7 @@ export function StatementPanel({
           open={shareOpen}
           statement={statement}
           previewMode={preview.mode}
+          onClose={() => setShareOpen(false)}
           onCopyLink={onCopyLink}
           onSavePdf={exportPdf}
           onSaveHtml={exportHtml}

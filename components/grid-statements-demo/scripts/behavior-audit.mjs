@@ -25,10 +25,27 @@ async function openPage(width, height, reducedMotion = 'no-preference') {
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
+  // The PDF prints from its own iframe realm, which a patch on this realm never
+  // reaches. Patch the frame's print as it attaches and read what it was given.
   await page.addInitScript(() => {
+    window.__prints = [];
     window.print = () => {
-      window.__printedTitle = document.title;
+      window.__prints.push({ title: document.title, text: document.body?.innerText ?? '', fromFrame: false });
     };
+    new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (!(node instanceof HTMLIFrameElement) || !node.contentWindow) continue;
+          node.contentWindow.print = () => {
+            window.__prints.push({
+              title: node.contentDocument?.title ?? '',
+              text: node.contentDocument?.body?.innerText ?? '',
+              fromFrame: true,
+            });
+          };
+        }
+      }
+    }).observe(document, { childList: true, subtree: true });
   });
   await page.goto(`${baseUrl}/?theme=light`, { waitUntil: 'domcontentloaded' });
   return { context, page, errors };
@@ -164,11 +181,13 @@ await page.getByRole('button', { name: 'Share' }).click();
 await share.locator('[data-preview-shell="mobile"]').waitFor();
 assert.equal(await share.getByText('September statement').count(), 1);
 await page.getByRole('button', { name: 'Save PDF' }).click();
-await page.waitForFunction(() => window.__printedTitle);
-assert.equal(
-  await page.evaluate(() => window.__printedTitle),
-  'live-share-brand-september-statement',
-);
+await page.waitForFunction(() => window.__prints.length === 1);
+const printed = (await page.evaluate(() => window.__prints))[0];
+assert.equal(printed.title, 'live-share-brand-september-statement');
+assert.equal(printed.fromFrame, true, 'the PDF must print an isolated document');
+assert.match(printed.text, /September statement/);
+assert.match(printed.text, /Total fees for period/);
+assert.doesNotMatch(printed.text, /Explore playground|listTransactions|Configure statement/);
 
 await page.getByRole('button', { name: 'Share' }).click();
 const downloadPromise = page.waitForEvent('download');
@@ -200,6 +219,46 @@ assert.equal(
   'true',
 );
 await sharedPage.close();
+
+for (const dismiss of [
+  () => page.keyboard.press('Escape'),
+  () => page.locator('[class*="ShareSheet_backdrop"]').click({ position: { x: 4, y: 4 } }),
+]) {
+  if ((await share.count()) === 0) await page.getByRole('button', { name: 'Share' }).click();
+  await share.waitFor();
+  await dismiss();
+  await share.waitFor({ state: 'detached' });
+  assert.equal(
+    await page.locator('[class*="ShareSheet_backdrop"]').count(),
+    0,
+    'a dismissed sheet leaves no blocking layer',
+  );
+}
+await page.getByRole('radio', { name: 'Desktop' }).click();
+await page.getByRole('radio', { name: 'Mobile' }).click();
+
+// The selected account cell is the unavailable one, as in the Cards flow tiles,
+// so keyboard reachability is not implied by the markup.
+const accountCells = page.getByRole('radiogroup', { name: 'Account type' });
+const reachable = await accountCells.evaluate((group) =>
+  Array.from(group.querySelectorAll('button')).filter(
+    (button) => !button.disabled && button.tabIndex >= 0,
+  ).length,
+);
+assert(reachable >= 1, 'no account cell is reachable by keyboard');
+await accountCells.getByRole('radio', { name: 'Commercial' }).focus();
+await page.keyboard.press('ArrowRight');
+await page.getByText('listTransactions').waitFor();
+assert.equal(
+  await accountCells.getByRole('radio', { name: 'Commercial' }).getAttribute('aria-checked'),
+  'true',
+);
+assert.equal(
+  await page.evaluate(() => document.activeElement?.dataset.choice),
+  'consumer',
+  'focus must stay on the cell that is still actionable',
+);
+await expectReload(page, 'Consumer');
 
 const mobileScroll = await appPreview
   .locator('[class*="StatementScreen_scroller"]')

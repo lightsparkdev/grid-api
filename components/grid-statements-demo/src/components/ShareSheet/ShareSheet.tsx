@@ -14,6 +14,7 @@ interface ShareSheetProps {
   open: boolean;
   statement: StatementModel;
   previewMode: 'mobile' | 'desktop';
+  onClose: () => void;
   onCopyLink: () => void;
   onSavePdf: () => void;
   onSaveHtml: () => void;
@@ -23,6 +24,7 @@ export function ShareSheet({
   open,
   statement,
   previewMode,
+  onClose,
   onCopyLink,
   onSavePdf,
   onSaveHtml,
@@ -36,13 +38,11 @@ export function ShareSheet({
   useEffect(() => {
     if (!open) return;
     const close = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        document.querySelector<HTMLButtonElement>('[aria-label="Cancel"]')?.click();
-      }
+      if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
-  }, [open]);
+  }, [onClose, open]);
 
   return (
     <AnimatePresence>
@@ -50,6 +50,8 @@ export function ShareSheet({
         <>
           <motion.div
             className={styles.backdrop}
+            aria-hidden
+            onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

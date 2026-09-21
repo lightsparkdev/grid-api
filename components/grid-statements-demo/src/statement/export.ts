@@ -112,7 +112,6 @@ export async function buildStatementHtml(
 
 export async function printStatementHtml(source: HTMLElement, title: string) {
   const html = await buildStatementHtml(source, title);
-  (window as Window & { __printedTitle?: string }).__printedTitle = title;
   const frame = document.createElement('iframe');
   frame.setAttribute('title', 'Statement PDF');
   frame.style.position = 'fixed';

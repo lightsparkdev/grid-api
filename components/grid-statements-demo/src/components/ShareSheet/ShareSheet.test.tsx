@@ -1,7 +1,7 @@
 import React from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BRAND, STATEMENT_PERIOD, buildStatement } from '@/statement/fixtures';
 import { ShareSheet } from './ShareSheet';
@@ -30,6 +30,7 @@ describe('ShareSheet', () => {
         open
         statement={buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD)}
         previewMode="mobile"
+        onClose={vi.fn()}
         onCopyLink={vi.fn()}
         onSavePdf={vi.fn()}
         onSaveHtml={vi.fn()}
@@ -46,6 +47,7 @@ describe('ShareSheet', () => {
     const initial = buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD);
     const props = {
       open: true,
+      onClose: vi.fn(),
       onCopyLink: vi.fn(),
       onSavePdf: vi.fn(),
       onSaveHtml: vi.fn(),
@@ -65,6 +67,28 @@ describe('ShareSheet', () => {
     );
     expect(document.querySelector('[data-preview-shell="desktop"]')).toBeTruthy();
     expect(screen.getByText('Edited brand')).toBeTruthy();
+  });
+
+  it('dismisses on Escape and on a click outside the panel', () => {
+    const onClose = vi.fn();
+    const { container } = render(
+      <ShareSheet
+        open
+        statement={buildStatement('consumer', DEFAULT_BRAND, STATEMENT_PERIOD)}
+        previewMode="mobile"
+        onClose={onClose}
+        onCopyLink={vi.fn()}
+        onSavePdf={vi.fn()}
+        onSaveHtml={vi.fn()}
+      />,
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    const backdrop = container.querySelector('div[aria-hidden]');
+    fireEvent.click(backdrop as HTMLElement);
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 
   it('shortens the ripple for reduced motion', () => {

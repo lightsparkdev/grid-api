@@ -158,7 +158,7 @@ export function ConfigurePanel({
                   />
                   <ContrastWarning
                     visible={!color.passes}
-                    pair={color.key === 'primaryText' ? 'primary' : 'secondary'}
+                    pair={color.key.startsWith('primary') ? 'primary' : 'secondary'}
                   />
                 </div>
               ))}

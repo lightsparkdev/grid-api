@@ -6,9 +6,9 @@ import {
   LEGAL,
   STATEMENT_PERIOD,
   statementRows,
-  statementFilename,
 } from './fixtures';
 import { buildApiEntries, reconcileApiEntries } from './api';
+import { statementExportFilename } from './export';
 
 describe('statement fixtures', () => {
   it('reconciles the consumer statement and fee total', () => {
@@ -97,6 +97,8 @@ describe('statement fixtures', () => {
       STATEMENT_PERIOD,
     );
 
-    expect(statementFilename(statement)).toBe('waterbnb-september-statement.pdf');
+    expect(statementExportFilename(statement, 'pdf')).toBe(
+      'waterbnb-september-statement.pdf',
+    );
   });
 });

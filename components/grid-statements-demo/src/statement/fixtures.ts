@@ -259,7 +259,3 @@ export function formatMoney(cents: number, signed = false): string {
   });
   return signed ? `${cents >= 0 ? '+' : '-'}$${amount}` : `$${amount}`;
 }
-
-export function statementFilename(statement: StatementModel): string {
-  return statementExportFilename(statement, 'pdf');
-}
