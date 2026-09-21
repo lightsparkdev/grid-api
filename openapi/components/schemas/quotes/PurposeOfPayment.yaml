@@ -1,7 +1,9 @@
 type: string
 description: >-
   The purpose of the payment. This may be required when sending to certain
-  geographies (e.g. India).
+  geographies (e.g. India). Business payments to China must use one of the
+  specific purposes rather than `GOODS_OR_SERVICES`, because each purpose
+  requires its own supporting documents.
 enum:
   - GIFT
   - SELF
@@ -16,4 +18,10 @@ enum:
   - TRAVEL
   - FAMILY_SUPPORT
   - SALARY_PAYMENT
+  - EXPORTED_GOODS_PREPAYMENT
+  - EXPORTED_GOODS_POSTPAYMENT
+  - SERVICE_CHARGES
+  - OFFICE_EXPENSES
+  - DELIVERY_FEES
+  - HOTEL_ACCOMMODATION
   - OTHER
