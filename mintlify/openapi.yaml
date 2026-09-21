@@ -8944,12 +8944,20 @@ paths:
 
         Request the reveal right before rendering the iframe and render the returned `panEmbedUrl` immediately; it expires at `expiresAt` (within minutes). Never store, cache, or log the URL — it is a bearer secret for the full card details. The card data renders inside the processor's iframe and never crosses Grid's or your servers.
 
+        Set `cardConfigs.panRevealCssUrl` on your platform config to style the iframe with your own stylesheet, or send `cssUrl` in the body to override it for one reveal.
+
         Every reveal is audit-logged with the requesting actor.
       operationId: revealCard
       tags:
         - Cards
       security:
         - BasicAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardRevealRequest'
       responses:
         '200':
           description: Reveal URL minted.
@@ -13040,6 +13048,15 @@ components:
             - type: 'null'
           description: Platform-level cap on the number of transactions each card may authorize during one UTC calendar day, for every card whose authorization decisions are made by Grid. Grid enforces the lower of this cap and the card's configured `maxTransactionsPerDay`; null means no platform-level daily transaction cap. The window resets at 00:00 UTC. Each approved authorization counts once; refunds, reversals, and authorization expiries do not restore capacity during the day. The cap applies to existing cards and cards issued later. Provider-decided card programs are unaffected.
           example: 50
+        panRevealCssUrl:
+          anyOf:
+            - type: string
+              format: uri
+              pattern: ^https://[^@]*$
+              maxLength: 512
+            - type: 'null'
+          description: HTTPS URL of a stylesheet that styles the card-details iframe returned by `POST /cards/{id}/reveal`, so the revealed PAN, expiry, and CVV carry your branding instead of the default. The card processor's page links the stylesheet and the cardholder's browser fetches it, so it must be reachable over HTTPS without credentials. Style the `card`, `pan`, `expiry`, and `cvv` ids and the `pan-separator` class; the rest of the page structure is not a contract. The stylesheet loads into the page rendering the live card details, so host it somewhere you would trust with them. `null` restores the default styling. A `cssUrl` in the body of `POST /cards/{id}/reveal` overrides this for one reveal. Applies to cards whose `cardCapabilities.supportsPanReveal` is true; cards revealed through the card issuer's own hosted flow are styled by that issuer.
+          example: https://acme.com/card-reveal.css
     FeeType:
       type: string
       enum:
@@ -27652,6 +27669,19 @@ components:
           type: string
           description: Sets a new static 3-D Secure password on the card. Send it on its own, and only when the card's `cardCapabilities.supports3dSecurePassword` is true.
           example: AbCd1234EfGh5678
+    CardRevealRequest:
+      type: object
+      description: Optional overrides for one reveal. Omit the body entirely to use your platform's configured settings.
+      properties:
+        cssUrl:
+          anyOf:
+            - type: string
+              format: uri
+              pattern: ^https://[^@]*$
+              maxLength: 512
+            - type: 'null'
+          description: 'HTTPS URL of a stylesheet for this reveal only, overriding `cardConfigs.panRevealCssUrl` for this call without changing your platform config. Use it to style one reveal differently from the rest — to match the cardholder''s light or dark theme, for example. Subject to the same rules as the platform-level setting: it must be reachable over HTTPS without credentials, it styles the same selectors, and it loads into the page rendering the live card details, so host it somewhere you would trust with them. Omit the field, or send `null`, to fall back to your platform config.'
+          example: https://acme.com/card-reveal-dark.css
     CardRevealResponse:
       type: object
       required:
