@@ -46,3 +46,6 @@ export const TEXT_GLASS: GlassConfig = {
   cornerSmoothing: 0,
   mapSize: 128,
 };
+
+export const TEXT_GLASS_BACKDROP =
+  'linear-gradient(180deg, #ffffff 0%, #ebebef 100%)';

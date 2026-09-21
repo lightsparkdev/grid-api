@@ -79,31 +79,77 @@ for (const auditCase of cases) {
         api: rect('.api-column, [class*="apiCol"]'),
         header: rect('.panel-header, [class*="PanelHeader_header"]'),
         shell: rect('[class*="AppShell_frame"]'),
+        deviceToggle: rect('[role="radiogroup"][aria-label="Preview device"]'),
+        stage: rect('[class*="StatementPanel_stage"]'),
+        liquidGlassFilters: document.querySelectorAll(
+          '[class*="DeviceToggle_glass"] filter',
+        ).length,
+        secondaryBackgroundControl: Array.from(
+          document.querySelectorAll('span'),
+        ).some((element) => element.textContent === 'Secondary background'),
         body: {
           width: document.body.scrollWidth,
           height: document.body.scrollHeight,
         },
       };
     });
-    evidence.push({ app: app.name, case: auditCase.name, metrics, errors });
+    const entry = { app: app.name, case: auditCase.name, metrics, errors };
+    evidence.push(entry);
 
     if (app.name === 'statements' && !auditCase.mobile) {
       await page.getByText('listTransactions').waitFor({ state: 'attached' });
+      entry.metrics.mobileBrandLogo = await page
+        .locator('[class*="StatementScreen_logo"] img')
+        .evaluate((element) => {
+          const box = element.getBoundingClientRect();
+          return {
+            width: Math.round(box.width),
+            height: Math.round(box.height),
+          };
+        });
       await page.screenshot({
         path: new URL(`${baseName}-statement.png`, output).pathname,
         fullPage: true,
       });
       await page.getByRole('radio', { name: 'Desktop' }).click();
       await page.getByText('September statement').first().waitFor();
+      entry.metrics.desktopFrame = await page
+        .locator('[class*="StatementPreview_desktopApp"]')
+        .evaluate((element) => {
+          const box = element.getBoundingClientRect();
+          return {
+            width: Math.round(box.width),
+            height: Math.round(box.height),
+          };
+        });
       await page.screenshot({
         path: new URL(`${baseName}-desktop.png`, output).pathname,
         fullPage: true,
       });
       await page.getByRole('button', { name: 'Share' }).click();
+      const sheet = page.getByRole('region', { name: 'Share statement' });
+      await sheet.waitFor();
+      entry.metrics.shareSheet = await sheet.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return {
+          width: Math.round(box.width),
+          height: Math.round(box.height),
+          fitsViewport:
+            box.left >= 0 &&
+            box.top >= 0 &&
+            box.right <= window.innerWidth &&
+            box.bottom <= window.innerHeight,
+        };
+      });
       await page.screenshot({
         path: new URL(`${baseName}-share.png`, output).pathname,
         fullPage: true,
       });
+      await page.keyboard.press('Escape');
+      await sheet.waitFor({ state: 'detached' });
+      entry.metrics.escapeDismisses = true;
+      entry.metrics.backdropLeftBehind =
+        (await page.locator('[class*="ShareSheet_backdrop"]').count()) > 0;
     }
 
     if (auditCase.mobile) {
@@ -119,6 +165,15 @@ for (const auditCase of cases) {
           fullPage: true,
         });
         if (app.name === 'statements') {
+          entry.metrics.mobileBrandLogo = await page
+            .locator('[class*="StatementScreen_logo"] img')
+            .evaluate((element) => {
+              const box = element.getBoundingClientRect();
+              return {
+                width: Math.round(box.width),
+                height: Math.round(box.height),
+              };
+            });
           await page.screenshot({
             path: new URL(`${baseName}-playground-statement.png`, output).pathname,
             fullPage: true,

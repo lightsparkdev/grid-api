@@ -237,16 +237,21 @@ for (const dismiss of [
 await page.getByRole('radio', { name: 'Desktop' }).click();
 await page.getByRole('radio', { name: 'Mobile' }).click();
 
-// The selected account cell is the unavailable one, as in the Cards flow tiles,
-// so keyboard reachability is not implied by the markup.
 const accountCells = page.getByRole('radiogroup', { name: 'Account type' });
-const reachable = await accountCells.evaluate((group) =>
-  Array.from(group.querySelectorAll('button')).filter(
-    (button) => !button.disabled && button.tabIndex >= 0,
-  ).length,
+assert.deepEqual(
+  await accountCells.getByRole('radio').evaluateAll((radios) =>
+    radios.map((radio) => ({
+      checked: radio.getAttribute('aria-checked'),
+      disabled: radio.hasAttribute('disabled'),
+      tabIndex: radio.tabIndex,
+    })),
+  ),
+  [
+    { checked: 'true', disabled: false, tabIndex: 0 },
+    { checked: 'false', disabled: false, tabIndex: -1 },
+  ],
 );
-assert(reachable >= 1, 'no account cell is reachable by keyboard');
-await accountCells.getByRole('radio', { name: 'Commercial' }).focus();
+await accountCells.getByRole('radio', { name: 'Consumer' }).focus();
 await page.keyboard.press('ArrowRight');
 await page.getByText('listTransactions').waitFor();
 assert.equal(
@@ -255,8 +260,8 @@ assert.equal(
 );
 assert.equal(
   await page.evaluate(() => document.activeElement?.dataset.choice),
-  'consumer',
-  'focus must stay on the cell that is still actionable',
+  'commercial',
+  'focus must follow the selected radio',
 );
 await expectReload(page, 'Consumer');
 

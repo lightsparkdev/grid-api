@@ -6,11 +6,7 @@
   left: 50%;
   z-index: 1;
   overflow: hidden;
-  border: var(--stroke-xs) solid color-mix(in srgb, white 62%, transparent);
   border-radius: 1000px;
-  background: color-mix(in srgb, var(--surface-primary) 72%, transparent);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(18px) saturate(1.25);
   transform: translateX(-50%);
 }
 

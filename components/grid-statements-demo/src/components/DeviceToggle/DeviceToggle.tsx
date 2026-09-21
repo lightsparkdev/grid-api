@@ -1,10 +1,22 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { IconLayoutWindow } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconLayoutWindow';
 import { IconPhone } from '@central-icons-react/round-outlined-radius-3-stroke-1.5/IconPhone';
-import { Glass, TEXT_GLASS } from '@/components/liquid-glass';
+import {
+  TEXT_GLASS,
+  TEXT_GLASS_BACKDROP,
+} from '@/components/liquid-glass';
 import type { PreviewMode } from '@/statement/lifecycle';
 import styles from './DeviceToggle.module.scss';
+
+const GlassOver = dynamic(
+  () =>
+    import('@/components/liquid-glass/WalletGlassOver').then(
+      (module) => module.GlassOver,
+    ),
+  { ssr: false },
+);
 
 export function DeviceToggle({
   value,
@@ -14,7 +26,11 @@ export function DeviceToggle({
   onChange: (mode: PreviewMode) => void;
 }) {
   return (
-    <Glass {...TEXT_GLASS} className={styles.glass}>
+    <GlassOver
+      {...TEXT_GLASS}
+      backdrop={TEXT_GLASS_BACKDROP}
+      className={styles.glass}
+    >
       <div className={styles.group} role="radiogroup" aria-label="Preview device">
         {[
           { id: 'mobile', label: 'Mobile', Icon: IconPhone },
@@ -34,6 +50,6 @@ export function DeviceToggle({
           </button>
         ))}
       </div>
-    </Glass>
+    </GlassOver>
   );
 }

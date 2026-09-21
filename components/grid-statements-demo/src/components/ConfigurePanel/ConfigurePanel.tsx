@@ -181,7 +181,7 @@ function ContrastWarning({
 }) {
   if (!visible) return null;
   return (
-    <Tooltip text={`${pair === 'primary' ? 'Primary' : 'Secondary'} text needs at least 4.5:1 contrast.`}>
+    <Tooltip text={`${pair === 'primary' ? 'Primary' : 'Secondary'} text and background need at least 4.5:1 contrast.`}>
       {(tip) => (
         <span
           className={styles.contrastWarning}
